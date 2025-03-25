@@ -1,10 +1,12 @@
 <script lang="ts">
 	import PokemonInfo from '@components/card/PokemonInfo.svelte';
+	import EvolutionChain from '@components/card/EvolutionChain.svelte';
 	import {fade} from 'svelte/transition';
 	import type {Card, Pokemon} from '~/types.js';
 
 	export let pokemons: Pokemon[];
 	export let cards: Card[];
+	export let sprites: Record<number, string>;
 	let card: Card = cards[0];
 
 	const setLogoFirstHalf = cards.slice(0, 5).map(card => card.set);
@@ -13,7 +15,7 @@
 	const types = [...new Set(cards.map(card => card.types.toLowerCase().split(',')[0]))];
 
 	let centerCard: HTMLElement;
-	let styleElement: HTMLStyleElement;
+	let styleElement: HTMLStyleElement = null!;
 
 	$: currentSet = setLogoFirstHalf[0];
 	$: currentType = card.types.toLowerCase().split(',')[0];
@@ -49,12 +51,12 @@
 
 			const gradPos = `background-position: ${lp}% ${tp}%;`;
 			const sparkPos = `background-position: ${pxSpark}% ${pySpark}%;`;
-			const opc = `opacity ${pOpc / 100};`;
+			const opc = `opacity: ${pOpc / 100};`;
 			const tf = `transform: rotateX(${ty}deg) rotateY(${tx}deg);`;
-			const style2 = `.holo:hover::before {${gradPos}} !important`;
-			const style3 = `.holo:hover::after {${sparkPos} ${opc}} !important`;
+			const style2 = `.holo:hover::before {${gradPos}}`;
+			const style3 = `.holo:hover::after {${sparkPos} ${opc}}`;
 			centerCard.setAttribute('style', tf);
-			styleElement.innerHTML = `${style2} \n${style3}}`;
+			styleElement.innerHTML = `${style2} \n${style3}`;
 		} else {
 			if (!centerCard.classList.contains('inactive')) {
 				centerCard.classList.add('inactive');
@@ -68,7 +70,10 @@
 
 <svelte:window on:mousemove={({clientX, clientY}) => {cursorX = clientX; cursorY = clientY;}}/>
 
-<div class="h-[33rem] max-lg:h-[inherit] max-lg:flex max-lg:flex-col max-lg:gap-8 max-lg:flex-wrap max-lg:content-center">
+<div class="h-[42rem] max-lg:h-[inherit] max-lg:flex max-lg:flex-col max-lg:gap-8 max-lg:flex-wrap max-lg:content-center">
+	<!-- Evolution Chain Component -->
+	<EvolutionChain {card} {pokemons} {cards} {sprites} />
+
 	<div class="card-container h-full w-fit m-auto flex gap-12 max-lg:gap-3 max-lg:grid max-lg:place-items-center">
 		<div class="left-sets">
 			{#each setLogoFirstHalf as set}
@@ -90,22 +95,22 @@
 		</div>
 		<div
 			bind:this={centerCard}
-			class="center-card {currentType} {card.rarity.toLowerCase()}"
+			class="center-card h-[34rem] {currentType} {card.rarity.toLowerCase()}"
 			id="center-card"
 		>
 			<div class="card-aura {currentType}" id="card-aura"></div>
 			<div class="relative h-[34rem] w-[24rem] -z-10 max-lg:w-[75vw] max-lg:h-[112.5vw]">
-				{#each cards as card}
-					{#if currentSet === card.set}
+				{#each cards as c}
+					{#if currentSet === c.set}
 						<img
-							alt={card.pokemon.name}
+							alt={c.pokemon.name}
 							class="image"
 							decoding="async"
-							hidden={card.pokemon.name !== pokemonName}
+							hidden={c.pokemon.name !== pokemonName}
 							draggable="false"
-							loading={card.pokemon.name === pokemonName ? 'eager' : 'lazy'}
+							loading={c.pokemon.name === pokemonName ? 'eager' : 'lazy'}
 							height="420"
-							src={card.image}
+							src={c.image}
 							width="300"
 							transition:fade
 						/>
@@ -144,7 +149,7 @@
 	{/if}
 {/each}
 
-<PokemonInfo {card} {cards} {pokemons}/>
+<PokemonInfo {card} />
 
 <style lang="postcss">
 	img {
@@ -184,7 +189,7 @@
 	.left-sets, .right-sets {
 		align-items: center;
 		background-color: rgba(35, 35, 35, 0.75);
-		border-color: theme(borderColor.gold.400);
+		border-color: #f3d02c;
 		border-radius: 1rem;
 		border-style: solid;
 		border-width: 6px;
@@ -261,7 +266,7 @@
 		left: 50%;
 		mix-blend-mode: color-dodge;
 		position: absolute;
-		top: 52%;
+		top: 50%;
 		transform: translate(-50%, -50%);
 		transition: all 0.33s ease;
 		width: 24rem;

@@ -6,7 +6,7 @@ import {getCards, getPokemons} from '$helpers/data';
 import Layout from '@layouts/Layout.astro';
 import PokemonDisplay from '@components/card/PokemonDisplay.svelte';
 import type {Card} from "~/types";
-
+import { spriteCache } from '../../stores/spriteCache';
 
 export const getStaticPaths = (async () => {
 	const pokemons = await getPokemons();
@@ -33,12 +33,67 @@ interface Props {
 }
 
 const {cards} = Astro.props;
-
 const pokemons = await getPokemons();
-
 const card = cards[0];
 const pokemonName = card.pokemon.name;
 const capitalizedPokemonName = pokemonName.charAt(0).toUpperCase() + pokemonName.slice(1);
+
+// Préchargement des sprites pour la chaîne d'évolution
+const currentPokemon = card.pokemon;
+
+// Find pre-evolution if it exists
+const preEvolution = currentPokemon.evolves_from ?
+	pokemons.find(pokemon => pokemon.id === currentPokemon.evolves_from) :
+	undefined;
+
+// Find pre-pre-evolution if it exists (for 3-stage chains)
+const prePreEvolution = preEvolution?.evolves_from ?
+	pokemons.find(pokemon => pokemon.id === preEvolution.evolves_from) :
+	undefined;
+
+// Find evolutions if they exist
+const evolutions = currentPokemon.evolves_to ?
+	currentPokemon.evolves_to.map(evoId => pokemons.find(pokemon => pokemon.id === evoId)) :
+	[];
+
+// Find further evolutions if they exist
+const furtherEvolutions = evolutions.length ?
+	evolutions.flatMap(evo =>
+		evo?.evolves_to ?
+			evo.evolves_to.map(furtherEvoId => pokemons.find(pokemon => pokemon.id === furtherEvoId)) :
+			[]
+	) :
+	[];
+
+// Build the full chain
+const fullChain = [];
+
+if (prePreEvolution) fullChain.push(prePreEvolution);
+if (preEvolution) fullChain.push(preEvolution);
+fullChain.push(currentPokemon);
+evolutions.forEach(evo => {
+	if (evo) fullChain.push(evo);
+});
+furtherEvolutions.forEach(evo => {
+	if (evo) fullChain.push(evo);
+});
+
+// Remove duplicates if any
+const uniqueChain = fullChain.filter((pokemon, index, self) =>
+	index === self.findIndex(p => p.id === pokemon.id)
+);
+
+// Préchargement des sprites
+const sprites = await Promise.all(
+	uniqueChain.map(async (pokemon) => ({
+		id: pokemon.id,
+		sprite: await spriteCache.getSprite(pokemon.id)
+	}))
+);
+
+const spritesMap = Object.fromEntries(
+	sprites.map(({id, sprite}) => [id, sprite])
+);
 ---
 
 <Layout
@@ -51,7 +106,7 @@ const capitalizedPokemonName = pokemonName.charAt(0).toUpperCase() + pokemonName
 >
 	<main class="max-w-[100vw] m-auto p-2 text-lg text-white">
 		<div class="mt-10 mx-auto flex flex-col gap-8 w-[90%] -z-10 max-lg:mt-8">
-			<PokemonDisplay client:load {cards} {pokemons}/>
+			<PokemonDisplay client:load {cards} {pokemons} sprites={spritesMap}/>
 		</div>
 	</main>
 </Layout>
