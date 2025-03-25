@@ -35,7 +35,7 @@ export const filterSet = persistentStore('filter-set', 'all');
 export const filterType = persistentStore('filter-type', 'all');
 export const filterRarity = persistentStore('filter-rarity', 'all');
 
-export const displayAll = persistentStore('display-all', false);
+export const displayAll = persistentStore('display-all', true);
 
 export function isVisible(card: Card) {
 	const numero = get(filterNumero).toLowerCase();

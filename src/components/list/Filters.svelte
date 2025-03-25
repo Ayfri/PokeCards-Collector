@@ -13,21 +13,20 @@
 		$filterSet = 'all';
 		$filterType = 'all';
 		$filterRarity = 'all';
-		$displayAll = false;
+		$displayAll = true;
 	}
 
 	let visibleCardsCount = 0;
+	let uniquePokemonCount = 0;
 	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $displayAll) {
-		visibleCardsCount = cards.filter(isVisible).length;
+		const visibleCards = cards.filter(isVisible);
+		visibleCardsCount = visibleCards.length;
+		uniquePokemonCount = new Set(visibleCards.map(card => card.pokemon.id)).size;
 	}
 
 </script>
 
 <div class="flex items-center gap-4 max-lg:flex-col max-lg:gap-1.5">
-	<label class="text-white flex items-center gap-2 max-lg:text-[1rem] max-lg:leading-snug max-sm:text-sm" for="display-all">
-		Display all cards
-		<input bind:checked={$displayAll} class="!w-min" id="display-all" name="display-all" type="checkbox">
-	</label>
 	<button class="sort-order-btn fill-white !w-8 hover:fill-black" on:click={() => $sortOrder = $sortOrder === 'asc' ? 'desc' : 'asc'}>
 		<svg class="inline align-text-top" height="1em" viewBox="0 0 576 512" xmlns="http://www.w3.org/2000/svg">
 			{#if $sortOrder === 'asc'}
@@ -43,9 +42,10 @@
 </div>
 
 <div class="flex items-center gap-4 max-lg:flex-col max-lg:gap-1.5">
-	<output class="text-gold-400 text-[1rem] font-semibold lg:mr-2 max-lg:-mb-2 max-sm:text-sm">Cards :
-		<span>{visibleCardsCount}</span>
-	</output>
+	<div class="flex flex-col">
+		<div class="text-gold-400 text-[1rem] font-semibold lg:mr-2 max-lg:-mb-2 max-sm:text-sm">Pokémon: <span>{uniquePokemonCount}</span></div>
+		<div class="text-gold-400 text-[1rem] font-semibold lg:mr-2 max-lg:-mb-2 max-sm:text-sm">Cards: <span>{visibleCardsCount}</span></div>
+	</div>
 
 	<select bind:value={$sortBy} class="filter" id="sort" name="sort">
 		<option selected value="sort-numero">Sort by pokédex</option>
