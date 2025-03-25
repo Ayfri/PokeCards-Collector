@@ -56,7 +56,7 @@ This project uses the following technologies :
 
 - Astro.js for the client and the api
 - MariaDB for the database
-- Node.js for running the modules
+- Node.js for running the modules, Node 23 is required!
 - NPM for the dependencies
 - Typescript for the typing and the main code
 - Vite for the bundling
