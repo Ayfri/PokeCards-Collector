@@ -10,9 +10,14 @@
 		price,
 		rarity,
 		types,
+		set
 	} = card;
 
 	const lowResolutionImage = image.replace("_hires", "");
+	// Get set code from set object or image name
+	const setCode = set.ptcgoCode || image.split('/').at(-2);
+	// Get card code from image name, remove all non-numeric characters
+	const cardCode = image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
 
 	const {name} = pokemon;
 	let loaded = false;
@@ -48,7 +53,15 @@
 			srcset="{lowResolutionImage} 245px, {image} 300px"
 			width="300"
 		/>
-		<h2 class="text-center font-bold text-2xl">{name.charAt(0).toUpperCase() + name.slice(1)}</h2>
+		<h2 class="text-center font-bold text-[1.3rem]">
+			{name.charAt(0).toUpperCase() + name.slice(1)}
+			<span class="uppercase">
+				{#if setCode}
+					{setCode}
+				{/if}
+				#{cardCode}/{set.printedTotal}
+			</span>
+		</h2>
 		<h3 class="text-center">{price && price !== 100_000 ? `${price} $` : 'Priceless'}</h3>
 	</div>
 </a>

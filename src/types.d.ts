@@ -22,6 +22,8 @@ export interface Pokemon {
 export interface Set {
 	name: string;
 	logo: string;
+	printedTotal: number;
+	ptcgoCode: string;
 }
 
 export interface User {

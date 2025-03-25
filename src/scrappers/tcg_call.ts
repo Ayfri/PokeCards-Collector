@@ -136,11 +136,13 @@ type FetchedSet = {
 	images: {
 		logo: string;
 	};
+	printedTotal: number;
+	ptcgoCode: string;
 };
 
 async function fetchAndFilterSets() {
 	const sets = await pokemon.set.all({
-		select: 'name,images',
+		select: 'name,images,printedTotal,ptcgoCode',
 	}) as FetchedSet[];
 
 	console.log(`Found ${sets.length} sets!`);
@@ -148,6 +150,8 @@ async function fetchAndFilterSets() {
 	const setsData = sets.map(set => ({
 		name: set.name,
 		logo: set.images.logo,
+		printedTotal: set.printedTotal,
+		ptcgoCode: set.ptcgoCode,
 	}));
 
 	try {
@@ -160,6 +164,8 @@ async function fetchAndFilterSets() {
 		return uniqueNames.map(name => ({
 			name,
 			logo: sets.find(set => set.name === name)?.images?.logo,
+			printedTotal: sets.find(set => set.name === name)?.printedTotal,
+			ptcgoCode: sets.find(set => set.name === name)?.ptcgoCode,
 		}));
 	} catch (error) {
 		console.error(`Error reading ${CARDS}`, error);
