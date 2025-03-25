@@ -7,9 +7,12 @@ import type {Card} from '../types.ts';
 import {CARDS, SETS} from './files.ts';
 
 // Load and configure environment variables
-const apiKey = import.meta.env.POKEMON_TCG_API_KEY;
-
-if (!apiKey) {
+let apiKey = '';
+if (process.env.POKEMON_TCG_API_KEY) {
+	apiKey = process.env.POKEMON_TCG_API_KEY;
+} else if (import.meta.env.POKEMON_TCG_API_KEY) {
+	apiKey = import.meta.env.POKEMON_TCG_API_KEY;
+} else {
 	throw new Error('Pokémon TCG API key is missing from .env file, key: POKEMON_TCG_API_KEY');
 }
 
