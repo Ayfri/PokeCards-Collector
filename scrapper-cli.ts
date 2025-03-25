@@ -16,6 +16,21 @@ interface ScraperOption {
 
 const scrapers: ScraperOption[] = [
     {
+        name: 'all',
+        description: 'Run all scrapers sequentially',
+        action: async () => {
+            for (const scraper of scrapers.filter(s => s.name !== 'all')) {
+                console.log(chalk.yellow(`Running ${scraper.name} scraper...`));
+                try {
+                    await scraper.action();
+                    console.log(chalk.green(`✓ ${scraper.name} scraper completed successfully!`));
+                } catch (error) {
+                    console.error(chalk.red(`✗ Error running ${scraper.name} scraper:`), error);
+                }
+            }
+        }
+    },
+    {
         name: 'cards',
         description: 'Fetch all Pokémon cards from TCG API',
         action: fetchCards
@@ -62,12 +77,16 @@ async function main() {
     const selectedScraper = scrapers.find(scraper => scraper.name === choice);
 
     if (selectedScraper) {
-        console.log(chalk.yellow(`Running ${selectedScraper.name} scraper...`));
-        try {
+        if (selectedScraper.name === 'all') {
             await selectedScraper.action();
-            console.log(chalk.green(`✓ ${selectedScraper.name} scraper completed successfully!`));
-        } catch (error) {
-            console.error(chalk.red(`✗ Error running ${selectedScraper.name} scraper:`), error);
+        } else {
+            console.log(chalk.yellow(`Running ${selectedScraper.name} scraper...`));
+            try {
+                await selectedScraper.action();
+                console.log(chalk.green(`✓ ${selectedScraper.name} scraper completed successfully!`));
+            } catch (error) {
+                console.error(chalk.red(`✗ Error running ${selectedScraper.name} scraper:`), error);
+            }
         }
     } else {
         console.error(chalk.red('Invalid selection'));
