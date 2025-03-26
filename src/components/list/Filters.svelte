@@ -91,6 +91,7 @@
 		<option value="sort-price">Sort by price</option>
 		<option value="sort-name">Sort by name</option>
 		<option value="sort-id">Sort by id</option>
+		<option value="sort-rarity">Sort by rarity</option>
 	</select>
 
 	<select bind:value={$filterSet} class="filter" id="set" name="set">

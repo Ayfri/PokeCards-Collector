@@ -1,6 +1,7 @@
 <script lang="ts">
 	import "~/styles/colors.css";
 	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterType, isVisible, sortBy, sortOrder} from '$helpers/filters.js';
+	import {getRarityLevel} from '$helpers/rarity.js';
 	import CardComponent from '@components/list/Card.svelte';
 	import Filters from '@components/list/Filters.svelte';
 	import VirtualGrid from '@components/list/VirtualGrid.svelte';
@@ -32,6 +33,10 @@
 				return $sortOrder === 'asc' ? a.pokemon.name.localeCompare(b.pokemon.name) : b.pokemon.name.localeCompare(a.pokemon.name);
 			} else if ($sortBy === 'sort-id') {
 				return $sortOrder === 'asc' ? aCardCode - bCardCode : bCardCode - aCardCode;
+			} else if ($sortBy === 'sort-rarity') {
+				const aLevel = getRarityLevel(a.rarity);
+				const bLevel = getRarityLevel(b.rarity);
+				return $sortOrder === 'asc' ? aLevel - bLevel : bLevel - aLevel;
 			}
 
 			return $sortOrder === 'asc' ? aNumero - bNumero : bNumero - aNumero;
