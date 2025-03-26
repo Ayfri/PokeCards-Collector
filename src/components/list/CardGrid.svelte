@@ -6,7 +6,6 @@
 	import VirtualGrid from '@components/list/VirtualGrid.svelte';
 	import PageTitle from '@components/PageTitle.svelte';
 	import type {Card, Set} from '~/types.js';
-	import {getRarityLevel} from '$helpers/rarity.js';
 
 	export let cards: Card[];
 	export let sets: Set[];
@@ -23,14 +22,16 @@
 		displayedCards = displayedCards.sort((a, b) => {
 			const aNumero = parseInt(a.numero);
 			const bNumero = parseInt(b.numero);
+			// Extraire le cardCode des images
+			const aCardCode = parseInt(a.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
+			const bCardCode = parseInt(b.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
+			
 			if ($sortBy === 'sort-price') {
 				return $sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
 			} else if ($sortBy === 'sort-name') {
 				return $sortOrder === 'asc' ? a.pokemon.name.localeCompare(b.pokemon.name) : b.pokemon.name.localeCompare(a.pokemon.name);
-			} else if ($sortBy === 'sort-rarity') {
-				const aLevel = getRarityLevel(a.rarity);
-				const bLevel = getRarityLevel(b.rarity);
-				return $sortOrder === 'asc' ? aLevel - bLevel : bLevel - aLevel;
+			} else if ($sortBy === 'sort-id') {
+				return $sortOrder === 'asc' ? aCardCode - bCardCode : bCardCode - aCardCode;
 			}
 
 			return $sortOrder === 'asc' ? aNumero - bNumero : bNumero - aNumero;

@@ -90,7 +90,7 @@
 		<option selected value="sort-numero">Sort by pokédex</option>
 		<option value="sort-price">Sort by price</option>
 		<option value="sort-name">Sort by name</option>
-		<option value="sort-rarity">Sort by rarity</option>
+		<option value="sort-id">Sort by id</option>
 	</select>
 
 	<select bind:value={$filterSet} class="filter" id="set" name="set">
