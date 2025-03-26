@@ -6,6 +6,7 @@
 	import VirtualGrid from '@components/list/VirtualGrid.svelte';
 	import PageTitle from '@components/PageTitle.svelte';
 	import type {Card, Set} from '~/types.js';
+	import {getRarityLevel} from '$helpers/rarity.js';
 
 	export let cards: Card[];
 	export let sets: Set[];
@@ -26,6 +27,10 @@
 				return $sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
 			} else if ($sortBy === 'sort-name') {
 				return $sortOrder === 'asc' ? a.pokemon.name.localeCompare(b.pokemon.name) : b.pokemon.name.localeCompare(a.pokemon.name);
+			} else if ($sortBy === 'sort-rarity') {
+				const aLevel = getRarityLevel(a.rarity);
+				const bLevel = getRarityLevel(b.rarity);
+				return $sortOrder === 'asc' ? aLevel - bLevel : bLevel - aLevel;
 			}
 
 			return $sortOrder === 'asc' ? aNumero - bNumero : bNumero - aNumero;
