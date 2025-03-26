@@ -12,6 +12,7 @@ export const getStaticPaths = (async () => {
 	const pokemons = await getPokemons();
 	let allCards = await getCards();
 	allCards = allCards.sort((a, b) => a.pokemon.id - b.pokemon.id || b.price - a.price);
+	allCards = allCards.filter((card, index, self) => self.findIndex(c => c.image === card.image) === index);
 
 	return pokemons.map(pokemon => {
 		const pokemonCards = allCards.filter(c => parseInt(c.numero) === pokemon.id && c.set);
