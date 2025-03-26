@@ -7,7 +7,6 @@ let cards = await getCards();
 
 // unique by image
 cards = cards.filter((card, index, self) => self.findIndex(c => c.image === card.image) === index);
-cards = cards.filter((card) => card.price);
 
 const sets = await getSets();
 const rarities = await getRarities();
