@@ -1,6 +1,7 @@
 <script lang="ts">
 	import PokemonInfo from '@components/card/PokemonInfo.svelte';
 	import EvolutionChain from '@components/card/EvolutionChain.svelte';
+	import AllPokemonCards from '@components/card/AllPokemonCards.svelte';
 	import {fade} from 'svelte/transition';
 	import type {Card, Pokemon} from '~/types.js';
 
@@ -9,15 +10,15 @@
 	export let sprites: Record<number, string>;
 	let card: Card = cards[0];
 
-	const setLogoFirstHalf = cards.slice(0, 5).map(card => card.set);
-	const setLogoSecondHalf = cards.slice(5, 10).map(card => card.set);
+	$: allSets = cards.map(card => card.set);
+	
 	const pokemonName = card.pokemon.name;
 	const types = [...new Set(cards.map(card => card.types.toLowerCase().split(',')[0]))];
 
 	let centerCard: HTMLElement;
 	let styleElement: HTMLStyleElement = null!;
 
-	$: currentSet = setLogoFirstHalf[0];
+	$: currentSet = allSets[0];
 	$: currentType = card.types.toLowerCase().split(',')[0];
 	$: card = cards.find(card => card.set_name === currentSet.name) ?? cards[0];
 
@@ -66,6 +67,16 @@
 			}
 		}
 	}
+
+	function handleCardSelect(selectedCard: Card) {
+		card = selectedCard;
+		currentSet = selectedCard.set;
+		// Smooth scroll to top
+		window.scrollTo({
+			top: 0,
+			behavior: 'smooth'
+		});
+	}
 </script>
 
 <svelte:window on:mousemove={({clientX, clientY}) => {cursorX = clientX; cursorY = clientY;}}/>
@@ -74,25 +85,8 @@
 	<!-- Evolution Chain Component -->
 	<EvolutionChain {card} {pokemons} {cards} {sprites} />
 
-	<div class="card-container h-full w-fit m-auto flex gap-12 max-lg:gap-3 max-lg:grid max-lg:place-items-center">
-		<div class="left-sets">
-			{#each setLogoFirstHalf as set}
-				<button
-					on:click={() => currentSet = set}
-				>
-					<img
-						alt={set.name}
-						class="set object-contain h-24 w-32"
-						class:shadow={currentSet === set}
-						draggable="false"
-						height="105"
-						src={set.logo}
-						title="Click to see card in {set.name} set"
-						width="75"
-					/>
-				</button>
-			{/each}
-		</div>
+	<div class="card-container h-full w-fit m-auto flex flex-col gap-4 items-center">
+		<!-- Center card display -->
 		<div
 			bind:this={centerCard}
 			class="center-card h-[34rem] {currentType} {card.rarity.toLowerCase()}"
@@ -118,24 +112,6 @@
 				{/each}
 			</div>
 		</div>
-		<div class="right-sets" class:empty={setLogoSecondHalf.length === 0}>
-			{#each setLogoSecondHalf as set}
-				<button
-					on:click={() => currentSet = set}
-				>
-					<img
-						alt={set.name}
-						class="set object-contain h-24 w-32"
-						class:shadow={currentSet === set}
-						draggable="false"
-						height="105"
-						src={set.logo}
-						title="Click to see card in {set.name} set"
-						width="75"
-					/>
-				</button>
-			{/each}
-		</div>
 	</div>
 </div>
 
@@ -150,6 +126,13 @@
 {/each}
 
 <PokemonInfo {card} />
+
+<!-- Add the new AllPokemonCards component -->
+<AllPokemonCards 
+	cards={cards} 
+	currentPokemonId={card.pokemon.id} 
+	onCardSelect={handleCardSelect}
+/>
 
 <style lang="postcss">
 	img {
@@ -170,37 +153,6 @@
 		position: fixed;
 		width: 100%;
 		z-index: -20;
-	}
-
-	.shadow {
-		filter: drop-shadow(0px 0px 8px rgb(243, 208, 44)) drop-shadow(3px 3px 4px #000);
-		transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-	}
-
-	.set {
-		transition: all .5s cubic-bezier(0.22, 1, 0.36, 1);
-	}
-
-	.set:hover {
-		cursor: pointer;
-		transform: scale(1.05);
-	}
-
-	.left-sets, .right-sets {
-		align-items: center;
-		background-color: rgba(35, 35, 35, 0.75);
-		border-color: #f3d02c;
-		border-radius: 1rem;
-		border-style: solid;
-		border-width: 6px;
-		box-sizing: border-box;
-		display: flex;
-		flex-direction: column;
-		height: 34rem;
-		justify-content: space-evenly;
-		padding: 1rem;
-		width: 11rem;
-		z-index: 1;
 	}
 
 	.center-card {
@@ -299,15 +251,7 @@
 
 	@media (max-width: 768px) {
 		.card-container {
-			grid-template-areas:
-					'center'
-					'left'
-					'right';
-		}
-
-		#center-card {
-			grid-area: center;
-			margin-bottom: 0.75rem;
+			margin: 0 auto;
 		}
 
 		#card-aura {
@@ -319,31 +263,6 @@
 		.images, .image {
 			height: 112.5vw;
 			width: 75vw;
-		}
-
-		.left-sets, .right-sets {
-			flex-direction: row;
-			height: 5rem;
-			padding: 0.33rem;
-			width: 90vw;
-		}
-
-		.left-sets {
-			grid-area: left;
-		}
-
-		.right-sets {
-			grid-area: right;
-		}
-
-		.right-sets.empty {
-			display: none;
-		}
-
-		.left-sets img, .right-sets img {
-			aspect-ratio: 1;
-			max-height: 4rem;
-			width: unset;
 		}
 	}
 </style>

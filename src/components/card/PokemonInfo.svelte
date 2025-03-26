@@ -31,4 +31,13 @@
 		</div>
 		<p class="text-center">{card.pokemon.description}</p>
 	</div>
+	
+	<!-- Add a visual separator between the description and the card collection -->
+	<div class="separator w-full max-w-[800px] my-4 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
 </div>
+
+<style>
+	.separator {
+		opacity: 0.5;
+	}
+</style>
