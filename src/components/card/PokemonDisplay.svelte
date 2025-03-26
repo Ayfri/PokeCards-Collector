@@ -598,5 +598,37 @@
 			font-size: 0.9rem;
 			margin-top: 0.5rem;
 		}
+
+		.pokemon-title {
+			font-size: 1.75rem;
+			margin-top: 0.25rem;
+		}
+
+		:global(.center-card + div > h2) {
+			margin-top: 1rem;
+			font-size: 1.75rem;
+		}
+	}
+
+	.pokemon-title-container {
+		display: none;
+	}
+
+	.pokemon-title {
+		color: white;
+		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.5);
+		margin-bottom: 1rem;
+	}
+
+	/* Styles pour le titre du Pokémon sur la page */
+	:global(.center-card + div > h2) {
+		position: relative;
+		z-index: 5;
+		margin-top: 2rem;
+		color: white;
+		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.5);
+		font-size: 2.5rem;
+		font-weight: bold;
+		text-align: center;
 	}
 </style>

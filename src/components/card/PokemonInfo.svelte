@@ -9,7 +9,7 @@
 	const capitalizedPokemonName = pokemonName.charAt(0).toUpperCase() + pokemonName.slice(1);
 </script>
 
-<div class="mb-8 flex flex-col items-center gap-4 max-lg:gap-0">
+<div class="pokemon-info-container mb-8 flex flex-col items-center gap-4 max-lg:gap-0">
 	<PageTitle title={capitalizedPokemonName}/>
 
 	<div class="flex flex-col items-center gap-4 max-lg:flex-col max-lg:items-center text-xl">
@@ -40,5 +40,15 @@
 <style>
 	.separator {
 		opacity: 0.5;
+	}
+	
+	.pokemon-info-container {
+		margin-top: 2rem;
+	}
+
+	@media (max-width: 768px) {
+		.pokemon-info-container {
+			margin-top: 3rem;
+		}
 	}
 </style>
