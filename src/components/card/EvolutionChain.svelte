@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { pascalCase } from '$helpers/strings.js';
 	import type { Card, Pokemon } from '~/types.js';
+	import { spriteCache } from '../../stores/spriteCache';
 
 	export let cards: Card[];
 	export let pokemons: Pokemon[];
@@ -57,6 +58,26 @@
 		const pokemonCard = cards.find(c => c.pokemon.id === pokemonId);
 		return pokemonCard ? pokemonCard.image : '/loading-spinner.svg';
 	}
+
+	// Préchargement des sprites manquants
+	async function ensureSprite(pokemonId: number) {
+		if (!sprites[pokemonId]) {
+			try {
+				sprites[pokemonId] = await spriteCache.getSprite(pokemonId);
+			} catch (error) {
+				console.error(`Failed to load sprite for Pokemon #${pokemonId}`);
+				sprites[pokemonId] = getCardImage(pokemonId);
+			}
+		}
+		return sprites[pokemonId];
+	}
+
+	// Préchargement des sprites pour la chaîne d'évolution
+	uniqueChain.forEach(pokemon => {
+		if (!sprites[pokemon.id]) {
+			ensureSprite(pokemon.id);
+		}
+	});
 </script>
 
 {#if uniqueChain.length > 1}
@@ -77,10 +98,17 @@
 						alt={pokemon.name}
 						class="evolution-image w-16 h-16 object-contain"
 						title={pascalCase(pokemon.name)}
-						on:error={() => {
+						on:error={(e) => {
 							// If sprite loading fails, replace with card image
-							const img = document.querySelector(`[data-pokemon-id="${pokemon.id}"]`);
-							if (img) img.src = getCardImage(pokemon.id);
+							const img = e.currentTarget;
+							img.src = getCardImage(pokemon.id);
+							// Add a class to prevent infinite loop if both sprite and card image fail
+							if (img.classList.contains('fallback-attempted')) {
+								img.src = '/loading-spinner.svg';
+								img.onerror = null; // Prevent further error handling
+							} else {
+								img.classList.add('fallback-attempted');
+							}
 						}}
 						data-pokemon-id={pokemon.id}
 					/>
