@@ -10,7 +10,7 @@
 	export let gapY: number = 0;
 	export let marginTop: number = 0;
 
-	const marginRows = 2;
+	const marginRows = 4;
 	const scrollThreshold = itemHeight * 0.8;
 
 	let container: HTMLDivElement;
