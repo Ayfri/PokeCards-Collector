@@ -7,7 +7,30 @@
 	export let rarities: string[];
 	export let types: string[];
 
+	let searchName = '';
+	let searchNumero = '';
+	let debounceTimeout: number;
+
+	function debounce(fn: Function, delay: number) {
+		return (...args: any[]) => {
+			clearTimeout(debounceTimeout);
+			debounceTimeout = window.setTimeout(() => {
+				fn(...args);
+			}, delay);
+		};
+	}
+
+	const debouncedSetFilterName = debounce((value: string) => {
+		$filterName = value;
+	}, 300);
+
+	const debouncedSetFilterNumero = debounce((value: string) => {
+		$filterNumero = value;
+	}, 300);
+
 	function resetFilters() {
+		searchNumero = '';
+		searchName = '';
 		$filterNumero = '';
 		$filterName = '';
 		$filterSet = 'all';
@@ -37,8 +60,24 @@
 		</svg>
 	</button>
 	<button class="reset-btn" on:click={resetFilters}>Reset filters</button>
-	<input bind:value={$filterNumero} class="filter" id="numero" name="numero" placeholder="ID" type="text">
-	<input bind:value={$filterName} class="filter" id="name" name="name" placeholder="Name" type="text">
+	<input 
+		bind:value={searchNumero} 
+		on:input={(e) => debouncedSetFilterNumero(e.currentTarget.value)}
+		class="filter" 
+		id="numero" 
+		name="numero" 
+		placeholder="ID" 
+		type="text"
+	>
+	<input 
+		bind:value={searchName} 
+		on:input={(e) => debouncedSetFilterName(e.currentTarget.value)}
+		class="filter" 
+		id="name" 
+		name="name" 
+		placeholder="Name" 
+		type="text"
+	>
 </div>
 
 <div class="flex items-center gap-4 max-lg:flex-col max-lg:gap-1.5">
