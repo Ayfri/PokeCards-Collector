@@ -24,3 +24,6 @@ pnpm-debug.log*
 
 # Intellij
 .idea/
+
+# Images
+images/

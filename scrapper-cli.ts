@@ -7,6 +7,7 @@ import { fetchPokemons } from './src/scrappers/pokemon_scraper.ts';
 import { fetchHoloCards } from './src/scrappers/holo_scraper.ts';
 import { fetchCards, fetchSets } from './src/scrappers/tcg_call.ts';
 import { getCardMasks } from './src/scrappers/foil_scraper.ts';
+import { downloadAllImages } from './src/scrappers/download_images.ts';
 
 interface ScraperOption {
     name: string;
@@ -14,26 +15,16 @@ interface ScraperOption {
     action: () => Promise<void>;
 }
 
-const scrapers: ScraperOption[] = [
-    {
-        name: 'all',
-        description: 'Run all scrapers sequentially',
-        action: async () => {
-            for (const scraper of scrapers.filter(s => s.name !== 'all')) {
-                console.log(chalk.yellow(`Running ${scraper.name} scraper...`));
-                try {
-                    await scraper.action();
-                    console.log(chalk.green(`✓ ${scraper.name} scraper completed successfully!`));
-                } catch (error) {
-                    console.error(chalk.red(`✗ Error running ${scraper.name} scraper:`), error);
-                }
-            }
-        }
-    },
+const baseScrapers: ScraperOption[] = [
     {
         name: 'cards',
         description: 'Fetch all Pokémon cards from TCG API',
         action: fetchCards
+    },
+    {
+        name: 'download-images',
+        description: 'Download low-res card images based on cards.json',
+        action: downloadAllImages
     },
     {
         name: 'foil',
@@ -60,6 +51,27 @@ const scrapers: ScraperOption[] = [
         description: 'Extract all Pokémon types from cards dataset',
         action: fetchPokemonTypes
     },
+];
+
+baseScrapers.sort((a, b) => a.name.localeCompare(b.name));
+
+const scrapers: ScraperOption[] = [
+    {
+        name: 'all',
+        description: 'Run all scrapers sequentially (excluding image download)',
+        action: async () => {
+            for (const scraper of baseScrapers) {
+                console.log(chalk.yellow(`Running ${scraper.name} scraper...`));
+                try {
+                    await scraper.action();
+                    console.log(chalk.green(`✓ ${scraper.name} scraper completed successfully!`));
+                } catch (error) {
+                    console.error(chalk.red(`✗ Error running ${scraper.name} scraper:`), error);
+                }
+            }
+        }
+    },
+    ...baseScrapers
 ];
 
 async function main() {
