@@ -2,6 +2,7 @@
 	import {fade} from 'svelte/transition';
 	import type {Card} from '~/types.js';
 	import { getCardImage } from '~/helpers/card-images.ts';
+	import { onMount, onDestroy } from 'svelte';
 
 	export let card: Card;
 
@@ -23,6 +24,61 @@
 
 	const {name} = pokemon;
 	let loaded = false;
+	let displayImageUrl: string | null = null;
+	let loading: boolean = true;
+	let error: boolean = false;
+	let controller: AbortController | null = null;
+
+	onMount(() => {
+		loading = true;
+		error = false;
+		displayImageUrl = null;
+		controller = new AbortController();
+		const signal = controller.signal;
+
+		const imageUrl = getCardImage(card.image);
+
+		fetch(imageUrl, { signal })
+			.then(response => {
+				if (!response.ok) {
+					throw new Error(`HTTP error! status: ${response.status}`);
+				}
+				return response.blob();
+			})
+			.then(blob => {
+				if (!signal.aborted) {
+					displayImageUrl = URL.createObjectURL(blob);
+					loading = false;
+				}
+			})
+			.catch(err => {
+				if (err.name === 'AbortError') {
+					// console.log('Fetch aborted for:', card.name, card.numero);
+				} else {
+					console.error('Failed to load image:', err);
+					error = true;
+					loading = false;
+				}
+			});
+
+		return () => {
+			if (controller) {
+				controller.abort();
+			}
+			if (displayImageUrl && displayImageUrl.startsWith('blob:')) {
+				URL.revokeObjectURL(displayImageUrl);
+			}
+		};
+	});
+
+	onDestroy(() => {
+		if (controller) {
+			controller.abort();
+		}
+		if (displayImageUrl && displayImageUrl.startsWith('blob:')) {
+			URL.revokeObjectURL(displayImageUrl);
+		}
+	});
 </script>
 
 <a
@@ -38,23 +94,30 @@
 			class={`aura h-[26rem] max-2xs:h-[22rem] w-[20rem] max-2xs:w-[16rem] absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-[var(--type-color)]
 			transition-all duration-700 ease-out group-hover:blur-[2.5rem] ${types.toLowerCase().split(',')}`}
 		></div>
-		{#if !loaded}
-			<div class="loader" style={`--card-color: #${card.meanColor};`} transition:fade></div>
-		{/if}
-		<img
-			alt={name.charAt(0).toUpperCase() + name.slice(1)}
-			class="rounded-lg h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px] transition-opacity duration-300"
-			class:opacity-0={!loaded}
-			decoding="async"
-			draggable="false"
-			height="420"
-			loading="lazy"
-			on:load={() => loaded = true}
-			sizes="(max-width: 245px) 245px, 300px"
-			src={cardImage}
-			srcset="{lowResolutionImage} 245px, {cardImage} 300px"
-			width="300"
-		/>
+		<div class="relative h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px]">
+			{#if loading}
+				<div class="loader absolute top-0 left-0" style={`--card-color: #${card.meanColor};`} transition:fade></div>
+			{:else if error}
+				<div class="absolute inset-0 flex items-center justify-center bg-red-900 rounded-lg">
+					<span class="text-white">Error</span>
+				</div>
+			{:else if displayImageUrl}
+				<img
+					alt={name.charAt(0).toUpperCase() + name.slice(1)}
+					class="rounded-lg h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px] transition-opacity duration-300 absolute top-0 left-0"
+					class:opacity-0={!loaded}
+					decoding="async"
+					draggable="false"
+					height="420"
+					loading="lazy"
+					on:load={() => loaded = true}
+					sizes="(max-width: 245px) 245px, 300px"
+					src={displayImageUrl}
+					srcset="{lowResolutionImage} 245px, {cardImage} 300px"
+					width="300"
+				/>
+			{/if}
+		</div>
 		<h2 class="text-center font-bold text-[1.3rem]">
 			{name.charAt(0).toUpperCase() + name.slice(1)}
 			<span class="uppercase">
@@ -298,7 +361,6 @@
 		background-size: auto;
 		border-radius: 0.5rem;
 		height: 420px;
-		position: absolute;
 		width: 300px;
 		z-index: -1;
 
