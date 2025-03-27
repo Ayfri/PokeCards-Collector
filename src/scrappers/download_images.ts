@@ -1,55 +1,68 @@
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
-import sharp from 'sharp'; // Import sharp
-// Removed pokemon SDK import and API key logic
-
-// Import the Card type and file path constant
-import type { Card } from '../types.js'; // Assuming Card type has 'id' and 'image'
-import { CARDS } from './files.js'; // Assuming CARDS points to 'src/assets/cards-full.json'
+import sharp from 'sharp';
+import type { Card } from '../types.js';
+import { CARDS } from './files.js';
 
 const BATCH_SIZE = 60;
-const OUTPUT_DIR = path.join(process.cwd(), 'images'); // Output directory at the root
 const DELAY_BETWEEN_BATCHES_MS = 1000; // 1 second delay (can be adjusted)
+const DOWNLOAD_HIGH_RES = false; // <<< Set to true to download high-resolution images
+const OUTPUT_DIR = path.join(process.cwd(), DOWNLOAD_HIGH_RES ? 'images_hires' : 'images'); // Output directory based on resolution
 
 interface CardInfo {
-	imageUrl: string; // URL for the low-res image
+	imageUrl: string; // URL for the image (high or low res)
+	number: number;
 }
 
 /**
- * Reads card metadata from the JSON file and generates low-res image URLs.
+ * Reads card metadata from the JSON file and generates image URLs based on DOWNLOAD_HIGH_RES.
  */
 async function readCardMetadataFromJson(): Promise<CardInfo[]> {
 	console.log(`Reading card data from ${CARDS}...`);
 	try {
 		const fileContent = await fs.readFile(CARDS, 'utf-8');
-		// Assuming the JSON structure might be nested arrays, flatten it first
 		const allCardsRaw = JSON.parse(fileContent).flat() as Card[];
 
 		const cardInfos: CardInfo[] = allCardsRaw
 			.map((card) => {
-				if (!card || !card.image) {
+				if (!card || !card.image) { // Ensure card.id exists
 					console.warn(`Skipping card due to missing id or image: ${JSON.stringify(card)}`);
 					return null;
 				}
-				// Convert high-res URL to low-res URL
-				const lowResImageUrl = card.image.replace('_hires.png', '.png');
 
-				// Check if replacement actually happened (URL might already be low-res or different format)
-				if (lowResImageUrl === card.image && card.image.includes('_hires.png')) {
-					console.warn(`Could not convert URL to low-res for card ${card.id}: ${card.image}`);
-					return null; // Skip if conversion failed but looked like it should work
-				} else if (!lowResImageUrl.endsWith('.png')) {
-                    console.warn(`Skipping card ${card.id} due to unexpected image URL format: ${card.image}`);
-                    return null; // Skip if the URL doesn't end with .png after potential replacement
-                }
+				let imageUrl: string;
+				const originalImageUrl = card.image;
+
+				if (DOWNLOAD_HIGH_RES) {
+					// Use the original URL, assuming it's high-res (_hires.png)
+					if (!originalImageUrl.endsWith('_hires.png')) {
+						console.warn(`Expected high-res URL ending in '_hires.png' for card ${card.id}, but got: ${originalImageUrl}. Skipping.`);
+						return null; // Skip if the format isn't as expected for high-res
+					}
+					imageUrl = originalImageUrl;
+				} else {
+					// Attempt to convert high-res URL to low-res URL
+					const lowResImageUrl = originalImageUrl.replace('_hires.png', '.png');
+
+					// Check if replacement happened or if it was already low-res
+					if (lowResImageUrl === originalImageUrl && originalImageUrl.includes('_hires.png')) {
+						console.warn(`Could not convert URL to low-res for card ${card.id}: ${originalImageUrl}. Skipping.`);
+						return null; // Skip if conversion failed but looked like it should work
+					} else if (!lowResImageUrl.endsWith('.png')) {
+						console.warn(`Skipping card ${card.id} due to unexpected image URL format for low-res: ${originalImageUrl}. Skipping.`);
+						return null; // Skip if the URL doesn't end with .png after potential replacement
+					}
+					imageUrl = lowResImageUrl;
+				}
 
 				return {
-					imageUrl: lowResImageUrl,
+					imageUrl: imageUrl,
+					number: card.id, // Store the card ID
 				};
 			})
-			.filter((info): info is CardInfo => info !== null); // Filter out null entries
+			.filter((info) => info !== null); // Filter out null entries
 
-		console.log(`Successfully read and processed ${cardInfos.length} cards from JSON.`);
+		console.log(`Successfully read and processed ${cardInfos.length} cards for ${DOWNLOAD_HIGH_RES ? 'high' : 'low'}-resolution download.`);
 		return cardInfos;
 
 	} catch (error) {
@@ -71,13 +84,15 @@ async function downloadImageBatch(batch: CardInfo[]): Promise<void> {
 			console.warn(`Skipping card due to missing set name or card name: ${cardInfo.imageUrl}`);
 			return;
 		}
-		const filename = `${setName}_${cardName}`;
+		const filename = `${setName}/${cardName}`;
 		const outputPath = path.join(OUTPUT_DIR, filename);
+
+		await fs.mkdir(path.join(OUTPUT_DIR, setName), { recursive: true });
 
 		try {
 			// Check if image already exists
 			await fs.access(outputPath);
-			// console.log(`Image already exists, skipping optimization: ${filename}`);
+			// console.log(`Image already exists, skipping: ${filename}`);
 			return; // Skip download and optimization if file exists
 		} catch {
 			// File doesn't exist, proceed with download and optimization
@@ -90,38 +105,34 @@ async function downloadImageBatch(batch: CardInfo[]): Promise<void> {
 			const response = await fetch(cardInfo.imageUrl);
 			if (!response.ok) {
 				if (response.status === 404) {
-					console.warn(`Image not found (404): ${cardInfo.imageUrl}`);
+					console.warn(`Image not found (404): ${cardInfo.imageUrl} (Card ID: ${cardInfo.number})`);
 				} else {
-					console.error(`HTTP error! Status: ${response.status} for ${cardInfo.imageUrl}`);
+					console.error(`HTTP error! Status: ${response.status} for ${cardInfo.imageUrl} (Card ID: ${cardInfo.number})`);
 				}
 				return; // Skip processing if download failed
 			}
 			imageBuffer = await response.arrayBuffer();
 		} catch (error) {
-			console.error(`Failed to download ${cardInfo.imageUrl}:`, error);
+			console.error(`Failed to download ${cardInfo.imageUrl} (Card ID: ${cardInfo.number}):`, error);
 			return; // Skip processing if download failed
 		}
 
-		// --- Optimization Phase ---
+		// --- Optimization/Saving Phase ---
 		if (imageBuffer) {
 			try {
+				// Optimization settings (can be adjusted)
+				// For high-res, maybe less aggressive compression? For now, using the same.
 				await sharp(Buffer.from(imageBuffer))
 					.png({
-						compressionLevel: 9, // Max lossless compression (0-9)
-						adaptiveFiltering: true, // Use adaptive filtering for potentially better compression
-						quality: 90, // Explicitly set quality to max (though default for PNG is lossless)
+						compressionLevel: 9,
+						adaptiveFiltering: true,
+						quality: DOWNLOAD_HIGH_RES ? 100 : 90, // Slightly adjust quality based on res? PNG quality is complex.
 					})
 					.toFile(outputPath);
-				// console.log(`Downloaded and optimized: ${filename}`);
+				// console.log(`Downloaded and saved: ${filename}`);
 			} catch (error) {
-				console.error(`Failed to optimize image ${filename} from ${cardInfo.imageUrl}:`, error);
-				// Optionally, save the unoptimized version as a fallback:
-				// try {
-				// 	await fs.writeFile(outputPath, Buffer.from(imageBuffer));
-				// 	console.warn(`Saved unoptimized version of ${filename} due to optimization error.`);
-				// } catch (writeError) {
-				// 	console.error(`Failed to write unoptimized fallback for ${filename}:`, writeError);
-				// }
+				console.error(`Failed to process image ${filename} from ${cardInfo.imageUrl}:`, error);
+				// Fallback logic removed for brevity, can be added back if needed
 			}
 		}
 	});
@@ -135,7 +146,8 @@ async function downloadImageBatch(batch: CardInfo[]): Promise<void> {
  * Export this function so it can be used by the CLI.
  */
 export async function downloadAllImages() {
-	console.log(`Starting image download process. Output directory: ${OUTPUT_DIR}`);
+	const resolution = DOWNLOAD_HIGH_RES ? 'high-resolution' : 'low-resolution';
+	console.log(`Starting ${resolution} image download process. Output directory: ${OUTPUT_DIR}`);
 
 	// 1. Ensure output directory exists
 	try {
@@ -154,7 +166,7 @@ export async function downloadAllImages() {
 	}
 
 	// 3. Download and optimize images in batches
-	console.log(`Starting image download and optimization in batches of ${BATCH_SIZE}...`);
+	console.log(`Starting ${resolution} image download and processing in batches of ${BATCH_SIZE}...`);
 	let downloadedCount = 0;
 	const totalCards = allCards.length;
 	for (let i = 0; i < totalCards; i += BATCH_SIZE) {
@@ -164,19 +176,13 @@ export async function downloadAllImages() {
 
 		console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} images)...`);
 		await downloadImageBatch(batch);
-		downloadedCount += batch.length; // Approximation, as some might fail/be skipped
+		downloadedCount += batch.length; // Approximation
 
-		// Add delay between batches to avoid rate limiting, unless it's the last batch
 		if (i + BATCH_SIZE < totalCards) {
 			console.log(`Batch ${batchNumber} finished. Processed approx ${downloadedCount}/${totalCards} cards. Waiting ${DELAY_BETWEEN_BATCHES_MS / 1000}s...`);
 			await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES_MS));
 		}
 	}
 
-	console.log(`Image download process finished. Processed approx ${downloadedCount}/${totalCards} cards.`);
+	console.log(`${resolution.charAt(0).toUpperCase() + resolution.slice(1)} image download process finished. Processed approx ${downloadedCount}/${totalCards} cards.`);
 }
-
-// --- Remove the direct execution ---
-// downloadAllImages().catch(error => {
-// 	console.error('An unexpected error occurred during the download process:', error);
-// });
