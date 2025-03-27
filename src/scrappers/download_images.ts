@@ -6,8 +6,8 @@ import { CARDS } from './files.js';
 
 const BATCH_SIZE = 60;
 const DELAY_BETWEEN_BATCHES_MS = 1000; // 1 second delay (can be adjusted)
-const DOWNLOAD_HIGH_RES = false; // <<< Set to true to download high-resolution images
-const OUTPUT_DIR = path.join(process.cwd(), DOWNLOAD_HIGH_RES ? 'images_hires' : 'images'); // Output directory based on resolution
+const DOWNLOAD_HIGH_RES = true; // <<< Set to true to download high-resolution images
+const OUTPUT_DIR = path.join(process.cwd(), 'images'); // Output directory based on resolution
 
 interface CardInfo {
 	imageUrl: string; // URL for the image (high or low res)
