@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pascalCase } from '$helpers/strings.js';
+	import { getCardImage } from '~/helpers/card-images.ts';
 	import type { Card, Pokemon } from '~/types.js';
 	import { spriteCache } from '../../stores/spriteCache';
 
@@ -54,9 +55,9 @@
 	);
 
 	// Function to get card image as fallback
-	function getCardImage(pokemonId: number): string {
+	function getCardImageForPokemon(pokemonId: number): string {
 		const pokemonCard = cards.find(c => c.pokemon.id === pokemonId);
-		return pokemonCard ? pokemonCard.image : '/loading-spinner.svg';
+		return pokemonCard ? getCardImage(pokemonCard.image) : '/loading-spinner.svg';
 	}
 
 	// Préchargement des sprites manquants
@@ -94,7 +95,7 @@
 					</div>
 
 					<img
-						src={sprites[pokemon.id] || getCardImage(pokemon.id)}
+						src={sprites[pokemon.id] || getCardImageForPokemon(pokemon.id)}
 						alt={pokemon.name}
 						class="evolution-image w-16 h-16 object-contain"
 						title={pascalCase(pokemon.name)}

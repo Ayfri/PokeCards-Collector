@@ -1,6 +1,7 @@
 <script lang="ts">
 	import {fade} from 'svelte/transition';
 	import type {Card} from '~/types.js';
+	import { getCardImage } from '~/helpers/card-images.ts';
 
 	export let card: Card;
 
@@ -13,7 +14,8 @@
 		set
 	} = card;
 
-	const lowResolutionImage = image.replace("_hires", "");
+	const cardImage = getCardImage(image);
+	const lowResolutionImage = cardImage.replace("_hires", "");
 	// Get set code from set object or image name
 	const setCode = set.ptcgoCode || image.split('/').at(-2);
 	// Get card code from image name, remove all non-numeric characters
@@ -46,11 +48,11 @@
 			decoding="async"
 			draggable="false"
 			height="420"
-			loading="eager"
+			loading="lazy"
 			on:load={() => loaded = true}
 			sizes="(max-width: 245px) 245px, 300px"
-			src={image}
-			srcset="{lowResolutionImage} 245px, {image} 300px"
+			src={cardImage}
+			srcset="{lowResolutionImage} 245px, {cardImage} 300px"
 			width="300"
 		/>
 		<h2 class="text-center font-bold text-[1.3rem]">

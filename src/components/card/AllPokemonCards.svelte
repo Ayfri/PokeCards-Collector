@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 	import type { Card } from '~/types.js';
+	import { getCardImage } from '~/helpers/card-images.ts';
 
 	export let cards: Card[];
 	export let currentPokemonId: number;
@@ -12,26 +13,26 @@
 
 <div class="all-pokemon-cards">
 	<h2 class="text-xl font-bold text-gold-400 mb-4">All {sortedCards.length > 0 ? sortedCards[0].pokemon.name.charAt(0).toUpperCase() + sortedCards[0].pokemon.name.slice(1) : ''} Cards</h2>
-	
+
 	<div class="cards-grid">
 		{#each sortedCards as card}
-			<div 
-				class="card-item" 
+			<div
+				class="card-item"
 				transition:fade={{ duration: 200 }}
 				on:click={() => onCardSelect(card)}
 			>
 				<div class="card-container">
-					<img 
-						src={card.image} 
-						alt={card.pokemon.name} 
+					<img
+						src={getCardImage(card.image)}
+						alt={card.pokemon.name}
 						class="card-image"
 						loading="lazy"
 					/>
 					<div class="set-overlay">
-						<img 
-							src={card.set.logo} 
-							alt={card.set.name} 
-							class="set-icon" 
+						<img
+							src={card.set.logo}
+							alt={card.set.name}
+							class="set-icon"
 							title={card.set.name}
 						/>
 					</div>
@@ -137,4 +138,4 @@
 			height: 24px;
 		}
 	}
-</style> 
+</style>

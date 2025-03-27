@@ -16,6 +16,7 @@ To install the project you need to follow multiple steps :
 5. Create a `.env` file in the root folder of the project and fill it with the following variables :
     - API_URL: The URL of the API.
     - API_KEY: The API key of the Google Maps API (you must activate the "Places API" on the key).
+    - PUBLIC_CARD_CDN_URL (optional): URL of the CDN for card images. If not provided, original API URLs will be used.
 6. Run `prisma generate` to generate the Prisma client.
 7. Run the api with `npm run api`.
 8. Run the client with `npm run dev`.
@@ -32,6 +33,7 @@ pnpm scrapers
 
 This will present a menu where you can choose which scraper to run:
 
+- **all**: Run all scrapers sequentially
 - **cards**: Fetch all Pokémon cards from TCG API
 - **foil**: Generate foil URLs for holographic cards
 - **holo**: Extract holographic cards from cards dataset
@@ -49,6 +51,35 @@ For best results, run the scrapers in the following order:
 6. `types` - Extract types (requires cards data)
 
 The scraped data is saved to JSON files in the `src/assets/` directory.
+
+### Downloading Card Images
+
+To download all the card images to a local `images` directory:
+
+```bash
+pnpm download-images
+```
+
+This will:
+- Create an `images` directory if it doesn't exist
+- Organize images by set and Pokémon name
+- Download all card images from the data in `src/assets/cards-full.json`
+- Skip any images that have already been downloaded
+- Process downloads in batches to avoid overwhelming the server
+
+#### Using a Custom CDN
+
+After downloading the images, you can host them on your own CDN and set the `PUBLIC_CARD_CDN_URL` environment variable to use your CDN instead of the original API URLs.
+
+For example, if you host your images at `https://cdn.example.com/pokemon-cards`, set:
+```
+PUBLIC_CARD_CDN_URL=https://cdn.example.com/pokemon-cards
+```
+
+The application will then automatically use your CDN for all card images using the format:
+```
+https://cdn.example.com/pokemon-cards/{setCode}/{cardId}.png
+```
 
 ## Technologies
 
