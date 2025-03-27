@@ -4,14 +4,15 @@ import sharp from 'sharp';
 import type { Card } from '../types.js';
 import { CARDS } from './files.js';
 
-const BATCH_SIZE = 60;
+const BATCH_SIZE = 50;
 const DELAY_BETWEEN_BATCHES_MS = 1000; // 1 second delay (can be adjusted)
 const DOWNLOAD_HIGH_RES = true; // <<< Set to true to download high-resolution images
-const OUTPUT_DIR = path.join(process.cwd(), 'images'); // Output directory based on resolution
+const OPTIMIZE_EXISTING_ONLY = false; // <<< Set to true to only optimize existing local images
+const OUTPUT_DIR = path.join(process.cwd(), 'images'); // Output directory
 
 interface CardInfo {
 	imageUrl: string; // URL for the image (high or low res)
-	number: number;
+	number: number; // Keep the card number/id
 }
 
 /**
@@ -54,15 +55,14 @@ async function readCardMetadataFromJson(): Promise<CardInfo[]> {
 					}
 					imageUrl = lowResImageUrl;
 				}
-
 				return {
 					imageUrl: imageUrl,
-					number: card.id, // Store the card ID
+					number: parseInt(card.numero),
 				};
 			})
-			.filter((info) => info !== null); // Filter out null entries
+			.filter((info) => info !== null); // Filter out null entries with type guard
 
-		console.log(`Successfully read and processed ${cardInfos.length} cards for ${DOWNLOAD_HIGH_RES ? 'high' : 'low'}-resolution download.`);
+		console.log(`Successfully read and processed ${cardInfos.length} cards for ${DOWNLOAD_HIGH_RES ? 'high' : 'low'}-resolution processing.`);
 		return cardInfos;
 
 	} catch (error) {
@@ -72,89 +72,131 @@ async function readCardMetadataFromJson(): Promise<CardInfo[]> {
 }
 
 /**
- * Downloads and optimizes a batch of images using sharp.
+ * Optimizes an image buffer using Sharp and saves it to the specified path.
+ * @param imageBuffer The image data buffer.
+ * @param outputPath The path to save the optimized image.
+ * @param filename The filename for logging purposes.
+ */
+async function optimizeAndSaveImage(imageBuffer: Buffer, outputPath: string, filename: string): Promise<void> {
+	try {
+		await sharp(imageBuffer)
+			.png({
+				compressionLevel: 9,
+				adaptiveFiltering: true,
+				palette: true,
+				quality: DOWNLOAD_HIGH_RES ? 100 : 90,
+			})
+			.toFile(outputPath);
+		// console.log(`Optimized and saved: ${filename}`);
+	} catch (error) {
+		console.error(`Failed to optimize or save image ${filename}:`, error);
+	}
+}
+
+/**
+ * Downloads and/or optimizes a batch of images.
+ * If OPTIMIZE_EXISTING_ONLY is true, it only optimizes existing files.
+ * Otherwise, it downloads missing files and optimizes them.
  * @param batch - Array of CardInfo objects (max BATCH_SIZE).
  */
-async function downloadImageBatch(batch: CardInfo[]): Promise<void> {
+async function downloadOrOptimizeImageBatch(batch: CardInfo[]): Promise<void> {
 	const processPromises = batch.map(async (cardInfo) => {
-		// Generate filename
+		// Generate filename (keeping your structure)
 		const setName = cardInfo.imageUrl.split('/').at(-2);
 		const cardName = cardInfo.imageUrl.split('/').at(-1);
 		if (!setName || !cardName) {
-			console.warn(`Skipping card due to missing set name or card name: ${cardInfo.imageUrl}`);
+			console.warn(`Skipping card due to missing set name or card name from URL: ${cardInfo.imageUrl} (Card Number: ${cardInfo.number})`);
 			return;
 		}
-		const filename = `${setName}/${cardName}`;
-		const outputPath = path.join(OUTPUT_DIR, filename);
+		const filename = `${setName}/${cardName}`; // Keep the folder/file structure
+		const outputDirForSet = path.join(OUTPUT_DIR, setName);
+		const outputPath = path.join(outputDirForSet, cardName);
 
-		await fs.mkdir(path.join(OUTPUT_DIR, setName), { recursive: true });
-
+		// Ensure the specific set directory exists (keeping your change)
 		try {
-			// Check if image already exists
-			await fs.access(outputPath);
-			// console.log(`Image already exists, skipping: ${filename}`);
-			return; // Skip download and optimization if file exists
-		} catch {
-			// File doesn't exist, proceed with download and optimization
+			await fs.mkdir(outputDirForSet, { recursive: true });
+		} catch (error) {
+			console.error(`Failed to create directory ${outputDirForSet}:`, error);
+			return; // Skip card if directory creation fails
 		}
 
-		let imageBuffer: ArrayBuffer | null = null;
+		let imageBuffer: Buffer | null = null;
+		let fileExists = false;
 
-		// --- Download Phase ---
+		// --- Check File Existence ---
 		try {
-			const response = await fetch(cardInfo.imageUrl);
-			if (!response.ok) {
-				if (response.status === 404) {
-					console.warn(`Image not found (404): ${cardInfo.imageUrl} (Card ID: ${cardInfo.number})`);
-				} else {
-					console.error(`HTTP error! Status: ${response.status} for ${cardInfo.imageUrl} (Card ID: ${cardInfo.number})`);
+			await fs.access(outputPath);
+			fileExists = true;
+			// console.log(`Image found locally: ${filename}`);
+		} catch {
+			// File doesn't exist
+			if (OPTIMIZE_EXISTING_ONLY) {
+				console.warn(`Optimize only mode: Image not found locally, skipping: ${filename}`);
+				return; // Skip if in optimize-only mode and file is missing
+			}
+			// console.log(`Image not found locally, proceeding with download: ${filename}`);
+		}
+
+		// --- Processing Logic ---
+		if (fileExists && OPTIMIZE_EXISTING_ONLY) {
+			// Mode: Optimize existing only, and file exists
+			console.log(`Optimizing existing image: ${filename}`);
+			try {
+				imageBuffer = await fs.readFile(outputPath);
+				await optimizeAndSaveImage(imageBuffer, outputPath, filename); // Optimize the existing file
+			} catch (readError) {
+				console.error(`Failed to read existing file ${filename} for optimization:`, readError);
+			}
+		} else if (!fileExists && !OPTIMIZE_EXISTING_ONLY) {
+			// Mode: Download and optimize, and file does not exist
+			// --- Download Phase ---
+			try {
+				const response = await fetch(cardInfo.imageUrl);
+				if (!response.ok) {
+					if (response.status === 404) {
+						console.warn(`Image not found (404): ${cardInfo.imageUrl} (Card Number: ${cardInfo.number})`);
+					} else {
+						console.error(`HTTP error! Status: ${response.status} for ${cardInfo.imageUrl} (Card Number: ${cardInfo.number})`);
+					}
+					return; // Skip processing if download failed
 				}
+				const arrayBuffer = await response.arrayBuffer();
+				imageBuffer = Buffer.from(arrayBuffer); // Convert to Buffer
+			} catch (error) {
+				console.error(`Failed to download ${cardInfo.imageUrl} (Card Number: ${cardInfo.number}):`, error);
 				return; // Skip processing if download failed
 			}
-			imageBuffer = await response.arrayBuffer();
-		} catch (error) {
-			console.error(`Failed to download ${cardInfo.imageUrl} (Card ID: ${cardInfo.number}):`, error);
-			return; // Skip processing if download failed
-		}
 
-		// --- Optimization/Saving Phase ---
-		if (imageBuffer) {
-			try {
-				// Optimization settings (can be adjusted)
-				// For high-res, maybe less aggressive compression? For now, using the same.
-				await sharp(Buffer.from(imageBuffer))
-					.png({
-						compressionLevel: 9,
-						adaptiveFiltering: true,
-						quality: DOWNLOAD_HIGH_RES ? 100 : 90, // Slightly adjust quality based on res? PNG quality is complex.
-					})
-					.toFile(outputPath);
-				// console.log(`Downloaded and saved: ${filename}`);
-			} catch (error) {
-				console.error(`Failed to process image ${filename} from ${cardInfo.imageUrl}:`, error);
-				// Fallback logic removed for brevity, can be added back if needed
+			// --- Optimization Phase (after download) ---
+			if (imageBuffer) {
+				await optimizeAndSaveImage(imageBuffer, outputPath, filename);
 			}
+		} else if (fileExists && !OPTIMIZE_EXISTING_ONLY) {
+			// Mode: Download and optimize, but file already exists - skip
+			// console.log(`Image already exists, skipping download/optimization: ${filename}`);
+			return;
 		}
+		// The case (!fileExists && OPTIMIZE_EXISTING_ONLY) is handled by the return inside the catch block.
 	});
 
-	// Wait for all downloads and optimizations in the batch to settle
+	// Wait for all operations in the batch to settle
 	await Promise.allSettled(processPromises);
 }
 
 /**
- * Main function to orchestrate reading metadata and downloading/optimizing images.
+ * Main function to orchestrate reading metadata and processing images.
  * Export this function so it can be used by the CLI.
  */
 export async function downloadAllImages() {
-	const resolution = DOWNLOAD_HIGH_RES ? 'high-resolution' : 'low-resolution';
-	console.log(`Starting ${resolution} image download process. Output directory: ${OUTPUT_DIR}`);
+	const mode = OPTIMIZE_EXISTING_ONLY ? 'Optimize existing' : (DOWNLOAD_HIGH_RES ? 'High-resolution download' : 'Low-resolution download');
+	console.log(`Starting ${mode} process. Output directory: ${OUTPUT_DIR}`);
 
-	// 1. Ensure output directory exists
+	// 1. Ensure base output directory exists (individual set dirs created in batch)
 	try {
 		await fs.mkdir(OUTPUT_DIR, { recursive: true });
-		console.log(`Output directory "${OUTPUT_DIR}" ensured.`);
+		console.log(`Base output directory "${OUTPUT_DIR}" ensured.`);
 	} catch (error) {
-		console.error(`Failed to create output directory "${OUTPUT_DIR}":`, error);
+		console.error(`Failed to create base output directory "${OUTPUT_DIR}":`, error);
 		return; // Stop if directory cannot be created
 	}
 
@@ -165,9 +207,9 @@ export async function downloadAllImages() {
 		return;
 	}
 
-	// 3. Download and optimize images in batches
-	console.log(`Starting ${resolution} image download and processing in batches of ${BATCH_SIZE}...`);
-	let downloadedCount = 0;
+	// 3. Process images in batches
+	console.log(`Starting image processing in batches of ${BATCH_SIZE}...`);
+	let processedCount = 0;
 	const totalCards = allCards.length;
 	for (let i = 0; i < totalCards; i += BATCH_SIZE) {
 		const batch = allCards.slice(i, i + BATCH_SIZE);
@@ -175,14 +217,15 @@ export async function downloadAllImages() {
 		const totalBatches = Math.ceil(totalCards / BATCH_SIZE);
 
 		console.log(`Processing batch ${batchNumber}/${totalBatches} (${batch.length} images)...`);
-		await downloadImageBatch(batch);
-		downloadedCount += batch.length; // Approximation
+		// Use the updated batch function name
+		await downloadOrOptimizeImageBatch(batch);
+		processedCount += batch.length; // Approximation
 
 		if (i + BATCH_SIZE < totalCards) {
-			console.log(`Batch ${batchNumber} finished. Processed approx ${downloadedCount}/${totalCards} cards. Waiting ${DELAY_BETWEEN_BATCHES_MS / 1000}s...`);
+			console.log(`Batch ${batchNumber} finished. Processed approx ${processedCount}/${totalCards} cards. Waiting ${DELAY_BETWEEN_BATCHES_MS / 1000}s...`);
 			await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES_MS));
 		}
 	}
 
-	console.log(`${resolution.charAt(0).toUpperCase() + resolution.slice(1)} image download process finished. Processed approx ${downloadedCount}/${totalCards} cards.`);
+	console.log(`${mode} process finished. Processed approx ${processedCount}/${totalCards} cards.`);
 }
