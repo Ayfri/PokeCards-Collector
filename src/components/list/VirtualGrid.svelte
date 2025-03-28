@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ScrollToBottom from '@components/list/ScrollToBottom.svelte';
+	import { updateScrollProgress } from '$helpers/scrollStore.js';
 	import {onMount} from 'svelte';
 	import type {Card} from '~/types.js';
 
@@ -25,7 +26,11 @@
 	$: if ('window' in globalThis) visibleRows = Math.ceil(window.innerHeight / (itemHeight + gapY));
 	$: leftMargin = (clientWidth - (itemsPerRow * itemWidth + (itemsPerRow - 1) * gapX)) / 2;
 
-	onMount(updateVisibleItems);
+	onMount(() => {
+		updateVisibleItems();
+		// Initialize scroll progress
+		updateScrollProgress(container);
+	});
 
 	function updateVisibleItems() {
 		if (scrollingTo) return;
@@ -43,6 +48,9 @@
 		}
 		previousScroll = scrollTop;
 		updateVisibleItems();
+		
+		// Update scroll progress
+		updateScrollProgress(container);
 	}
 
 	function scrollToLast() {
@@ -55,6 +63,9 @@
 		queueMicrotask(() => {
 			container.scrollTop = scrollTop;
 			scrollingTo = false;
+			
+			// Update scroll progress after scrolling to the end
+			updateScrollProgress(container);
 		});
 	}
 </script>

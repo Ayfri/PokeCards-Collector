@@ -6,6 +6,7 @@
 	import Filters from '@components/list/Filters.svelte';
 	import VirtualGrid from '@components/list/VirtualGrid.svelte';
 	import PageTitle from '@components/PageTitle.svelte';
+	import ScrollProgress from '@components/list/ScrollProgress.svelte';
 	import type {Card, Set} from '~/types.js';
 
 	export let cards: Card[];
@@ -52,11 +53,12 @@
 <svelte:window bind:innerWidth={clientWidth}/>
 
 <div class="w-full mx-auto max-lg:px-2">
-	<div class="flex max-lg:flex-col justify-between mx-28 max-lg:m-0 pb-2 lg:pb-3 items-center border-b-white border-b-[6px] max-lg:border-b-4">
+	<div class="flex max-lg:flex-col justify-between mx-28 max-lg:m-0 pb-4 lg:pb-5 items-center relative">
 		<PageTitle title="Card List"/>
 		<div class="flex flex-col max-lg:flex-row items-end gap-3 leading-normal max-lg:-mt-1.5">
 			<Filters cards={displayedCards} {rarities} {sets} {types}/>
 		</div>
+		<ScrollProgress />
 	</div>
 </div>
 
