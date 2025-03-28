@@ -1,7 +1,9 @@
 <script lang="ts">
 	import ScrollToBottom from '@components/list/ScrollToBottom.svelte';
+	import ScrollToTop from '@components/list/ScrollToTop.svelte';
 	import { updateScrollProgress } from '$helpers/scrollStore.js';
 	import {onMount} from 'svelte';
+	import { fade, slide } from 'svelte/transition';
 	import type {Card} from '~/types.js';
 
 	export let items: Card[];
@@ -13,6 +15,7 @@
 
 	const marginRows = 4;
 	const scrollThreshold = itemHeight * 0.8;
+	const scrollDuration = 800; // Animation duration in ms
 
 	let container: HTMLDivElement;
 	let clientWidth: number;
@@ -21,6 +24,7 @@
 	let visibleItems: Card[] = [];
 	let scrollingTo: boolean = false;
 	let previousScroll: number = 0;
+	let hasScrolled: boolean = false;
 
 	$: if (container && items) updateVisibleItems();
 	$: if ('window' in globalThis) visibleRows = Math.ceil(window.innerHeight / (itemHeight + gapY));
@@ -49,24 +53,63 @@
 		previousScroll = scrollTop;
 		updateVisibleItems();
 		
+		// Set hasScrolled to true when the user has scrolled down
+		hasScrolled = scrollTop > 100;
+		
 		// Update scroll progress
 		updateScrollProgress(container);
 	}
 
-	function scrollToLast() {
+	// Smooth scroll animation function
+	function smoothScroll(element: HTMLElement, targetPosition: number, duration: number) {
 		scrollingTo = true;
+		const startPosition = element.scrollTop;
+		const distance = targetPosition - startPosition;
+		const startTime = performance.now();
+		
+		function scrollStep(timestamp: number) {
+			const currentTime = timestamp - startTime;
+			const progress = Math.min(currentTime / duration, 1);
+			
+			// Easing function for smooth animation
+			const easeInOutCubic = progress => 
+				progress < 0.5
+					? 4 * progress ** 3
+					: 1 - Math.pow(-2 * progress + 2, 3) / 2;
+			
+			element.scrollTop = startPosition + distance * easeInOutCubic(progress);
+			
+			if (currentTime < duration) {
+				window.requestAnimationFrame(scrollStep);
+			} else {
+				element.scrollTop = targetPosition;
+				scrollingTo = false;
+				updateScrollProgress(element);
+			}
+		}
+		
+		window.requestAnimationFrame(scrollStep);
+	}
+
+	function scrollToLast() {
+		const targetScrollTop = (items.length / itemsPerRow) * (itemHeight + gapY) + marginTop;
 		const start = items.length - visibleRows * itemsPerRow;
 		const end = start + visibleRows * itemsPerRow;
+		visibleItems = items.slice(Math.max(0, start - itemsPerRow * marginRows), end + itemsPerRow * marginRows);
+		
+		smoothScroll(container, targetScrollTop, scrollDuration);
+	}
+	
+	function scrollToTop() {
+		const start = 0;
+		const end = visibleRows * itemsPerRow;
 		visibleItems = items.slice(start, end + itemsPerRow * marginRows);
-
-		const scrollTop = (items.length / itemsPerRow) * (itemHeight + gapY) + marginTop;
-		queueMicrotask(() => {
-			container.scrollTop = scrollTop;
-			scrollingTo = false;
-			
-			// Update scroll progress after scrolling to the end
-			updateScrollProgress(container);
-		});
+		
+		smoothScroll(container, 0, scrollDuration);
+		// Reset hasScrolled after animation completes
+		setTimeout(() => {
+			hasScrolled = false;
+		}, scrollDuration);
 	}
 </script>
 
@@ -88,4 +131,9 @@
 	{/each}
 </div>
 
+{#if hasScrolled}
+<div transition:fade={{ duration: 300 }}>
+	<ScrollToTop on:click={scrollToTop}/>
+</div>
+{/if}
 <ScrollToBottom on:click={scrollToLast}/>
