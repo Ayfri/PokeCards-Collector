@@ -15,16 +15,14 @@ const types = await getTypes();
 sets.sort((a, b) => a.name.localeCompare(b.name));
 rarities.sort((a, b) => a.localeCompare(b));
 types.sort((a, b) => a.localeCompare(b));
-
-const pageDescription = "Browse, search, and filter through a comprehensive list of Pokémon TCG cards. Find cards by set, rarity, type, and more.";
 ---
 
 <Layout
-	title="Pokémon TCG Card List"
-	description={pageDescription}
+	title="Card List"
+	description="Browse, search, and filter through a comprehensive list of Pokémon TCG cards. Find cards by set, rarity, type, and more."
 	image={{
 		url: "https://pokestore.ayfri.com/pokestore.png",
-		alt: "Pokémon TCG Card List - PokéStore",
+		alt: "PokéStore - Pokémon TCG Card List",
 	}}
 >
 	<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 gap-2">
