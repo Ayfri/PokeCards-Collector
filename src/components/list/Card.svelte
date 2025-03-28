@@ -96,9 +96,9 @@
 		></div>
 		<div class="relative h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px]">
 			{#if loading}
-				<div class="loader absolute top-0 left-0" style={`--card-color: #${card.meanColor};`} transition:fade></div>
+				<div class="loader absolute top-0 left-0 h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px]" style={`--card-color: #${card.meanColor};`} transition:fade></div>
 			{:else if error}
-				<div class="absolute inset-0 flex items-center justify-center bg-red-900 rounded-lg">
+				<div class="absolute inset-0 flex items-center justify-center bg-red-900 rounded-lg h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px]">
 					<span class="text-white">Error</span>
 				</div>
 			{:else if displayImageUrl}
@@ -360,14 +360,7 @@
 		background: linear-gradient(to right, var(--card-color) 8%, color-mix(in oklab, var(--card-color), white 30%) 38%, var(--card-color) 54%);
 		background-size: auto;
 		border-radius: 0.5rem;
-		height: 420px;
-		width: 300px;
 		z-index: -1;
-
-		@media (max-width: 420px) {
-			height: 342px;
-			width: 245px;
-		}
 	}
 
 	@keyframes placeHolderShimmer {

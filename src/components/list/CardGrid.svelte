@@ -69,7 +69,7 @@
 	itemWidth={clientWidth > 350 ? 300 : 245}
 	items={filteredCards}
 	let:item
-	marginTop={15 + clientWidth * 0.025}
+	marginTop={clientWidth ? 15 + clientWidth * 0.025 : 50}
 >
 	<CardComponent card={item}/>
 

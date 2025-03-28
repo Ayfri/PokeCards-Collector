@@ -25,19 +25,24 @@
 	let scrollingTo: boolean = false;
 	let previousScroll: number = 0;
 	let hasScrolled: boolean = false;
+	let isInitialized: boolean = false;
 
-	$: if (container && items) updateVisibleItems();
+	$: if (container && items && isInitialized) updateVisibleItems();
 	$: if ('window' in globalThis) visibleRows = Math.ceil(window.innerHeight / (itemHeight + gapY));
 	$: leftMargin = (clientWidth - (itemsPerRow * itemWidth + (itemsPerRow - 1) * gapX)) / 2;
 
 	onMount(() => {
-		updateVisibleItems();
-		// Initialize scroll progress
-		updateScrollProgress(container);
+		// Delay the initial render to ensure DOM measurements are accurate
+		setTimeout(() => {
+			isInitialized = true;
+			updateVisibleItems();
+			// Initialize scroll progress
+			updateScrollProgress(container);
+		}, 100);
 	});
 
 	function updateVisibleItems() {
-		if (scrollingTo) return;
+		if (scrollingTo || !isInitialized) return;
 		itemsPerRow = Math.max(1, Math.floor(clientWidth / (itemWidth + gapX)));
 		const scrollTop = container.scrollTop;
 		const start = Math.floor(scrollTop / (itemHeight + gapY)) * itemsPerRow;
@@ -46,6 +51,7 @@
 	}
 
 	function scroll() {
+		if (!isInitialized) return;
 		const scrollTop = container.scrollTop;
 		if (Math.abs(scrollTop - previousScroll) < scrollThreshold) {
 			return;
@@ -113,22 +119,31 @@
 	}
 </script>
 
-<svelte:window on:resize={() => setTimeout(updateVisibleItems, 0)}/>
+<svelte:window on:resize={() => {
+    setTimeout(() => {
+        if (isInitialized) updateVisibleItems();
+    }, 0);
+}}/>
 
 <div bind:this={container} bind:clientWidth class="relative flex-1 w-full h-full overflow-y-scroll scrollbar-hide" on:scroll={scroll}>
-	<div class="absolute size-[1px]" style="top: {Math.ceil((items.length) / itemsPerRow) * (itemHeight + gapY) + marginTop}px;"></div>
+	{#if isInitialized}
+		<div class="absolute size-[1px]" style="top: {Math.ceil((items.length) / itemsPerRow) * (itemHeight + gapY) + marginTop}px;"></div>
 
-	{#each items as item, i (item.image)}
-		{#if visibleItems.includes(item)}
-			{#key item.image}
-				<div class="absolute" style="top: {Math.floor(i / itemsPerRow) * (itemHeight + gapY) + marginTop}px; left: {i % itemsPerRow * (itemWidth + gapX) + leftMargin}px">
-					<slot {item}/>
-				</div>
-			{/key}
-		{/if}
+		{#each items as item, i (item.image)}
+			{#if visibleItems.includes(item)}
+				{#key item.image}
+					<div class="absolute" style="top: {Math.floor(i / itemsPerRow) * (itemHeight + gapY) + marginTop}px; left: {i % itemsPerRow * (itemWidth + gapX) + leftMargin}px">
+						<slot {item}/>
+					</div>
+				{/key}
+			{/if}
+		{:else}
+			<slot name="empty"/>
+		{/each}
 	{:else}
-		<slot name="empty"/>
-	{/each}
+		<!-- Loading placeholder to maintain height until initialized -->
+		<div class="w-full" style="height: {visibleRows * itemHeight}px"></div>
+	{/if}
 </div>
 
 {#if hasScrolled}
