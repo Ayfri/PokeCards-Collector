@@ -6,6 +6,7 @@
 	import type {FullCard, Pokemon} from '~/lib/types';
 	import { spriteCache } from '$stores/spriteCache';
 	import { pascalCase } from '$helpers/strings';
+	import { getCardImageForPokemon } from '$helpers/card-images';
 
 	export let pokemons: Pokemon[];
 	export let cards: FullCard[];
@@ -33,17 +34,11 @@
 	// Trouver le pokémon suivant dans le Pokédex
 	$: nextPokemon = pokemons.find(p => p.id === card.pokemon.id + 1);
 
-	// Function to get card image as fallback
-	function getCardImage(pokemonId: number): string {
-		const pokemonCard = cards.find(c => c.pokemon.id === pokemonId);
-		return pokemonCard ? pokemonCard.image : '/loading-spinner.svg';
-	}
-
 	// Handle error for previous Pokemon image
 	function handlePreviousPokemonError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
 		if (!previousPokemon) return;
-		img.src = getCardImage(previousPokemon.id);
+		img.src = getCardImageForPokemon(previousPokemon.id, cards);
 		// Add a class to prevent infinite loop if both sprite and card image fail
 		if (img.classList.contains('fallback-attempted')) {
 			img.src = '/loading-spinner.svg';
@@ -57,7 +52,7 @@
 	function handleNextPokemonError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
 		if (!nextPokemon) return;
-		img.src = getCardImage(nextPokemon.id);
+		img.src = getCardImageForPokemon(nextPokemon.id, cards);
 		// Add a class to prevent infinite loop if both sprite and card image fail
 		if (img.classList.contains('fallback-attempted')) {
 			img.src = '/loading-spinner.svg';
@@ -74,7 +69,7 @@
 				sprites[pokemonId] = await spriteCache.getSprite(pokemonId);
 			} catch (error) {
 				console.error(`Failed to load sprite for Pokemon #${pokemonId}`);
-				sprites[pokemonId] = getCardImage(pokemonId);
+				sprites[pokemonId] = getCardImageForPokemon(pokemonId, cards);
 			}
 		}
 		return sprites[pokemonId];
@@ -164,7 +159,7 @@
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
 						<img
-							src={sprites[previousPokemon.id] || getCardImage(previousPokemon.id)}
+							src={sprites[previousPokemon.id] || getCardImageForPokemon(previousPokemon.id, cards)}
 							alt={pascalCase(previousPokemon.name)}
 							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
 							title={pascalCase(previousPokemon.name)}
@@ -223,7 +218,7 @@
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
 						<img
-							src={sprites[nextPokemon.id] || getCardImage(nextPokemon.id)}
+							src={sprites[nextPokemon.id] || getCardImageForPokemon(nextPokemon.id, cards)}
 							alt={pascalCase(nextPokemon.name)}
 							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
 							title={pascalCase(nextPokemon.name)}
@@ -268,7 +263,7 @@
 	onCardSelect={handleCardSelect}
 />
 
-<style lang="postcss">
+<style>
 	img {
 		user-select: none;
 	}

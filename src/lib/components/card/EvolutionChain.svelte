@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { pascalCase } from '$helpers/strings.js';
-	import { getCardImage as getCardImageHelper } from '$helpers/card-images';
+	import { getCardImageForPokemon } from '$helpers/card-images';
 	import type { FullCard, Pokemon } from '~/lib/types';
 	import { spriteCache } from '$stores/spriteCache';
 
@@ -54,16 +54,10 @@
 		index === self.findIndex(p => p.id === pokemon.id)
 	);
 
-	// Function to get card image as fallback
-	function getCardImageForPokemon(pokemonId: number): string {
-		const pokemonCard = cards.find(c => c.pokemon.id === pokemonId);
-		return pokemonCard ? getCardImageHelper(pokemonCard.image) : '/loading-spinner.svg';
-	}
-
 	// Handle error for Pokemon evolution image
 	function handlePokemonImageError(event: Event, pokemonId: number) {
 		const img = event.currentTarget as HTMLImageElement;
-		img.src = getCardImageForPokemon(pokemonId);
+		img.src = getCardImageForPokemon(pokemonId, cards);
 		// Add a class to prevent infinite loop if both sprite and card image fail
 		if (img.classList.contains('fallback-attempted')) {
 			img.src = '/loading-spinner.svg';
@@ -80,7 +74,7 @@
 				sprites[pokemonId] = await spriteCache.getSprite(pokemonId);
 			} catch (error) {
 				console.error(`Failed to load sprite for Pokemon #${pokemonId}`);
-				sprites[pokemonId] = getCardImageForPokemon(pokemonId);
+				sprites[pokemonId] = getCardImageForPokemon(pokemonId, cards);
 			}
 		}
 		return sprites[pokemonId];
@@ -108,7 +102,7 @@
 					</div>
 
 					<img
-						src={sprites[pokemon.id] || getCardImageForPokemon(pokemon.id)}
+						src={sprites[pokemon.id] || getCardImageForPokemon(pokemon.id, cards)}
 						alt={pokemon.name}
 						class="evolution-image w-16 h-16 object-contain"
 						title={pascalCase(pokemon.name)}

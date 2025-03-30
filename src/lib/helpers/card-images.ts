@@ -1,4 +1,19 @@
 import { env } from '$env/dynamic/public';
+import type { FullCard } from '~/lib/types';
+
+/**
+ * Gets the image URL for a Pokémon
+ * If CDN_URL environment variable is set, it will use that as the base URL
+ * Otherwise it will use the original API URL
+ *
+ * @param pokemonId The ID of the Pokémon
+ * @param cards The list of cards to search through
+ * @returns The image URL to use
+ */
+export function getCardImageForPokemon(pokemonId: number, cards: FullCard[]): string {
+	const pokemonCard = cards.find(c => c.pokemon.id === pokemonId);
+	return pokemonCard ? getHighResCardImage(pokemonCard.image) : '/loading-spinner.svg';
+}
 
 /**
  * Gets the image URL for a card
