@@ -25,7 +25,7 @@ types.sort((a, b) => a.localeCompare(b));
 		alt: "PokéStore - Pokémon TCG Card List",
 	}}
 >
-	<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 gap-2">
+	<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1">
 		<CardGrid client:visible {cards} {sets} {rarities} {types}/>
 	</main>
 </Layout>

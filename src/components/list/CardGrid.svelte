@@ -27,7 +27,7 @@
 			// Extraire le cardCode des images
 			const aCardCode = parseInt(a.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
 			const bCardCode = parseInt(b.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
-			
+
 			if ($sortBy === 'sort-price') {
 				return $sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
 			} else if ($sortBy === 'sort-name') {
