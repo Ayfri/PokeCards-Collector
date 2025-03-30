@@ -5,7 +5,7 @@ import type {GetStaticPaths} from 'astro';
 import {getCards, getPokemons} from '$helpers/data';
 import Layout from '@layouts/Layout.astro';
 import PokemonDisplay from '@components/card/PokemonDisplay.svelte';
-import type {FullCard} from "~/types.d.ts";
+import type {FullCard, Pokemon} from "~/types.d.ts";
 import { spriteCache } from '~/stores/spriteCache';
 
 export const getStaticPaths = (async () => {
@@ -67,7 +67,7 @@ const furtherEvolutions = evolutions.length ?
 	[];
 
 // Build the full chain
-const fullChain = [];
+const fullChain: Pokemon[] = [];
 
 if (prePreEvolution) fullChain.push(prePreEvolution);
 if (preEvolution) fullChain.push(preEvolution);
