@@ -1,16 +1,17 @@
 import {getAverageColor} from 'fast-average-color-node';
 import * as fs from 'node:fs/promises';
-import {POKEMONS_COUNT} from '../constants.ts';
-import {getPokemons} from '../helpers/data.ts';
-import type {Card} from '../types.ts';
-import {CARDS, SETS} from './files.ts';
+import {POKEMONS_COUNT} from '~/constants';
+import {getPokemons} from '$helpers/data';
+import type {Card} from '$lib/types';
+import { CARDS, SETS } from './files';
+import { env } from '$env/dynamic/private';
 
 // Load and configure environment variables
 let apiKey = '';
 if (process.env.POKEMON_TCG_API_KEY) {
 	apiKey = process.env.POKEMON_TCG_API_KEY;
-} else if (import.meta.env.POKEMON_TCG_API_KEY) {
-	apiKey = import.meta.env.POKEMON_TCG_API_KEY;
+} else if (env.POKEMON_TCG_API_KEY) {
+	apiKey = env.POKEMON_TCG_API_KEY;
 } else {
 	throw new Error('Pokémon TCG API key is missing from .env file, key: POKEMON_TCG_API_KEY');
 }

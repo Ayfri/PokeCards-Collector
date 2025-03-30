@@ -1,9 +1,10 @@
-# build output
-dist/
-.jampack/
-
-# generated types
-.astro/
+# Build output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/build
 
 # dependencies
 node_modules/
@@ -22,8 +23,13 @@ pnpm-debug.log*
 # macOS-specific files
 .DS_Store
 
-# Intellij
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# Editors
 .idea/
+.vscode/
 
 # Images
 images/

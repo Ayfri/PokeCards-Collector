@@ -1,34 +1,16 @@
 {
-	"extends": "astro/tsconfigs/strict",
+	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": {
-		"target": "ES2021",
-		"module": "ES2022",
-		"lib": [
-			"ESNext",
-			"DOM",
-			"DOM.Iterable"
-		],
-		"forceConsistentCasingInFileNames": true,
-		"moduleResolution": "NodeNext",
-		"skipLibCheck": true,
+		"allowJs": true,
+		"checkJs": true,
 		"esModuleInterop": true,
-		"baseUrl": ".",
-		"paths": {
-			"@components/*": [
-				"src/components/*"
-			],
-			"@layouts/*": [
-				"src/layouts/*"
-			],
-			"$helpers/*": [
-				"src/helpers/*"
-			],
-			"$scrappers/*": [
-				"src/scrappers/*"
-			],
-			"~/*": [
-				"src/*"
-			]
-		}
+		"forceConsistentCasingInFileNames": true,
+		"noImplicitAny": true,
+		"noFallthroughCasesInSwitch": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"sourceMap": true,
+		"strict": true,
+		"verbatimModuleSyntax": true
 	}
 }
