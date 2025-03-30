@@ -3,10 +3,10 @@
 	import ScrollToTop from '@components/list/ScrollToTop.svelte';
 	import { updateScrollProgress } from '$helpers/scrollStore.ts';
 	import {onMount} from 'svelte';
-	import { fade, slide } from 'svelte/transition';
-	import type {Card} from '~/types.d.ts';
+	import { fade } from 'svelte/transition';
+	import type {FullCard} from '~/types.d.ts';
 
-	export let items: Card[];
+	export let items: FullCard[];
 	export let itemHeight: number;
 	export let itemWidth: number;
 	export let gapX: number = 0;
@@ -21,7 +21,7 @@
 	let clientWidth: number;
 	let itemsPerRow: number = 1;
 	let visibleRows: number = 0;
-	let visibleItems: Card[] = [];
+	let visibleItems: FullCard[] = [];
 	let scrollingTo: boolean = false;
 	let previousScroll: number = 0;
 	let hasScrolled: boolean = false;
@@ -78,7 +78,7 @@
 			const progress = Math.min(currentTime / duration, 1);
 
 			// Easing function for smooth animation
-			const easeInOutCubic = progress =>
+			const easeInOutCubic = (progress: number) =>
 				progress < 0.5
 					? 4 * progress ** 3
 					: 1 - Math.pow(-2 * progress + 2, 3) / 2;

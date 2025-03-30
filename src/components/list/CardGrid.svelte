@@ -7,9 +7,9 @@
 	import VirtualGrid from '@components/list/VirtualGrid.svelte';
 	import PageTitle from '@components/PageTitle.svelte';
 	import ScrollProgress from '@components/list/ScrollProgress.svelte';
-	import type {Card, Set} from '~/types.js';
+	import type {FullCard, Set} from '~/types.js';
 
-	export let cards: Card[];
+	export let cards: FullCard[];
 	export let sets: Set[];
 	export let rarities: string[];
 	export let types: string[];
@@ -29,7 +29,7 @@
 			const bCardCode = parseInt(b.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
 
 			if ($sortBy === 'sort-price') {
-				return $sortOrder === 'asc' ? a.price - b.price : b.price - a.price;
+				return $sortOrder === 'asc' ? (a.price ?? -1) - (b.price ?? 0) : (b.price ?? 0) - (a.price ?? -1);
 			} else if ($sortBy === 'sort-name') {
 				return $sortOrder === 'asc' ? a.pokemon.name.localeCompare(b.pokemon.name) : b.pokemon.name.localeCompare(a.pokemon.name);
 			} else if ($sortBy === 'sort-id') {

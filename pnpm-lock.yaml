@@ -26,15 +26,15 @@ importers:
       '@divriots/jampack':
         specifier: ^0.32.0
         version: 0.32.0(react-dom@16.14.0(react@16.14.0))(react@16.14.0)
-      '@lucide/svelte':
-        specifier: ^0.485.0
-        version: 0.485.0(svelte@4.2.19)
       astro:
         specifier: ^4.16.18
         version: 4.16.18(@types/node@22.13.9)(lightningcss@1.29.1)(rollup@4.34.9)(terser@5.39.0)(typescript@5.8.2)
       fast-average-color-node:
         specifier: ^3.1.0
         version: 3.1.0
+      lucide-svelte:
+        specifier: ^0.485.0
+        version: 0.485.0(svelte@4.2.19)
       sharp:
         specifier: ^0.33.5
         version: 0.33.5
@@ -855,11 +855,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
-
-  '@lucide/svelte@0.485.0':
-    resolution: {integrity: sha512-8+pW8gyRc7D9tklhNxXV3v0N/7yIo64Njjs/+6zaD2d4dDqQkPT8WgVUQ/XXoKAAimJNiyrtu1SK4YiK42Jo9Q==}
-    peerDependencies:
-      svelte: ^5
 
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
@@ -2086,6 +2081,11 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
+
+  lucide-svelte@0.485.0:
+    resolution: {integrity: sha512-YLV/HXmHa3Zn6W7aMstdqQVyHxOorWDdw2o+c5Ae6Lqv138i1+KgJeVlZg6spGRZPIkddHarqO9HeVT2b6IK2Q==}
+    peerDependencies:
+      svelte: ^3 || ^4 || ^5.0.0-next.42
 
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
@@ -3951,10 +3951,6 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@lucide/svelte@0.485.0(svelte@4.2.19)':
-    dependencies:
-      svelte: 4.2.19
-
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
       '@nodelib/fs.stat': 2.0.5
@@ -5266,6 +5262,10 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
+
+  lucide-svelte@0.485.0(svelte@4.2.19):
+    dependencies:
+      svelte: 4.2.19
 
   magic-string@0.30.17:
     dependencies:

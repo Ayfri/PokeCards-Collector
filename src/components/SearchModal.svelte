@@ -2,7 +2,8 @@
 	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import SearchBar from './SearchBar.svelte';
-	import type { Card } from '~/types.js';
+	import type { FullCard } from '~/types.js';
+	import { Search, X } from 'lucide-svelte';
 
 	export let allCards: FullCards[] = [];
 
@@ -34,7 +35,7 @@
 	on:click={toggleModal}
 	aria-label="Open search"
 >
-	<i class="fas fa-search text-md"></i>
+	<Search />
 </button>
 
 <!-- Mobile search modal/overlay -->
@@ -47,7 +48,7 @@
 			<div class="flex items-center justify-between mb-4">
 				<span class="text-white text-lg font-semibold">Search Cards</span>
 				<button class="text-gray-400 hover:text-white p-2" on:click={toggleModal}>
-					<i class="fas fa-times text-lg"></i>
+					<X />
 				</button>
 			</div>
 			<div class="w-full">

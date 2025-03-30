@@ -1,5 +1,5 @@
 import {get, writable} from 'svelte/store';
-import type {Card} from '~/types.js';
+import type {FullCard} from '~/types.js';
 
 function persistentStore<T>(key: string, initialValue: T) {
 	const store = writable(initialValue);
@@ -37,7 +37,7 @@ export const filterRarity = persistentStore('filter-rarity', 'all');
 
 export const displayAll = persistentStore('display-all', true);
 
-export function isVisible(card: Card) {
+export function isVisible(card: FullCard) {
 	const numero = get(filterNumero).toLowerCase();
 	const name = get(filterName).toLowerCase();
 	const set = get(filterSet).toLowerCase();

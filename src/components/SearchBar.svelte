@@ -2,15 +2,16 @@
 	import { fade } from 'svelte/transition';
 	import { getCardImage } from '~/helpers/card-images.ts';
 	import { onMount, onDestroy } from 'svelte';
-	import type { Card } from '~/types.js';
+	import type { FullCard } from '~/types.js';
+	import { Search, X } from 'lucide-svelte';
 
-	export let allCards: Card[] = [];
+	export let allCards: FullCard[] = [];
 	export let autoFocus: boolean = false;
 	export let mobileMode: boolean = false;
 	export let onToggleModal: (() => void) | undefined = undefined;
 
 	let searchQuery = '';
-	let searchResults: Card[] = [];
+	let searchResults: FullCard[] = [];
 	let showResults = false;
 	let inputElement: HTMLInputElement;
 
@@ -22,7 +23,7 @@
 			return;
 		}
 
-		let scoredResults: Array<{card: Card, score: number}> = [];
+		let scoredResults: Array<{card: FullCard, score: number}> = [];
 
 		// Search with various criteria and assign scores
 		allCards.forEach(card => {
@@ -30,6 +31,8 @@
 			const cardCode = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
 			const pokemonName = card.pokemon.name.toLowerCase();
 			const setTotal = card.set.printedTotal.toString();
+
+			if (!cardCode) return;
 
 			// Pokemon name match (highest priority)
 			if (pokemonName.includes(query)) {
@@ -193,7 +196,7 @@
 <div class="relative {mobileMode ? 'flex flex-col w-full' : ''}">
 	<div class="search-container relative">
 		<div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-			<i class="fas fa-search"></i>
+			<Search />
 		</div>
 		<input
 			bind:this={inputElement}
@@ -208,7 +211,7 @@
 				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
 				on:click={handleClearSearch}
 			>
-				✕
+				<X />
 			</button>
 		{/if}
 	</div>
