@@ -73,16 +73,18 @@ export const load = async ({ params }) => {
 		index === self.findIndex((p: Pokemon) => p.id === pokemon.id)
 	);
 
+	const capitalizedPokemonName = pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1);
+
 	return {
 		cards: pokemonCards,
 		pokemons,
 		pokemon,
 		evolutionChain: uniqueChain,
-		title: pokemon.name,
-		description: `Explore the evolution chain of ${pokemon.name} in Pokémon TCG`,
+		title: capitalizedPokemonName,
+		description: `${capitalizedPokemonName} - ${pokemon.description}`,
 		image: {
-			url: `https://pokemon.com/pokemon/${pokemon.id}/`,
-			alt: `${pokemon.name} evolution chain`
+			url: pokemonCards[0].image,
+			alt: pokemon.description
 		}
 	};
 }

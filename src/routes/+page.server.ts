@@ -17,10 +17,11 @@ export async function load() {
 		rarities,
 		types,
 		title: 'PokéStore',
-		description: 'Browse and search through a comprehensive list of Pokémon TCG cards.',
+		description:
+			'Browse, search, and filter through a comprehensive list of Pokémon TCG cards. Find cards by set, rarity, type, and more."',
 		image: {
 			url: 'https://pokestore.ayfri.com/pokestore.png',
-			alt: 'PokéStore - Pokémon TCG Card List'
-		}
+			alt: 'PokéStore - Pokémon TCG Card List',
+		},
 	};
 }
