@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { pascalCase } from '$helpers/strings.js';
-	import { getCardImage } from '$helpers/card-images';
+	import { getCardImage as getCardImageHelper } from '$helpers/card-images';
 	import type { FullCard, Pokemon } from '~/lib/types';
 	import { spriteCache } from '$stores/spriteCache';
 
@@ -57,7 +57,20 @@
 	// Function to get card image as fallback
 	function getCardImageForPokemon(pokemonId: number): string {
 		const pokemonCard = cards.find(c => c.pokemon.id === pokemonId);
-		return pokemonCard ? getCardImage(pokemonCard.image) : '/loading-spinner.svg';
+		return pokemonCard ? getCardImageHelper(pokemonCard.image) : '/loading-spinner.svg';
+	}
+
+	// Handle error for Pokemon evolution image
+	function handlePokemonImageError(event: Event, pokemonId: number) {
+		const img = event.currentTarget as HTMLImageElement;
+		img.src = getCardImageForPokemon(pokemonId);
+		// Add a class to prevent infinite loop if both sprite and card image fail
+		if (img.classList.contains('fallback-attempted')) {
+			img.src = '/loading-spinner.svg';
+			img.onerror = null; // Prevent further error handling
+		} else {
+			img.classList.add('fallback-attempted');
+		}
 	}
 
 	// Préchargement des sprites manquants
@@ -67,7 +80,7 @@
 				sprites[pokemonId] = await spriteCache.getSprite(pokemonId);
 			} catch (error) {
 				console.error(`Failed to load sprite for Pokemon #${pokemonId}`);
-				sprites[pokemonId] = getCardImage(pokemonId.toString());
+				sprites[pokemonId] = getCardImageForPokemon(pokemonId);
 			}
 		}
 		return sprites[pokemonId];
@@ -99,18 +112,7 @@
 						alt={pokemon.name}
 						class="evolution-image w-16 h-16 object-contain"
 						title={pascalCase(pokemon.name)}
-						on:error={(e) => {
-							// If sprite loading fails, replace with card image
-							const img = e.currentTarget;
-							img.src = getCardImage(pokemon.id.toString());
-							// Add a class to prevent infinite loop if both sprite and card image fail
-							if (img.classList.contains('fallback-attempted')) {
-								img.src = '/loading-spinner.svg';
-								img.onerror = null; // Prevent further error handling
-							} else {
-								img.classList.add('fallback-attempted');
-							}
-						}}
+						on:error={(e) => handlePokemonImageError(e, pokemon.id)}
 						data-pokemon-id={pokemon.id}
 					/>
 

@@ -39,6 +39,34 @@
 		return pokemonCard ? pokemonCard.image : '/loading-spinner.svg';
 	}
 
+	// Handle error for previous Pokemon image
+	function handlePreviousPokemonError(event: Event) {
+		const img = event.currentTarget as HTMLImageElement;
+		if (!previousPokemon) return;
+		img.src = getCardImage(previousPokemon.id);
+		// Add a class to prevent infinite loop if both sprite and card image fail
+		if (img.classList.contains('fallback-attempted')) {
+			img.src = '/loading-spinner.svg';
+			img.onerror = null; // Prevent further error handling
+		} else {
+			img.classList.add('fallback-attempted');
+		}
+	}
+
+	// Handle error for next Pokemon image
+	function handleNextPokemonError(event: Event) {
+		const img = event.currentTarget as HTMLImageElement;
+		if (!nextPokemon) return;
+		img.src = getCardImage(nextPokemon.id);
+		// Add a class to prevent infinite loop if both sprite and card image fail
+		if (img.classList.contains('fallback-attempted')) {
+			img.src = '/loading-spinner.svg';
+			img.onerror = null; // Prevent further error handling
+		} else {
+			img.classList.add('fallback-attempted');
+		}
+	}
+
 	// Préchargement des sprites manquants
 	async function ensureSprite(pokemonId: number) {
 		if (!sprites[pokemonId]) {
@@ -140,18 +168,7 @@
 							alt={pascalCase(previousPokemon.name)}
 							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
 							title={pascalCase(previousPokemon.name)}
-							on:error={(e) => {
-								// If sprite loading fails, replace with card image
-								const img = e.currentTarget;
-								img.src = getCardImage(previousPokemon.id.toString());
-								// Add a class to prevent infinite loop if both sprite and card image fail
-								if (img.classList.contains('fallback-attempted')) {
-									img.src = '/loading-spinner.svg';
-									img.onerror = null; // Prevent further error handling
-								} else {
-									img.classList.add('fallback-attempted');
-								}
-							}}
+							on:error={handlePreviousPokemonError}
 							data-pokemon-id={previousPokemon.id}
 						/>
 					</div>
@@ -210,18 +227,7 @@
 							alt={pascalCase(nextPokemon.name)}
 							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
 							title={pascalCase(nextPokemon.name)}
-							on:error={(e) => {
-								// If sprite loading fails, replace with card image
-								const img = e.currentTarget;
-								img.src = getCardImage(nextPokemon.id.toString());
-								// Add a class to prevent infinite loop if both sprite and card image fail
-								if (img.classList.contains('fallback-attempted')) {
-									img.src = '/loading-spinner.svg';
-									img.onerror = null; // Prevent further error handling
-								} else {
-									img.classList.add('fallback-attempted');
-								}
-							}}
+							on:error={handleNextPokemonError}
 							data-pokemon-id={nextPokemon.id}
 						/>
 					</div>
