@@ -1,13 +1,14 @@
 export interface Card {
-	id: number;
+	id: string;
 	image: string;
 	meanColor: string;
+	name: string;
 	numero: string;
-	pokemon: Pokemon;
-	price: number;
-	set_name: string;
+	pokemon?: Pokemon;
+	price?: number;
 	rarity: string;
-	set: Set;
+	set_name: string;
+	set?: Set;
 	types: string;
 }
 

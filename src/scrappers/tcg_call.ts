@@ -1,6 +1,5 @@
 import {getAverageColor} from 'fast-average-color-node';
 import * as fs from 'node:fs/promises';
-import pokemon from 'pokemontcgsdk';
 import {POKEMONS_COUNT} from '../constants.ts';
 import {getPokemons} from '../helpers/data.ts';
 import type {Card} from '../types.ts';
@@ -16,7 +15,7 @@ if (process.env.POKEMON_TCG_API_KEY) {
 	throw new Error('Pokémon TCG API key is missing from .env file, key: POKEMON_TCG_API_KEY');
 }
 
-pokemon.configure({apiKey});
+const API_BASE_URL = 'https://api.pokemontcg.io/v2';
 
 type FetchedCard = {
 	id: string;
@@ -57,39 +56,134 @@ type FetchedCard = {
 	types: string[];
 };
 
+type FetchedCardsResponse = {
+	data: FetchedCard[];
+};
+
+type FetchedSet = {
+	name: string;
+	images: {
+		logo: string;
+	};
+	printedTotal: number;
+	ptcgoCode: string;
+};
+
+type FetchedSetsResponse = {
+	data: FetchedSet[];
+};
+
+/**
+ * Generic retry function with exponential backoff
+ */
+async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5, baseDelay = 1000, log = true): Promise<T> {
+	let attempt = 0;
+
+	while (true) {
+		try {
+			return await fn();
+		} catch (error) {
+			attempt++;
+
+			if (attempt > maxRetries) {
+				throw error;
+			}
+
+			const delay = baseDelay * Math.pow(1.5, attempt) + (Math.random() * baseDelay);
+			if (log) {
+				console.log(`Retry attempt ${attempt}/${maxRetries} after ${Math.round(delay)}ms...`);
+			}
+			await new Promise(resolve => setTimeout(resolve, delay));
+		}
+	}
+}
+
+/**
+ * Fetches data from the Pokemon TCG API with retry mechanism
+ */
+async function fetchFromApi<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
+	return withRetry(async () => {
+		const queryParams = new URLSearchParams(params).toString();
+		const url = `${API_BASE_URL}/${endpoint}${queryParams ? `?${queryParams}` : ''}`;
+
+		const response = await fetch(url, {
+			headers: {
+				'X-Api-Key': apiKey,
+				'Content-Type': 'application/json',
+			},
+		});
+
+		if (!response.ok) {
+			if (response.status === 429) {
+				throw new Error('429: Rate limit reached');
+			}
+			throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+		}
+
+		return await response.json() as T;
+	}, 5, 1000);
+}
+
+/**
+ * Safe wrapper for getAverageColor with retry mechanism
+ */
+async function safeGetAverageColor(imageUrl: string): Promise<string> {
+	return withRetry(async () => {
+		try {
+			const result = await getAverageColor(imageUrl, {algorithm: 'simple'});
+			return result.hex.substring(1);
+		} catch (error) {
+			// Silently ignore errors
+			throw error;
+		}
+	}, 3, 300, false);
+}
+
 export async function fetchPokemon(name: string, index: number) {
 	try {
-		const searchOptions = {
+		const selectFields = 'name,rarity,images,set,cardmarket,types,nationalPokedexNumbers';
+		let query = `nationalPokedexNumbers:${index} supertype:Pokémon`;
+		let params = {
+			q: query,
 			orderBy: 'nationalPokedexNumbers',
-			select: 'name,rarity,images,set,cardmarket,types,nationalPokedexNumbers',
+			select: selectFields,
+			pageSize: '250',
 		};
 
-		const cardsData = await pokemon.card.all({
-			q: `nationalPokedexNumbers:${index} supertype:Pokémon`,
-			...searchOptions,
-		}) as FetchedCard[];
+		const response = await fetchFromApi<FetchedCardsResponse>('cards', params);
 
-		if (!cardsData.toString()) {
+		if (!response.data.length) {
 			const searchName = name.replaceAll('-', ' ');
 			console.log(`Pokédex: ${index}/${POKEMONS_COUNT} (${name}), no cards found for this Pokémon, retrying with name '${searchName}'...`);
-			return await pokemon.card.all({
+
+			params = {
 				q: `name:"${searchName}" supertype:Pokémon`,
-				...searchOptions,
-			}) as FetchedCard[];
+				orderBy: 'nationalPokedexNumbers',
+				select: selectFields,
+				pageSize: '250',
+			};
+
+			return (await fetchFromApi<FetchedCardsResponse>('cards', params)).data;
 		}
-		return cardsData;
+
+		return response.data;
 	} catch (e) {
 		if (!(e instanceof Error)) {
 			console.error(`Pokédex: ${index}/${POKEMONS_COUNT} (${name}), error: ${e}, retrying...`);
-			await new Promise(resolve => setTimeout(resolve, 3000));
+			await new Promise(resolve => setTimeout(resolve, 1500));
 			return fetchPokemon(name, index);
 		}
 
 		if (e.message.includes('429')) {
 			console.error(`Pokédex: ${index}/${POKEMONS_COUNT} (${name}), rate limit reached, retrying...`);
-			await new Promise(resolve => setTimeout(resolve, 5000));
+			await new Promise(resolve => setTimeout(resolve, 2500));
 			return fetchPokemon(name, index);
 		}
+
+		// Other errors
+		console.error(`Pokédex: ${index}/${POKEMONS_COUNT} (${name}), error: ${e.message}, retrying...`);
+		await new Promise(resolve => setTimeout(resolve, 1500));
+		return fetchPokemon(name, index);
 	}
 }
 
@@ -111,8 +205,7 @@ async function getPokemon(name: string, index: number) {
 			tcgplayerPrices["1stEditionNormal"]?.market;
 
 		const smallImageURL = card.images.small;
-		const meanColor = await getAverageColor(smallImageURL, {algorithm: 'simple'});
-		const meanColorHex = meanColor.hex.substring(1);
+		const meanColorHex = await safeGetAverageColor(smallImageURL);
 
 		const nationalPokedexNumbers = card.nationalPokedexNumbers ?? [index];
 		return {
@@ -131,19 +224,11 @@ async function getPokemon(name: string, index: number) {
 	return allCards.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
 }
 
-type FetchedSet = {
-	name: string;
-	images: {
-		logo: string;
-	};
-	printedTotal: number;
-	ptcgoCode: string;
-};
-
 async function fetchAndFilterSets() {
-	const sets = await pokemon.set.all({
+	const response = await fetchFromApi<FetchedSetsResponse>('sets', {
 		select: 'name,images,printedTotal,ptcgoCode',
-	}) as FetchedSet[];
+	});
+	const sets = response.data;
 
 	console.log(`Found ${sets.length} sets!`);
 
@@ -175,11 +260,14 @@ async function fetchAndFilterSets() {
 
 export async function fetchCards() {
 	const pokemonGroups = [];
-	const interval = 3;
+	const interval = 20;
 	const pokemons = await getPokemons();
 
+	console.log(`Starting to fetch cards for ${POKEMONS_COUNT} pokemon with concurrent batch size ${interval}`);
+
 	for (let i = 0; i <= POKEMONS_COUNT + 2; i += interval) {
-		await new Promise(resolve => setTimeout(resolve, 2000));
+		console.log(`Processing batch ${Math.floor(i/interval) + 1}/${Math.ceil((POKEMONS_COUNT + 2)/interval)}`);
+		await new Promise(resolve => setTimeout(resolve, 1000));
 		const promises = Array.from({length: interval}, (_, j) => {
 			const name = pokemons[i + j]?.name;
 			if (!name) return [];
