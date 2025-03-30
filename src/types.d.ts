@@ -12,6 +12,11 @@ export interface Card {
 	types: string;
 }
 
+export type FullCard = Card & {
+	pokemon: Pokemon;
+	set: Set;
+};
+
 export interface Pokemon {
 	id: number;
 	name: string;

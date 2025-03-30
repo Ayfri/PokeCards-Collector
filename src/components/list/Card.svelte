@@ -1,10 +1,10 @@
 <script lang="ts">
 	import {fade} from 'svelte/transition';
-	import type {Card} from '~/types.js';
+	import type {FullCard} from '~/types.d.ts';
 	import { getCardImage } from '~/helpers/card-images.ts';
 	import { onMount, onDestroy } from 'svelte';
 
-	export let card: Card;
+	export let card: FullCard;
 
 	const {
 		image,

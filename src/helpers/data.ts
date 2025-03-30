@@ -4,7 +4,7 @@ import {fetchPokemons} from '$scrappers/pokemon_scraper.ts';
 import {fetchCards, fetchSets} from '$scrappers/tcg_call.ts';
 import {fetchPokemonTypes} from '$scrappers/types_scraper.ts';
 import * as fs from 'node:fs';
-import type {Card, Pokemon, Set} from '~/types.ts';
+import type {Card, FullCard, Pokemon, Set} from '~/types.ts';
 
 export async function getPokemons(): Promise<Pokemon[]> {
 	if (fs.existsSync(POKEMONS)) {
@@ -15,7 +15,7 @@ export async function getPokemons(): Promise<Pokemon[]> {
 	return getPokemons();
 }
 
-export async function getCards(): Promise<Card[]> {
+export async function getCards(): Promise<FullCard[]> {
 	const pokemons = await getPokemons();
 	if (fs.existsSync(CARDS)) {
 		if (!fs.existsSync(SETS)) {
@@ -29,7 +29,7 @@ export async function getCards(): Promise<Card[]> {
 			card.pokemon = pokemons.find(pokemon => pokemon.id === parseInt(card.numero))!;
 			card.set = sets.find(set => set.name === card.set_name)!;
 
-			return card;
+			return card as FullCard;
 		}).filter(card => card.pokemon);
 	}
 

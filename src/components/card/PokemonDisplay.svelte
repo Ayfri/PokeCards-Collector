@@ -4,7 +4,7 @@
 	import AllPokemonCards from '@components/card/AllPokemonCards.svelte';
 	import {fade} from 'svelte/transition';
 	import type {Card, Pokemon} from '~/types.js';
-	import { spriteCache } from '../../stores/spriteCache';
+	import { spriteCache } from '~/stores/spriteCache';
 	import { pascalCase } from '$helpers/strings.js';
 
 	export let pokemons: Pokemon[];
@@ -13,7 +13,7 @@
 	let card: Card = cards[0];
 
 	$: allSets = cards.map(card => card.set);
-	
+
 	const pokemonName = card.pokemon.name;
 	const types = [...new Set(cards.map(card => card.types.toLowerCase().split(',')[0]))];
 
@@ -29,7 +29,7 @@
 
 	// Trouver le pokémon précédent dans le Pokédex
 	$: previousPokemon = pokemons.find(p => p.id === card.pokemon.id - 1);
-	
+
 	// Trouver le pokémon suivant dans le Pokédex
 	$: nextPokemon = pokemons.find(p => p.id === card.pokemon.id + 1);
 
@@ -56,7 +56,7 @@
 	$: if (previousPokemon && !sprites[previousPokemon.id]) {
 		ensureSprite(previousPokemon.id);
 	}
-	
+
 	$: if (nextPokemon && !sprites[nextPokemon.id]) {
 		ensureSprite(nextPokemon.id);
 	}
@@ -120,7 +120,7 @@
 <div class="h-[42rem] max-lg:h-[inherit] max-lg:flex max-lg:flex-col max-lg:gap-8 max-lg:flex-wrap max-lg:content-center">
 	<!-- Evolution Chain Component -->
 	<EvolutionChain {card} {pokemons} {cards} {sprites} />
-	
+
 	<!-- Pokédex number indicator -->
 	<div class="pokedex-number-display text-center mb-2">
 		<div class="pokedex-number text-gold-400 font-bold px-3 py-1 rounded-md inline-block">
@@ -256,9 +256,9 @@
 <PokemonInfo {card} />
 
 <!-- Add the new AllPokemonCards component -->
-<AllPokemonCards 
-	cards={cards} 
-	currentPokemonId={card.pokemon.id} 
+<AllPokemonCards
+	cards={cards}
+	currentPokemonId={card.pokemon.id}
 	onCardSelect={handleCardSelect}
 />
 
@@ -320,7 +320,7 @@
 		margin-top: 0.5rem;
 		margin-bottom: 1rem;
 	}
-	
+
 	.pokedex-number {
 		background-color: rgba(0, 0, 0, 0.5);
 		border: 1px solid #f3d02c;
@@ -362,9 +362,9 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		background: radial-gradient(circle at center, 
-			rgba(40, 40, 40, 0.3) 5%, 
-			rgba(20, 20, 20, 0.5) 35%, 
+		background: radial-gradient(circle at center,
+			rgba(40, 40, 40, 0.3) 5%,
+			rgba(20, 20, 20, 0.5) 35%,
 			rgba(0, 0, 0, 0.7) 70%);
 		opacity: 1;
 		z-index: 1;
@@ -375,7 +375,7 @@
 	.nav-pokemon-wrapper:hover {
 		transform: scale(1.05);
 	}
-	
+
 	.nav-pokemon-wrapper::after {
 		content: '';
 		position: absolute;
@@ -389,7 +389,7 @@
 		z-index: 2;
 		border-radius: 50%;
 	}
-	
+
 	.nav-pokemon-wrapper:hover::after {
 		opacity: 1;
 	}

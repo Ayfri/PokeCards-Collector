@@ -2,7 +2,7 @@
 	import { pascalCase } from '$helpers/strings.js';
 	import { getCardImage } from '~/helpers/card-images.ts';
 	import type { Card, Pokemon } from '~/types.js';
-	import { spriteCache } from '../../stores/spriteCache';
+	import { spriteCache } from '~/stores/spriteCache';
 
 	export let cards: Card[];
 	export let pokemons: Pokemon[];

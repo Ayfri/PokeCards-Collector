@@ -4,7 +4,7 @@
 	import SearchBar from './SearchBar.svelte';
 	import type { Card } from '~/types.js';
 
-	export let allCards: Card[] = [];
+	export let allCards: FullCards[] = [];
 
 	let isOpen = false;
 

@@ -5,13 +5,13 @@ import type {GetStaticPaths} from 'astro';
 import {getCards, getPokemons} from '$helpers/data';
 import Layout from '@layouts/Layout.astro';
 import PokemonDisplay from '@components/card/PokemonDisplay.svelte';
-import type {Card} from "~/types";
-import { spriteCache } from '../../stores/spriteCache';
+import type {FullCard} from "~/types.d.ts";
+import { spriteCache } from '~/stores/spriteCache';
 
 export const getStaticPaths = (async () => {
 	const pokemons = await getPokemons();
 	let allCards = await getCards();
-	allCards = allCards.sort((a, b) => a.pokemon.id - b.pokemon.id || b.price - a.price);
+	allCards = allCards.sort((a, b) => a.pokemon.id - b.pokemon.id || (b.price ?? 0) - (a.price ?? 0));
 	allCards = allCards.filter((card, index, self) => self.findIndex(c => c.image === card.image) === index);
 
 	return pokemons.map(pokemon => {
@@ -30,7 +30,7 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 interface Props {
-	cards: Card[];
+	cards: FullCard[];
 }
 
 const {cards} = Astro.props;
