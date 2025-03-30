@@ -18,7 +18,6 @@
 		"@divriots/jampack": "^0.32.0",
 		"astro": "^4.16.18",
 		"fast-average-color-node": "^3.1.0",
-		"pokemontcgsdk": "^2.0.0",
 		"sharp": "^0.33.5",
 		"svelte": "^4.2.19",
 		"tailwindcss": "^3.4.17",
