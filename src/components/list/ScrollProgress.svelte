@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { scrollProgress } from '$helpers/scrollStore.js';
+  import { scrollProgress } from '$helpers/scrollStore.ts';
 </script>
 
 <div class="progress-container">
@@ -37,9 +37,9 @@
     .progress-container {
       height: 4px;
     }
-    
+
     .progress-bar {
-      box-shadow: 0 0 6px 1px rgba(255, 215, 0, 0.6);  
+      box-shadow: 0 0 6px 1px rgba(255, 215, 0, 0.6);
     }
   }
-</style> 
+</style>

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import ScrollToBottom from '@components/list/ScrollToBottom.svelte';
 	import ScrollToTop from '@components/list/ScrollToTop.svelte';
-	import { updateScrollProgress } from '$helpers/scrollStore.js';
+	import { updateScrollProgress } from '$helpers/scrollStore.ts';
 	import {onMount} from 'svelte';
 	import { fade, slide } from 'svelte/transition';
-	import type {Card} from '~/types.js';
+	import type {Card} from '~/types.d.ts';
 
 	export let items: Card[];
 	export let itemHeight: number;
@@ -58,10 +58,10 @@
 		}
 		previousScroll = scrollTop;
 		updateVisibleItems();
-		
+
 		// Set hasScrolled to true when the user has scrolled down
 		hasScrolled = scrollTop > 100;
-		
+
 		// Update scroll progress
 		updateScrollProgress(container);
 	}
@@ -72,19 +72,19 @@
 		const startPosition = element.scrollTop;
 		const distance = targetPosition - startPosition;
 		const startTime = performance.now();
-		
+
 		function scrollStep(timestamp: number) {
 			const currentTime = timestamp - startTime;
 			const progress = Math.min(currentTime / duration, 1);
-			
+
 			// Easing function for smooth animation
-			const easeInOutCubic = progress => 
+			const easeInOutCubic = progress =>
 				progress < 0.5
 					? 4 * progress ** 3
 					: 1 - Math.pow(-2 * progress + 2, 3) / 2;
-			
+
 			element.scrollTop = startPosition + distance * easeInOutCubic(progress);
-			
+
 			if (currentTime < duration) {
 				window.requestAnimationFrame(scrollStep);
 			} else {
@@ -93,7 +93,7 @@
 				updateScrollProgress(element);
 			}
 		}
-		
+
 		window.requestAnimationFrame(scrollStep);
 	}
 
@@ -102,15 +102,15 @@
 		const start = items.length - visibleRows * itemsPerRow;
 		const end = start + visibleRows * itemsPerRow;
 		visibleItems = items.slice(Math.max(0, start - itemsPerRow * marginRows), end + itemsPerRow * marginRows);
-		
+
 		smoothScroll(container, targetScrollTop, scrollDuration);
 	}
-	
+
 	function scrollToTop() {
 		const start = 0;
 		const end = visibleRows * itemsPerRow;
 		visibleItems = items.slice(start, end + itemsPerRow * marginRows);
-		
+
 		smoothScroll(container, 0, scrollDuration);
 		// Reset hasScrolled after animation completes
 		setTimeout(() => {
