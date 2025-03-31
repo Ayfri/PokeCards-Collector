@@ -4,10 +4,22 @@
 	import { page } from '$app/state';
 	import Header from '@components/Header.svelte';
 	import pokeballSvg from '~/assets/pokeball.svg?raw';
+	import { onNavigate } from '$app/navigation';
 
 	const baseUrl = 'https://pokestore.ayfri.com';
 	const siteName = 'PokéStore';
 	const { title, description, image } = page.data;
+
+	onNavigate((navigation) => {
+	if (!document.startViewTransition) return;
+
+	return new Promise((resolve) => {
+		document.startViewTransition(async () => {
+			resolve();
+			await navigation.complete;
+		});
+	});
+});
 </script>
 
 <svelte:head>
