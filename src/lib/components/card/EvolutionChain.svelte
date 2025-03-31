@@ -9,50 +9,54 @@
 	export let card: FullCard;
 	export let sprites: Record<number, string>;
 
-	// Get current Pokemon from card
-	const currentPokemon = card.pokemon;
+	function buildEvolutionChain(card: FullCard) {
+		// Get current Pokemon from card
+		const currentPokemon = card.pokemon;
 
-	// Find pre-evolution if it exists
-	const preEvolution = currentPokemon.evolves_from ?
-		pokemons.find(pokemon => pokemon.id === currentPokemon.evolves_from) :
-		undefined;
+		// Find pre-evolution if it exists
+		const preEvolution = currentPokemon.evolves_from ?
+			pokemons.find(pokemon => pokemon.id === currentPokemon.evolves_from) :
+			undefined;
 
-	// Find pre-pre-evolution if it exists (for 3-stage chains)
-	const prePreEvolution = preEvolution?.evolves_from ?
-		pokemons.find(pokemon => pokemon.id === preEvolution.evolves_from) :
-		undefined;
+		// Find pre-pre-evolution if it exists (for 3-stage chains)
+		const prePreEvolution = preEvolution?.evolves_from ?
+			pokemons.find(pokemon => pokemon.id === preEvolution.evolves_from) :
+			undefined;
 
-	// Find evolutions if they exist
-	const evolutions = currentPokemon.evolves_to ?
-		currentPokemon.evolves_to.map(evoId => pokemons.find(pokemon => pokemon.id === evoId)) :
-		[];
+		// Find evolutions if they exist
+		const evolutions = currentPokemon.evolves_to ?
+			currentPokemon.evolves_to.map(evoId => pokemons.find(pokemon => pokemon.id === evoId)) :
+			[];
 
-	// Find further evolutions if they exist
-	const furtherEvolutions = evolutions.length ?
-		evolutions.flatMap(evo =>
-			evo?.evolves_to ?
-				evo.evolves_to.map(furtherEvoId => pokemons.find(pokemon => pokemon.id === furtherEvoId)) :
-				[]
-		) :
-		[];
+		// Find further evolutions if they exist
+		const furtherEvolutions = evolutions.length ?
+			evolutions.flatMap(evo =>
+				evo?.evolves_to ?
+					evo.evolves_to.map(furtherEvoId => pokemons.find(pokemon => pokemon.id === furtherEvoId)) :
+					[]
+			) :
+			[];
 
-	// Build the full chain
-	const fullChain = [];
+		// Build the full chain
+		const fullChain = [];
 
-	if (prePreEvolution) fullChain.push(prePreEvolution);
-	if (preEvolution) fullChain.push(preEvolution);
-	fullChain.push(currentPokemon);
-	evolutions.forEach(evo => {
-		if (evo) fullChain.push(evo);
-	});
-	furtherEvolutions.forEach(evo => {
-		if (evo) fullChain.push(evo);
-	});
+		if (prePreEvolution) fullChain.push(prePreEvolution);
+		if (preEvolution) fullChain.push(preEvolution);
+		fullChain.push(currentPokemon);
+		evolutions.forEach(evo => {
+			if (evo) fullChain.push(evo);
+		});
+		furtherEvolutions.forEach(evo => {
+			if (evo) fullChain.push(evo);
+		});
 
-	// Remove duplicates if any
-	const uniqueChain = fullChain.filter((pokemon, index, self) =>
-		index === self.findIndex(p => p.id === pokemon.id)
-	);
+		// Remove duplicates if any
+		const uniqueChain = fullChain.filter((pokemon, index, self) =>
+				index === self.findIndex(p => p.id === pokemon.id)
+			);
+
+		return uniqueChain;
+	}
 
 	// Handle error for Pokemon evolution image
 	function handlePokemonImageError(event: Event, pokemonId: number) {
@@ -67,21 +71,20 @@
 		}
 	}
 
-	// Préchargement des sprites manquants
 	async function ensureSprite(pokemonId: number) {
 		if (!sprites[pokemonId]) {
 			try {
 				sprites[pokemonId] = await spriteCache.getSprite(pokemonId);
 			} catch (error) {
 				console.error(`Failed to load sprite for Pokemon #${pokemonId}`);
-				sprites[pokemonId] = getCardImageForPokemon(pokemonId, cards);
 			}
 		}
 		return sprites[pokemonId];
 	}
 
-	// Préchargement des sprites pour la chaîne d'évolution
-	uniqueChain.forEach(pokemon => {
+	$: currentPokemon = card.pokemon;
+	$: uniqueChain = buildEvolutionChain(card);
+	$: uniqueChain.forEach(pokemon => {
 		if (!sprites[pokemon.id]) {
 			ensureSprite(pokemon.id);
 		}

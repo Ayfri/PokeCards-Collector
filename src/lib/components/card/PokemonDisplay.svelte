@@ -198,9 +198,8 @@
 								alt={c.pokemon.name}
 								class="image"
 								decoding="async"
-								hidden={c.pokemon.name !== pokemonName}
 								draggable="false"
-								loading={c.pokemon.name === pokemonName ? 'eager' : 'lazy'}
+								loading="eager"
 								height="420"
 								src={c.image}
 								width="300"
@@ -248,11 +247,7 @@
 	<style bind:this={styleElement} id="card"></style>
 </svelte:head>
 
-{#each types as type}
-	{#if currentType === type}
-		<div class="filter {type}" id="filter" transition:fade></div>
-	{/if}
-{/each}
+<div class="filter {currentType}" id="filter" transition:fade></div>
 
 <PokemonInfo {card} />
 
