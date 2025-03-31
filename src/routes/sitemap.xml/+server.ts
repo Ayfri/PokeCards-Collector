@@ -3,6 +3,8 @@ import { BASE_URL } from '~/constants';
 export async function GET() {
 	const cards = await getCards();
 
+	const mainPage = `${BASE_URL}/`;
+
 	return new Response(
 		`
 		<?xml version="1.0" encoding="UTF-8" ?>
@@ -14,6 +16,12 @@ export async function GET() {
 			xmlns:image="https://www.google.com/schemas/sitemap-image/1.1"
 			xmlns:video="https://www.google.com/schemas/sitemap-video/1.1"
 		>
+			<url>
+				<loc>${mainPage}</loc>
+				<lastmod>${new Date().toISOString()}</lastmod>
+				<changefreq>weekly</changefreq>
+				<priority>1</priority>
+			</url>
 			${cards.map(card => `<url>
 				<loc>${`${BASE_URL}/card/${card.pokemon.id}`}</loc>
 				<lastmod>${new Date().toISOString()}</lastmod>
