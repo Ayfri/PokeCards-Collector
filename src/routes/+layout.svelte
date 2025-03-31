@@ -5,9 +5,8 @@
 	import Header from '@components/Header.svelte';
 	import pokeballSvg from '~/assets/pokeball.svg?raw';
 	import { onNavigate } from '$app/navigation';
+	import { BASE_URL, SITE_NAME } from '~/constants';
 
-	const baseUrl = 'https://pokestore.ayfri.com';
-	const siteName = 'PokéStore';
 	const { title, description, image } = page.data;
 
 	onNavigate((navigation) => {
@@ -33,11 +32,11 @@
 	<meta name="author" content="Ayfri;Anta;Bahsiik"/>
 	<meta name="keywords" content="Pokemon, Pokémon, TCG, Card Game, Trading Card Game, Pokemon Cards, Card List, PokéStore"/>
 
-	<meta property="og:site_name" content={siteName}/>
+	<meta property="og:site_name" content={SITE_NAME}/>
 	<meta property="og:title" content={title}/>
 	<meta property="og:description" content={description}/>
 	<meta property="og:type" content="website"/>
-	<meta property="og:url" content={baseUrl}/>
+	<meta property="og:url" content={BASE_URL}/>
 
 	<meta name="viewport" content="width=device-width"/>
 	<meta name="twitter:card" content="summary_large_image"/>
@@ -53,8 +52,8 @@
 
 	<link rel="sitemap" href="/sitemap-index.xml"/>
 	<link rel="icon" type="image/png" href="/favicon.png"/>
-	<link rel="alternate" href={baseUrl} hreflang="en"/>
-	<link rel="alternate" href={baseUrl} hreflang="x-default"/>
+	<link rel="alternate" href={BASE_URL} hreflang="en"/>
+	<link rel="alternate" href={BASE_URL} hreflang="x-default"/>
 
 	<!-- Google tag (gtag.js) -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-PS0GZ8MEB8"></script>
