@@ -32,7 +32,7 @@
 	<meta property="og:image:alt" content="{data.cards[0].pokemon.description}" />
 </svelte:head>
 
-<main class="max-w-[100vw] m-auto p-2 text-lg text-white">
+<main class="max-w-[100vw] p-2 text-lg text-white">
 	<div class="mt-10 mx-auto flex flex-col gap-8 w-[90%] -z-10 max-lg:mt-8">
 		<PokemonDisplay cards={data.cards} pokemons={data.pokemons} sprites={spritesMap}/>
 	</div>
