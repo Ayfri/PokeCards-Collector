@@ -10,6 +10,19 @@ export interface Card {
 	set_name: string;
 	set?: Set;
 	types: string;
+	supertype: string;
+	artist?: string;
+	tcgplayer?: {
+		url: string;
+		updatedAt: string;
+		prices: Record<string, {
+			low?: number;
+			mid?: number;
+			high?: number;
+			market?: number;
+			directLow?: number;
+		}>;
+	};
 }
 
 export type FullCard = Card & {
