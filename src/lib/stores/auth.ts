@@ -42,15 +42,14 @@ function createAuthStore() {
         if (tokenString) {
           try {
             const tokenData = JSON.parse(tokenString);
-            console.log('Token trouvé dans localStorage');
             
             // Extraire les informations utilisateur du token (si disponibles)
             if (tokenData.access_token) {
               // Le token existe, essayons de récupérer le profil utilisateur
               // Créer un client temporaire avec le token
               const { createClient } = await import('@supabase/supabase-js');
-              const supabaseUrl = import.meta.env.SUPABASE_URL;
-              const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY;
+              const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+              const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
               
               const tempClient = createClient(supabaseUrl, supabaseAnonKey);
               
@@ -58,8 +57,6 @@ function createAuthStore() {
               const { data: userData, error: userError } = await tempClient.auth.getUser(tokenData.access_token);
               
               if (!userError && userData.user) {
-                console.log('Utilisateur récupéré:', userData.user.id);
-                
                 // Récupérer le profil
                 const response = await fetch(
                   `${supabaseUrl}/rest/v1/profiles?auth_id=eq.${userData.user.id}&select=*`,
@@ -77,7 +74,6 @@ function createAuthStore() {
                   const profile = profiles.length > 0 ? profiles[0] : null;
                   
                   if (profile) {
-                    console.log('Profil récupéré');
                     update(state => ({ 
                       ...state, 
                       user: userData.user, 
@@ -90,7 +86,7 @@ function createAuthStore() {
               }
             }
           } catch (tokenError) {
-            console.error('Erreur de parsing du token:', tokenError);
+            // Ignorer les erreurs de token et continuer avec la méthode standard
           }
         }
         
@@ -117,7 +113,6 @@ function createAuthStore() {
           update(state => ({ ...state, user: null, profile: null, loading: false }));
         }
       } catch (error) {
-        console.error('Auth store initialization error:', error);
         update(state => ({ 
           ...state, 
           user: null, 
