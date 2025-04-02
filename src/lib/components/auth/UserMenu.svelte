@@ -28,26 +28,19 @@
   async function handleSignOut() {
     try {
       closeMenu();
-      console.log('Signing out...');
       
       // Supprimer le token manuellement
       localStorage.removeItem('supabase.auth.token');
-      console.log('Token removed locally');
       
       // Réinitialiser le store
       authStore.reset();
-      console.log('Auth store reset');
       
       // Appeler la fonction de déconnexion
       await signOut();
-      console.log('signOut() function executed');
       
       // Forcer le rechargement de la page même si signOut() échoue
-      console.log('Forced page reload');
       window.location.href = '/';
     } catch (error) {
-      console.error('Error during sign out:', error);
-      
       // En cas d'erreur, forcer quand même le rechargement
       window.location.href = '/';
     }

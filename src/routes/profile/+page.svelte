@@ -20,25 +20,20 @@
     
     try {
       const isPublic = !$authStore.profile.is_public;
-      console.log('Attempting to change profile visibility to:', isPublic ? 'public' : 'private');
-      
       const { data, error } = await toggleProfileVisibility($authStore.profile.username, isPublic);
       
       if (error) {
-        console.error('Error toggling profile visibility:', error);
         errorMessage = `Failed to update profile visibility: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
         return;
       }
       
       if (data) {
-        console.log('Profile visibility updated successfully:', data);
         authStore.setProfile(data);
         successMessage = `Profile visibility changed to ${isPublic ? 'public' : 'private'}`;
       } else {
         errorMessage = 'No data returned from server';
       }
     } catch (error) {
-      console.error('Exception toggling profile visibility:', error);
       errorMessage = `An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`;
     } finally {
       isLoading = false;
