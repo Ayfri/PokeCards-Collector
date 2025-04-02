@@ -48,3 +48,36 @@ export interface SpriteCache {
 	subscribe: any;
 	getSprite: (id: number) => Promise<string>;
 }
+
+export interface UserProfile {
+	username: string;
+	auth_id: string;
+	avatar_url?: string;
+	is_public: boolean;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface UserCollection {
+	id: string;
+	username: string;
+	card_id: string;
+	quantity: number;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface UserWishlist {
+	id: string;
+	username: string;
+	card_id: string;
+	created_at: string;
+	updated_at: string;
+}
+
+export interface CollectionStats {
+	total_cards: number;
+	total_value: number;
+	cards_by_rarity: Record<string, number>;
+	cards_by_set: Record<string, number>;
+}
