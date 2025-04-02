@@ -1,0 +1,162 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { User, LogOut, Heart, Library, Settings } from 'lucide-svelte';
+  import { authStore } from '$lib/stores/auth';
+  import { signOut } from '$lib/services/auth';
+  import AuthModal from './AuthModal.svelte';
+
+  let isMenuOpen = false;
+  let isAuthModalOpen = false;
+
+  function toggleMenu() {
+    isMenuOpen = !isMenuOpen;
+  }
+
+  function closeMenu() {
+    isMenuOpen = false;
+  }
+
+  function openAuthModal() {
+    closeMenu();
+    isAuthModalOpen = true;
+  }
+
+  function closeAuthModal() {
+    isAuthModalOpen = false;
+  }
+
+  async function handleSignOut() {
+    try {
+      closeMenu();
+      console.log('Signing out...');
+      
+      // Supprimer le token manuellement
+      localStorage.removeItem('supabase.auth.token');
+      console.log('Token removed locally');
+      
+      // Réinitialiser le store
+      authStore.reset();
+      console.log('Auth store reset');
+      
+      // Appeler la fonction de déconnexion
+      await signOut();
+      console.log('signOut() function executed');
+      
+      // Forcer le rechargement de la page même si signOut() échoue
+      console.log('Forced page reload');
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      
+      // En cas d'erreur, forcer quand même le rechargement
+      window.location.href = '/';
+    }
+  }
+
+  onMount(() => {
+    // Initialize the auth store
+    authStore.init();
+  });
+</script>
+
+<div class="relative">
+  <!-- Auth modal -->
+  <AuthModal isOpen={isAuthModalOpen} on:close={closeAuthModal} />
+  
+  <!-- User button -->
+  <button
+    type="button"
+    class="flex items-center justify-center size-9 text-gray-400 hover:text-white rounded-full focus:outline-none"
+    on:click={toggleMenu}
+    aria-expanded={isMenuOpen}
+  >
+    {#if $authStore.user && $authStore.profile}
+      <span class="sr-only">Open user menu</span>
+      <div class="size-8 rounded-full bg-red-500 flex items-center justify-center text-white uppercase font-bold">
+        {$authStore.profile.username.charAt(0)}
+      </div>
+    {:else}
+      <span class="sr-only">Sign in</span>
+      <User size={24} />
+    {/if}
+  </button>
+  
+  <!-- Dropdown menu -->
+  {#if isMenuOpen}
+    <div
+      class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+      role="menu"
+      aria-orientation="vertical"
+      aria-labelledby="user-menu-button"
+      tabindex="-1"
+    >
+      {#if $authStore.user && $authStore.profile}
+        <!-- Logged in menu items -->
+        <div class="py-2 px-3 border-b dark:border-gray-700">
+          <p class="text-sm font-medium text-gray-900 dark:text-white">{$authStore.profile.username}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 truncate">{$authStore.user.email}</p>
+        </div>
+        <div class="py-1">
+          <a
+            href="/profile"
+            class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            role="menuitem"
+            on:click={closeMenu}
+          >
+            <User class="mr-3" size={16} />
+            My profile
+          </a>
+          <a
+            href="/collection"
+            class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            role="menuitem"
+            on:click={closeMenu}
+          >
+            <Library class="mr-3" size={16} />
+            My collection
+          </a>
+          <a
+            href="/wishlist"
+            class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            role="menuitem"
+            on:click={closeMenu}
+          >
+            <Heart class="mr-3" size={16} />
+            My wishlist
+          </a>
+          <a
+            href="/settings"
+            class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            role="menuitem"
+            on:click={closeMenu}
+          >
+            <Settings class="mr-3" size={16} />
+            Settings
+          </a>
+          <button
+            type="button"
+            class="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            role="menuitem"
+            on:click={handleSignOut}
+          >
+            <LogOut class="mr-3" size={16} />
+            Sign out
+          </button>
+        </div>
+      {:else}
+        <!-- Not logged in -->
+        <div class="py-1">
+          <button
+            type="button"
+            class="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            role="menuitem"
+            on:click={openAuthModal}
+          >
+            <User class="mr-3" size={16} />
+            Sign in / Register
+          </button>
+        </div>
+      {/if}
+    </div>
+  {/if}
+</div> 

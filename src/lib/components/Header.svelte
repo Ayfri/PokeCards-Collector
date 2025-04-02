@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import SearchBar from '@components/SearchBar.svelte';
 	import SearchModal from '@components/SearchModal.svelte';
+	import UserMenu from '@components/auth/UserMenu.svelte';
 	import type { FullCard } from '~/lib/types';
 	import pokestore from '~/assets/pokestore.png';
 	import { page } from '$app/state';
@@ -30,6 +31,9 @@
 
 		<!-- Mobile search using the Svelte component -->
 		<SearchModal allCards={cards} />
+		
+		<!-- User menu -->
+		<UserMenu />
 	</div>
 </header>
 
