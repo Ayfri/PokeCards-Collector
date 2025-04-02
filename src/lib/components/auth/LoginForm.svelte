@@ -18,63 +18,61 @@
 
     loading = true;
     errorMessage = '';
-    console.log('Login attempt...');
+    
+    // Ajouter un timeout visible pour l'utilisateur
+    const loginTimeout = setTimeout(() => {
+      if (loading) {
+        errorMessage = "La connexion prend plus de temps que prévu. Vérifiez votre connexion internet ou réessayez plus tard.";
+        loading = false;
+      }
+    }, 15000);
 
     try {
-      // Utiliser fetch directement au lieu du client Supabase
-      const supabaseUrl = import.meta.env.SUPABASE_URL;
-      const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY;
+      // Utiliser la fonction signIn du service auth
+      let result;
+      try {
+        result = await signIn(email, password);
+      } catch (signInError) {
+        throw signInError;
+      }
       
-      console.log('Sending request to server...');
-      const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
-        method: 'POST',
-        headers: {
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          email,
-          password
-        })
-      });
+      const { user, session, error } = result;
       
-      console.log('Response received:', response.status);
+      // Nettoyer le timeout
+      clearTimeout(loginTimeout);
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Login error:', errorText);
-        
-        if (errorText.includes('Invalid login credentials')) {
+      if (error) {
+        console.error('Erreur pendant le login:', error);
+        if (error.message.includes('Invalid login credentials')) {
           errorMessage = 'Incorrect email or password';
         } else {
-          errorMessage = 'Error during login: ' + errorText;
+          errorMessage = 'Error during login: ' + error.message;
         }
-        
         loading = false;
         return;
       }
       
-      const data = await response.json();
-      console.log('Login successful, data received');
-      
-      // Enregistrer le token dans le localStorage
-      if (data.access_token) {
-        localStorage.setItem('supabase.auth.token', JSON.stringify({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token
-        }));
-      }
-      
-      // Recharger la page pour appliquer l'authentification
-      window.location.reload();
-      
-      // Success - notify parent component
-      console.log('Login successful, notifying parent');
-      dispatch('success');
-    } catch (error) {
-      console.error('Exception during login:', error);
-      errorMessage = 'An error occurred while communicating with the server';
+      // Login réussi
+      clearTimeout(loginTimeout);
       loading = false;
+      
+      // Notifier le composant parent du succès
+      dispatch('success');
+      
+      // Redirection vers la page d'accueil
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 100);
+    } catch (error: any) {
+      clearTimeout(loginTimeout);
+      loading = false;
+      
+      // Message d'erreur plus descriptif
+      if (error.message?.includes('Timeout') || error.message?.includes('pris trop de temps')) {
+        errorMessage = "Impossible de se connecter au service d'authentification. Vérifiez votre connexion internet ou réessayez plus tard.";
+      } else {
+        errorMessage = `Échec de connexion: ${error?.message || 'Erreur inconnue'}`;
+      }
     }
   }
 </script>

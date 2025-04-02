@@ -74,24 +74,148 @@ export async function signUp(email: string, password: string, username: string):
 // Sign in a user
 export async function signIn(email: string, password: string): Promise<AuthResponse> {
   try {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    // Définir une promesse avec timeout pour éviter les blocages
+    const timeoutPromise = new Promise<AuthResponse>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('Login timeout: Connection took too long'));
+      }, 10000); // 10 secondes
     });
-
-    return { 
-      user: data?.user || null, 
-      session: data?.session || null, 
-      error 
-    };
-  } catch (error) {
-    console.error('Sign in error:', error);
+    
+    const authPromise = new Promise<AuthResponse>(async (resolve) => {
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        
+        // Tenter la connexion via l'API REST directement (contourne certains problèmes CORS)
+        try {
+          const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+            method: 'POST',
+            headers: {
+              'apikey': supabaseAnonKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              email,
+              password
+            })
+          });
+          
+          if (!response.ok) {
+            // Fallback au client Supabase
+            const { data, error } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            
+            if (error) {
+              resolve({ 
+                user: null, 
+                session: null, 
+                error
+              });
+              return;
+            }
+            
+            resolve({ 
+              user: data?.user || null, 
+              session: data?.session || null, 
+              error: null
+            });
+            return;
+          }
+          
+          // Succès avec fetch direct
+          const authData = await response.json();
+          
+          // Récupérer l'utilisateur à partir du token
+          const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+            headers: {
+              'apikey': supabaseAnonKey,
+              'Authorization': `Bearer ${authData.access_token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (!userResponse.ok) {
+            resolve({
+              user: null,
+              session: {
+                access_token: authData.access_token,
+                refresh_token: authData.refresh_token,
+                expires_at: authData.expires_at,
+                expires_in: authData.expires_in
+              } as any,
+              error: null
+            });
+            return;
+          }
+          
+          const userData = await userResponse.json();
+          
+          // Sauvegarder le token pour les futures requêtes
+          localStorage.setItem('supabase.auth.token', JSON.stringify({
+            ...authData,
+            user: userData
+          }));
+          
+          // Mettre à jour authStore
+          if (userData) {
+            authStore.setUser(userData);
+          }
+          
+          resolve({
+            user: userData,
+            session: {
+              access_token: authData.access_token,
+              refresh_token: authData.refresh_token,
+              expires_at: authData.expires_at,
+              expires_in: authData.expires_in
+            } as any,
+            error: null
+          });
+        } catch (fetchError) {
+          // Fallback sur le client Supabase
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          
+          if (error) {
+            resolve({ 
+              user: null, 
+              session: null, 
+              error
+            });
+            return;
+          }
+          
+          resolve({ 
+            user: data?.user || null, 
+            session: data?.session || null, 
+            error: null
+          });
+        }
+      } catch (error) {
+        resolve({ 
+          user: null, 
+          session: null, 
+          error: { 
+            name: 'UnknownError', 
+            message: 'An error occurred during sign in'
+          } as AuthError 
+        });
+      }
+    });
+    
+    // Utiliser une race entre la promesse d'authentification et le timeout
+    return await Promise.race([authPromise, timeoutPromise]);
+  } catch (raceError) {
     return { 
       user: null, 
       session: null, 
       error: { 
-        name: 'UnknownError', 
-        message: 'An unknown error occurred during sign in' 
+        name: 'TimeoutError', 
+        message: 'Connection timed out'
       } as AuthError 
     };
   }
@@ -102,11 +226,9 @@ export async function signOut(): Promise<{ error: AuthError | null }> {
   try {
     // Supprimer le token du localStorage
     localStorage.removeItem('supabase.auth.token');
-    console.log('Token supprimé du localStorage');
     
     // Reset local auth state
     authStore.reset();
-    console.log('Auth store reset');
     
     let error = null;
     
@@ -114,19 +236,15 @@ export async function signOut(): Promise<{ error: AuthError | null }> {
       // Essayer également la méthode Supabase standard
       const result = await supabase.auth.signOut();
       error = result.error;
-      console.log('Supabase signOut', error ? 'error: ' + error.message : 'succès');
     } catch (e) {
-      console.error('Erreur lors de supabase.auth.signOut():', e);
+      // Ignorer les erreurs de déconnexion
     }
     
     // Always reload, even if there was an error
-    console.log('Rechargement de la page...');
     setTimeout(() => window.location.reload(), 100);
     
     return { error };
   } catch (error) {
-    console.error('Sign out error:', error);
-    
     // Même en cas d'erreur globale, on tente de recharger la page
     setTimeout(() => window.location.reload(), 100);
     

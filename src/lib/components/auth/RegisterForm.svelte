@@ -33,31 +33,37 @@
         return false;
       }
       
-      // Ajouter un timeout pour éviter une attente infinie
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout checking username')), 5000);
-      });
-      
-      // Race entre la requête normale et le timeout
-      const usernameCheckResult = await Promise.race([
-        isUsernameTaken(username),
-        timeoutPromise
-      ]) as { exists: boolean, error: any };
-      
-      // À ce stade, nous avons soit un résultat valide, soit une erreur de timeout
-      const { exists, error } = usernameCheckResult;
-      
-      if (error) {
-        errorMessage = 'Error checking username';
+      // Utiliser directement fetch pour vérifier le nom d'utilisateur
+      try {
+        const response = await fetch('/api/auth/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            action: 'check_username',
+            username
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+          errorMessage = 'Error checking username availability';
+          return false;
+        }
+        
+        if (data.exists) {
+          errorMessage = 'This username is already taken';
+          return false;
+        }
+        
+        return true;
+      } catch (checkError) {
+        console.error('Error checking username:', checkError);
+        errorMessage = 'Error checking username availability';
         return false;
       }
-      
-      if (exists) {
-        errorMessage = 'This username is already taken';
-        return false;
-      }
-      
-      return true;
     } catch (error) {
       errorMessage = 'Internal error during username validation';
       return false;
@@ -84,6 +90,7 @@
       
       // Username validation
       const isUsernameValid = await validateUsername();
+      
       if (!isUsernameValid) {
         return;
       }
@@ -91,89 +98,133 @@
       // Everything is validated, continue
       loading = true;
       errorMessage = '';
+      
+      // Ajouter un timeout visible pour l'utilisateur
+      const registerTimeout = setTimeout(() => {
+        if (loading) {
+          errorMessage = "L'inscription prend plus de temps que prévu. Vérifiez votre connexion internet ou réessayez plus tard.";
+          loading = false;
+        }
+      }, 15000);
 
       try {
         // Use the server API endpoint instead of the direct function
-        const response = await fetch('/api/auth/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            email,
-            password,
-            username
-          })
-        });
         
-        let data;
-        try {
-          data = await response.json();
-        } catch (parseError) {
-          errorMessage = 'Error processing server response';
+        // Vérifier la connectivité réseau
+        if (!navigator.onLine) {
+          clearTimeout(registerTimeout);
+          errorMessage = 'No internet connection. Please check your network.';
           loading = false;
           return;
         }
         
-        if (!response.ok || !data.success) {
-          if (data.error && data.error.includes('already registered')) {
-            errorMessage = 'This email is already registered';
-          } else if (data.error && data.error.includes('already taken')) {
-            errorMessage = 'This username is already taken';
-          } else if (data.error && data.error.includes('Profile creation')) {
-            errorMessage = 'Error creating profile. Please try again.';
-          } else {
-            errorMessage = data.error || 'Error during registration';
-          }
-          loading = false;
-          return;
-        }
-        
-        // Automatic login via Supabase API
         try {
-          // Use fetch directly to avoid issues with the Supabase client
-          const supabaseUrl = import.meta.env.SUPABASE_URL;
-          const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY;
-          
-          const loginResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+          const response = await fetch('/api/auth/signup', {
             method: 'POST',
             headers: {
-              'apikey': supabaseAnonKey,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
               email,
-              password
+              password,
+              username
             })
           });
           
-          if (!loginResponse.ok) {
-            errorMessage = 'Registration successful, but automatic login failed. Please log in manually.';
+          let data;
+          try {
+            const responseText = await response.text();
+            
+            try {
+              data = JSON.parse(responseText);
+            } catch (jsonError) {
+              throw new Error('Réponse non-JSON: ' + responseText);
+            }
+          } catch (parseError) {
+            clearTimeout(registerTimeout);
+            errorMessage = 'Error processing server response';
             loading = false;
             return;
           }
           
-          // Success - redirect to home page
+          if (!response.ok || !data.success) {
+            clearTimeout(registerTimeout);
+            if (data.error && data.error.includes('already registered')) {
+              errorMessage = 'This email is already registered';
+            } else if (data.error && data.error.includes('already taken')) {
+              errorMessage = 'This username is already taken';
+            } else if (data.error && data.error.includes('Profile creation')) {
+              errorMessage = 'Error creating profile. Please try again.';
+            } else {
+              errorMessage = data.error || 'Error during registration';
+            }
+            loading = false;
+            return;
+          }
           
-          // Manual redirection - user will need to log in
-          errorMessage = 'Registration successful! Please log in with your credentials.';
-          loading = false;
+          // Inscription réussie
           
-          // Switch to login tab
-          dispatch('switch', 'login');
-          return;
-        } catch (loginError) {
-          errorMessage = 'Registration successful, but an error occurred during automatic login. Please log in manually.';
+          // Automatic login via Supabase API
+          try {
+            // Use fetch directly to avoid issues with the Supabase client
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            
+            const loginResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+              method: 'POST',
+              headers: {
+                'apikey': supabaseAnonKey,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                email,
+                password
+              })
+            });
+            
+            if (!loginResponse.ok) {
+              clearTimeout(registerTimeout);
+              errorMessage = 'Registration successful, but automatic login failed. Please log in manually.';
+              loading = false;
+              
+              // Switch to login tab
+              dispatch('switch', 'login');
+              return;
+            }
+            
+            // Connexion automatique réussie
+            clearTimeout(registerTimeout);
+            errorMessage = 'Registration successful! Logging you in...';
+            loading = false;
+            
+            // Switch to login tab and notify success
+            dispatch('success');
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 1000);
+            return;
+          } catch (loginError) {
+            clearTimeout(registerTimeout);
+            errorMessage = 'Registration successful, but an error occurred during automatic login. Please log in manually.';
+            loading = false;
+            
+            // Switch to login tab
+            dispatch('switch', 'login');
+            return;
+          }
+        } catch (fetchError) {
+          clearTimeout(registerTimeout);
+          errorMessage = 'An error occurred while communicating with the server. Please try again.';
           loading = false;
-          return;
         }
-      } catch (error) {
-        errorMessage = 'An error occurred while communicating with the server';
-      } finally {
+      } catch (error: unknown) {
+        clearTimeout(registerTimeout);
+        alert(`Error during submission: ${error instanceof Error ? error.message : 'Unknown error'}`);
         loading = false;
       }
     } catch (error: unknown) {
       alert(`Error during submission: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      loading = false;
     }
   }
 </script>
@@ -242,10 +293,9 @@
   </div>
   
   <button
-    type="button"
+    type="submit"
     disabled={loading}
     class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-    on:click={handleSubmit}
   >
     {loading ? 'Registering...' : 'Register'}
   </button>
