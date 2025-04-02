@@ -11,7 +11,7 @@
   import { 
     addCardToWishlist, 
     isCardInWishlist, 
-    removeCardFromWishlistByIds 
+    removeCardFromWishlist 
   } from '$lib/services/wishlists';
   import type { UserCollection } from '$lib/types';
 
@@ -24,13 +24,13 @@
   let isLoading = false;
   
   async function checkStatus() {
-    if (!$authStore.user) return;
+    if (!$authStore.user || !$authStore.profile) return;
     
     isLoading = true;
     
     try {
       // Check if card is in collection
-      const { data: collectionData } = await getCardInCollection($authStore.user.id, cardId);
+      const { data: collectionData } = await getCardInCollection($authStore.profile.username, cardId);
       isInCollection = !!collectionData;
       collectionItem = collectionData;
       
@@ -39,7 +39,7 @@
       }
       
       // Check if card is in wishlist
-      const { exists } = await isCardInWishlist($authStore.user.id, cardId);
+      const { exists } = await isCardInWishlist($authStore.profile.username, cardId);
       isInWishlist = exists;
     } catch (error) {
       console.error('Error checking card status:', error);
@@ -49,18 +49,18 @@
   }
   
   async function toggleWishlist() {
-    if (!$authStore.user) return;
+    if (!$authStore.user || !$authStore.profile) return;
     
     isLoading = true;
     
     try {
       if (isInWishlist) {
         // Remove from wishlist
-        await removeCardFromWishlistByIds($authStore.user.id, cardId);
+        await removeCardFromWishlist($authStore.profile.username, cardId);
         isInWishlist = false;
       } else {
         // Add to wishlist
-        await addCardToWishlist($authStore.user.id, cardId);
+        await addCardToWishlist($authStore.profile.username, cardId);
         isInWishlist = true;
       }
     } catch (error) {
@@ -71,12 +71,12 @@
   }
   
   async function addToCollection() {
-    if (!$authStore.user) return;
+    if (!$authStore.user || !$authStore.profile) return;
     
     isLoading = true;
     
     try {
-      await addCardToCollection($authStore.user.id, cardId, 1);
+      await addCardToCollection($authStore.profile.username, cardId, 1);
       await checkStatus();
     } catch (error) {
       console.error('Error adding to collection:', error);
@@ -86,7 +86,7 @@
   }
   
   async function increaseQuantity() {
-    if (!collectionItem || !$authStore.user) return;
+    if (!collectionItem || !$authStore.user || !$authStore.profile) return;
     
     isLoading = true;
     
@@ -102,7 +102,7 @@
   }
   
   async function decreaseQuantity() {
-    if (!collectionItem || !$authStore.user || quantity <= 1) return;
+    if (!collectionItem || !$authStore.user || !$authStore.profile || quantity <= 1) return;
     
     isLoading = true;
     
@@ -118,12 +118,12 @@
   }
   
   async function removeFromCollection() {
-    if (!collectionItem || !$authStore.user) return;
+    if (!$authStore.user || !$authStore.profile) return;
     
     isLoading = true;
     
     try {
-      await removeCardFromCollection(collectionItem.id);
+      await removeCardFromCollection($authStore.profile.username, cardId);
       isInCollection = false;
       collectionItem = null;
       quantity = 1;
