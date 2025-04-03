@@ -1,0 +1,39 @@
+---
+description: Documentation on how to deal with data and states in the code.
+globs: 
+alwaysApply: false
+---
+# State Management
+
+State management in PokéStore primarily relies on Svelte's built-in mechanisms and potentially Svelte Stores for more complex, shared state.
+
+## Component State
+
+*   For state local to a single component, use standard Svelte reactivity with `let` variables.
+
+## Props Drilling
+
+*   Pass data down from parent to child components using props (`export let propName`).
+*   For events flowing up, use function props (`export let onEventName = () => {}`). Avoid `createEventDispatcher`.
+
+## Layout Data
+
+*   Data loaded in a `+layout.server.ts` or `+layout.ts` file is available to the layout component and all page components rendered within that layout.
+*   This is useful for data needed across multiple pages, like user authentication status or global settings.
+
+## Page Data
+
+*   Data loaded in a `+page.server.ts` or `+page.ts` file is passed directly to the corresponding `+page.svelte` component.
+
+## Svelte Stores (`src/lib/stores/`)
+
+*   For state that needs to be shared across different parts of the application that aren't directly related in the component tree (e.g., global user settings, theme, shopping cart-like state if applicable), use Svelte Stores.
+*   Define stores in the `src/lib/stores/` directory.
+*   Use `writable` stores for data that needs to be updated from multiple places.
+*   Use `readable` stores for data derived from other sources or fetched asynchronously.
+*   Use `derived` stores to create reactive values based on other stores.
+*   Access store values within components using the `$` auto-subscription syntax (e.g., `$myStore`).
+
+## Supabase Client
+
+*   The Supabase client (`src/lib/supabase.ts`) manages authentication state internally. You can use `supabase.auth.getSession()` and `supabase.auth.onAuthStateChange()` to react to login/logout events and get user information. 

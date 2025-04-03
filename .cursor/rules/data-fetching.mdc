@@ -1,0 +1,43 @@
+---
+description: Documentation for data fetching.
+globs: 
+alwaysApply: false
+---
+# Data Fetching & Backend
+
+This document describes how data is fetched and managed, primarily using Supabase and local assets.
+
+## Backend: Supabase
+
+*   **Client:** The Supabase JavaScript client is initialized in `src/lib/supabase.ts` and should be imported from there.
+*   **Authentication:** Supabase handles user authentication (login, signup, sessions).
+*   **Database:** User collections, wishlists, profiles, etc., are stored in the Supabase PostgreSQL database. Interact with it using the Supabase client's database methods (`supabase.from('table_name').select()`, `.insert()`, `.update()`, `.delete()`).
+*   **Schema:** The database schema is defined in `supabase-schema.sql` (initial) and potentially updated via `supabase-schema-update.sql`.
+
+## Static Data Assets (`src/assets/`)
+
+*   The data scraping process (`pnpm scrapers`) generates JSON files (e.g., `cards.json`, `sets.json`, `types.json`) stored in `src/assets/`.
+*   These files contain relatively static Pokémon TCG data.
+*   Helper functions (likely in `src/lib/helpers/data.ts` or similar) are used to read and potentially cache/process this data for use in the application (e.g., `getCards()`, `getSets()`).
+*   This data is often loaded server-side in `load` functions (`+page.server.ts`, `+layout.server.ts`) to populate dropdowns, provide base data for filtering, etc.
+
+## Server-Side Data Loading (`load` function)
+
+*   **Location:** Use `+page.server.ts` or `+layout.server.ts` files.
+*   **Purpose:** Fetch data needed to render a specific page or layout before it reaches the browser. Ideal for:
+    *   Fetching data using sensitive API keys (like the Supabase service key, if needed, though anon key is used by default).
+    *   Direct database access.
+    *   Reading local asset files.
+    *   Ensuring data is available for SEO and initial render.
+*   **Accessing Data:** Data returned from the `load` function is available in the `data` prop of the corresponding `.svelte` file.
+
+## Client-Side Data Fetching
+
+*   **When to Use:** For data that is user-specific and needs to be fetched *after* the initial load, or in response to user interactions (e.g., fetching a user's collection after login, submitting a form).
+*   **How:** Use the imported `supabase` client directly within Svelte component `<script>` blocks (often inside `onMount` or event handlers).
+
+## Image Handling
+
+*   Card images can be sourced directly from the Pokémon TCG API URLs (default) or from a custom CDN.
+*   If using a CDN, run the `pnpm scrapers download-images` command, upload the images, and set the `PUBLIC_CARD_CDN_URL` environment variable.
+*   The application constructs the final image URL based on this configuration. 

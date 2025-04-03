@@ -1,0 +1,45 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Code Standards
+
+This document outlines the coding standards and conventions to follow when contributing to the PokéStore project.
+
+## General
+
+*   **Language:** All code and comments must be written in English.
+*   **Indentation:** Use tabs for indentation.
+*   **Semicolons:** Always use semicolons at the end of statements.
+*   **Quotes:** Prefer single quotes (`'`) for strings. Use double quotes (`"`) only when the string itself contains a single quote.
+*   **Object Properties:** Quote all object property keys consistently (preferably without quotes if they are valid identifiers, but if quoting, quote all).
+*   **Parentheses:** Avoid unnecessary parentheses where possible (e.g., around single parameters in arrow functions).
+*   **File Size:** Aim to keep files, especially Svelte components, under 200 lines. Split larger components or logic into smaller, reusable pieces.
+*   **Sorting:** Sort properties, variables, and functions alphabetically within their scope where it enhances readability.
+
+## TypeScript / JavaScript
+
+*   **Typing:** Utilize TypeScript for strong typing. Define interfaces or types for complex objects (e.g., API responses, database models) in relevant `.d.ts` files or directly within modules.
+*   **Modules:** Use ES Modules (`import`/`export`).
+*   **Constants:** Define shared constants in `src/constants.ts`.
+*   **Features:** Use the latest language features available.
+
+## Svelte
+
+*   **Component Structure:**
+    *   Keep the `<script>` block first, followed by the HTML markup, and then the `<style>` block.
+    *   Use `lang="ts"` in script tags: `<script lang="ts">`.
+*   **Props:** Prefer using `export let propName = defaultValue;` for component props.
+*   **Events:** Avoid using `createEventDispatcher`. Instead, pass callback functions as props (e.g., `export let onEventName: (detail?: any) => void;`).
+*   **Styling:** Use Tailwind CSS classes for styling directly in the HTML markup. For component-specific complex styles, use a `<style>` block (potentially with `lang="postcss"`).
+*   **Class Directive:** Do not use `class:` with class names containing slashes (`/`). Use standard class attributes and conditional logic within the attribute value if necessary.
+*   **HTML Typing:** Do not use TypeScript syntax (like type assertions) directly within the HTML template part of Svelte components.
+
+## Package Management
+
+*   **Manager:** Always use `pnpm` for installing and managing dependencies.
+
+## Environment
+
+*   The primary development environment assumes Windows with PowerShell 7, although the code should be cross-platform compatible. 

@@ -1,0 +1,31 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Project Architecture
+
+This document outlines the high-level architecture of the PokéStore application.
+
+## Overview
+
+PokéStore is a web application built using the SvelteKit framework for the frontend and Supabase as the backend-as-a-service (BaaS). It leverages TypeScript for type safety and Tailwind CSS for styling.
+
+## Key Components
+
+*   **Frontend Framework:** SvelteKit handles routing, server-side rendering (SSR), and component management.
+*   **Backend:** Supabase provides database storage (PostgreSQL), user authentication, and real-time capabilities (though not explicitly seen in initial files, it's a common Supabase feature).
+*   **Database:** A PostgreSQL database managed by Supabase stores user data, collection details, wishlists, and potentially cached/scraped Pokémon TCG data. The initial schema is defined in `supabase-schema.sql`.
+*   **Styling:** Tailwind CSS is used for utility-first styling, configured in `tailwind.config.mjs` and applied globally via `src/app.css`.
+*   **Data Scraping:** A separate CLI tool (`scrapper-cli.ts` using `tsx`) is provided to fetch data from the Pokémon TCG API and PokéAPI, process it, and potentially store it locally (`src/assets/`) or in the Supabase database.
+
+## Data Flow
+
+1.  **Client Request:** User interacts with the SvelteKit frontend in their browser.
+2.  **SvelteKit Routing:** SvelteKit matches the URL to a route defined in `src/routes/`.
+3.  **Data Loading:**
+    *   `+page.server.ts` or `+layout.server.ts` files fetch necessary data for the page, potentially interacting with Supabase or local JSON files (`src/assets/`). Helper functions in `src/lib/helpers/` might abstract data fetching logic.
+    *   Data can also be fetched client-side within Svelte components (`<script>` blocks) using the Supabase client (`src/lib/supabase.ts`).
+4.  **Rendering:** SvelteKit renders the page, combining fetched data with Svelte components (`.svelte` files).
+5.  **API Interaction:** Client-side interactions (e.g., adding to collection) directly call Supabase functions or potentially custom API endpoints defined in `src/routes/api/`.
+6.  **Authentication:** Supabase handles user sign-up, login, and session management. The Supabase client makes user information available throughout the app. 

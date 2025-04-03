@@ -1,0 +1,45 @@
+---
+description: Documentation on dealing with routes/routing and how to create a new route.
+globs: 
+alwaysApply: false
+---
+# Routing
+
+PokéStore uses SvelteKit's file-system based router.
+
+## Structure
+
+*   All routes are defined within the `src/routes` directory.
+*   Each subdirectory corresponds to a URL path segment.
+*   Files named `+page.svelte` define the UI component for that route.
+*   Files named `+layout.svelte` define a layout component that wraps the page and potentially nested layouts.
+*   Files named `+page.server.ts` (or `+page.ts`) export a `load` function to fetch data for the corresponding page on the server (or both server/client for `+page.ts`).
+*   Files named `+layout.server.ts` (or `+layout.ts`) export a `load` function to fetch data for the corresponding layout, accessible by the layout and all child pages.
+*   Files named `+server.ts` define API endpoints.
+
+## Example
+
+```
+src/routes/
+├── +page.svelte        # Component for the homepage (/)
+├── +page.server.ts     # Data loading for the homepage
+├── +layout.svelte      # Root layout for all pages
+├── card/
+│   └── [id]/
+│       ├── +page.svelte    # Component for /card/[id]
+│       └── +page.server.ts # Data loading for /card/[id]
+└── collection/
+    ├── +page.svelte    # Component for /collection
+    └── +layout.server.ts # Data loading for /collection layout (e.g., user check)
+```
+
+## Key Files
+
+*   **`src/routes/+layout.svelte`:** The root layout component, likely containing the header, footer, and main content slot.
+*   **`src/routes/+page.server.ts`:** Loads initial data needed for the homepage/card browser (e.g., sets, types, initial card list).
+*   **Dynamic Routes (e.g., `src/routes/card/[id]/+page.server.ts`)**: Use the `params` argument in the `load` function to get the dynamic segment (e.g., `params.id`) and fetch specific data.
+
+## Data Loading
+
+*   Prefer using `+page.server.ts` or `+layout.server.ts` for data loading that requires sensitive keys or direct database access.
+*   Data returned from `load` functions is automatically passed as props to the corresponding `+page.svelte` or `+layout.svelte` component. 
