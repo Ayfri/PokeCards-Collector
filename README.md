@@ -335,5 +335,9 @@ This project is licensed under the GNU GPLv3 License - see the [LICENSE](LICENSE
     ·
     <a href="https://github.com/Ayfri/pokestore/issues">Request Feature</a>
   </p>
-  <p>Made with ❤️ by <a href="https://github.com/Ayfri">Ayfri</a></p>
+  <p>
+    Made with ❤️ by <a href="https://github.com/Ayfri">Ayfri</a>,
+    <a href="https://github.com/antaww">Anta</a>,
+    <a href="https://github.com/Bahsiik">Bahsiik</a>
+  </p>
 </div>
