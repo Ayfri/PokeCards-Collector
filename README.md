@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/Ayfri/pokestore/main/static/banner.png" alt="PokéStore Banner" width="800"/>
+  <img src="./static/pokestore.png" alt="PokéStore Logo" width="150"/>
 
   # PokéStore
 
