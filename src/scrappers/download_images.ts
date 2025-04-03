@@ -8,7 +8,8 @@ const BATCH_SIZE = 50;
 const DELAY_BETWEEN_BATCHES_MS = 1000; // 1 second delay (can be adjusted)
 const DOWNLOAD_HIGH_RES = true; // <<< Set to true to download high-resolution images
 const OPTIMIZE_EXISTING_ONLY = false; // <<< Set to true to only optimize existing local images
-const OUTPUT_DIR = path.join(process.cwd(), 'images'); // Output directory
+const OUTPUT_DIR = path.join(process.cwd(), 'static/images/cards'); // Output directory
+const LOW_RES_WIDTH = 30; // Width for the low-resolution placeholder images
 
 interface CardInfo {
 	imageUrl: string; // URL for the image (high or low res)
@@ -72,47 +73,68 @@ async function readCardMetadataFromJson(): Promise<CardInfo[]> {
 }
 
 /**
- * Optimizes an image buffer using Sharp and saves it to the specified path.
+ * Optimizes an image buffer using Sharp, saves standard and low-res WebP versions.
  * @param imageBuffer The image data buffer.
- * @param outputPath The path to save the optimized image.
- * @param filename The filename for logging purposes.
+ * @param baseOutputPath The base path for saving (directory + filename without extension).
+ * @param baseFilename The base filename without extension for logging purposes.
  */
-async function optimizeAndSaveImage(imageBuffer: Buffer, outputPath: string, filename: string): Promise<void> {
+async function optimizeAndSaveImage(imageBuffer: Buffer, baseOutputPath: string, baseFilename: string): Promise<void> {
+	const standardPath = `${baseOutputPath}.webp`;
+	const lowResPath = `${baseOutputPath}_lowres.webp`;
+
+	// Optimize and save standard resolution WebP
 	try {
 		await sharp(imageBuffer)
-			.png({
-				compressionLevel: 9,
-				adaptiveFiltering: true,
-				palette: true,
-				quality: DOWNLOAD_HIGH_RES ? 100 : 90,
+			.webp({
+				quality: DOWNLOAD_HIGH_RES ? 95 : 85, // Higher quality for high-res source
+				lossless: false,
 			})
-			.toFile(outputPath);
-		// console.log(`Optimized and saved: ${filename}`);
+			.toFile(standardPath);
+		// console.log(`Optimized and saved standard res: ${baseFilename}.webp`);
 	} catch (error) {
-		console.error(`Failed to optimize or save image ${filename}:`, error);
+		console.error(`Failed to optimize or save standard image ${baseFilename}.webp:`, error);
+	}
+
+	// Optimize and save low resolution WebP
+	try {
+		await sharp(imageBuffer)
+			.resize({ width: LOW_RES_WIDTH }) // Resize to low width, height is auto
+			.webp({
+				quality: 70, // Lower quality for placeholder
+				lossless: false,
+			})
+			.toFile(lowResPath);
+		// console.log(`Optimized and saved low res: ${baseFilename}_lowres.webp`);
+	} catch (error) {
+		console.error(`Failed to optimize or save low-res image ${baseFilename}_lowres.webp:`, error);
 	}
 }
 
 /**
  * Downloads and/or optimizes a batch of images.
- * If OPTIMIZE_EXISTING_ONLY is true, it only optimizes existing files.
- * Otherwise, it downloads missing files and optimizes them.
+ * If OPTIMIZE_EXISTING_ONLY is true, it only optimizes existing files (generating low-res if needed).
+ * Otherwise, it downloads missing files and optimizes them (standard + low-res WebP).
  * @param batch - Array of CardInfo objects (max BATCH_SIZE).
  */
 async function downloadOrOptimizeImageBatch(batch: CardInfo[]): Promise<void> {
 	const processPromises = batch.map(async (cardInfo) => {
-		// Generate filename (keeping your structure)
+		// Generate base filename and paths
 		const setName = cardInfo.imageUrl.split('/').at(-2);
-		const cardName = cardInfo.imageUrl.split('/').at(-1);
-		if (!setName || !cardName) {
+		const originalCardName = cardInfo.imageUrl.split('/').at(-1); // e.g., xy1-1_hires.png or sv5-1.png
+
+		if (!setName || !originalCardName) {
 			console.warn(`Skipping card due to missing set name or card name from URL: ${cardInfo.imageUrl} (Card Number: ${cardInfo.number})`);
 			return;
 		}
-		const filename = `${setName}/${cardName}`; // Keep the folder/file structure
-		const outputDirForSet = path.join(OUTPUT_DIR, setName);
-		const outputPath = path.join(outputDirForSet, cardName);
 
-		// Ensure the specific set directory exists (keeping your change)
+		// Remove original extension (.png or _hires.png) to get base name
+		const baseFilename = originalCardName.replace(/(_hires)?\.png$/, '');
+		const outputDirForSet = path.join(OUTPUT_DIR, setName);
+		const baseOutputPath = path.join(outputDirForSet, baseFilename); // Path without extension
+		const standardWebpPath = `${baseOutputPath}.webp`;
+		const lowResWebpPath = `${baseOutputPath}_lowres.webp`;
+
+		// Ensure the specific set directory exists
 		try {
 			await fs.mkdir(outputDirForSet, { recursive: true });
 		} catch (error) {
@@ -120,37 +142,69 @@ async function downloadOrOptimizeImageBatch(batch: CardInfo[]): Promise<void> {
 			return; // Skip card if directory creation fails
 		}
 
-		let imageBuffer: Buffer | null = null;
-		let fileExists = false;
+		let standardFileExists = false;
+		let lowResFileExists = false;
 
 		// --- Check File Existence ---
 		try {
-			await fs.access(outputPath);
-			fileExists = true;
-			// console.log(`Image found locally: ${filename}`);
-		} catch {
-			// File doesn't exist
-			if (OPTIMIZE_EXISTING_ONLY) {
-				console.warn(`Optimize only mode: Image not found locally, skipping: ${filename}`);
-				return; // Skip if in optimize-only mode and file is missing
-			}
-			// console.log(`Image not found locally, proceeding with download: ${filename}`);
-		}
+			await fs.access(standardWebpPath);
+			standardFileExists = true;
+		} catch { /* Standard file doesn't exist */ }
+		try {
+			await fs.access(lowResWebpPath);
+			lowResFileExists = true;
+		} catch { /* Low-res file doesn't exist */ }
 
 		// --- Processing Logic ---
-		if (fileExists && OPTIMIZE_EXISTING_ONLY) {
-			// Mode: Optimize existing only, and file exists
-			console.log(`Optimizing existing image: ${filename}`);
-			try {
-				imageBuffer = await fs.readFile(outputPath);
-				await optimizeAndSaveImage(imageBuffer, outputPath, filename); // Optimize the existing file
-			} catch (readError) {
-				console.error(`Failed to read existing file ${filename} for optimization:`, readError);
+		if (OPTIMIZE_EXISTING_ONLY) {
+			if (!standardFileExists) {
+				console.warn(`Optimize only mode: Standard image not found locally, skipping: ${baseFilename}.webp`);
+				return;
 			}
-		} else if (!fileExists && !OPTIMIZE_EXISTING_ONLY) {
-			// Mode: Download and optimize, and file does not exist
-			// --- Download Phase ---
+
+			// If standard exists, ensure low-res also exists
+			if (!lowResFileExists) {
+				console.log(`Optimizing existing image to create missing low-res: ${baseFilename}_lowres.webp`);
+				try {
+					const imageBuffer = await fs.readFile(standardWebpPath); // Read the existing standard webp
+					// Only generate low-res part
+					await sharp(imageBuffer)
+						.resize({ width: LOW_RES_WIDTH })
+						.webp({ quality: 70, lossless: false })
+						.toFile(lowResWebpPath);
+					// console.log(`Generated missing low res: ${baseFilename}_lowres.webp`);
+				} catch (readOrOptimizeError) {
+					console.error(`Failed to read ${standardWebpPath} or generate low-res version for ${baseFilename}:`, readOrOptimizeError);
+				}
+			} else {
+				// console.log(`Optimize only mode: Both standard and low-res exist, skipping: ${baseFilename}`);
+			}
+			return; // Finish processing for this card in optimize only mode
+
+		} else { // --- Download and Optimize Mode ---
+			if (standardFileExists) {
+				// If standard exists, assume low-res should also exist from previous run or will be handled if missing
+				// console.log(`Image already exists (standard WebP found), skipping download/optimization: ${baseFilename}.webp`);
+				// Optionally: Add check here to generate low-res if standard exists but low-res doesn't
+				if (!lowResFileExists) {
+					console.log(`Standard exists, but low-res missing. Generating low-res for: ${baseFilename}_lowres.webp`);
+					try {
+						const imageBuffer = await fs.readFile(standardWebpPath);
+						await sharp(imageBuffer)
+							.resize({ width: LOW_RES_WIDTH })
+							.webp({ quality: 70, lossless: false })
+							.toFile(lowResWebpPath);
+					} catch (error) {
+						console.error(`Failed to generate missing low-res ${baseFilename}_lowres.webp:`, error);
+					}
+				}
+				return;
+			}
+
+			// --- Download Phase (Standard file doesn't exist) ---
+			let imageBuffer: Buffer | null = null;
 			try {
+				// console.log(`Downloading: ${cardInfo.imageUrl}`);
 				const response = await fetch(cardInfo.imageUrl);
 				if (!response.ok) {
 					if (response.status === 404) {
@@ -169,14 +223,9 @@ async function downloadOrOptimizeImageBatch(batch: CardInfo[]): Promise<void> {
 
 			// --- Optimization Phase (after download) ---
 			if (imageBuffer) {
-				await optimizeAndSaveImage(imageBuffer, outputPath, filename);
+				await optimizeAndSaveImage(imageBuffer, baseOutputPath, baseFilename);
 			}
-		} else if (fileExists && !OPTIMIZE_EXISTING_ONLY) {
-			// Mode: Download and optimize, but file already exists - skip
-			// console.log(`Image already exists, skipping download/optimization: ${filename}`);
-			return;
 		}
-		// The case (!fileExists && OPTIMIZE_EXISTING_ONLY) is handled by the return inside the catch block.
 	});
 
 	// Wait for all operations in the batch to settle
