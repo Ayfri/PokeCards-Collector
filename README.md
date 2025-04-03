@@ -1,138 +1,164 @@
-# PokeStore
+# PokéStore
 
-PokeStore is a website that allows you to buy Pokemon cards. It is a school project.
-You can search for cards, add them to your cart and buy them.
+PokéStore is a web application built with SvelteKit and Supabase that allows you to browse and manage your Pokémon Trading Card Game (TCG) collection.
 
-## Installation
+## Features
 
-To install the project you need to follow multiple steps :
+*   **User Authentication:** Sign up and log in to manage your personal collection.
+*   **Card Browser:** Search and view Pokémon TCG cards.
+*   **Collection Management:** Keep track of the cards you own.
+*   **Wishlist:** Maintain a list of cards you want to acquire.
+*   **Profile & Settings:** Manage your user profile and application settings.
+*   **Data Scraping:** Built-in CLI tool to fetch the latest Pokémon TCG data.
 
-1. Clone the project
-2. Install the dependencies (`npm install`)
-3. Create a MariaDB database and import the `dump.sql` file.
-4. Create a `.env` file in the `api` folder of the project and fill it with the following variables :
-    - DATABASE_URL: The URL of your MariaDB database.
-    - POKEMON_TCG_API_KEY: The API key of the [Pokemon TCG API](https://pokemontcg.io/).
-5. Create a `.env` file in the root folder of the project and fill it with the following variables :
-    - API_URL: The URL of the API.
-    - API_KEY: The API key of the Google Maps API (you must activate the "Places API" on the key).
-    - PUBLIC_CARD_CDN_URL (optional): URL of the CDN for card images. If not provided, original API URLs will be used.
-6. Run `prisma generate` to generate the Prisma client.
-7. Run the api with `npm run api`.
-8. Run the client with `npm run dev`.
-9. Go to `http://localhost:4321/admin/load` and wait for the 'ok' to appear to load the JSON data into the database. This step can take a few dozen seconds.
-10. Go to `http://localhost:4322` and enjoy the project !
+## Tech Stack
 
-## Data Scrapers
+*   **Framework:** [SvelteKit](https://kit.svelte.dev/)
+*   **Language:** [TypeScript](https://www.typescriptlang.org/)
+*   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+*   **Database & Auth:** [Supabase](https://supabase.io/)
+*   **Icons:** [Lucide Icons](https://lucide.dev/)
+*   **Deployment:** [Cloudflare Pages/Workers](https://workers.cloudflare.com/) (via `@sveltejs/adapter-cloudflare`)
+*   **Scraper CLI:** [tsx](https://github.com/esbuild-kit/tsx), [@inquirer/prompts](https://github.com/SBoudrias/Inquirer.js/tree/master/packages/prompts)
+*   **Package Manager:** [pnpm](https://pnpm.io/)
 
-You can use the interactive CLI to scrape and update various Pokemon data:
+## Getting Started
+
+Follow these steps to set up the project locally:
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/Ayfri/PokeStore.git
+    cd PokeStore
+    ```
+
+2.  **Install dependencies:**
+    Make sure you have [pnpm](https://pnpm.io/installation) installed.
+    ```bash
+    pnpm install
+    ```
+
+3.  **Set up Supabase:**
+    *   Create a new project on [Supabase](https://supabase.io/).
+    *   In your Supabase project dashboard, go to the SQL Editor.
+    *   Copy the contents of `supabase-schema.sql` from this repository and run it to create the initial database tables.
+    *   (Optional) If needed, run the contents of `supabase-schema-update.sql` for subsequent updates.
+    *   Navigate to Project Settings > API.
+    *   Find your Project URL and `anon` public key.
+
+4.  **Set up Pokémon TCG API Key:**
+    *   Get an API key from the [Pokemon TCG API](https://pokemontcg.io/).
+
+5.  **Configure Environment Variables:**
+    *   Create a `.env` file in the root of the project by copying `.env.example`.
+    *   Fill in the required variables:
+        ```dotenv
+        # Supabase Configuration
+        VITE_SUPABASE_URL=YOUR_SUPABASE_PROJECT_URL
+        VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_PUBLIC_KEY
+
+        # Pokemon TCG API Key
+        POKEMON_TCG_API_KEY=YOUR_POKEMON_TCG_API_KEY
+
+        # CDN URL for card images (optional) without trailing slash
+        # If not provided, original API URLs will be used
+        # Format: https://your-cdn.com/path
+        PUBLIC_CARD_CDN_URL=
+        ```
+
+6.  **Run the development server:**
+    ```bash
+    pnpm dev
+    ```
+    The application should now be running on `http://localhost:5173` (or the next available port).
+
+## Data Scraping
+
+The project includes an interactive CLI tool to fetch and update various Pokémon TCG data required for the application.
+
+**Run the Scraper CLI:**
 
 ```bash
 pnpm scrapers
 ```
 
-This will present a menu where you can choose which scraper to run:
+This command will present a menu allowing you to choose which scraper to run. Available options include:
 
-- **all**: Run all scrapers sequentially
-- **cards**: Fetch all Pokémon cards from TCG API
-- **foil**: Generate foil URLs for holographic cards
-- **holo**: Extract holographic cards from cards dataset
-- **pokemons**: Fetch all Pokémon data from PokéAPI
-- **sets**: Fetch all card sets from TCG API
-- **types**: Extract all Pokémon types from cards dataset
+*   **`all`**: Run all data scrapers sequentially (pokemons, sets, cards, holo, foil, types). Does *not* download images.
+*   **`cards`**: Fetch all Pokémon cards from the TCG API.
+*   **`download-images`**: Download card images based on the fetched card data (requires `cards` to be run first). Images are typically saved to an `images/` directory (check `src/scrappers/download_images.ts` for specifics).
+*   **`foil`**: Generate foil mask URLs for holographic cards (requires `holo` data).
+*   **`holo`**: Extract holographic cards from the main card dataset (requires `cards` data).
+*   **`pokemons`**: Fetch base Pokémon data from PokéAPI.
+*   **`sets`**: Fetch all card set information from the TCG API.
+*   **`types`**: Extract unique Pokémon types from the card dataset (requires `cards` data).
 
-For best results, run the scrapers in the following order:
+**Recommended Scraper Order:**
 
-1. `pokemons` - Get basic Pokémon data
-2. `sets` - Get card sets data
-3. `cards` - Get all cards (requires Pokémon data)
-4. `holo` - Extract holographic cards (requires cards data)
-5. `foil` - Generate foil URLs (requires holo data)
-6. `types` - Extract types (requires cards data)
+For initial setup or a full data refresh, it's generally recommended to run the scrapers in an order that respects dependencies:
 
-The scraped data is saved to JSON files in the `src/assets/` directory.
+1.  `pokemons`
+2.  `types`
+3.  `sets`
+4.  `cards`
+5.  `holo`
+6.  `foil`
+7.  `download-images` (Optional, run if you need local images)
 
-### Downloading Card Images
+You can run `all` to execute steps 1-6 automatically.
 
-To download all the card images to a local `images` directory:
+### Using a Custom CDN for Images
 
-```bash
-pnpm download-images
+After running the `download-images` scraper, you will have local copies of the card images. If you host these images on your own CDN or file server:
+
+1.  Upload the contents of the `images` directory to your CDN.
+2.  Set the `PUBLIC_CARD_CDN_URL` environment variable in your `.env` file to the base URL of your hosted images.
+    Example: `PUBLIC_CARD_CDN_URL=https://cdn.example.com/pokemon-cards`
+3.  The application will automatically construct image URLs like `https://cdn.example.com/pokemon-cards/{setCode}/{cardId}.png`.
+
+## Scripts
+
+*   `pnpm dev`: Starts the development server.
+*   `pnpm build`: Builds the application for production (outputs to `.svelte-kit/cloudflare`).
+*   `pnpm preview`: Runs a local preview of the production build.
+*   `pnpm scrapers`: Runs the interactive data scraping CLI.
+
+## Project Structure
+
 ```
-
-This will:
-- Create an `images` directory if it doesn't exist
-- Organize images by set and Pokémon name
-- Download all card images from the data in `src/assets/cards-full.json`
-- Skip any images that have already been downloaded
-- Process downloads in batches to avoid overwhelming the server
-
-#### Using a Custom CDN
-
-After downloading the images, you can host them on your own CDN and set the `PUBLIC_CARD_CDN_URL` environment variable to use your CDN instead of the original API URLs.
-
-For example, if you host your images at `https://cdn.example.com/pokemon-cards`, set:
+.
+├── .svelte-kit/        # Build output and internal SvelteKit files
+├── node_modules/       # Project dependencies
+├── src/
+│   ├── assets/         # Static assets (e.g., scraped JSON data)
+│   ├── lib/            # Svelte components, utilities, Supabase client, etc.
+│   │   ├── components/ # Reusable Svelte components
+│   │   ├── helpers/    # Utility functions
+│   │   ├── services/   # Data fetching or business logic services
+│   │   ├── stores/     # Svelte stores
+│   │   └── supabase.ts # Supabase client initialization
+│   ├── routes/         # Application pages and API endpoints
+│   ├── scrappers/      # Data scraping scripts
+│   ├── styles/         # Global styles
+│   ├── app.css         # Main CSS file (often imports Tailwind)
+│   ├── app.d.ts        # Ambient TypeScript declarations for SvelteKit
+│   ├── app.html        # Main HTML template
+│   └── constants.ts    # Application constants
+├── static/             # Static files (favicon, etc.)
+├── .env                # Local environment variables (ignored by Git)
+├── .env.example        # Example environment variables
+├── .gitignore          # Git ignore rules
+├── package.json        # Project metadata and dependencies
+├── pnpm-lock.yaml      # PNPM lock file
+├── svelte.config.js    # SvelteKit configuration
+├── supabase-schema.sql # Initial Supabase database schema
+├── supabase-schema-update.sql # Database schema updates (if any)
+├── tailwind.config.mjs # Tailwind CSS configuration
+├── tsconfig.json       # TypeScript configuration
+├── scrapper-cli.ts     # Entry point for the data scraper CLI
+└── vite.config.ts      # Vite configuration
 ```
-PUBLIC_CARD_CDN_URL=https://cdn.example.com/pokemon-cards
-```
-
-The application will then automatically use your CDN for all card images using the format:
-```
-https://cdn.example.com/pokemon-cards/{setCode}/{cardId}.png
-```
-
-## Technologies
-
-This project uses the following technologies :
-
-- Astro.js for the client and the api
-- MariaDB for the database
-- Node.js for running the modules, Node 23 is required!
-- NPM for the dependencies
-- Typescript for the typing and the main code
-- Vite for the bundling
-
-## Dependencies
-
-This project uses the following dependencies :
-
-- `@astrojs/node` for the server-side rendering
-- `@prisma/client` for the database
-- `@types/google.maps` for the Google Maps API
-- `astro` for the client-side rendering
-- `pokemontcgsdk` for the Pokemon TCG API
-- `prisma` for managing the database
-
-## Project structure
-
-The project is structured as follows :
-
-```shell
-/api : The main folder of the api
-  /prisma : The prisma configuration
-  /resources : The scripts and JSON files used to load the database
-  /src : The source code of the api
-    /pages : The endpoints of the api
-/public : The public folder of the client
-/src : The source code of the client
-  /components : The components of the website
-  /fonts : The fonts of the website
-  /pages : The pages of the website
-  /srcappers : The files of the scrapers
-  /styles : The styles of the website
-  /utils : The utilities of the client
-```
-
-## Database
-
-The database is structured as follows :
-
-![Database schema](https://imgur.com/15X86Fv.png)
-
-## API
-
-The API structure can be found in the `/pokestore-spec.yaml` file.
 
 ## License
 
-This project is licensed under the GNU GPLv3 license. You can find the license in the `LICENSE` file.
+This project is licensed under the GNU GPLv3 License. See the `LICENSE` file for details.
