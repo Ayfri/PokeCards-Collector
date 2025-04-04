@@ -103,18 +103,6 @@
 					<span class="text-white">Error</span>
 				</div>
 			{:else if displayImageUrl}
-				{#if card.cardmarket?.url}
-					<a 
-						href={card.cardmarket.url} 
-						target="_blank" 
-						rel="noopener noreferrer" 
-						class="cardmarket-link absolute top-2 right-2 z-10 flex items-center justify-center bg-black bg-opacity-70 p-1.5 rounded-full border border-gold-400 hover:bg-opacity-90 transition-all duration-200"
-						on:click|stopPropagation
-						aria-label="View on Cardmarket"
-					>
-						<ExternalLink size={18} class="text-gold-400" />
-					</a>
-				{/if}
 				<img
 					alt={name.charAt(0).toUpperCase() + name.slice(1)}
 					class="rounded-lg h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px] transition-opacity duration-300 absolute top-0 left-0"
@@ -140,7 +128,21 @@
 				#{cardCode}/{set?.printedTotal}
 			</span>
 		</h2>
-		<h3 class="text-center">{price && price !== 100_000 ? `${price} $` : 'Priceless'}</h3>
+		<div class="flex items-center justify-center gap-2">
+			<h3 class="text-center">{price && price !== 100_000 ? `${price} $` : 'Priceless'}</h3>
+			{#if card.cardmarket?.url && card.cardmarket.url.trim() !== ''}
+				<a
+					href={card.cardmarket.url}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="text-gold-400 bg-black bg-opacity-60 p-1.5 rounded-full border border-gold-400 hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center"
+					on:click|stopPropagation
+					aria-label="View on Cardmarket"
+				>
+					<ExternalLink size={14} />
+				</a>
+			{/if}
+		</div>
 	</div>
 </a>
 
@@ -383,16 +385,5 @@
 		100% {
 			background-position: 468px 0
 		}
-	}
-
-	.cardmarket-link {
-		opacity: 0;
-		transform: scale(0.9);
-		transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-	}
-	
-	.card-pokestore:hover .cardmarket-link {
-		opacity: 1;
-		transform: scale(1);
 	}
 </style>

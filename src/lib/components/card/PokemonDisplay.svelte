@@ -198,16 +198,6 @@
 			>
 				<div class="card-aura {currentType}" id="card-aura"></div>
 				<div class="relative h-[34rem] w-[24rem] -z-10 max-lg:w-[75vw] max-lg:h-[112.5vw]">
-					<a 
-						href={card.cardmarket?.url || '#'} 
-						target="_blank" 
-						rel="noopener noreferrer" 
-						class="cardmarket-link absolute top-3 right-3 z-20 flex items-center justify-center bg-black bg-opacity-70 p-2 rounded-full border border-gold-400 hover:bg-opacity-90 transition-all duration-200 {!card.cardmarket?.url ? 'hidden' : ''}"
-						on:click|stopPropagation
-						aria-label="View on Cardmarket"
-					>
-						<ExternalLink size={20} class="text-gold-400" />
-					</a>
 					{#each cards as c}
 						{#if currentSet === c.set}
 							<img
@@ -224,6 +214,20 @@
 						{/if}
 					{/each}
 				</div>
+				{#if card.cardmarket?.url && card.cardmarket.url.trim() !== ''}
+					<div class="mt-2 flex justify-center">
+						<a 
+							href={card.cardmarket.url}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="flex items-center gap-1 px-3 py-1 bg-black bg-opacity-60 rounded-full border border-gold-400 text-gold-400 hover:bg-opacity-90 transition-all duration-200"
+							on:click|stopPropagation
+						>
+							<span>Voir sur CardMarket</span>
+							<ExternalLink size={16} />
+						</a>
+					</div>
+				{/if}
 			</div>
 		</div>
 
@@ -303,17 +307,6 @@
 	.center-card:hover {
 		border-radius: 0.5rem !important;
 		box-shadow: 0 0 30px -5px #ffffff70, 0 0 10px -2px #ffffff9e, 0 50px 20px 10px rgb(0, 0, 0);
-	}
-
-	.center-card:hover .cardmarket-link {
-		opacity: 1;
-		transform: scale(1);
-	}
-
-	.cardmarket-link {
-		opacity: 0;
-		transform: scale(0.9);
-		transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
 	}
 
 	#card-aura {
