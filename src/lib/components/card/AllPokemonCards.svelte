@@ -2,6 +2,7 @@
 	import { fade } from 'svelte/transition';
 	import type { FullCard } from '~/lib/types';
 	import { getCardImage } from '$helpers/card-images';
+	import { ExternalLink } from 'lucide-svelte';
 
 	export let cards: FullCard[];
 	export let currentPokemonId: number;
@@ -22,6 +23,18 @@
 				on:click={() => onCardSelect(card)}
 			>
 				<div class="card-container">
+					{#if 'cardmarket' in card && card.cardmarket && card.cardmarket.url}
+						<a 
+							href={card.cardmarket.url} 
+							target="_blank" 
+							rel="noopener noreferrer" 
+							class="cardmarket-link absolute top-2 right-2 z-10 flex items-center justify-center bg-black bg-opacity-70 p-1.5 rounded-full border border-gold-400 hover:bg-opacity-90 transition-all duration-200"
+							on:click|stopPropagation
+							aria-label="View on Cardmarket"
+						>
+							<ExternalLink size={15} class="text-gold-400" />
+						</a>
+					{/if}
 					<img
 						src={getCardImage(card.image)}
 						alt={card.pokemon.name}
@@ -125,6 +138,17 @@
 		font-size: 0.9rem;
 		font-weight: bold;
 		color: #f3d02c;
+	}
+
+	.cardmarket-link {
+		opacity: 0;
+		transform: scale(0.9);
+		transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+	}
+	
+	.card-item:hover .cardmarket-link {
+		opacity: 1;
+		transform: scale(1);
 	}
 
 	@media (max-width: 768px) {

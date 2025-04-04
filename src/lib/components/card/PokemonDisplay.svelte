@@ -3,15 +3,23 @@
 	import EvolutionChain from '@components/card/EvolutionChain.svelte';
 	import AllPokemonCards from '@components/card/AllPokemonCards.svelte';
 	import {fade} from 'svelte/transition';
-	import type {FullCard, Pokemon} from '~/lib/types';
+	import type {Card, FullCard, Pokemon} from '~/lib/types';
 	import { spriteCache } from '$stores/spriteCache';
 	import { pascalCase } from '$helpers/strings';
 	import { getCardImageForPokemon } from '$helpers/card-images';
+	import { ExternalLink } from 'lucide-svelte';
 
 	export let pokemons: Pokemon[];
 	export let cards: FullCard[];
 	export let sprites: Record<number, string>;
 	let card: FullCard = cards[0];
+
+	// Helper function to safely get cardmarket URL
+	function getCardmarketUrl(cardObj: FullCard): string | null {
+		return cardObj && 'cardmarket' in cardObj && cardObj.cardmarket && 'url' in cardObj.cardmarket 
+			? cardObj.cardmarket.url 
+			: null;
+	}
 
 	$: allSets = cards.map(card => card.set);
 
@@ -24,6 +32,7 @@
 	$: currentSet = allSets[0];
 	$: currentType = card.types.toLowerCase().split(',')[0];
 	$: card = cards.find(card => card.set_name === currentSet.name) ?? cards[0];
+	$: cardmarketUrl = getCardmarketUrl(card);
 
 	let cursorX = 0;
 	let cursorY = 0;
@@ -128,13 +137,10 @@
 	}
 
 	function handleCardSelect(selectedCard: FullCard) {
-		card = selectedCard;
-		currentSet = selectedCard.set;
-		// Smooth scroll to top
-		window.scrollTo({
-			top: 0,
-			behavior: 'smooth'
-		});
+		const selectedSet = allSets.find(set => set.name === selectedCard.set_name);
+		if (selectedSet) {
+			currentSet = selectedSet;
+		}
 	}
 </script>
 
@@ -192,6 +198,16 @@
 			>
 				<div class="card-aura {currentType}" id="card-aura"></div>
 				<div class="relative h-[34rem] w-[24rem] -z-10 max-lg:w-[75vw] max-lg:h-[112.5vw]">
+					<a 
+						href={card.cardmarket?.url || '#'} 
+						target="_blank" 
+						rel="noopener noreferrer" 
+						class="cardmarket-link absolute top-3 right-3 z-20 flex items-center justify-center bg-black bg-opacity-70 p-2 rounded-full border border-gold-400 hover:bg-opacity-90 transition-all duration-200 {!card.cardmarket?.url ? 'hidden' : ''}"
+						on:click|stopPropagation
+						aria-label="View on Cardmarket"
+					>
+						<ExternalLink size={20} class="text-gold-400" />
+					</a>
 					{#each cards as c}
 						{#if currentSet === c.set}
 							<img
@@ -287,6 +303,17 @@
 	.center-card:hover {
 		border-radius: 0.5rem !important;
 		box-shadow: 0 0 30px -5px #ffffff70, 0 0 10px -2px #ffffff9e, 0 50px 20px 10px rgb(0, 0, 0);
+	}
+
+	.center-card:hover .cardmarket-link {
+		opacity: 1;
+		transform: scale(1);
+	}
+
+	.cardmarket-link {
+		opacity: 0;
+		transform: scale(0.9);
+		transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
 	}
 
 	#card-aura {
