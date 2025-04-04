@@ -3,6 +3,7 @@
 	import type {FullCard, Set} from '~/lib/types';
 	import { ArrowUpDown } from 'lucide-svelte';
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 
 	export let cards: FullCard[];
 	export let sets: Set[];
@@ -12,6 +13,12 @@
 	let searchName = '';
 	let searchNumero = '';
 	let debounceTimeout: number;
+
+	// Initialiser les valeurs de recherche à partir des stores lors du chargement du composant
+	onMount(() => {
+		searchName = $filterName;
+		searchNumero = $filterNumero;
+	});
 
 	function debounce(fn: Function, delay: number) {
 		return (...args: any[]) => {
@@ -31,8 +38,6 @@
 	}, 300);
 
 	function resetFilters() {
-		searchNumero = '';
-		searchName = '';
 		$filterNumero = '';
 		$filterName = '';
 		$filterSet = 'all';
@@ -41,6 +46,10 @@
 		$filterSupertype = 'all';
 		$displayAll = true;
 		$mostExpensiveOnly = false;
+		
+		// Mettre à jour les variables locales pour qu'elles soient synchronisées avec les stores
+		searchNumero = '';
+		searchName = '';
 	}
 
 	function toggleMostExpensiveOnly() {
