@@ -76,6 +76,11 @@ export async function getRarities(): Promise<string[]> {
 	return [...new Set(cards.map(card => card.rarity).filter(rarity => rarity))];
 }
 
+export async function getArtists(): Promise<string[]> {
+	const cards = await getCards();
+	return [...new Set(cards.map(card => card.artist).filter((artist): artist is string => artist !== undefined))].sort();
+}
+
 export async function getHoloFoilsCards(): Promise<Card[]> {
 	return holoCards as Card[];
 }

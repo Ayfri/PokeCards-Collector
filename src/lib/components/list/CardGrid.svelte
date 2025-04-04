@@ -1,6 +1,6 @@
 <script lang="ts">
 	import "~/styles/colors.css";
-	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, isVisible, mostExpensiveOnly, sortBy, sortOrder} from '$helpers/filters';
+	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder} from '$helpers/filters';
 	import {getRarityLevel} from '$helpers/rarity';
 	import CardComponent from '@components/list/Card.svelte';
 	import Filters from '@components/list/Filters.svelte';
@@ -13,6 +13,7 @@
 	export let sets: Set[];
 	export let rarities: string[];
 	export let types: string[];
+	export let artists: string[] = [];
 
 	let clientWidth: number = 0;
 
@@ -76,6 +77,10 @@
 				const aLevel = getRarityLevel(a.rarity);
 				const bLevel = getRarityLevel(b.rarity);
 				return $sortOrder === 'asc' ? aLevel - bLevel : bLevel - aLevel;
+			} else if ($sortBy === 'sort-artist') {
+				const aArtist = a.artist || '';
+				const bArtist = b.artist || '';
+				return $sortOrder === 'asc' ? aArtist.localeCompare(bArtist) : bArtist.localeCompare(aArtist);
 			}
 
 			return $sortOrder === 'asc' ? aNumero - bNumero : bNumero - aNumero;
@@ -83,7 +88,7 @@
 	}
 
 	let filteredCards = displayedCards;
-	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $displayAll || $sortBy || $sortOrder || $mostExpensiveOnly) {
+	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $filterArtist || $displayAll || $sortBy || $sortOrder || $mostExpensiveOnly) {
 		filteredCards = displayedCards.filter(isVisible);
 	}
 </script>
@@ -94,7 +99,7 @@
 	<div class="flex max-lg:flex-col justify-between mx-28 max-lg:m-0 pb-4 lg:pb-5 items-center relative">
 		<PageTitle title="Card List"/>
 		<div class="flex flex-col max-lg:flex-row items-end gap-3 leading-normal max-lg:-mt-1.5">
-			<Filters cards={filteredCards} {rarities} {sets} {types}/>
+			<Filters cards={filteredCards} {rarities} {sets} {types} {artists}/>
 		</div>
 		<ScrollProgress />
 	</div>

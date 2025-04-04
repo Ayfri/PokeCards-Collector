@@ -11,6 +11,7 @@ export interface Card {
 	set?: Set;
 	types: string;
 	supertype?: string;
+	artist?: string;
 	cardmarket?: {
 		url: string;
 		updatedAt: string;

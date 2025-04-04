@@ -1,4 +1,4 @@
-import { getCards, getRarities, getSets, getTypes } from '$helpers/data';
+import { getCards, getRarities, getSets, getTypes, getArtists } from '$helpers/data';
 
 export async function load() {
 	let cards = await getCards();
@@ -32,12 +32,14 @@ export async function load() {
 	const sets = await getSets();
 	const rarities = await getRarities();
 	const types = await getTypes();
+	const artists = await getArtists();
 
 	return {
 		cards,
 		sets,
 		rarities,
 		types,
+		artists,
 		title: 'PokéStore',
 		description:
 			'Browse, search, and filter through a comprehensive list of Pokémon TCG cards. Find cards by set, rarity, type, and more."',

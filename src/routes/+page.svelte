@@ -7,10 +7,11 @@
 	const sets: Set[] = page.data.sets;
 	const rarities: string[] = page.data.rarities;
 	const types: string[] = page.data.types;
+	const artists: string[] = page.data.artists;
 </script>
 
 <main class="max-lg:px-0 text-white text-lg flex flex-col flex-1">
-	<CardGrid {cards} {sets} {rarities} {types} />
+	<CardGrid {cards} {sets} {rarities} {types} {artists} />
 </main>
 
 <style>

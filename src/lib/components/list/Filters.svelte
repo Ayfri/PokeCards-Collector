@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, isVisible, mostExpensiveOnly, sortBy, sortOrder} from '$helpers/filters';
+	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder} from '$helpers/filters';
 	import type {FullCard, Set} from '~/lib/types';
 	import { ArrowUpDown } from 'lucide-svelte';
 	import { page } from '$app/state';
@@ -9,6 +9,7 @@
 	export let sets: Set[];
 	export let rarities: string[];
 	export let types: string[];
+	export let artists: string[] = [];
 
 	let searchName = '';
 	let searchNumero = '';
@@ -44,6 +45,7 @@
 		$filterType = 'all';
 		$filterRarity = 'all';
 		$filterSupertype = 'all';
+		$filterArtist = 'all';
 		$displayAll = true;
 		$mostExpensiveOnly = false;
 		
@@ -65,7 +67,7 @@
 	// Mettre à jour les compteurs quand les cartes ou les filtres changent
 	$: {
 		// Cette instruction garantit que ce bloc se déclenchera quand n'importe quel filtre change
-		const _ = [$filterName, $filterNumero, $filterRarity, $filterSet, $filterType, $filterSupertype, $displayAll, $sortBy, $sortOrder, $mostExpensiveOnly];
+		const _ = [$filterName, $filterNumero, $filterRarity, $filterSet, $filterType, $filterSupertype, $filterArtist, $displayAll, $sortBy, $sortOrder, $mostExpensiveOnly];
 		
 		if (cards) {
 			const visibleCards = cards.filter(isVisible);
@@ -123,6 +125,7 @@
 		<option value="sort-name">Sort by name</option>
 		<option value="sort-id">Sort by id</option>
 		<option value="sort-rarity">Sort by rarity</option>
+		<option value="sort-artist">Sort by illustrator</option>
 	</select>
 
 	<select bind:value={$filterSupertype} class="filter" id="supertype" name="supertype">
@@ -150,6 +153,13 @@
 		<option selected value="all">All rarities</option>
 		{#each rarities as rarity}
 			<option value={rarity.toLowerCase()}>{rarity}</option>
+		{/each}
+	</select>
+
+	<select bind:value={$filterArtist} class="filter" id="artist" name="artist">
+		<option selected value="all">All illustrators</option>
+		{#each artists as artist}
+			<option value={artist.toLowerCase()}>{artist}</option>
 		{/each}
 	</select>
 </div>
