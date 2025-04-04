@@ -214,26 +214,6 @@
 						{/if}
 					{/each}
 				</div>
-				{#if card.cardmarket?.url && card.cardmarket.url.trim() !== ''}
-					<div class="mt-2 flex justify-center">
-						<a 
-							href={card.cardmarket.url}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="text-gold-400 font-bold underline hover:text-gold-300 transition-colors duration-200 text-lg flex items-center"
-							on:click|stopPropagation
-						>
-							<div class="flex items-center justify-center whitespace-nowrap">
-								<span class="text-white font-normal">{card.price && card.price !== 100_000 ? `${card.price} $` : 'Priceless'}</span>
-								<span class="mx-2">-</span>
-								<span class="flex items-center">
-									Cardmarket
-									<ExternalLink size={16} class="ml-1" />
-								</span>
-							</div>
-						</a>
-					</div>
-				{/if}
 			</div>
 		</div>
 

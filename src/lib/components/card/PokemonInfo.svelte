@@ -1,6 +1,7 @@
 <script lang="ts">
 	import PageTitle from '@components/PageTitle.svelte';
 	import type {FullCard} from '~/lib/types';
+	import { ExternalLink } from 'lucide-svelte';
 
 	export let card: FullCard;
 
@@ -28,6 +29,13 @@
 		>
 			{card.price ? `${card.price} $` : 'Priceless'}
 		</p>
+		<!-- Cardmarket Link -->
+		{#if card.cardmarket?.url && card.cardmarket.url.trim() !== ''}
+			<a href={card.cardmarket.url} target="_blank" rel="noopener noreferrer" class="text-gold-400 font-bold underline hover:text-gold-300 transition-colors duration-200 text-2xl flex items-center">
+				Cardmarket
+				<ExternalLink size={20} class="ml-1" />
+			</a>
+		{/if}
 
 		<p class="text-center mt-2">{card.pokemon.description}</p>
 	</div>
