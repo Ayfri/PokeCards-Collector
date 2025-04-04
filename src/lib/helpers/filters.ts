@@ -35,6 +35,7 @@ export const filterSet = persistentStore('filter-set', 'all');
 export const filterType = persistentStore('filter-type', 'all');
 export const filterRarity = persistentStore('filter-rarity', 'all');
 export const filterSupertype = persistentStore('filter-supertype', 'all');
+export const mostExpensiveOnly = persistentStore('most-expensive-only', false);
 
 export const displayAll = persistentStore('display-all', true);
 

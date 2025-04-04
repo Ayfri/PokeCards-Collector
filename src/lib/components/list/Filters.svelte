@@ -1,5 +1,5 @@
 <script lang="ts">
-	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, isVisible, sortBy, sortOrder} from '$helpers/filters';
+	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, isVisible, mostExpensiveOnly, sortBy, sortOrder} from '$helpers/filters';
 	import type {FullCard, Set} from '~/lib/types';
 	import { ArrowUpDown } from 'lucide-svelte';
 	import { page } from '$app/state';
@@ -40,6 +40,11 @@
 		$filterRarity = 'all';
 		$filterSupertype = 'all';
 		$displayAll = true;
+		$mostExpensiveOnly = false;
+	}
+
+	function toggleMostExpensiveOnly() {
+		$mostExpensiveOnly = !$mostExpensiveOnly;
 	}
 
 	let visibleCardsCount = 0;
@@ -51,7 +56,7 @@
 	// Mettre à jour les compteurs quand les cartes ou les filtres changent
 	$: {
 		// Cette instruction garantit que ce bloc se déclenchera quand n'importe quel filtre change
-		const _ = [$filterName, $filterNumero, $filterRarity, $filterSet, $filterType, $filterSupertype, $displayAll, $sortBy, $sortOrder];
+		const _ = [$filterName, $filterNumero, $filterRarity, $filterSet, $filterType, $filterSupertype, $displayAll, $sortBy, $sortOrder, $mostExpensiveOnly];
 		
 		if (cards) {
 			const visibleCards = cards.filter(isVisible);
@@ -73,6 +78,9 @@
 		<ArrowUpDown class={$sortOrder === 'asc' ? 'rotate-180' : ''} size={16} />
 	</button>
 	<button class="reset-btn" on:click={resetFilters}>Reset filters</button>
+	<button class="filter-btn {$mostExpensiveOnly ? 'active' : ''}" on:click={toggleMostExpensiveOnly}>
+		Expensive Only
+	</button>
 	<input
 		bind:value={searchNumero}
 		on:input={(e) => debouncedSetFilterNumero(e.currentTarget.value)}
@@ -109,7 +117,7 @@
 	</select>
 
 	<select bind:value={$filterSupertype} class="filter" id="supertype" name="supertype">
-		<option selected value="all">All card supertypes</option>
+		<option selected value="all">All supertypes</option>
 		<option value="pokémon">Pokémon</option>
 		<option value="trainer">Trainer</option>
 		<option value="energy">Energy</option>
@@ -172,7 +180,7 @@
 		outline: none;
 	}
 
-	.reset-btn, .sort-order-btn {
+	.reset-btn, .sort-order-btn, .filter-btn {
 		background-color: transparent;
 		background-image: linear-gradient(to right, #FFF, #FFF);
 		background-position: 0 100%;
@@ -189,15 +197,20 @@
 		width: 10rem;
 	}
 
+	.filter-btn.active {
+		background-size: 100% 100%;
+		color: #000;
+	}
+
 	@media (max-width: 1024px) {
-		input, select, .reset-btn, .sort-order-btn {
+		input, select, .reset-btn, .sort-order-btn, .filter-btn {
 			border-width: 2px;
 			font-size: 0.8rem;
 		}
 	}
 
 	@media (max-width: 420px) {
-		input, select, .reset-btn, .sort-order-btn {
+		input, select, .reset-btn, .sort-order-btn, .filter-btn {
 			font-size: 0.7rem;
 			height: 0.8rem;
 			line-height: 0;
@@ -206,7 +219,7 @@
 		}
 	}
 
-	.reset-btn:hover, .sort-order-btn:hover {
+	.reset-btn:hover, .sort-order-btn:hover, .filter-btn:hover {
 		background-size: 100% 100%;
 		color: #000;
 		cursor: pointer;

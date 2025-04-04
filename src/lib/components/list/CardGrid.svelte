@@ -1,6 +1,6 @@
 <script lang="ts">
 	import "~/styles/colors.css";
-	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, isVisible, sortBy, sortOrder} from '$helpers/filters';
+	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, isVisible, mostExpensiveOnly, sortBy, sortOrder} from '$helpers/filters';
 	import {getRarityLevel} from '$helpers/rarity';
 	import CardComponent from '@components/list/Card.svelte';
 	import Filters from '@components/list/Filters.svelte';
@@ -17,12 +17,46 @@
 	let clientWidth: number = 0;
 
 	let displayedCards = cards;
-	$: displayedCards =
-		$displayAll ? cards : cards.filter((card, index, self) => 
-			card.supertype === 'Pokémon' && 
-			card.pokemon && 
-			self.findIndex(c => c.pokemon.id === card.pokemon.id) === index
-		);
+	$: {
+		if ($mostExpensiveOnly) {
+			// Group cards by appropriate ID based on supertype
+			const cardGroups = new Map<string, FullCard>();
+			
+			cards.forEach(card => {
+				let groupKey = '';
+				
+				// Use different keys based on supertype
+				if (card.supertype === 'Pokémon' && card.pokemon) {
+					// For Pokémon cards, group by Pokémon ID
+					groupKey = `pokemon_${card.pokemon.id}`;
+				} else if (card.supertype === 'Trainer') {
+					// For Trainer cards, group by name to keep different trainers separate
+					groupKey = `trainer_${card.name.toLowerCase()}`;
+				} else if (card.supertype === 'Energy') {
+					// For Energy cards, group by name to keep different energies separate
+					groupKey = `energy_${card.name.toLowerCase()}`;
+				} else {
+					// Fallback for any other types
+					groupKey = `other_${card.name.toLowerCase() || card.id}`;
+				}
+				
+				const existingCard = cardGroups.get(groupKey);
+				
+				// Only keep the most expensive card in each group
+				if (!existingCard || (card.price ?? 0) > (existingCard.price ?? 0)) {
+					cardGroups.set(groupKey, card);
+				}
+			});
+			
+			displayedCards = Array.from(cardGroups.values());
+		} else {
+			displayedCards = $displayAll ? cards : cards.filter((card, index, self) => 
+				card.supertype === 'Pokémon' && 
+				card.pokemon && 
+				self.findIndex(c => c.pokemon.id === card.pokemon.id) === index
+			);
+		}
+	}
 
 	$: if ($sortOrder || $sortBy) {
 		displayedCards = displayedCards.sort((a, b) => {
@@ -49,7 +83,7 @@
 	}
 
 	let filteredCards = displayedCards;
-	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $displayAll || $sortBy || $sortOrder) {
+	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $displayAll || $sortBy || $sortOrder || $mostExpensiveOnly) {
 		filteredCards = displayedCards.filter(isVisible);
 	}
 </script>
