@@ -16,15 +16,55 @@ export async function getCards(): Promise<FullCard[]> {
 	const cardData = pokemonCards as Card[];
 	return cardData.map(card => {
 		card.rarity ??= 'Unknown';
-		card.pokemon = pokemons.find(pokemon => pokemon.id === parseInt(card.numero))!;
-		card.set = sets.find(set => set.name === card.set_name)!;
+		
+		// Try to find associated pokemon if there's a valid numero
+		if (card.numero && card.numero !== '-') {
+			try {
+				const pokemonId = parseInt(card.numero);
+				if (!isNaN(pokemonId)) {
+					card.pokemon = pokemons.find(pokemon => pokemon.id === pokemonId);
+				}
+			} catch (e) {
+				// If parsing fails, it's likely not a Pokémon card
+			}
+		}
+		
+		card.set = sets.find(set => set.name === card.set_name);
+		
+		// Ensure supertype is correctly defined
+		card.supertype ??= card.pokemon ? 'Pokémon' : 'Trainer'; // Default to Trainer if not specified
+		
+		// Create a dummy Pokemon object for non-Pokémon cards
+		// This allows the FullCard type to work for all card types
+		if (!card.pokemon) {
+			card.pokemon = {
+				id: 0,
+				name: card.name,
+				description: ''
+			};
+		}
+		
+		// Ensure set is defined
+		if (!card.set) {
+			card.set = {
+				name: card.set_name,
+				logo: '',
+				printedTotal: 0,
+				ptcgoCode: ''
+			};
+		}
 
-		return card as FullCard;
-	}).filter(card => card.pokemon);
+		// The as FullCard assertion ensures TypeScript knows all required fields are present
+		return {
+			...card,
+			pokemon: card.pokemon,
+			set: card.set
+		} as FullCard;
+	});
 }
 
 export async function getSets(): Promise<Set[]> {
-	return pokemonSets;
+	return pokemonSets as Set[];
 }
 
 export async function getTypes(): Promise<string[]> {
@@ -37,5 +77,5 @@ export async function getRarities(): Promise<string[]> {
 }
 
 export async function getHoloFoilsCards(): Promise<Card[]> {
-	return holoCards;
+	return holoCards as Card[];
 }

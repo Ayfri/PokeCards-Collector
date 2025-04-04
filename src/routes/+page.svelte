@@ -1,5 +1,5 @@
 <script lang="ts">
-	import CardGrid from '@components/list/CardGrid.svelte';
+	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { FullCard, Set } from '~/lib/types';
 	import { page } from '$app/state';
 

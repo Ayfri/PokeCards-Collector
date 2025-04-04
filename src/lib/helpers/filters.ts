@@ -34,6 +34,7 @@ export const filterName = persistentStore('filter-name', '');
 export const filterSet = persistentStore('filter-set', 'all');
 export const filterType = persistentStore('filter-type', 'all');
 export const filterRarity = persistentStore('filter-rarity', 'all');
+export const filterSupertype = persistentStore('filter-supertype', 'all');
 
 export const displayAll = persistentStore('display-all', true);
 
@@ -43,12 +44,14 @@ export function isVisible(card: FullCard) {
 	const set = get(filterSet).toLowerCase();
 	const type = get(filterType).toLowerCase();
 	const rarity = get(filterRarity).toLowerCase();
+	const supertype = get(filterSupertype).toLowerCase();
 
 	return (
 		(card.numero.includes(numero) || card.pokemon.name.toLowerCase().includes(numero)) &&
 		(card.pokemon.name.toLowerCase().includes(name) || card.numero.includes(name)) &&
 		(set === 'all' || card.set_name.toLowerCase() === set) &&
 		(type === 'all' || card.types.toLowerCase().includes(type)) &&
-		(rarity === 'all' || card.rarity.toLowerCase() === rarity)
+		(rarity === 'all' || card.rarity.toLowerCase() === rarity) &&
+		(supertype === 'all' || (card.supertype && card.supertype.toLowerCase() === supertype))
 	);
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import "~/styles/colors.css";
-	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterType, isVisible, sortBy, sortOrder} from '$helpers/filters';
+	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, isVisible, sortBy, sortOrder} from '$helpers/filters';
 	import {getRarityLevel} from '$helpers/rarity';
 	import CardComponent from '@components/list/Card.svelte';
 	import Filters from '@components/list/Filters.svelte';
@@ -18,7 +18,11 @@
 
 	let displayedCards = cards;
 	$: displayedCards =
-		$displayAll ? cards : cards.filter((card, index, self) => card.pokemon && self.findIndex(c => c.pokemon.id === card.pokemon.id) === index);
+		$displayAll ? cards : cards.filter((card, index, self) => 
+			card.supertype === 'Pokémon' && 
+			card.pokemon && 
+			self.findIndex(c => c.pokemon.id === card.pokemon.id) === index
+		);
 
 	$: if ($sortOrder || $sortBy) {
 		displayedCards = displayedCards.sort((a, b) => {
@@ -45,7 +49,7 @@
 	}
 
 	let filteredCards = displayedCards;
-	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $displayAll || $sortBy || $sortOrder) {
+	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $displayAll || $sortBy || $sortOrder) {
 		filteredCards = displayedCards.filter(isVisible);
 	}
 </script>
@@ -56,7 +60,7 @@
 	<div class="flex max-lg:flex-col justify-between mx-28 max-lg:m-0 pb-4 lg:pb-5 items-center relative">
 		<PageTitle title="Card List"/>
 		<div class="flex flex-col max-lg:flex-row items-end gap-3 leading-normal max-lg:-mt-1.5">
-			<Filters cards={displayedCards} {rarities} {sets} {types}/>
+			<Filters cards={filteredCards} {rarities} {sets} {types}/>
 		</div>
 		<ScrollProgress />
 	</div>

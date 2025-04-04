@@ -1,7 +1,8 @@
 <script lang="ts">
-	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterType, isVisible, sortBy, sortOrder} from '$helpers/filters';
+	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, isVisible, sortBy, sortOrder} from '$helpers/filters';
 	import type {FullCard, Set} from '~/lib/types';
 	import { ArrowUpDown } from 'lucide-svelte';
+	import { page } from '$app/state';
 
 	export let cards: FullCard[];
 	export let sets: Set[];
@@ -37,17 +38,34 @@
 		$filterSet = 'all';
 		$filterType = 'all';
 		$filterRarity = 'all';
+		$filterSupertype = 'all';
 		$displayAll = true;
 	}
 
 	let visibleCardsCount = 0;
 	let uniquePokemonCount = 0;
-	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $displayAll) {
-		const visibleCards = cards.filter(isVisible);
-		visibleCardsCount = visibleCards.length;
-		uniquePokemonCount = new Set(visibleCards.map(card => card.numero)).size;
+	let pokemonCardsCount = 0;
+	let trainerCardsCount = 0;
+	let energyCardsCount = 0;
+
+	// Mettre à jour les compteurs quand les cartes ou les filtres changent
+	$: {
+		// Cette instruction garantit que ce bloc se déclenchera quand n'importe quel filtre change
+		const _ = [$filterName, $filterNumero, $filterRarity, $filterSet, $filterType, $filterSupertype, $displayAll, $sortBy, $sortOrder];
+		
+		if (cards) {
+			const visibleCards = cards.filter(isVisible);
+			visibleCardsCount = visibleCards.length;
+			uniquePokemonCount = new Set(visibleCards.filter(card => card.supertype === 'Pokémon').map(card => card.numero)).size;
+			
+			// Count by supertype
+			pokemonCardsCount = visibleCards.filter(card => card.supertype === 'Pokémon').length;
+			trainerCardsCount = visibleCards.filter(card => card.supertype === 'Trainer').length;
+			energyCardsCount = visibleCards.filter(card => card.supertype === 'Energy').length;
+		}
 	}
 
+	const stats = page.data.stats;
 </script>
 
 <div class="flex items-center gap-4 max-lg:flex-col max-lg:gap-1.5">
@@ -79,6 +97,7 @@
 	<div class="flex flex-col">
 		<div class="text-gold-400 text-[1rem] font-semibold lg:mr-2 max-lg:-mb-2 max-sm:text-sm">Pokémon: <span>{uniquePokemonCount}</span></div>
 		<div class="text-gold-400 text-[1rem] font-semibold lg:mr-2 max-lg:-mb-2 max-sm:text-sm">Cards: <span>{visibleCardsCount}</span></div>
+		<div class="text-gold-400 text-[0.8rem] font-semibold lg:mr-2 max-lg:-mb-2 max-sm:text-sm">(Pokémon: {pokemonCardsCount}, Trainer: {trainerCardsCount}, Energy: {energyCardsCount})</div>
 	</div>
 
 	<select bind:value={$sortBy} class="filter" id="sort" name="sort">
@@ -89,6 +108,13 @@
 		<option value="sort-rarity">Sort by rarity</option>
 	</select>
 
+	<select bind:value={$filterSupertype} class="filter" id="supertype" name="supertype">
+		<option selected value="all">All card types</option>
+		<option value="pokémon">Pokémon</option>
+		<option value="trainer">Trainer</option>
+		<option value="energy">Energy</option>
+	</select>
+	
 	<select bind:value={$filterSet} class="filter" id="set" name="set">
 		<option selected value="all">All sets</option>
 		{#each sets as set}

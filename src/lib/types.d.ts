@@ -10,6 +10,7 @@ export interface Card {
 	set_name: string;
 	set?: Set;
 	types: string;
+	supertype?: string;
 }
 
 export type FullCard = Card & {
