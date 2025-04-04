@@ -27,8 +27,24 @@ type FetchedCard = {
 		name: string;
 	};
 	cardmarket: {
+		url: string;
+		updatedAt: string;
 		prices: {
 			averageSellPrice: number;
+			lowPrice: number;
+			trendPrice: number;
+			germanProLow: number;
+			suggestedPrice: number;
+			reverseHoloSell: number;
+			reverseHoloLow: number;
+			reverseHoloTrend: number;
+			lowPriceExPlus: number;
+			avg1: number;
+			avg7: number;
+			avg30: number;
+			reverseHoloAvg1: number;
+			reverseHoloAvg7: number;
+			reverseHoloAvg30: number;
 		};
 	};
 	tcgplayer?: {
@@ -241,10 +257,10 @@ async function getPokemon(name: string, index: number) {
 			types: card.types?.join(', ') || '',
 			supertype: card.supertype,
 			artist: card.artist,
-			tcgplayer: card.tcgplayer ? {
-				url: card.tcgplayer.url,
-				updatedAt: card.tcgplayer.updatedAt,
-				prices: card.tcgplayer.prices
+			cardmarket: card.cardmarket ? {
+				url: card.cardmarket.url,
+				updatedAt: card.cardmarket.updatedAt,
+				prices: card.cardmarket.prices
 			} : undefined
 		};
 	});
@@ -447,10 +463,10 @@ export async function fetchCards() {
 				types: card.types?.join(', ') || '',
 				supertype: card.supertype,
 				artist: card.artist,
-				tcgplayer: card.tcgplayer ? {
-					url: card.tcgplayer.url,
-					updatedAt: card.tcgplayer.updatedAt,
-					prices: card.tcgplayer.prices
+				cardmarket: card.cardmarket ? {
+					url: card.cardmarket.url,
+					updatedAt: card.cardmarket.updatedAt,
+					prices: card.cardmarket.prices
 				} : undefined
 			};
 		});
@@ -555,10 +571,10 @@ async function getCardsByType(supertype: string) {
 			types: card.types?.join(', ') || '',
 			supertype: card.supertype,
 			artist: card.artist,
-			tcgplayer: card.tcgplayer ? {
-				url: card.tcgplayer.url,
-				updatedAt: card.tcgplayer.updatedAt,
-				prices: card.tcgplayer.prices
+			cardmarket: card.cardmarket ? {
+				url: card.cardmarket.url,
+				updatedAt: card.cardmarket.updatedAt,
+				prices: card.cardmarket.prices
 			} : undefined
 		};
 	});
