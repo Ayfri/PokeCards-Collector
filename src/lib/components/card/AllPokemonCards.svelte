@@ -40,19 +40,27 @@
 				</div>
 				<div class="card-info">
 					<div class="set-name">{card.set.name}</div>
-					<div class="flex items-center justify-center gap-2">
-						<div class="card-price">{card.price ? `${card.price} $` : 'Priceless'}</div>
+					<div class="flex items-center justify-center">
 						{#if 'cardmarket' in card && card.cardmarket && card.cardmarket.url && card.cardmarket.url.trim() !== ''}
 							<a
 								href={card.cardmarket.url}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="text-gold-400 bg-black bg-opacity-60 p-1 rounded-full border border-gold-400 hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center"
+								class="hover:text-gold-300 transition-colors duration-200 text-center"
 								on:click|stopPropagation
 								aria-label="View on Cardmarket"
 							>
-								<ExternalLink size={12} />
+								<div class="flex items-center justify-center whitespace-nowrap">
+									<span class="card-price">{card.price ? `${card.price} $` : 'Priceless'}</span>
+									<span class="mx-1">-</span>
+									<span class="text-gold-400 font-bold underline text-xs flex items-center">
+										Cardmarket
+										<ExternalLink size={10} class="ml-1" />
+									</span>
+								</div>
 							</a>
+						{:else}
+							<div class="card-price">{card.price ? `${card.price} $` : 'Priceless'}</div>
 						{/if}
 					</div>
 				</div>

@@ -220,11 +220,17 @@
 							href={card.cardmarket.url}
 							target="_blank"
 							rel="noopener noreferrer"
-							class="flex items-center gap-1 px-3 py-1 bg-black bg-opacity-60 rounded-full border border-gold-400 text-gold-400 hover:bg-opacity-90 transition-all duration-200"
+							class="text-gold-400 font-bold underline hover:text-gold-300 transition-colors duration-200 text-lg flex items-center"
 							on:click|stopPropagation
 						>
-							<span>Voir sur CardMarket</span>
-							<ExternalLink size={16} />
+							<div class="flex items-center justify-center whitespace-nowrap">
+								<span class="text-white font-normal">{card.price && card.price !== 100_000 ? `${card.price} $` : 'Priceless'}</span>
+								<span class="mx-2">-</span>
+								<span class="flex items-center">
+									Cardmarket
+									<ExternalLink size={16} class="ml-1" />
+								</span>
+							</div>
 						</a>
 					</div>
 				{/if}

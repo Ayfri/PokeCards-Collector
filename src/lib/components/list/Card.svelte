@@ -128,19 +128,27 @@
 				#{cardCode}/{set?.printedTotal}
 			</span>
 		</h2>
-		<div class="flex items-center justify-center gap-2">
-			<h3 class="text-center">{price && price !== 100_000 ? `${price} $` : 'Priceless'}</h3>
+		<div class="flex items-center justify-center">
 			{#if card.cardmarket?.url && card.cardmarket.url.trim() !== ''}
 				<a
 					href={card.cardmarket.url}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="text-gold-400 bg-black bg-opacity-60 p-1.5 rounded-full border border-gold-400 hover:bg-opacity-90 transition-all duration-200 flex items-center justify-center"
+					class="text-center hover:text-gold-300 transition-colors duration-200"
 					on:click|stopPropagation
 					aria-label="View on Cardmarket"
 				>
-					<ExternalLink size={14} />
+					<div class="flex items-center justify-center whitespace-nowrap">
+						<span>{price && price !== 100_000 ? `${price} $` : 'Priceless'}</span>
+						<span class="mx-1">-</span>
+						<span class="text-gold-400 font-bold underline flex items-center">
+							Cardmarket
+							<ExternalLink size={12} class="ml-1" />
+						</span>
+					</div>
 				</a>
+			{:else}
+				<h3 class="text-center">{price && price !== 100_000 ? `${price} $` : 'Priceless'}</h3>
 			{/if}
 		</div>
 	</div>
