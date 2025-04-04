@@ -11,14 +11,14 @@ This document describes the purpose of the main directories within the `src` fol
 src/
 ├── assets/         # Static data files (e.g., scraped JSON data used by the app).
 ├── lib/            # Core application library: reusable components, utilities, stores, etc.
-│   ├── components/ # Shared Svelte components used across multiple routes.
+│   ├── components/ # Shared Svelte components used across multiple pages.
 │   ├── helpers/    # Utility functions (e.g., data transformations, formatting).
 │   ├── services/   # Modules for specific business logic or external API interactions (beyond Supabase).
 │   ├── stores/     # Svelte stores for managing application state.
 │   └── supabase.ts # Supabase client initialization and export.
 ├── routes/         # Application pages and API endpoints based on SvelteKit's file-based routing.
 │                   # Each subdirectory represents a route segment.
-│                   # Files like +page.svelte, +layout.svelte, +page.server.ts define page structure and data loading.
+│                   # Files such as +page.svelte, +layout.svelte, +page.server.ts define page structure and data loading.
 ├── scrappers/      # Scripts related to the data scraping CLI tool.
 ├── styles/         # Global CSS styles or Tailwind base/component layers (if needed beyond app.css).
 ├── fonts/          # Font files.
@@ -30,8 +30,38 @@ src/
 
 ## Key Locations
 
-*   **New Pages:** Add new pages by creating folders and `+page.svelte` / `+page.server.ts` files within `src/routes/`.
-*   **Reusable UI:** Create general-purpose Svelte components in `src/lib/components/`.
-*   **Data Fetching Logic:** Place server-side data fetching logic in `+page.server.ts` or `+layout.server.ts` files. Use `src/lib/helpers/` or `src/lib/services/` for abstracting complex fetching/data manipulation.
-*   **State Management:** Use Svelte stores defined in `src/lib/stores/` for cross-component state.
-*   **Supabase Client:** Import the initialized Supabase client from `src/lib/supabase.ts`. 
+- **New Pages:** Add new pages by creating folders and `+page.svelte` / `+page.server.ts` files within `src/routes/`.
+- **Reusable UI:** Create general-purpose Svelte components in `src/lib/components/`.
+- **Data Fetching Logic:** Place server-side data fetching logic in `+page.server.ts` or `+layout.server.ts` files. For more complex data manipulation, use files in `src/lib/helpers/` or `src/lib/services/`.
+- **State Management:** Use Svelte stores defined in `src/lib/stores/` to manage cross-component state.
+- **Supabase Client:** Import the initialized Supabase client from `src/lib/supabase.ts`.
+
+## Alias Configuration
+
+In addition to the structure described above, the following aliases have been configured to streamline module imports and improve code readability. These include custom aliases as well as SvelteKit’s default aliases:
+
+```js
+alias: {
+  '@components': 'src/lib/components/*',
+  '$helpers': 'src/lib/helpers/*',
+  '$stores': 'src/lib/stores/*',
+  '$scrappers': 'src/scrappers/*',
+  '~': 'src/*',
+},
+```
+
+- **@components:** Access shared components located in `src/lib/components/`.
+- **$helpers:** Import utility functions from `src/lib/helpers/`.
+- **$stores:** Easily import Svelte stores from `src/lib/stores/`.
+- **$scrappers:** Reference data scraping scripts located in `src/scrappers/`.
+- **~:** A global alias to reference any file within `src/`.
+
+Additionally, SvelteKit provides some default aliases:
+
+- **$app**: Provides access to SvelteKit’s runtime modules (e.g., navigation, stores, forms, and paths).
+- **$lib**: Points to the `src/lib`.
+- **$env/dynamic/private**: Exposes private environment variables at runtime.
+- **$env/dynamic/public**: Exposes public environment variables at runtime.
+- **$env/static/private**: Exposes private environment variables at build time.
+- **$env/static/public**: Exposes public environment variables at build time.
+
