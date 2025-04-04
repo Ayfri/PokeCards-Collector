@@ -109,7 +109,7 @@
 	</select>
 
 	<select bind:value={$filterSupertype} class="filter" id="supertype" name="supertype">
-		<option selected value="all">All card types</option>
+		<option selected value="all">All card supertypes</option>
 		<option value="pokémon">Pokémon</option>
 		<option value="trainer">Trainer</option>
 		<option value="energy">Energy</option>
