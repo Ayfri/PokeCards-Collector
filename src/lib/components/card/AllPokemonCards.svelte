@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
-	import type { FullCard } from '~/lib/types';
-	import { getCardImage } from '$helpers/card-images';
+	import type {FullCard} from '$lib/types';
+	import CardImage from '@components/card/CardImage.svelte';
+	import {fade} from 'svelte/transition';
 	import { ExternalLink } from 'lucide-svelte';
 
 	export let cards: FullCard[];
@@ -23,11 +23,11 @@
 				on:click={() => onCardSelect(card)}
 			>
 				<div class="card-container">
-					<img
-						src={getCardImage(card.image)}
+					<CardImage
+						imageUrl={card.image}
 						alt={card.pokemon.name}
 						class="card-image"
-						loading="lazy"
+						lazy={true}
 					/>
 					<div class="set-overlay">
 						<img

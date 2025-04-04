@@ -1,0 +1,352 @@
+<script lang="ts">
+	import {env} from '$env/dynamic/public';
+
+	/**
+	 * Alt text for the image
+	 * Defaults to "Pokemon card"
+	 */
+	export let alt: string = 'Pokemon card';
+
+	/**
+	 * The image URL from the API
+	 * e.g. "https://images.pokemontcg.io/pop5/17_hires.png"
+	 */
+	export let imageUrl: string;
+
+	/**
+	 * Whether to use high-resolution image
+	 */
+	export let highRes: boolean = true;
+
+	/**
+	 * Whether the image is for lazy loading
+	 */
+	export let lazy: boolean = true;
+
+	/**
+	 * Height of the image
+	 * Optional if width is specified
+	 */
+	export let height: number | undefined = undefined;
+
+	/**
+	 * Width of the image
+	 * Optional if height is specified
+	 */
+	export let width: number | undefined = undefined;
+
+	/**
+	 * CSS classes to apply to the image
+	 */
+	let classNames: string = '';
+
+	export {classNames as class};
+
+	let loaded = false;
+	let error = false;
+
+	// Process the image URL to get the set code and card ID
+	const urlParts = imageUrl.split('/');
+	const setCode = urlParts.length >= 2 ? urlParts[urlParts.length - 2] : '';
+	const cardIdWithExt = urlParts.length >= 1 ? urlParts[urlParts.length - 1] : '';
+	const cardId = cardIdWithExt.split('_')[0]; // Remove "_hires" part if present
+
+	// Default to the original image URL (usually PNG)
+	let standardImageUrl = imageUrl;
+	let lowResImageUrl = imageUrl.replace('_hires.png', '.png');
+
+	// Determine if CDN is being used
+	const CDN_URL = env.PUBLIC_CARD_CDN_URL;
+	const usingCdn = !!CDN_URL;
+
+	// If using CDN, it'll be WebP format with normal and low-res versions
+	if (usingCdn) {
+		// Format: CDN_URL/setCode/cardId.webp and CDN_URL/setCode/cardId_lowres.webp
+		standardImageUrl = `${CDN_URL}/${setCode}/${cardId}.webp`;
+		lowResImageUrl = `${CDN_URL}/${setCode}/${cardId}_lowres.webp`;
+	} else if (highRes && !standardImageUrl.includes('_hires')) {
+		// For non-CDN URLs, ensure high resolution if requested
+		const lastDotIndex = standardImageUrl.lastIndexOf('.');
+		if (lastDotIndex !== -1) {
+			standardImageUrl = `${standardImageUrl.substring(0, lastDotIndex)}_hires${standardImageUrl.substring(lastDotIndex)}`;
+		}
+	}
+
+	// For small screen devices, use the standard resolution rather than high-res
+	const srcsetValue = `${lowResImageUrl} 245w, ${standardImageUrl} 300w`;
+
+	const sizesValue = '(max-width: 245px) 245px, 300w';
+
+	// Handle error case
+	function handleError() {
+		error = true;
+	}
+</script>
+
+{#if error}
+	<div class="error-placeholder {classNames}">
+		<span>Image not available</span>
+	</div>
+{:else}
+	<img
+		{alt}
+		class="card-image {classNames}"
+		class:opacity-0={!loaded}
+		decoding="async"
+		draggable="false"
+		{height}
+		loading={lazy ? 'lazy' : 'eager'}
+		on:error={handleError}
+		on:load={() => loaded = true}
+		sizes={sizesValue}
+		src={standardImageUrl}
+		srcset={srcsetValue}
+		{width}
+	/>
+{/if}
+
+<style>
+	.card-image {
+		transition: opacity 300ms ease;
+	}
+
+	.error-placeholder {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: #7f1d1d;
+		color: white;
+		border-radius: 0.5rem;
+	}
+
+
+	.holo::after {
+		background-image: url("https://assets.codepen.io/13471/sparkles.gif"), url(https://assets.codepen.io/13471/holo.png), linear-gradient(125deg, #ff008450 15%, #fca40040 30%, #ffff0030 40%, #00ff8a20 60%, #00cfff40 70%, #cc4cfa50 85%);
+		background-position: 50% 50%;
+		background-size: 160%;
+		filter: brightness(1) contrast(1);
+		mix-blend-mode: color-dodge;
+		opacity: 70%;
+		transition: all 0.33s ease;
+		z-index: 2;
+	}
+
+	.holo::before,
+	.holo::after {
+		background-repeat: no-repeat;
+		content: "";
+		height: 420px;
+		left: 50%;
+		mix-blend-mode: color-dodge;
+		position: absolute;
+		top: 43%;
+		transform: translate(-50%, -50%);
+		transition: all 0.33s ease;
+		width: 300px;
+	}
+
+	@-webkit-keyframes holoSparkle {
+		0%, 100% {
+			opacity: 0.75;
+			background-position: 50% 50%;
+			filter: brightness(1.2) contrast(1.25);
+		}
+		5%, 8% {
+			opacity: 1;
+			background-position: 40% 40%;
+			filter: brightness(0.8) contrast(1.2);
+		}
+		13%, 16% {
+			opacity: 0.5;
+			background-position: 50% 50%;
+			filter: brightness(1.2) contrast(0.8);
+		}
+		35%, 38% {
+			opacity: 1;
+			background-position: 60% 60%;
+			filter: brightness(1) contrast(1);
+		}
+		55% {
+			opacity: 0.33;
+			background-position: 45% 45%;
+			filter: brightness(1.2) contrast(1.25);
+		}
+	}
+
+	@keyframes holoSparkle {
+		0%, 100% {
+			opacity: 0.75;
+			background-position: 50% 50%;
+			filter: brightness(1.2) contrast(1.25);
+		}
+		5%, 8% {
+			opacity: 1;
+			background-position: 40% 40%;
+			filter: brightness(0.8) contrast(1.2);
+		}
+		13%, 16% {
+			opacity: 0.5;
+			background-position: 50% 50%;
+			filter: brightness(1.2) contrast(0.8);
+		}
+		35%, 38% {
+			opacity: 1;
+			background-position: 60% 60%;
+			filter: brightness(1) contrast(1);
+		}
+		55% {
+			opacity: 0.33;
+			background-position: 45% 45%;
+			filter: brightness(1.2) contrast(1.25);
+		}
+	}
+
+	@-webkit-keyframes holoGradient {
+		0%, 100% {
+			opacity: 0.5;
+			background-position: 50% 50%;
+			filter: brightness(0.5) contrast(1);
+		}
+		5%, 9% {
+			background-position: 100% 100%;
+			opacity: 1;
+			filter: brightness(0.75) contrast(1.25);
+		}
+		13%, 17% {
+			background-position: 0 0;
+			opacity: 0.88;
+		}
+		35%, 39% {
+			background-position: 100% 100%;
+			opacity: 1;
+			filter: brightness(0.5) contrast(1);
+		}
+		55% {
+			background-position: 0 0;
+			opacity: 1;
+			filter: brightness(0.75) contrast(1.25);
+		}
+	}
+
+	@keyframes holoGradient {
+		0%, 100% {
+			opacity: 0.5;
+			background-position: 50% 50%;
+			filter: brightness(0.5) contrast(1);
+		}
+		5%, 9% {
+			background-position: 100% 100%;
+			opacity: 1;
+			filter: brightness(0.75) contrast(1.25);
+		}
+		13%, 17% {
+			background-position: 0 0;
+			opacity: 0.88;
+		}
+		35%, 39% {
+			background-position: 100% 100%;
+			opacity: 1;
+			filter: brightness(0.5) contrast(1);
+		}
+		55% {
+			background-position: 0 0;
+			opacity: 1;
+			filter: brightness(0.75) contrast(1.25);
+		}
+	}
+
+	@-webkit-keyframes holoCard {
+		0%, 100% {
+			transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg);
+		}
+		5%, 8% {
+			transform: rotateZ(0deg) rotateX(6deg) rotateY(-20deg);
+		}
+		13%, 16% {
+			transform: rotateZ(0deg) rotateX(-9deg) rotateY(32deg);
+		}
+		35%, 38% {
+			transform: rotateZ(3deg) rotateX(12deg) rotateY(20deg);
+		}
+		55% {
+			transform: rotateZ(-3deg) rotateX(-12deg) rotateY(-27deg);
+		}
+	}
+
+	@keyframes holoCard {
+		0%, 100% {
+			transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg);
+		}
+		5%, 8% {
+			transform: rotateZ(0deg) rotateX(6deg) rotateY(-20deg);
+		}
+		13%, 16% {
+			transform: rotateZ(0deg) rotateX(-9deg) rotateY(32deg);
+		}
+		35%, 38% {
+			transform: rotateZ(3deg) rotateX(12deg) rotateY(20deg);
+		}
+		55% {
+			transform: rotateZ(-3deg) rotateX(-12deg) rotateY(-27deg);
+		}
+	}
+
+	@-webkit-keyframes rubberBand {
+		from {
+			transform: scale3d(1, 1, 1);
+		}
+		30% {
+			transform: scale3d(1.25, 0.75, 1);
+		}
+		40% {
+			transform: scale3d(0.75, 1.25, 1);
+		}
+		50% {
+			transform: scale3d(1.15, 0.85, 1);
+		}
+		65% {
+			transform: scale3d(0.95, 1.05, 1);
+		}
+		75% {
+			transform: scale3d(1.05, 0.95, 1);
+		}
+		to {
+			transform: scale3d(1, 1, 1);
+		}
+	}
+
+	@keyframes rubberBand {
+		from {
+			transform: scale3d(1, 1, 1);
+		}
+		30% {
+			transform: scale3d(1.25, 0.75, 1);
+		}
+		40% {
+			transform: scale3d(0.75, 1.25, 1);
+		}
+		50% {
+			transform: scale3d(1.15, 0.85, 1);
+		}
+		65% {
+			transform: scale3d(0.95, 1.05, 1);
+		}
+		75% {
+			transform: scale3d(1.05, 0.95, 1);
+		}
+		to {
+			transform: scale3d(1, 1, 1);
+		}
+	}
+
+
+
+	@keyframes placeHolderShimmer {
+		0% {
+			background-position: -468px 0
+		}
+		100% {
+			background-position: 468px 0
+		}
+	}
+</style>

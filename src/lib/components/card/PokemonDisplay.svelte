@@ -3,11 +3,10 @@
 	import EvolutionChain from '@components/card/EvolutionChain.svelte';
 	import AllPokemonCards from '@components/card/AllPokemonCards.svelte';
 	import {fade} from 'svelte/transition';
-	import type {Card, FullCard, Pokemon} from '~/lib/types';
+	import type {FullCard, Pokemon} from '~/lib/types';
 	import { spriteCache } from '$stores/spriteCache';
 	import { pascalCase } from '$helpers/strings';
-	import { getCardImageForPokemon } from '$helpers/card-images';
-	import { ExternalLink } from 'lucide-svelte';
+	import CardImage from '@components/card/CardImage.svelte';
 
 	export let pokemons: Pokemon[];
 	export let cards: FullCard[];
@@ -16,15 +15,12 @@
 
 	// Helper function to safely get cardmarket URL
 	function getCardmarketUrl(cardObj: FullCard): string | null {
-		return cardObj && 'cardmarket' in cardObj && cardObj.cardmarket && 'url' in cardObj.cardmarket 
-			? cardObj.cardmarket.url 
+		return cardObj && 'cardmarket' in cardObj && cardObj.cardmarket && 'url' in cardObj.cardmarket
+			? cardObj.cardmarket.url
 			: null;
 	}
 
 	$: allSets = cards.map(card => card.set);
-
-	const pokemonName = card.pokemon.name;
-	const types = [...new Set(cards.map(card => card.types.toLowerCase().split(',')[0]))];
 
 	let centerCard: HTMLElement;
 	let styleElement: HTMLStyleElement = null!;
@@ -47,7 +43,6 @@
 	function handlePreviousPokemonError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
 		if (!previousPokemon) return;
-		img.src = getCardImageForPokemon(previousPokemon.id, cards);
 		// Add a class to prevent infinite loop if both sprite and card image fail
 		if (img.classList.contains('fallback-attempted')) {
 			img.src = '/loading-spinner.svg';
@@ -61,7 +56,6 @@
 	function handleNextPokemonError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
 		if (!nextPokemon) return;
-		img.src = getCardImageForPokemon(nextPokemon.id, cards);
 		// Add a class to prevent infinite loop if both sprite and card image fail
 		if (img.classList.contains('fallback-attempted')) {
 			img.src = '/loading-spinner.svg';
@@ -78,7 +72,6 @@
 				sprites[pokemonId] = await spriteCache.getSprite(pokemonId);
 			} catch (error) {
 				console.error(`Failed to load sprite for Pokemon #${pokemonId}`);
-				sprites[pokemonId] = getCardImageForPokemon(pokemonId, cards);
 			}
 		}
 		return sprites[pokemonId];
@@ -165,7 +158,7 @@
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
 						<img
-							src={sprites[previousPokemon.id] || getCardImageForPokemon(previousPokemon.id, cards)}
+							src={sprites[previousPokemon.id]}
 							alt={pascalCase(previousPokemon.name)}
 							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
 							title={pascalCase(previousPokemon.name)}
@@ -200,16 +193,13 @@
 				<div class="relative h-[34rem] w-[24rem] -z-10 max-lg:w-[75vw] max-lg:h-[112.5vw]">
 					{#each cards as c}
 						{#if currentSet === c.set}
-							<img
+							<CardImage
 								alt={c.pokemon.name}
 								class="image"
-								decoding="async"
-								draggable="false"
-								loading="eager"
-								height="420"
-								src={c.image}
-								width="300"
-								transition:fade
+								imageUrl={c.image}
+								lazy={true}
+								height={420}
+								width={300}
 							/>
 						{/if}
 					{/each}
@@ -223,7 +213,7 @@
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
 						<img
-							src={sprites[nextPokemon.id] || getCardImageForPokemon(nextPokemon.id, cards)}
+							src={sprites[nextPokemon.id]}
 							alt={pascalCase(nextPokemon.name)}
 							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
 							title={pascalCase(nextPokemon.name)}
