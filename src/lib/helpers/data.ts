@@ -68,17 +68,18 @@ export async function getSets(): Promise<Set[]> {
 }
 
 export async function getTypes(): Promise<string[]> {
-	return pokemonTypes;
+	return [...pokemonTypes].sort();
 }
 
 export async function getRarities(): Promise<string[]> {
 	const cards = await getCards();
-	return [...new Set(cards.map(card => card.rarity).filter(rarity => rarity))];
+	return [...new Set(cards.map(card => card.rarity).filter(rarity => rarity))].sort();
 }
 
 export async function getArtists(): Promise<string[]> {
 	const cards = await getCards();
-	return [...new Set(cards.map(card => card.artist).filter((artist): artist is string => artist !== undefined))].sort();
+	return [...new Set(cards.map(card => card.artist).filter((artist): artist is string => artist !== undefined))]
+		.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
 export async function getHoloFoilsCards(): Promise<Card[]> {

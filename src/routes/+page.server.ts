@@ -34,6 +34,9 @@ export async function load() {
 	const types = await getTypes();
 	const artists = await getArtists();
 
+	// Trier les sets par ordre alphabétique
+	sets.sort((a, b) => a.name.localeCompare(b.name));
+
 	return {
 		cards,
 		sets,
