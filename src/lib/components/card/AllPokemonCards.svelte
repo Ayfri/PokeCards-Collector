@@ -39,7 +39,7 @@
 					</div>
 				</div>
 				<div class="card-info">
-					<div class="set-name">{card.set.name}</div>
+					<h2 class="text-center font-bold text-sm">{card.set.name}</h2>
 					<div class="flex items-center justify-center">
 						{#if 'cardmarket' in card && card.cardmarket && card.cardmarket.url && card.cardmarket.url.trim() !== ''}
 							<a
@@ -51,16 +51,16 @@
 								aria-label="View on Cardmarket"
 							>
 								<div class="flex items-center justify-center whitespace-nowrap">
-									<span class="card-price">{card.price ? `${card.price} $` : 'Priceless'}</span>
-									<span class="mx-1">-</span>
-									<span class="text-gold-400 font-bold underline text-xs flex items-center">
+									<span class="text-sm">{card.price ? `${card.price} $` : 'Priceless'}</span>
+									<span class="mx-1 text-sm">-</span>
+									<span class="text-gold-400 font-bold underline text-sm flex items-center">
 										Cardmarket
 										<ExternalLink size={10} class="ml-1" />
 									</span>
 								</div>
 							</a>
 						{:else}
-							<div class="card-price">{card.price ? `${card.price} $` : 'Priceless'}</div>
+							<div>{card.price ? `${card.price} $` : 'Priceless'}</div>
 						{/if}
 					</div>
 				</div>
@@ -129,25 +129,11 @@
 	}
 
 	.card-info {
-		margin-top: 0.5rem;
+		margin-top: 0.2rem;
 		width: 100%;
 		text-align: center;
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	.set-name {
-		font-size: 0.8rem;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-
-	.card-price {
-		font-size: 0.9rem;
-		font-weight: bold;
-		color: #f3d02c;
 	}
 
 	@media (max-width: 768px) {
