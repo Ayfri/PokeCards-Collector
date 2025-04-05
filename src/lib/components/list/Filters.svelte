@@ -85,31 +85,41 @@
 </script>
 
 <div class="flex items-center gap-4 max-lg:flex-col max-lg:gap-1.5">
-	<button class="sort-order-btn fill-white !w-8 flex justify-center items-center hover:fill-black" on:click={() => $sortOrder = $sortOrder === 'asc' ? 'desc' : 'asc'}>
-		<ArrowUpDown class={$sortOrder === 'asc' ? 'rotate-180' : ''} size={16} />
-	</button>
-	<button class="reset-btn" on:click={resetFilters}>Reset filters</button>
-	<button class="filter-btn {$mostExpensiveOnly ? 'active' : ''}" on:click={toggleMostExpensiveOnly}>
-		Expensive Only
-	</button>
-	<input
-		bind:value={searchNumero}
-		on:input={(e) => debouncedSetFilterNumero(e.currentTarget.value)}
-		class="filter"
-		id="numero"
-		name="numero"
-		placeholder="ID"
-		type="text"
-	>
-	<input
-		bind:value={searchName}
-		on:input={(e) => debouncedSetFilterName(e.currentTarget.value)}
-		class="filter"
-		id="name"
-		name="name"
-		placeholder="Name"
-		type="text"
-	>
+	<div class="form-element-container">
+		<button class="sort-order-btn fill-white !w-8 flex justify-center items-center hover:fill-black {$sortOrder !== 'asc' ? 'sort-active' : ''}" on:click={() => $sortOrder = $sortOrder === 'asc' ? 'desc' : 'asc'}>
+			<ArrowUpDown class={$sortOrder === 'asc' ? 'rotate-180' : ''} size={16} />
+		</button>
+	</div>
+	<div class="form-element-container">
+		<button class="reset-btn" on:click={resetFilters}>Reset filters</button>
+	</div>
+	<div class="form-element-container">
+		<button class="filter-btn {$mostExpensiveOnly ? 'active' : ''}" on:click={toggleMostExpensiveOnly}>
+			Expensive Only
+		</button>
+	</div>
+	<div class="form-element-container">
+		<input
+			bind:value={searchNumero}
+			on:input={(e) => debouncedSetFilterNumero(e.currentTarget.value)}
+			class="filter {searchNumero ? 'filter-active' : ''}"
+			id="numero"
+			name="numero"
+			placeholder="ID"
+			type="text"
+		>
+	</div>
+	<div class="form-element-container">
+		<input
+			bind:value={searchName}
+			on:input={(e) => debouncedSetFilterName(e.currentTarget.value)}
+			class="filter {searchName ? 'filter-active' : ''}"
+			id="name"
+			name="name"
+			placeholder="Name"
+			type="text"
+		>
+	</div>
 </div>
 
 <div class="flex items-center gap-4 max-lg:flex-col max-lg:gap-1.5">
@@ -119,52 +129,70 @@
 		<div class="text-gold-400 text-[0.8rem] font-semibold lg:mr-2 max-lg:-mb-2 max-sm:text-sm">(Pokémon: {pokemonCardsCount}, Trainer: {trainerCardsCount}, Energy: {energyCardsCount})</div>
 	</div>
 
-	<select bind:value={$sortBy} class="filter" id="sort" name="sort">
-		<option selected value="sort-numero">Sort by pokédex</option>
-		<option value="sort-price">Sort by price</option>
-		<option value="sort-name">Sort by name</option>
-		<option value="sort-id">Sort by id</option>
-		<option value="sort-rarity">Sort by rarity</option>
-		<option value="sort-artist">Sort by illustrator</option>
-	</select>
+	<div class="form-element-container">
+		<select bind:value={$sortBy} class="filter {$sortBy !== 'sort-numero' ? 'filter-active' : ''}" id="sort" name="sort">
+			<option selected value="sort-numero">Sort by pokédex</option>
+			<option value="sort-price">Sort by price</option>
+			<option value="sort-name">Sort by name</option>
+			<option value="sort-id">Sort by id</option>
+			<option value="sort-rarity">Sort by rarity</option>
+			<option value="sort-artist">Sort by illustrator</option>
+		</select>
+	</div>
 
-	<select bind:value={$filterSupertype} class="filter" id="supertype" name="supertype">
-		<option selected value="all">All supertypes</option>
-		<option value="pokémon">Pokémon</option>
-		<option value="trainer">Trainer</option>
-		<option value="energy">Energy</option>
-	</select>
+	<div class="form-element-container">
+		<select bind:value={$filterSupertype} class="filter {$filterSupertype !== 'all' ? 'filter-active' : ''}" id="supertype" name="supertype">
+			<option selected value="all">All supertypes</option>
+			<option value="pokémon">Pokémon</option>
+			<option value="trainer">Trainer</option>
+			<option value="energy">Energy</option>
+		</select>
+	</div>
 	
-	<select bind:value={$filterSet} class="filter" id="set" name="set">
-		<option selected value="all">All sets</option>
-		{#each sets as set}
-			<option value={set.name.toLowerCase()}>{set.name}</option>
-		{/each}
-	</select>
+	<div class="form-element-container">
+		<select bind:value={$filterSet} class="filter {$filterSet !== 'all' ? 'filter-active' : ''}" id="set" name="set">
+			<option selected value="all">All sets</option>
+			{#each sets as set}
+				<option value={set.name.toLowerCase()}>{set.name}</option>
+			{/each}
+		</select>
+	</div>
 
-	<select bind:value={$filterType} class="filter" id="type" name="type">
-		<option selected value="all">All types</option>
-		{#each types as type}
-			<option value={type.toLowerCase()}>{type}</option>
-		{/each}
-	</select>
+	<div class="form-element-container">
+		<select bind:value={$filterType} class="filter {$filterType !== 'all' ? 'filter-active' : ''}" id="type" name="type">
+			<option selected value="all">All types</option>
+			{#each types as type}
+				<option value={type.toLowerCase()}>{type}</option>
+			{/each}
+		</select>
+	</div>
 
-	<select bind:value={$filterRarity} class="filter" id="rarity" name="rarity">
-		<option selected value="all">All rarities</option>
-		{#each rarities as rarity}
-			<option value={rarity.toLowerCase()}>{rarity}</option>
-		{/each}
-	</select>
+	<div class="form-element-container">
+		<select bind:value={$filterRarity} class="filter {$filterRarity !== 'all' ? 'filter-active' : ''}" id="rarity" name="rarity">
+			<option selected value="all">All rarities</option>
+			{#each rarities as rarity}
+				<option value={rarity.toLowerCase()}>{rarity}</option>
+			{/each}
+		</select>
+	</div>
 
-	<select bind:value={$filterArtist} class="filter" id="artist" name="artist">
-		<option selected value="all">All illustrators</option>
-		{#each artists as artist}
-			<option value={artist.toLowerCase()}>{artist}</option>
-		{/each}
-	</select>
+	<div class="form-element-container">
+		<select bind:value={$filterArtist} class="filter {$filterArtist !== 'all' ? 'filter-active' : ''}" id="artist" name="artist">
+			<option selected value="all">All illustrators</option>
+			{#each artists as artist}
+				<option value={artist.toLowerCase()}>{artist}</option>
+			{/each}
+		</select>
+	</div>
 </div>
 
 <style>
+	.form-element-container {
+		height: 42px; /* Augmenté davantage */
+		display: flex;
+		align-items: center;
+	}
+
 	select:hover {
 		cursor: pointer;
 	}
@@ -182,17 +210,29 @@
 		background: transparent;
 		border: 3px solid #FFF;
 		border-radius: 4px;
-		box-sizing: content-box;
+		box-sizing: border-box;
 		color: white;
 		font-family: "Clash Display", serif;
 		font-weight: 500;
-		height: 1rem;
+		height: 1.8rem;
+		line-height: 1.4rem;
 		padding: 0.2rem 0.4rem;
 		width: 10rem;
+		transition: border-color 0.2s ease, color 0.2s ease;
+	}
+
+	.filter-active {
+		border-color: #FFB700;
+		color: #FFB700;
+	}
+
+	.sort-active {
+		fill: #FFB700;
 	}
 
 	select option {
 		background-color: black;
+		color: white;
 	}
 
 	input:focus {
@@ -207,12 +247,13 @@
 		background-size: 100% 0;
 		border: 3px solid #FFF;
 		border-radius: 4px;
-		box-sizing: content-box;
+		box-sizing: border-box;
 		color: white;
 		font-weight: 500;
-		height: 1rem;
+		height: 1.8rem;
+		line-height: 1.4rem;
 		padding: 0.2rem 0.4rem;
-		transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+		transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease;
 		width: 10rem;
 	}
 
@@ -222,17 +263,26 @@
 	}
 
 	@media (max-width: 1024px) {
+		.form-element-container {
+			height: 36px; /* Augmenté pour contenir l'élément */
+		}
+
 		input, select, .reset-btn, .sort-order-btn, .filter-btn {
 			border-width: 2px;
 			font-size: 0.8rem;
+			height: 1.6rem;
 		}
 	}
 
 	@media (max-width: 420px) {
+		.form-element-container {
+			height: 32px; /* Augmenté pour contenir l'élément */
+		}
+
 		input, select, .reset-btn, .sort-order-btn, .filter-btn {
 			font-size: 0.7rem;
-			height: 0.8rem;
-			line-height: 0;
+			height: 1.4rem;
+			line-height: normal;
 			padding: 0.1rem 0.2rem;
 			width: 8rem;
 		}
