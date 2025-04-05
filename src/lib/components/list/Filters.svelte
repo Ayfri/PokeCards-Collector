@@ -255,11 +255,16 @@
 		padding: 0.2rem 0.4rem;
 		transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease;
 		width: 10rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.filter-btn.active {
 		background-size: 100% 100%;
+		background-image: linear-gradient(to right, #FFB700, #FFB700);
 		color: #000;
+		border-color: #FFB700;
 	}
 
 	@media (max-width: 1024px) {
@@ -290,8 +295,10 @@
 
 	.reset-btn:hover, .sort-order-btn:hover, .filter-btn:hover {
 		background-size: 100% 100%;
+		background-image: linear-gradient(to right, #FFB700, #FFB700);
 		color: #000;
 		cursor: pointer;
 		font-weight: 500;
+		border-color: #FFB700;
 	}
 </style>
