@@ -191,18 +191,18 @@
 			>
 				<div class="card-aura {currentType}" id="card-aura"></div>
 				<div class="relative h-[34rem] w-[24rem] -z-10 max-lg:w-[75vw] max-lg:h-[112.5vw]">
-					{#each cards as c}
-						{#if currentSet === c.set}
+					{#key card.image}
+						{#if card && card.image}
 							<CardImage
-								alt={c.pokemon.name}
+								alt={card.pokemon.name}
 								class="image"
-								imageUrl={c.image}
+								imageUrl={card.image}
 								lazy={true}
 								height={420}
 								width={300}
 							/>
 						{/if}
-					{/each}
+					{/key}
 				</div>
 			</div>
 		</div>
