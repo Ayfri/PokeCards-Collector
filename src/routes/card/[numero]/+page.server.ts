@@ -2,9 +2,13 @@ import { getCards, getPokemons } from '$helpers/data';
 import type { Pokemon } from '~/types';
 import { error } from '@sveltejs/kit';
 
-export const load = async ({ params }) => {
+export const load = async ({ params, url }) => {
 	const pokemons = await getPokemons();
 	let allCards = await getCards();
+	
+	// Get the card identification parameters from the URL
+	const setCode = url.searchParams.get('set');
+	const cardNumber = url.searchParams.get('number');
 
 	allCards = allCards.sort((a, b) => a.pokemon.id - b.pokemon.id || (b.price ?? 0) - (a.price ?? 0));
 	allCards = allCards.filter((card, index, self) =>
@@ -72,6 +76,31 @@ export const load = async ({ params }) => {
 	const uniqueChain = fullChain.filter((pokemon, index, self) =>
 		index === self.findIndex((p) => p.id === pokemon.id)
 	);
+
+	// Reorder the cards array if specific card parameters are provided
+	let targetCard = null;
+	
+	if (setCode && cardNumber) {
+		// Find the specific card by matching set code and card number
+		targetCard = pokemonCards.find(card => {
+			// Extract card information
+			const cardSetCode = card.set?.ptcgoCode;
+			const imageCardNumber = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
+			
+			// Match both the set code and card number
+			return cardSetCode === setCode && imageCardNumber === cardNumber;
+		});
+	}
+	
+	// Reorder array if a matching card was found
+	if (targetCard) {
+		// Remove the target card from the array
+		const remainingCards = pokemonCards.filter(card => card !== targetCard);
+		
+		// Add it back at the beginning
+		pokemonCards.splice(0, pokemonCards.length, targetCard, ...remainingCards);
+	}
+	// Sinon, les cartes restent dans leur ordre par défaut (prix décroissant)
 
 	const capitalizedPokemonName = pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1);
 

@@ -7,6 +7,7 @@
 	import { spriteCache } from '$stores/spriteCache';
 	import { pascalCase } from '$helpers/strings';
 	import CardImage from '@components/card/CardImage.svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	export let pokemons: Pokemon[];
 	export let cards: FullCard[];
@@ -133,8 +134,58 @@
 		const selectedSet = allSets.find(set => set.name === selectedCard.set_name);
 		if (selectedSet) {
 			currentSet = selectedSet;
+			
+			// Extraire les informations pour l'URL
+			const pokemonId = selectedCard.pokemon.id;
+			const setCode = selectedCard.set?.ptcgoCode ?? '';
+			const cardCode = selectedCard.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
+			
+			// Construire la nouvelle URL
+			const newUrl = `/card/${pokemonId}/?set=${setCode}&number=${cardCode}`;
+			
+			// Mettre à jour l'URL sans rafraîchir la page
+			history.pushState({ pokemonId, setCode, cardCode }, '', newUrl);
 		}
 	}
+
+	$: currentSetCode = card.set?.ptcgoCode ?? '';
+	$: currentCardCode = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
+
+	// Gestionnaire pour les événements de navigation (bouton précédent/suivant du navigateur)
+	function handlePopState(event: PopStateEvent) {
+		if (event.state) {
+			const { setCode, cardCode } = event.state;
+			// Trouver la carte correspondante
+			const selectedCard = cards.find(c => {
+				const cardSetCode = c.set?.ptcgoCode;
+				const imageCardNumber = c.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
+				return cardSetCode === setCode && imageCardNumber === cardCode;
+			});
+			
+			if (selectedCard) {
+				const selectedSet = allSets.find(set => set.name === selectedCard.set_name);
+				if (selectedSet) {
+					currentSet = selectedSet;
+				}
+			}
+		}
+	}
+	
+	onMount(() => {
+		window.addEventListener('popstate', handlePopState);
+		
+		// Initialiser l'état de l'historique avec la carte actuelle
+		const initialState = {
+			pokemonId: card.pokemon.id,
+			setCode: currentSetCode,
+			cardCode: currentCardCode
+		};
+		history.replaceState(initialState, '', window.location.href);
+	});
+	
+	onDestroy(() => {
+		window.removeEventListener('popstate', handlePopState);
+	});
 </script>
 
 <svelte:window on:mousemove={({clientX, clientY}) => {cursorX = clientX; cursorY = clientY;}}/>
