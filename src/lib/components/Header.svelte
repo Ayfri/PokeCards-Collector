@@ -7,7 +7,8 @@
 	import pokestore from '~/assets/pokestore.png';
 	import { page } from '$app/state';
 
-	let cards: FullCard[] = page.data.cards;
+	// Use allCards from layout data instead of page-specific data
+	$: allCards = page.data.allCards as FullCard[] || [];
 </script>
 
 <header class="w-full p-2 pb-6 lg:pb-12">
@@ -26,12 +27,12 @@
 		</a>
 		<!-- Search on desktop: visible on sm screens and up -->
 		<div class="w-60 sm:w-80 md:w-96 max-sm:hidden">
-			<SearchBar allCards={cards} />
+			<SearchBar {allCards} />
 		</div>
 
 		<!-- Mobile search using the Svelte component -->
-		<SearchModal allCards={cards} />
-		
+		<SearchModal {allCards} />
+
 		<!-- User menu -->
 		<UserMenu />
 	</div>
