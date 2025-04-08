@@ -2,19 +2,15 @@ import { getCards, getPokemons } from '$helpers/data';
 import type { Pokemon } from '~/types';
 import { error } from '@sveltejs/kit';
 
-export const load = async ({ params, url }) => {
+export const load = async ({ params, parent, url }) => {
 	const pokemons = await getPokemons();
-	let allCards = await getCards();
-	
+	let { allCards } = await parent();
+
 	// Get the card identification parameters from the URL
 	const setCode = url.searchParams.get('set');
 	const cardNumber = url.searchParams.get('number');
 
 	allCards = allCards.sort((a, b) => a.pokemon.id - b.pokemon.id || (b.price ?? 0) - (a.price ?? 0));
-	allCards = allCards.filter((card, index, self) =>
-		self.findIndex((c) => c.image === card.image) === index
-	);
-	allCards = allCards.filter((card) => card.set);
 
 	const pokemon = pokemons.find((p) => p.id === parseInt(params.numero));
 
@@ -79,24 +75,24 @@ export const load = async ({ params, url }) => {
 
 	// Reorder the cards array if specific card parameters are provided
 	let targetCard = null;
-	
+
 	if (setCode && cardNumber) {
 		// Find the specific card by matching set code and card number
 		targetCard = pokemonCards.find(card => {
 			// Extract card information
 			const cardSetCode = card.set?.ptcgoCode;
 			const imageCardNumber = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
-			
+
 			// Match both the set code and card number
 			return cardSetCode === setCode && imageCardNumber === cardNumber;
 		});
 	}
-	
+
 	// Reorder array if a matching card was found
 	if (targetCard) {
 		// Remove the target card from the array
 		const remainingCards = pokemonCards.filter(card => card !== targetCard);
-		
+
 		// Add it back at the beginning
 		pokemonCards.splice(0, pokemonCards.length, targetCard, ...remainingCards);
 	}

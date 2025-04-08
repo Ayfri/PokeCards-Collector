@@ -37,7 +37,7 @@
 <main class="max-w-[100vw] p-2 text-lg text-white">
 	<div class="mt-10 mx-auto flex flex-col gap-8 w-[90%] -z-10 max-lg:mt-8">
 		<PokemonDisplay cards={data.cards} pokemons={data.pokemons} sprites={spritesMap}/>
-		
+
 		<div class="bg-gray-800 p-4 rounded-lg">
 			<h2 class="text-xl font-semibold mb-2">Actions</h2>
 			<CardActions cardId={cardId} />

@@ -134,15 +134,15 @@
 		const selectedSet = allSets.find(set => set.name === selectedCard.set_name);
 		if (selectedSet) {
 			currentSet = selectedSet;
-			
+
 			// Extraire les informations pour l'URL
 			const pokemonId = selectedCard.pokemon.id;
 			const setCode = selectedCard.set?.ptcgoCode ?? '';
 			const cardCode = selectedCard.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
-			
+
 			// Construire la nouvelle URL
 			const newUrl = `/card/${pokemonId}/?set=${setCode}&number=${cardCode}`;
-			
+
 			// Mettre à jour l'URL sans rafraîchir la page
 			history.pushState({ pokemonId, setCode, cardCode }, '', newUrl);
 		}
@@ -161,7 +161,7 @@
 				const imageCardNumber = c.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
 				return cardSetCode === setCode && imageCardNumber === cardCode;
 			});
-			
+
 			if (selectedCard) {
 				const selectedSet = allSets.find(set => set.name === selectedCard.set_name);
 				if (selectedSet) {
@@ -170,10 +170,10 @@
 			}
 		}
 	}
-	
+
 	onMount(() => {
 		window.addEventListener('popstate', handlePopState);
-		
+
 		// Initialiser l'état de l'historique avec la carte actuelle
 		const initialState = {
 			pokemonId: card.pokemon.id,
@@ -181,10 +181,10 @@
 			cardCode: currentCardCode
 		};
 		history.replaceState(initialState, '', window.location.href);
-	});
-	
-	onDestroy(() => {
-		window.removeEventListener('popstate', handlePopState);
+
+		return () => {
+			window.removeEventListener('popstate', handlePopState);
+		};
 	});
 </script>
 

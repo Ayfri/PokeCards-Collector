@@ -1,8 +1,8 @@
 import { getCards } from '$helpers/data';
-import type { FullCard } from '$lib/types';
+import type { LayoutServerLoad } from './$types';
 
-export async function load() {
-	let cards: FullCard[] = await getCards();
+export const load: LayoutServerLoad = async ({ route }) => {
+	let cards = await getCards();
 
 	// unique by image
 	cards = cards.filter((card, index, self) => self.findIndex(c => c.image === card.image) === index);
@@ -23,6 +23,13 @@ export async function load() {
 	});
 
 	return {
-		allCards: cards
+		title: 'PokéStore',
+		description:
+			'Browse, search, and filter through a comprehensive list of Pokémon TCG cards. Find cards by set, rarity, type, and more."',
+		image: {
+			url: 'https://pokestore.ayfri.com/pokestore.png',
+			alt: 'PokéStore - Pokémon TCG Card List',
+		},
+		allCards: cards,
 	};
 }
