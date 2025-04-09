@@ -3,7 +3,8 @@
 	import { onMount } from 'svelte';
 	import SearchBar from './SearchBar.svelte';
 	import type { FullCard } from '~/lib/types';
-	import { Search, X } from 'lucide-svelte';
+	import Search from 'lucide-svelte/icons/search';
+	import X from 'lucide-svelte/icons/x';
 
 	export let allCards: FullCard[] = [];
 

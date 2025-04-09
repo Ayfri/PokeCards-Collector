@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PageTitle from '@components/PageTitle.svelte';
 	import type {FullCard} from '~/lib/types';
-	import { ExternalLink } from 'lucide-svelte';
+	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import { onMount } from 'svelte';
 
 	export let card: FullCard;

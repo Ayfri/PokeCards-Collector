@@ -2,7 +2,7 @@
 	import type {FullCard} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import {fade} from 'svelte/transition';
-	import { ExternalLink } from 'lucide-svelte';
+	import ExternalLink from 'lucide-svelte/icons/external-link';
 
 	export let cards: FullCard[];
 	export let currentPokemonId: number;

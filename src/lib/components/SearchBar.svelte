@@ -3,7 +3,8 @@
 	import { getCardImage } from '$helpers/card-images';
 	import { onMount, onDestroy } from 'svelte';
 	import type { FullCard } from '~/lib/types';
-	import { Search, X } from 'lucide-svelte';
+	import Search from 'lucide-svelte/icons/search';
+	import X from 'lucide-svelte/icons/x';
 
 	export let allCards: FullCard[] = [];
 	export let autoFocus: boolean = false;

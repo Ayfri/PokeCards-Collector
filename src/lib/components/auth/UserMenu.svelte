@@ -1,6 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { User, LogOut, Heart, Library, Settings } from 'lucide-svelte';
+  import User from 'lucide-svelte/icons/user';
+  import LogOut from 'lucide-svelte/icons/log-out';
+  import Heart from 'lucide-svelte/icons/heart';
+  import Library from 'lucide-svelte/icons/library';
+  import Settings from 'lucide-svelte/icons/settings';
   import { authStore } from '$lib/stores/auth';
   import { signOut } from '$lib/services/auth';
   import AuthModal from './AuthModal.svelte';

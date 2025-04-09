@@ -1,6 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Heart, Plus, Minus, Trash } from 'lucide-svelte';
+  import Heart from 'lucide-svelte/icons/heart';
+  import Plus from 'lucide-svelte/icons/plus';
+  import Minus from 'lucide-svelte/icons/minus';
+  import Trash from 'lucide-svelte/icons/trash';
   import { authStore } from '$lib/stores/auth';
   import { 
     addCardToCollection, 

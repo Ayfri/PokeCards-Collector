@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type {FullCard} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
-	import { ExternalLink } from 'lucide-svelte';
+	import ExternalLink from 'lucide-svelte/icons/external-link';
 
 	export let card: FullCard;
 

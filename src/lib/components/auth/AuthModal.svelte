@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import LoginForm from './LoginForm.svelte';
   import RegisterForm from './RegisterForm.svelte';
-  import { X } from 'lucide-svelte';
+  import X from 'lucide-svelte/icons/x';
 
   const dispatch = createEventDispatcher();
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder} from '$helpers/filters';
 	import type {FullCard, Set} from '~/lib/types';
-	import { ArrowUpDown } from 'lucide-svelte';
+	import ArrowUpDown from 'lucide-svelte/icons/arrow-up-down';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 
