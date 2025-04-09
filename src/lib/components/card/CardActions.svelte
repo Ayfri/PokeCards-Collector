@@ -204,9 +204,5 @@
         </button>
       {/if}
     </div>
-  {:else}
-    <p class="text-sm text-gray-500 dark:text-gray-400">
-      <a href="/" class="text-red-500 hover:underline">Connectez-vous</a> pour ajouter cette carte à votre collection ou wishlist.
-    </p>
   {/if}
 </div> 

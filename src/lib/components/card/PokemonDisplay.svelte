@@ -7,12 +7,16 @@
 	import { spriteCache } from '$stores/spriteCache';
 	import { pascalCase } from '$helpers/strings';
 	import CardImage from '@components/card/CardImage.svelte';
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy, tick } from 'svelte';
 
 	export let pokemons: Pokemon[];
 	export let cards: FullCard[];
 	export let sprites: Record<number, string>;
 	let card: FullCard = cards[0];
+	
+	// Indicateur pour savoir si on a fini le chargement initial
+	let isInitialRenderComplete = false;
+	let shouldRenderAllCards = false;
 
 	// Helper function to safely get cardmarket URL
 	function getCardmarketUrl(cardObj: FullCard): string | null {
@@ -33,40 +37,40 @@
 
 	let cursorX = 0;
 	let cursorY = 0;
+	let debounceTimer: number;
 
 	// Trouver le pokémon précédent dans le Pokédex
 	$: previousPokemon = pokemons.find(p => p.id === card.pokemon.id - 1);
 
 	// Trouver le pokémon suivant dans le Pokédex
 	$: nextPokemon = pokemons.find(p => p.id === card.pokemon.id + 1);
-
-	// Handle error for previous Pokemon image
+	
+	// Gestionnaires d'erreurs pour les images Pokémon
 	function handlePreviousPokemonError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
 		if (!previousPokemon) return;
-		// Add a class to prevent infinite loop if both sprite and card image fail
+		// Ajouter une classe pour éviter une boucle infinie si les deux images échouent
 		if (img.classList.contains('fallback-attempted')) {
 			img.src = '/loading-spinner.svg';
-			img.onerror = null; // Prevent further error handling
+			img.onerror = null; // Empêcher la gestion d'erreur ultérieure
 		} else {
 			img.classList.add('fallback-attempted');
 		}
 	}
 
-	// Handle error for next Pokemon image
 	function handleNextPokemonError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
 		if (!nextPokemon) return;
-		// Add a class to prevent infinite loop if both sprite and card image fail
+		// Ajouter une classe pour éviter une boucle infinie si les deux images échouent
 		if (img.classList.contains('fallback-attempted')) {
 			img.src = '/loading-spinner.svg';
-			img.onerror = null; // Prevent further error handling
+			img.onerror = null; // Empêcher la gestion d'erreur ultérieure
 		} else {
 			img.classList.add('fallback-attempted');
 		}
 	}
 
-	// Préchargement des sprites manquants
+	// Préchargement des sprites manquants - uniquement pour les Pokémon adjacents (optimisation)
 	async function ensureSprite(pokemonId: number) {
 		if (!sprites[pokemonId]) {
 			try {
@@ -78,7 +82,7 @@
 		return sprites[pokemonId];
 	}
 
-	// Préchargement des sprites pour les Pokémon adjacents
+	// Préchargement optimisé des sprites pour les Pokémon adjacents uniquement
 	$: if (previousPokemon && !sprites[previousPokemon.id]) {
 		ensureSprite(previousPokemon.id);
 	}
@@ -87,16 +91,28 @@
 		ensureSprite(nextPokemon.id);
 	}
 
-	$: if (cursorX && cursorY) {
-		const rect = centerCard.getBoundingClientRect();
-		const isInCard = cursorX >= rect.left && cursorX <= rect.right &&
-			cursorY >= rect.top && cursorY <= rect.bottom;
+	// Optimisation: Utilisation du debounce pour limiter les mises à jour de style lors du mouvement de la souris
+	function debounce(fn: Function, delay: number) {
+		return (...args: any[]) => {
+			clearTimeout(debounceTimer);
+			debounceTimer = window.setTimeout(() => {
+				fn(...args);
+			}, delay);
+		};
+	}
+
+	const debouncedUpdateCardStyle = debounce((clientX: number, clientY: number) => {
+		const rect = centerCard?.getBoundingClientRect();
+		if (!rect) return;
+		
+		const isInCard = clientX >= rect.left && clientX <= rect.right &&
+			clientY >= rect.top && clientY <= rect.bottom;
 
 		if (isInCard) {
 			centerCard.classList.remove('inactive');
 
-			const l = cursorX - rect.left;
-			const t = cursorY - rect.top;
+			const l = clientX - rect.left;
+			const t = clientY - rect.top;
 			const h = rect.height;
 			const w = rect.width;
 			const px = Math.abs(Math.floor(100 / w * l) - 100);
@@ -128,6 +144,13 @@
 				styleElement.innerHTML = '';
 			}
 		}
+	}, 16); // 60fps - une mise à jour toutes les 16ms
+
+	function handleMouseMove(event: MouseEvent) {
+		const {clientX, clientY} = event;
+		cursorX = clientX;
+		cursorY = clientY;
+		debouncedUpdateCardStyle(clientX, clientY);
 	}
 
 	function handleCardSelect(selectedCard: FullCard) {
@@ -147,9 +170,6 @@
 			history.pushState({ pokemonId, setCode, cardCode }, '', newUrl);
 		}
 	}
-
-	$: currentSetCode = card.set?.ptcgoCode ?? '';
-	$: currentCardCode = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
 
 	// Gestionnaire pour les événements de navigation (bouton précédent/suivant du navigateur)
 	function handlePopState(event: PopStateEvent) {
@@ -172,27 +192,47 @@
 	}
 
 	onMount(() => {
+		// Créer un élément de style pour les animations de carte holo
+		styleElement = document.createElement('style');
+		document.head.appendChild(styleElement);
+		
 		window.addEventListener('popstate', handlePopState);
 
 		// Initialiser l'état de l'historique avec la carte actuelle
 		const initialState = {
 			pokemonId: card.pokemon.id,
-			setCode: currentSetCode,
-			cardCode: currentCardCode
+			setCode: card.set?.ptcgoCode ?? '',
+			cardCode: card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1')
 		};
 		history.replaceState(initialState, '', window.location.href);
-
+		
+		// Marquer le rendu initial comme terminé après un court délai
+		setTimeout(() => {
+			isInitialRenderComplete = true;
+		}, 0);
+		
+		// Charger le composant AllPokemonCards de manière différée
+		setTimeout(() => {
+			shouldRenderAllCards = true;
+		}, 100);
+		
 		return () => {
 			window.removeEventListener('popstate', handlePopState);
+			if (styleElement && styleElement.parentNode) {
+				styleElement.parentNode.removeChild(styleElement);
+			}
+			clearTimeout(debounceTimer);
 		};
 	});
 </script>
 
-<svelte:window on:mousemove={({clientX, clientY}) => {cursorX = clientX; cursorY = clientY;}}/>
+<svelte:window on:mousemove={handleMouseMove}/>
 
 <div class="h-[42rem] max-lg:h-[inherit] max-lg:flex max-lg:flex-col max-lg:gap-8 max-lg:flex-wrap max-lg:content-center">
 	<!-- Evolution Chain Component -->
-	<EvolutionChain {card} {pokemons} {cards} {sprites} />
+	{#if isInitialRenderComplete}
+		<EvolutionChain {card} {pokemons} {cards} {sprites} />
+	{/if}
 
 	<!-- Pokédex number indicator -->
 	<div class="pokedex-number-display text-center mb-2">
@@ -288,6 +328,18 @@
 			</div>
 		{/if}
 	</div>
+
+	<!-- Afficher d'abord les informations de la carte avec PokemonInfo -->
+	<PokemonInfo {card} />
+
+	<!-- Chargement différé de la section AllPokemonCards après PokemonInfo -->
+	{#if shouldRenderAllCards}
+		<AllPokemonCards 
+			cards={cards} 
+			currentPokemonId={card.pokemon.id} 
+			onCardSelect={handleCardSelect} 
+		/>
+	{/if}
 </div>
 
 <svelte:head>
@@ -295,15 +347,6 @@
 </svelte:head>
 
 <div class="filter {currentType}" id="filter" transition:fade></div>
-
-<PokemonInfo {card} />
-
-<!-- Add the new AllPokemonCards component -->
-<AllPokemonCards
-	cards={cards}
-	currentPokemonId={card.pokemon.id}
-	onCardSelect={handleCardSelect}
-/>
 
 <style>
 	img {
