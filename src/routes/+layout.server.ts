@@ -2,35 +2,27 @@ import { getCards } from '$helpers/data';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ route }) => {
-	console.log(`[${new Date().toISOString()}] FETCHING CARDS ${route.id}`);
-
-	// Charger seulement les données essentielles pour la page d'accueil
-	// Optimisation: Ajouter un flag pour éviter les opérations lourdes sur les pages qui n'en ont pas besoin
 	const isCatalogPage = route.id === '/' || route.id === null;
 	let cards = await getCards();
 
-	// N'effectuer ces opérations que sur la page d'accueil
+	// Only filter cards on the catalog page
 	if (isCatalogPage) {
 		// unique by image
-		console.log("BEFORE FILTER", cards.length);
 		const seenImages = new Set();
 		cards = cards.filter(card => {
-			// On vérifie d'abord que card.setName existe, sinon on rejette immédiatement la carte.
+			// We first check that card.setName exists, otherwise we reject the card immediately.
 			if (!card.setName) return false;
 
-			// Si l'image a déjà été rencontrée, on la rejette.
+			// If the image has already been encountered, we reject it.
 			if (seenImages.has(card.image)) return false;
 
-			// Sinon, on ajoute l'image au Set et on garde la carte.
+			// Otherwise, we add the image to the Set and keep the card.
 			seenImages.add(card.image);
 			return true;
 		});
-		console.log("AFTER FILTER", cards.length);
-		cards = cards.filter((card) => card.setName);
-		console.log("AFTER FILTER 2", cards.length);
-	}
 
-	console.log(`[${new Date().toISOString()}] CARDS FETCHED ${route.id}`);
+		cards = cards.filter((card) => card.setName);
+	}
 
 	return {
 		title: 'PokéStore',
