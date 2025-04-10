@@ -12,6 +12,7 @@
 		price,
 		rarity,
 		pokemonNumber,
+		setName,
 		types,
 		cardCode  // `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`
 	} = card;
@@ -22,7 +23,7 @@
 	const pokemonId = cardCode.split('_')[1];
 
 	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
-	const set = sets.find(s => s.ptcgoCode === setCode)!!;
+	const set = sets.find(s => s.name === setName)!!;
 </script>
 
 <a
