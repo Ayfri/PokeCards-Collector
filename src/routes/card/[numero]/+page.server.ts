@@ -49,11 +49,20 @@ export const load = async ({ params, parent, url }) => {
 	// Réordonne les cartes selon les paramètres d'URL
 	let targetCard = null;
 	if (setCode && cardNumber) {
+		// Construire le cardCode attendu pour la comparaison
+		const expectedCardCode = `pokemon_${pokemonId}_${setCode.toLowerCase()}_${cardNumber}`;
+		
+		// Trouver la carte dont le cardCode correspond
 		targetCard = pokemonCards.find(card => {
-			const cardSetCode = card.set?.ptcgoCode;
-			const imageCardNumber = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
-			return cardSetCode === setCode && imageCardNumber === cardNumber;
+			return card.cardCode === expectedCardCode;
 		});
+		
+		// Si aucune correspondance exacte, on essaie une correspondance partielle
+		if (!targetCard) {
+			targetCard = pokemonCards.find(card => {
+				return card.cardCode.includes(`_${pokemonId}_${setCode.toLowerCase()}_`);
+			});
+		}
 	}
 
 	// Réordonne le tableau si une carte correspondante a été trouvée

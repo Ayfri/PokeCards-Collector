@@ -11,13 +11,14 @@
 		price,
 		rarity,
 		types,
-		set
+		set,
+		cardCode  // `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`
 	} = card;
 
 	// Get set code from set object or image name
-	const setCode = set?.ptcgoCode ?? image.split('/').at(-2);
-	// Get card code from image name, remove all non-numeric characters
-	const cardCode = image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
+	const setCode = cardCode.split('_')[2];
+	const cardNumber = cardCode.split('_')[3];
+	const pokemonId = cardCode.split('_')[1];
 
 	const {name} = pokemon;
 </script>
@@ -26,7 +27,7 @@
 	aria-label={`Go to the card page of ${name}`}
 	class="card-link text-white"
 	draggable="false"
-	href={`/card/${pokemon.id}/?set=${set?.ptcgoCode ?? ''}&number=${cardCode}`}
+	href={`/card/${pokemonId}/?set=${setCode}&number=${cardNumber}`}
 	rel="dofollow"
 >
 	<div class="card-pokestore group relative flex flex-col items-center w-fit cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.025]">
@@ -51,7 +52,7 @@
 				{#if setCode}
 					{setCode}
 				{/if}
-				#{cardCode}/{set?.printedTotal}
+				#{cardNumber}/{set?.printedTotal}
 			</span>
 		</h2>
 		<div class="flex items-center justify-center">

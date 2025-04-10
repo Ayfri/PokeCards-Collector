@@ -4,6 +4,7 @@ import {POKEMONS_COUNT} from '~/constants';
 import {getPokemons} from '$helpers/data';
 import type {Card} from '$lib/types';
 import { CARDS, SETS } from './files';
+import { generateUniqueCardCode } from '$lib/helpers/card-utils';
 
 let apiKey = '';
 if (process.env.POKEMON_TCG_API_KEY) {
@@ -245,6 +246,26 @@ async function getPokemon(name: string, index: number) {
 		const meanColorHex = await safeGetAverageColor(smallImageURL);
 
 		const nationalPokedexNumbers = card.nationalPokedexNumbers ?? [index];
+		
+		// Extract set code from image URL
+		const setCode = card.images.large.split('/').at(-2);
+		
+		// Extract card number from filename
+		let cardNumber;
+		const filename = card.images.large.split('/').at(-1);
+		if (filename) {
+			const match = filename.split('_')[0].match(/[a-z]*(\d+)[a-z]*/i);
+			cardNumber = match ? match[1] : undefined;
+		}
+		
+		// Generate unique card code
+		const cardCode = generateUniqueCardCode(
+			nationalPokedexNumbers[0],
+			setCode,
+			cardNumber,
+			card.supertype
+		);
+		
 		return {
 			id: card.id,
 			image: card.images.large,
@@ -257,6 +278,7 @@ async function getPokemon(name: string, index: number) {
 			types: card.types?.join(', ') || '',
 			supertype: card.supertype,
 			artist: card.artist,
+			cardCode, // Add the generated cardCode
 			cardmarket: card.cardmarket ? {
 				url: card.cardmarket.url,
 				updatedAt: card.cardmarket.updatedAt,
@@ -451,6 +473,25 @@ export async function fetchCards() {
 
 			const nationalPokedexNumbers = card.nationalPokedexNumbers ?? [];
 			
+			// Extract set code from image URL
+			const setCode = card.images.large.split('/').at(-2);
+			
+			// Extract card number from filename
+			let cardNumber;
+			const filename = card.images.large.split('/').at(-1);
+			if (filename) {
+				const match = filename.split('_')[0].match(/[a-z]*(\d+)[a-z]*/i);
+				cardNumber = match ? match[1] : undefined;
+			}
+			
+			// Generate unique card code
+			const cardCode = generateUniqueCardCode(
+				nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0,
+				setCode,
+				cardNumber,
+				card.supertype
+			);
+			
 			return {
 				id: card.id,
 				image: card.images.large,
@@ -463,6 +504,7 @@ export async function fetchCards() {
 				types: card.types?.join(', ') || '',
 				supertype: card.supertype,
 				artist: card.artist,
+				cardCode, // Add the generated cardCode
 				cardmarket: card.cardmarket ? {
 					url: card.cardmarket.url,
 					updatedAt: card.cardmarket.updatedAt,
@@ -558,6 +600,25 @@ async function getCardsByType(supertype: string) {
 
 		const smallImageURL = card.images.small;
 		const meanColorHex = await safeGetAverageColor(smallImageURL);
+		
+		// Extract set code from image URL
+		const setCode = card.images.large.split('/').at(-2);
+		
+		// Extract card number from filename
+		let cardNumber;
+		const filename = card.images.large.split('/').at(-1);
+		if (filename) {
+			const match = filename.split('_')[0].match(/[a-z]*(\d+)[a-z]*/i);
+			cardNumber = match ? match[1] : undefined;
+		}
+		
+		// Generate unique card code
+		const cardCode = generateUniqueCardCode(
+			0, // Energy and Trainer cards have no Pokédex number
+			setCode,
+			cardNumber,
+			card.supertype
+		);
 
 		return {
 			id: card.id,
@@ -571,6 +632,7 @@ async function getCardsByType(supertype: string) {
 			types: card.types?.join(', ') || '',
 			supertype: card.supertype,
 			artist: card.artist,
+			cardCode, // Add the generated cardCode
 			cardmarket: card.cardmarket ? {
 				url: card.cardmarket.url,
 				updatedAt: card.cardmarket.updatedAt,

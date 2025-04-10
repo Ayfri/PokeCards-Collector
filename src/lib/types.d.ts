@@ -12,6 +12,7 @@ export interface Card {
 	types: string;
 	supertype?: string;
 	artist?: string;
+	cardCode: string;
 	cardmarket?: {
 		url: string;
 		updatedAt: string;
@@ -84,8 +85,7 @@ export interface UserProfile {
 export interface UserCollection {
 	id: string;
 	username: string;
-	card_id: string;
-	quantity: number;
+	card_code: string;
 	created_at: string;
 	updated_at: string;
 }
@@ -93,7 +93,7 @@ export interface UserCollection {
 export interface UserWishlist {
 	id: string;
 	username: string;
-	card_id: string;
+	card_code: string;
 	created_at: string;
 	updated_at: string;
 }
