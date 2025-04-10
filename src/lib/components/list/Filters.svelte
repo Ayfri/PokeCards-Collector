@@ -1,12 +1,13 @@
 <script lang="ts">
 	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder} from '$helpers/filters';
-	import type {FullCard, Set} from '~/lib/types';
+	import type {FullCard, Set, Pokemon} from '$lib/types';
 	import ArrowUpDown from 'lucide-svelte/icons/arrow-up-down';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 
 	export let cards: FullCard[];
 	export let sets: Set[];
+	export let pokemons: Pokemon[];
 	export let rarities: string[];
 	export let types: string[];
 	export let artists: string[] = [];
@@ -48,7 +49,7 @@
 		$filterArtist = 'all';
 		$displayAll = true;
 		$mostExpensiveOnly = false;
-		
+
 		// Mettre à jour les variables locales pour qu'elles soient synchronisées avec les stores
 		searchNumero = '';
 		searchName = '';
@@ -68,12 +69,12 @@
 	$: {
 		// Cette instruction garantit que ce bloc se déclenchera quand n'importe quel filtre change
 		const _ = [$filterName, $filterNumero, $filterRarity, $filterSet, $filterType, $filterSupertype, $filterArtist, $displayAll, $sortBy, $sortOrder, $mostExpensiveOnly];
-		
+
 		if (cards) {
-			const visibleCards = cards.filter(isVisible);
+			const visibleCards = cards.filter(card => isVisible(card, pokemons.find(p => p.id === card.pokemonNumber)!!, sets.find(s => s.name === card.setName)!!));
 			visibleCardsCount = visibleCards.length;
-			uniquePokemonCount = new Set(visibleCards.filter(card => card.supertype === 'Pokémon').map(card => card.numero)).size;
-			
+			uniquePokemonCount = new Set(visibleCards.filter(card => card.supertype === 'Pokémon').map(card => card.pokemonNumber)).size;
+
 			// Count by supertype
 			pokemonCardsCount = visibleCards.filter(card => card.supertype === 'Pokémon').length;
 			trainerCardsCount = visibleCards.filter(card => card.supertype === 'Trainer').length;
@@ -148,7 +149,7 @@
 			<option value="energy">Energy</option>
 		</select>
 	</div>
-	
+
 	<div class="form-element-container">
 		<select bind:value={$filterSet} class="filter {$filterSet !== 'all' ? 'filter-active' : ''}" id="set" name="set">
 			<option selected value="all">All sets</option>

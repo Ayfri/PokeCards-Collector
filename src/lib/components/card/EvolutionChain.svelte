@@ -11,7 +11,11 @@
 
 	function buildEvolutionChain(card: FullCard) {
 		// Get current Pokemon from card
-		const currentPokemon = card.pokemon;
+		const currentPokemon = pokemons.find(p => p.id === card.pokemonNumber);
+		if (!currentPokemon) {
+			console.error(`Pokemon #${card.pokemonNumber} not found in pokemons array`);
+			return [];
+		}
 
 		// Find pre-evolution if it exists
 		const preEvolution = currentPokemon.evolves_from ?
@@ -52,8 +56,8 @@
 
 		// Remove duplicates if any
 		const uniqueChain = fullChain.filter((pokemon, index, self) =>
-				index === self.findIndex(p => p.id === pokemon.id)
-			);
+			index === self.findIndex(p => p.id === pokemon.id)
+		);
 
 		return uniqueChain;
 	}
@@ -82,7 +86,7 @@
 		return sprites[pokemonId];
 	}
 
-	$: currentPokemon = card.pokemon;
+	$: currentPokemon = pokemons.find(p => p.id === card.pokemonNumber);
 	$: uniqueChain = buildEvolutionChain(card);
 	$: uniqueChain.forEach(pokemon => {
 		if (!sprites[pokemon.id]) {
@@ -92,15 +96,13 @@
 </script>
 
 {#if uniqueChain.length > 1}
-	{@const currentSetCode = card.set?.ptcgoCode ?? ''}
-	{@const currentCardCode = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1')}
 	<div class="evolution-chain mb-4 flex items-center justify-center gap-4 max-w-full overflow-x-auto px-4 py-2">
 		{#each uniqueChain as pokemon, i}
 			<div class="evolution-item flex flex-col items-center">
 				<a
 					href={`/card/${pokemon.id}/`}
 					class="evolution-image-wrapper relative"
-					class:current={pokemon.id === currentPokemon.id}
+					class:current={pokemon.id === currentPokemon?.id}
 				>
 					<div class="pokemon-number text-[0.6rem] absolute -top-1 -right-1 bg-black text-white rounded-full w-5 h-5 flex items-center justify-center z-10">
 						{pokemon.id}
@@ -115,7 +117,7 @@
 						data-pokemon-id={pokemon.id}
 					/>
 
-					{#if pokemon.id === currentPokemon.id}
+					{#if pokemon.id === currentPokemon?.id}
 						<div class="current-marker absolute inset-0 border-2 border-gold-400 rounded-full"></div>
 					{/if}
 				</a>

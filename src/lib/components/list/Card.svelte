@@ -1,17 +1,18 @@
 <script lang="ts">
-	import type {FullCard} from '$lib/types';
+	import type {FullCard, Pokemon, Set} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 
 	export let card: FullCard;
+	export let pokemons: Pokemon[];
+	export let sets: Set[];
 
 	const {
 		image,
-		pokemon,
 		price,
 		rarity,
+		pokemonNumber,
 		types,
-		set,
 		cardCode  // `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`
 	} = card;
 
@@ -20,11 +21,12 @@
 	const cardNumber = cardCode.split('_')[3];
 	const pokemonId = cardCode.split('_')[1];
 
-	const {name} = pokemon;
+	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
+	const set = sets.find(s => s.ptcgoCode === setCode)!!;
 </script>
 
 <a
-	aria-label={`Go to the card page of ${name}`}
+	aria-label={`Go to the card page of ${pokemon.name}`}
 	class="card-link text-white"
 	draggable="false"
 	href={`/card/${pokemonId}/?set=${setCode}&number=${cardNumber}`}
@@ -39,7 +41,7 @@
 		<div class="relative h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px]">
 			<CardImage
 				imageUrl={image}
-				alt={name.charAt(0).toUpperCase() + name.slice(1)}
+				alt={pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}
 				class="rounded-lg h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px] transition-opacity duration-300 absolute top-0 left-0"
 				height={420}
 				width={300}
@@ -47,7 +49,7 @@
 			/>
 		</div>
 		<h2 class="text-center font-bold text-[1.3rem]">
-			{name.charAt(0).toUpperCase() + name.slice(1)}
+			{pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}
 			<span class="uppercase">
 				{#if setCode}
 					{setCode}
@@ -56,9 +58,9 @@
 			</span>
 		</h2>
 		<div class="flex items-center justify-center">
-			{#if card.cardmarket?.url && card.cardmarket.url.trim() !== ''}
+			{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
 				<a
-					href={card.cardmarket.url}
+					href={card.cardMarketUrl}
 					target="_blank"
 					rel="noopener noreferrer"
 					class="text-center hover:text-gold-300 transition-colors duration-200"

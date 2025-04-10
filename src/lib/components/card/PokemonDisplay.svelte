@@ -3,48 +3,38 @@
 	import EvolutionChain from '@components/card/EvolutionChain.svelte';
 	import AllPokemonCards from '@components/card/AllPokemonCards.svelte';
 	import {fade} from 'svelte/transition';
-	import type {FullCard, Pokemon} from '~/lib/types';
+	import type {FullCard, Pokemon, Set} from '$lib/types';
 	import { spriteCache } from '$stores/spriteCache';
 	import { pascalCase } from '$helpers/strings';
 	import CardImage from '@components/card/CardImage.svelte';
-	import { onMount, onDestroy, tick } from 'svelte';
+	import { onMount } from 'svelte';
 
 	export let pokemons: Pokemon[];
 	export let cards: FullCard[];
+	export let sets: Set[];
 	export let sprites: Record<number, string>;
 	let card: FullCard = cards[0];
-	
+
 	// Indicateur pour savoir si on a fini le chargement initial
 	let isInitialRenderComplete = false;
 	let shouldRenderAllCards = false;
 
-	// Helper function to safely get cardmarket URL
-	function getCardmarketUrl(cardObj: FullCard): string | null {
-		return cardObj && 'cardmarket' in cardObj && cardObj.cardmarket && 'url' in cardObj.cardmarket
-			? cardObj.cardmarket.url
-			: null;
-	}
-
-	$: allSets = cards.map(card => card.set);
-
 	let centerCard: HTMLElement;
 	let styleElement: HTMLStyleElement = null!;
 
-	$: currentSet = allSets[0];
+	$: currentSet = sets.find(set => set.name === card.setName)!!;
 	$: currentType = card.types.toLowerCase().split(',')[0];
-	$: card = cards.find(card => card.set_name === currentSet.name) ?? cards[0];
-	$: cardmarketUrl = getCardmarketUrl(card);
 
+	let debounceTimer: number;
 	let cursorX = 0;
 	let cursorY = 0;
-	let debounceTimer: number;
 
 	// Trouver le pokémon précédent dans le Pokédex
-	$: previousPokemon = pokemons.find(p => p.id === card.pokemon.id - 1);
+	$: previousPokemon = pokemons.find(p => p.id === card.pokemonNumber!! - 1);
 
 	// Trouver le pokémon suivant dans le Pokédex
-	$: nextPokemon = pokemons.find(p => p.id === card.pokemon.id + 1);
-	
+	$: nextPokemon = pokemons.find(p => p.id === card.pokemonNumber!! + 1);
+
 	// Gestionnaires d'erreurs pour les images Pokémon
 	function handlePreviousPokemonError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
@@ -104,7 +94,7 @@
 	const debouncedUpdateCardStyle = debounce((clientX: number, clientY: number) => {
 		const rect = centerCard?.getBoundingClientRect();
 		if (!rect) return;
-		
+
 		const isInCard = clientX >= rect.left && clientX <= rect.right &&
 			clientY >= rect.top && clientY <= rect.bottom;
 
@@ -154,13 +144,13 @@
 	}
 
 	function handleCardSelect(selectedCard: FullCard) {
-		const selectedSet = allSets.find(set => set.name === selectedCard.set_name);
+		const selectedSet = sets.find(set => set.name === selectedCard.setName);
 		if (selectedSet) {
 			currentSet = selectedSet;
 
 			// Extraire les informations pour l'URL
-			const pokemonId = selectedCard.pokemon.id;
-			const setCode = selectedCard.set?.ptcgoCode ?? '';
+			const pokemonId = selectedCard.pokemonNumber!!;
+			const setCode = selectedSet.ptcgoCode;
 			const cardCode = selectedCard.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
 
 			// Construire la nouvelle URL
@@ -177,13 +167,13 @@
 			const { setCode, cardCode } = event.state;
 			// Trouver la carte correspondante
 			const selectedCard = cards.find(c => {
-				const cardSetCode = c.set?.ptcgoCode;
+				const cardSetCode = c.setName;
 				const imageCardNumber = c.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
 				return cardSetCode === setCode && imageCardNumber === cardCode;
 			});
 
 			if (selectedCard) {
-				const selectedSet = allSets.find(set => set.name === selectedCard.set_name);
+				const selectedSet = sets.find(set => set.name === selectedCard.setName);
 				if (selectedSet) {
 					currentSet = selectedSet;
 				}
@@ -195,27 +185,27 @@
 		// Créer un élément de style pour les animations de carte holo
 		styleElement = document.createElement('style');
 		document.head.appendChild(styleElement);
-		
+
 		window.addEventListener('popstate', handlePopState);
 
 		// Initialiser l'état de l'historique avec la carte actuelle
 		const initialState = {
-			pokemonId: card.pokemon.id,
-			setCode: card.set?.ptcgoCode ?? '',
+			pokemonId: card.pokemonNumber!!,
+			setCode: currentSet.ptcgoCode,
 			cardCode: card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1')
 		};
 		history.replaceState(initialState, '', window.location.href);
-		
+
 		// Marquer le rendu initial comme terminé après un court délai
 		setTimeout(() => {
 			isInitialRenderComplete = true;
 		}, 0);
-		
+
 		// Charger le composant AllPokemonCards de manière différée
 		setTimeout(() => {
 			shouldRenderAllCards = true;
 		}, 100);
-		
+
 		return () => {
 			window.removeEventListener('popstate', handlePopState);
 			if (styleElement && styleElement.parentNode) {
@@ -237,7 +227,7 @@
 	<!-- Pokédex number indicator -->
 	<div class="pokedex-number-display text-center mb-2">
 		<div class="pokedex-number text-gold-400 font-bold px-3 py-1 rounded-md inline-block">
-			#{card.pokemon.id}
+			#{card.pokemonNumber}
 		</div>
 	</div>
 
@@ -285,7 +275,7 @@
 					{#key card.image}
 						{#if card && card.image}
 							<CardImage
-								alt={card.pokemon.name}
+								alt={pokemons.find(p => p.id === card.pokemonNumber)?.name}
 								class="image"
 								imageUrl={card.image}
 								lazy={true}
@@ -330,14 +320,16 @@
 	</div>
 
 	<!-- Afficher d'abord les informations de la carte avec PokemonInfo -->
-	<PokemonInfo {card} />
+	<PokemonInfo {card} pokemon={pokemons.find(p => p.id === card.pokemonNumber)} />
 
 	<!-- Chargement différé de la section AllPokemonCards après PokemonInfo -->
 	{#if shouldRenderAllCards}
-		<AllPokemonCards 
-			cards={cards} 
-			currentPokemonId={card.pokemon.id} 
-			onCardSelect={handleCardSelect} 
+		<AllPokemonCards
+			cards={cards}
+			pokemons={pokemons}
+			sets={sets}
+			currentPokemonId={card.pokemonNumber}
+			onCardSelect={handleCardSelect}
 		/>
 	{/if}
 </div>

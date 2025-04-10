@@ -1,4 +1,4 @@
-import { getRarities, getSets, getTypes, getArtists } from '$helpers/data';
+import { getRarities, getSets, getTypes, getArtists, getPokemons } from '$helpers/data';
 export async function load({ parent }) {
 	const { allCards } = await parent();
 
@@ -8,8 +8,9 @@ export async function load({ parent }) {
 	const energyCards = allCards.filter(card => card.supertype === 'Energy');
 
 	// Count unique Pokemon
-	const uniquePokemon = new Set(pokemonCards.map(card => card.pokemon?.id).filter(Boolean)).size;
+	const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
 
+	const pokemons = await getPokemons();
 	const sets = await getSets();
 	const rarities = await getRarities();
 	const types = await getTypes();
@@ -23,6 +24,7 @@ export async function load({ parent }) {
 		rarities,
 		types,
 		artists,
+		pokemons,
 		title: 'PokéStore',
 		description:
 			'Browse, search, and filter through a comprehensive list of Pokémon TCG cards. Find cards by set, rarity, type, and more."',

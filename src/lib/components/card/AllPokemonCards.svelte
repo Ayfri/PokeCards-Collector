@@ -1,19 +1,30 @@
 <script lang="ts">
-	import type {FullCard} from '$lib/types';
+	import type {FullCard, Pokemon, Set} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import {fade} from 'svelte/transition';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 
 	export let cards: FullCard[];
+	export let pokemons: Pokemon[];
+	export let sets: Set[];
 	export let currentPokemonId: number;
 	export let onCardSelect: (card: FullCard) => void;
 
+	function getPokemon(pokemonNumber: number | undefined): Pokemon | undefined {
+		return pokemons.find(p => p.id === pokemonNumber);
+	}
+
+	function getSet(setName: string): Set | undefined {
+		return sets.find(s => s.name === setName);
+	}
+
 	// Sort cards by set name for a consistent display
-	$: sortedCards = [...cards].filter(card => card.pokemon.id === currentPokemonId).sort((a, b) => a.set_name.localeCompare(b.set_name));
+	$: sortedCards = [...cards].filter(card => card.pokemonNumber === currentPokemonId).sort((a, b) => a.setName.localeCompare(b.setName));
+	$: firstPokemon = getPokemon(sortedCards[0].pokemonNumber);
 </script>
 
 <div class="all-pokemon-cards">
-	<h2 class="text-xl font-bold text-gold-400 mb-4">All {sortedCards.length > 0 ? sortedCards[0].pokemon.name.charAt(0).toUpperCase() + sortedCards[0].pokemon.name.slice(1) : ''} Cards</h2>
+	<h2 class="text-xl font-bold text-gold-400 mb-4">All {firstPokemon ? firstPokemon.name.charAt(0).toUpperCase() + firstPokemon.name.slice(1) : ''} Cards</h2>
 
 	<div class="cards-grid">
 		{#each sortedCards as card}
@@ -25,25 +36,25 @@
 				<div class="card-container">
 					<CardImage
 						imageUrl={card.image}
-						alt={card.pokemon.name}
+						alt={getPokemon(card.pokemonNumber)?.name}
 						class="card-image"
 						lazy={true}
 					/>
 					<div class="set-overlay">
 						<img
-							src={card.set.logo}
-							alt={card.set.name}
+							src={getSet(card.setName)?.logo}
+							alt={getSet(card.setName)?.name}
 							class="set-icon"
-							title={card.set.name}
+							title={getSet(card.setName)?.name}
 						/>
 					</div>
 				</div>
 				<div class="card-info">
-					<h2 class="text-center font-bold text-sm">{card.set.name}</h2>
+					<h2 class="text-center font-bold text-sm">{getSet(card.setName)?.name}</h2>
 					<div class="flex items-center justify-center">
-						{#if 'cardmarket' in card && card.cardmarket && card.cardmarket.url && card.cardmarket.url.trim() !== ''}
+						{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
 							<a
-								href={card.cardmarket.url}
+								href={card.cardMarketUrl}
 								target="_blank"
 								rel="noopener noreferrer"
 								class="hover:text-gold-300 transition-colors duration-200 text-center"
@@ -104,12 +115,6 @@
 		border-radius: 0.5rem;
 		overflow: hidden;
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-	}
-
-	.card-image {
-		width: 100%;
-		aspect-ratio: 5/7;
-		object-fit: cover;
 	}
 
 	.set-overlay {

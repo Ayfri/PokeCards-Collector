@@ -1,45 +1,38 @@
 export interface Card {
-	id: string;
+	artist: string;
+	cardCode: string;
+	cardMarketUpdatedAt: string;
+	cardMarketUrl: string;
 	image: string;
 	meanColor: string;
 	name: string;
-	numero: string;
-	pokemon?: Pokemon;
-	price?: number;
+	pokemonNumber?: number;
+	price: number;
 	rarity: string;
-	set_name: string;
-	set?: Set;
+	setName: string;
+	supertype: string;
 	types: string;
-	supertype?: string;
-	artist?: string;
-	cardCode: string;
-	cardmarket?: {
-		url: string;
-		updatedAt: string;
-		prices: {
-			averageSellPrice?: number;
-			lowPrice?: number;
-			trendPrice?: number;
-			germanProLow?: number;
-			suggestedPrice?: number;
-			reverseHoloSell?: number;
-			reverseHoloLow?: number;
-			reverseHoloTrend?: number;
-			lowPriceExPlus?: number;
-			avg1?: number;
-			avg7?: number;
-			avg30?: number;
-			reverseHoloAvg1?: number;
-			reverseHoloAvg7?: number;
-			reverseHoloAvg30?: number;
-		};
-	};
 }
 
-export type FullCard = Card & {
-	pokemon: Pokemon;
-	set: Set;
-};
+export interface CardMarketPrices {
+	averageSellPrice: number;
+	lowPrice: number;
+	trendPrice: number;
+	germanProLow: number;
+	suggestedPrice: number;
+	reverseHoloSell: number;
+	reverseHoloLow: number;
+	reverseHoloTrend: number;
+	lowPriceExPlus: number;
+	avg1: number;
+	avg7: number;
+	avg30: number;
+	reverseHoloAvg1: number;
+	reverseHoloAvg7: number;
+	reverseHoloAvg30: number;
+}
+
+export type FullCard = Card;
 
 export interface Pokemon {
 	id: number;

@@ -10,10 +10,11 @@
 	$: rarities = data.rarities;
 	$: types = data.types;
 	$: artists = data.artists;
+	$: pokemons = data.pokemons;
 </script>
 
 <main class="max-lg:px-0 text-white text-lg flex flex-col flex-1">
-	<CardGrid cards={allCards} {sets} {rarities} {types} {artists} />
+	<CardGrid cards={allCards} {sets} {rarities} {types} {artists} {pokemons} />
 </main>
 
 <style>

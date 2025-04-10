@@ -1,4 +1,4 @@
-import { getCards, getPokemons } from '$helpers/data';
+import { getPokemons, getSets } from '$helpers/data';
 import type { Pokemon } from '~/types';
 import { error } from '@sveltejs/kit';
 
@@ -7,56 +7,57 @@ const cachedPokemonCards = new Map();
 
 export const load = async ({ params, parent, url }) => {
 	const pokemons = await getPokemons();
-	
+	const sets = await getSets();
+
 	// Extrait l'ID du Pokémon de l'URL
 	const pokemonId = parseInt(params.numero);
-	
+
 	// Récupère les paramètres de la carte spécifique
 	const setCode = url.searchParams.get('set');
 	const cardNumber = url.searchParams.get('number');
-	
+
 	// Vérifie d'abord le cache
 	const cacheKey = `pokemon_${pokemonId}_${setCode || ''}_${cardNumber || ''}`;
 	if (cachedPokemonCards.has(cacheKey)) {
 		return cachedPokemonCards.get(cacheKey);
 	}
-	
+
 	// Cherche le Pokémon
 	const pokemon = pokemons.find((p) => p.id === pokemonId);
 	if (!pokemon) {
 		throw error(404, 'Pokemon not found');
 	}
-	
+
 	// Charge les cartes - seule une partie réduite (optimisé par le flag false)
 	const { allCards } = await parent();
-	
+
 	// Filtre pour ne garder que les cartes pertinentes pour ce Pokémon
-	const pokemonCards = allCards.filter((c) => parseInt(c.numero) === pokemon.id && c.set);
-	
+	const pokemonCards = allCards.filter((c) => c.pokemonNumber === pokemon.id && c.setName);
+
 	if (!pokemonCards.length) {
 		throw error(404, 'No cards found for this Pokemon');
 	}
-	
+
 	// Trie initialement par prix décroissant
 	pokemonCards.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
-	
+
 	// Prépare la chaîne d'évolution
 	const currentPokemon = pokemon;
 
 	// Construction optimisée de la chaîne d'évolution
 	const evolutionChain = buildEvolutionChain(currentPokemon, pokemons);
-	
+
 	// Réordonne les cartes selon les paramètres d'URL
 	let targetCard = null;
 	if (setCode && cardNumber) {
 		// Construire le cardCode attendu pour la comparaison
 		const expectedCardCode = `pokemon_${pokemonId}_${setCode.toLowerCase()}_${cardNumber}`;
-		
+
 		// Trouver la carte dont le cardCode correspond
 		targetCard = pokemonCards.find(card => {
 			return card.cardCode === expectedCardCode;
 		});
-		
+
 		// Si aucune correspondance exacte, on essaie une correspondance partielle
 		if (!targetCard) {
 			targetCard = pokemonCards.find(card => {
@@ -73,10 +74,11 @@ export const load = async ({ params, parent, url }) => {
 	}
 
 	const capitalizedPokemonName = pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1);
-	
+
 	// Prépare le résultat
 	const result = {
 		cards: pokemonCards,
+		sets,
 		pokemons,
 		pokemon,
 		evolutionChain,
@@ -87,17 +89,17 @@ export const load = async ({ params, parent, url }) => {
 			alt: pokemon.description
 		}
 	};
-	
+
 	// Stocke dans le cache pour les futurs appels
 	cachedPokemonCards.set(cacheKey, result);
-	
+
 	// Limite la taille du cache
 	if (cachedPokemonCards.size > 50) {
 		// Supprime les entrées les plus anciennes
 		const oldestKey = cachedPokemonCards.keys().next().value;
 		cachedPokemonCards.delete(oldestKey);
 	}
-	
+
 	return result;
 };
 
@@ -106,16 +108,16 @@ function buildEvolutionChain(currentPokemon: Pokemon, pokemons: Pokemon[]): Poke
 	// Trouver les pré-évolutions
 	let preEvolution = currentPokemon.evolves_from ?
 		pokemons.find((p) => p.id === currentPokemon.evolves_from) : undefined;
-	
+
 	let prePreEvolution = preEvolution?.evolves_from ?
 		pokemons.find((p) => p.id === preEvolution.evolves_from) : undefined;
-	
+
 	// Trouver les évolutions directes
 	const evolutions = currentPokemon.evolves_to ?
 		currentPokemon.evolves_to
 			.map((evoId) => pokemons.find((p) => p.id === evoId))
 			.filter((p): p is Pokemon => p !== undefined) : [];
-	
+
 	// Trouver les évolutions ultérieures (deuxième niveau)
 	const furtherEvolutions = evolutions.flatMap((evo) =>
 		evo.evolves_to ?
@@ -123,7 +125,7 @@ function buildEvolutionChain(currentPokemon: Pokemon, pokemons: Pokemon[]): Poke
 				.map((furtherEvoId) => pokemons.find((p) => p.id === furtherEvoId))
 				.filter((p): p is Pokemon => p !== undefined) : []
 	);
-	
+
 	// Construire la chaîne complète
 	const chain: Pokemon[] = [];
 	if (prePreEvolution) chain.push(prePreEvolution);
@@ -131,7 +133,7 @@ function buildEvolutionChain(currentPokemon: Pokemon, pokemons: Pokemon[]): Poke
 	chain.push(currentPokemon);
 	chain.push(...evolutions);
 	chain.push(...furtherEvolutions);
-	
+
 	// Dédupliquer
 	return chain.filter((pokemon, index, self) =>
 		index === self.findIndex((p) => p.id === pokemon.id)

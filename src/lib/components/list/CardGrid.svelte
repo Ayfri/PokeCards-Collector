@@ -7,10 +7,11 @@
 	import VirtualGrid from '@components/list/VirtualGrid.svelte';
 	import PageTitle from '@components/PageTitle.svelte';
 	import ScrollProgress from '@components/list/ScrollProgress.svelte';
-	import type {FullCard, Set} from '~/lib/types';
+	import type {FullCard, Set, Pokemon} from '$lib/types';
 
 	export let cards: FullCard[];
 	export let sets: Set[];
+	export let pokemons: Pokemon[];
 	export let rarities: string[];
 	export let types: string[];
 	export let artists: string[] = [];
@@ -22,14 +23,14 @@
 		if ($mostExpensiveOnly) {
 			// Group cards by appropriate ID based on supertype
 			const cardGroups = new Map<string, FullCard>();
-			
+
 			cards.forEach(card => {
 				let groupKey = '';
-				
+
 				// Use different keys based on supertype
-				if (card.supertype === 'Pokémon' && card.pokemon) {
+				if (card.supertype === 'Pokémon' && card.pokemonNumber) {
 					// For Pokémon cards, group by Pokémon ID
-					groupKey = `pokemon_${card.pokemon.id}`;
+					groupKey = `pokemon_${card.pokemonNumber}`;
 				} else if (card.supertype === 'Trainer') {
 					// For Trainer cards, group by name to keep different trainers separate
 					groupKey = `trainer_${card.name.toLowerCase()}`;
@@ -38,31 +39,31 @@
 					groupKey = `energy_${card.name.toLowerCase()}`;
 				} else {
 					// Fallback for any other types
-					groupKey = `other_${card.name.toLowerCase() || card.id}`;
+					groupKey = `other_${card.name.toLowerCase()}`;
 				}
-				
+
 				const existingCard = cardGroups.get(groupKey);
-				
+
 				// Only keep the most expensive card in each group
 				if (!existingCard || (card.price ?? 0) > (existingCard.price ?? 0)) {
 					cardGroups.set(groupKey, card);
 				}
 			});
-			
+
 			displayedCards = Array.from(cardGroups.values());
 		} else {
-			displayedCards = $displayAll ? cards : cards.filter((card, index, self) => 
-				card.supertype === 'Pokémon' && 
-				card.pokemon && 
-				self.findIndex(c => c.pokemon.id === card.pokemon.id) === index
+			displayedCards = $displayAll ? cards : cards.filter((card, index, self) =>
+				card.supertype === 'Pokémon' &&
+				card.pokemonNumber &&
+				self.findIndex(c => c.pokemonNumber === card.pokemonNumber) === index
 			);
 		}
 	}
 
 	$: if ($sortOrder || $sortBy) {
 		displayedCards = displayedCards.sort((a, b) => {
-			const aNumero = parseInt(a.numero);
-			const bNumero = parseInt(b.numero);
+			const aNumero = a.pokemonNumber ?? 0;
+			const bNumero = b.pokemonNumber ?? 0;
 			// Extraire le cardCode des images
 			const aCardCode = parseInt(a.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
 			const bCardCode = parseInt(b.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
@@ -70,7 +71,9 @@
 			if ($sortBy === 'sort-price') {
 				return $sortOrder === 'asc' ? (a.price ?? -1) - (b.price ?? 0) : (b.price ?? 0) - (a.price ?? -1);
 			} else if ($sortBy === 'sort-name') {
-				return $sortOrder === 'asc' ? a.pokemon.name.localeCompare(b.pokemon.name) : b.pokemon.name.localeCompare(a.pokemon.name);
+				const aPokemon = pokemons.find(p => p.id === a.pokemonNumber) ?? {name: ''};
+				const bPokemon = pokemons.find(p => p.id === b.pokemonNumber) ?? {name: ''};
+				return $sortOrder === 'asc' ? aPokemon.name.localeCompare(bPokemon.name) : bPokemon.name.localeCompare(aPokemon.name);
 			} else if ($sortBy === 'sort-id') {
 				return $sortOrder === 'asc' ? aCardCode - bCardCode : bCardCode - aCardCode;
 			} else if ($sortBy === 'sort-rarity') {
@@ -89,7 +92,7 @@
 
 	let filteredCards = displayedCards;
 	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $filterArtist || $displayAll || $sortBy || $sortOrder || $mostExpensiveOnly) {
-		filteredCards = displayedCards.filter(isVisible);
+		filteredCards = displayedCards.filter(card => isVisible(card, pokemons.find(p => p.id === card.pokemonNumber)!!, sets.find(s => s.name === card.setName)!!));
 	}
 </script>
 
@@ -99,7 +102,7 @@
 	<div class="flex max-lg:flex-col justify-between mx-28 max-lg:m-0 pb-4 lg:pb-5 items-center relative">
 		<PageTitle title="Card List"/>
 		<div class="flex flex-col max-lg:flex-row items-end gap-3 leading-normal max-lg:-mt-1.5">
-			<Filters cards={filteredCards} {rarities} {sets} {types} {artists}/>
+			<Filters cards={filteredCards} {rarities} {sets} {types} {artists} {pokemons} />
 		</div>
 		<ScrollProgress />
 	</div>
@@ -114,7 +117,7 @@
 	let:item
 	marginTop={clientWidth ? 15 + clientWidth * 0.025 : 50}
 >
-	<CardComponent card={item}/>
+	<CardComponent card={item} {pokemons} {sets}/>
 
 	<div slot="empty">
 		<p class="text-white text-center mt-32 text-2xl">No cards found</p>

@@ -11,7 +11,7 @@ import type { FullCard } from '~/lib/types';
  * @returns The image URL to use
  */
 export function getCardImageForPokemon(pokemonId: number, cards: FullCard[]): string {
-	const pokemonCard = cards.find(c => c.pokemon.id === pokemonId);
+	const pokemonCard = cards.find(c => c.pokemonNumber === pokemonId);
 	return pokemonCard ? getHighResCardImage(pokemonCard.image) : '/loading-spinner.svg';
 }
 

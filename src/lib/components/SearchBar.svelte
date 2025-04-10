@@ -2,11 +2,13 @@
 	import { fade } from 'svelte/transition';
 	import { getCardImage } from '$helpers/card-images';
 	import { onMount, onDestroy } from 'svelte';
-	import type { FullCard } from '~/lib/types';
+	import type { FullCard, Pokemon, Set } from '$lib/types';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
 
 	export let allCards: FullCard[] = [];
+	export let pokemons: Pokemon[] = [];
+	export let sets: Set[] = [];
 	export let autoFocus: boolean = false;
 	export let mobileMode: boolean = false;
 	export let onToggleModal: (() => void) | undefined = undefined;
@@ -15,6 +17,14 @@
 	let searchResults: FullCard[] = [];
 	let showResults = false;
 	let inputElement: HTMLInputElement;
+
+	function getSet(card: FullCard): Set {
+		return sets.find(s => s.name === card.setName) ?? {name: '', ptcgoCode: '', printedTotal: 0, logo: ''};
+	}
+
+	function getPokemon(card: FullCard): Pokemon {
+		return pokemons.find(p => p.id === card.pokemonNumber) ?? {id: 0, name: '', description: '', evolves_from: 0, evolves_to: []};
+	}
 
 	const searchCards = () => {
 		const query = searchQuery.toLowerCase().trim();
@@ -30,8 +40,9 @@
 		allCards.forEach(card => {
 			let score = 0;
 			const cardCode = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
-			const pokemonName = card.pokemon.name.toLowerCase();
-			const setTotal = card.set.printedTotal.toString();
+			const pokemonName = getPokemon(card).name.toLowerCase();
+			const set = getSet(card);
+			const setTotal = set.printedTotal.toString();
 
 			if (!cardCode) return;
 
@@ -111,7 +122,7 @@
 			if (query.includes(' ')) {
 				const [setCode, cardNumber] = query.split(' ');
 				if (
-					card.set.ptcgoCode?.toLowerCase() === setCode.toLowerCase() &&
+					set?.ptcgoCode?.toLowerCase() === setCode.toLowerCase() &&
 					cardCode === cardNumber
 				) {
 					score += 60;
@@ -119,7 +130,7 @@
 			}
 
 			// Set name match (lowest priority)
-			if (card.set.name.toLowerCase().includes(query)) {
+			if (set?.name.toLowerCase().includes(query)) {
 				score += 20;
 			}
 
@@ -223,32 +234,32 @@
 			transition:fade={{ duration: 150 }}
 		>
 			{#each searchResults as card}
-				{@const setCode = card.set.ptcgoCode || card.image.split('/').at(-2)}
+				{@const setCode = getSet(card).ptcgoCode || card.image.split('/').at(-2)}
 				{@const cardCode = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1')}
 				{@const cardImage = getCardImage(card.image)}
 
 				<a
-					href={`/card/${card.pokemon.id}/`}
+					href={`/card/${getPokemon(card).id}/`}
 					class="flex items-center p-3 hover:bg-gray-700 transition-colors duration-200 border-b border-gray-700 last:border-b-0"
 				>
 					<div class="card-preview mr-3 flex-shrink-0">
 						<img
 							src={cardImage}
-							alt={card.pokemon.name}
+							alt={getPokemon(card).name}
 							class="h-20 w-14 object-contain rounded"
 							loading="lazy"
 						/>
 					</div>
 					<div class="card-info flex-grow">
 						<div class="pokemon-name font-bold text-white">
-							{card.pokemon.name.charAt(0).toUpperCase() + card.pokemon.name.slice(1)}
+							{getPokemon(card).name.charAt(0).toUpperCase() + getPokemon(card).name.slice(1)}
 						</div>
 						<div class="set-info text-gray-300 text-sm flex justify-between">
 							<span>
-								{card.set.name} · {setCode}
+								{getSet(card).name} · {setCode}
 							</span>
 							<span>
-								#{cardCode}/{card.set.printedTotal}
+								#{cardCode}/{getSet(card).printedTotal}
 							</span>
 						</div>
 						<div class="price text-gold-400 text-sm">
