@@ -24,7 +24,10 @@
 </script>
 
 <div class="all-pokemon-cards">
-	<h2 class="text-xl font-bold text-gold-400 mb-4">All {firstPokemon ? firstPokemon.name.charAt(0).toUpperCase() + firstPokemon.name.slice(1) : ''} Cards</h2>
+	<h2 class="text-xl font-bold text-gold-400 mb-4">
+		All {firstPokemon ? firstPokemon.name.charAt(0).toUpperCase() + firstPokemon.name.slice(1) : ''} Cards
+		<span class="font-medium text-lg ml-1">({sortedCards.length})</span>
+	</h2>
 
 	<div class="cards-grid">
 		{#each sortedCards as card (card.image)}
