@@ -2,6 +2,9 @@
 	import PageTitle from '@components/PageTitle.svelte';
 	import type {FullCard, Pokemon, CardMarketPrices} from '$lib/types';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
+	import { slide } from 'svelte/transition';
+	import ChevronDown from 'lucide-svelte/icons/chevron-down';
+	import ChevronUp from 'lucide-svelte/icons/chevron-up';
 
 	export let card: FullCard;
 	export let pokemon: Pokemon;
@@ -22,6 +25,14 @@
 		reverseHoloAvg7: 0,
 		reverseHoloAvg30: 0,
 	};
+
+	// State for toggling details visibility
+	let showDetails = false;
+
+	// Function to toggle details
+	function toggleDetails() {
+		showDetails = !showDetails;
+	}
 
 	// Make name reactive to prop changes
 	$: capitalizedPokemonName = pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1);
@@ -60,129 +71,151 @@
 					<span class="text-sm text-gray-400 block">Main Price</span>
 				</div>
 
-				<h4 class="text-lg text-gold-400 font-bold mb-2 text-center">Market Prices (€)</h4>
-				<div class="grid grid-cols-2 gap-3">
-					{#if cardmarket.averageSellPrice !== undefined}
-						<div class="price-item">
-							<span class="font-semibold">Average Sell:</span>
-							<span>{cardmarket.averageSellPrice}€</span>
-						</div>
-					{/if}
-
-					{#if cardmarket.lowPrice !== undefined}
-						<div class="price-item">
-							<span class="font-semibold">Low Price:</span>
-							<span>{cardmarket.lowPrice}€</span>
-						</div>
-					{/if}
-
-					{#if cardmarket.trendPrice !== undefined}
-						<div class="price-item">
-							<span class="font-semibold">Trend Price:</span>
-							<span>{cardmarket.trendPrice}€</span>
-						</div>
-					{/if}
-
-					{#if cardmarket.germanProLow !== undefined && cardmarket.germanProLow > 0}
-						<div class="price-item">
-							<span class="font-semibold">German Pro Low:</span>
-							<span>{cardmarket.germanProLow}€</span>
-						</div>
-					{/if}
-
-					{#if cardmarket.suggestedPrice !== undefined && cardmarket.suggestedPrice > 0}
-						<div class="price-item">
-							<span class="font-semibold">Suggested Price:</span>
-							<span>{cardmarket.suggestedPrice}€</span>
-						</div>
-					{/if}
-
-					{#if cardmarket.lowPriceExPlus !== undefined}
-						<div class="price-item">
-							<span class="font-semibold">Low Price (EX+):</span>
-							<span>{cardmarket.lowPriceExPlus}€</span>
-						</div>
-					{/if}
+				<!-- Toggle Button -->
+				<div class="text-center mb-3">
+					<button
+						on:click={toggleDetails}
+						class="inline-flex items-center justify-center text-sm bg-gold-500 hover:bg-gold-600 text-white font-semibold py-1 px-3 rounded transition-colors duration-200"
+						aria-expanded={showDetails}
+					>
+						{showDetails ? 'Show Less Details' : 'Show More Details'}
+						{#if showDetails}
+							<ChevronUp size={16} class="ml-1" />
+						{:else}
+							<ChevronDown size={16} class="ml-1" />
+						{/if}
+					</button>
 				</div>
 
-				{#if cardmarket.reverseHoloLow !== undefined && cardmarket.reverseHoloLow > 0}
-					<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 text-center">Reverse Holo Prices</h4>
-					<div class="grid grid-cols-2 gap-3">
-						{#if cardmarket.reverseHoloSell !== undefined && cardmarket.reverseHoloSell > 0}
-							<div class="price-item">
-								<span class="font-semibold">Reverse Holo Sell:</span>
-								<span>{cardmarket.reverseHoloSell}€</span>
-							</div>
-						{/if}
+				<!-- Collapsible Details Section -->
+				{#if showDetails}
+					<div transition:slide={{ duration: 300 }}>
+						<h4 class="text-lg text-gold-400 font-bold mb-2 text-center">Market Prices (€)</h4>
+						<div class="grid grid-cols-2 gap-3">
+							{#if cardmarket.averageSellPrice !== undefined}
+								<div class="price-item">
+									<span class="font-semibold">Average Sell:</span>
+									<span>{cardmarket.averageSellPrice}€</span>
+								</div>
+							{/if}
+
+							{#if cardmarket.lowPrice !== undefined}
+								<div class="price-item">
+									<span class="font-semibold">Low Price:</span>
+									<span>{cardmarket.lowPrice}€</span>
+								</div>
+							{/if}
+
+							{#if cardmarket.trendPrice !== undefined}
+								<div class="price-item">
+									<span class="font-semibold">Trend Price:</span>
+									<span>{cardmarket.trendPrice}€</span>
+								</div>
+							{/if}
+
+							{#if cardmarket.germanProLow !== undefined && cardmarket.germanProLow > 0}
+								<div class="price-item">
+									<span class="font-semibold">German Pro Low:</span>
+									<span>{cardmarket.germanProLow}€</span>
+								</div>
+							{/if}
+
+							{#if cardmarket.suggestedPrice !== undefined && cardmarket.suggestedPrice > 0}
+								<div class="price-item">
+									<span class="font-semibold">Suggested Price:</span>
+									<span>{cardmarket.suggestedPrice}€</span>
+								</div>
+							{/if}
+
+							{#if cardmarket.lowPriceExPlus !== undefined}
+								<div class="price-item">
+									<span class="font-semibold">Low Price (EX+):</span>
+									<span>{cardmarket.lowPriceExPlus}€</span>
+								</div>
+							{/if}
+						</div>
 
 						{#if cardmarket.reverseHoloLow !== undefined && cardmarket.reverseHoloLow > 0}
-							<div class="price-item">
-								<span class="font-semibold">Reverse Holo Low:</span>
-								<span>{cardmarket.reverseHoloLow}€</span>
+							<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 text-center">Reverse Holo Prices</h4>
+							<div class="grid grid-cols-2 gap-3">
+								{#if cardmarket.reverseHoloSell !== undefined && cardmarket.reverseHoloSell > 0}
+									<div class="price-item">
+										<span class="font-semibold">Reverse Holo Sell:</span>
+										<span>{cardmarket.reverseHoloSell}€</span>
+									</div>
+								{/if}
+
+								{#if cardmarket.reverseHoloLow !== undefined && cardmarket.reverseHoloLow > 0}
+									<div class="price-item">
+										<span class="font-semibold">Reverse Holo Low:</span>
+										<span>{cardmarket.reverseHoloLow}€</span>
+									</div>
+								{/if}
+
+								{#if cardmarket.reverseHoloTrend !== undefined && cardmarket.reverseHoloTrend > 0}
+									<div class="price-item">
+										<span class="font-semibold">Reverse Holo Trend:</span>
+										<span>{cardmarket.reverseHoloTrend}€</span>
+									</div>
+								{/if}
 							</div>
 						{/if}
 
-						{#if cardmarket.reverseHoloTrend !== undefined && cardmarket.reverseHoloTrend > 0}
-							<div class="price-item">
-								<span class="font-semibold">Reverse Holo Trend:</span>
-								<span>{cardmarket.reverseHoloTrend}€</span>
+						<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 text-center">Average Prices</h4>
+						<div class="grid grid-cols-2 gap-3">
+							{#if cardmarket.avg1 !== undefined}
+								<div class="price-item">
+									<span class="font-semibold">Avg (1 day):</span>
+									<span>{cardmarket.avg1}€</span>
+								</div>
+							{/if}
+
+							{#if cardmarket.avg7 !== undefined}
+								<div class="price-item">
+									<span class="font-semibold">Avg (7 days):</span>
+									<span>{cardmarket.avg7}€</span>
+								</div>
+							{/if}
+
+							{#if cardmarket.avg30 !== undefined}
+								<div class="price-item">
+									<span class="font-semibold">Avg (30 days):</span>
+									<span>{cardmarket.avg30}€</span>
+								</div>
+							{/if}
+						</div>
+
+						{#if (cardmarket.reverseHoloAvg1 !== undefined && cardmarket.reverseHoloAvg1 > 0) ||
+							(cardmarket.reverseHoloAvg7 !== undefined && cardmarket.reverseHoloAvg7 > 0) ||
+							(cardmarket.reverseHoloAvg30 !== undefined && cardmarket.reverseHoloAvg30 > 0)}
+							<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 text-center">Reverse Holo Averages</h4>
+							<div class="grid grid-cols-2 gap-3">
+								{#if cardmarket.reverseHoloAvg1 !== undefined && cardmarket.reverseHoloAvg1 > 0}
+									<div class="price-item">
+										<span class="font-semibold">R. Holo Avg (1 day):</span>
+										<span>{cardmarket.reverseHoloAvg1}€</span>
+									</div>
+								{/if}
+
+								{#if cardmarket.reverseHoloAvg7 !== undefined && cardmarket.reverseHoloAvg7 > 0}
+									<div class="price-item">
+										<span class="font-semibold">R. Holo Avg (7 days):</span>
+										<span>{cardmarket.reverseHoloAvg7}€</span>
+									</div>
+								{/if}
+
+								{#if cardmarket.reverseHoloAvg30 !== undefined && cardmarket.reverseHoloAvg30 > 0}
+									<div class="price-item">
+										<span class="font-semibold">R. Holo Avg (30 days):</span>
+										<span>{cardmarket.reverseHoloAvg30}€</span>
+									</div>
+								{/if}
 							</div>
 						{/if}
 					</div>
 				{/if}
 
-				<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 text-center">Average Prices</h4>
-				<div class="grid grid-cols-2 gap-3">
-					{#if cardmarket.avg1 !== undefined}
-						<div class="price-item">
-							<span class="font-semibold">Avg (1 day):</span>
-							<span>{cardmarket.avg1}€</span>
-						</div>
-					{/if}
-
-					{#if cardmarket.avg7 !== undefined}
-						<div class="price-item">
-							<span class="font-semibold">Avg (7 days):</span>
-							<span>{cardmarket.avg7}€</span>
-						</div>
-					{/if}
-
-					{#if cardmarket.avg30 !== undefined}
-						<div class="price-item">
-							<span class="font-semibold">Avg (30 days):</span>
-							<span>{cardmarket.avg30}€</span>
-						</div>
-					{/if}
-				</div>
-
-				{#if (cardmarket.reverseHoloAvg1 !== undefined && cardmarket.reverseHoloAvg1 > 0) ||
-					(cardmarket.reverseHoloAvg7 !== undefined && cardmarket.reverseHoloAvg7 > 0) ||
-					(cardmarket.reverseHoloAvg30 !== undefined && cardmarket.reverseHoloAvg30 > 0)}
-					<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 text-center">Reverse Holo Averages</h4>
-					<div class="grid grid-cols-2 gap-3">
-						{#if cardmarket.reverseHoloAvg1 !== undefined && cardmarket.reverseHoloAvg1 > 0}
-							<div class="price-item">
-								<span class="font-semibold">R. Holo Avg (1 day):</span>
-								<span>{cardmarket.reverseHoloAvg1}€</span>
-							</div>
-						{/if}
-
-						{#if cardmarket.reverseHoloAvg7 !== undefined && cardmarket.reverseHoloAvg7 > 0}
-							<div class="price-item">
-								<span class="font-semibold">R. Holo Avg (7 days):</span>
-								<span>{cardmarket.reverseHoloAvg7}€</span>
-							</div>
-						{/if}
-
-						{#if cardmarket.reverseHoloAvg30 !== undefined && cardmarket.reverseHoloAvg30 > 0}
-							<div class="price-item">
-								<span class="font-semibold">R. Holo Avg (30 days):</span>
-								<span>{cardmarket.reverseHoloAvg30}€</span>
-							</div>
-						{/if}
-					</div>
-				{/if}
-
+				<!-- Last Updated - Now outside the collapsible section -->
 				{#if card.cardMarketUpdatedAt}
 					<p class="text-sm text-gray-400 mt-4 text-center">Last updated: {card.cardMarketUpdatedAt}</p>
 				{/if}
