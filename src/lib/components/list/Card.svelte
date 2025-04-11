@@ -2,7 +2,11 @@
 	import type {FullCard, Pokemon, Set} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
+	import Heart from 'lucide-svelte/icons/heart';
 	import { NO_IMAGES } from '~/constants';
+	import { authStore } from '$lib/stores/auth';
+	import { addCardToWishlist, isCardInWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
+	import { onMount } from 'svelte';
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];
@@ -25,6 +29,41 @@
 
 	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
 	const set = sets.find(s => s.name === setName)!!;
+	
+	let isInWishlist = false;
+	let isAddingToWishlist = false;
+	
+	// Check if card is in wishlist on mount
+	onMount(async () => {
+		if ($authStore.user && $authStore.profile) {
+			const { exists } = await isCardInWishlist($authStore.profile.username, cardCode);
+			isInWishlist = exists;
+		}
+	});
+	
+	// Toggle wishlist status
+	async function toggleWishlist(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		
+		if (!$authStore.user || !$authStore.profile) return;
+		
+		isAddingToWishlist = true;
+		
+		try {
+			if (isInWishlist) {
+				await removeCardFromWishlist($authStore.profile.username, cardCode);
+				isInWishlist = false;
+			} else {
+				await addCardToWishlist($authStore.profile.username, cardCode);
+				isInWishlist = true;
+			}
+		} catch (error) {
+			console.error('Error toggling wishlist status:', error);
+		} finally {
+			isAddingToWishlist = false;
+		}
+	}
 </script>
 
 <a
@@ -43,6 +82,19 @@
 			></div>
 		{/if}
 		<div class="relative h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px]">
+			{#if $authStore.user && $authStore.profile}
+				<button
+					aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+					class="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors duration-200"
+					on:click={toggleWishlist}
+					disabled={isAddingToWishlist}
+				>
+					<Heart 
+						size={24} 
+						class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'} 
+					/>
+				</button>
+			{/if}
 			<CardImage
 				imageUrl={image}
 				alt={pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}

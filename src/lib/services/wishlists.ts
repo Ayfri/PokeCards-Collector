@@ -2,15 +2,15 @@ import { supabase } from '../supabase';
 import type { UserWishlist } from '../types';
 
 // Add a card to user's wishlist
-export async function addCardToWishlist(username: string, cardId: string) {
+export async function addCardToWishlist(username: string, cardCode: string) {
   try {
     // Check if card already exists in wishlist
     const { data: existingCard } = await supabase
       .from('wishlists')
       .select('*')
       .eq('username', username)
-      .eq('card_id', cardId)
-      .single();
+      .eq('card_code', cardCode)
+      .maybeSingle();
 
     if (existingCard) {
       // Card already in wishlist, return it
@@ -21,7 +21,7 @@ export async function addCardToWishlist(username: string, cardId: string) {
         .from('wishlists')
         .insert({
           username,
-          card_id: cardId,
+          card_code: cardCode,
         })
         .select();
       
@@ -34,13 +34,13 @@ export async function addCardToWishlist(username: string, cardId: string) {
 }
 
 // Remove a card from user's wishlist
-export async function removeCardFromWishlist(username: string, cardId: string) {
+export async function removeCardFromWishlist(username: string, cardCode: string) {
   try {
     const { data, error } = await supabase
       .from('wishlists')
       .delete()
       .eq('username', username)
-      .eq('card_id', cardId)
+      .eq('card_code', cardCode)
       .select();
     
     return { data, error };
@@ -51,14 +51,14 @@ export async function removeCardFromWishlist(username: string, cardId: string) {
 }
 
 // Get if a card is in user's wishlist
-export async function isCardInWishlist(username: string, cardId: string) {
+export async function isCardInWishlist(username: string, cardCode: string) {
   try {
     const { data, error } = await supabase
       .from('wishlists')
       .select('*')
       .eq('username', username)
-      .eq('card_id', cardId)
-      .single();
+      .eq('card_code', cardCode)
+      .maybeSingle();
     
     return { 
       exists: !!data, 

@@ -9,6 +9,7 @@
 		"scrapers": "tsx --env-file=.env scrapper-cli.ts"
 	},
 	"dependencies": {
+		"@supabase/ssr": "^0.6.1",
 		"@supabase/supabase-js": "^2.49.4",
 		"@sveltejs/adapter-cloudflare": "^4.9.0",
 		"@sveltejs/kit": "^2.20.4",
