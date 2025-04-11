@@ -27,7 +27,7 @@
 	<h2 class="text-xl font-bold text-gold-400 mb-4">All {firstPokemon ? firstPokemon.name.charAt(0).toUpperCase() + firstPokemon.name.slice(1) : ''} Cards</h2>
 
 	<div class="cards-grid">
-		{#each sortedCards as card}
+		{#each sortedCards as card (card.image)}
 			<div
 				class="card-item"
 				transition:fade={{ duration: 200 }}
@@ -115,6 +115,8 @@
 		border-radius: 0.5rem;
 		overflow: hidden;
 		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+		aspect-ratio: 63 / 88;
+		width: 100%;
 	}
 
 	.set-overlay {

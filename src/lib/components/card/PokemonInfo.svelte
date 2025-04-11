@@ -23,8 +23,8 @@
 		reverseHoloAvg30: 0,
 	};
 
-	const pokemonName = pokemon.name;
-	const capitalizedPokemonName = pokemonName.charAt(0).toUpperCase() + pokemonName.slice(1);
+	// Make name reactive to prop changes
+	$: capitalizedPokemonName = pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1);
 </script>
 
 <div class="pokemon-info-container mb-8 flex flex-col items-center gap-4 max-lg:gap-0">

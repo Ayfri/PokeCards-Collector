@@ -8,12 +8,16 @@
 	import { pascalCase } from '$helpers/strings';
 	import CardImage from '@components/card/CardImage.svelte';
 	import { onMount } from 'svelte';
+	import { page } from '$app/stores'; // Import the page store
 
 	export let pokemons: Pokemon[];
 	export let cards: FullCard[];
 	export let sets: Set[];
 	export let sprites: Record<number, string>;
-	let card: FullCard = cards[0];
+
+	// Reactive statement to find the correct card based on the URL ID
+	$: currentPokemonId = parseInt($page.params.id, 10);
+	$: card = cards.find(c => c.pokemonNumber === currentPokemonId) ?? cards[0]; // Fallback to first card if not found
 
 	// Indicateur pour savoir si on a fini le chargement initial
 	let isInitialRenderComplete = false;
@@ -28,6 +32,7 @@
 	let debounceTimer: number;
 	let cursorX = 0;
 	let cursorY = 0;
+	let maxRotate = 25; // Max rotation in degrees
 
 	// Trouver le pokémon précédent dans le Pokédex
 	$: previousPokemon = pokemons.find(p => p.id === card.pokemonNumber!! - 1);
@@ -81,17 +86,21 @@
 		ensureSprite(nextPokemon.id);
 	}
 
-	// Optimisation: Utilisation du debounce pour limiter les mises à jour de style lors du mouvement de la souris
-	function debounce(fn: Function, delay: number) {
+	// Optimisation: Utilisation de throttle pour limiter les mises à jour de style lors du mouvement de la souris
+	function throttle(fn: Function, delay: number) {
+		let canRun = true;
 		return (...args: any[]) => {
-			clearTimeout(debounceTimer);
-			debounceTimer = window.setTimeout(() => {
+			if (canRun) {
 				fn(...args);
-			}, delay);
+				canRun = false;
+				setTimeout(() => {
+					canRun = true;
+				}, delay);
+			}
 		};
 	}
 
-	const debouncedUpdateCardStyle = debounce((clientX: number, clientY: number) => {
+	const throttledUpdateCardStyle = throttle((clientX: number, clientY: number) => {
 		const rect = centerCard?.getBoundingClientRect();
 		if (!rect) return;
 
@@ -105,42 +114,29 @@
 			const t = clientY - rect.top;
 			const h = rect.height;
 			const w = rect.width;
-			const px = Math.abs(Math.floor(100 / w * l) - 100);
-			const py = Math.abs(Math.floor(100 / h * t) - 100);
-			const pa = (50 - px) + (50 - py);
 
-			// Calculs pour les positions de gradient / arrière-plan
-			const lp = 50 + (px - 50) / 1.5;
-			const tp = 50 + (py - 50) / 1.5;
-			const pxSpark = 50 + (px - 50) / 7;
-			const pySpark = 50 + (py - 50) / 7;
-			const pOpc = 20 + Math.abs(pa) * 1.5;
-			const ty = ((tp - 50) / 2) * -1;
-			const tx = ((lp - 50) / 1.5) * 0.5;
+			// Calculate rotation based on mouse position within the card
+			const rotateY = ((l / w) * 2 - 1) * maxRotate; // Map x pos to [-maxRotate, maxRotate]
+			const rotateX = (1 - (t / h) * 2) * maxRotate; // Map y pos to [-maxRotate, maxRotate] (inverted Y)
 
-			const gradPos = `background-position: ${lp}% ${tp}%;`;
-			const sparkPos = `background-position: ${pxSpark}% ${pySpark}%;`;
-			const opc = `opacity: ${pOpc / 100};`;
-			const tf = `transform: rotateX(${ty}deg) rotateY(${tx}deg);`;
-			const style2 = `.holo:hover::before {${gradPos}}`;
-			const style3 = `.holo:hover::after {${sparkPos} ${opc}}`;
-			centerCard.setAttribute('style', tf);
-			styleElement.innerHTML = `${style2} \n${style3}`;
+			// Update CSS custom properties
+			centerCard.style.setProperty('--rx', `${rotateX.toFixed(2)}deg`);
+			centerCard.style.setProperty('--ry', `${rotateY.toFixed(2)}deg`);
 		} else {
 			if (!centerCard.classList.contains('inactive')) {
 				centerCard.classList.add('inactive');
-				centerCard.removeAttribute('style');
-				centerCard.style.transform = `rotateY(0deg) rotateX(0deg)`;
-				styleElement.innerHTML = '';
+				// Remove custom properties to allow CSS transition back to default
+				centerCard.style.removeProperty('--rx');
+				centerCard.style.removeProperty('--ry');
 			}
 		}
-	}, 16); // 60fps - une mise à jour toutes les 16ms
+	}, 16); // Throttle to ~60fps
 
 	function handleMouseMove(event: MouseEvent) {
 		const {clientX, clientY} = event;
 		cursorX = clientX;
 		cursorY = clientY;
-		debouncedUpdateCardStyle(clientX, clientY);
+		throttledUpdateCardStyle(clientX, clientY);
 	}
 
 	function handleCardSelect(selectedCard: FullCard) {
@@ -162,39 +158,42 @@
 	}
 
 	// Gestionnaire pour les événements de navigation (bouton précédent/suivant du navigateur)
-	function handlePopState(event: PopStateEvent) {
-		if (event.state) {
-			const { setCode, cardCode } = event.state;
-			// Trouver la carte correspondante
-			const selectedCard = cards.find(c => {
-				const cardSetCode = c.setName;
-				const imageCardNumber = c.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
-				return cardSetCode === setCode && imageCardNumber === cardCode;
-			});
-
-			if (selectedCard) {
-				const selectedSet = sets.find(set => set.name === selectedCard.setName);
-				if (selectedSet) {
-					currentSet = selectedSet;
-				}
-			}
-		}
-	}
+	// This might become redundant or need adjustment with the reactive approach
+	// function handlePopState(event: PopStateEvent) {
+	// 	if (event.state) {
+	// 		const { setCode, cardCode } = event.state;
+	// 		// Trouver la carte correspondante
+	// 		const selectedCard = cards.find(c => {
+	// 			const cardSetCode = c.setName; // Assuming setName corresponds to setCode somehow
+	// 			const imageCardNumber = c.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
+	// 			// Need to ensure setCode maps correctly to setName if they differ
+	// 			const selectedSet = sets.find(set => set.ptcgoCode === setCode); // Find set by ptcgoCode
+	// 			return selectedSet && c.setName === selectedSet.name && imageCardNumber === cardCode;
+	// 		});
+	// 		if (selectedCard) {
+	// 			card = selectedCard; // Update the reactive card variable
+	// 		}
+	// 	}
+	// }
 
 	onMount(() => {
-		// Créer un élément de style pour les animations de carte holo
-		styleElement = document.createElement('style');
-		document.head.appendChild(styleElement);
+		// Remove style element creation and appending
+		// styleElement = document.createElement('style');
+		// document.head.appendChild(styleElement);
 
-		window.addEventListener('popstate', handlePopState);
+		// window.addEventListener('popstate', handlePopState); // Consider removing or adapting popstate
 
-		// Initialiser l'état de l'historique avec la carte actuelle
-		const initialState = {
-			pokemonId: card.pokemonNumber!!,
-			setCode: currentSet.ptcgoCode,
-			cardCode: card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1')
-		};
-		history.replaceState(initialState, '', window.location.href);
+		// Initialiser l'état de l'historique avec la carte actuelle (might need adjustment)
+		// Ensure this reflects the card found via $page.params.id
+		const initialSet = sets.find(set => set.name === card.setName);
+		if (initialSet) {
+			const initialState = {
+				pokemonId: card.pokemonNumber!!,
+				setCode: initialSet.ptcgoCode,
+				cardCode: card.image?.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1')
+			};
+			history.replaceState(initialState, '', window.location.href);
+		}
 
 		// Marquer le rendu initial comme terminé après un court délai
 		setTimeout(() => {
@@ -207,18 +206,18 @@
 		}, 100);
 
 		return () => {
-			window.removeEventListener('popstate', handlePopState);
-			if (styleElement && styleElement.parentNode) {
-				styleElement.parentNode.removeChild(styleElement);
-			}
-			clearTimeout(debounceTimer);
+			// window.removeEventListener('popstate', handlePopState); // Cleanup popstate listener if kept
+			// Remove style element removal
+			// if (styleElement && styleElement.parentNode) {
+			// 	styleElement.parentNode.removeChild(styleElement);
+			// }
 		};
 	});
 </script>
 
 <svelte:window on:mousemove={handleMouseMove}/>
 
-<div class="h-[42rem] max-lg:h-[inherit] max-lg:flex max-lg:flex-col max-lg:gap-8 max-lg:flex-wrap max-lg:content-center">
+<div class="max-lg:flex max-lg:flex-col max-lg:gap-8 max-lg:flex-wrap max-lg:content-center">
 	<!-- Evolution Chain Component -->
 	{#if isInitialRenderComplete}
 		<EvolutionChain {card} {pokemons} {cards} {sprites} />
@@ -232,7 +231,7 @@
 	</div>
 
 	<!-- Main card display with adjacent navigation -->
-	<div class="card-navigation-container flex items-center justify-between w-full px-12 max-w-8xl mx-auto">
+	<div class="card-navigation-container flex items-center justify-between w-full px-12 max-w-8xl mx-auto perspective-container">
 		<!-- Previous Pokemon -->
 		{#if previousPokemon}
 			<a href={`/card/${previousPokemon.id}/`} class="prev-pokemon-nav flex flex-col items-center w-48">
@@ -248,43 +247,31 @@
 						/>
 					</div>
 				</div>
-				<span class="pokemon-name mt-3 text-base font-semibold text-center w-full px-2">
-					<span class="text-gold-400 mr-1">&larr;</span> {pascalCase(previousPokemon.name)}
-				</span>
-				<div class="pokemon-number-indicator mt-1">
-					#{previousPokemon.id}
-				</div>
+				<span class="nav-pokemon-name mt-2 text-center text-sm">{pascalCase(previousPokemon.name)}</span>
+				<span class="nav-pokemon-id text-xs text-gray-400 mt-1">#{previousPokemon.id}</span>
 			</a>
 		{:else}
-			<div class="prev-pokemon-nav empty-space w-32 h-32 opacity-30 flex flex-col items-center justify-center">
-				<div class="empty-pokemon-label text-gold-400 font-bold text-lg">
-					Début du Pokédex
-				</div>
-			</div>
+			<div class="w-48"></div> <!-- Placeholder for alignment -->
 		{/if}
 
-		<!-- Center card -->
-		<div class="card-container h-full w-fit flex flex-col gap-4 items-center">
+		<!-- Center Card -->
+		<div class="center-card-wrapper relative flex-shrink-0 mx-4">
 			<div
+				class="w-[23rem] max-w-[23rem] h-[32rem] max-h-[32rem] mx-auto rounded-xl shadow-lg card-face interactive-card"
 				bind:this={centerCard}
-				class="center-card h-[34rem] {currentType} {card.rarity.toLowerCase()}"
-				id="center-card"
+				data-card-id={currentSet.ptcgoCode}
+				data-card-type={currentType}
 			>
-				<div class="card-aura {currentType}" id="card-aura"></div>
-				<div class="relative h-[34rem] w-[24rem] -z-10 max-lg:w-[75vw] max-lg:h-[112.5vw]">
-					{#key card.image}
-						{#if card && card.image}
-							<CardImage
-								alt={pokemons.find(p => p.id === card.pokemonNumber)?.name}
-								class="image"
-								imageUrl={card.image}
-								lazy={true}
-								height={420}
-								width={300}
-							/>
-						{/if}
-					{/key}
-				</div>
+				{#key card.image}
+					<CardImage
+						alt={pokemons.find(p => p.id === card.pokemonNumber)?.name}
+						imageUrl={card.image}
+						height={544}
+						width={384}
+						class="image rounded-xl"
+						lazy={true}
+					/>
+				{/key}
 			</div>
 		</div>
 
@@ -303,410 +290,160 @@
 						/>
 					</div>
 				</div>
-				<span class="pokemon-name mt-3 text-base font-semibold text-center w-full px-2">
-					{pascalCase(nextPokemon.name)} <span class="text-gold-400 ml-1">&rarr;</span>
-				</span>
-				<div class="pokemon-number-indicator mt-1">
-					#{nextPokemon.id}
-				</div>
+				<span class="nav-pokemon-name mt-2 text-center text-sm">{pascalCase(nextPokemon.name)}</span>
+				<span class="nav-pokemon-id text-xs text-gray-400 mt-1">#{nextPokemon.id}</span>
 			</a>
 		{:else}
-			<div class="next-pokemon-nav empty-space w-32 h-32 opacity-30 flex flex-col items-center justify-center">
-				<div class="empty-pokemon-label text-gold-400 font-bold text-lg">
-					Fin du Pokédex
-				</div>
-			</div>
+			<div class="w-48"></div> <!-- Placeholder for alignment -->
 		{/if}
 	</div>
 
-	<!-- Afficher d'abord les informations de la carte avec PokemonInfo -->
-	<PokemonInfo {card} pokemon={pokemons.find(p => p.id === card.pokemonNumber)} />
-
-	<!-- Chargement différé de la section AllPokemonCards après PokemonInfo -->
-	{#if shouldRenderAllCards}
-		<AllPokemonCards
-			cards={cards}
-			pokemons={pokemons}
-			sets={sets}
-			currentPokemonId={card.pokemonNumber}
-			onCardSelect={handleCardSelect}
-		/>
+	<!-- Pokémon Info Component -->
+	{#if isInitialRenderComplete}
+		{@const pokemon = pokemons.find(p => p.id === card.pokemonNumber)}
+		{#if pokemon}
+			<PokemonInfo {card} {pokemon} />
+		{/if}
 	{/if}
+
 </div>
 
-<svelte:head>
-	<style bind:this={styleElement} id="card"></style>
-</svelte:head>
-
-<div class="filter {currentType}" id="filter" transition:fade></div>
+<!-- Lazy load AllPokemonCards -->
+{#if shouldRenderAllCards}
+	<div class="container mx-auto px-4 py-8" transition:fade|global>
+		{#if card.pokemonNumber}
+			<AllPokemonCards {cards} {pokemons} {sets} currentPokemonId={card.pokemonNumber} onCardSelect={handleCardSelect}/>
+		{/if}
+	</div>
+{/if}
 
 <style>
-	img {
-		user-select: none;
+	.perspective-container {
+		perspective: 1000px;
 	}
 
-	.inactive {
-		transition: all 3s cubic-bezier(0.22, 1, 0.36, 1) !important;
-	}
+	.interactive-card {
+		/* Variables driven by JS */
+		--rx: 0deg;
+		--ry: 0deg;
 
-	.filter {
-		background-image: url("/particles.png");
-		background-size: cover;
-		content: "";
-		filter: var(--filter);
-		height: 100%;
-		inset: 0 0 0 0;
-		position: fixed;
-		width: 100%;
-		z-index: -20;
-	}
-
-	.center-card {
-		position: relative;
+		/* Base state */
 		transform-style: preserve-3d;
+		transform: rotateX(var(--rx)) rotateY(var(--ry));
+		transition: transform 0.3s ease-out; /* Unified transition duration */
+		position: relative; /* Needed for positioning children like CardImage */
+		overflow: hidden; /* Clip children to rounded corners */
 	}
 
-	.center-card:hover {
-		border-radius: 0.5rem !important;
-		box-shadow: 0 0 30px -5px #ffffff70, 0 0 10px -2px #ffffff9e, 0 50px 20px 10px rgb(0, 0, 0);
-	}
-
-	#card-aura {
-		background-color: var(--type-color);
-		border-radius: 50%;
-		filter: blur(5rem) opacity(0.5);
-		height: 43rem;
-		left: 50%;
-		pointer-events: none;
+	.interactive-card .image {
+		/* Ensure image covers the card and respects 3D transform */
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover; /* Or contain, depending on desired behavior */
 		position: absolute;
-		top: 50%;
-		transform: translateX(-50%) translateY(-50%);
-		transition: all 0.3s ease-in-out;
-		width: 43rem;
-		z-index: -20;
+		top: 0;
+		left: 0;
+		backface-visibility: hidden; /* Prevent flickering during rotation */
 	}
 
-	.image {
-		border-radius: 0.5rem;
-		height: 34rem;
-		position: absolute;
-		width: 24rem;
-		z-index: 10;
+	.interactive-card.inactive {
+		/* Smooth transition back to default when mouse leaves */
+		transform: rotateX(0deg) rotateY(0deg);
+		/* transition: transform 0.4s ease-out; */ /* Removed - Use base transition */
+	}
+
+	.card-face {
+		/* Ensure the image inside respects the 3D space if needed, maybe add backface-visibility */
+		/* backface-visibility: hidden; */
 	}
 
 	.pokedex-number-display {
-		margin-top: 0.5rem;
-		margin-bottom: 1rem;
+		height: 2.5rem; /* Fixed height to prevent layout shift */
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.pokedex-number {
-		background-color: rgba(0, 0, 0, 0.5);
-		border: 1px solid #f3d02c;
-		font-size: 1.25rem;
-	}
-
-	.pokemon-number-indicator {
-		text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
-		background-color: rgba(0, 0, 0, 0.7);
-		padding: 0.2rem 0.5rem;
-		border-radius: 0.75rem;
-		border: 1px solid #f3d02c;
-		box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
-		font-weight: bold;
-		font-size: 0.8rem;
-		color: #f3d02c;
-		display: inline-block;
+		background-color: rgba(0, 0, 0, 0.6);
+		border: 1px solid var(--color-gold-400);
+		box-shadow: 0 0 5px var(--color-gold-400);
 	}
 
 	.nav-pokemon-wrapper {
-		padding: 0.5rem;
-		border-radius: 50%;
-		background-color: rgba(0, 0, 0, 0.7);
-		transition: transform 0.3s ease-in-out;
-		position: relative;
-		overflow: hidden;
-		width: 9rem;
-		height: 9rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+		transition: transform 0.4s ease-in-out;
 	}
 
-	.nav-pokemon-wrapper::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: radial-gradient(circle at center,
-			rgba(40, 40, 40, 0.3) 5%,
-			rgba(20, 20, 20, 0.5) 35%,
-			rgba(0, 0, 0, 0.7) 70%);
-		opacity: 1;
-		z-index: 1;
-		border-radius: 50%;
-		transition: background 0.3s ease-in-out;
-	}
-
-	.nav-pokemon-wrapper:hover {
+	.prev-pokemon-nav:hover .nav-pokemon-wrapper,
+	.next-pokemon-nav:hover .nav-pokemon-wrapper {
 		transform: scale(1.05);
 	}
 
-	.nav-pokemon-wrapper::after {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: radial-gradient(circle, rgba(243, 208, 44, 0.3) 0%, rgba(0, 0, 0, 0) 70%);
-		opacity: 0;
-		transition: opacity 0.3s ease-in-out;
-		z-index: 2;
-		border-radius: 50%;
-	}
-
-	.nav-pokemon-wrapper:hover::after {
-		opacity: 1;
-	}
-
-	.pokemon-sprite-container {
-		position: relative;
-		overflow: hidden;
-		border-radius: 50%;
-		width: 8rem;
-		height: 8rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		transition: transform 0.3s ease-in-out;
-		background: radial-gradient(circle at center, rgba(140, 140, 140, 0.25) 0%, rgba(70, 70, 70, 0.1) 50%, rgba(0, 0, 0, 0) 80%);
-	}
-
-	.pokemon-sprite-container::before {
-		content: '';
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, rgba(200, 200, 200, 0.1) 40%, transparent 75%);
-		z-index: 2;
-		opacity: 0.7;
-	}
-
 	.nav-pokemon-image {
-		background-color: transparent;
-		border-radius: 50%;
-		transition: all 0.3s ease-in-out;
-		position: relative;
-		z-index: 2;
+		transition: filter 0.4s ease-in-out;
 	}
 
-	/* Silhouette effect */
-	.silhouette {
-		filter: brightness(0) contrast(0.85) drop-shadow(0 0 3px rgba(255, 255, 255, 0.9));
-		transition: all 0.3s ease-in-out;
-		position: relative;
-		z-index: 3;
-		opacity: 0.95;
+	.nav-pokemon-image.silhouette {
+		/* filter: brightness(0) invert(0.2) sepia(0.5) hue-rotate(180deg); */
+		filter: grayscale(100%) brightness(0.2) opacity(0.8);
 	}
 
-	.nav-pokemon-wrapper:hover .silhouette {
-		filter: brightness(1) contrast(1) drop-shadow(0 0 3px rgba(255, 255, 255, 0.9));
-		opacity: 1;
+	.prev-pokemon-nav:hover .nav-pokemon-image.silhouette,
+	.next-pokemon-nav:hover .nav-pokemon-image.silhouette {
+		filter: none; /* Reveal color on hover */
 	}
 
-	.pokemon-name {
-		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		letter-spacing: 0.02em;
+	.nav-pokemon-name {
+		color: #ccc; /* Lighter color for better readability */
+		transition: color 0.4s ease-in-out;
 	}
 
-	.empty-pokemon-label {
-		text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
-		padding: 0.5rem;
-		text-align: center;
-		border-radius: 0.5rem;
-		background-color: rgba(0, 0, 0, 0.3);
-		border: 1px solid rgba(243, 208, 44, 0.3);
+	.prev-pokemon-nav:hover .nav-pokemon-name,
+	.next-pokemon-nav:hover .nav-pokemon-name {
+		color: #fff; /* Brighten on hover */
 	}
 
-	.empty-space {
-		border-radius: 50%;
-		background-color: rgba(0, 0, 0, 0.4);
-		box-shadow: inset 0 0 15px rgba(243, 208, 44, 0.2);
+	/* Existing styles */
+	:global(.dark) .silhouette {
+		/* filter: brightness(1.5) contrast(0.9) saturate(0); */
+		filter: grayscale(100%) brightness(0.7) opacity(0.8); /* Adjusted for grey silhouette in dark mode */
 	}
 
-	:global(.card-type) {
-		background-color: color-mix(in oklab, var(--type-color), white 50%);
-		border: 1px solid var(--type-color);
-		border-radius: 1rem;
-		color: color-mix(in oklab, var(--type-color), black 25%);
-		margin: 0;
-		padding: 0.15rem 0.8rem;
+	:global(.dark) .prev-pokemon-nav:hover .nav-pokemon-image.silhouette,
+	:global(.dark) .next-pokemon-nav:hover .nav-pokemon-image.silhouette {
+		filter: none;
 	}
 
-	:global(.holo::after) {
-		background-image: url("https://assets.codepen.io/13471/sparkles.gif"), url(https://assets.codepen.io/13471/holo.png), linear-gradient(125deg, #ff008450 15%, #fca40040 30%, #ffff0030 40%, #00ff8a20 60%, #00cfff40 70%, #cc4cfa50 85%);
-		background-position: 50% 50%;
-		background-size: 160%;
-		border-radius: 2.5rem !important;
-		filter: brightness(1) contrast(1);
-		mix-blend-mode: color-dodge;
-		opacity: 70%;
-		transition: all 0.33s ease;
-		z-index: 2;
-	}
-
-	:global(.holo::before),
-	:global(.holo::after) {
-		background-repeat: no-repeat;
-		border-radius: 0.5rem !important;
-		content: "";
-		height: 34rem;
-		left: 50%;
-		mix-blend-mode: color-dodge;
-		position: absolute;
-		top: 50%;
-		transform: translate(-50%, -50%);
-		transition: all 0.33s ease;
-		width: 24rem;
-	}
-
-	:global(.holo.active:after),
-	:global(.holo:hover:after) {
-		border-radius: 0.5rem !important;
-		filter: brightness(1) contrast(1);
-		opacity: 1;
-	}
-
-	:global(.holo.active),
-	:global(.holo:hover) {
-		animation: none;
-		border-radius: 0.5rem !important;
-		transition: box-shadow 0.1s ease-out;
-	}
-
-	:global(.holo:hover::before) {
-		animation: none;
-		background-image: linear-gradient(110deg, transparent 25%, var(--type-color) 48%, var(--type-color2) 52%, transparent 75%);
-		background-position: 50% 50%;
-		background-size: 250% 250%;
-		border-radius: 0.5rem !important;
-		filter: brightness(0.66) contrast(1.33);
-		opacity: 0.88;
-		transition: none;
-	}
-
-	@media (max-width: 1200px) {
-		.card-navigation-container {
-			padding: 0 1rem;
-		}
-	}
-
-	@media (max-width: 768px) {
-		.card-container {
-			margin: 1.5rem auto;
-		}
-
+	/* Responsive adjustments if necessary */
+	@media (max-width: 1024px) {
 		.card-navigation-container {
 			flex-direction: column;
-			padding: 0;
-			margin-top: 2rem;
+			gap: 1rem;
+			padding: 1rem;
+			perspective: none; /* Disable perspective on smaller screens? Or adjust? */
 		}
 
-		.prev-pokemon-nav, .next-pokemon-nav {
-			margin: 1.5rem 0;
-		}
-
-		.prev-pokemon-nav {
-			order: 1;
-			align-self: flex-start;
-			margin-left: 1.5rem;
-		}
-
+		.prev-pokemon-nav,
 		.next-pokemon-nav {
-			order: 2;
-			align-self: flex-end;
-			margin-right: 1.5rem;
+			order: 2; /* Place nav arrows below card */
+			width: auto;
 		}
 
-		.card-container {
-			order: 0;
+		.center-card-wrapper {
+			order: 1;
+			margin: 0;
 		}
 
-		#card-aura {
-			height: 50vh;
-			top: 35%;
-			width: 80vw;
-		}
-
-		.images, .image {
-			height: 112.5vw;
-			width: 75vw;
-		}
-
-		.nav-pokemon-wrapper {
-			width: 6rem;
-			height: 6rem;
-			margin-top: 1rem;
-		}
-
-		.pokemon-sprite-container {
-			width: 5rem;
-			height: 5rem;
-		}
-
-		.nav-pokemon-image {
-			width: 4.5rem;
-			height: 4.5rem;
-		}
-
-		.pokemon-number-indicator {
-			font-size: 0.7rem;
-			padding: 0.15rem 0.4rem;
-		}
-
-		.pokemon-name {
-			font-size: 0.9rem;
-			margin-top: 0.5rem;
-		}
-
-		.pokemon-title {
-			font-size: 1.75rem;
-			margin-top: 0.25rem;
-		}
-
-		:global(.center-card + div > h2) {
-			margin-top: 1rem;
-			font-size: 1.75rem;
+		.interactive-card {
+			width: 80vw; /* Adjust width for smaller screens */
+			height: auto; /* Adjust height proportionally */
+			aspect-ratio: 63 / 88; /* Standard Pokemon card ratio */
+			max-width: none;
+			max-height: none;
+			transform: none !important; /* Disable rotation on small screens */
+			transition: none;
 		}
 	}
 
-	.pokemon-title-container {
-		display: none;
-	}
-
-	.pokemon-title {
-		color: white;
-		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.5);
-		margin-bottom: 1rem;
-	}
-
-	/* Styles pour le titre du Pokémon sur la page */
-	:global(.center-card + div > h2) {
-		position: relative;
-		z-index: 5;
-		margin-top: 2rem;
-		color: white;
-		text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8), 0 0 4px rgba(0, 0, 0, 0.5);
-		font-size: 2.5rem;
-		font-weight: bold;
-		text-align: center;
-	}
 </style>
