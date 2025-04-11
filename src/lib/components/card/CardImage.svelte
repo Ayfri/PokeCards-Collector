@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {env} from '$env/dynamic/public';
+	import { processCardImage } from '$lib/helpers/card-images';
 
 	/**
 	 * Alt text for the image
@@ -45,36 +46,12 @@
 	let loaded = false;
 	let error = false;
 
-	// Process the image URL to get the set code and card ID
-	const urlParts = imageUrl.split('/');
-	const setCode = urlParts.length >= 2 ? urlParts[urlParts.length - 2] : '';
-	const cardIdWithExt = urlParts.length >= 1 ? urlParts[urlParts.length - 1] : '';
-	const cardId = cardIdWithExt.split('_')[0]; // Remove "_hires" part if present
-
-	// Default to the original image URL (usually PNG)
-	let standardImageUrl = imageUrl;
-	let lowResImageUrl = imageUrl.replace('_hires.png', '.png');
-
-	// Determine if CDN is being used
-	const CDN_URL = env.PUBLIC_CARD_CDN_URL;
-	const usingCdn = !!CDN_URL;
-
-	// If using CDN, it'll be WebP format with normal and low-res versions
-	if (usingCdn) {
-		// Format: CDN_URL/setCode/cardId.webp and CDN_URL/setCode/cardId_lowres.webp
-		standardImageUrl = `${CDN_URL}/${setCode}/${cardId}.webp`;
-		lowResImageUrl = `${CDN_URL}/${setCode}/${cardId}_lowres.webp`;
-	} else if (highRes && !standardImageUrl.includes('_hires')) {
-		// For non-CDN URLs, ensure high resolution if requested
-		const lastDotIndex = standardImageUrl.lastIndexOf('.');
-		if (lastDotIndex !== -1) {
-			standardImageUrl = `${standardImageUrl.substring(0, lastDotIndex)}_hires${standardImageUrl.substring(lastDotIndex)}`;
-		}
-	}
+	// Process the image URL using our centralized function
+	const standardImageUrl = processCardImage(imageUrl, highRes);
+	const lowResImageUrl = processCardImage(imageUrl, false);
 
 	// For small screen devices, use the standard resolution rather than high-res
 	const srcsetValue = `${lowResImageUrl} 245w, ${standardImageUrl} 300w`;
-
 	const sizesValue = '(max-width: 245px) 245px, 300w';
 
 	// Handle error case

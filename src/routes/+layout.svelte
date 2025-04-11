@@ -5,7 +5,7 @@
 	import Header from '@components/Header.svelte';
 	import pokeballSvg from '~/assets/pokeball.svg?raw';
 	import { onNavigate } from '$app/navigation';
-	import { BASE_URL, SITE_NAME } from '~/constants';
+	import { BASE_URL, NO_IMAGES, SITE_NAME } from '~/constants';
 
 	const { title, description, image } = page.data;
 
@@ -83,7 +83,7 @@
 <div class="flex flex-col min-h-screen">
 	<Header/>
 	<slot/>
-	<div class="background fixed top-[15%] -z-50 flex place-content-center h-[100lvh] w-[95%] max-lg:left-[2.5%] lg:w-full">
+	<div class="background fixed top-[15%] -z-50 flex place-content-center h-[100lvh] w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
 		{@html pokeballSvg}
 	</div>
 </div>

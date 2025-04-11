@@ -1,5 +1,6 @@
 import { env } from '$env/dynamic/public';
-import type { FullCard } from '~/lib/types';
+import type { FullCard } from '$lib/types';
+import { NO_IMAGES } from '~/constants';
 
 /**
  * Gets the image URL for a Pokémon
@@ -12,23 +13,28 @@ import type { FullCard } from '~/lib/types';
  */
 export function getCardImageForPokemon(pokemonId: number, cards: FullCard[]): string {
 	const pokemonCard = cards.find(c => c.pokemonNumber === pokemonId);
-	return pokemonCard ? getHighResCardImage(pokemonCard.image) : '/loading-spinner.svg';
+	return pokemonCard ? processCardImage(pokemonCard.image) : '/loading-spinner.svg';
 }
 
 /**
- * Gets the image URL for a card
- * If CDN_URL environment variable is set, it will use that as the base URL
- * Otherwise it will use the original API URL
- *
+ * Centralized function to process all card images
+ * Handles CDN configurations, NO_IMAGES mode, and high-res options
+ * 
  * @param imageUrl The original image URL from the API
- * @returns The image URL to use
+ * @param highRes Whether to use high-resolution images (default: true)
+ * @returns The processed image URL
  */
-export function getCardImage(imageUrl: string): string {
+export function processCardImage(imageUrl: string, highRes: boolean = true): string {
 	const CDN_URL = env.PUBLIC_CARD_CDN_URL;
 
-	// If no CDN URL is set, return the original URL
+	// Check for NO_IMAGES mode
+	if (NO_IMAGES) {
+		return "https://placehold.co/300x450/transparent/transparent";
+	}
+
+	// If no CDN URL is set, handle high-res if needed
 	if (!CDN_URL) {
-		return imageUrl;
+		return highRes ? getHighResCardImage(imageUrl) : imageUrl;
 	}
 
 	// Extract set code and card ID from the original URL
@@ -44,7 +50,15 @@ export function getCardImage(imageUrl: string): string {
 
 	// Construct the CDN URL
 	// Format: CDN_URL/setCode/cardId.png
-	return `${CDN_URL}/${setCode}/${cardId}_hires.png`;
+	return `${CDN_URL}/${setCode}/${cardId}${highRes ? '_hires' : ''}.png`;
+}
+
+/**
+ * Legacy function for backward compatibility
+ * @deprecated Use processCardImage instead
+ */
+export function getCardImage(imageUrl: string): string {
+	return processCardImage(imageUrl);
 }
 
 /**

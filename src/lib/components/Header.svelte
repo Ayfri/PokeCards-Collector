@@ -3,9 +3,10 @@
 	import SearchBar from '@components/SearchBar.svelte';
 	import SearchModal from '@components/SearchModal.svelte';
 	import UserMenu from '@components/auth/UserMenu.svelte';
-	import type { FullCard } from '~/lib/types';
+	import type { FullCard } from '$lib/types';
 	import pokestore from '~/assets/pokestore.png';
 	import { page } from '$app/state';
+	import { NO_IMAGES } from '~/constants';
 
 	// Use allCards from layout data instead of page-specific data
 	$: allCards = page.data.allCards as FullCard[] || [];
@@ -16,7 +17,7 @@
 		<a href="/" class="text-gray-400 max-xs:text-sm">Cards</a>
 		<span class="flex-1"></span>
 		<a href="/" class="logo-link absolute left-1/2 top-full xs:top-3/4 lg:top-full -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full z-20">
-			{#if pokestore}
+			{#if !NO_IMAGES}
 				<img
 					alt="logo"
 					loading="eager"

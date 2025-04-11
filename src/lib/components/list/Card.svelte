@@ -2,6 +2,7 @@
 	import type {FullCard, Pokemon, Set} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
+	import { NO_IMAGES } from '~/constants';
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];
@@ -35,10 +36,12 @@
 >
 	<div class="card-pokestore group relative flex flex-col items-center w-fit cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.025]">
 		<div class:list={rarity.toLowerCase()}></div>
-		<div
-			class={`aura h-[26rem] max-2xs:h-[22rem] w-[20rem] max-2xs:w-[16rem] absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-[var(--type-color)]
-			transition-all duration-700 ease-out group-hover:blur-[2.5rem] ${types.toLowerCase().split(',')}`}
-		></div>
+		{#if !NO_IMAGES}
+			<div
+				class={`aura h-[26rem] max-2xs:h-[22rem] w-[20rem] max-2xs:w-[16rem] absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-[var(--type-color)]
+				transition-all duration-700 ease-out group-hover:blur-[2.5rem] ${types.toLowerCase().split(',')}`}
+			></div>
+		{/if}
 		<div class="relative h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px]">
 			<CardImage
 				imageUrl={image}

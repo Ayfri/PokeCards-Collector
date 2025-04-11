@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import { getCardImage } from '$helpers/card-images';
+	import { getCardImage, processCardImage } from '$helpers/card-images';
 	import { onMount, onDestroy } from 'svelte';
 	import type { FullCard, Pokemon, Set } from '$lib/types';
 	import Search from 'lucide-svelte/icons/search';
@@ -236,7 +236,7 @@
 			{#each searchResults as card}
 				{@const setCode = getSet(card).ptcgoCode || card.image.split('/').at(-2)}
 				{@const cardCode = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1')}
-				{@const cardImage = getCardImage(card.image)}
+				{@const cardImage = processCardImage(card.image)}
 
 				<a
 					href={`/card/${getPokemon(card).id}/`}
