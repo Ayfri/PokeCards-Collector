@@ -161,21 +161,6 @@ async function fetchFromApi<T>(endpoint: string, params: Record<string, string> 
 	}, 5, 1000);
 }
 
-/**
- * Safe wrapper for getAverageColor with retry mechanism
- */
-async function safeGetAverageColor(imageUrl: string): Promise<string> {
-	return withRetry(async () => {
-		try {
-			const result = await getAverageColor(imageUrl, {algorithm: 'simple'});
-			return result.hex.substring(1);
-		} catch (error) {
-			// Silently ignore errors
-			throw error;
-		}
-	}, 3, 300, false);
-}
-
 export async function fetchPokemon(name: string, index: number) {
 	try {
 		const selectFields = 'name,rarity,images,set,cardmarket,types,nationalPokedexNumbers,supertype,artist,tcgplayer';
@@ -222,71 +207,6 @@ export async function fetchPokemon(name: string, index: number) {
 		await new Promise(resolve => setTimeout(resolve, 1500));
 		return fetchPokemon(name, index);
 	}
-}
-
-async function getPokemon(name: string, index: number) {
-	const cards = await fetchPokemon(name, index);
-	if (!cards || cards?.length === 0) {
-		console.log(`Pokédex: ${index}/${POKEMONS_COUNT} (${name}), no cards found for this Pokémon !`);
-		return [];
-	}
-
-	console.log(`Pokédex: ${index}/${POKEMONS_COUNT} (${name}), found ${cards.length} cards !`);
-
-	const fetchedCards = cards.map(async (card: FetchedCard) => {
-		const tcgplayerPrices = card?.tcgplayer?.prices ?? {};
-
-		const price = card.cardmarket?.prices?.averageSellPrice || tcgplayerPrices.holofoil?.market ||
-			tcgplayerPrices.reverseHolofoil?.market ||
-			tcgplayerPrices.normal?.market || tcgplayerPrices["1stEditionHolofoil"]?.market ||
-			tcgplayerPrices["1stEditionNormal"]?.market;
-
-		const smallImageURL = card.images.small;
-		const meanColorHex = await safeGetAverageColor(smallImageURL);
-
-		const nationalPokedexNumbers = card.nationalPokedexNumbers ?? [index];
-
-		// Extract set code from image URL
-		const setCode = card.images.large.split('/').at(-2);
-
-		// Extract card number from filename
-		let cardNumber;
-		const filename = card.images.large.split('/').at(-1);
-		if (filename) {
-			const match = filename.split('_')[0].match(/[a-z]*(\d+)[a-z]*/i);
-			cardNumber = match ? match[1] : undefined;
-		}
-
-		// Generate unique card code
-		const cardCode = generateUniqueCardCode(
-			nationalPokedexNumbers[0],
-			setCode,
-			cardNumber,
-			card.supertype
-		);
-
-		return {
-			id: card.id,
-			image: card.images.large,
-			meanColor: meanColorHex,
-			name: card.name,
-			numero: nationalPokedexNumbers.join(', '),
-			price,
-			rarity: card.rarity,
-			set_name: card.set.name,
-			types: card.types?.join(', ') || '',
-			supertype: card.supertype,
-			artist: card.artist,
-			cardCode, // Add the generated cardCode
-			cardmarket: card.cardmarket ? {
-				url: card.cardmarket.url,
-				updatedAt: card.cardmarket.updatedAt,
-				prices: card.cardmarket.prices
-			} : undefined
-		};
-	});
-	const allCards = await Promise.all(fetchedCards);
-	return allCards.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
 }
 
 async function fetchAndFilterSets() {
@@ -580,67 +500,4 @@ export async function fetchCardsByType(supertype: string) {
 		await new Promise(resolve => setTimeout(resolve, 2500));
 		return fetchCardsByType(supertype);
 	}
-}
-
-async function getCardsByType(supertype: string) {
-	const cards = await fetchCardsByType(supertype);
-	if (!cards || cards?.length === 0) {
-		console.log(`No ${supertype} cards found!`);
-		return [];
-	}
-
-	console.log(`Found ${cards.length} ${supertype} cards!`);
-
-	const fetchedCards = cards.map(async (card: FetchedCard) => {
-		const tcgplayerPrices = card?.tcgplayer?.prices ?? {};
-
-		const price = card.cardmarket?.prices?.averageSellPrice || tcgplayerPrices.holofoil?.market ||
-			tcgplayerPrices.reverseHolofoil?.market ||
-			tcgplayerPrices.normal?.market || tcgplayerPrices["1stEditionHolofoil"]?.market ||
-			tcgplayerPrices["1stEditionNormal"]?.market;
-
-		const smallImageURL = card.images.small;
-		const meanColorHex = await safeGetAverageColor(smallImageURL);
-
-		// Extract set code from image URL
-		const setCode = card.images.large.split('/').at(-2);
-
-		// Extract card number from filename
-		let cardNumber;
-		const filename = card.images.large.split('/').at(-1);
-		if (filename) {
-			const match = filename.split('_')[0].match(/[a-z]*(\d+)[a-z]*/i);
-			cardNumber = match ? match[1] : undefined;
-		}
-
-		// Generate unique card code
-		const cardCode = generateUniqueCardCode(
-			0, // Energy and Trainer cards have no Pokédex number
-			setCode,
-			cardNumber,
-			card.supertype
-		);
-
-		return {
-			id: card.id,
-			image: card.images.large,
-			meanColor: meanColorHex,
-			name: card.name,
-			numero: '-', // Les cartes Energy et Trainer n'ont pas de numéro Pokédex
-			price,
-			rarity: card.rarity,
-			set_name: card.set.name,
-			types: card.types?.join(', ') || '',
-			supertype: card.supertype,
-			artist: card.artist,
-			cardCode, // Add the generated cardCode
-			cardmarket: card.cardmarket ? {
-				url: card.cardmarket.url,
-				updatedAt: card.cardmarket.updatedAt,
-				prices: card.cardmarket.prices
-			} : undefined
-		};
-	});
-	const allCards = await Promise.all(fetchedCards);
-	return allCards.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
 }
