@@ -289,6 +289,20 @@
 		transform: none;
 	}
 
+	/* Styles for Pokemon Type Tags */
+	.card-type {
+		background-color: var(--type-color, #777); /* Use type color, fallback gray */
+		color: white;
+		padding: 0.2rem 0.8rem; /* Adjusted padding */
+		border-radius: 9999px; /* Pill shape */
+		font-size: 0.9rem; /* Adjusted font size */
+		font-weight: 500; /* Medium weight */
+		text-transform: capitalize;
+		box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+		border: 1px solid rgba(0,0,0,0.2);
+		text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+	}
+
 	@media (max-width: 768px) {
 		.pokemon-info-container {
 			margin-top: 3rem;
