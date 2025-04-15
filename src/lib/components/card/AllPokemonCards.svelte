@@ -23,20 +23,20 @@
 	$: firstPokemon = getPokemon(sortedCards[0].pokemonNumber);
 </script>
 
-<div class="all-pokemon-cards">
+<div class="bg-gray-800/40 border-gold-400 border-2 rounded-2xl p-6 mt-8 w-full">
 	<h2 class="text-xl font-bold text-gold-400 mb-4">
 		All {firstPokemon ? firstPokemon.name.charAt(0).toUpperCase() + firstPokemon.name.slice(1) : ''} Cards
 		<span class="font-medium text-lg ml-1">({sortedCards.length})</span>
 	</h2>
 
-	<div class="cards-grid">
+	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-4">
 		{#each sortedCards as card (card.image)}
 			<button
-				class="card-item"
+				class="flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5 cursor-pointer"
 				transition:fade={{ duration: 200 }}
 				on:click={() => onCardSelect(card)}
 			>
-				<div class="card-container">
+				<div class="relative rounded-lg overflow-hidden shadow-lg w-full" style="aspect-ratio: 63/88;">
 					<CardImage
 						imageUrl={card.image}
 						alt={getPokemon(card.pokemonNumber)?.name}
@@ -44,16 +44,16 @@
 						lazy={true}
 						highRes={false}
 					/>
-					<div class="set-overlay">
+					<div class="absolute bottom-1 right-1 bg-black/70 rounded-full p-0.5 border border-gold-400">
 						<img
 							src={getSet(card.setName)?.logo}
 							alt={getSet(card.setName)?.name}
-							class="set-icon"
+							class="w-[30px] h-[30px] md:w-[24px] md:h-[24px] object-contain"
 							title={getSet(card.setName)?.name}
 						/>
 					</div>
 				</div>
-				<div class="card-info">
+				<div class="mt-0.5 w-full text-center flex flex-col">
 					<h2 class="text-center font-bold text-sm">{getSet(card.setName)?.name}</h2>
 					<div class="flex items-center justify-center">
 						{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
@@ -83,79 +83,3 @@
 		{/each}
 	</div>
 </div>
-
-<style lang="postcss">
-	.all-pokemon-cards {
-		background-color: rgba(35, 35, 35, 0.75);
-		border-color: #f3d02c;
-		border-radius: 1rem;
-		border-style: solid;
-		border-width: 2px;
-		padding: 1.5rem;
-		margin-top: 2rem;
-		width: 100%;
-	}
-
-	.cards-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-		gap: 1.5rem;
-	}
-
-	.card-item {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		transition: transform 0.2s ease;
-		cursor: pointer;
-	}
-
-	.card-item:hover {
-		transform: translateY(-10px);
-	}
-
-	.card-container {
-		position: relative;
-		border-radius: 0.5rem;
-		overflow: hidden;
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-		aspect-ratio: 63 / 88;
-		width: 100%;
-	}
-
-	.set-overlay {
-		position: absolute;
-		bottom: 5px;
-		right: 5px;
-		background-color: rgba(0, 0, 0, 0.7);
-		border-radius: 50%;
-		padding: 2px;
-		border: 1px solid #f3d02c;
-	}
-
-	.set-icon {
-		width: 30px;
-		height: 30px;
-		object-fit: contain;
-	}
-
-	.card-info {
-		margin-top: 0.2rem;
-		width: 100%;
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-	}
-
-	@media (max-width: 768px) {
-		.cards-grid {
-			grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-			gap: 1rem;
-		}
-
-		.set-icon {
-			width: 24px;
-			height: 24px;
-		}
-	}
-</style>
