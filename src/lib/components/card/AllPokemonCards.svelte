@@ -31,7 +31,7 @@
 
 	<div class="cards-grid">
 		{#each sortedCards as card (card.image)}
-			<div
+			<button
 				class="card-item"
 				transition:fade={{ duration: 200 }}
 				on:click={() => onCardSelect(card)}
@@ -79,7 +79,7 @@
 						{/if}
 					</div>
 				</div>
-			</div>
+			</button>
 		{/each}
 	</div>
 </div>
