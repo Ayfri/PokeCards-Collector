@@ -14,7 +14,10 @@ export async function getCards(): Promise<FullCard[]> {
 }
 
 export async function getSets(): Promise<Set[]> {
-	return pokemonSets as Set[];
+	return pokemonSets.map(set => ({
+		...set,
+		releaseDate: new Date(set.releaseDate)
+	}));
 }
 
 export async function getTypes(): Promise<string[]> {
