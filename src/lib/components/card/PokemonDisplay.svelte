@@ -8,7 +8,7 @@
 	import { pascalCase } from '$helpers/strings';
 	import CardImage from '@components/card/CardImage.svelte';
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores'; // Import the page store
+	import { page } from '$app/stores';
 
 	export let pokemons: Pokemon[];
 	export let cards: FullCard[];
@@ -19,12 +19,11 @@
 	$: currentPokemonId = parseInt($page.params.id, 10);
 	$: card = cards.find(c => c.pokemonNumber === currentPokemonId) ?? cards[0]; // Fallback to first card if not found
 
-	// Indicateur pour savoir si on a fini le chargement initial
+	// Indicator for when initial loading is complete
 	let isInitialRenderComplete = false;
 	let shouldRenderAllCards = false;
 
 	let centerCard: HTMLElement;
-	let styleElement: HTMLStyleElement = null!;
 
 	$: currentSet = sets.find(set => set.name === card.setName)!!;
 	$: currentType = card.types.toLowerCase().split(',')[0];
@@ -34,38 +33,24 @@
 	let cursorY = 0;
 	let maxRotate = 25; // Max rotation in degrees
 
-	// Trouver le pokémon précédent dans le Pokédex
+	// Find the previous pokemon in the Pokédex
 	$: previousPokemon = pokemons.find(p => p.id === card.pokemonNumber!! - 1);
 
-	// Trouver le pokémon suivant dans le Pokédex
+	// Find the next pokemon in the Pokédex
 	$: nextPokemon = pokemons.find(p => p.id === card.pokemonNumber!! + 1);
 
-	// Gestionnaires d'erreurs pour les images Pokémon
-	function handlePreviousPokemonError(event: Event) {
+	// Replace previous/next error handlers with a single one
+	function handlePokemonImageError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
-		if (!previousPokemon) return;
-		// Ajouter une classe pour éviter une boucle infinie si les deux images échouent
-		if (img.classList.contains('fallback-attempted')) {
-			img.src = '/loading-spinner.svg';
-			img.onerror = null; // Empêcher la gestion d'erreur ultérieure
-		} else {
-			img.classList.add('fallback-attempted');
+		// Use a known fallback and prevent loops if the fallback itself fails
+		const fallbackSrc = '/loading-spinner.svg';
+		if (img.src !== fallbackSrc) {
+			img.src = fallbackSrc;
+			img.onerror = null; // Prevent infinite loops
 		}
 	}
 
-	function handleNextPokemonError(event: Event) {
-		const img = event.currentTarget as HTMLImageElement;
-		if (!nextPokemon) return;
-		// Ajouter une classe pour éviter une boucle infinie si les deux images échouent
-		if (img.classList.contains('fallback-attempted')) {
-			img.src = '/loading-spinner.svg';
-			img.onerror = null; // Empêcher la gestion d'erreur ultérieure
-		} else {
-			img.classList.add('fallback-attempted');
-		}
-	}
-
-	// Préchargement des sprites manquants - uniquement pour les Pokémon adjacents (optimisation)
+	// Preload missing sprites - only for adjacent Pokémon (optimization)
 	async function ensureSprite(pokemonId: number) {
 		if (!sprites[pokemonId]) {
 			try {
@@ -77,7 +62,7 @@
 		return sprites[pokemonId];
 	}
 
-	// Préchargement optimisé des sprites pour les Pokémon adjacents uniquement
+	// Optimized sprite preloading for adjacent Pokémon only
 	$: if (previousPokemon && !sprites[previousPokemon.id]) {
 		ensureSprite(previousPokemon.id);
 	}
@@ -86,7 +71,7 @@
 		ensureSprite(nextPokemon.id);
 	}
 
-	// Optimisation: Utilisation de throttle pour limiter les mises à jour de style lors du mouvement de la souris
+	// Optimization: Using throttle to limit style updates when mouse moves
 	function throttle(fn: Function, delay: number) {
 		let canRun = true;
 		return (...args: any[]) => {
@@ -144,47 +129,21 @@
 		if (selectedSet) {
 			currentSet = selectedSet;
 
-			// Extraire les informations pour l'URL
+			// Extract information for the URL
 			const pokemonId = selectedCard.pokemonNumber!!;
 			const setCode = selectedSet.ptcgoCode;
 			const cardCode = selectedCard.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
 
-			// Construire la nouvelle URL
+			// Build the new URL
 			const newUrl = `/card/${pokemonId}/?set=${setCode}&number=${cardCode}`;
 
-			// Mettre à jour l'URL sans rafraîchir la page
+			// Update the URL without refreshing the page
 			history.pushState({ pokemonId, setCode, cardCode }, '', newUrl);
 		}
 	}
 
-	// Gestionnaire pour les événements de navigation (bouton précédent/suivant du navigateur)
-	// This might become redundant or need adjustment with the reactive approach
-	// function handlePopState(event: PopStateEvent) {
-	// 	if (event.state) {
-	// 		const { setCode, cardCode } = event.state;
-	// 		// Trouver la carte correspondante
-	// 		const selectedCard = cards.find(c => {
-	// 			const cardSetCode = c.setName; // Assuming setName corresponds to setCode somehow
-	// 			const imageCardNumber = c.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
-	// 			// Need to ensure setCode maps correctly to setName if they differ
-	// 			const selectedSet = sets.find(set => set.ptcgoCode === setCode); // Find set by ptcgoCode
-	// 			return selectedSet && c.setName === selectedSet.name && imageCardNumber === cardCode;
-	// 		});
-	// 		if (selectedCard) {
-	// 			card = selectedCard; // Update the reactive card variable
-	// 		}
-	// 	}
-	// }
-
 	onMount(() => {
-		// Remove style element creation and appending
-		// styleElement = document.createElement('style');
-		// document.head.appendChild(styleElement);
-
-		// window.addEventListener('popstate', handlePopState); // Consider removing or adapting popstate
-
-		// Initialiser l'état de l'historique avec la carte actuelle (might need adjustment)
-		// Ensure this reflects the card found via $page.params.id
+		// Initialize the history state with the current card (might need adjustment)
 		const initialSet = sets.find(set => set.name === card.setName);
 		if (initialSet) {
 			const initialState = {
@@ -195,23 +154,15 @@
 			history.replaceState(initialState, '', window.location.href);
 		}
 
-		// Marquer le rendu initial comme terminé après un court délai
+		// Mark the initial render as complete after a short delay
 		setTimeout(() => {
 			isInitialRenderComplete = true;
 		}, 0);
 
-		// Charger le composant AllPokemonCards de manière différée
+		// Load the AllPokemonCards component asynchronously
 		setTimeout(() => {
 			shouldRenderAllCards = true;
 		}, 100);
-
-		return () => {
-			// window.removeEventListener('popstate', handlePopState); // Cleanup popstate listener if kept
-			// Remove style element removal
-			// if (styleElement && styleElement.parentNode) {
-			// 	styleElement.parentNode.removeChild(styleElement);
-			// }
-		};
 	});
 </script>
 
@@ -225,7 +176,7 @@
 
 	<!-- Pokédex number indicator -->
 	<div class="pokedex-number-display text-center mb-2">
-		<div class="pokedex-number text-gold-400 font-bold px-3 py-1 rounded-md inline-block">
+		<div class="pokedex-number text-gold-400 bg-black/60 font-bold px-3 py-1 rounded-md inline-block z-10">
 			#{card.pokemonNumber}
 		</div>
 	</div>
@@ -238,11 +189,11 @@
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
 						<img
-							src={sprites[previousPokemon.id]}
+							src={sprites[previousPokemon.id] ?? '/loading-spinner.svg'}
 							alt={pascalCase(previousPokemon.name)}
 							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
 							title={pascalCase(previousPokemon.name)}
-							on:error={handlePreviousPokemonError}
+							on:error={handlePokemonImageError}
 							data-pokemon-id={previousPokemon.id}
 						/>
 					</div>
@@ -256,6 +207,7 @@
 
 		<!-- Center Card -->
 		<div class="center-card-wrapper relative flex-shrink-0 mx-4">
+			<div class="card-aura {currentType}" id="card-aura"></div>
 			<div
 				class="w-[23rem] max-w-[23rem] h-[32rem] max-h-[32rem] mx-auto rounded-xl shadow-lg card-face interactive-card"
 				bind:this={centerCard}
@@ -281,11 +233,11 @@
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
 						<img
-							src={sprites[nextPokemon.id]}
+							src={sprites[nextPokemon.id] ?? '/loading-spinner.svg'}
 							alt={pascalCase(nextPokemon.name)}
 							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
 							title={pascalCase(nextPokemon.name)}
-							on:error={handleNextPokemonError}
+							on:error={handlePokemonImageError}
 							data-pokemon-id={nextPokemon.id}
 						/>
 					</div>
@@ -317,6 +269,8 @@
 	</div>
 {/if}
 
+<div class="filter {currentType}" id="filter" transition:fade></div>
+
 <style>
 	.perspective-container {
 		perspective: 1000px;
@@ -335,27 +289,31 @@
 		overflow: hidden; /* Clip children to rounded corners */
 	}
 
-	.interactive-card .image {
-		/* Ensure image covers the card and respects 3D transform */
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: cover; /* Or contain, depending on desired behavior */
+	#card-aura {
+		background-color: var(--type-color);
+		border-radius: 50%;
+		filter: blur(5rem) opacity(0.5);
+		height: 43rem;
+		left: 50%;
+		pointer-events: none;
 		position: absolute;
-		top: 0;
-		left: 0;
-		backface-visibility: hidden; /* Prevent flickering during rotation */
+		top: 50%;
+		transform: translateX(-50%) translateY(-50%);
+		transition: all 0.3s ease-in-out;
+		width: 43rem;
+		z-index: -20;
 	}
 
-	.interactive-card.inactive {
-		/* Smooth transition back to default when mouse leaves */
-		transform: rotateX(0deg) rotateY(0deg);
-		/* transition: transform 0.4s ease-out; */ /* Removed - Use base transition */
-	}
-
-	.card-face {
-		/* Ensure the image inside respects the 3D space if needed, maybe add backface-visibility */
-		/* backface-visibility: hidden; */
+	.filter {
+		background-image: url("/particles.png");
+		background-size: cover;
+		content: "";
+		filter: var(--filter);
+		height: 100%;
+		inset: 0 0 0 0;
+		position: fixed;
+		width: 100%;
+		z-index: -20;
 	}
 
 	.pokedex-number-display {
@@ -363,12 +321,6 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-	}
-
-	.pokedex-number {
-		background-color: rgba(0, 0, 0, 0.6);
-		border: 1px solid var(--color-gold-400);
-		box-shadow: 0 0 5px var(--color-gold-400);
 	}
 
 	.nav-pokemon-wrapper {
