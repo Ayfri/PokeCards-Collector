@@ -104,6 +104,7 @@ type FetchedSet = {
 	};
 	printedTotal: number;
 	ptcgoCode: string;
+	releaseDate: string; // YYYY/MM/DD
 };
 
 type FetchedSetsResponse = {
@@ -211,7 +212,7 @@ export async function fetchPokemon(name: string, index: number) {
 
 async function fetchAndFilterSets() {
 	const response = await fetchFromApi<FetchedSetsResponse>('sets', {
-		select: 'name,images,printedTotal,ptcgoCode',
+		select: 'name,images,printedTotal,ptcgoCode,releaseDate',
 	});
 	const sets = response.data;
 
@@ -222,6 +223,7 @@ async function fetchAndFilterSets() {
 		logo: set.images.logo,
 		printedTotal: set.printedTotal,
 		ptcgoCode: set.ptcgoCode,
+		releaseDate: set.releaseDate,
 	}));
 
 	try {
@@ -236,6 +238,7 @@ async function fetchAndFilterSets() {
 			logo: sets.find(set => set.name === name)?.images?.logo,
 			printedTotal: sets.find(set => set.name === name)?.printedTotal,
 			ptcgoCode: sets.find(set => set.name === name)?.ptcgoCode,
+			releaseDate: sets.find(set => set.name === name)?.releaseDate,
 		}));
 	} catch (error) {
 		console.error(`Error reading ${CARDS}`, error);
