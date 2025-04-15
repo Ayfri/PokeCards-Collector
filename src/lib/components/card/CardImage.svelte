@@ -1,5 +1,4 @@
 <script lang="ts">
-	import {env} from '$env/dynamic/public';
 	import { processCardImage } from '$lib/helpers/card-images';
 
 	/**
@@ -61,13 +60,13 @@
 </script>
 
 {#if error}
-	<div class="error-placeholder {classNames}">
+	<div class="flex items-center justify-center bg-red-900 text-white rounded-lg {classNames}">
 		<span>Image not available</span>
 	</div>
 {:else}
 	<img
 		{alt}
-		class="card-image {classNames}"
+		class="transition-opacity duration-300 ease-in-out {classNames}"
 		class:opacity-0={!loaded}
 		decoding="async"
 		draggable="false"
@@ -83,20 +82,6 @@
 {/if}
 
 <style>
-	.card-image {
-		transition: opacity 300ms ease;
-	}
-
-	.error-placeholder {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background-color: #7f1d1d;
-		color: white;
-		border-radius: 0.5rem;
-	}
-
-
 	.holo::after {
 		background-image: url("https://assets.codepen.io/13471/sparkles.gif"), url(https://assets.codepen.io/13471/holo.png), linear-gradient(125deg, #ff008450 15%, #fca40040 30%, #ffff0030 40%, #00ff8a20 60%, #00cfff40 70%, #cc4cfa50 85%);
 		background-position: 50% 50%;
