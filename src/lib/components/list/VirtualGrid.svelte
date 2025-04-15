@@ -152,9 +152,3 @@
 </div>
 {/if}
 <ScrollToBottom on:click={scrollToLast}/>
-
-<style>
-	.virtual-grid-container {
-		height: calc(100vh - 130px);
-	}
-</style>
