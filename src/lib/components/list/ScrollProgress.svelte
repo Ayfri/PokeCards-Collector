@@ -9,11 +9,9 @@
 
 <style>
   .progress-container {
-    position: absolute;
-    bottom: 0;
-    left: 0;
+    position: relative;
     width: 100%;
-    height: 6px;
+    height: 3px;
     overflow: hidden;
     z-index: 10;
   }
@@ -22,7 +20,7 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.2);
   }
 
   .progress-bar {
@@ -35,7 +33,7 @@
 
   @media (max-width: 1024px) {
     .progress-container {
-      height: 4px;
+      height: 2px;
     }
 
     .progress-bar {

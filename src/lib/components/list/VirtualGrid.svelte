@@ -125,7 +125,7 @@
     }, 0);
 }}/>
 
-<div bind:this={container} bind:clientWidth class="top-2 relative flex-1 w-full h-full overflow-y-scroll scrollbar-hide" on:scroll={scroll}>
+<div bind:this={container} bind:clientWidth class="virtual-grid-container top-2 relative flex-1 w-full overflow-y-scroll scrollbar-hide" on:scroll={scroll}>
 	{#if isInitialized}
 		<div class="absolute size-[1px]" style="top: {Math.ceil((items.length) / itemsPerRow) * (itemHeight + gapY) + marginTop}px;"></div>
 
@@ -152,3 +152,9 @@
 </div>
 {/if}
 <ScrollToBottom on:click={scrollToLast}/>
+
+<style>
+	.virtual-grid-container {
+		height: calc(100vh - 130px);
+	}
+</style>
