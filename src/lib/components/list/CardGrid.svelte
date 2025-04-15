@@ -164,26 +164,26 @@
 {#if showFilters}
 	<!-- Overlay -->
 	<div
-		class="filter-overlay {filterOverlay ? 'active' : ''}"
+		class="filter-overlay fixed inset-0 z-50 {filterOverlay ? 'bg-black/70 visible' : 'bg-black/0 invisible'} transition-all duration-300"
 		on:click={handleClickOutside}
 	></div>
 
 	<!-- Drawer -->
-	<div class="filter-drawer {showFilters ? 'open' : ''}" transition:fly={{ x: 380, duration: 300 }}>
-		<div class="drawer-header">
-			<h2>Filters</h2>
-			<button class="close-btn" on:click={toggleFilters}>
+	<div class="fixed top-0 h-screen w-[380px] bg-[rgb(20,20,20)] z-60 shadow-lg flex flex-col {showFilters ? 'right-0' : '-right-[380px]'} transition-all duration-300" transition:fly={{ x: 380, duration: 300 }}>
+		<div class="flex justify-between items-center p-4 border-b border-white/10">
+			<h2 class="m-0 text-xl text-[#FFB700] font-semibold">Filters</h2>
+			<button class="bg-transparent border-none text-white p-1 rounded hover:bg-white/10 transition-colors flex items-center justify-center" on:click={toggleFilters}>
 				<XIcon size={20} />
 			</button>
 		</div>
-		<div class="drawer-content">
+		<div class="flex-1 overflow-y-auto p-6">
 			<Filters cards={filteredCards} {rarities} {sets} {types} {artists} {pokemons} />
 		</div>
 	</div>
 {/if}
 
-<div class="main-content">
-	<div class="filter-header">
+<div class="min-h-[calc(100vh-130px)] flex flex-col">
+	<div class="flex justify-between items-center py-3 px-8 mb-0">
 		<div class="flex items-center gap-3">
 			<PageTitle title="Card List"/>
 			<span class="text-gold-400 text-sm">
@@ -193,15 +193,20 @@
 
 		<div class="flex items-center gap-2">
 			{#if activeFiltersCount > 0}
-				<span class="filter-badge">{activeFiltersCount}</span>
+				<span class="bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-6 h-6 rounded-full">
+					{activeFiltersCount}
+				</span>
 			{/if}
-			<button class="filter-toggle-btn" on:click={toggleFilters}>
+			<button
+				class="bg-transparent border-2 border-[#FFB700] text-[#FFB700] text-xs font-medium py-1 px-3 rounded flex items-center transition-all duration-200 hover:bg-[#FFB700] hover:text-black"
+				on:click={toggleFilters}
+			>
 				<SlidersHorizontalIcon size={16} class="mr-1"/> Filters
 			</button>
 		</div>
 	</div>
 
-	<div class="progress-wrapper">
+	<div class="w-full">
 		<ScrollProgress />
 	</div>
 
@@ -223,134 +228,10 @@
 </div>
 
 <style>
-	.main-content {
-		min-height: calc(100vh - 130px);
-		display: flex;
-		flex-direction: column;
-	}
-
-	.filter-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 0.75rem 2rem;
-		margin-bottom: 0;
-		border-bottom: none;
-	}
-
-	.filter-toggle-btn {
-		background-color: transparent;
-		border: 2px solid #FFB700;
-		color: #FFB700;
-		font-size: 0.8rem;
-		font-weight: 500;
-		padding: 0.25rem 0.75rem;
-		border-radius: 4px;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		display: flex;
-		align-items: center;
-	}
-
-	.filter-toggle-btn:hover {
-		background-color: #FFB700;
-		color: black;
-	}
-
-	.filter-badge {
-		background-color: #FFB700;
-		color: black;
-		font-size: 0.7rem;
-		font-weight: bold;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 1.5rem;
-		height: 1.5rem;
-		border-radius: 50%;
-	}
-
-	.filter-overlay {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0);
-		z-index: 50;
-		visibility: hidden;
-		transition: background-color 0.3s ease, visibility 0.3s ease;
-	}
-
-	.filter-overlay.active {
-		background-color: rgba(0, 0, 0, 0.7);
-		visibility: visible;
-	}
-
-	.filter-drawer {
-		position: fixed;
-		top: 0;
-		right: -380px;
-		width: 380px;
-		height: 100vh;
-		background-color: rgb(20, 20, 20);
-		z-index: 60;
-		box-shadow: -2px 0 10px rgba(0, 0, 0, 0.5);
-		transition: right 0.3s ease;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.filter-drawer.open {
-		right: 0;
-	}
-
-	.drawer-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 1rem 1.5rem;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-	}
-
-	.drawer-header h2 {
-		margin: 0;
-		font-size: 1.25rem;
-		color: #FFB700;
-		font-weight: 600;
-	}
-
-	.close-btn {
-		background: transparent;
-		border: none;
-		color: #fff;
-		cursor: pointer;
-		padding: 0.25rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		border-radius: 4px;
-		transition: background-color 0.2s ease;
-	}
-
-	.close-btn:hover {
-		background-color: rgba(255, 255, 255, 0.1);
-	}
-
-	.drawer-content {
-		flex: 1;
-		overflow-y: auto;
-		padding: 1.5rem;
-	}
-
 	@media (max-width: 640px) {
-		.filter-drawer {
+		:global(.filter-drawer) {
 			width: 320px;
 			right: -320px;
 		}
-	}
-
-	.progress-wrapper {
-		width: 100%;
 	}
 </style>
