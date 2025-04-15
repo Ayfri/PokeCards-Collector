@@ -80,6 +80,12 @@
 				const aLevel = getRarityLevel(a.rarity);
 				const bLevel = getRarityLevel(b.rarity);
 				return $sortOrder === 'asc' ? aLevel - bLevel : bLevel - aLevel;
+			} else if ($sortBy === 'sort-release-date') {
+				const aSet = sets.find(s => s.name === a.setName);
+				const bSet = sets.find(s => s.name === b.setName);
+				const aReleaseDate = aSet?.releaseDate.getTime() ?? 0;
+				const bReleaseDate = bSet?.releaseDate.getTime() ?? 0;
+				return $sortOrder === 'asc' ? aReleaseDate - bReleaseDate : bReleaseDate - aReleaseDate;
 			} else if ($sortBy === 'sort-artist') {
 				const aArtist = a.artist || '';
 				const bArtist = b.artist || '';

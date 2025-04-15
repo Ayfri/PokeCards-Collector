@@ -137,6 +137,7 @@
 			<option value="sort-name">Sort by name</option>
 			<option value="sort-id">Sort by id</option>
 			<option value="sort-rarity">Sort by rarity</option>
+			<option value="sort-release-date">Sort by release date</option>
 			<option value="sort-artist">Sort by illustrator</option>
 		</select>
 	</div>
