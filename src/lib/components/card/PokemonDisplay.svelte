@@ -218,10 +218,11 @@
 					<CardImage
 						alt={pokemons.find(p => p.id === card.pokemonNumber)?.name}
 						imageUrl={card.image}
+						highRes={true}
 						height={544}
 						width={384}
 						class="image rounded-xl"
-						lazy={true}
+						lazy={false}
 					/>
 				{/key}
 			</div>

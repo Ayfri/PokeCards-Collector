@@ -57,8 +57,11 @@
 	function handleError() {
 		error = true;
 	}
-</script>
 
+	function onLoad() {
+		loaded = true;
+	}
+</script>
 {#if error}
 	<div class="flex items-center justify-center bg-red-900 text-white rounded-lg {classNames}">
 		<span>Image not available</span>
@@ -66,14 +69,13 @@
 {:else}
 	<img
 		{alt}
-		class="transition-opacity duration-300 ease-in-out {classNames}"
-		class:opacity-0={!loaded}
+		class="transition-opacity duration-300 ease-in-out {classNames} {loaded ? '' : 'opacity-0'}"
 		decoding="async"
 		draggable="false"
 		{height}
 		loading={lazy ? 'lazy' : 'eager'}
 		on:error={handleError}
-		on:load={() => loaded = true}
+		on:load={onLoad}
 		sizes={sizesValue}
 		src={standardImageUrl}
 		srcset={srcsetValue}

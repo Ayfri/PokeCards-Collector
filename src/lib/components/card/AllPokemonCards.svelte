@@ -42,6 +42,7 @@
 						alt={getPokemon(card.pokemonNumber)?.name}
 						class="card-image"
 						lazy={true}
+						highRes={false}
 					/>
 					<div class="set-overlay">
 						<img
