@@ -62,15 +62,6 @@
 		return sprites[pokemonId];
 	}
 
-	// Optimized sprite preloading for adjacent Pokémon only
-	$: if (previousPokemon && !sprites[previousPokemon.id]) {
-		ensureSprite(previousPokemon.id);
-	}
-
-	$: if (nextPokemon && !sprites[nextPokemon.id]) {
-		ensureSprite(nextPokemon.id);
-	}
-
 	// Optimization: Using throttle to limit style updates when mouse moves
 	function throttle(fn: Function, delay: number) {
 		let canRun = true;
@@ -188,14 +179,25 @@
 			<a href={`/card/${previousPokemon.id}/`} class="prev-pokemon-nav flex flex-col items-center w-48">
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
-						<img
-							src={sprites[previousPokemon.id] ?? '/loading-spinner.svg'}
-							alt={pascalCase(previousPokemon.name)}
-							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
-							title={pascalCase(previousPokemon.name)}
-							on:error={handlePokemonImageError}
-							data-pokemon-id={previousPokemon.id}
-						/>
+						{#await ensureSprite(previousPokemon.id)}
+							<img
+								src="/loading-spinner.svg"
+								alt={pascalCase(previousPokemon.name)}
+								class="w-32 h-32 object-contain nav-pokemon-image silhouette"
+								title={pascalCase(previousPokemon.name)}
+								on:error={handlePokemonImageError}
+								data-pokemon-id={previousPokemon.id}
+							/>
+						{:then sprite}
+							<img
+								src={sprite}
+								alt={pascalCase(previousPokemon.name)}
+								class="w-32 h-32 object-contain nav-pokemon-image silhouette"
+								title={pascalCase(previousPokemon.name)}
+								on:error={handlePokemonImageError}
+								data-pokemon-id={previousPokemon.id}
+							/>
+						{/await}
 					</div>
 				</div>
 				<span class="nav-pokemon-name mt-2 text-center text-sm">{pascalCase(previousPokemon.name)}</span>
@@ -233,14 +235,24 @@
 			<a href={`/card/${nextPokemon.id}/`} class="next-pokemon-nav flex flex-col items-center w-48">
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
-						<img
-							src={sprites[nextPokemon.id] ?? '/loading-spinner.svg'}
-							alt={pascalCase(nextPokemon.name)}
-							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
-							title={pascalCase(nextPokemon.name)}
-							on:error={handlePokemonImageError}
-							data-pokemon-id={nextPokemon.id}
-						/>
+						{#await ensureSprite(nextPokemon.id)}
+							<img
+								src="/loading-spinner.svg"
+								alt={pascalCase(nextPokemon.name)}
+								class="w-32 h-32 object-contain nav-pokemon-image silhouette"
+								title={pascalCase(nextPokemon.name)}
+								data-pokemon-id={nextPokemon.id}
+							/>
+						{:then sprite}
+							<img
+								src={sprite}
+								alt={pascalCase(nextPokemon.name)}
+								class="w-32 h-32 object-contain nav-pokemon-image silhouette"
+								title={pascalCase(nextPokemon.name)}
+								on:error={handlePokemonImageError}
+								data-pokemon-id={nextPokemon.id}
+							/>
+						{/await}
 					</div>
 				</div>
 				<span class="nav-pokemon-name mt-2 text-center text-sm">{pascalCase(nextPokemon.name)}</span>
