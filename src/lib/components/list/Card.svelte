@@ -1,12 +1,12 @@
 <script lang="ts">
+	import {NO_IMAGES} from '$lib/images';
+	import {addCardToWishlist, isCardInWishlist, removeCardFromWishlist} from '$lib/services/wishlists';
+	import {authStore} from '$lib/stores/auth';
 	import type {FullCard, Pokemon, Set} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import Heart from 'lucide-svelte/icons/heart';
-	import { NO_IMAGES } from '~/constants';
-	import { authStore } from '$lib/stores/auth';
-	import { addCardToWishlist, isCardInWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
-	import { onMount } from 'svelte';
+	import {onMount} from 'svelte';
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];
@@ -19,7 +19,7 @@
 		pokemonNumber,
 		setName,
 		types,
-		cardCode  // `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`
+		cardCode,  // `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`
 	} = card;
 
 	// Get set code from set object or image name
@@ -29,27 +29,27 @@
 
 	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
 	const set = sets.find(s => s.name === setName)!!;
-	
+
 	let isInWishlist = false;
 	let isAddingToWishlist = false;
-	
+
 	// Check if card is in wishlist on mount
 	onMount(async () => {
 		if ($authStore.user && $authStore.profile) {
-			const { exists } = await isCardInWishlist($authStore.profile.username, cardCode);
+			const {exists} = await isCardInWishlist($authStore.profile.username, cardCode);
 			isInWishlist = exists;
 		}
 	});
-	
+
 	// Toggle wishlist status
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
-		
+
 		if (!$authStore.user || !$authStore.profile) return;
-		
+
 		isAddingToWishlist = true;
-		
+
 		try {
 			if (isInWishlist) {
 				await removeCardFromWishlist($authStore.profile.username, cardCode);
@@ -89,19 +89,19 @@
 					on:click={toggleWishlist}
 					disabled={isAddingToWishlist}
 				>
-					<Heart 
-						size={24} 
-						class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'} 
+					<Heart
+						size={24}
+						class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'}
 					/>
 				</button>
 			{/if}
 			<CardImage
-				imageUrl={image}
 				alt={pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}
 				class="rounded-lg h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px] transition-opacity duration-300 absolute top-0 left-0"
 				height={420}
-				width={300}
+				imageUrl={image}
 				lazy={true}
+				width={300}
 			/>
 		</div>
 		<h2 class="text-center font-bold text-[1.3rem]">
@@ -128,7 +128,7 @@
 						<span class="mx-1">-</span>
 						<span class="text-gold-400 font-bold underline flex items-center">
 							Cardmarket
-							<ExternalLink size={12} class="ml-1" />
+							<ExternalLink size={12} class="ml-1"/>
 						</span>
 					</div>
 				</a>

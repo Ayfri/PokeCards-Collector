@@ -1,12 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import {page} from '$app/state';
+	import {NO_IMAGES} from '$lib/images';
+	import type {FullCard} from '$lib/types';
+	import UserMenu from '@components/auth/UserMenu.svelte';
 	import SearchBar from '@components/SearchBar.svelte';
 	import SearchModal from '@components/SearchModal.svelte';
-	import UserMenu from '@components/auth/UserMenu.svelte';
-	import type { FullCard } from '$lib/types';
 	import pokestore from '~/assets/pokestore.png';
-	import { page } from '$app/state';
-	import { NO_IMAGES } from '~/constants';
 
 	// Use allCards from layout data instead of page-specific data
 	$: allCards = page.data.allCards as FullCard[] || [];
@@ -14,9 +13,9 @@
 
 <header class="w-full p-2 pb-6 lg:pb-12">
 	<div class="relative py-1.5 xs:py-2.5 lg:py-3 px-4 xs:px-6 lg:px-8 flex items-center justify-between gap-8 rounded-full z-50 bg-gray-800">
-		<a href="/" class="text-gray-400 max-xs:text-sm">Cards</a>
+		<a class="text-gray-400 max-xs:text-sm" href="/">Cards</a>
 		<span class="flex-1"></span>
-		<a href="/" class="logo-link absolute left-1/2 top-full xs:top-3/4 lg:top-full -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full z-20">
+		<a class="logo-link absolute left-1/2 top-full xs:top-3/4 lg:top-full -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full z-20" href="/">
 			{#if !NO_IMAGES}
 				<img
 					alt="logo"
@@ -28,14 +27,14 @@
 		</a>
 		<!-- Search on desktop: visible on sm screens and up -->
 		<div class="w-60 sm:w-80 md:w-96 max-sm:hidden">
-			<SearchBar {allCards} />
+			<SearchBar {allCards}/>
 		</div>
 
 		<!-- Mobile search using the Svelte component -->
-		<SearchModal {allCards} />
+		<SearchModal {allCards}/>
 
 		<!-- User menu -->
-		<UserMenu />
+		<UserMenu/>
 	</div>
 </header>
 

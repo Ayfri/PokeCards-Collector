@@ -1,6 +1,6 @@
-import { env } from '$env/dynamic/public';
-import type { FullCard } from '$lib/types';
-import { NO_IMAGES } from '~/constants';
+import {env} from '$env/dynamic/public';
+import {NO_IMAGES} from '$lib/images';
+import type {FullCard} from '$lib/types';
 
 /**
  * Gets the image URL for a Pokémon
@@ -19,7 +19,7 @@ export function getCardImageForPokemon(pokemonId: number, cards: FullCard[]): st
 /**
  * Centralized function to process all card images
  * Handles CDN configurations, NO_IMAGES mode, and high-res options
- * 
+ *
  * @param imageUrl The original image URL from the API
  * @param highRes Whether to use high-resolution images (default: true)
  * @returns The processed image URL
