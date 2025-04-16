@@ -247,7 +247,7 @@
 			<!-- Reset Button -->
 			<button
 				class="flex items-center justify-center bg-transparent border-2 border-white text-white rounded text-sm p-1.5 h-8 transition-all duration-200 
-					   hover:bg-white hover:text-black 
+					   hover:bg-[#FFB700] hover:text-black hover:border-[#FFB700]
 					   disabled:border-gray-600 disabled:text-gray-600 disabled:hover:bg-transparent disabled:hover:text-gray-600 disabled:cursor-not-allowed"
 				on:click={resetFilters}
 				aria-label="Reset filters"
