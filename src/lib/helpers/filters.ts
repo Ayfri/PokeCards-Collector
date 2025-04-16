@@ -28,7 +28,7 @@ function persistentStore<T>(key: string, initialValue: T) {
 }
 
 export const sortBy = persistentStore('sort-by', 'sort-numero');
-export const sortOrder = persistentStore('sort-order', 'asc');
+export const sortOrder = persistentStore<'asc' | 'desc'>('sort-order', 'asc');
 export const filterNumero = persistentStore('filter-numero', '');
 export const filterName = persistentStore('filter-name', '');
 export const filterSet = persistentStore('filter-set', 'all');
