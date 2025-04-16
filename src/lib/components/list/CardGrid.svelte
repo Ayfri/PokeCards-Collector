@@ -7,6 +7,8 @@
 	import VirtualGrid from '@components/list/VirtualGrid.svelte';
 	import PageTitle from '@components/PageTitle.svelte';
 	import ScrollProgress from '@components/list/ScrollProgress.svelte';
+	import TextInput from '$lib/components/filters/TextInput.svelte';
+	import { onMount } from 'svelte';
 	import type {FullCard, Set, Pokemon} from '$lib/types';
 	import { fly } from 'svelte/transition';
 	import XIcon from 'lucide-svelte/icons/x';
@@ -22,6 +24,25 @@
 	let clientWidth: number = 0;
 	let showFilters = false;
 	let filterOverlay = false;
+	let searchName = '';
+	let debounceTimeout: number;
+
+	onMount(() => {
+		searchName = $filterName;
+	});
+
+	function debounce(fn: Function, delay: number) {
+		return (...args: any[]) => {
+			clearTimeout(debounceTimeout);
+			debounceTimeout = window.setTimeout(() => {
+				fn(...args);
+			}, delay);
+		};
+	}
+
+	const debouncedSetFilterName = debounce((value: string) => {
+		$filterName = value;
+	}, 300);
 
 	let displayedCards = cards;
 	$: {
@@ -190,23 +211,34 @@
 			</span>
 		</div>
 
-		<div class="flex items-center gap-2">
+		<div class="flex items-end gap-2">
 			<span class="text-gold-400 text-sm ml-4 md:hidden">
 				({uniquePokemonCount} Pokémon, {visibleCardsCount} cards)
 			</span>
 
-			{#if activeFiltersCount > 0}
-				<span class="bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-6 h-6 rounded-full">
-					{activeFiltersCount}
-				</span>
-			{/if}
+			<div class="w-48">
+				<TextInput
+					id="name"
+					label="Name"
+					bind:value={searchName}
+					placeholder="Search by name..."
+					debounceFunction={debouncedSetFilterName}
+				/>
+			</div>
 
-			<button
-				class="bg-transparent border-2 border-[#FFB700] text-[#FFB700] text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-200 hover:bg-[#FFB700] hover:text-black"
-				on:click={toggleFilters}
-			>
-				<SlidersHorizontalIcon size={16} class="mr-1"/> Filters
-			</button>
+			<div class="relative">
+				<button
+					class="bg-transparent border-2 border-[#FFB700] text-[#FFB700] text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-200 hover:bg-[#FFB700] hover:text-black"
+					on:click={toggleFilters}
+				>
+					<SlidersHorizontalIcon size={16} class="mr-1"/> Filters
+				</button>
+				{#if activeFiltersCount > 0}
+					<span class="absolute -bottom-1 -right-1 bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full pointer-events-none">
+						{activeFiltersCount}
+					</span>
+				{/if}
+			</div>
 		</div>
 	</div>
 

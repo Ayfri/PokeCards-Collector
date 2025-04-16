@@ -152,14 +152,6 @@
 					placeholder="Enter card ID..."
 					debounceFunction={debouncedSetFilterNumero}
 				/>
-
-				<TextInput
-					id="name"
-					label="Name"
-					bind:value={searchName}
-					placeholder="Search by name..."
-					debounceFunction={debouncedSetFilterName}
-				/>
 			</div>
 
 			<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
