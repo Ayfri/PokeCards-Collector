@@ -142,9 +142,6 @@
 					bind:sortValue={$sortBy}
 					options={sortOptions}
 				/>
-			</div>
-
-			<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
 				<TextInput
 					id="numero"
 					label="ID"
