@@ -3,6 +3,7 @@
 	import type { FullCard, Set, Pokemon } from '$lib/types';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
+	import { persistentWritable } from '$lib/stores/persistentStore'; // Import the persistent store
 
 	import Section from '$lib/components/filters/Section.svelte';
 	import Select from '$lib/components/filters/Select.svelte';
@@ -17,10 +18,10 @@
 	export let types: string[];
 	export let artists: string[] = [];
 
-	// Collapsibles sections
-	let showBasicFilters = true;
-	let showTypeFilters = false;
-	let showCollectionFilters = false;
+	// Use persistent stores for collapsible sections
+	const showBasicFilters = persistentWritable('pokestore_filter_basic_open', true);
+	const showTypeFilters = persistentWritable('pokestore_filter_type_open', false);
+	const showCollectionFilters = persistentWritable('pokestore_filter_collection_open', false);
 
 	// Inputs text variables
 	let searchName = '';
@@ -29,6 +30,7 @@
 
 	// Initialize search values from stores when component is loaded
 	onMount(() => {
+		// Load search input values
 		searchName = $filterName;
 		searchNumero = $filterNumero;
 	});
@@ -134,7 +136,7 @@
 </script>
 
 <div class="w-full">
-	<Section title="Basic Filters" bind:isOpen={showBasicFilters}>
+	<Section title="Basic Filters" bind:isOpen={$showBasicFilters}>
 		<div class="flex flex-col gap-4">
 			<div class="flex flex-wrap gap-4">
 				<SortControl
@@ -165,7 +167,7 @@
 		</div>
 	</Section>
 
-	<Section title="Type Filters" bind:isOpen={showTypeFilters}>
+	<Section title="Type Filters" bind:isOpen={$showTypeFilters}>
 		<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
 			<Select
 				id="supertype"
@@ -190,7 +192,7 @@
 		</div>
 	</Section>
 
-	<Section title="Collection Filters" bind:isOpen={showCollectionFilters}>
+	<Section title="Collection Filters" bind:isOpen={$showCollectionFilters}>
 		<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
 			<Select
 				id="set"
