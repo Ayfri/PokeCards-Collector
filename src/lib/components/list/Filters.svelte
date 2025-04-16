@@ -3,6 +3,7 @@
 	import type { FullCard, Set, Pokemon } from '$lib/types';
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
+	import { filterStates, toggleBasicFilters, toggleTypeFilters, toggleCollectionFilters } from '$stores/filterStates';
 
 	import Section from '$lib/components/filters/Section.svelte';
 	import Select from '$lib/components/filters/Select.svelte';
@@ -16,11 +17,6 @@
 	export let rarities: string[];
 	export let types: string[];
 	export let artists: string[] = [];
-
-	// Collapsibles sections
-	let showBasicFilters = true;
-	let showTypeFilters = false;
-	let showCollectionFilters = false;
 
 	// Inputs text variables
 	let searchName = '';
@@ -134,7 +130,7 @@
 </script>
 
 <div class="w-full">
-	<Section title="Basic Filters" bind:isOpen={showBasicFilters}>
+	<Section title="Basic Filters" bind:isOpen={$filterStates.basicFilters}>
 		<div class="flex flex-col gap-4">
 			<div class="flex flex-wrap gap-4">
 				<SortControl
@@ -165,7 +161,7 @@
 		</div>
 	</Section>
 
-	<Section title="Type Filters" bind:isOpen={showTypeFilters}>
+	<Section title="Type Filters" bind:isOpen={$filterStates.typeFilters}>
 		<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
 			<Select
 				id="supertype"
@@ -190,7 +186,7 @@
 		</div>
 	</Section>
 
-	<Section title="Collection Filters" bind:isOpen={showCollectionFilters}>
+	<Section title="Collection Filters" bind:isOpen={$filterStates.collectionFilters}>
 		<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
 			<Select
 				id="set"
