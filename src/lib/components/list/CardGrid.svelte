@@ -229,16 +229,18 @@
 
 			<div class="relative">
 				<button
-					class="bg-transparent border-2 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-200 h-8
+					class="animated-hover-button filters-button relative overflow-hidden bg-transparent border-2 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 z-0
 						   {activeFiltersCount > 0
-								? 'border-[#FFB700] text-[#FFB700] hover:bg-[#FFB700] hover:text-black'
-								: 'border-white text-white hover:bg-white hover:text-black'}"
+								? 'border-[#FFB700] text-[#FFB700]'
+								: 'border-white text-white'}"
 					on:click={toggleFilters}
 				>
-					<SlidersHorizontalIcon size={16} class="mr-1"/> Filters
+					<span class="relative z-10 flex items-center">
+						<SlidersHorizontalIcon size={16} class="mr-1"/> Filters
+					</span>
 				</button>
 				{#if activeFiltersCount > 0}
-					<span class="absolute -bottom-1 -right-1 bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full pointer-events-none">
+					<span class="absolute -bottom-1 -right-1 bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full pointer-events-none z-20">
 						{activeFiltersCount}
 					</span>
 				{/if}
@@ -246,14 +248,15 @@
 
 			<!-- Reset Button -->
 			<button
-				class="flex items-center justify-center bg-transparent border-2 border-white text-white rounded text-sm p-1.5 h-8 transition-all duration-200 
-					   hover:bg-[#FFB700] hover:text-black hover:border-[#FFB700]
-					   disabled:border-gray-600 disabled:text-gray-600 disabled:hover:bg-transparent disabled:hover:text-gray-600 disabled:cursor-not-allowed"
+				class="animated-hover-button reset-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 border-white text-white rounded text-sm p-1.5 h-8 transition-all duration-300 z-0
+					   disabled:border-gray-600 disabled:text-gray-600 disabled:cursor-not-allowed"
 				on:click={resetFilters}
 				aria-label="Reset filters"
 				disabled={activeFiltersCount === 0}
 			>
-				<RotateCcwIcon size={16}/>
+				<span class="relative z-10 flex items-center">
+					<RotateCcwIcon size={16}/>
+				</span>
 			</button>
 		</div>
 	</div>
@@ -285,5 +288,50 @@
 			width: 320px;
 			right: -320px;
 		}
+	}
+
+	/* Base styles for animated buttons */
+	.animated-hover-button {
+		transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+	}
+
+	.animated-hover-button::before {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		height: 0;
+		transition: height 0.3s ease-in-out;
+		z-index: -1;
+	}
+
+	.animated-hover-button:not(:disabled):hover::before {
+		height: 100%;
+	}
+
+	.animated-hover-button:not(:disabled):hover {
+		color: black;
+		border-color: #FFB700;
+	}
+
+	/* Specific background colors for each button */
+	.filters-button::before {
+		background-color: #FFB700;
+	}
+
+	.reset-button::before {
+		background-color: #FFB700;
+	}
+
+	/* Ensure disabled button does not show hover effects */
+	.animated-hover-button:disabled {
+		border-color: #4B5563;
+		color: #4B5563;
+		pointer-events: none;
+	}
+
+	.animated-hover-button:disabled::before {
+		display: none;
 	}
 </style>
