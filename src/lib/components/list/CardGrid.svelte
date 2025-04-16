@@ -168,7 +168,7 @@
 
 {#if showFilters}
 	<!-- Drawer -->
-	<div class="fixed top-0 h-screen w-[450px] bg-gray-800 z-60 shadow-lg flex flex-col {showFilters ? 'right-0' : '-right-[380px]'} transition-all duration-300 z-50" transition:fly={{ x: 380, duration: 300 }}>
+	<div class="fixed top-0 h-screen w-full md:w-[450px] bg-gray-800 z-60 shadow-lg flex flex-col {showFilters ? 'right-0' : '-right-[380px]'} transition-all duration-300 z-50" transition:fly={{ x: 380, duration: 300 }}>
 		<div class="flex justify-between items-center p-4 border-b border-white/10">
 			<h2 class="m-0 text-xl text-[#FFB700] font-semibold">Filters</h2>
 			<button class="bg-transparent border-none text-white p-1 rounded hover:bg-white/10 transition-colors flex items-center justify-center" on:click={toggleFilters}>
@@ -182,20 +182,25 @@
 {/if}
 
 <div class="min-h-[calc(100vh)] flex flex-col">
-	<div class="flex justify-between items-center pb-3 px-10 mb-0">
-		<div class="flex items-center gap-3 ml-14">
+	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-10 mb-0">
+		<div class="flex flex-col md:flex-row items-center gap-3 md:ml-14">
 			<PageTitle title="Card List"/>
-			<span class="text-gold-400 text-sm ml-4">
+			<span class="text-gold-400 text-sm ml-4 hidden md:block">
 				({uniquePokemonCount} Pokémon, {visibleCardsCount} cards)
 			</span>
 		</div>
 
 		<div class="flex items-center gap-2">
+			<span class="text-gold-400 text-sm ml-4 md:hidden">
+				({uniquePokemonCount} Pokémon, {visibleCardsCount} cards)
+			</span>
+
 			{#if activeFiltersCount > 0}
 				<span class="bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-6 h-6 rounded-full">
 					{activeFiltersCount}
 				</span>
 			{/if}
+
 			<button
 				class="bg-transparent border-2 border-[#FFB700] text-[#FFB700] text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-200 hover:bg-[#FFB700] hover:text-black"
 				on:click={toggleFilters}
