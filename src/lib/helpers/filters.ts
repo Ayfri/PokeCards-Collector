@@ -40,6 +40,20 @@ export const mostExpensiveOnly = persistentStore('most-expensive-only', false);
 
 export const displayAll = persistentStore('display-all', true);
 
+export function resetFilters() {
+	filterNumero.set('');
+	filterName.set('');
+	filterSet.set('all');
+	filterType.set('all');
+	filterRarity.set('all');
+	filterSupertype.set('all');
+	filterArtist.set('all');
+	mostExpensiveOnly.set(false);
+	displayAll.set(true); // Reset displayAll as well, if desired
+	sortBy.set('sort-numero'); // Optionally reset sorting
+	sortOrder.set('asc'); // Optionally reset sorting order
+}
+
 export function isVisible(card: FullCard, cardPokemon: Pokemon | undefined, cardSet: Set) {
 	const numero = get(filterNumero).toLowerCase();
 	const name = get(filterName).toLowerCase();

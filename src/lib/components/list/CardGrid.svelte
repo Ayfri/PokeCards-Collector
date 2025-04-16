@@ -1,6 +1,6 @@
 <script lang="ts">
 	import "~/styles/colors.css";
-	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder} from '$helpers/filters';
+	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder, resetFilters} from '$helpers/filters';
 	import {getRarityLevel} from '$helpers/rarity';
 	import CardComponent from '@components/list/Card.svelte';
 	import Filters from '@components/list/Filters.svelte';
@@ -13,6 +13,7 @@
 	import { fly } from 'svelte/transition';
 	import XIcon from 'lucide-svelte/icons/x';
 	import SlidersHorizontalIcon from 'lucide-svelte/icons/sliders-horizontal';
+	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
 
 	export let cards: FullCard[];
 	export let sets: Set[];
@@ -228,7 +229,10 @@
 
 			<div class="relative">
 				<button
-					class="bg-transparent border-2 border-[#FFB700] text-[#FFB700] text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-200 hover:bg-[#FFB700] hover:text-black"
+					class="bg-transparent border-2 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-200 h-8
+						   {activeFiltersCount > 0
+								? 'border-[#FFB700] text-[#FFB700] hover:bg-[#FFB700] hover:text-black'
+								: 'border-white text-white hover:bg-white hover:text-black'}"
 					on:click={toggleFilters}
 				>
 					<SlidersHorizontalIcon size={16} class="mr-1"/> Filters
@@ -239,6 +243,18 @@
 					</span>
 				{/if}
 			</div>
+
+			<!-- Reset Button -->
+			<button
+				class="flex items-center justify-center bg-transparent border-2 border-white text-white rounded text-sm p-1.5 h-8 transition-all duration-200 
+					   hover:bg-white hover:text-black 
+					   disabled:border-gray-600 disabled:text-gray-600 disabled:hover:bg-transparent disabled:hover:text-gray-600 disabled:cursor-not-allowed"
+				on:click={resetFilters}
+				aria-label="Reset filters"
+				disabled={activeFiltersCount === 0}
+			>
+				<RotateCcwIcon size={16}/>
+			</button>
 		</div>
 	</div>
 
