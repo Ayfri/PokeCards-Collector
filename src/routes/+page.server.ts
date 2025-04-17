@@ -1,13 +1,25 @@
-import { getRarities, getSets, getTypes, getArtists, getPokemons } from '$helpers/data';
-export async function load({ parent }) {
-	const { allCards } = await parent();
+import { getCards, getRarities, getSets, getTypes, getArtists, getPokemons } from '$helpers/data';
+import type { FullCard } from '$lib/types'; // Import FullCard type
 
-	// Count different card types
+export async function load({ parent }) {
+	// Load all cards here instead of layout
+	let allCards: FullCard[] = await getCards();
+
+	// Apply unique by image filter (moved from layout)
+	const seenImages = new Set();
+	allCards = allCards.filter(card => {
+		if (!card.setName) return false;
+		if (seenImages.has(card.image)) return false;
+		seenImages.add(card.image);
+		return true;
+	});
+
+	// Count different card types based on the loaded cards
 	const pokemonCards = allCards.filter(card => card.supertype === 'Pokémon');
 	const trainerCards = allCards.filter(card => card.supertype === 'Trainer');
 	const energyCards = allCards.filter(card => card.supertype === 'Energy');
 
-	// Count unique Pokemon
+	// Count unique Pokemon based on the loaded cards
 	const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
 
 	const pokemons = await getPokemons();
@@ -20,6 +32,7 @@ export async function load({ parent }) {
 	sets.sort((a, b) => a.name.localeCompare(b.name));
 
 	return {
+		allCards, // Return the loaded and filtered cards
 		sets,
 		rarities,
 		types,

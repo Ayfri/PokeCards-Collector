@@ -1,11 +1,11 @@
-import { getPokemons, getSets } from '$helpers/data';
-import type { Pokemon } from '~/types';
+import { getCards, getPokemons, getSets } from '$helpers/data';
+import type { FullCard, Pokemon } from '$lib/types';
 import { error } from '@sveltejs/kit';
 
 // Cache pour optimiser les chargements répétés
 const cachedPokemonCards = new Map();
 
-export const load = async ({ params, parent, url }) => {
+export const load = async ({ params, url }) => {
 	const pokemons = await getPokemons();
 	const sets = await getSets();
 
@@ -28,8 +28,8 @@ export const load = async ({ params, parent, url }) => {
 		throw error(404, 'Pokemon not found');
 	}
 
-	// Charge les cartes - seule une partie réduite (optimisé par le flag false)
-	const { allCards } = await parent();
+	// Load all cards directly here
+	const allCards: FullCard[] = await getCards();
 
 	// Filtre pour ne garder que les cartes pertinentes pour ce Pokémon
 	const pokemonCards = allCards.filter((c) => c.pokemonNumber === pokemon.id && c.setName);
