@@ -65,7 +65,7 @@
 
 	// Options for sorting
 	const sortOptions = [
-		{ value: 'sort-numero', label: 'Pokédex' },
+		{ value: 'sort-pokedex', label: 'Pokédex' },
 		{ value: 'sort-price', label: 'Price' },
 		{ value: 'sort-name', label: 'Name' },
 		{ value: 'sort-id', label: 'ID' },

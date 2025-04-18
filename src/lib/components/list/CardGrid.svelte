@@ -97,17 +97,14 @@
 
 	$: if ($sortOrder || $sortBy) {
 		displayedCards = displayedCards.sort((a, b) => {
-			const aNumero = a.pokemonNumber ?? 0;
-			const bNumero = b.pokemonNumber ?? 0;
-			// Extraire le cardCode des images
 			const aCardCode = parseInt(a.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
 			const bCardCode = parseInt(b.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
 
 			if ($sortBy === 'sort-price') {
 				return $sortOrder === 'asc' ? (a.price ?? -1) - (b.price ?? 0) : (b.price ?? 0) - (a.price ?? -1);
 			} else if ($sortBy === 'sort-name') {
-				const aPokemon = pokemons.find(p => p.id === a.pokemonNumber) ?? {name: ''};
-				const bPokemon = pokemons.find(p => p.id === b.pokemonNumber) ?? {name: ''};
+				const aPokemon = pokemons.find(p => p.id === a.pokemonNumber) ?? {name: a.name};
+				const bPokemon = pokemons.find(p => p.id === b.pokemonNumber) ?? {name: b.name};
 				return $sortOrder === 'asc' ? aPokemon.name.localeCompare(bPokemon.name) : bPokemon.name.localeCompare(aPokemon.name);
 			} else if ($sortBy === 'sort-id') {
 				return $sortOrder === 'asc' ? aCardCode - bCardCode : bCardCode - aCardCode;
@@ -125,9 +122,29 @@
 				const aArtist = a.artist || '';
 				const bArtist = b.artist || '';
 				return $sortOrder === 'asc' ? aArtist.localeCompare(bArtist) : bArtist.localeCompare(aArtist);
+			} else if ($sortBy === 'sort-pokedex') {
+				const aNum = a.pokemonNumber;
+				const bNum = b.pokemonNumber;
+
+				if (aNum === null && bNum !== null) {
+					return 1;
+				}
+				if (bNum === null && aNum !== null) {
+					return -1;
+				}
+				if (aNum === null && bNum === null) {
+					return a.name.localeCompare(b.name);
+				}
+
+				return $sortOrder === 'asc' ? aNum! - bNum! : bNum! - aNum!;
 			}
 
-			return $sortOrder === 'asc' ? aNumero - bNumero : bNumero - aNumero;
+			const aNumDefault = a.pokemonNumber;
+			const bNumDefault = b.pokemonNumber;
+			if (aNumDefault === null && bNumDefault !== null) return 1;
+			if (bNumDefault === null && aNumDefault !== null) return -1;
+			if (aNumDefault === null && bNumDefault === null) return a.name.localeCompare(b.name);
+			return aNumDefault! - bNumDefault!;
 		});
 	}
 
