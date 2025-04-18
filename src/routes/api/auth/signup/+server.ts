@@ -25,6 +25,8 @@ export const POST: RequestHandler = async ({ request }) => {
       }, { status: 400 });
     }
     
+    const normalizedUsername = username.toLowerCase();
+
     // 2. Initialiser le client Supabase admin
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
@@ -46,7 +48,7 @@ export const POST: RequestHandler = async ({ request }) => {
       }, { status: 500 });
     }
     
-    // 3. Vérification si le nom d'utilisateur existe déjà
+    // 3. Vérification si le nom d'utilisateur existe déjà (case-insensitive)
     let existingUser;
     let usernameCheckError;
     
@@ -54,7 +56,7 @@ export const POST: RequestHandler = async ({ request }) => {
       const result = await supabaseAdmin
         .from('profiles')
         .select('username')
-        .eq('username', username);
+        .eq('username', normalizedUsername);
       
       existingUser = result.data;
       usernameCheckError = result.error;
@@ -101,16 +103,29 @@ export const POST: RequestHandler = async ({ request }) => {
       
       if (!createUserResponse.ok) {
         // En cas d'erreur, essayer de lire le corps pour plus de détails
-        let errorBody;
+        let errorBody = { message: 'Unknown error' }; // Default error object
+        let errorMessage = 'Unknown error during user creation';
         try {
           errorBody = await createUserResponse.json();
+          // Check for Supabase specific error messages or codes if available in the body
+          if (errorBody.message && errorBody.message.toLowerCase().includes('email address already registered')) {
+            errorMessage = 'This email address is already registered.';
+          } else if (errorBody.message) {
+            errorMessage = errorBody.message;
+          }
         } catch (e) {
-          errorBody = { message: 'Unknown error' };
+          // Failed to parse JSON body, use status text if available
+          errorMessage = createUserResponse.statusText || 'Unknown error during user creation';
         }
         
+        // Check specifically for the 422 status which often indicates email exists
+        if (createUserResponse.status === 422 && errorMessage.includes('email')) { 
+             errorMessage = 'This email address is already registered.'; // More specific message for 422
+        }
+
         return json({
           success: false,
-          error: `Failed to create user: ${errorBody.message || 'Unknown error'}`
+          error: `Failed to create user: ${errorMessage}` // Use the refined error message
         }, { status: createUserResponse.status });
       }
       
@@ -129,7 +144,7 @@ export const POST: RequestHandler = async ({ request }) => {
           password,
           options: {
             data: {
-              username: username
+              username: normalizedUsername
             }
           }
         });
@@ -171,7 +186,7 @@ export const POST: RequestHandler = async ({ request }) => {
     try {
       // Utiliser fetch direct au lieu du client Supabase
       const profileData = {
-        username,
+        username: normalizedUsername,
         auth_id: authData.user.id,
         is_public: true,
         avatar_url: null,
