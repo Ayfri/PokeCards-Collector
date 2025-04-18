@@ -90,17 +90,33 @@
   });
 </script>
 
-<div class="px-10">
+<div class="px-10 flex flex-col flex-grow">
   {#if isLoading}
-    <div class="flex justify-center items-center p-8">
+    <div class="flex justify-center items-center p-8 flex-grow">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
     </div>
   {:else if statusMessage}
-    <div class="text-center p-8">
-      <p class="text-lg">{statusMessage}</p>
+    <div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
+      <p 
+        class="font-bold mb-4 {statusMessage.includes('not found') ? 'text-4xl' : 'text-3xl'}"
+      >
+        {statusMessage}
+      </p>
       {#if statusMessage === 'Your wishlist is empty.'}
-        <p class="mt-2">Add cards to your wishlist by browsing card pages.</p>
+        <p class="mt-2 mb-4">Add cards to your wishlist by browsing card pages.</p>
       {/if}
+      <a 
+        href="/" 
+        class="home-button animated-hover-button relative overflow-hidden bg-transparent border-2 border-white text-white text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4"
+      >
+        <span class="relative z-10 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          Return to Home
+        </span>
+      </a>
     </div>
   {:else}
     <CardGrid 
@@ -114,3 +130,36 @@
     />
   {/if}
 </div> 
+
+<style>
+	/* Base styles for animated buttons */
+	.animated-hover-button {
+		/* Ensure z-index is appropriate if needed, inherited seems fine here */
+		transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+	}
+
+	.animated-hover-button::before {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		height: 0;
+		transition: height 0.3s ease-in-out;
+		z-index: -1; /* Place behind the text/icon */
+	}
+
+	.animated-hover-button:not(:disabled):hover::before {
+		height: 100%;
+	}
+
+	.animated-hover-button:not(:disabled):hover {
+		color: black; /* Change text color on hover */
+		border-color: #FFB700; /* Change border color on hover */
+	}
+
+	/* Specific background color for the home button */
+	.home-button::before {
+		background-color: #FFB700;
+	}
+</style> 
