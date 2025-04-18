@@ -4,48 +4,39 @@
   import { getUserWishlist } from '$lib/services/wishlists';
   import { goto } from '$app/navigation';
   import PageTitle from '$lib/components/PageTitle.svelte';
-  import type { UserWishlist, Card } from '$lib/types';
+  import CardGrid from '$lib/components/list/CardGrid.svelte';
+  import type { PageData } from './$types';
+  import type { FullCard, Pokemon, Set } from '$lib/types';
+  
+  export let data: PageData;
   
   let isLoading = true;
-  let wishlist: UserWishlist[] = [];
-  let cards: Card[] = [];
+  let wishlistCards: FullCard[] = [];
   
-  async function loadWishlist() {
-    if (!$authStore.user || !$authStore.profile) {
-      return;
-    }
-    
-    isLoading = true;
-    
-    try {
-      // Get wishlist
-      const { data: wishlistData, error: wishlistError } = await getUserWishlist($authStore.profile.username);
-      
-      if (wishlistError) {
-        console.error('Error loading wishlist:', wishlistError);
-        return;
-      }
-      
-      wishlist = wishlistData || [];
-      
-      // TODO: Fetch card details using card_ids from wishlist
-      // This would depend on your API for fetching cards
-      
-    } catch (error) {
-      console.error('Error in loadWishlist:', error);
-    } finally {
-      isLoading = false;
-    }
-  }
+  // Reactive variables for data from server
+  $: allCards = data.allCards || [];
+  $: pokemons = data.pokemons || [];
+  $: sets = data.sets || [];
+  $: rarities = data.rarities || [];
+  $: types = data.types || [];
   
-  // Check if user is logged in
   onMount(() => {
-    const unsubscribe = authStore.subscribe(state => {
-      if (state.user === null && !state.loading) {
-        // Redirect to home if not logged in
-        goto('/');
-      } else if (state.user && !state.loading) {
-        loadWishlist();
+    const unsubscribe = authStore.subscribe(async (state) => {
+      if (!state.loading) {
+        isLoading = true;
+        if (state.profile) {
+          const { data: wishlistItems, error } = await getUserWishlist(state.profile.username);
+          if (error) {
+            console.error('Error loading wishlist:', error);
+            wishlistCards = [];
+          } else {
+            const wishlistCardCodes = new Set(wishlistItems?.map(item => item.card_code) || []);
+            wishlistCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
+          }
+        } else {
+          goto('/');
+        }
+        isLoading = false;
       }
     });
     
@@ -64,27 +55,13 @@
     <div class="flex justify-center items-center p-8">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
     </div>
-  {:else if !$authStore.user}
-    <div class="text-center p-8">
-      <p class="text-lg">Please sign in to view your wishlist.</p>
-    </div>
-  {:else if wishlist.length === 0}
+  {:else if wishlistCards.length === 0}
     <div class="text-center p-8">
       <p class="text-lg">Your wishlist is empty.</p>
       <p class="mt-2">Add cards to your wishlist by browsing card pages.</p>
     </div>
   {:else}
-    <!-- Wishlist cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-      {#each wishlist as item}
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-          <div class="p-4">
-            <p class="text-sm font-semibold">ID: {item.card_id}</p>
-            <p class="text-xs text-gray-500">Added on: {new Date(item.created_at).toLocaleDateString()}</p>
-            <!-- TODO: Display card image and details once fetched -->
-          </div>
-        </div>
-      {/each}
-    </div>
+    <!-- Display filtered cards using CardGrid -->
+    <CardGrid cards={wishlistCards} {pokemons} {sets} {rarities} {types} />
   {/if}
 </div> 
