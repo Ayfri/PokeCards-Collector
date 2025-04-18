@@ -118,13 +118,13 @@
 				width={300}
 			/>
 		</div>
-		<h2 class="text-center font-bold text-lg text-pretty w-[300px] max-2xs:w-[245px] leading-none pt-2">
+		<h2 class="text-center font-bold text-lg text-pretty w-[300px] max-2xs:w-[245px] leading-none pt-2 flex flex-col gap-[0.1rem]">
 			{#if card.pokemonNumber}
 				{cardName}
 			{:else}
 				{cardName}
 			{/if}
-			<span class="uppercase text-sm">
+			<span class="uppercase text-sm opacity-85">
 				{#if setCode}
 					{setCode}
 				{/if}
