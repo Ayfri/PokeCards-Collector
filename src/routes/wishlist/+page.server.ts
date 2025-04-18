@@ -6,6 +6,7 @@ import type { PageServerLoad } from './$types';
 import type { FullCard, UserProfile } from '$lib/types';
 
 export const load: PageServerLoad = async ({ url, locals }) => {
+	console.log('Running +page.server.ts load for URL:', url.href);
 	const targetUsername = url.searchParams.get('user');
 
 	// --- Always load base data --- 
