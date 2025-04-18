@@ -186,23 +186,23 @@ export async function signIn(email: string, password: string): Promise<AuthRespo
           
           if (!response.ok) {
             // Fallback au client Supabase
-            const { data, error } = await supabase.auth.signInWithPassword({
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
               email,
               password,
             });
             
-            if (error) {
+            if (signInError) {
               resolve({ 
                 user: null, 
                 session: null, 
-                error
+                error: signInError
               });
               return;
             }
             
             resolve({ 
-              user: data?.user || null, 
-              session: data?.session || null, 
+              user: signInData?.user || null, 
+              session: signInData?.session || null, 
               error: null
             });
             return;
@@ -211,7 +211,6 @@ export async function signIn(email: string, password: string): Promise<AuthRespo
           // Succès avec fetch direct
           const authData = await response.json();
           
-          // Récupérer l'utilisateur à partir du token
           const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
             headers: {
               'apikey': supabaseAnonKey,
@@ -221,14 +220,19 @@ export async function signIn(email: string, password: string): Promise<AuthRespo
           });
           
           if (!userResponse.ok) {
+            // Store token even if user fetch fails, session is valid
+            localStorage.setItem('supabase.auth.token', JSON.stringify(authData)); 
             resolve({
               user: null,
               session: {
                 access_token: authData.access_token,
                 refresh_token: authData.refresh_token,
                 expires_at: authData.expires_at,
-                expires_in: authData.expires_in
-              } as any,
+                expires_in: authData.expires_in,
+                token_type: authData.token_type,
+                provider_token: authData.provider_token,
+                provider_refresh_token: authData.provider_refresh_token
+              } as Session,
               error: null
             });
             return;
@@ -236,70 +240,44 @@ export async function signIn(email: string, password: string): Promise<AuthRespo
           
           const userData = await userResponse.json();
           
-          // Sauvegarder le token pour les futures requêtes
-          localStorage.setItem('supabase.auth.token', JSON.stringify({
-            ...authData,
-            user: userData
-          }));
-          
-          // Mettre à jour authStore
-          if (userData) {
-            authStore.setUser(userData);
-          }
+          // Construct session object
+          const session: Session = {
+            access_token: authData.access_token,
+            refresh_token: authData.refresh_token,
+            expires_at: authData.expires_at,
+            expires_in: authData.expires_in,
+            token_type: authData.token_type,
+            user: userData,
+            provider_token: authData.provider_token, 
+            provider_refresh_token: authData.provider_refresh_token
+          };
+
+          // Save session to localStorage
+          localStorage.setItem('supabase.auth.token', JSON.stringify(session));
           
           resolve({
             user: userData,
-            session: {
-              access_token: authData.access_token,
-              refresh_token: authData.refresh_token,
-              expires_at: authData.expires_at,
-              expires_in: authData.expires_in
-            } as any,
+            session: session,
             error: null
           });
         } catch (fetchError) {
-          // Fallback sur le client Supabase
-          const { data, error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
-          
-          if (error) {
-            resolve({ 
-              user: null, 
-              session: null, 
-              error
-            });
-            return;
-          }
-          
-          resolve({ 
-            user: data?.user || null, 
-            session: data?.session || null, 
-            error: null
-          });
+          resolve({ user: null, session: null, error: { name: 'FetchError', message: 'Failed to fetch during sign in' } as AuthError });
         }
-      } catch (error) {
-        resolve({ 
-          user: null, 
-          session: null, 
-          error: { 
-            name: 'UnknownError', 
-            message: 'An error occurred during sign in'
-          } as AuthError 
-        });
+      } catch (innerError) {
+        resolve({ user: null, session: null, error: { name: 'SignInError', message: 'An unexpected error occurred during sign in' } as AuthError });
       }
     });
     
     // Utiliser une race entre la promesse d'authentification et le timeout
     return await Promise.race([authPromise, timeoutPromise]);
-  } catch (raceError) {
+  } catch (error) {
+    console.error('Sign in error:', error);
     return { 
       user: null, 
       session: null, 
       error: { 
-        name: 'TimeoutError', 
-        message: 'Connection timed out'
+        name: 'UnknownError', 
+        message: 'An unknown error occurred during sign in' 
       } as AuthError 
     };
   }

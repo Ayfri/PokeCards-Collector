@@ -1,8 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { signIn } from '$lib/services/auth';
-  import { isUsernameTaken } from '$lib/services/profiles';
+  import { isUsernameTaken, getProfileByAuthId } from '$lib/services/profiles';
   import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { authStore } from '$lib/stores/auth';
 
   const dispatch = createEventDispatcher();
 
@@ -108,8 +110,6 @@
       }, 15000);
 
       try {
-        // Use the server API endpoint instead of the direct function
-        
         // Vérifier la connectivité réseau
         if (!navigator.onLine) {
           clearTimeout(registerTimeout);
@@ -162,50 +162,47 @@
             return;
           }
           
-          // Inscription réussie
-          
-          // Automatic login via Supabase API
+          // Inscription réussie -> Connexion automatique
           try {
-            // Use fetch directly to avoid issues with the Supabase client
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+            console.log('Signup successful, attempting automatic sign in...');
+            const { user, session, error: loginError } = await signIn(email, password);
             
-            const loginResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
-              method: 'POST',
-              headers: {
-                'apikey': supabaseAnonKey,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                email,
-                password
-              })
-            });
-            
-            if (!loginResponse.ok) {
+            if (loginError || !user || !session) {
+              console.error('Automatic sign in failed:', loginError);
               clearTimeout(registerTimeout);
-              errorMessage = 'Registration successful, but automatic login failed. Please log in manually.';
+              errorMessage = 'Registration successful, but automatic login failed: ' + (loginError?.message || 'Unknown error');
               loading = false;
-              
-              // Switch to login tab
               dispatch('switch', 'login');
               return;
             }
             
-            // Connexion automatique réussie
+            // Connexion automatique réussie -> Mettre à jour le store MANUELLEMENT
+            console.log('Automatic sign in successful! Manually updating store...');
+            authStore.setUser(user);
+            const { data: profile, error: profileError } = await getProfileByAuthId(user.id);
+            if (profileError) {
+              console.warn('Could not fetch profile immediately after sign in:', profileError);
+              authStore.setProfile(null);
+            } else {
+              authStore.setProfile(profile);
+            }
+
             clearTimeout(registerTimeout);
-            errorMessage = 'Registration successful! Logging you in...';
             loading = false;
+
+            // Dispatch success event BEFORE navigation
+            console.log('Dispatching success event...');
+            dispatch('success'); 
             
-            // Switch to login tab and notify success
-            dispatch('success');
-            setTimeout(() => {
-              window.location.href = '/';
-            }, 1000);
+            console.log('Store updated. Navigating to /...');
+            await goto('/', { invalidateAll: true });
             return;
-          } catch (loginError) {
+          } catch (loginCatchError: unknown) {
             clearTimeout(registerTimeout);
             errorMessage = 'Registration successful, but an error occurred during automatic login. Please log in manually.';
+            if (loginCatchError instanceof Error) {
+                errorMessage += ` (${loginCatchError.message})`;
+            }
             loading = false;
             
             // Switch to login tab
