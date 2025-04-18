@@ -6,7 +6,7 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import Heart from 'lucide-svelte/icons/heart';
-	import {onMount} from 'svelte';
+	import { onMount } from 'svelte';
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];
@@ -33,15 +33,25 @@
 	let isInWishlist = false;
 	let isAddingToWishlist = false;
 
-	// Check if card is in wishlist on mount
-	onMount(async () => {
-		if ($authStore.user && $authStore.profile) {
-			const {exists} = await isCardInWishlist($authStore.profile.username, cardCode);
-			isInWishlist = exists;
-		}
+	onMount(() => {
+		// Subscribe to auth state changes
+		const unsubscribe = authStore.subscribe(async (state) => {
+			if (!state.loading) { // Wait for auth to finish loading
+				if (state.profile) {
+					// User is logged in, check wishlist status for this card
+					const { exists } = await isCardInWishlist(state.profile.username, cardCode);
+					isInWishlist = exists; // Update state based on result
+				} else {
+					// User is not logged in, ensure heart is empty
+					isInWishlist = false;
+				}
+			}
+		});
+
+		// Cleanup subscription on component destroy
+		return unsubscribe;
 	});
 
-	// Toggle wishlist status
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
@@ -85,7 +95,7 @@
 			{#if $authStore.user && $authStore.profile}
 				<button
 					aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-					class="absolute top-2 right-2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors duration-200"
+					class="absolute bottom-2 right-2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors duration-200"
 					on:click={toggleWishlist}
 					disabled={isAddingToWishlist}
 				>

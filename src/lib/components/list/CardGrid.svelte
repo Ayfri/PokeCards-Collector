@@ -1,7 +1,7 @@
 <script lang="ts">
 	import "~/styles/colors.css";
-	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder, resetFilters} from '$helpers/filters';
-	import {getRarityLevel} from '$helpers/rarity';
+	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder, resetFilters} from '$lib/helpers/filters';
+	import { getRarityLevel } from '$lib/helpers/rarity';
 	import CardComponent from '@components/list/Card.svelte';
 	import Filters from '@components/list/Filters.svelte';
 	import VirtualGrid from '@components/list/VirtualGrid.svelte';
@@ -274,7 +274,7 @@
 		let:item
 		marginTop={clientWidth ? 15 + clientWidth * 0.025 : 50}
 	>
-		<CardComponent card={item} {pokemons} {sets}/>
+		<CardComponent card={item} {pokemons} {sets} />
 
 		<div slot="empty">
 			<p class="text-white text-center mt-32 text-2xl">No cards found</p>

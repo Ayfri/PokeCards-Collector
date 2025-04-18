@@ -1,7 +1,10 @@
 import { getCards, getRarities, getSets, getTypes, getArtists, getPokemons } from '$helpers/data';
 import type { FullCard } from '$lib/types'; // Import FullCard type
+import type { PageServerLoad } from './$types'; // Added import for type
 
-export async function load({ parent }) {
+export const load: PageServerLoad = async ({ parent }) => {
+	// Removed session/profile fetching
+
 	// Load all cards here instead of layout
 	let allCards: FullCard[] = await getCards();
 
