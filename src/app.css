@@ -8,6 +8,51 @@
 	.scrollbar-hide {
 		scrollbar-width: none;
 	}
+
+	/* Base styles for animated buttons */
+	.animated-hover-button {
+		transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+		position: relative; /* Needed for absolute positioning of ::before */
+		overflow: hidden; /* Hide ::before when height is 0 */
+		z-index: 0; /* Ensure button itself has a z-index */
+	}
+
+	.animated-hover-button::before {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		height: 0;
+		background-color: #FFB700; /* Default hover background */
+		transition: height 0.3s ease-in-out;
+		z-index: -1; /* Place behind the text/icon */
+	}
+
+	/* Specific background colors using ::before */
+	/* If a button needs a different hover color, define a specific class */
+	/* Example: .other-button::before { background-color: #some-other-color; } */
+	/* We'll use the default #FFB700 for filters, reset, and home for now */
+
+	.animated-hover-button:not(:disabled):hover::before {
+		height: 100%;
+	}
+
+	.animated-hover-button:not(:disabled):hover {
+		color: black; /* Change text color on hover */
+		border-color: #FFB700; /* Change border color on hover */
+	}
+
+	/* Ensure disabled button does not show hover effects */
+	.animated-hover-button:disabled {
+		border-color: #4B5563; /* Tailwind gray-600 */
+		color: #4B5563; /* Tailwind gray-600 */
+		pointer-events: none;
+	}
+
+	.animated-hover-button:disabled::before {
+		display: none;
+	}
 }
 
 html {

@@ -130,36 +130,3 @@
     />
   {/if}
 </div> 
-
-<style>
-	/* Base styles for animated buttons */
-	.animated-hover-button {
-		/* Ensure z-index is appropriate if needed, inherited seems fine here */
-		transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out;
-	}
-
-	.animated-hover-button::before {
-		content: '';
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		width: 100%;
-		height: 0;
-		transition: height 0.3s ease-in-out;
-		z-index: -1; /* Place behind the text/icon */
-	}
-
-	.animated-hover-button:not(:disabled):hover::before {
-		height: 100%;
-	}
-
-	.animated-hover-button:not(:disabled):hover {
-		color: black; /* Change text color on hover */
-		border-color: #FFB700; /* Change border color on hover */
-	}
-
-	/* Specific background color for the home button */
-	.home-button::before {
-		background-color: #FFB700;
-	}
-</style> 
