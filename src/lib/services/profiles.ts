@@ -38,13 +38,13 @@ export async function getProfileByAuthId(authId: string) {
   }
 }
 
-// Get user profile by username
+// Get user profile by username (case-insensitive)
 export async function getProfileByUsername(username: string) {
   try {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('username', username)
+      .ilike('username', username) // Use ilike for case-insensitive match
       .single();
     
     return { data, error };

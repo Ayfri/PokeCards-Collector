@@ -1,4 +1,4 @@
-import { error } from '@sveltejs/kit';
+import { error, redirect } from '@sveltejs/kit';
 import { getCards, getPokemons, getSets, getRarities, getTypes } from '$helpers/data';
 import { getUserWishlist } from '$lib/services/wishlists';
 import { getProfileByUsername } from '$lib/services/profiles';
@@ -61,12 +61,20 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			};
 		}
 
+		// --- Profile Found - Check Casing and Redirect if needed --- 
+		if (targetProfile.username !== targetUsername) {
+			// Input username casing differs from stored username, redirect to correct URL
+			const correctUrl = `/wishlist?user=${encodeURIComponent(targetProfile.username)}`;
+			throw redirect(307, correctUrl); // 307 Temporary Redirect is appropriate here
+		}
+		// --- End Casing Check --- 
+
 		if (targetProfile.is_public) {
 			// Profile is public, fetch wishlist
-			const { data: wishlistItems, error: wishlistError } = await getUserWishlist(targetUsername);
+			const { data: wishlistItems, error: wishlistError } = await getUserWishlist(targetProfile.username);
 			if (wishlistError) {
-				console.error(`Error fetching wishlist for ${targetUsername}:`, wishlistError);
-				throw error(500, `Failed to load wishlist for ${targetUsername}`);
+				console.error(`Error fetching wishlist for ${targetProfile.username}:`, wishlistError);
+				throw error(500, `Failed to load wishlist for ${targetProfile.username}`);
 			}
 			const wishlistCardCodes = new Set(wishlistItems?.map(item => item.card_code) || []);
 			const wishlistCards: FullCard[] = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
@@ -76,9 +84,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 				targetProfile, 
 				isPublic: true,
 				serverWishlistCards: wishlistCards,
-				targetUsername,
-				title: `${targetUsername}'s Wishlist`,
-				description: `Pokémon TCG wishlist for user ${targetUsername}.`,
+				targetUsername: targetProfile.username,
+				title: `${targetProfile.username}'s Wishlist`,
+				description: `Pokémon TCG wishlist for user ${targetProfile.username}.`,
 			};
 		} else {
 			// Profile is private
@@ -87,7 +95,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 				targetProfile, 
 				isPublic: false,
 				serverWishlistCards: null, 
-				targetUsername,
+				targetUsername: targetProfile.username,
 				title: 'Private Wishlist',
 				description: `This user's wishlist is private.`,
 			};
