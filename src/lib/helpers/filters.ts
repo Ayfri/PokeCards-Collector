@@ -64,7 +64,7 @@ export function isVisible(card: FullCard, cardPokemon: Pokemon | undefined, card
 	const artist = get(filterArtist).toLowerCase();
 
 	const hasNumero = card.pokemonNumber ? card.pokemonNumber.toString().includes(numero) : true;
-	const hasName = cardPokemon ? cardPokemon.name.toLowerCase().includes(name) : true;
+	const hasName = card.name.toLowerCase().includes(name);
 	const hasSet = set === 'all' || cardSet.name.toLowerCase() === set;
 	const hasType = type === 'all' || card.types.toLowerCase().includes(type);
 	const hasRarity = rarity === 'all' || card.rarity.toLowerCase() === rarity;
