@@ -47,6 +47,12 @@
 		$filterName = value;
 	}, 300);
 
+	// Local reset function to clear both store and local state
+	function localResetFilters() {
+		resetFilters(); // Call the imported helper to reset stores
+		searchName = ''; // Reset the local searchName bound to the TextInput
+	}
+
 	let displayedCards = cards;
 	$: {
 		if ($mostExpensiveOnly) {
@@ -259,7 +265,7 @@
 			<button
 				class="animated-hover-button reset-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 border-white text-white rounded text-sm p-1.5 h-8 transition-all duration-300 z-0
 					   disabled:border-gray-600 disabled:text-gray-600 disabled:cursor-not-allowed"
-				on:click={resetFilters}
+				on:click={localResetFilters}
 				aria-label="Reset filters"
 				disabled={activeFiltersCount === 0}
 			>
