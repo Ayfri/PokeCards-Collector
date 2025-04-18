@@ -74,10 +74,14 @@
 			isAddingToWishlist = false;
 		}
 	}
+
+	const cardName = card.pokemonNumber ?
+		pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1) :
+		card.name.charAt(0).toUpperCase() + card.name.slice(1);
 </script>
 
 <a
-	aria-label={`Go to the card page of ${pokemon.name}`}
+	aria-label={`Go to the card page of ${cardName}`}
 	class="card-link text-white"
 	draggable="false"
 	href={`/card/${pokemonId}/?set=${setCode}&number=${cardNumber}`}
@@ -106,7 +110,7 @@
 				</button>
 			{/if}
 			<CardImage
-				alt={pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}
+				alt={cardName}
 				class="rounded-lg h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px] transition-opacity duration-300 absolute top-0 left-0"
 				height={420}
 				imageUrl={image}
@@ -115,7 +119,11 @@
 			/>
 		</div>
 		<h2 class="text-center font-bold text-[1.3rem]">
-			{pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)}
+			{#if card.pokemonNumber}
+				{cardName}
+			{:else}
+				{cardName}
+			{/if}
 			<span class="uppercase">
 				{#if setCode}
 					{setCode}

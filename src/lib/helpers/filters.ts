@@ -63,13 +63,21 @@ export function isVisible(card: FullCard, cardPokemon: Pokemon | undefined, card
 	const supertype = get(filterSupertype).toLowerCase();
 	const artist = get(filterArtist).toLowerCase();
 
+	const hasNumero = card.pokemonNumber ? card.pokemonNumber.toString().includes(numero) : true;
+	const hasName = cardPokemon ? cardPokemon.name.toLowerCase().includes(name) : true;
+	const hasSet = set === 'all' || cardSet.name.toLowerCase() === set;
+	const hasType = type === 'all' || card.types.toLowerCase().includes(type);
+	const hasRarity = rarity === 'all' || card.rarity.toLowerCase() === rarity;
+	const hasSupertype = supertype === 'all' || (card.supertype.toLowerCase() === supertype);
+	const hasArtist = artist === 'all' || (card.artist.toLowerCase() === artist);
+
 	return (
-		(card.pokemonNumber?.toString().includes(numero) || cardPokemon?.name.toLowerCase().includes(numero)) &&
-		(cardPokemon?.name.toLowerCase().includes(name) || card.pokemonNumber?.toString().includes(name)) &&
-		(set === 'all' || cardSet.name.toLowerCase() === set) &&
-		(type === 'all' || card.types.toLowerCase().includes(type)) &&
-		(rarity === 'all' || card.rarity.toLowerCase() === rarity) &&
-		(supertype === 'all' || (card.supertype && card.supertype.toLowerCase() === supertype)) &&
-		(artist === 'all' || (card.artist && card.artist.toLowerCase() === artist))
+		hasNumero &&
+		hasName &&
+		hasSet &&
+		hasType &&
+		hasRarity &&
+		hasSupertype &&
+		hasArtist
 	);
 }

@@ -127,7 +127,7 @@
 
 	let filteredCards = displayedCards;
 	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $filterArtist || $displayAll || $sortBy || $sortOrder || $mostExpensiveOnly) {
-		filteredCards = displayedCards.filter(card => isVisible(card, pokemons.find(p => p.id === card.pokemonNumber)!!, sets.find(s => s.name === card.setName)!!));
+		filteredCards = displayedCards.filter(card => isVisible(card, pokemons.find(p => p.id === card.pokemonNumber), sets.find(s => s.name === card.setName)!!));
 	}
 
 	// Count active filters
