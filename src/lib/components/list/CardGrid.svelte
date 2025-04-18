@@ -21,6 +21,8 @@
 	export let rarities: string[];
 	export let types: string[];
 	export let artists: string[] = [];
+	export let showTitleAndControls: boolean = true;
+	export let pageTitle: string | null = "Card List";
 
 	let clientWidth: number = 0;
 	let showFilters = false;
@@ -204,19 +206,26 @@
 {/if}
 
 <div class="min-h-[calc(100vh)] flex flex-col">
+	<!-- Header Row -->
 	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-10 mb-0">
-		<div class="flex flex-col md:flex-row items-center gap-3 md:ml-14">
-			<PageTitle title="Card List"/>
-			<span class="text-gold-400 text-sm ml-4 hidden md:block">
+		<!-- Left Side (Title conditional based on prop, Counts always present) -->
+		<div class="flex items-center gap-3 md:ml-14">
+			{#if pageTitle}
+				<PageTitle title={pageTitle}/>
+			{/if}
+			<!-- Desktop Counts (always rendered in this position) -->
+			<span class:ml-4={!!pageTitle} class="text-gold-400 text-sm hidden md:block">
 				({uniquePokemonCount} Pokémon, {visibleCardsCount} cards)
 			</span>
 		</div>
 
+		<!-- Right Side (Controls) -->
 		<div class="flex items-end gap-2">
+			<!-- Mobile Count -->
 			<span class="text-gold-400 text-sm ml-4 md:hidden">
 				({uniquePokemonCount} Pokémon, {visibleCardsCount} cards)
 			</span>
-
+			<!-- Name Search (Should be always visible) -->
 			<div class="w-48">
 				<TextInput
 					id="name"
@@ -226,7 +235,7 @@
 					debounceFunction={debouncedSetFilterName}
 				/>
 			</div>
-
+			<!-- Filters Button (Always Visible) -->
 			<div class="relative">
 				<button
 					class="animated-hover-button filters-button relative overflow-hidden bg-transparent border-2 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 z-0
@@ -246,7 +255,7 @@
 				{/if}
 			</div>
 
-			<!-- Reset Button -->
+			<!-- Reset Button (Should be always visible) -->
 			<button
 				class="animated-hover-button reset-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 border-white text-white rounded text-sm p-1.5 h-8 transition-all duration-300 z-0
 					   disabled:border-gray-600 disabled:text-gray-600 disabled:cursor-not-allowed"

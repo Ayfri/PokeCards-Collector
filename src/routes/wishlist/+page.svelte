@@ -7,6 +7,7 @@
   import CardGrid from '$lib/components/list/CardGrid.svelte';
   import type { PageData } from './$types';
   import type { FullCard, Pokemon, Set } from '$lib/types';
+  import { resetFilters } from '$lib/helpers/filters';
   
   export let data: PageData;
   
@@ -21,6 +22,7 @@
   $: types = data.types || [];
   
   onMount(() => {
+    resetFilters();
     const unsubscribe = authStore.subscribe(async (state) => {
       if (!state.loading) {
         isLoading = true;
@@ -44,13 +46,7 @@
   });
 </script>
 
-<div class="w-full mx-auto pb-4 lg:pb-5">
-  <div class="flex justify-between mx-28 max-lg:mx-4 items-center">
-    <PageTitle title="My Wishlist" />
-  </div>
-</div>
-
-<div class="container mx-auto px-4 py-8">
+<div class="max-lg:px-0 text-white text-lg flex flex-col flex-1">
   {#if isLoading}
     <div class="flex justify-center items-center p-8">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
@@ -61,7 +57,14 @@
       <p class="mt-2">Add cards to your wishlist by browsing card pages.</p>
     </div>
   {:else}
-    <!-- Display filtered cards using CardGrid -->
-    <CardGrid cards={wishlistCards} {pokemons} {sets} {rarities} {types} />
+    <CardGrid 
+      cards={wishlistCards} 
+      {pokemons} 
+      {sets} 
+      {rarities} 
+      {types} 
+      pageTitle="My Wishlist" 
+      showTitleAndControls={false} 
+    />
   {/if}
 </div> 
