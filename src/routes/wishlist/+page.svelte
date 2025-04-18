@@ -6,39 +6,83 @@
   import PageTitle from '$lib/components/PageTitle.svelte';
   import CardGrid from '$lib/components/list/CardGrid.svelte';
   import type { PageData } from './$types';
-  import type { FullCard, Pokemon, Set } from '$lib/types';
+  import type { FullCard, Pokemon, Set, UserProfile } from '$lib/types';
   import { resetFilters } from '$lib/helpers/filters';
   
   export let data: PageData;
   
-  let isLoading = true;
-  let wishlistCards: FullCard[] = [];
+  // --- State Variables --- 
+  let isLoading = true; // Loading covers auth check AND potential client-side fetch
+  let displayCards: FullCard[] = [];
+  let pageTitleDisplay = data.title; // Start with title from server
+  let statusMessage: string | null = null; // For errors like private/not found
+  let loggedInUser: UserProfile | null = null;
+  let isOwnProfile = false;
   
-  // Reactive variables for data from server
+  // --- Reactive Data from Server --- 
   $: allCards = data.allCards || [];
   $: pokemons = data.pokemons || [];
   $: sets = data.sets || [];
   $: rarities = data.rarities || [];
   $: types = data.types || [];
+  $: targetProfile = data.targetProfile;
+  $: isPublic = data.isPublic;
+  $: serverWishlistCards = data.serverWishlistCards;
+  $: targetUsername = data.targetUsername;
   
   onMount(() => {
     resetFilters();
+    isLoading = true; // Ensure loading state is true initially
+    
     const unsubscribe = authStore.subscribe(async (state) => {
       if (!state.loading) {
-        isLoading = true;
-        if (state.profile) {
-          const { data: wishlistItems, error } = await getUserWishlist(state.profile.username);
-          if (error) {
-            console.error('Error loading wishlist:', error);
-            wishlistCards = [];
+        loggedInUser = state.profile;
+        
+        if (targetUsername) {
+          // --- Case 1: Viewing a specific user (?user=...) --- 
+          isOwnProfile = loggedInUser?.username === targetUsername;
+          
+          if (!targetProfile) {
+            statusMessage = `User "${targetUsername}" not found.`;
+            pageTitleDisplay = 'User Not Found';
+            displayCards = [];
+          } else if (!isPublic && !isOwnProfile) {
+            statusMessage = `Profile for "${targetUsername}" is private.`;
+            pageTitleDisplay = 'Private Wishlist';
+            displayCards = [];
           } else {
-            const wishlistCardCodes = new Set(wishlistItems?.map(item => item.card_code) || []);
-            wishlistCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
+            // Profile is public or own profile
+            displayCards = serverWishlistCards || []; // Use cards from server
+            pageTitleDisplay = isOwnProfile ? 'My Wishlist' : `${targetUsername}'s Wishlist`;
+            if (displayCards.length === 0) {
+              statusMessage = isOwnProfile ? 'Your wishlist is empty.' : `"${targetUsername}" wishlist is empty.`;
+            }
           }
         } else {
-          goto('/');
+          // --- Case 2: Viewing own wishlist (no ?user=...) --- 
+          isOwnProfile = true;
+          pageTitleDisplay = 'My Wishlist';
+          if (loggedInUser) {
+            // Fetch own wishlist client-side
+            const { data: wishlistItems, error } = await getUserWishlist(loggedInUser.username);
+            if (error) {
+              console.error('Error loading own wishlist:', error);
+              statusMessage = 'Could not load your wishlist.';
+              displayCards = [];
+            } else {
+              const wishlistCardCodes = new Set(wishlistItems?.map(item => item.card_code) || []);
+              displayCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
+              if (displayCards.length === 0) {
+                statusMessage = 'Your wishlist is empty.';
+              }
+            }
+          } else {
+            // Not logged in and no target user -> redirect
+            goto('/');
+            return; // Prevent further processing
+          }
         }
-        isLoading = false;
+        isLoading = false; // Finish loading after logic completes
       }
     });
     
@@ -46,25 +90,27 @@
   });
 </script>
 
-<div class="max-lg:px-0 text-white text-lg flex flex-col flex-1">
+<div class="px-10">
   {#if isLoading}
     <div class="flex justify-center items-center p-8">
       <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
     </div>
-  {:else if wishlistCards.length === 0}
+  {:else if statusMessage}
     <div class="text-center p-8">
-      <p class="text-lg">Your wishlist is empty.</p>
-      <p class="mt-2">Add cards to your wishlist by browsing card pages.</p>
+      <p class="text-lg">{statusMessage}</p>
+      {#if statusMessage === 'Your wishlist is empty.'}
+        <p class="mt-2">Add cards to your wishlist by browsing card pages.</p>
+      {/if}
     </div>
   {:else}
     <CardGrid 
-      cards={wishlistCards} 
+      cards={displayCards} 
       {pokemons} 
       {sets} 
       {rarities} 
       {types} 
-      pageTitle="My Wishlist" 
-      showTitleAndControls={false} 
+      pageTitle={pageTitleDisplay} 
+      showTitleAndControls={true}
     />
   {/if}
 </div> 
