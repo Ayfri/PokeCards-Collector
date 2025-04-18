@@ -2,12 +2,12 @@
 	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import SearchBar from './SearchBar.svelte';
-	import type { FullCard } from '~/lib/types';
+	import type { FullCard, Set } from '~/lib/types';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
 
 	export let allCards: FullCard[] = [];
-
+	export let sets: Set[] = [];
 	let isOpen = false;
 
 	function toggleModal() {
@@ -55,6 +55,7 @@
 			<div class="w-full">
 				<SearchBar
 					{allCards}
+					{sets}
 					autoFocus={true}
 					mobileMode={true}
 					onToggleModal={toggleModal}

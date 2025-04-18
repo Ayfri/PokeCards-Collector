@@ -1,158 +1,135 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import { getCardImage, processCardImage } from '$helpers/card-images';
-	import { onMount, onDestroy } from 'svelte';
-	import type { FullCard, Pokemon, Set } from '$lib/types';
+	import { onDestroy, onMount } from 'svelte';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
+	import { processCardImage } from '$helpers/card-images';
+	import type { FullCard, Set } from '$lib/types';
+	import { browser } from '$app/environment';
 
-	export let allCards: FullCard[] = [];
-	export let pokemons: Pokemon[] = [];
-	export let sets: Set[] = [];
+	// --- Props ---
+	export let allCards: FullCard[];
 	export let autoFocus: boolean = false;
 	export let mobileMode: boolean = false;
 	export let onToggleModal: (() => void) | undefined = undefined;
+	export let sets: Set[];
 
+	// --- State ---
+	let inputElement: HTMLInputElement;
 	let searchQuery = '';
 	let searchResults: FullCard[] = [];
 	let showResults = false;
-	let inputElement: HTMLInputElement;
 
-	function getSet(card: FullCard): Set {
-		return sets.find(s => s.name === card.setName) ?? {name: '', ptcgoCode: '', printedTotal: 0, logo: ''};
+	// Helper to extract card number from cardCode (preferred)
+	function extractCardNumberFromCode(cardCode: string): string {
+		// Assuming format: supertype_pokemonId_setCode_cardNumber
+		return cardCode?.split('_')[3] || '';
 	}
 
-	function getPokemon(card: FullCard): Pokemon {
-		return pokemons.find(p => p.id === card.pokemonNumber) ?? {id: 0, name: '', description: '', evolves_from: 0, evolves_to: []};
+	// Debounce function
+	function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
+		let timeout: number | undefined;
+		return (...args: Parameters<T>) => {
+			clearTimeout(timeout);
+			if (browser) {
+				timeout = window.setTimeout(() => func(...args), wait);
+			}
+		};
 	}
 
-	const searchCards = () => {
+	const performSearch = () => {
 		const query = searchQuery.toLowerCase().trim();
 
 		if (!query) {
 			searchResults = [];
+			showResults = false;
 			return;
 		}
 
-		let scoredResults: Array<{card: FullCard, score: number}> = [];
+		searchResults = allCards.filter(card => {
+			const set = sets.find(s => s.name === card.setName);
+			const cardName = card.name.toLowerCase();
+			const cardNumber = extractCardNumberFromCode(card.cardCode).toLowerCase();
+			const setName = set?.name.toLowerCase() || '';
+			const setCode = set?.ptcgoCode?.toLowerCase() || '';
 
-		// Search with various criteria and assign scores
-		allCards.forEach(card => {
-			let score = 0;
-			const cardCode = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1');
-			const pokemonName = getPokemon(card).name.toLowerCase();
-			const set = getSet(card);
-			const setTotal = set.printedTotal.toString();
+			// --- Search Logic (Order matters for relevance) ---
 
-			if (!cardCode) return;
+			// 1. Exact Card Number match
+			if (cardNumber === query) return true;
 
-			// Pokemon name match (highest priority)
-			if (pokemonName.includes(query)) {
-				score += 100;
-				// Exact match or starts with gets higher score
-				if (pokemonName === query) {
-					score += 50;
-				} else if (pokemonName.startsWith(query)) {
-					score += 25;
-				}
-			}
+			// 2. Exact Set Code match
+			if (setCode === query) return true;
 
-			// Format "Name Number" like "Pikachu 123"
-			if (query.includes(' ')) {
-				const parts = query.split(' ');
-				// If the last part is a number
-				if (/^\d+$/.test(parts[parts.length - 1])) {
-					const searchName = parts.slice(0, -1).join(' ').toLowerCase();
-					const searchNumber = parts[parts.length - 1];
+			// 3. Card Name includes query
+			if (cardName.includes(query)) return true;
 
-					// Check if name matches and number matches
-					if (pokemonName.includes(searchName) && cardCode === searchNumber) {
-						score += 120; // Higher than regular name match
-					}
-				}
-			}
+			// 4. Set Name includes query
+			if (setName.includes(query)) return true;
 
-			// Card number match (high priority)
-			if (cardCode === query) {
-				score += 80;
-			}
-
-			// Card number format match (X/Y) (high priority)
+			// 5. Card Number / Set Total match (X/Y or X/ format)
 			if (query.includes('/')) {
-				const [queryNumber, queryTotal] = query.split('/');
+				const parts = query.split('/');
+				const queryNumber = parts[0];
+				const queryTotal = parts[1]; // Might be undefined or ""
 
-				// Match exact card number and set total
-				if (cardCode === queryNumber && setTotal === queryTotal) {
-					score += 150; // Higher than any other match
-				}
-				// Match exact card number in a set with similar total count
-				else if (cardCode === queryNumber) {
-					// If the total count is close, also consider it a good match
-					const totalDiff = Math.abs(parseInt(setTotal) - parseInt(queryTotal));
-					if (totalDiff <= 5) {
-						score += 90;
-					} else {
-						score += 70;
+				// Check if the extracted card number matches the part before the slash
+				if (cardNumber === queryNumber) {
+					// Case 1: Query is like "25/" (queryTotal is empty/undefined and query ends with /)
+					if (!queryTotal && query.endsWith('/')) {
+						return true;
 					}
-				}
-				// Match any card with the same X/Y ratio (relative position in the set)
-				else if (queryTotal !== '0') {
-					const cardPosition = parseInt(cardCode) / parseInt(setTotal);
-					const queryPosition = parseInt(queryNumber) / parseInt(queryTotal);
-
-					// If the relative positions are similar
-					const positionDiff = Math.abs(cardPosition - queryPosition);
-					if (positionDiff < 0.05) {
-						score += 40;
+					// Case 2: Query is like "25/156" (queryTotal exists and matches set's printedTotal)
+					else if (queryTotal && set?.printedTotal?.toString() === queryTotal) {
+						return true;
 					}
 				}
 			}
 
-			// Rarity match (medium priority)
-			if (card.rarity.toLowerCase().includes(query)) {
-				score += 40;
-			}
-
-			// Types match (medium priority)
-			if (card.types.toLowerCase().includes(query)) {
-				score += 30;
-			}
-
-			// Set code + number format (e.g. "SV01 123") (medium priority)
+			// 6. Combined formats with space
 			if (query.includes(' ')) {
-				const [setCode, cardNumber] = query.split(' ');
-				if (
-					set?.ptcgoCode?.toLowerCase() === setCode.toLowerCase() &&
-					cardCode === cardNumber
-				) {
-					score += 60;
+				// 6a. Set Code + Card Number (e.g., "SV01 123")
+				if (/^[a-zA-Z]+[0-9]*\s+\d+$/.test(query)) {
+					const [querySetCode, queryCardNumber] = query.split(' ');
+					if (setCode === querySetCode.toLowerCase() && cardNumber === queryCardNumber) {
+						return true;
+					}
+				}
+
+				// 6b. Card Name + Card Number (e.g., "Pikachu 104")
+				if (/\s+\d+$/.test(query)) { // Ends with space + number
+					const parts = query.split(' ');
+					const searchNumber = parts.pop(); // Known to be a number due to regex
+					const searchName = parts.join(' ');
+					if (cardName.includes(searchName) && cardNumber === searchNumber) {
+						return true;
+					}
+				}
+
+				// 6c. Card Name + Set Name (e.g., "Pikachu Base Set") - Try splitting
+				const queryParts = query.split(' ');
+				for (let i = 1; i < queryParts.length; i++) {
+					const potentialName = queryParts.slice(0, i).join(' ');
+					const potentialSet = queryParts.slice(i).join(' ');
+					if (cardName.includes(potentialName) && setName.includes(potentialSet)) {
+						return true;
+					}
 				}
 			}
 
-			// Set name match (lowest priority)
-			if (set?.name.toLowerCase().includes(query)) {
-				score += 20;
-			}
+			return false;
+		})
+		.slice(0, mobileMode ? 10 : 5); // Limit results
 
-			// Add to results if there's any match
-			if (score > 0) {
-				scoredResults.push({ card, score });
-			}
-		});
-
-		// Sort by score (highest first) and take top results
-		// In mobile mode, show more results
-		const limit = mobileMode ? 10 : 5;
-		searchResults = scoredResults
-			.sort((a, b) => b.score - a.score)
-			.slice(0, limit)
-			.map(result => result.card);
+		showResults = searchResults.length > 0;
 	};
 
-	const handleClickOutside = (event: MouseEvent) => {
-		// Skip handler in mobile mode as the search is full screen
-		if (mobileMode) return;
+	// Debounced search function
+	const debouncedSearch = debounce(performSearch, 300);
 
+	// --- Event Handlers ---
+	const handleClickOutside = (event: MouseEvent) => {
+		if (mobileMode) return;
 		const target = event.target as Node;
 		if (showResults && inputElement && !inputElement.contains(target) && !document.querySelector('.search-results')?.contains(target)) {
 			showResults = false;
@@ -161,6 +138,7 @@
 
 	const handleInputFocus = () => {
 		if (searchQuery.trim() !== '') {
+			performSearch();
 			showResults = true;
 		}
 	};
@@ -179,49 +157,61 @@
 		searchQuery = '';
 		searchResults = [];
 		showResults = false;
+		inputElement?.focus();
 	};
 
+	// --- Lifecycle ---
 	onMount(() => {
-		document.addEventListener('click', handleClickOutside);
-		document.addEventListener('keydown', handleKeydown);
+		if (browser) {
+			document.addEventListener('click', handleClickOutside);
+			document.addEventListener('keydown', handleKeydown);
 
-		if (autoFocus && inputElement) {
-			setTimeout(() => {
-				inputElement.focus();
-			}, 100);
+			if (autoFocus && inputElement) {
+				setTimeout(() => {
+					inputElement.focus();
+				}, 100);
+			}
 		}
-
-		return () => {
-			document.removeEventListener('click', handleClickOutside);
-			document.removeEventListener('keydown', handleKeydown);
-		};
 	});
 
-	$: if (searchQuery) {
-		showResults = true;
-		searchCards();
-	} else {
-		searchResults = [];
+	onDestroy(() => {
+		if (browser) {
+			document.removeEventListener('click', handleClickOutside);
+			document.removeEventListener('keydown', handleKeydown);
+		}
+	});
+
+	// --- Reactive Statements ---
+	// Trigger search only when query changes (and is not undefined/null)
+	$: if (typeof searchQuery === 'string') {
+		if (searchQuery.trim()) {
+			debouncedSearch();
+		} else {
+			// Clear results immediately when query is emptied
+			searchResults = [];
+			showResults = false;
+		}
 	}
 </script>
 
 <div class="relative {mobileMode ? 'flex flex-col w-full' : ''}">
 	<div class="search-container relative">
-		<div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+		<div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
 			<Search />
 		</div>
 		<input
 			bind:this={inputElement}
 			bind:value={searchQuery}
-			class="bg-black text-white px-4 py-2 rounded-full w-full outline-none focus:ring-2 focus:ring-gold-400 pl-10"
+			class="bg-black text-white px-4 py-2 rounded-full w-full outline-none focus:ring-2 focus:ring-gold-400 pl-10 pr-10"
 			on:focus={handleInputFocus}
 			placeholder="Search cards..."
 			type="text"
 		/>
 		{#if searchQuery.length > 0}
 			<button
-				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white z-10"
 				on:click={handleClearSearch}
+				aria-label="Clear search"
 			>
 				<X />
 			</button>
@@ -230,51 +220,38 @@
 
 	{#if showResults && searchResults.length > 0}
 		<div
-			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg overflow-hidden z-[100] border border-gray-700"
+			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg overflow-y-auto max-h-96 z-[100] border border-gray-700"
 			transition:fade={{ duration: 150 }}
 		>
-			{#each searchResults as card}
-				{@const setCode = getSet(card).ptcgoCode || card.image.split('/').at(-2)}
-				{@const cardCode = card.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1')}
+			{#each searchResults as card (card.cardCode)}
+				{@const set = sets.find(s => s.name === card.setName)}
+				{@const cardNumber = extractCardNumberFromCode(card.cardCode)}
 				{@const cardImage = processCardImage(card.image)}
+				{@const cardLink = `/card/${set?.ptcgoCode || 'unknown'}/${cardNumber || 'unknown'}`}
 
 				<a
-					href={`/card/${getPokemon(card).id}/`}
-					class="flex items-center p-3 hover:bg-gray-700 transition-colors duration-200 border-b border-gray-700 last:border-b-0"
+					href={cardLink}
+					class="flex items-center p-3 hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700 last:border-b-0"
+					on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
 				>
-					<div class="card-preview mr-3 flex-shrink-0">
-						<img
-							src={cardImage}
-							alt={getPokemon(card).name}
-							class="h-20 w-14 object-contain rounded"
-							loading="lazy"
-						/>
+					<img
+						src={cardImage}
+						alt={card.name}
+						class="h-20 w-14 object-contain rounded mr-4 flex-shrink-0"
+						loading="lazy"
+					/>
+					<div class="flex-grow text-sm">
+						<p class="font-semibold text-white truncate">{card.name}</p>
+						<p class="text-gray-400 truncate">{set?.name || 'Unknown Set'}</p>
+						{#if card.price}
+							<p class="text-gold-400 font-medium mt-1">{card.price.toFixed(2)} $</p>
+						{/if}
 					</div>
-					<div class="card-info flex-grow">
-						<div class="pokemon-name font-bold text-white">
-							{getPokemon(card).name.charAt(0).toUpperCase() + getPokemon(card).name.slice(1)}
-						</div>
-						<div class="set-info text-gray-300 text-sm flex justify-between">
-							<span>
-								{getSet(card).name} · {setCode}
-							</span>
-							<span>
-								#{cardCode}/{getSet(card).printedTotal}
-							</span>
-						</div>
-						<div class="price text-gold-400 text-sm">
-							{card.price && card.price !== 100_000 ? `${card.price} $` : 'Priceless'}
-						</div>
+					<div class="text-xs text-gray-500 ml-2 text-right flex-shrink-0">
+						#{cardNumber || '?'}{#if set?.printedTotal}/{set.printedTotal}{/if}
 					</div>
 				</a>
 			{/each}
-		</div>
-	{:else if showResults && searchQuery.trim() !== ''}
-		<div
-			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg p-4 text-gray-400 z-[100] border border-gray-700"
-			transition:fade={{ duration: 150 }}
-		>
-			No results found
 		</div>
 	{/if}
 </div>
