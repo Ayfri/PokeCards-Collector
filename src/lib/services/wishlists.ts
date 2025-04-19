@@ -1,5 +1,4 @@
 import { supabase } from '../supabase';
-import type { UserWishlist } from '../types';
 
 // Add a card to user's wishlist
 export async function addCardToWishlist(username: string, cardCode: string) {
@@ -24,7 +23,7 @@ export async function addCardToWishlist(username: string, cardCode: string) {
           card_code: cardCode,
         })
         .select();
-      
+
       return { data, error };
     }
   } catch (error) {
@@ -42,7 +41,7 @@ export async function removeCardFromWishlist(username: string, cardCode: string)
       .eq('username', username)
       .eq('card_code', cardCode)
       .select();
-    
+
     return { data, error };
   } catch (error) {
     console.error('Error removing card from wishlist:', error);
@@ -59,18 +58,18 @@ export async function isCardInWishlist(username: string, cardCode: string) {
       .eq('username', username)
       .eq('card_code', cardCode)
       .maybeSingle();
-    
-    return { 
-      exists: !!data, 
-      data, 
-      error 
+
+    return {
+      exists: !!data,
+      data,
+      error
     };
   } catch (error) {
     console.error('Error checking wishlist:', error);
-    return { 
-      exists: false, 
-      data: null, 
-      error 
+    return {
+      exists: false,
+      data: null,
+      error
     };
   }
 }
@@ -82,10 +81,10 @@ export async function getUserWishlist(username: string) {
       .from('wishlists')
       .select('*')
       .eq('username', username);
-    
+
     return { data, error };
   } catch (error) {
     console.error('Error getting user wishlist:', error);
     return { data: null, error };
   }
-} 
+}

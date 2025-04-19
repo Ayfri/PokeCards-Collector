@@ -1,25 +1,26 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createClient } from '@supabase/supabase-js';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, PUBLIC_SUPABASE_SERVICE_ROLE_KEY } from '$env/static/public';
 
 // Endpoint de test simple pour vérifier que l'API fonctionne
 export const GET: RequestHandler = async () => {
   try {
     // Récupérer les variables d'environnement
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
+    const supabaseUrl = PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = PUBLIC_SUPABASE_ANON_KEY;
+
     if (!supabaseUrl || !supabaseAnonKey) {
       return json({
         success: false,
         error: 'Variables d\'environnement Supabase manquantes',
-        config: { 
-          hasUrl: !!supabaseUrl, 
-          hasKey: !!supabaseAnonKey 
+        config: {
+          hasUrl: !!supabaseUrl,
+          hasKey: !!supabaseAnonKey
         }
       });
     }
-    
+
     // Test de connexion directe avec fetch
     let fetchResult: any = null;
     let fetchError = null;
@@ -29,26 +30,26 @@ export const GET: RequestHandler = async () => {
           'apikey': supabaseAnonKey
         }
       });
-      
+
       fetchResult = {
         status: response.status,
         ok: response.ok
       };
-      
+
       if (response.ok) {
         fetchResult.data = await response.json();
       }
     } catch (error) {
       fetchError = error instanceof Error ? error.message : String(error);
     }
-    
+
     // Test avec le client
     let clientResult = null;
     let clientError = null;
     try {
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
       const { data, error } = await supabase.from('profiles').select('count').limit(1);
-      
+
       if (error) {
         clientError = error.message;
       } else {
@@ -57,9 +58,9 @@ export const GET: RequestHandler = async () => {
     } catch (error) {
       clientError = error instanceof Error ? error.message : String(error);
     }
-    
-    return json({ 
-      success: true, 
+
+    return json({
+      success: true,
       message: 'API test endpoint fonctionne!',
       timestamp: new Date().toISOString(),
       supabase_config: {
@@ -88,33 +89,33 @@ export const GET: RequestHandler = async () => {
 export const POST: RequestHandler = async ({ request }) => {
   try {
     const data = await request.json();
-    
+
     // Test spécial pour vérifier la connexion à Supabase
     if (data.action === 'check_supabase') {
       try {
         // Créer un client Supabase
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        
+        const supabaseUrl = PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = PUBLIC_SUPABASE_ANON_KEY;
+
         if (!supabaseUrl || !supabaseAnonKey) {
           return json({
             success: false,
             error: 'Variables d\'environnement Supabase manquantes',
-            config: { 
-              hasUrl: !!supabaseUrl, 
-              hasKey: !!supabaseAnonKey 
+            config: {
+              hasUrl: !!supabaseUrl,
+              hasKey: !!supabaseAnonKey
             }
           });
         }
-        
+
         const supabase = createClient(supabaseUrl, supabaseAnonKey);
-        
+
         // Tester la connexion en faisant une requête simple
         const { data: testData, error: testError } = await supabase
           .from('profiles')
           .select('username')
           .limit(1);
-        
+
         if (testError) {
           return json({
             success: false,
@@ -122,7 +123,7 @@ export const POST: RequestHandler = async ({ request }) => {
             details: testError
           });
         }
-        
+
         return json({
           success: true,
           message: 'Connexion à Supabase réussie',
@@ -137,34 +138,34 @@ export const POST: RequestHandler = async ({ request }) => {
         });
       }
     }
-    
+
     // Test spécial pour vérifier la clé service role
     if (data.action === 'check_service_role') {
       try {
         // Vérifier que la clé service role est définie
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
-        
+        const supabaseUrl = PUBLIC_SUPABASE_URL;
+        const supabaseServiceKey = PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+
         if (!supabaseUrl || !supabaseServiceKey) {
           return json({
             success: false,
             error: 'Variables d\'environnement pour la clé service role manquantes',
-            config: { 
-              hasUrl: !!supabaseUrl, 
-              hasServiceKey: !!supabaseServiceKey 
+            config: {
+              hasUrl: !!supabaseUrl,
+              hasServiceKey: !!supabaseServiceKey
             }
           });
         }
-        
+
         // Créer un client admin avec la clé service role
         const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-        
+
         // Tester la connexion et les permissions en faisant une requête simple
         const { data: testData, error: testError } = await supabaseAdmin
           .from('profiles')
           .select('count(*)')
           .limit(1);
-        
+
         if (testError) {
           return json({
             success: false,
@@ -172,16 +173,16 @@ export const POST: RequestHandler = async ({ request }) => {
             details: testError
           });
         }
-        
+
         // Si le test de base passe, tester les permissions admin
         const testEmail = `test-${Date.now()}@example.com`;
         const testPassword = 'Password123';
-        
+
         // Essayer de créer un utilisateur de test (mais ne pas terminer la création)
         const { data: authQueryData, error: authError } = await supabaseAdmin.auth.admin.listUsers({
           perPage: 1
         });
-        
+
         if (authError) {
           return json({
             success: false,
@@ -189,11 +190,11 @@ export const POST: RequestHandler = async ({ request }) => {
             details: authError
           });
         }
-        
+
         return json({
           success: true,
           message: 'La clé service role fonctionne correctement et a les permissions nécessaires',
-          data: { 
+          data: {
             dbAccessOk: true,
             adminRightsOk: true,
             usersCount: authQueryData?.users?.length || 0
@@ -208,22 +209,22 @@ export const POST: RequestHandler = async ({ request }) => {
         });
       }
     }
-    
+
     // Test spécial pour vérifier si un username existe
     if (data.action === 'check_username' && data.username) {
       try {
         // Créer un client Supabase
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        
+        const supabaseUrl = PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = PUBLIC_SUPABASE_ANON_KEY;
+
         const supabase = createClient(supabaseUrl, supabaseAnonKey);
-        
+
         // Vérifier si le username existe
         const { data: userData, error: userError } = await supabase
           .from('profiles')
           .select('username')
           .eq('username', data.username);
-        
+
         if (userError) {
           return json({
             success: false,
@@ -231,7 +232,7 @@ export const POST: RequestHandler = async ({ request }) => {
             details: userError
           });
         }
-        
+
         return json({
           success: true,
           exists: userData && userData.length > 0,
@@ -246,7 +247,7 @@ export const POST: RequestHandler = async ({ request }) => {
         });
       }
     }
-    
+
     return json({
       success: true,
       message: 'Données reçues avec succès',
@@ -261,4 +262,4 @@ export const POST: RequestHandler = async ({ request }) => {
       timestamp: new Date().toISOString()
     }, { status: 500 });
   }
-}; 
+};
