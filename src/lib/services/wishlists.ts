@@ -3,6 +3,7 @@ import { supabase } from '../supabase';
 // Add a card to user's wishlist
 export async function addCardToWishlist(username: string, cardCode: string) {
 	try {
+		console.log('addCardToWishlist', username, cardCode);
 		// Check if card already exists in wishlist
 		const { data: existingCard } = await supabase
 			.from('wishlists')
@@ -10,7 +11,7 @@ export async function addCardToWishlist(username: string, cardCode: string) {
 			.eq('username', username)
 			.eq('card_code', cardCode)
 			.maybeSingle();
-
+		console.log('existingCard', existingCard);
 		if (existingCard) {
 			// Card already in wishlist, return it
 			return { data: existingCard, error: null };
