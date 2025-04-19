@@ -1,155 +1,155 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { authStore } from '$lib/stores/auth';
-  import { toggleProfileVisibility } from '$lib/services/profiles';
-  import { goto } from '$app/navigation';
-  import PageTitle from '$lib/components/PageTitle.svelte';
-  import type { UserProfile } from '$lib/types';
-  
-  let isLoading = false;
-  let errorMessage = '';
-  let successMessage = '';
-  
-  // Toggle profile visibility
-  async function handleToggleVisibility() {
-    if (!$authStore.user || !$authStore.profile) return;
-    
-    isLoading = true;
-    errorMessage = '';
-    successMessage = '';
-    
-    try {
-      const isPublic = !$authStore.profile.is_public;
-      const { data, error } = await toggleProfileVisibility($authStore.profile.username, isPublic);
-      
-      if (error) {
-        errorMessage = `Failed to update profile visibility: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
-        return;
-      }
-      
-      if (data) {
-        authStore.setProfile(data);
-        successMessage = `Profile visibility changed to ${isPublic ? 'public' : 'private'}`;
-      } else {
-        errorMessage = 'No data returned from server';
-      }
-    } catch (error) {
-      errorMessage = `An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`;
-    } finally {
-      isLoading = false;
-      
-      // Auto-hide success message after 3 seconds
-      if (successMessage) {
-        setTimeout(() => {
-          successMessage = '';
-        }, 3000);
-      }
-    }
-  }
-  
-  // Check if user is logged in
-  onMount(() => {
-    const unsubscribe = authStore.subscribe(state => {
-      if (state.user === null && !state.loading) {
-        // Redirect to home if not logged in
-        goto('/');
-      }
-    });
-    
-    return unsubscribe;
-  });
+	import { onMount } from 'svelte';
+	import { authStore } from '$lib/stores/auth';
+	import { toggleProfileVisibility } from '$lib/services/profiles';
+	import { goto } from '$app/navigation';
+	import PageTitle from '$lib/components/PageTitle.svelte';
+	import type { UserProfile } from '$lib/types';
+
+	let isLoading = false;
+	let errorMessage = '';
+	let successMessage = '';
+
+	// Toggle profile visibility
+	async function handleToggleVisibility() {
+		if (!$authStore.user || !$authStore.profile) return;
+
+		isLoading = true;
+		errorMessage = '';
+		successMessage = '';
+
+		try {
+			const isPublic = !$authStore.profile.is_public;
+			const { data, error } = await toggleProfileVisibility($authStore.profile.username, isPublic);
+
+			if (error) {
+				errorMessage = `Failed to update profile visibility: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
+				return;
+			}
+
+			if (data) {
+				authStore.setProfile(data);
+				successMessage = `Profile visibility changed to ${isPublic ? 'public' : 'private'}`;
+			} else {
+				errorMessage = 'No data returned from server';
+			}
+		} catch (error) {
+			errorMessage = `An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`;
+		} finally {
+			isLoading = false;
+
+			// Auto-hide success message after 3 seconds
+			if (successMessage) {
+				setTimeout(() => {
+					successMessage = '';
+				}, 3000);
+			}
+		}
+	}
+
+	// Check if user is logged in
+	onMount(() => {
+		const unsubscribe = authStore.subscribe(state => {
+			if (state.user === null && !state.loading) {
+				// Redirect to home if not logged in
+				goto('/');
+			}
+		});
+
+		return unsubscribe;
+	});
 </script>
 
 <div class="w-full mx-auto pb-4 lg:pb-5">
-  <div class="flex justify-between mx-28 max-lg:mx-4 items-center">
-    <PageTitle title="My Profile" />
-  </div>
+	<div class="flex justify-between mx-28 max-lg:mx-4 items-center">
+		<PageTitle title="My Profile" />
+	</div>
 </div>
 
 <div class="container mx-auto px-4 py-8">
-  {#if $authStore.loading}
-    <div class="flex justify-center items-center p-8">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
-    </div>
-  {:else if !$authStore.user || !$authStore.profile}
-    <div class="text-center p-8">
-      <p class="text-lg">Please sign in to view your profile.</p>
-    </div>
-  {:else}
-    <!-- Success message -->
-    {#if successMessage}
-      <div class="mb-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded">
-        <p>{successMessage}</p>
-      </div>
-    {/if}
-    
-    <!-- Error message -->
-    {#if errorMessage}
-      <div class="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
-        <p>{errorMessage}</p>
-      </div>
-    {/if}
-    
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Profile Information -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div class="flex items-center gap-4 mb-6">
-          <div class="size-16 rounded-full bg-red-500 flex items-center justify-center text-white text-2xl uppercase font-bold">
-            {$authStore.profile.username.charAt(0)}
-          </div>
-          <div>
-            <h2 class="text-xl font-semibold dark:text-white">{$authStore.profile.username}</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{$authStore.user.email}</p>
-          </div>
-        </div>
-        
-        <div class="border-t dark:border-gray-700 pt-4">
-          <div class="mb-4">
-            <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Profile visibility:</span>
-            <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
-              {$authStore.profile.is_public ? 'Public' : 'Private'}
-            </span>
-          </div>
-          
-          <button
-            type="button"
-            class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            on:click={handleToggleVisibility}
-            disabled={isLoading}
-          >
-            {isLoading ? 
-              'Processing...' : 
-              ($authStore.profile.is_public ? 'Make my profile private' : 'Make my profile public')
-            }
-            {#if isLoading}
-              <span class="ml-2 inline-block h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin"></span>
-            {/if}
-          </button>
-        </div>
-      </div>
-      
-      <!-- Quick links -->
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 lg:col-span-2">
-        <h2 class="text-xl font-semibold mb-4 dark:text-white">My Collections</h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <a 
-            href="/collection" 
-            class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          >
-            <h3 class="text-lg font-medium mb-2 dark:text-white">My Collection</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Manage your collected cards</p>
-          </a>
-          
-          <a 
-            href="/wishlist" 
-            class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-          >
-            <h3 class="text-lg font-medium mb-2 dark:text-white">My Wishlist</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Cards you want to acquire</p>
-          </a>
-        </div>
-      </div>
-    </div>
-  {/if}
-</div> 
+	{#if $authStore.loading}
+		<div class="flex justify-center items-center p-8">
+			<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
+		</div>
+	{:else if !$authStore.user || !$authStore.profile}
+		<div class="text-center p-8">
+			<p class="text-lg">Please sign in to view your profile.</p>
+		</div>
+	{:else}
+		<!-- Success message -->
+		{#if successMessage}
+			<div class="mb-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded">
+				<p>{successMessage}</p>
+			</div>
+		{/if}
+
+		<!-- Error message -->
+		{#if errorMessage}
+			<div class="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
+				<p>{errorMessage}</p>
+			</div>
+		{/if}
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+			<!-- Profile Information -->
+			<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+				<div class="flex items-center gap-4 mb-6">
+					<div class="size-16 rounded-full bg-red-500 flex items-center justify-center text-white text-2xl uppercase font-bold">
+						{$authStore.profile.username.charAt(0)}
+					</div>
+					<div>
+						<h2 class="text-xl font-semibold dark:text-white">{$authStore.profile.username}</h2>
+						<p class="text-sm text-gray-500 dark:text-gray-400">{$authStore.user.email}</p>
+					</div>
+				</div>
+
+				<div class="border-t dark:border-gray-700 pt-4">
+					<div class="mb-4">
+						<span class="text-sm font-medium text-gray-500 dark:text-gray-400">Profile visibility:</span>
+						<span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+							{$authStore.profile.is_public ? 'Public' : 'Private'}
+						</span>
+					</div>
+
+					<button
+						type="button"
+						class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+						on:click={handleToggleVisibility}
+						disabled={isLoading}
+					>
+						{isLoading ?
+							'Processing...' :
+							($authStore.profile.is_public ? 'Make my profile private' : 'Make my profile public')
+						}
+						{#if isLoading}
+							<span class="ml-2 inline-block h-4 w-4 rounded-full border-2 border-t-transparent border-white animate-spin"></span>
+						{/if}
+					</button>
+				</div>
+			</div>
+
+			<!-- Quick links -->
+			<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 lg:col-span-2">
+				<h2 class="text-xl font-semibold mb-4 dark:text-white">My Collections</h2>
+
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+					<a
+						href="/collection"
+						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+					>
+						<h3 class="text-lg font-medium mb-2 dark:text-white">My Collection</h3>
+						<p class="text-sm text-gray-500 dark:text-gray-400">Manage your collected cards</p>
+					</a>
+
+					<a
+						href="/wishlist"
+						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+					>
+						<h3 class="text-lg font-medium mb-2 dark:text-white">My Wishlist</h3>
+						<p class="text-sm text-gray-500 dark:text-gray-400">Cards you want to acquire</p>
+					</a>
+				</div>
+			</div>
+		</div>
+	{/if}
+</div>

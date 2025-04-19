@@ -8,11 +8,11 @@ const supabaseAnonKey = PUBLIC_SUPABASE_ANON_KEY;
 // Créer le client Supabase
 let supabase: SupabaseClient;
 try {
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
+	supabase = createClient(supabaseUrl, supabaseAnonKey);
 } catch (error) {
-  // En cas d'erreur d'initialisation, créer un client par défaut
-  supabase = createClient(supabaseUrl, supabaseAnonKey);
-  console.error('Error initializing Supabase:', error);
+	// En cas d'erreur d'initialisation, créer un client par défaut
+	supabase = createClient(supabaseUrl, supabaseAnonKey);
+	console.error('Error initializing Supabase:', error);
 }
 
 export { supabase };
