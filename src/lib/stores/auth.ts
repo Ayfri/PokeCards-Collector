@@ -3,6 +3,7 @@ import type { User } from '@supabase/supabase-js';
 import { supabase } from '../supabase';
 import type { UserProfile } from '../types';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { browser } from '$app/environment';
 
 // Define types
 interface AuthState {
@@ -37,8 +38,11 @@ function createAuthStore() {
 			try {
 				update(state => ({ ...state, loading: true, error: null }));
 
-				// Vérifier d'abord le localStorage pour le token
-				const tokenString = localStorage.getItem('supabase.auth.token');
+				// Vérifier d'abord le localStorage pour le token (uniquement côté client)
+				let tokenString: string | null = null;
+				if (browser) {
+					tokenString = localStorage.getItem('supabase.auth.token');
+				}
 
 				if (tokenString) {
 					try {

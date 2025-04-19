@@ -9,6 +9,8 @@
   import { authStore } from '$lib/stores/auth';
   import { signOut } from '$lib/services/auth';
   import AuthModal from './AuthModal.svelte';
+  import { goto } from '$app/navigation';
+  import { browser } from '$app/environment';
 
   let isMenuOpen = false;
   let isAuthModalOpen = false;
@@ -44,8 +46,10 @@
     try {
       closeMenu();
       
-      // Supprimer le token manuellement
-      localStorage.removeItem('supabase.auth.token');
+      // Supprimer le token manuellement (client-side only)
+      if (browser) {
+        localStorage.removeItem('supabase.auth.token');
+      }
       
       // Réinitialiser le store
       authStore.reset();
@@ -53,11 +57,11 @@
       // Appeler la fonction de déconnexion
       await signOut();
       
-      // Forcer le rechargement de la page même si signOut() échoue
-      window.location.href = '/';
+      // Use goto for navigation
+      await goto('/');
     } catch (error) {
-      // En cas d'erreur, forcer quand même le rechargement
-      window.location.href = '/';
+      // En cas d'erreur, rediriger quand même
+      await goto('/');
     }
   }
 
@@ -65,12 +69,17 @@
     // Initialize the auth store
     authStore.init();
 
-    // Add click listener on mount
-    window.addEventListener('click', handleClickOutside, true);
+    // Add click listener on mount (client-side only)
+    if (browser) {
+      window.addEventListener('click', handleClickOutside, true);
+    }
   });
 
   onDestroy(() => {
-    window.removeEventListener('click', handleClickOutside, true);
+    // Remove click listener on destroy (client-side only)
+    if (browser) {
+      window.removeEventListener('click', handleClickOutside, true);
+    }
   });
 </script>
 
