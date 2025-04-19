@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import { fly } from 'svelte/transition';
   import User from 'lucide-svelte/icons/user';
   import LogOut from 'lucide-svelte/icons/log-out';
   import Heart from 'lucide-svelte/icons/heart';
@@ -11,6 +12,7 @@
 
   let isMenuOpen = false;
   let isAuthModalOpen = false;
+  let menuElement: HTMLElement;
 
   function toggleMenu() {
     isMenuOpen = !isMenuOpen;
@@ -27,6 +29,15 @@
 
   function closeAuthModal() {
     isAuthModalOpen = false;
+  }
+
+  function handleClickOutside(event: MouseEvent) {
+    if (menuElement && !menuElement.contains(event.target as Node) && isMenuOpen) {
+      const targetButton = (event.target as Element).closest('button[aria-expanded]');
+      if (!targetButton || targetButton !== menuElement.previousElementSibling) {
+        closeMenu();
+      }
+    }
   }
 
   async function handleSignOut() {
@@ -53,6 +64,13 @@
   onMount(() => {
     // Initialize the auth store
     authStore.init();
+
+    // Add click listener on mount
+    window.addEventListener('click', handleClickOutside, true);
+  });
+
+  onDestroy(() => {
+    window.removeEventListener('click', handleClickOutside, true);
   });
 </script>
 
@@ -81,6 +99,8 @@
   <!-- Dropdown menu -->
   {#if isMenuOpen}
     <div
+      bind:this={menuElement}
+      transition:fly={{ y: -10, duration: 200 }}
       class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
       role="menu"
       aria-orientation="vertical"
