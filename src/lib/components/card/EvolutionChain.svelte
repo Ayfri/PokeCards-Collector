@@ -2,12 +2,10 @@
 	import { pascalCase } from '$helpers/strings.js';
 	import { processCardImage } from '$helpers/card-images';
 	import type { FullCard, Pokemon } from '~/lib/types';
-	import { spriteCache } from '$stores/spriteCache';
 
 	export let cards: FullCard[];
 	export let pokemons: Pokemon[];
 	export let card: FullCard;
-	export let sprites: Record<number, string>;
 
 	function buildEvolutionChain(card: FullCard) {
 		// Get current Pokemon from card
@@ -71,7 +69,7 @@
 		} else {
 			img.src = '/loading-spinner.svg';
 		}
-		
+
 		// Add a class to prevent infinite loop if both sprite and card image fail
 		if (img.classList.contains('fallback-attempted')) {
 			img.src = '/loading-spinner.svg';
@@ -83,36 +81,13 @@
 
 	// Helper function to get the image source for a Pokémon
 	function getPokemonImageSrc(pokemonId: number): string {
-		if (sprites[pokemonId]) {
-			return sprites[pokemonId];
-		}
-		
-		const pokemonCard = cards.find(c => c.pokemonNumber === pokemonId);
-		if (pokemonCard?.image) {
-			return processCardImage(pokemonCard.image);
-		}
-		
-		return '/loading-spinner.svg';
-	}
-
-	async function ensureSprite(pokemonId: number) {
-		if (!sprites[pokemonId]) {
-			try {
-				sprites[pokemonId] = await spriteCache.getSprite(pokemonId);
-			} catch (error) {
-				console.error(`Failed to load sprite for Pokemon #${pokemonId}`);
-			}
-		}
-		return sprites[pokemonId];
+		// Always try the official artwork first
+		const officialArtworkUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonId}.png`;
+		return officialArtworkUrl; // Will trigger onError if it fails
 	}
 
 	$: currentPokemon = pokemons.find(p => p.id === card.pokemonNumber);
 	$: uniqueChain = buildEvolutionChain(card);
-	$: uniqueChain.forEach(pokemon => {
-		if (!sprites[pokemon.id]) {
-			ensureSprite(pokemon.id);
-		}
-	});
 </script>
 
 {#if uniqueChain.length > 1}

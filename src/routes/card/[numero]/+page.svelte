@@ -1,37 +1,21 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import type { PageData } from './$types';
 	import CardDisplay from "@components/card/CardDisplay.svelte";
-	import CardImage from "@components/card/CardImage.svelte";
-	import { spriteCache } from "$stores/spriteCache";
-	import type { PageData } from "./$types";
-	import type { Pokemon, FullCard } from "$lib/types";
 
 	export let data: PageData;
-	const pokemon: Pokemon | undefined = data.pokemon;
-	const primaryCard: FullCard = data.cards[0];
 
-	let spritesMap: Record<number, string> = {};
-
-	onMount(async () => {
-		if (pokemon && data.evolutionChain?.length > 0) {
-			const sprites = await Promise.all(
-				data.evolutionChain.map(async (evoPokemon: Pokemon) => ({
-					id: evoPokemon.id,
-					sprite: await spriteCache.getSprite(evoPokemon.id),
-				})),
-			);
-			spritesMap = Object.fromEntries(sprites.map(({ id, sprite }) => [id, sprite]));
-		}
-	});
+	$: cards = data.cards;
+	$: pokemons = data.pokemons;
+	$: sets = data.sets;
+	$: pokemon = data.pokemon;
 </script>
 
 <main class="max-w-[100vw] p-2 text-lg text-white">
 	<div class="mt-10 mx-auto flex flex-col gap-8 w-[90%] -z-10 max-lg:mt-8">
-		<CardDisplay
-			cards={data.cards}
-			pokemons={data.pokemons}
-			sprites={spritesMap}
-			sets={data.sets}
-			{pokemon} />
+		{#if !cards || cards.length === 0}
+			<p>Loading card details...</p>
+		{:else}
+			<CardDisplay {cards} {pokemons} {sets} pokemon={pokemon} />
+		{/if}
 	</div>
 </main>

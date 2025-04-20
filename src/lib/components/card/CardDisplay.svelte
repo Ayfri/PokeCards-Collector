@@ -4,7 +4,6 @@
 	import AllPokemonCards from '@components/card/AllPokemonCards.svelte';
 	import {fade} from 'svelte/transition';
 	import type {FullCard, Pokemon, Set} from '$lib/types';
-	import { spriteCache } from '$stores/spriteCache';
 	import { pascalCase } from '$helpers/strings';
 	import CardImage from '@components/card/CardImage.svelte';
 	import { onMount } from 'svelte';
@@ -13,7 +12,6 @@
 	export let cards: FullCard[]; // Expects the primary card to be the first element
 	export let pokemons: Pokemon[]; // Full list for lookups (prev/next, evolutions)
 	export let sets: Set[];
-	export let sprites: Record<number, string>;
 	export let pokemon: Pokemon | undefined = undefined; // Make Pokemon optional
 
 	// --- Reactive State ---
@@ -42,22 +40,25 @@
 	// --- Functions ---
 	function handlePokemonImageError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
-		const fallbackSrc = '/loading-spinner.svg';
-		if (img.src !== fallbackSrc) {
-			img.src = fallbackSrc;
-			img.onerror = null;
-		}
-	}
+		const pokemonId = img.dataset.pokemonId;
+		const currentSrc = img.src;
+		const defaultSpriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
+		const loadingSpinner = '/loading-spinner.svg';
 
-	async function ensureSprite(pokemonId: number) {
-		if (!sprites[pokemonId]) {
-			try {
-				sprites[pokemonId] = await spriteCache.getSprite(pokemonId);
-			} catch (error) {
-				console.error(`Failed to load sprite for Pokemon #${pokemonId}`);
-			}
+		if (!pokemonId) {
+			img.src = loadingSpinner;
+			img.onerror = null;
+			return;
 		}
-		return sprites[pokemonId];
+
+		if (currentSrc.includes('official-artwork')) {
+			// Official artwork failed, try default sprite
+			img.src = defaultSpriteUrl;
+		} else {
+			// Default sprite also failed (or it was the first attempt and it failed), show spinner
+			img.src = loadingSpinner;
+			img.onerror = null; // Prevent infinite loop
+		}
 	}
 
 	function throttle(fn: Function, delay: number) {
@@ -164,7 +165,7 @@
 <div class="max-lg:flex max-lg:flex-col max-lg:gap-8 max-lg:flex-wrap max-lg:content-center">
 	<!-- Evolution Chain Component (Only for Pokemon) -->
 	{#if pokemon && isInitialRenderComplete}
-		<EvolutionChain {card} {pokemons} {cards} {sprites} />
+		<EvolutionChain {card} {pokemons} {cards} />
 	{/if}
 
 	<!-- Pokédex number indicator (Only for Pokemon) -->
@@ -183,24 +184,14 @@
 			<a href={`/card/${previousPokemon.id}/`} class="prev-pokemon-nav flex flex-col items-center w-48">
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
-						{#await ensureSprite(previousPokemon.id)}
-							<img
-								src="/loading-spinner.svg"
-								alt={pascalCase(previousPokemon.name)}
-								class="w-32 h-32 object-contain nav-pokemon-image silhouette"
-								title={pascalCase(previousPokemon.name)}
-								on:error={handlePokemonImageError}
-								data-pokemon-id={previousPokemon.id}
-							/>
-						{:then sprite}
-							<img
-								alt={pascalCase(previousPokemon.name)}
-								src={sprite}
-								class="w-32 h-32 object-contain nav-pokemon-image silhouette"
-								on:error={handlePokemonImageError}
-								data-pokemon-id={previousPokemon.id}
-							/>
-						{/await}
+						<img
+							src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
+							alt={pascalCase(previousPokemon.name)}
+							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
+							title={pascalCase(previousPokemon.name)}
+							on:error={handlePokemonImageError}
+							data-pokemon-id={previousPokemon.id}
+						/>
 					</div>
 				</div>
 				<span class="nav-pokemon-name mt-2 text-center text-sm">{pascalCase(previousPokemon.name)}</span>
@@ -241,23 +232,14 @@
 			<a href={`/card/${nextPokemon.id}/`} class="next-pokemon-nav flex flex-col items-center w-48">
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
-						{#await ensureSprite(nextPokemon.id)}
-							<img
-								src="/loading-spinner.svg"
-								alt={pascalCase(nextPokemon.name)}
-								class="w-32 h-32 object-contain nav-pokemon-image silhouette"
-								title={pascalCase(nextPokemon.name)}
-								data-pokemon-id={nextPokemon.id}
-							/>
-						{:then sprite}
-							<img
-								alt={pascalCase(nextPokemon.name)}
-								src={sprite}
-								class="w-32 h-32 object-contain nav-pokemon-image silhouette"
-								on:error={handlePokemonImageError}
-								data-pokemon-id={nextPokemon.id}
-							/>
-						{/await}
+						<img
+							src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
+							alt={pascalCase(nextPokemon.name)}
+							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
+							title={pascalCase(nextPokemon.name)}
+							on:error={handlePokemonImageError}
+							data-pokemon-id={nextPokemon.id}
+						/>
 					</div>
 				</div>
 				<span class="nav-pokemon-name mt-2 text-center text-sm">{pascalCase(nextPokemon.name)}</span>

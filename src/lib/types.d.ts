@@ -62,11 +62,6 @@ export interface PokemonStats {
 	name: string;
 }
 
-export interface SpriteCache {
-	subscribe: any;
-	getSprite: (id: number) => Promise<string>;
-}
-
 export interface UserProfile {
 	username: string;
 	auth_id: string;
@@ -102,4 +97,13 @@ export interface CollectionStats {
 export interface Image {
 	url: string;
 	alt: string;
+}
+
+export interface SetLogoUrls {
+	logo: string | null;
+	symbol: string | null;
+}
+
+export type CardFilter = {
+	set?: string[];
 }
