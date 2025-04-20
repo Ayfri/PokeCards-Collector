@@ -3,7 +3,7 @@
 	import EvolutionChain from '@components/card/EvolutionChain.svelte';
 	import AllPokemonCards from '@components/card/AllPokemonCards.svelte';
 	import {fade} from 'svelte/transition';
-	import type {FullCard, Pokemon, Set} from '$lib/types';
+	import type {FullCard, Pokemon, Set, CardMarketPrices} from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
 	import CardImage from '@components/card/CardImage.svelte';
 	import { onMount } from 'svelte';
@@ -13,6 +13,23 @@
 	export let pokemons: Pokemon[]; // Full list for lookups (prev/next, evolutions)
 	export let sets: Set[];
 	export let pokemon: Pokemon | undefined = undefined; // Make Pokemon optional
+	export let cardmarket: CardMarketPrices = {
+		averageSellPrice: 0,
+		avg1: 0,
+		avg7: 0,
+		avg30: 0,
+		reverseHoloAvg1: 0,
+		reverseHoloAvg7: 0,
+		reverseHoloAvg30: 0,
+		germanProLow: 0,
+		lowPrice: 0,
+		reverseHoloLow: 0,
+		lowPriceExPlus: 0,
+		trendPrice: 0,
+		suggestedPrice: 0,
+		reverseHoloSell: 0,
+		reverseHoloTrend: 0
+	};
 
 	// --- Reactive State ---
 	// The primary card to display is the first one in the sorted list
@@ -251,8 +268,8 @@
 	</div>
 
 	<!-- Pokémon Info Component (Render always when ready, CardInfo handles pokemon presence) -->
-	{#if isInitialRenderComplete}
-		<CardInfo {card} {pokemon} />
+	{#if isInitialRenderComplete && currentSet}
+		<CardInfo {card} {pokemon} set={currentSet} {cardmarket} />
 	{/if}
 
 	<!-- TODO: Add display for non-pokemon card details (rules, etc.) here if needed -->
