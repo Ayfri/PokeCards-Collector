@@ -8,11 +8,11 @@ import { generateUniqueCardCode } from '$lib/helpers/card-utils';
 const cachedCardData = new Map<string, any>();
 
 export const load = async ({ params, url }) => {
-	const { numero: identifier } = params;
+	const { numero: pokemonIdOrCardCode } = params;
 	const setCodeParam = url.searchParams.get('set');
 	const cardNumberParam = url.searchParams.get('number');
 
-	const cacheKey = `${identifier}_${setCodeParam || ''}_${cardNumberParam || ''}`;
+	const cacheKey = `${pokemonIdOrCardCode}_${setCodeParam || ''}_${cardNumberParam || ''}`;
 	if (cachedCardData.has(cacheKey)) {
 		return cachedCardData.get(cacheKey);
 	}
@@ -28,7 +28,7 @@ export const load = async ({ params, url }) => {
 	let pageTitle = 'Card Details';
 	let pageDescription = '';
 
-	const potentialPokemonId = parseInt(identifier);
+	const potentialPokemonId = parseInt(pokemonIdOrCardCode);
 
 	if (!isNaN(potentialPokemonId)) {
 		// --- Case 1: Identifier is a Pokemon ID ---
@@ -40,7 +40,7 @@ export const load = async ({ params, url }) => {
 
 	} else {
 		// --- Case 2: Identifier is a Card Code ---
-		targetCard = allCards.find(c => c.cardCode === identifier) || null;
+		targetCard = allCards.find(c => c.cardCode === pokemonIdOrCardCode) || null;
 		if (!targetCard) throw error(404, 'Card not found for this code');
 
 		if (targetCard.supertype?.toLowerCase() === 'pokémon') {
@@ -89,7 +89,7 @@ export const load = async ({ params, url }) => {
 
 	// If no relevant cards found after all checks, something went wrong (should have been caught earlier)
 	if (!relevantCards.length) {
-		console.error('No relevant cards found despite initial checks, identifier:', identifier);
+		console.error('No relevant cards found despite initial checks, identifier:', pokemonIdOrCardCode);
 		throw error(500, 'Could not determine relevant cards');
 	}
 
@@ -103,8 +103,7 @@ export const load = async ({ params, url }) => {
 		pageDescription = `${capitalizedName} - ${featuredPokemon.description}`;
 	} else {
 		pageTitle = featuredCard.name;
-		const cardRules = (featuredCard as any).rules;
-		pageDescription = Array.isArray(cardRules) ? cardRules.join('\n') : `Card details for ${featuredCard.name}`;
+		pageDescription = `Card details for ${featuredCard.name}`;
 	}
 
 	const pageImage = {
