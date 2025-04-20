@@ -3,7 +3,8 @@ import type { FullCard } from '$lib/types'; // Import FullCard type
 import type { PageServerLoad } from './$types'; // Added import for type
 
 export const load: PageServerLoad = async ({ parent }) => {
-	// Removed session/profile fetching
+	// Get layout data which contains default SEO values
+	const layoutData = await parent();
 
 	// Load all cards here instead of layout
 	let allCards: FullCard[] = await getCards();
@@ -34,26 +35,26 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// Trier les sets par ordre alphabétique
 	sets.sort((a, b) => a.name.localeCompare(b.name));
 
+	// Define page-specific SEO data (or use layout defaults if not specified)
+	const pageSeoData = {
+		title: 'PokéStore Home',
+	};
+
 	return {
+		...layoutData, // Start with layout data (including its SEO defaults)
 		allCards, // Return the loaded and filtered cards
 		sets,
 		rarities,
 		types,
 		artists,
 		pokemons,
-		title: 'PokéStore',
-		description:
-			'Browse, search, and filter through a comprehensive list of Pokémon TCG cards. Find cards by set, rarity, type, and more."',
-		image: {
-			url: 'https://pokestore.ayfri.com/pokestore.png',
-			alt: 'PokéStore - Pokémon TCG Card List',
-		},
 		stats: {
 			totalCards: allCards.length,
 			uniquePokemon,
 			pokemonCards: pokemonCards.length,
 			trainerCards: trainerCards.length,
 			energyCards: energyCards.length,
-		}
+		},
+		...pageSeoData, // Override with page-specific SEO data
 	};
 }

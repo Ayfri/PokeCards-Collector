@@ -5,7 +5,7 @@ export const load: LayoutServerLoad = async () => {
 	return {
 		title: 'PokéStore',
 		description:
-			'Browse, search, and filter through a comprehensive list of Pokémon TCG cards. Find cards by set, rarity, type, and more."',
+			'Search, browse, and filter Pokémon TCG cards by set, rarity, type, and more. Connect your account to manage your collection and wishlist easily at Pokestore.',
 		image: {
 			url: 'https://pokestore.ayfri.com/pokestore.png',
 			alt: 'PokéStore - Pokémon TCG Card List',

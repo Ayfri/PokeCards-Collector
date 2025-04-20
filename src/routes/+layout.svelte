@@ -2,17 +2,14 @@
 	import '~/app.css';
 	import "~/fonts/stylesheet.css";
 	import {onNavigate} from '$app/navigation';
-	import {page} from '$app/state';
+	import {page} from '$app/stores';
 	import {NO_IMAGES} from '$lib/images';
 	import Header from '@components/Header.svelte';
 	import pokeballSvg from '~/assets/pokeball.svg?raw';
-	import {BASE_URL, SITE_NAME} from '~/constants';
+	import {BASE_URL} from '~/constants';
+	import Seo from '$lib/components/seo/Seo.svelte';
 
-	const {
-		title,
-		description,
-		image,
-	} = page.data;
+	$: ({title, description, image} = $page.data);
 
 	onNavigate((navigation) => {
 		if (!document.startViewTransition) return;
@@ -28,32 +25,14 @@
 
 <svelte:head>
 	<meta charset="UTF-8"/>
-	<meta content={description} name="description"/>
 
 	<meta content="#000" name="theme-color"/>
 	<meta content="dark light" name="color-scheme"/>
-	<meta content="index, follow" name="robots"/>
 	<meta content="en" name="language"/>
 	<meta content="Ayfri;Anta;Bahsiik" name="author"/>
 	<meta content="Pokemon, Pokémon, TCG, Card Game, Trading Card Game, Pokemon Cards, Card List, PokéStore" name="keywords"/>
 
-	<meta content={SITE_NAME} property="og:site_name"/>
-	<meta content={title} property="og:title"/>
-	<meta content={description} property="og:description"/>
-	<meta content="website" property="og:type"/>
-	<meta content={BASE_URL} property="og:url"/>
-
 	<meta content="width=device-width" name="viewport"/>
-	<meta content="summary_large_image" name="twitter:card"/>
-	<meta content={description} name="twitter:description"/>
-	<meta content={title} name="twitter:title"/>
-
-	{#if image}
-		<meta property="og:image" content={image.url}/>
-		<meta property="og:image:alt" content={image.alt}/>
-		<meta name="twitter:image" content={image.url}/>
-		<meta name="twitter:image:alt" content={image.alt}/>
-	{/if}
 
 	<link href="/sitemap-index.xml" rel="sitemap"/>
 	<link href="/favicon.png" rel="icon" type="image/png"/>
@@ -82,7 +61,9 @@
 	<!-- End Cloudflare Web Analytics -->
 	<!-- <ViewTransitions fallback="animate"/> -->
 
-	<title>{title}</title>
+	{#key $page.url.pathname}
+		<Seo {title} {description} {image} type={$page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
+	{/key}
 </svelte:head>
 
 <div class="flex flex-col min-h-screen">

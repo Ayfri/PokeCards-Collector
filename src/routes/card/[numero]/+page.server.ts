@@ -2,19 +2,29 @@ import { getCards, getPokemons, getSets } from '$helpers/data';
 import type { FullCard, Pokemon } from '$lib/types';
 import { error } from '@sveltejs/kit';
 import { generateUniqueCardCode } from '$lib/helpers/card-utils';
+import type { PageServerLoad } from './$types';
 
 // Cache for optimizing repeated loads
 // Keys are composed of identifier_set?_number?
 const cachedCardData = new Map<string, any>();
 
-export const load = async ({ params, url }) => {
+export const load: PageServerLoad = async ({ params, url, parent }) => {
 	const { numero: pokemonIdOrCardCode } = params;
 	const setCodeParam = url.searchParams.get('set');
 	const cardNumberParam = url.searchParams.get('number');
 
+	// Get layout data which contains default SEO values
+	const layoutData = await parent();
+
 	const cacheKey = `${pokemonIdOrCardCode}_${setCodeParam || ''}_${cardNumberParam || ''}`;
+	// Check cache *after* getting layout data to ensure layout data is always included
 	if (cachedCardData.has(cacheKey)) {
-		return cachedCardData.get(cacheKey);
+		// Combine cached page data with fresh layout data
+		const cachedPageData = cachedCardData.get(cacheKey);
+		return {
+			...layoutData, // Default SEO etc.
+			...cachedPageData, // Page specific content
+		};
 	}
 
 	// --- Initial Data Loading ---
@@ -25,8 +35,6 @@ export const load = async ({ params, url }) => {
 	let associatedPokemon: Pokemon | undefined = undefined;
 	let relevantCards: FullCard[] = [];
 	let targetCard: FullCard | null = null;
-	let pageTitle = 'Card Details';
-	let pageDescription = '';
 
 	const potentialPokemonId = parseInt(pokemonIdOrCardCode);
 
@@ -97,37 +105,41 @@ export const load = async ({ params, url }) => {
 	const featuredCard = relevantCards[0];
 	const featuredPokemon = associatedPokemon || (featuredCard.supertype?.toLowerCase() === 'pokémon' ? allPokemons.find(p => p.id === featuredCard.pokemonNumber) : undefined);
 
+	let pageTitle = 'Card Details'; // Default if no specific title found
+	let pageDescription = '';
+
 	if (featuredPokemon) {
 		const capitalizedName = featuredPokemon.name.charAt(0).toUpperCase() + featuredPokemon.name.slice(1);
-		pageTitle = capitalizedName;
-		pageDescription = `${capitalizedName} - ${featuredPokemon.description}`;
+		pageTitle = capitalizedName; // Set specific title
+		pageDescription = `${capitalizedName} - ${featuredPokemon.description}`; // Set specific description
 	} else {
-		pageTitle = featuredCard.name;
-		pageDescription = `Card details for ${featuredCard.name}`;
+		pageTitle = featuredCard.name; // Set specific title
+		pageDescription = `Card details for ${featuredCard.name}`; // Set specific description
 	}
 
 	const pageImage = {
-		url: featuredCard?.image || '',
-		alt: featuredPokemon ? featuredPokemon.description : featuredCard?.name || 'Card image'
+		url: featuredCard?.image || layoutData.image?.url || '', // Fallback to layout image
+		alt: pageTitle // Use the generated title as alt text
 	};
 
 	// --- Build Evolution Chain (only if a Pokemon is involved) ---
 	const evolutionChain = featuredPokemon ? buildEvolutionChain(featuredPokemon, allPokemons) : [];
 
-	// --- Prepare Result ---
-	const result = {
+	// --- Prepare Page Specific Data ---
+	const pageSpecificData = {
 		cards: relevantCards,
 		sets: allSets,
 		pokemons: allPokemons,
 		pokemon: featuredPokemon,
 		evolutionChain,
+		// Define the SEO data to potentially override layout defaults
 		title: pageTitle,
 		description: pageDescription,
-		image: pageImage
+		image: pageImage,
 	};
 
-	// --- Caching ---
-	cachedCardData.set(cacheKey, result);
+	// --- Caching (Cache only page-specific data) ---
+	cachedCardData.set(cacheKey, pageSpecificData);
 	if (cachedCardData.size > 50) {
 		const oldestKey = cachedCardData.keys().next().value;
 		if (oldestKey !== undefined) {
@@ -135,7 +147,11 @@ export const load = async ({ params, url }) => {
 		}
 	}
 
-	return result;
+	// Combine layout data (defaults) with page-specific data (overrides)
+	return {
+		...layoutData,
+		...pageSpecificData,
+	};
 };
 
 // Helper function to build the evolution chain

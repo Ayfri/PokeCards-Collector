@@ -98,3 +98,8 @@ export interface CollectionStats {
 	cards_by_rarity: Record<string, number>;
 	cards_by_set: Record<string, number>;
 }
+
+export interface Image {
+	url: string;
+	alt: string;
+}
