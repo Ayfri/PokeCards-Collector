@@ -2,14 +2,14 @@
 	import '~/app.css';
 	import "~/fonts/stylesheet.css";
 	import {onNavigate} from '$app/navigation';
-	import {page} from '$app/stores';
+	import {page} from '$app/state';
 	import {NO_IMAGES} from '$lib/images';
 	import Header from '@components/Header.svelte';
 	import pokeballSvg from '~/assets/pokeball.svg?raw';
 	import {BASE_URL} from '~/constants';
 	import Seo from '$lib/components/seo/Seo.svelte';
 
-	$: ({title, description, image} = $page.data);
+	$: ({title, description, image} = page.data);
 
 	onNavigate((navigation) => {
 		if (!document.startViewTransition) return;
@@ -61,7 +61,7 @@
 	<!-- End Cloudflare Web Analytics -->
 	<!-- <ViewTransitions fallback="animate"/> -->
 </svelte:head>
-<Seo {title} {description} {image} type={$page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
+<Seo {title} {description} {image} type={page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
 
 <div class="flex flex-col min-h-screen">
 	<Header/>
