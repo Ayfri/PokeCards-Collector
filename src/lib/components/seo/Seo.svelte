@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { BASE_URL, SITE_NAME } from '~/constants';
 	import type { Image } from '$lib/types';
 
@@ -13,7 +13,7 @@
 	export let type: 'WebSite' | 'WebPage' | 'Article' | 'Product' = 'WebPage'; // Default type
 
 	$: effectiveTitle = title === SITE_NAME ? SITE_NAME : `${title} - ${SITE_NAME}`;
-	$: effectiveCanonicalUrl = canonicalUrl ?? `${BASE_URL}${$page.url.pathname}${$page.url.search}`;
+	$: effectiveCanonicalUrl = canonicalUrl ?? `${BASE_URL}${page.url.pathname}${page.url.search}`;
 
 	const jsonLd = {
 		'@context': 'https://schema.org',

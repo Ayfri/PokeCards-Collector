@@ -60,11 +60,8 @@
 	></script>
 	<!-- End Cloudflare Web Analytics -->
 	<!-- <ViewTransitions fallback="animate"/> -->
-
-	{#key $page.url.pathname}
-		<Seo {title} {description} {image} type={$page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
-	{/key}
 </svelte:head>
+<Seo {title} {description} {image} type={$page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
 
 <div class="flex flex-col min-h-screen">
 	<Header/>
