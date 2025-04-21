@@ -4,6 +4,7 @@
 	import {fade} from 'svelte/transition';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import ArrowUp from 'lucide-svelte/icons/arrow-up';
+	import { persistentStore } from '$lib/helpers/persistentStore';
 
 	// --- Props ---
 	export let cards: FullCard[];
@@ -12,9 +13,9 @@
 	export let pokemon: Pokemon | undefined = undefined; // Optional Pokemon context
 	export let onCardSelect: (card: FullCard) => void;
 
-	// --- Local State ---
-	let localSortBy = 'sort-set';
-	let localSortOrder = 'asc';
+	// --- Persistent Sorting State ---
+	const relatedSortBy = persistentStore('related-cards-sort-by', 'sort-set');
+	const relatedSortOrder = persistentStore<'asc' | 'desc'>('related-cards-sort-order', 'asc');
 
 	// --- Helper Functions ---
 	function getPokemon(pokemonNumber: number | undefined): Pokemon | undefined {
@@ -76,13 +77,8 @@
 		return sorted;
 	}
 
-	// Toggle sort order
-	function toggleSortOrder() {
-		localSortOrder = localSortOrder === 'asc' ? 'desc' : 'asc';
-	}
-
 	// Sort the cards based on the current sort settings (use the passed 'cards' directly)
-	$: sortedCards = sortCards(cards, localSortBy, localSortOrder);
+	$: sortedCards = sortCards(cards, $relatedSortBy, $relatedSortOrder);
 
 	// Determine the title based on whether a specific Pokémon context is provided
 	$: titleName = pokemon
@@ -100,18 +96,18 @@
 		<div class="flex items-center gap-4">
 			<div class="form-element-container">
 				<button
-					class="sort-order-btn fill-white !w-8 flex justify-center items-center hover:fill-black {localSortOrder !== 'asc' ? 'sort-active' : ''}"
-					on:click={toggleSortOrder}
-					aria-label={localSortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
+					class="sort-order-btn fill-white !w-8 flex justify-center items-center hover:fill-black {$relatedSortOrder !== 'asc' ? 'sort-active' : ''}"
+					on:click={() => ($relatedSortOrder = $relatedSortOrder === 'asc' ? 'desc' : 'asc')}
+					aria-label={$relatedSortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
 				>
-					<ArrowUp class={localSortOrder === 'asc' ? 'rotate-180' : ''} size={16} />
+					<ArrowUp class={$relatedSortOrder === 'asc' ? 'rotate-180' : ''} size={16} />
 				</button>
 			</div>
 
 			<div class="form-element-container">
 				<select
-					bind:value={localSortBy}
-					class="filter {localSortBy !== 'sort-set' ? 'filter-active' : ''}"
+					bind:value={$relatedSortBy}
+					class="filter {$relatedSortBy !== 'sort-set' ? 'filter-active' : ''}"
 					id="sort"
 					name="sort"
 					aria-label="Sort by"

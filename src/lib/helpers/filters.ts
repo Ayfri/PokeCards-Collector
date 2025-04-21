@@ -1,31 +1,6 @@
-import { get, writable } from 'svelte/store';
+import { get } from 'svelte/store';
 import type { FullCard, Pokemon, Set } from '$lib/types';
-
-function persistentStore<T>(key: string, initialValue: T) {
-	const store = writable(initialValue);
-	const {
-		subscribe,
-		set,
-	} = store;
-
-	if (globalThis.window === undefined) {
-		return store;
-	}
-
-	const json = localStorage.getItem(key);
-	if (json) {
-		set(JSON.parse(json));
-	}
-
-	return {
-		subscribe,
-		set: (value: T) => {
-			localStorage.setItem(key, JSON.stringify(value));
-			set(value);
-		},
-	};
-
-}
+import { persistentStore } from '$lib/helpers/persistentStore';
 
 export const sortBy = persistentStore('sort-by', 'sort-numero');
 export const sortOrder = persistentStore<'asc' | 'desc'>('sort-order', 'asc');
