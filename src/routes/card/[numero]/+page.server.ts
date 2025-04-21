@@ -61,7 +61,43 @@ export const load: PageServerLoad = async ({ params, url, parent }) => {
 			}
 		} else {
 			// It's a Trainer, Energy, etc. card
-			relevantCards = [targetCard];
+			const supertype = targetCard.supertype?.toLowerCase();
+			if ((supertype === 'energy' || supertype === 'trainer') && targetCard.name) {
+				// Find all cards with the same *normalized* name (case-insensitive) and a set name
+				const normalizeName = (name: string): string => {
+					let lowerName = name.toLowerCase();
+					// Remove common prefixes/suffixes (add more as needed)
+					const prefixes = ['basic ', 'special ', 'prism star ', 'ace spec '];
+					const suffixes = [' item', ' supporter', ' stadium', ' tool', ' technical machine', ' prism star', ' ace spec']; // Note spaces
+
+					prefixes.forEach(prefix => {
+						if (lowerName.startsWith(prefix)) {
+							lowerName = lowerName.substring(prefix.length);
+						}
+					});
+					suffixes.forEach(suffix => {
+						if (lowerName.endsWith(suffix)) {
+							lowerName = lowerName.substring(0, lowerName.length - suffix.length);
+						}
+					});
+					return lowerName.trim();
+				};
+
+				const normalizedTargetName = normalizeName(targetCard.name);
+				relevantCards = allCards.filter(c =>
+					normalizeName(c.name) === normalizedTargetName && c.setName
+				);
+				// Ensure the original target card is included if it got filtered out by normalization
+				const isTargetCardIncluded = relevantCards.some(rc => rc.cardCode === targetCard!.cardCode);
+				if (!isTargetCardIncluded) {
+					// We already checked targetCard.name is truthy, so targetCard itself should be non-null here.
+					// Using non-null assertion (!) as the logic guarantees it's safe.
+					relevantCards.push(targetCard!);
+				}
+			} else {
+				// For other non-pokemon types or if name is missing, keep the original behavior
+				relevantCards = [targetCard];
+			}
 		}
 	}
 

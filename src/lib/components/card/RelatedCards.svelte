@@ -5,40 +5,47 @@
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import ArrowUp from 'lucide-svelte/icons/arrow-up';
 
+	// --- Props ---
 	export let cards: FullCard[];
-	export let pokemons: Pokemon[];
+	export let pokemons: Pokemon[]; // Still needed for lookups if a card *is* a pokemon
 	export let sets: Set[];
-	export let currentPokemonId: number;
+	export let pokemon: Pokemon | undefined = undefined; // Optional Pokemon context
 	export let onCardSelect: (card: FullCard) => void;
 
+	// --- Local State ---
 	let localSortBy = 'sort-set';
 	let localSortOrder = 'asc';
 
+	// --- Helper Functions ---
 	function getPokemon(pokemonNumber: number | undefined): Pokemon | undefined {
+		if (!pokemonNumber) return undefined;
 		return pokemons.find(p => p.id === pokemonNumber);
 	}
 
-	function getSet(setName: string): Set | undefined {
+	function getSet(setName: string | undefined): Set | undefined {
+		if (!setName) return undefined;
 		return sets.find(s => s.name === setName);
 	}
 
-	// Sort the filtered cards based on the current sort settings
+	// Sort the cards based on the current sort settings
 	function sortCards(cardsToSort: FullCard[], sortType: string, order: string) {
-		if (!cardsToSort.length) return [];
+		if (!cardsToSort?.length) return [];
 
 		let sorted = [...cardsToSort];
 
 		switch (sortType) {
 			case 'sort-price':
 				sorted = sorted.sort((a, b) => {
-					const priceA = a.price;
-					const priceB = b.price;
+					const priceA = a.price ?? 0; // Handle null/undefined price
+					const priceB = b.price ?? 0;
 					return order === 'asc' ? priceA - priceB : priceB - priceA;
 				});
 				break;
 			case 'sort-rarity':
 				sorted = sorted.sort((a, b) => {
-					return order === 'asc' ? a.rarity.localeCompare(b.rarity) : b.rarity.localeCompare(a.rarity);
+					const rarityA = a.rarity ?? ''; // Handle null/undefined rarity
+					const rarityB = b.rarity ?? '';
+					return order === 'asc' ? rarityA.localeCompare(rarityB) : rarityB.localeCompare(rarityA);
 				});
 				break;
 			case 'sort-artist':
@@ -52,14 +59,16 @@
 				sorted = sorted.sort((a, b) => {
 					const aSet = getSet(a.setName);
 					const bSet = getSet(b.setName);
-					const aTime = aSet?.releaseDate.getTime() ?? 0;
-					const bTime = bSet?.releaseDate.getTime() ?? 0;
+					const aTime = aSet?.releaseDate?.getTime() ?? 0; // Handle null/undefined date
+					const bTime = bSet?.releaseDate?.getTime() ?? 0;
 					return order === 'asc' ? aTime - bTime : bTime - aTime;
 				});
 				break;
 			default: // sort-set (default)
 				sorted = sorted.sort((a, b) => {
-					return order === 'asc' ? a.setName.localeCompare(b.setName) : b.setName.localeCompare(a.setName);
+					const nameA = a.setName ?? ''; // Handle null/undefined set name
+					const nameB = b.setName ?? '';
+					return order === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
 				});
 				break;
 		}
@@ -72,20 +81,19 @@
 		localSortOrder = localSortOrder === 'asc' ? 'desc' : 'asc';
 	}
 
-	// Filter the cards by current Pokémon
-	$: filteredCards = [...cards].filter(card => card.pokemonNumber === currentPokemonId);
+	// Sort the cards based on the current sort settings (use the passed 'cards' directly)
+	$: sortedCards = sortCards(cards, localSortBy, localSortOrder);
 
-	// Sort the filtered cards based on the current sort settings
-	$: sortedCards = sortCards(filteredCards, localSortBy, localSortOrder);
-
-	// Get the first Pokémon for the title display
-	$: firstPokemon = getPokemon(sortedCards[0]?.pokemonNumber);
+	// Determine the title based on whether a specific Pokémon context is provided
+	$: titleName = pokemon
+		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
+		: (sortedCards[0]?.name || 'Related'); // Fallback to first card name or generic term
 </script>
 
 <div class="bg-gray-800/40 border-gold-400 border-2 rounded-2xl p-6 mt-8 w-full">
 	<div class="flex items-center justify-between mb-4">
 		<h2 class="text-xl font-bold text-gold-400">
-			All {firstPokemon ? firstPokemon.name.charAt(0).toUpperCase() + firstPokemon.name.slice(1) : ''} Cards
+			All {titleName} Cards
 			<span class="font-medium text-lg ml-1">({sortedCards.length})</span>
 		</h2>
 
@@ -94,6 +102,7 @@
 				<button
 					class="sort-order-btn fill-white !w-8 flex justify-center items-center hover:fill-black {localSortOrder !== 'asc' ? 'sort-active' : ''}"
 					on:click={toggleSortOrder}
+					aria-label={localSortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
 				>
 					<ArrowUp class={localSortOrder === 'asc' ? 'rotate-180' : ''} size={16} />
 				</button>
@@ -105,6 +114,7 @@
 					class="filter {localSortBy !== 'sort-set' ? 'filter-active' : ''}"
 					id="sort"
 					name="sort"
+					aria-label="Sort by"
 				>
 					<option value="sort-set">Set Name</option>
 					<option value="sort-date">Release Date</option>
@@ -116,59 +126,69 @@
 		</div>
 	</div>
 
-	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-4">
-		{#each sortedCards as card (card.image)}
-			<button
-				class="flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5 cursor-pointer"
-				transition:fade={{ duration: 200 }}
-				on:click={() => onCardSelect(card)}
-			>
-				<div class="relative rounded-lg overflow-hidden shadow-lg w-full" style="aspect-ratio: 63/88;">
-					<CardImage
-						imageUrl={card.image}
-						alt={getPokemon(card.pokemonNumber)?.name}
-						class="card-image"
-						lazy={true}
-						highRes={false}
-					/>
-					<div class="absolute bottom-1 right-1 bg-black/70 rounded-full p-0.5 border border-gold-400">
-						<img
-							src={getSet(card.setName)?.logo}
-							alt={getSet(card.setName)?.name}
-							class="w-[30px] h-[30px] md:w-[24px] md:h-[24px] object-contain"
-							title={getSet(card.setName)?.name}
+	{#if sortedCards.length > 0}
+		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-4">
+			{#each sortedCards as card (card.image || card.cardCode)} <!-- Add cardCode as fallback key -->
+				{@const cardPokemon = getPokemon(card.pokemonNumber)}
+				{@const cardSet = getSet(card.setName)}
+				<button
+					class="flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5 cursor-pointer"
+					transition:fade={{ duration: 200 }}
+					on:click={() => onCardSelect(card)}
+					aria-label={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
+				>
+					<div class="relative rounded-lg overflow-hidden shadow-lg w-full" style="aspect-ratio: 63/88;">
+						<CardImage
+							imageUrl={card.image}
+							alt={cardPokemon ? cardPokemon.name : card.name}
+							class="card-image"
+							lazy={true}
+							highRes={false}
 						/>
-					</div>
-				</div>
-				<div class="mt-0.5 w-full text-center flex flex-col">
-					<h2 class="text-center font-bold text-sm">{getSet(card.setName)?.name}</h2>
-					<div class="flex items-center justify-center">
-						{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
-							<a
-								href={card.cardMarketUrl}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="hover:text-gold-300 transition-colors duration-200 text-center"
-								on:click|stopPropagation
-								aria-label="View on Cardmarket"
-							>
-								<div class="flex items-center justify-center whitespace-nowrap">
-									<span class="text-sm">{card.price ? `${card.price} $` : 'Priceless'}</span>
-									<span class="mx-1 text-sm">-</span>
-									<span class="text-gold-400 font-bold underline text-sm flex items-center">
-										Cardmarket
-										<ExternalLink size={10} class="ml-1" />
-									</span>
-								</div>
-							</a>
-						{:else}
-							<div>{card.price ? `${card.price} $` : 'Priceless'}</div>
+						{#if cardSet}
+							<div class="absolute bottom-1 right-1 bg-black/70 rounded-full p-0.5 border border-gold-400">
+								<img
+									src={cardSet.logo}
+									alt={cardSet.name}
+									class="w-[30px] h-[30px] md:w-[24px] md:h-[24px] object-contain"
+									title={cardSet.name}
+									loading="lazy"
+								/>
+							</div>
 						{/if}
 					</div>
-				</div>
-			</button>
-		{/each}
-	</div>
+					<div class="mt-0.5 w-full text-center flex flex-col">
+						<h2 class="text-center font-bold text-sm">{cardSet?.name || 'Unknown Set'}</h2>
+						<div class="flex items-center justify-center">
+							{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
+								<a
+									href={card.cardMarketUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="hover:text-gold-300 transition-colors duration-200 text-center"
+									on:click|stopPropagation
+									aria-label="View on Cardmarket"
+								>
+									<div class="flex items-center justify-center whitespace-nowrap">
+										<span class="text-sm">{card.price != null ? `${card.price.toFixed(2)} $` : 'Priceless'}</span>
+										<span class="mx-1 text-sm">-</span>
+										<span class="text-gold-400 font-bold underline text-sm flex items-center">
+											Cardmarket
+											<ExternalLink size={10} class="ml-1" />
+										</span>
+									</div>
+								</a>
+							{:else}
+								<div class="text-sm">{card.price != null ? `${card.price.toFixed(2)} $` : 'Priceless'}</div>
+							{/if}
+						</div>
+					</div>
+				</button>
+			{/each}
+		</div>
+	{:else}
+		<p class="text-center text-gray-400">No other related cards found.</p>
+	{/if}
 </div>
 
 <style>
@@ -243,6 +263,17 @@
 		font-weight: 500;
 		border-color: #FFB700;
 	}
+
+	.sort-order-btn.sort-active {
+		border-color: #FFB700; /* Ensure border changes too */
+		color: #FFB700; /* Ensure icon color changes */
+	}
+
+	.sort-order-btn.sort-active:hover {
+		background-image: linear-gradient(to right, #FFB700, #FFB700); /* Keep gold background on hover when active */
+		color: #000; /* Text/Icon color on hover */
+	}
+
 
 	@media (max-width: 1024px) {
 		.form-element-container {

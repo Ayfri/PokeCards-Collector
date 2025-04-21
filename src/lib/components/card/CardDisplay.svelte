@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CardInfo from '@components/card/CardInfo.svelte';
 	import EvolutionChain from '@components/card/EvolutionChain.svelte';
-	import AllPokemonCards from '@components/card/AllPokemonCards.svelte';
+	import RelatedCards from '@components/card/RelatedCards.svelte';
 	import {fade} from 'svelte/transition';
 	import type {FullCard, Pokemon, Set, CardMarketPrices} from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
@@ -194,7 +194,7 @@
 		</div>
 	{/if}
 
-	<!-- Main card display with adjacent navigation (Only for Pokemon) -->
+	<!-- Main card display with adjacent navigation -->
 	<div class="card-navigation-container flex items-center justify-between w-full px-12 max-w-8xl mx-auto perspective-container">
 		<!-- Previous Pokemon (Only for Pokemon) -->
 		{#if pokemon && previousPokemon}
@@ -267,21 +267,16 @@
 		{/if}
 	</div>
 
-	<!-- Pokémon Info Component (Render always when ready, CardInfo handles pokemon presence) -->
-	{#if isInitialRenderComplete && currentSet}
-		<CardInfo {card} {pokemon} set={currentSet} {cardmarket} />
+	<!-- Card Information Component -->
+	{#if card && currentSet}
+		<CardInfo {card} set={currentSet} {cardmarket} {pokemon} />
 	{/if}
 
-	<!-- TODO: Add display for non-pokemon card details (rules, etc.) here if needed -->
-
+	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
+	{#if cards.length > 1 && shouldRenderAllCards}
+		<RelatedCards {cards} {pokemons} {sets} {pokemon} onCardSelect={handleCardSelect} />
+	{/if}
 </div>
-
-<!-- Only show AllPokemonCards if it's a pokemon page -->
-{#if pokemon && shouldRenderAllCards}
-	<div class="container mx-auto px-4 py-8" transition:fade|global>
-		<AllPokemonCards {cards} {pokemons} {sets} currentPokemonId={pokemon.id} onCardSelect={handleCardSelect}/>
-	</div>
-{/if}
 
 <!-- Background Filter (Conditional on Pokemon Type?) -->
 {#if pokemon}
@@ -294,124 +289,146 @@
 	}
 
 	.interactive-card {
-		--rx: 0deg;
-		--ry: 0deg;
 		transform-style: preserve-3d;
-		transform: rotateX(var(--rx)) rotateY(var(--ry));
-		transition: transform 0.3s ease-out;
-		position: relative;
-		overflow: hidden;
+		transition: transform 0.05s linear, filter 0.3s ease;
+		transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
 	}
 
-	#card-aura {
-		background-color: var(--type-color);
-		border-radius: 50%;
-		filter: blur(5rem) opacity(0.5);
-		height: 43rem;
-		left: 50%;
-		pointer-events: none;
+	.interactive-card.inactive {
+		transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); /* Smooth return */
+	}
+
+	/* Card Aura Styles */
+	.card-aura {
 		position: absolute;
-		top: 50%;
-		transform: translateX(-50%) translateY(-50%);
-		transition: all 0.3s ease-in-out;
-		width: 43rem;
-		z-index: -20;
+		top: -10%;
+		left: -10%;
+		width: 120%;
+		height: 120%;
+		border-radius: 1.5rem; /* Slightly larger than card radius */
+		z-index: -1;
+		filter: blur(25px);
+		opacity: 0.6;
+		transition: background 0.5s ease;
 	}
 
-	.filter {
-		background-image: url("/particles.png");
-		background-size: cover;
-		content: "";
-		filter: var(--filter);
-		height: 100%;
-		inset: 0 0 0 0;
-		position: fixed;
-		width: 100%;
-		z-index: -20;
+	/* Individual type colors */
+	.card-aura.grass { background: radial-gradient(circle, rgba(120, 200, 80, 0.8), transparent 70%); }
+	.card-aura.fire { background: radial-gradient(circle, rgba(240, 128, 48, 0.8), transparent 70%); }
+	.card-aura.water { background: radial-gradient(circle, rgba(104, 144, 240, 0.8), transparent 70%); }
+	.card-aura.lightning { background: radial-gradient(circle, rgba(248, 208, 48, 0.8), transparent 70%); }
+	.card-aura.psychic { background: radial-gradient(circle, rgba(248, 88, 136, 0.8), transparent 70%); }
+	.card-aura.fighting { background: radial-gradient(circle, rgba(192, 48, 40, 0.8), transparent 70%); }
+	.card-aura.darkness { background: radial-gradient(circle, rgba(112, 88, 72, 0.8), transparent 70%); }
+	.card-aura.metal { background: radial-gradient(circle, rgba(184, 184, 208, 0.8), transparent 70%); }
+	.card-aura.dragon { background: radial-gradient(circle, rgba(112, 56, 248, 0.8), transparent 70%); }
+	.card-aura.fairy { background: radial-gradient(circle, rgba(238, 153, 172, 0.8), transparent 70%); }
+	.card-aura.colorless { background: radial-gradient(circle, rgba(168, 168, 120, 0.8), transparent 70%); }
+	.card-aura.unknown { background: radial-gradient(circle, rgba(104, 160, 144, 0.8), transparent 70%); }
+
+	/* Navigation Pokemon Styles */
+	.prev-pokemon-nav, .next-pokemon-nav {
+		cursor: pointer;
+		transition: transform 0.3s ease, opacity 0.3s ease;
+		opacity: 0.7;
 	}
 
-	.pokedex-number-display {
-		height: 2.5rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.nav-pokemon-wrapper {
-		transition: transform 0.4s ease-in-out;
-	}
-
-	.prev-pokemon-nav:hover .nav-pokemon-wrapper,
-	.next-pokemon-nav:hover .nav-pokemon-wrapper {
-		transform: scale(1.05);
+	.prev-pokemon-nav:hover, .next-pokemon-nav:hover {
+		transform: scale(1.1);
+		opacity: 1;
 	}
 
 	.nav-pokemon-image {
-		transition: filter 0.4s ease-in-out;
+		transition: filter 0.3s ease;
 	}
 
 	.nav-pokemon-image.silhouette {
-		filter: grayscale(100%) brightness(0.2) opacity(0.8);
+		filter: brightness(0.3) contrast(1.1) saturate(0.9);
 	}
 
 	.prev-pokemon-nav:hover .nav-pokemon-image.silhouette,
 	.next-pokemon-nav:hover .nav-pokemon-image.silhouette {
-		filter: none;
+		filter: brightness(1) contrast(1) saturate(1);
 	}
 
 	.nav-pokemon-name {
-		color: #ccc;
-		transition: color 0.4s ease-in-out;
+		font-weight: bold;
 	}
 
-	.prev-pokemon-nav:hover .nav-pokemon-name,
-	.next-pokemon-nav:hover .nav-pokemon-name {
-		color: #fff;
-	}
-
-	:global(.dark) .silhouette {
-		filter: grayscale(100%) brightness(0.7) opacity(0.8);
-	}
-
-	:global(.dark) .prev-pokemon-nav:hover .nav-pokemon-image.silhouette,
-	:global(.dark) .next-pokemon-nav:hover .nav-pokemon-image.silhouette {
-		filter: none;
+	.pokedex-number-display {
+		position: relative;
 	}
 
 	@media (max-width: 1024px) {
 		.card-navigation-container {
 			flex-direction: column;
+			align-items: center;
+			padding: 0;
 			gap: 1rem;
-			padding: 1rem;
-			perspective: none;
 		}
 
-		.prev-pokemon-nav,
+		.prev-pokemon-nav, .next-pokemon-nav {
+			position: absolute;
+			top: 50%;
+			transform: translateY(-50%);
+			z-index: 10;
+			width: 5rem;
+		}
+
+		.prev-pokemon-nav {
+			left: 1rem;
+		}
+
 		.next-pokemon-nav {
-			order: 2;
-			width: auto;
+			right: 1rem;
+		}
+
+		.nav-pokemon-image {
+			width: 3rem;
+			height: 3rem;
+		}
+
+		.nav-pokemon-name, .nav-pokemon-id {
+			display: none; /* Hide text on smaller screens */
 		}
 
 		.center-card-wrapper {
-			order: 1;
+			order: 2; /* Ensure card is visually between nav buttons */
 			margin: 0;
+			width: 100%; /* Allow card to take full width */
+			display: flex;
+			justify-content: center;
+			margin-top: 1rem; /* Add some space */
 		}
 
 		.interactive-card {
-			width: 80vw;
-			height: auto;
-			aspect-ratio: 63 / 88;
-			max-width: none;
-			max-height: none;
-			transform: none;
-			transition: none;
+			width: 18rem;
+			height: 25rem;
 		}
 
-		/* Ensure non-pokemon cards also dont have transform on mobile */
-		.interactive-card.non-pokemon {
-			transform: none;
-			transition: none;
+		.card-aura {
+			filter: blur(20px);
+			opacity: 0.5;
 		}
 	}
 
+	@media (max-width: 640px) {
+		.interactive-card {
+			width: 15rem;
+			height: 21rem;
+		}
+
+		.card-aura {
+			filter: blur(15px);
+			opacity: 0.4;
+		}
+
+		.prev-pokemon-nav {
+			left: 0.5rem;
+		}
+
+		.next-pokemon-nav {
+			right: 0.5rem;
+		}
+	}
 </style>
