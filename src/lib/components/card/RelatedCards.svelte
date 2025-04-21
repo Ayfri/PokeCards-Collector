@@ -154,7 +154,7 @@
 						{/if}
 					</div>
 					<div class="mt-0.5 w-full text-center flex flex-col">
-						<h2 class="text-center font-bold text-sm">{cardSet?.name || 'Unknown Set'}</h2>
+						<h3 class="text-center font-bold text-sm">{cardSet?.name || 'Unknown Set'}</h3>
 						<div class="flex items-center justify-center">
 							{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
 								<a
