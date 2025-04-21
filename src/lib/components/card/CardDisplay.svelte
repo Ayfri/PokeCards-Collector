@@ -287,15 +287,16 @@
 
 	/* Card Aura Styles */
 	.card-aura {
+		aspect-ratio: 1 / 1;
 		background-color: var(--type-color);
 		border-radius: 50%;
 		filter: blur(5rem) opacity(.5);
-		height: 43rem;
 		left: 50%;
+		max-width: 100%;
 		pointer-events: none;
 		position: absolute;
 		top: 50%;
-		transform: translate(-50%) translateY(-50%);
+		transform: translate(-50%, -50%);
 		transition: all .3s ease-in-out;
 		width: 43rem;
 		z-index: -20;
