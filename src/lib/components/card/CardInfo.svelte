@@ -37,12 +37,12 @@
 							<dd class="flex flex-wrap justify-end gap-1.5">
 								{#if card?.types}
 									{#each card.types.toLowerCase().split(',') as type}
-										<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${type}-bg text-white`}>
+										<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${type} bg-[var(--type-color)] text-white`}>
 											{type}
 										</span>
 									{/each}
 								{:else if card?.supertype}
-									<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${card.supertype.toLowerCase()}-bg text-white`}>
+									<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${card.supertype.toLowerCase()} text-white`}>
 										{card.supertype}
 									</span>
 								{/if}
@@ -157,22 +157,6 @@
 		background-color: var(--gold-400);
 		border-radius: 20px;
 	}
-
-	/* Type colors as background classes */
-	.colorless-bg { background-color: #A8A878; }
-	.darkness-bg, .dark-bg { background-color: #705848; }
-	.dragon-bg { background-color: #7038F8; }
-	.fairy-bg { background-color: #EE99AC; }
-	.fighting-bg { background-color: #C03028; }
-	.fire-bg { background-color: #F08030; }
-	.grass-bg { background-color: #78C850; }
-	.lightning-bg, .electric-bg { background-color: #F8D030; }
-	.metal-bg, .steel-bg { background-color: #B8B8D0; }
-	.psychic-bg { background-color: #F85888; }
-	.water-bg { background-color: #6890F0; }
-	.trainer-bg, .item-bg, .supporter-bg, .stadium-bg, .tool-bg { background-color: #C22E28; }
-	.energy-bg { background-color: #6f7174; }
-	.pokemon-bg { background-color: #4DAD5B; }
 
 	@media (max-width: 768px) {
 		.pokemon-info-container {

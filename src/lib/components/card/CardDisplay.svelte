@@ -329,31 +329,35 @@
 
 	/* Card Aura Styles */
 	.card-aura {
+		background-color: var(--type-color);
+		border-radius: 50%;
+		filter: blur(5rem) opacity(.5);
+		height: 43rem;
+		left: 50%;
+		pointer-events: none;
 		position: absolute;
-		top: -10%;
-		left: -10%;
-		width: 120%;
-		height: 120%;
-		border-radius: 1.5rem; /* Slightly larger than card radius */
-		z-index: -1;
-		filter: blur(25px);
-		opacity: 0.6;
-		transition: background 0.5s ease;
+		top: 50%;
+		transform: translate(-50%) translateY(-50%);
+		transition: all .3s ease-in-out;
+		width: 43rem;
+		z-index: -20;
 	}
 
-	/* Individual type colors */
-	.card-aura.grass { background: radial-gradient(circle, rgba(120, 200, 80, 0.8), transparent 70%); }
-	.card-aura.fire { background: radial-gradient(circle, rgba(240, 128, 48, 0.8), transparent 70%); }
-	.card-aura.water { background: radial-gradient(circle, rgba(104, 144, 240, 0.8), transparent 70%); }
-	.card-aura.lightning { background: radial-gradient(circle, rgba(248, 208, 48, 0.8), transparent 70%); }
-	.card-aura.psychic { background: radial-gradient(circle, rgba(248, 88, 136, 0.8), transparent 70%); }
-	.card-aura.fighting { background: radial-gradient(circle, rgba(192, 48, 40, 0.8), transparent 70%); }
-	.card-aura.darkness { background: radial-gradient(circle, rgba(112, 88, 72, 0.8), transparent 70%); }
-	.card-aura.metal { background: radial-gradient(circle, rgba(184, 184, 208, 0.8), transparent 70%); }
-	.card-aura.dragon { background: radial-gradient(circle, rgba(112, 56, 248, 0.8), transparent 70%); }
-	.card-aura.fairy { background: radial-gradient(circle, rgba(238, 153, 172, 0.8), transparent 70%); }
-	.card-aura.colorless { background: radial-gradient(circle, rgba(168, 168, 120, 0.8), transparent 70%); }
-	.card-aura.unknown { background: radial-gradient(circle, rgba(104, 160, 144, 0.8), transparent 70%); }
+	/* Fixed background filter that covers the entire page */
+	.filter {
+		background-image: url(../../../particles.png);
+		background-size: cover;
+		content: "";
+		filter: var(--filter);
+		height: 100%;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		position: fixed;
+		width: 100%;
+		z-index: -20;
+	}
 
 	/* Navigation Pokemon Styles */
 	.prev-pokemon-nav, .next-pokemon-nav {
