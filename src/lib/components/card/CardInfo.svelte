@@ -14,37 +14,87 @@
 	$: displayName = pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name;
 	// Compute description: Pokemon description if available, otherwise card rules/basic info
 	$: displayDescription = pokemon ? pokemon.description : ((card as any).rules?.join('\n') || `Details for ${card?.name}`);
+
+	function formatDate(date: Date) {
+		return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+	}
 </script>
 
 <div class="pokemon-info-container mb-8 flex flex-col items-center gap-4 max-lg:gap-0">
 	<PageTitle title={displayName}/>
 
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-[800px]">
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-[1000px]">
 		<!-- Left Column: Card Details -->
-		<div class="flex flex-col items-center md:items-start gap-4 text-xl">
-			<div
-				class="flex gap-4 flex-wrap justify-center md:justify-start"
-				id="card-types"
-			>
-				{#if card?.types}
-					{#each card.types.toLowerCase().split(',') as type}
-						<p class={`card-type ${type}`}>{type}</p>
-					{/each}
-				{:else if card?.supertype}
-					<p class={`card-type ${card.supertype.toLowerCase()}`}>{card.supertype}</p>
-				{/if}
+		<div class="flex flex-col">
+			<div class="bg-gray-800 border-2 border-gold-400 rounded-xl p-4 h-full flex flex-col">
+				<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Details</h3>
+
+				<div class="space-y-2 flex-grow">
+					<!-- Add types as the first item -->
+					{#if card?.types || card?.supertype}
+						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
+							<dt class="font-semibold text-gold-300">Type:</dt>
+							<dd class="flex flex-wrap justify-end gap-1.5">
+								{#if card?.types}
+									{#each card.types.toLowerCase().split(',') as type}
+										<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${type}-bg text-white`}>
+											{type}
+										</span>
+									{/each}
+								{:else if card?.supertype}
+									<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${card.supertype.toLowerCase()}-bg text-white`}>
+										{card.supertype}
+									</span>
+								{/if}
+							</dd>
+						</div>
+					{/if}
+
+					{#if card.artist !== 'Unknown'}
+						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
+							<dt class="font-semibold text-gold-300">Artist:</dt>
+							<dd class="text-white text-right">{card.artist}</dd>
+						</div>
+					{/if}
+
+					{#if cardNumber && set.printedTotal}
+						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
+							<dt class="font-semibold text-gold-300">Number:</dt>
+							<dd class="text-white text-right">{cardNumber} / {set.printedTotal}</dd>
+						</div>
+					{/if}
+
+					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
+						<dt class="font-semibold text-gold-300">Rarity:</dt>
+						<dd class="text-white text-right">{card.rarity}</dd>
+					</div>
+
+					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
+						<dt class="font-semibold text-gold-300">Set:</dt>
+						<dd class="flex items-center gap-2 justify-end">
+							<span class="text-white">{set.name}</span>
+							{#if set.logo}
+								<img
+									src={set.logo}
+									alt={`${set.name} logo`}
+									class="inline-block max-w-[60px] max-h-[25px] object-contain"
+									title={set.name}
+									loading="lazy"
+								/>
+							{/if}
+						</dd>
+					</div>
+
+					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
+						<dt class="font-semibold text-gold-300">Release Date:</dt>
+						<dd class="text-white text-right">{formatDate(set.releaseDate)}</dd>
+					</div>
+				</div>
+
+				<div class="mt-4 bg-gray-900 border-2 border-gold-400 rounded-lg p-3">
+					<div class="text-sm text-white whitespace-pre-line">{displayDescription}</div>
+				</div>
 			</div>
-
-			<div class="card-details mt-4 text-base w-full text-center md:text-left space-y-2">
-				<p><span class="font-semibold text-gold-300">Artist:</span> {card.artist}</p>
-				<p><span class="font-semibold text-gold-300">Rarity:</span> {card.rarity}</p>
-				{#if cardNumber && set.printedTotal}
-					<p><span class="font-semibold text-gold-300">Number:</span> {cardNumber} / {set.printedTotal}</p>
-				{/if}
-			</div>
-
-			<p class="text-center md:text-left mt-4 text-base whitespace-pre-line">{displayDescription}</p>
-
 		</div>
 
 		<!-- Right Column: Prices -->
@@ -53,12 +103,15 @@
 				<CardPrice {card} {cardmarket} />
 			{:else}
 				<!-- Fallback display if cardmarket data is not available -->
-				<p
-					class="px-5 py-2 bg-gray-800 border-[3px] border-gold-400 rounded-[1rem] text-2xl mt-2"
-					id="card-price"
-				>
-					{card.price ? `${card.price} $` : 'Priceless'}
-				</p>
+				<div class="bg-gray-800 border-2 border-gold-400 rounded-xl p-4 w-full">
+					<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Price</h3>
+					<div class="bg-gray-900 border-2 border-gold-400 rounded-lg p-3 mb-4 text-center">
+						<span class="text-2xl font-bold">
+							{card.price ? `${card.price} $` : 'Priceless'}
+						</span>
+						<span class="text-sm text-gray-400 block">Main Price</span>
+					</div>
+				</div>
 			{/if}
 		</div>
 	</div>
@@ -105,23 +158,21 @@
 		border-radius: 20px;
 	}
 
-	/* Styles for Pokemon Type Tags */
-	.card-type {
-		background-color: var(--type-color, #777); /* Use type color, fallback gray */
-		color: white;
-		padding: 0.2rem 0.8rem; /* Adjusted padding */
-		border-radius: 9999px; /* Pill shape */
-		font-size: 0.9rem; /* Adjusted font size */
-		font-weight: 500; /* Medium weight */
-		text-transform: capitalize;
-		box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-		border: 1px solid rgba(0,0,0,0.2);
-		text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
-	}
-
-	.card-details p {
-		color: #ccc; /* Light gray text for details */
-	}
+	/* Type colors as background classes */
+	.colorless-bg { background-color: #A8A878; }
+	.darkness-bg, .dark-bg { background-color: #705848; }
+	.dragon-bg { background-color: #7038F8; }
+	.fairy-bg { background-color: #EE99AC; }
+	.fighting-bg { background-color: #C03028; }
+	.fire-bg { background-color: #F08030; }
+	.grass-bg { background-color: #78C850; }
+	.lightning-bg, .electric-bg { background-color: #F8D030; }
+	.metal-bg, .steel-bg { background-color: #B8B8D0; }
+	.psychic-bg { background-color: #F85888; }
+	.water-bg { background-color: #6890F0; }
+	.trainer-bg, .item-bg, .supporter-bg, .stadium-bg, .tool-bg { background-color: #C22E28; }
+	.energy-bg { background-color: #6f7174; }
+	.pokemon-bg { background-color: #4DAD5B; }
 
 	@media (max-width: 768px) {
 		.pokemon-info-container {
@@ -129,9 +180,6 @@
 		}
 		.grid {
 			gap: 1rem; /* Reduced gap */
-		}
-		.card-details {
-			text-align: center; /* Center details text on small screens */
 		}
 	}
 </style>

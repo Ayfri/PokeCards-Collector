@@ -17,7 +17,7 @@
 	}
 </script>
 
-<div class="detailed-prices bg-gray-800 border-2 border-gold-400 rounded-xl p-4 mt-2 w-full max-w-[500px]">
+<div class="detailed-prices bg-gray-800 border-2 border-gold-400 rounded-xl p-4 w-full max-w-[500px]">
 	{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
 		<a href={card.cardMarketUrl} target="_blank" rel="noopener noreferrer" class="text-gold-400 font-bold text-xl mb-3 flex items-center justify-center hover:text-gold-300 transition-colors duration-200">
 			Cardmarket Prices
