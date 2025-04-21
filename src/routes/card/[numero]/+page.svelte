@@ -11,7 +11,7 @@
 </script>
 
 <main class="max-w-[100vw] p-2 text-lg text-white">
-	<div class="mt-10 mx-auto flex flex-col gap-8 w-[90%] -z-10 max-lg:mt-8">
+	<div class="mt-4 lg:mt-10 mx-auto flex flex-col gap-8 w-[90%] -z-10">
 		{#if !cards || cards.length === 0}
 			<p>Loading card details...</p>
 		{:else}

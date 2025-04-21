@@ -166,7 +166,7 @@
 
 <svelte:window on:mousemove={handleMouseMove}/>
 
-<div class="flex flex-col gap-8 content-center">
+<div class="flex flex-col gap-1 lg:gap-8 content-center">
 	<!-- Evolution Chain Component (Only for Pokemon) -->
 	{#if pokemon && isInitialRenderComplete}
 		<EvolutionChain {card} {pokemons} {cards} />

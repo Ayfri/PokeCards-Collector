@@ -23,7 +23,7 @@
 <div class="pokemon-info-container mb-8 flex flex-col items-center gap-4 max-lg:gap-0">
 	<PageTitle title={displayName}/>
 
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-[1000px]">
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mt-4 lg:mt-0 max-w-[1000px]">
 		<!-- Left Column: Card Details -->
 		<div class="flex flex-col">
 			<div class="bg-gray-800 border-2 border-gold-400 rounded-xl p-4 h-full flex flex-col">
