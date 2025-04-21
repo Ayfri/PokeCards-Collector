@@ -1,16 +1,16 @@
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '../supabase';
 import type { UserProfile } from '../types';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
 import { browser } from '$app/environment';
 
 // Define types
 interface AuthState {
 	user: User | null;
 	profile: UserProfile | null;
-	loading: boolean;
+	loading: boolean; // Start true until listener provides initial state
 	error: string | null;
+	initialized: boolean; // Flag to track if initial state received
 }
 
 // Create initial state
@@ -18,139 +18,108 @@ const initialState: AuthState = {
 	user: null,
 	profile: null,
 	loading: true,
-	error: null
+	error: null,
+	initialized: false
 };
 
-// Create the store
+// --- Profile Fetch Helper ---
+// Fetches the user profile from the database
+async function fetchProfile(user: User | null): Promise<UserProfile | null> {
+	if (!user) return null;
+	try {
+		const { data: profile, error } = await supabase
+			.from('profiles')
+			.select('*')
+			.eq('auth_id', user.id)
+			.single();
+
+		if (error) {
+			// Log error but return null, let caller handle state update
+			console.error('Error fetching profile:', error);
+			return null;
+		}
+		return profile;
+	} catch (error) {
+		// Log error but return null, let caller handle state update
+		console.error('Exception fetching profile:', error);
+		return null;
+	}
+}
+
+// --- Store Creation ---
 function createAuthStore() {
 	const { subscribe, set, update } = writable<AuthState>(initialState);
 
 	return {
 		subscribe,
-		setUser: (user: User | null) => update(state => ({ ...state, user })),
-		setProfile: (profile: UserProfile | null) => update(state => ({ ...state, profile })),
-		setLoading: (loading: boolean) => update(state => ({ ...state, loading })),
-		setError: (error: string | null) => update(state => ({ ...state, error })),
-		reset: () => set(initialState),
-
-		// Initialize auth state from Supabase session or localStorage
-		init: async () => {
-			try {
-				update(state => ({ ...state, loading: true, error: null }));
-
-				// Vérifier d'abord le localStorage pour le token (uniquement côté client)
-				let tokenString: string | null = null;
-				if (browser) {
-					tokenString = localStorage.getItem('supabase.auth.token');
-				}
-
-				if (tokenString) {
-					try {
-						const tokenData = JSON.parse(tokenString);
-
-						// Extraire les informations utilisateur du token (si disponibles)
-						if (tokenData.access_token) {
-							// Le token existe, essayons de récupérer le profil utilisateur
-							// Créer un client temporaire avec le token
-							const { createClient } = await import('@supabase/supabase-js');
-							const supabaseUrl = PUBLIC_SUPABASE_URL;
-							const supabaseAnonKey = PUBLIC_SUPABASE_ANON_KEY;
-
-							const tempClient = createClient(supabaseUrl, supabaseAnonKey);
-
-							// Essayer de récupérer l'utilisateur
-							const { data: userData, error: userError } = await tempClient.auth.getUser(tokenData.access_token);
-
-							if (!userError && userData.user) {
-								// Récupérer le profil
-								const response = await fetch(
-									`${supabaseUrl}/rest/v1/profiles?auth_id=eq.${userData.user.id}&select=*`,
-									{
-										headers: {
-											'apikey': supabaseAnonKey,
-											'Authorization': `Bearer ${tokenData.access_token}`,
-											'Content-Type': 'application/json'
-										}
-									}
-								);
-
-								if (response.ok) {
-									const profiles = await response.json();
-									const profile = profiles.length > 0 ? profiles[0] : null;
-
-									if (profile) {
-										update(state => ({
-											...state,
-											user: userData.user,
-											profile,
-											loading: false
-										}));
-										return;
-									}
-								}
-							}
-						}
-					} catch (tokenError) {
-						// Ignorer les erreurs de token et continuer avec la méthode standard
-					}
-				}
-
-				// Essayer avec la méthode Supabase standard comme fallback
-				const { data: { session } } = await supabase.auth.getSession();
-
-				if (session) {
-					// Get user
-					const { data: { user } } = await supabase.auth.getUser();
-
-					// Get profile
-					if (user) {
-						const { data: profile } = await supabase
-							.from('profiles')
-							.select('*')
-							.eq('auth_id', user.id)
-							.single();
-
-						update(state => ({ ...state, user, profile, loading: false }));
-					} else {
-						update(state => ({ ...state, user: null, profile: null, loading: false }));
-					}
-				} else {
-					update(state => ({ ...state, user: null, profile: null, loading: false }));
-				}
-			} catch (error) {
-				update(state => ({
-					...state,
-					user: null,
-					profile: null,
-					loading: false,
-					error: 'Failed to initialize authentication'
-				}));
+		// Internal method for listener to update state
+		_update: (newState: Partial<AuthState>) => update(state => ({ ...state, ...newState })),
+		reset: () => {
+			if (browser) {
+				// Attempt to clear any potentially lingering local storage
+				localStorage.removeItem('supabase.auth.token');
 			}
+			set({ ...initialState, loading: false, initialized: true }); // Reset but mark as initialized
 		}
 	};
 }
 
-// Export the store
+// Export the store instance
 export const authStore = createAuthStore();
 
-// Set up Supabase auth state change listener
-supabase.auth.onAuthStateChange(async (event, session) => {
-	if (event === 'SIGNED_IN' && session) {
-		// Get user
-		const { data: { user } } = await supabase.auth.getUser();
+// --- Auth State Change Listener (Client-side only) ---
+// This runs once when the module loads on the client.
+if (browser) {
+	supabase.auth.onAuthStateChange(async (event, session) => {
+		const currentState = get(authStore);
 
-		// Get profile
-		if (user) {
-			const { data: profile } = await supabase
-				.from('profiles')
-				.select('*')
-				.eq('auth_id', user.id)
-				.single();
-
-			authStore.setUser(user);
-			authStore.setProfile(profile || null);
+		if (!currentState.initialized && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT')) {
+			// Mark as initialized on the first relevant event to sync loading state
+			authStore._update({ initialized: true, loading: false }); // Set loading false once initialized
 		}
-	} else if (event === 'SIGNED_OUT') {
-		authStore.reset();
-	}
-});
+
+		if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+			if (session?.user) {
+				const user = session.user;
+				// Update user state immediately, profile might follow
+				authStore._update({
+					user: user,
+					profile: currentState.profile?.auth_id === user.id ? currentState.profile : null, // Keep profile if user is same
+					loading: true, // Set loading true while potentially fetching profile
+					error: null
+				});
+
+				// Decouple profile fetch from the auth callback using setTimeout
+				// This seems necessary to prevent hangs in certain environments/timings.
+				setTimeout(async () => {
+					const latestState = get(authStore);
+					// Only fetch if the user is still the same and profile hasn't been loaded
+					if (latestState.user?.id === user.id && !latestState.profile) {
+						const profile = await fetchProfile(user);
+						authStore._update({
+							// User should still be set
+							profile: profile || null,
+							loading: false,
+							error: profile ? null : 'Failed to fetch profile'
+						});
+					} else if (latestState.user?.id === user.id) {
+						// User is correct, profile already loaded or fetch wasn't needed
+						authStore._update({ loading: false });
+					}
+					// If user changed before timeout, do nothing
+				}, 0);
+
+			} else {
+				// Event received without session/user - treat as logged out
+				console.warn(`[AuthStore] ${event} event received without session/user.`);
+				authStore.reset();
+			}
+		} else if (event === 'SIGNED_OUT') {
+			authStore.reset();
+		} else if (event === 'USER_UPDATED' && session?.user) {
+			// If user email/phone etc. changes, update it.
+			// Profile might need re-fetching depending on what can change.
+			authStore._update({ user: session.user });
+		}
+	});
+}

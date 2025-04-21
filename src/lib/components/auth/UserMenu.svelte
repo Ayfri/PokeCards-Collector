@@ -45,18 +45,18 @@
   async function handleSignOut() {
     try {
       closeMenu();
-      
+
       // Supprimer le token manuellement (client-side only)
       if (browser) {
         localStorage.removeItem('supabase.auth.token');
       }
-      
+
       // Réinitialiser le store
       authStore.reset();
-      
+
       // Appeler la fonction de déconnexion
       await signOut();
-      
+
       // Use goto for navigation
       await goto('/');
     } catch (error) {
@@ -66,9 +66,6 @@
   }
 
   onMount(() => {
-    // Initialize the auth store
-    authStore.init();
-
     // Add click listener on mount (client-side only)
     if (browser) {
       window.addEventListener('click', handleClickOutside, true);
@@ -86,7 +83,7 @@
 <div class="relative">
   <!-- Auth modal -->
   <AuthModal isOpen={isAuthModalOpen} on:close={closeAuthModal} />
-  
+
   <!-- User button -->
   <button
     type="button"
@@ -104,7 +101,7 @@
       <User size={24} />
     {/if}
   </button>
-  
+
   <!-- Dropdown menu -->
   {#if isMenuOpen}
     <div
@@ -185,4 +182,4 @@
       {/if}
     </div>
   {/if}
-</div> 
+</div>

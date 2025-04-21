@@ -1,18 +1,17 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+// Removed browser import as standard module caching should handle singleton
 
-// Récupérer les valeurs des variables d'environnement
 const supabaseUrl = PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = PUBLIC_SUPABASE_ANON_KEY;
 
-// Créer le client Supabase
-let supabase: SupabaseClient;
-try {
-	supabase = createClient(supabaseUrl, supabaseAnonKey);
-} catch (error) {
-	// En cas d'erreur d'initialisation, créer un client par défaut
-	supabase = createClient(supabaseUrl, supabaseAnonKey);
-	console.error('Error initializing Supabase:', error);
+if (!supabaseUrl || !supabaseAnonKey) {
+	console.error('Supabase URL or Anon Key is missing. Check your environment variables.');
+	// Throw an error or handle appropriately if keys are missing
+	// For now, let createClient handle potential errors if called with undefined
 }
+
+// Create the Supabase client - This ensures it runs only once when the module is first imported.
+const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 
 export { supabase };

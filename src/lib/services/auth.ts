@@ -1,366 +1,218 @@
 import { supabase } from '../supabase';
-import type { Session, User, AuthError } from '@supabase/supabase-js';
+import type { Session, User, AuthError as SupabaseAuthError } from '@supabase/supabase-js';
 import { authStore } from '../stores/auth';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { get } from 'svelte/store';
 
-// Types
-export interface AuthResponse {
-	user: User | null;
-	session: Session | null;
-	error: AuthError | null;
+// Define a simpler error type for internal error reporting if needed
+interface SimpleAuthError {
+	name: string;
+	message: string;
 }
 
-// Flag to prevent multiple refresh attempts
-let isRefreshing = false;
+// Type for the public return values of auth functions
+export interface AuthResponse {
+	error: SimpleAuthError | SupabaseAuthError | null;
+	session: Session | null;
+	user: User | null;
+}
 
-// Refresh the session token
-export async function refreshToken(): Promise<{ session: Session | null, error: AuthError | null }> {
-	if (isRefreshing) {
-		// Prevent concurrent refreshes
-		return { session: null, error: null };
-	}
+// --- Private Helper Functions ---
 
-	isRefreshing = true;
+function _logAuthError(message: string, operation: string, error?: any) {
+	console.error(`[AuthService] ${operation} error: ${message}`, error || '');
+}
+
+function _createSimpleError(message: string, name: string = 'UnknownAuthError'): SimpleAuthError {
+	return { name, message };
+}
+
+// Helper to fetch user profile
+async function _fetchUserProfile(userId: string): Promise<any | null> {
 	try {
-		console.log('Refreshing authentication token...');
-
-		// Try to refresh the session using Supabase client
-		const { data, error } = await supabase.auth.refreshSession();
+		const { data: profile, error } = await supabase
+			.from('profiles')
+			.select('*')
+			.eq('auth_id', userId)
+			.single();
 
 		if (error) {
-			console.error('Failed to refresh token:', error);
+			console.error('Error fetching user profile:', error);
+			return null;
+		}
+		return profile || null;
+	} catch (error) {
+		console.error('Exception fetching user profile:', error);
+		return null;
+	}
+}
+
+// --- Public Auth Functions ---
+
+// Flag to prevent multiple concurrent refresh attempts
+let isRefreshing = false;
+
+export function isSessionExpired(session: Session | null): boolean {
+	if (!session?.expires_at) {
+		return true;
+	}
+	const expiryTime = session.expires_at * 1000;
+	const currentTime = Date.now();
+	const fiveMinutesInMs = 5 * 60 * 1000;
+	return currentTime > expiryTime - fiveMinutesInMs;
+}
+
+// Note: getCurrentUser and getSession might not be strictly needed now
+// if the authStore is the single source of truth derived from onAuthStateChange.
+// However, they can be useful for imperative checks if required.
+
+export async function getCurrentUser(): Promise<{ user: User | null; error: SupabaseAuthError | SimpleAuthError | null }> {
+	try {
+		// Use the store as the primary source if initialized
+		const currentStore = get(authStore);
+		if (currentStore.initialized) {
+			return { user: currentStore.user, error: currentStore.error ? _createSimpleError(currentStore.error) : null };
+		}
+		// Fallback to Supabase if store not initialized (e.g., server-side context?)
+		const { data, error } = await supabase.auth.getUser();
+		if (error) {
+			_logAuthError(error.message, 'getting user', error);
+			return { user: null, error };
+		}
+		return { user: data?.user ?? null, error: null };
+	} catch (error: any) {
+		_logAuthError(error.message, 'getting user', error);
+		return { user: null, error: _createSimpleError('An unexpected error occurred while getting the user') };
+	}
+}
+
+export async function getSession(): Promise<{ session: Session | null; error: SupabaseAuthError | SimpleAuthError | null }> {
+	try {
+		const { data, error } = await supabase.auth.getSession();
+		if (error) {
+			_logAuthError(error.message, 'getting session', error);
 			return { session: null, error };
 		}
-
-		console.log('Token refreshed successfully');
-
-		// If we got a new session, update the auth store
-		if (data.session) {
-			// Get the user profile
-			if (data.user) {
-				const { data: profile } = await supabase
-					.from('profiles')
-					.select('*')
-					.eq('auth_id', data.user.id)
-					.single();
-
-				// Update the auth store
-				authStore.setUser(data.user);
-				authStore.setProfile(profile || null);
-			}
-
-			// Store the refreshed token in localStorage
-			try {
-				const tokenData = {
-					access_token: data.session.access_token,
-					refresh_token: data.session.refresh_token,
-					expires_at: data.session.expires_at,
-					expires_in: data.session.expires_in,
-					user: data.user
-				};
-
-				localStorage.setItem('supabase.auth.token', JSON.stringify(tokenData));
-			} catch (storageError) {
-				console.error('Error storing refreshed token:', storageError);
-			}
+		if (data.session && isSessionExpired(data.session)) {
+			console.log('[AuthService] Session expired, attempting refresh...');
+			return await refreshToken(); // refreshToken interacts with store via events
 		}
-
 		return { session: data.session, error: null };
-	} catch (error) {
-		console.error('Exception during token refresh:', error);
-		return {
-			session: null,
-			error: {
-				name: 'RefreshError',
-				message: 'Unknown error refreshing token'
-			} as AuthError
-		};
+	} catch (error: any) {
+		_logAuthError(error.message, 'getting session', error);
+		return { session: null, error: _createSimpleError('An unexpected error occurred while getting the session') };
+	}
+}
+
+export async function refreshToken(): Promise<{ session: Session | null; error: SupabaseAuthError | SimpleAuthError | null }> {
+	if (isRefreshing) {
+		return { session: null, error: null };
+	}
+	isRefreshing = true;
+	console.log('[AuthService] Refreshing authentication token...');
+	try {
+		// refreshSession will trigger onAuthStateChange, updating the store
+		const { data, error } = await supabase.auth.refreshSession();
+		if (error) {
+			_logAuthError(error.message, 'token refresh', error);
+			// Don't manually update store, let listener handle SIGNED_OUT/error
+			return { session: null, error };
+		}
+		console.log('[AuthService] Token refreshed successfully via refreshSession.');
+		return { session: data.session, error: null };
+	} catch (error: any) {
+		_logAuthError(error.message, 'token refresh', error);
+		return { session: null, error: _createSimpleError('An unexpected error occurred during token refresh') };
 	} finally {
 		isRefreshing = false;
 	}
 }
 
-// Check if the session is expired or about to expire
-export function isSessionExpired(session: Session | null): boolean {
-	if (!session || !session.expires_at) {
-		return true;
+export async function signIn(email: string, password: string): Promise<AuthResponse> {
+	try {
+		// signInWithPassword will trigger onAuthStateChange (SIGNED_IN)
+		const { data, error } = await supabase.auth.signInWithPassword({
+			email,
+			password,
+		});
+		if (error) {
+			_logAuthError(error.message, 'sign in', error);
+			return { user: null, session: null, error };
+		}
+		if (!data.user || !data.session) {
+			const errMsg = 'Sign in completed but no user/session returned';
+			_logAuthError(errMsg, 'sign in');
+			return { user: null, session: null, error: _createSimpleError(errMsg, 'SignInError') };
+		}
+		// Success state will be handled by the authStore listener
+		return { user: data.user, session: data.session, error: null };
+	} catch (error: any) {
+		_logAuthError(error.message, 'sign in', error);
+		return { user: null, session: null, error: _createSimpleError('An unexpected error occurred during sign in') };
 	}
-
-	// Check if the session is expired or will expire in the next 5 minutes
-	const expiryTime = session.expires_at * 1000; // Convert to milliseconds
-	const currentTime = Date.now();
-	const fiveMinutesInMs = 5 * 60 * 1000;
-
-	return currentTime > (expiryTime - fiveMinutesInMs);
 }
 
-// Sign up a new user
+export async function signOut(): Promise<{ error: SupabaseAuthError | SimpleAuthError | null }> {
+	try {
+		// Store reset is now handled by the listener on SIGNED_OUT event
+		// localStorage is also handled by the store reset method
+		const { error } = await supabase.auth.signOut();
+		if (error) {
+			_logAuthError(error.message, 'sign out', error);
+			// Still proceed with potential reload
+		}
+		// Reloading might still be desired depending on app structure
+		// Consider using goto('/', { invalidateAll: true }) for cleaner state reset in SvelteKit
+		setTimeout(() => window.location.reload(), 100);
+		return { error };
+	} catch (error: any) {
+		_logAuthError(error.message, 'sign out', error);
+		setTimeout(() => window.location.reload(), 100);
+		return { error: _createSimpleError('An unexpected error occurred during sign out') };
+	}
+}
+
 export async function signUp(email: string, password: string, username: string): Promise<AuthResponse> {
 	try {
-		// 1. Sign up the user
+		// 1. Sign up user - may trigger onAuthStateChange if auto-confirm/sign-in
 		const { data: authData, error: authError } = await supabase.auth.signUp({
 			email,
 			password,
 		});
-
 		if (authError) {
+			_logAuthError(authError.message, 'sign up', authError);
 			return { user: null, session: null, error: authError };
 		}
-
 		if (!authData.user) {
-			return {
-				user: null,
-				session: null,
-				error: {
-					name: 'UserCreationError',
-					message: 'User could not be created'
-				} as AuthError
-			};
+			const errMsg = 'User sign up succeeded but no user data returned';
+			_logAuthError(errMsg, 'sign up');
+			return { user: null, session: null, error: _createSimpleError(errMsg, 'UserCreationError') };
 		}
 
-		// 2. Create a profile for the user using service_role (bypasses RLS)
-		// NOTE: In a production app, you would typically do this on the server
-		// or in a Supabase Function, not the client
+		// 2. Create profile entry
+		// WARNING: Still potentially insecure from client-side.
 		const { error: profileError } = await supabase
 			.from('profiles')
 			.insert({
-				username,
 				auth_id: authData.user.id,
 				is_public: true,
+				username,
 			})
 			.select()
 			.single();
 
 		if (profileError) {
-			return {
-				user: null,
-				session: null,
-				error: {
-					name: 'ProfileCreationError',
-					message: profileError.message
-				} as AuthError
-			};
+			const errMsg = `Profile creation failed: ${profileError.message}`;
+			_logAuthError(errMsg, 'sign up profile creation', profileError);
+			// User exists in auth but profile creation failed.
+			return { user: null, session: null, error: _createSimpleError(errMsg, 'ProfileCreationError') };
 		}
 
+		// Success. If auto-confirm is on, listener will handle SIGNED_IN.
+		// If email confirmation needed, user/session is returned but store won't auto-update profile yet.
 		return { user: authData.user, session: authData.session, error: null };
-	} catch (error) {
-		console.error('Sign up error:', error);
-		return {
-			user: null,
-			session: null,
-			error: {
-				name: 'UnknownError',
-				message: 'An unknown error occurred during sign up'
-			} as AuthError
-		};
-	}
-}
 
-// Sign in a user
-export async function signIn(email: string, password: string): Promise<AuthResponse> {
-	try {
-		// Définir une promesse avec timeout pour éviter les blocages
-		const timeoutPromise = new Promise<AuthResponse>((_, reject) => {
-			setTimeout(() => {
-				reject(new Error('Login timeout: Connection took too long'));
-			}, 10000); // 10 secondes
-		});
-
-		const authPromise = new Promise<AuthResponse>(async (resolve) => {
-			try {
-				const supabaseUrl = PUBLIC_SUPABASE_URL;
-				const supabaseAnonKey = PUBLIC_SUPABASE_ANON_KEY;
-
-				// Tenter la connexion via l'API REST directement (contourne certains problèmes CORS)
-				try {
-					const response = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
-						method: 'POST',
-						headers: {
-							'apikey': supabaseAnonKey,
-							'Content-Type': 'application/json'
-						},
-						body: JSON.stringify({
-							email,
-							password
-						})
-					});
-
-					if (!response.ok) {
-						// Fallback au client Supabase
-						const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-							email,
-							password,
-						});
-
-						if (signInError) {
-							resolve({
-								user: null,
-								session: null,
-								error: signInError
-							});
-							return;
-						}
-
-						resolve({
-							user: signInData?.user || null,
-							session: signInData?.session || null,
-							error: null
-						});
-						return;
-					}
-
-					// Succès avec fetch direct
-					const authData = await response.json();
-
-					const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-						headers: {
-							'apikey': supabaseAnonKey,
-							'Authorization': `Bearer ${authData.access_token}`,
-							'Content-Type': 'application/json'
-						}
-					});
-
-					if (!userResponse.ok) {
-						// Store token even if user fetch fails, session is valid
-						localStorage.setItem('supabase.auth.token', JSON.stringify(authData));
-						resolve({
-							user: null,
-							session: {
-								access_token: authData.access_token,
-								refresh_token: authData.refresh_token,
-								expires_at: authData.expires_at,
-								expires_in: authData.expires_in,
-								token_type: authData.token_type,
-								provider_token: authData.provider_token,
-								provider_refresh_token: authData.provider_refresh_token
-							} as Session,
-							error: null
-						});
-						return;
-					}
-
-					const userData = await userResponse.json();
-
-					// Construct session object
-					const session: Session = {
-						access_token: authData.access_token,
-						refresh_token: authData.refresh_token,
-						expires_at: authData.expires_at,
-						expires_in: authData.expires_in,
-						token_type: authData.token_type,
-						user: userData,
-						provider_token: authData.provider_token,
-						provider_refresh_token: authData.provider_refresh_token
-					};
-
-					// Save session to localStorage
-					localStorage.setItem('supabase.auth.token', JSON.stringify(session));
-
-					resolve({
-						user: userData,
-						session: session,
-						error: null
-					});
-				} catch (fetchError) {
-					resolve({ user: null, session: null, error: { name: 'FetchError', message: 'Failed to fetch during sign in' } as AuthError });
-				}
-			} catch (innerError) {
-				resolve({ user: null, session: null, error: { name: 'SignInError', message: 'An unexpected error occurred during sign in' } as AuthError });
-			}
-		});
-
-		// Utiliser une race entre la promesse d'authentification et le timeout
-		return await Promise.race([authPromise, timeoutPromise]);
-	} catch (error) {
-		console.error('Sign in error:', error);
-		return {
-			user: null,
-			session: null,
-			error: {
-				name: 'UnknownError',
-				message: 'An unknown error occurred during sign in'
-			} as AuthError
-		};
-	}
-}
-
-// Sign out the current user
-export async function signOut(): Promise<{ error: AuthError | null }> {
-	try {
-		// Supprimer le token du localStorage
-		localStorage.removeItem('supabase.auth.token');
-
-		// Reset local auth state
-		authStore.reset();
-
-		let error = null;
-
-		try {
-			// Essayer également la méthode Supabase standard
-			const result = await supabase.auth.signOut();
-			error = result.error;
-		} catch (e) {
-			// Ignorer les erreurs de déconnexion
-		}
-
-		// Always reload, even if there was an error
-		setTimeout(() => window.location.reload(), 100);
-
-		return { error };
-	} catch (error) {
-		// Même en cas d'erreur globale, on tente de recharger la page
-		setTimeout(() => window.location.reload(), 100);
-
-		return {
-			error: {
-				name: 'UnknownError',
-				message: 'An unknown error occurred during sign out'
-			} as AuthError
-		};
-	}
-}
-
-// Get the current session
-export async function getSession(): Promise<{ session: Session | null, error: AuthError | null }> {
-	try {
-		const { data, error } = await supabase.auth.getSession();
-
-		if (error) {
-			return { session: null, error };
-		}
-
-		// Check if the session needs to be refreshed
-		if (data.session && isSessionExpired(data.session)) {
-			console.log('Session is expired or about to expire, refreshing...');
-			return await refreshToken();
-		}
-
-		return { session: data.session, error: null };
-	} catch (error) {
-		console.error('Get session error:', error);
-		return {
-			session: null,
-			error: {
-				name: 'UnknownError',
-				message: 'An unknown error occurred while getting session'
-			} as AuthError
-		};
-	}
-}
-
-// Get the current user
-export async function getCurrentUser(): Promise<{ user: User | null, error: AuthError | null }> {
-	try {
-		const { data, error } = await supabase.auth.getUser();
-		return { user: data?.user || null, error };
-	} catch (error) {
-		console.error('Get current user error:', error);
-		return {
-			user: null,
-			error: {
-				name: 'UnknownError',
-				message: 'An unknown error occurred while getting user'
-			} as AuthError
-		};
+	} catch (error: any) {
+		_logAuthError(error.message, 'sign up', error);
+		return { user: null, session: null, error: _createSimpleError('An unexpected error occurred during sign up') };
 	}
 }
