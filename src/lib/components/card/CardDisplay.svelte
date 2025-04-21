@@ -166,7 +166,7 @@
 
 <svelte:window on:mousemove={handleMouseMove}/>
 
-<div class="max-lg:flex max-lg:flex-col max-lg:gap-8 max-lg:flex-wrap max-lg:content-center">
+<div class="flex flex-col gap-8 content-center">
 	<!-- Evolution Chain Component (Only for Pokemon) -->
 	{#if pokemon && isInitialRenderComplete}
 		<EvolutionChain {card} {pokemons} {cards} />
@@ -181,38 +181,17 @@
 		</div>
 	{/if}
 
-	<!-- Main card display with adjacent navigation -->
-	<div class="card-navigation-container flex items-center justify-between w-full px-12 max-w-8xl mx-auto perspective-container">
-		<!-- Previous Pokemon (Only for Pokemon) -->
-		{#if pokemon && previousPokemon}
-			<a href={`/card/${previousPokemon.id}/`} class="prev-pokemon-nav flex flex-col items-center w-48">
-				<div class="nav-pokemon-wrapper relative">
-					<div class="pokemon-sprite-container relative">
-						<img
-							src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
-							alt={pascalCase(previousPokemon.name)}
-							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
-							title={pascalCase(previousPokemon.name)}
-							on:error={handlePokemonImageError}
-							data-pokemon-id={previousPokemon.id}
-						/>
-					</div>
-				</div>
-				<span class="nav-pokemon-name mt-2 text-center text-sm">{pascalCase(previousPokemon.name)}</span>
-				<span class="nav-pokemon-id text-xs text-gray-400 mt-1">#{previousPokemon.id}</span>
-			</a>
-		{:else}
-			<div class="w-48"></div> <!-- Placeholder for alignment -->
-		{/if}
+	<!-- Main card display container -->
+	<div class="card-display-area w-full px-4 md:px-12 max-w-8xl mx-auto perspective-container flex flex-col items-center">
 
 		<!-- Center Card -->
-		<div class="center-card-wrapper relative flex-shrink-0 mx-4">
+		<div class="center-card-wrapper relative flex-shrink-0 order-1 lg:order-2">
 			<!-- Conditional Aura for Pokemon Types -->
 			{#if pokemon}
 				<div class="card-aura {currentType}" id="card-aura"></div>
 			{/if}
 			<div
-				class="w-[23rem] max-w-[23rem] h-[32rem] max-h-[32rem] mx-auto rounded-xl shadow-lg card-face interactive-card {pokemon ? '' : 'non-pokemon'}"
+				class="w-[21rem] h-[29rem] sm:w-[20rem] sm:h-[28rem] lg:w-[23rem] lg:h-[32rem] max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {pokemon ? '' : 'non-pokemon'}"
 				bind:this={centerCard}
 				data-card-id={currentSet?.ptcgoCode}
 				data-card-type={currentType}
@@ -231,15 +210,77 @@
 			</div>
 		</div>
 
-		<!-- Next Pokemon (Only for Pokemon) -->
+		<!-- Mobile Navigation Wrapper -->
+		<div class="mobile-nav-wrapper w-full flex justify-between items-center mt-4 lg:hidden order-2">
+			<!-- Previous Pokemon (Mobile) -->
+			{#if pokemon && previousPokemon}
+				<a href={`/card/${previousPokemon.id}/`} class="prev-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity">
+					<img
+						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
+						alt={pascalCase(previousPokemon.name)}
+						class="w-16 h-16 object-contain nav-pokemon-image"
+						title={pascalCase(previousPokemon.name)}
+						on:error={handlePokemonImageError}
+						data-pokemon-id={previousPokemon.id}
+					/>
+					<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(previousPokemon.name)}</span>
+					<span class="nav-pokemon-id text-xs text-gray-400">#{previousPokemon.id}</span>
+				</a>
+			{:else}
+				<div class="w-16"></div> <!-- Placeholder for alignment -->
+			{/if}
+
+			<!-- Next Pokemon (Mobile) -->
+			{#if pokemon && nextPokemon}
+				<a href={`/card/${nextPokemon.id}/`} class="next-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity">
+					<img
+						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
+						alt={pascalCase(nextPokemon.name)}
+						class="w-16 h-16 object-contain nav-pokemon-image"
+						title={pascalCase(nextPokemon.name)}
+						on:error={handlePokemonImageError}
+						data-pokemon-id={nextPokemon.id}
+					/>
+					<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(nextPokemon.name)}</span>
+					<span class="nav-pokemon-id text-xs text-gray-400">#{nextPokemon.id}</span>
+				</a>
+			{:else}
+				<div class="w-16"></div> <!-- Placeholder for alignment -->
+			{/if}
+		</div>
+
+		<!-- Desktop Navigation -->
+		<!-- Previous Pokemon (Desktop) -->
+		{#if pokemon && previousPokemon}
+			<a href={`/card/${previousPokemon.id}/`} class="prev-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-1">
+				<div class="nav-pokemon-wrapper relative">
+					<div class="pokemon-sprite-container relative">
+						<img
+							src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
+							alt={pascalCase(previousPokemon.name)}
+							class="w-32 h-32 object-contain nav-pokemon-image"
+							title={pascalCase(previousPokemon.name)}
+							on:error={handlePokemonImageError}
+							data-pokemon-id={previousPokemon.id}
+						/>
+					</div>
+				</div>
+				<span class="nav-pokemon-name mt-2 text-center text-sm">{pascalCase(previousPokemon.name)}</span>
+				<span class="nav-pokemon-id text-xs text-gray-400 mt-1">#{previousPokemon.id}</span>
+			</a>
+		{:else}
+			<div class="w-48 prev-pokemon-placeholder hidden lg:block order-1"></div> <!-- Placeholder for alignment -->
+		{/if}
+
+		<!-- Next Pokemon (Desktop) -->
 		{#if pokemon && nextPokemon}
-			<a href={`/card/${nextPokemon.id}/`} class="next-pokemon-nav flex flex-col items-center w-48">
+			<a href={`/card/${nextPokemon.id}/`} class="next-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-3">
 				<div class="nav-pokemon-wrapper relative">
 					<div class="pokemon-sprite-container relative">
 						<img
 							src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
 							alt={pascalCase(nextPokemon.name)}
-							class="w-32 h-32 object-contain nav-pokemon-image silhouette"
+							class="w-32 h-32 object-contain nav-pokemon-image"
 							title={pascalCase(nextPokemon.name)}
 							on:error={handlePokemonImageError}
 							data-pokemon-id={nextPokemon.id}
@@ -250,7 +291,7 @@
 				<span class="nav-pokemon-id text-xs text-gray-400 mt-1">#{nextPokemon.id}</span>
 			</a>
 		{:else}
-			<div class="w-48"></div> <!-- Placeholder for alignment -->
+			<div class="w-48 next-pokemon-placeholder hidden lg:block order-3"></div> <!-- Placeholder for alignment -->
 		{/if}
 	</div>
 
@@ -334,15 +375,6 @@
 		transition: filter 0.3s ease;
 	}
 
-	.nav-pokemon-image.silhouette {
-		filter: brightness(0.3) contrast(1.1) saturate(0.9);
-	}
-
-	.prev-pokemon-nav:hover .nav-pokemon-image.silhouette,
-	.next-pokemon-nav:hover .nav-pokemon-image.silhouette {
-		filter: brightness(1) contrast(1) saturate(1);
-	}
-
 	.nav-pokemon-name {
 		font-weight: bold;
 	}
@@ -351,52 +383,65 @@
 		position: relative;
 	}
 
-	@media (max-width: 1024px) {
-		.card-navigation-container {
+	@media (min-width: 1024px) {
+		.card-display-area {
+			flex-direction: row; /* Row layout for desktop */
+			justify-content: space-between;
+			align-items: center;
+		}
+	}
+
+	@media (max-width: 1023px) { /* Adjusted breakpoint slightly */
+		/* Styles moved to Tailwind classes */
+		/* .card-navigation-container {
 			flex-direction: column;
 			align-items: center;
 			padding: 0;
 			gap: 1rem;
-		}
+		} */
 
-		.prev-pokemon-nav, .next-pokemon-nav {
-			position: absolute;
-			top: 50%;
-			transform: translateY(-50%);
-			z-index: 10;
-			width: 5rem;
-		}
+		/* Updated styles for mobile navigation */
+		/* .prev-pokemon-nav, .next-pokemon-nav {
+			width: 8rem;
+			opacity: 1;
+			margin-top: 1rem;
+		} */
 
-		.prev-pokemon-nav {
-			left: 1rem;
-		}
+		/* .prev-pokemon-nav {
+			order: 1;
+		} */
 
-		.next-pokemon-nav {
-			right: 1rem;
-		}
-
-		.nav-pokemon-image {
-			width: 3rem;
-			height: 3rem;
-		}
-
-		.nav-pokemon-name, .nav-pokemon-id {
-			display: none; /* Hide text on smaller screens */
-		}
-
-		.center-card-wrapper {
-			order: 2; /* Ensure card is visually between nav buttons */
+		/* .center-card-wrapper {
+			order: 2;
 			margin: 0;
-			width: 100%; /* Allow card to take full width */
+			width: 100%;
 			display: flex;
 			justify-content: center;
-			margin-top: 1rem; /* Add some space */
-		}
+			margin-top: 1rem;
+		} */
 
-		.interactive-card {
+		/* .next-pokemon-nav {
+			order: 3;
+		} */
+
+		/* .prev-pokemon-placeholder, .next-pokemon-placeholder {
+			display: none;
+		} */
+
+		/* .nav-pokemon-image {
+			width: 4rem;
+			height: 4rem;
+		} */
+
+		/* .nav-pokemon-name, .nav-pokemon-id {
+			display: block;
+		} */
+
+		/* Moved card size adjustments to Tailwind */
+		/* .interactive-card {
 			width: 18rem;
 			height: 25rem;
-		}
+		} */
 
 		.card-aura {
 			filter: blur(20px);
@@ -405,22 +450,17 @@
 	}
 
 	@media (max-width: 640px) {
-		.interactive-card {
+		/* Moved card size adjustments to Tailwind */
+		/* .interactive-card {
 			width: 15rem;
 			height: 21rem;
-		}
+		} */
 
 		.card-aura {
 			filter: blur(15px);
 			opacity: 0.4;
 		}
 
-		.prev-pokemon-nav {
-			left: 0.5rem;
-		}
-
-		.next-pokemon-nav {
-			right: 0.5rem;
-		}
+		/* Further mobile adjustments if needed */
 	}
 </style>
