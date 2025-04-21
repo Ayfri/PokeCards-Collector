@@ -7,7 +7,7 @@
 	import { pascalCase } from '$helpers/strings';
 	import CardImage from '@components/card/CardImage.svelte';
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, pushState } from '$app/navigation';
 
 	// --- Props ---
 	export let cards: FullCard[]; // Expects the primary card to be the first element
@@ -127,54 +127,12 @@
 
 	// Update the displayed card and URL when a related card is selected
 	function handleCardSelect(selectedCard: FullCard) {
-		// --- Find card and set details ---
-		const index = cards.findIndex(c => c.cardCode === selectedCard.cardCode || (c.image && c.image === selectedCard.image)); // Find by unique identifier
-		const selectedSet = sets.find(set => set.name === selectedCard.setName);
-
-		if (index > -1) {
-			// --- Determine the correct URL ---
-			let targetUrl = '';
-			const cardCode = selectedCard.cardCode;
-
-			if (!cardCode) {
-				console.error('Selected card is missing a cardCode, cannot navigate:', selectedCard);
-				return;
-			}
-
-			// Check if it's a Pokemon card with necessary details for the query param URL
-			if (selectedSet && selectedCard.pokemonNumber) {
-				const pokemonId = selectedCard.pokemonNumber;
-				const setCode = selectedSet.ptcgoCode;
-				// Extract card number (assuming filename contains it)
-				const filenameParts = selectedCard.image?.split('/').at(-1)?.split('_') || [];
-				const cardNumberRaw = filenameParts[0] || '';
-				const cardNumberMatch = cardNumberRaw.match(/[a-z]*(\d+)[a-z]*/i);
-				const cardNumber = cardNumberMatch ? cardNumberMatch[1] : undefined;
-
-				if (pokemonId && setCode && cardNumber) {
-					targetUrl = `/card/${pokemonId}?set=${setCode}&number=${cardNumber}`;
-				} else {
-					console.warn('Could not determine full details for Pokemon URL, falling back to card code.');
-					targetUrl = `/card/${cardCode}`;
-				}
-			} else {
-				// Not a Pokemon card, or missing details - use cardCode as the identifier
-				targetUrl = `/card/${cardCode}`;
-			}
-
-			// --- Navigate using goto ---
-			if (targetUrl && (window.location.pathname + window.location.search !== targetUrl)) {
-				goto(targetUrl);
-				// No need to manually scroll, goto usually handles scroll reset.
-				// No need to manually update `cards` array, the load function will provide new data.
-			} else if (!targetUrl) {
-				console.error('Could not determine target URL for navigation.');
-			} // else: URL is the same, do nothing
-
-		} else {
-			console.warn('Selected card not found in the current list:', selectedCard);
-			return; // Don't proceed if card isn't found
-		}
+		card = selectedCard;
+		pushState(`/card/${selectedCard.cardCode}/`, {});
+		window.scroll({
+			top: 150,
+			behavior: 'smooth'
+		});
 	}
 
 	// --- Lifecycle ---
