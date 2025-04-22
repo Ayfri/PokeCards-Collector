@@ -1,51 +1,35 @@
 <script lang="ts">
 	export let isActive: boolean = false;
 	export let onClick: () => void;
+
+	let classNames = '';
+	export { classNames as class };
 </script>
 
 <button
-	class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 rounded text-sm py-1 px-3 h-8 flex-1 transition-all duration-300 z-0
-		   {isActive 
+	class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 rounded text-sm py-1 px-3 h-8 flex-1 transition-all duration-300 z-0 hover:text-black
+		   {isActive
 			? 'border-[#FFB700] text-[#FFB700]'
-			: 'border-white text-white hover:text-black'}"
+			: 'border-white text-white hover:border-[#FFB700]'} {classNames}"
 	on:click={onClick}
 >
 	<span class="relative z-10"><slot /></span>
 </button>
 
 <style>
-	.animated-hover-button:not(.isActive)::before {
-		content: '';
-		position: absolute;
-		bottom: 0;
-		left: 0;
-		width: 100%;
-		height: 0;
+	.animated-hover-button::before {
 		background-color: #FFB700;
+		bottom: 0;
+		content: '';
+		height: 0;
+		left: 0;
+		position: absolute;
 		transition: height 0.3s ease-in-out;
+		width: 100%;
 		z-index: 0;
 	}
 
-	.animated-hover-button:not(.isActive):hover::before {
+	.animated-hover-button:hover::before {
 		height: 100%;
-	}
-	
-	.animated-hover-button span {
-		position: relative;
-		z-index: 1;
-	}
-	
-	.animated-hover-button:not(.isActive) {
-		transition: color 0.3s ease-in-out, border-color 0.3s ease-in-out;
-	}
-
-	.animated-hover-button:not(.isActive):hover {
-		color: black;
-		border-color: #FFB700;
-	}
-
-	.animated-hover-button.isActive {
-		/* Active state styles are now handled by Tailwind classes */
-		/* No hover background change */
 	}
 </style>

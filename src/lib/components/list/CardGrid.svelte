@@ -14,7 +14,7 @@
 	import XIcon from 'lucide-svelte/icons/x';
 	import SlidersHorizontalIcon from 'lucide-svelte/icons/sliders-horizontal';
 	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
-
+	import Button from '$lib/components/filters/Button.svelte';
 	export let cards: FullCard[];
 	export let sets: Set[];
 	export let pokemons: Pokemon[];
@@ -260,17 +260,15 @@
 			</div>
 			<!-- Filters Button (Always Visible) -->
 			<div class="relative">
-				<button
-					class="animated-hover-button filters-button relative overflow-hidden bg-transparent border-2 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 z-0
-						   {activeFiltersCount > 0
-								? 'border-[#FFB700] text-[#FFB700]'
-								: 'border-white text-white'}"
-					on:click={toggleFilters}
+				<Button
+					onClick={toggleFilters}
+					isActive={activeFiltersCount > 0}
+					class="px-4"
 				>
 					<span class="relative z-10 flex items-center">
 						<SlidersHorizontalIcon size={16} class="mr-1"/> Filters
 					</span>
-				</button>
+				</Button>
 				{#if activeFiltersCount > 0}
 					<span class="absolute -bottom-1 -right-1 bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full pointer-events-none z-20">
 						{activeFiltersCount}
