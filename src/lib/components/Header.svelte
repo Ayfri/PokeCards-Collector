@@ -15,6 +15,7 @@
 <header class="w-full p-2 pb-6 lg:pb-12">
 	<div class="relative py-1.5 xs:py-2.5 lg:py-3 px-4 xs:px-6 lg:px-8 flex items-center justify-between gap-4 rounded-full z-50 bg-gray-800">
 		<a class="text-gray-400 max-xs:text-sm" href="/">Cards</a>
+		<a class="text-gray-400 max-xs:text-sm" href="/sets">Sets</a>
 		<a class="text-gray-400 max-xs:text-sm" href="/random">Random Card</a>
 		<span class="flex-1"></span>
 		<a class="logo-link absolute left-1/2 top-full xs:top-3/4 lg:top-full -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full z-20" href="/">
