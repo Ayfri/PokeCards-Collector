@@ -10,7 +10,7 @@
 	import TextInput from '$lib/components/filters/TextInput.svelte';
 	import { onMount } from 'svelte';
 	import type {FullCard, Set, Pokemon} from '$lib/types';
-	import { fly } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import XIcon from 'lucide-svelte/icons/x';
 	import SlidersHorizontalIcon from 'lucide-svelte/icons/sliders-horizontal';
 	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
@@ -21,7 +21,6 @@
 	export let rarities: string[];
 	export let types: string[];
 	export let artists: string[] = [];
-	export let showTitleAndControls: boolean = true;
 	export let pageTitle: string | null = "Card List";
 
 	let clientWidth: number = 0;
@@ -174,51 +173,30 @@
 		}
 	}
 
-	function toggleFilters() {
-		showFilters = !showFilters;
-		if (showFilters) {
-			setTimeout(() => {
-				filterOverlay = true;
-			}, 10);
-			// Prevent scrolling when filter is open
-			document.body.style.overflow = 'hidden';
-		} else {
-			filterOverlay = false;
-			// Restore scrolling when filter is closed
-			document.body.style.overflow = '';
-		}
-	}
-
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape' && showFilters) {
-			toggleFilters();
-		}
-	}
-
-	// Close filters when clicking outside
-	function handleClickOutside(e: MouseEvent) {
-		if (showFilters && e.target && e.target instanceof HTMLElement) {
-			if (e.target.classList.contains('filter-overlay')) {
-				toggleFilters();
-			}
+			showFilters = false;
 		}
 	}
 </script>
 
 <svelte:window bind:innerWidth={clientWidth} on:keydown={handleKeydown}/>
-
-<!-- Overlay -->
-<div
-	class="filter-overlay fixed inset-0 z-50 {filterOverlay ? 'bg-black/70' : 'bg-black/0 pointer-events-none'} transition-all duration-300"
-	on:click={handleClickOutside}
-></div>
+<svelte:body style:overflow={showFilters ? 'hidden' : 'auto'}/>
 
 {#if showFilters}
+	<!-- Overlay -->
+	<div
+		aria-hidden={!showFilters}
+		class="filter-overlay fixed inset-0 z-50 bg-black/70 transition-all duration-300"
+		transition:fade={{ duration: 200 }}
+		on:click={() => showFilters = false}
+		on:keydown={handleKeydown}
+	></div>
 	<!-- Drawer -->
 	<div class="fixed top-0 h-screen w-full md:w-[450px] bg-gray-800 z-60 shadow-lg flex flex-col {showFilters ? 'right-0' : '-right-[380px]'} transition-all duration-300 z-50" transition:fly={{ x: 380, duration: 300 }}>
 		<div class="flex justify-between items-center p-4 border-b border-white/10">
 			<h2 class="m-0 text-xl text-[#FFB700] font-semibold">Filters</h2>
-			<button class="bg-transparent border-none text-white p-1 rounded hover:bg-white/10 transition-colors flex items-center justify-center" on:click={toggleFilters}>
+			<button class="bg-transparent border-none text-white p-1 rounded hover:bg-white/10 transition-colors flex items-center justify-center" on:click={() => showFilters = false}>
 				<XIcon size={20} />
 			</button>
 		</div>
@@ -261,7 +239,7 @@
 			<!-- Filters Button (Always Visible) -->
 			<div class="relative">
 				<Button
-					onClick={toggleFilters}
+					onClick={() => showFilters = true}
 					isActive={activeFiltersCount > 0}
 					class="px-4"
 				>
