@@ -78,6 +78,7 @@
 				? b.lastReleaseDate.getTime() - a.lastReleaseDate.getTime()
 				: a.lastReleaseDate.getTime() - b.lastReleaseDate.getTime();
 		}
+		return 0;
 	});
 </script>
 

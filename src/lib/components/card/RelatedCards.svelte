@@ -172,23 +172,3 @@
 		<p class="text-center text-gray-400">No other related cards found.</p>
 	{/if}
 </div>
-
-<style>
-	.form-element-container {
-		height: 42px;
-		display: flex;
-		align-items: center;
-	}
-
-	@media (max-width: 1024px) {
-		.form-element-container {
-			height: 36px;
-		}
-	}
-
-	@media (max-width: 420px) {
-		.form-element-container {
-			height: 32px;
-		}
-	}
-</style>

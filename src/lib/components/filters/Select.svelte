@@ -13,22 +13,17 @@
 </script>
 
 <div class="flex flex-col gap-1 min-w-[8rem] flex-1">
-	<label for={id} class="text-xs text-gray-300">{label}</label>
+	{#if label}
+		<label for={id} class="text-xs text-gray-300">{label}</label>
+	{/if}
 	<select
 		{id}
 		on:change={handleChange}
 		value={value}
-		class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {activeCondition ? 'border-amber-400 text-amber-400' : 'border-white'}"
+		class="bg-transparent border-2 cursor-pointer rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {activeCondition ? 'border-amber-400 text-amber-400' : 'border-white'}"
 	>
 		{#each options as option}
-			<option value={option.value}>{option.label}</option>
+			<option class="bg-black text-white" value={option.value}>{option.label}</option>
 		{/each}
 	</select>
 </div>
-
-<style>
-	select option {
-		background-color: black;
-		color: white;
-	}
-</style>
