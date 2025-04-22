@@ -53,7 +53,15 @@
 					{#if card.artist !== 'Unknown'}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
 							<dt class="font-semibold text-gold-300">Artist:</dt>
-							<dd class="text-white text-right">{card.artist}</dd>
+							<dd class="text-white text-right">
+								<a 
+									href="/?artist={encodeURIComponent(card.artist.toLowerCase())}" 
+									class="hover:text-gold-400 transition-colors underline"
+									title="View all cards by this artist"
+								>
+									{card.artist}
+								</a>
+							</dd>
 						</div>
 					{/if}
 
@@ -72,15 +80,22 @@
 					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
 						<dt class="font-semibold text-gold-300">Set:</dt>
 						<dd class="flex items-center gap-2 justify-end">
-							<span class="text-white">{set.name}</span>
+							<a 
+								href="/?set={encodeURIComponent(set.name)}" 
+								class="text-white hover:text-gold-400 transition-colors underline"
+								title="View all cards in this set"
+							>
+								{set.name}
+							</a>
 							{#if set.logo}
-								<img
-									src={set.logo}
-									alt={`${set.name} logo`}
-									class="inline-block max-w-[60px] max-h-[25px] object-contain"
-									title={set.name}
-									loading="lazy"
-								/>
+								<a href="/?set={encodeURIComponent(set.name)}" title="View all cards in this set">
+									<img
+										src={set.logo}
+										alt={`${set.name} logo`}
+										class="inline-block max-w-[60px] max-h-[25px] object-contain hover:opacity-80 transition-opacity"
+										loading="lazy"
+									/>
+								</a>
 							{/if}
 						</dd>
 					</div>
