@@ -16,6 +16,10 @@
 		totalCards: number;
 	}
 
+	// Sorting state
+	let sortDirection: 'asc' | 'desc' = 'asc'; // Default to A-Z
+	let sortValue: 'firstReleaseDate' | 'lastReleaseDate' | 'name' | 'totalCards' = 'name'; // Default sort by name
+
 	// Group cards by artist
 	$: artistsWithCards = data.artists.map(artist => {
 		// Find all cards by this artist
@@ -56,19 +60,23 @@
 		} as ArtistWithCards;
 	});
 
-	// Sorting state
-	let sortDirection: 'asc' | 'desc' = 'asc'; // Default to A-Z
-	let sortValue: 'name' | 'totalCards' = 'name'; // Default sort by name
-
 	$: sortedArtists = [...artistsWithCards].sort((a, b) => {
 		if (sortValue === 'name') {
 			return sortDirection === 'desc'
 				? b.name.localeCompare(a.name)
 				: a.name.localeCompare(b.name);
-		} else { // 'totalCards'
+		} else if (sortValue === 'totalCards') {
 			return sortDirection === 'desc'
 				? b.totalCards - a.totalCards
 				: a.totalCards - b.totalCards;
+		} else if (sortValue === 'firstReleaseDate') {
+			return sortDirection === 'desc'
+				? b.firstReleaseDate.getTime() - a.firstReleaseDate.getTime()
+				: a.firstReleaseDate.getTime() - b.firstReleaseDate.getTime();
+		} else if (sortValue === 'lastReleaseDate') {
+			return sortDirection === 'desc'
+				? b.lastReleaseDate.getTime() - a.lastReleaseDate.getTime()
+				: a.lastReleaseDate.getTime() - b.lastReleaseDate.getTime();
 		}
 	});
 </script>
@@ -83,7 +91,9 @@
 				bind:sortValue={sortValue}
 				options={[
 					{ value: 'name', label: 'Name' },
-					{ value: 'totalCards', label: 'Total Cards' }
+					{ value: 'totalCards', label: 'Total Cards' },
+					{ value: 'firstReleaseDate', label: 'First Release Date' },
+					{ value: 'lastReleaseDate', label: 'Last Release Date' }
 				]}
 			/>
 		</div>
