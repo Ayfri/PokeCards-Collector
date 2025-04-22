@@ -36,7 +36,7 @@
 
 <div class="container mx-auto px-4 py-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
-		<PageTitle title="Pokémon TCG Sets" />
+		<PageTitle title="Sets" />
 
 		<div class="flex items-center gap-2">
 			<SortControl
@@ -54,7 +54,8 @@
 	<hr class="w-full border-t-[3px] border-white my-4" />
 
 	<p class="text-gray-400 mb-6">
-		Showing {sortedSets.length} Pokémon TCG sets.
+		Sets are collections of cards that are released together.<br>
+		<span class="text-sm">Showing {sortedSets.length} sets.</span>
 	</p>
 
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">

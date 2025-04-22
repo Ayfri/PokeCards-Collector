@@ -52,7 +52,7 @@
 
 <div class="container mx-auto px-4 py-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
-		<PageTitle title="Pokémon TCG Artists" />
+		<PageTitle title="Artists" />
 
 		<div class="flex items-center gap-2">
 			<SortControl
@@ -68,7 +68,8 @@
 	<hr class="w-full border-t-[3px] border-white my-4" />
 
 	<p class="text-gray-400 mb-6">
-		Showing {sortedArtists.length} Pokémon TCG artists.
+		Artists are the creators of the cards, they are responsible for the design and artwork of the cards.<br>
+		<span class="text-sm">Showing {sortedArtists.length} artists.</span>
 	</p>
 
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
