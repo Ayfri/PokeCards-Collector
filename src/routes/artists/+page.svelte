@@ -3,6 +3,7 @@
 	import { NO_IMAGES } from '$lib/images';
 	import SortControl from '$lib/components/filters/SortControl.svelte';
 	import PageTitle from '$lib/components/PageTitle.svelte';
+	import CardImage from '$lib/components/card/CardImage.svelte';
 
 	export let data: PageData;
 
@@ -82,15 +83,16 @@
 										class="h-full flex-1 relative {index > 0 ? '-ml-16' : ''}"
 										style="z-index: {3 - index}"
 									>
-										<img
-											src={card.image}
+										<CardImage
 											alt="{card.name} by {artist.name}"
+											imageUrl={card.image}
+											highRes={false}
+											lazy={true}
 											class="h-full w-auto max-w-none object-contain mx-auto transform-gpu"
 											style="
 												transform: rotate({index * 10}deg) translateY({index * -5}px);
 												filter: drop-shadow({index * 2}px {index * 3}px 10px rgba(0, 0, 0, {0.7 - index * 0.15}));
 											"
-											loading="lazy"
 										/>
 									</div>
 								{/each}
