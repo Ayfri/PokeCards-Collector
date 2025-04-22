@@ -4,8 +4,17 @@
 	import SortControl from '$lib/components/filters/SortControl.svelte';
 	import PageTitle from '$lib/components/PageTitle.svelte';
 	import CardImage from '$lib/components/card/CardImage.svelte';
+	import type { Card } from '$lib/types';
 
 	export let data: PageData;
+
+	interface ArtistWithCards {
+		firstReleaseDate: Date;
+		lastReleaseDate: Date;
+		name: string;
+		showcaseCards: Card[];
+		totalCards: number;
+	}
 
 	// Group cards by artist
 	$: artistsWithCards = data.artists.map(artist => {
@@ -26,11 +35,25 @@
 		// Count total cards
 		const totalCards = cards.length;
 
+		const firstReleaseDate = cards.reduce((earliest, card) => {
+			const set = data.sets.find(s => s.name === card.setName);
+			const cardReleaseDate = set ? new Date(set.releaseDate) : new Date('0000-01-01');
+			return cardReleaseDate < earliest ? cardReleaseDate : earliest;
+		}, new Date('9999-01-01'));
+
+		const lastReleaseDate = cards.reduce((latest, card) => {
+			const set = data.sets.find(s => s.name === card.setName);
+			const cardReleaseDate = set ? new Date(set.releaseDate) : new Date('0000-01-01');
+			return cardReleaseDate > latest ? cardReleaseDate : latest;
+		}, new Date('0000-01-01'));
+
 		return {
 			name: artist,
 			showcaseCards,
-			totalCards
-		};
+			totalCards,
+			firstReleaseDate,
+			lastReleaseDate
+		} as ArtistWithCards;
 	});
 
 	// Sorting state
@@ -104,8 +127,9 @@
 					</div>
 					<div class="p-4 flex-1 flex flex-col">
 						<h2 class="text-lg font-semibold text-white">{artist.name}</h2>
-						<div class="mt-2 text-sm text-gray-400">
+						<div class="mt-2 text-sm text-gray-400 flex justify-between">
 							<span>{artist.totalCards} {artist.totalCards === 1 ? 'card' : 'cards'}</span>
+							<span>{artist.firstReleaseDate.getFullYear()} - {artist.lastReleaseDate.getFullYear()}</span>
 						</div>
 					</div>
 				</div>
