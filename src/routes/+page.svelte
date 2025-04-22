@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/auth';
 	import { getUserWishlist } from '$lib/services/wishlists';
-	import { filterSet } from '$lib/helpers/filters';
+	import { filterSet, filterArtist } from '$lib/helpers/filters';
 	import { page } from '$app/stores';
 
 	export let data: PageData;
@@ -25,6 +25,16 @@
 			const setExists = sets.some(set => set.name === decodedSetParam);
 			if (setExists) {
 				filterSet.set(decodedSetParam.toLowerCase());
+			}
+		}
+		
+		// Initialize artist filter from URL parameter if present
+		const artistParam = $page.url.searchParams.get('artist');
+		if (artistParam) {
+			const decodedArtistParam = decodeURIComponent(artistParam);
+			const artistExists = artists.some(artist => artist.toLowerCase() === decodedArtistParam);
+			if (artistExists) {
+				filterArtist.set(decodedArtistParam);
 			}
 		}
 
