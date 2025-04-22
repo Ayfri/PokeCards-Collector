@@ -201,7 +201,7 @@
 			</button>
 		</div>
 		<div class="flex-1 overflow-y-auto p-6 pointer-events-auto">
-			<Filters cards={filteredCards} {rarities} {sets} {types} {artists} {pokemons} />
+			<Filters {rarities} {sets} {types} {artists} />
 		</div>
 	</div>
 {/if}

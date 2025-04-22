@@ -1,19 +1,19 @@
 import { get } from 'svelte/store';
 import type { FullCard, Pokemon, Set } from '$lib/types';
-import { persistentStore } from '$lib/helpers/persistentStore';
+import { persistentWritable } from '$lib/stores/persistentStore';
 
-export const sortBy = persistentStore('sort-by', 'sort-numero');
-export const sortOrder = persistentStore<'asc' | 'desc'>('sort-order', 'asc');
-export const filterNumero = persistentStore('filter-numero', '');
-export const filterName = persistentStore('filter-name', '');
-export const filterSet = persistentStore('filter-set', 'all');
-export const filterType = persistentStore('filter-type', 'all');
-export const filterRarity = persistentStore('filter-rarity', 'all');
-export const filterSupertype = persistentStore('filter-supertype', 'all');
-export const filterArtist = persistentStore('filter-artist', 'all');
-export const mostExpensiveOnly = persistentStore('most-expensive-only', false);
+export const sortBy = persistentWritable('sort-by', 'sort-id');
+export const sortOrder = persistentWritable<'asc' | 'desc'>('sort-order', 'asc');
+export const filterNumero = persistentWritable('filter-numero', '');
+export const filterName = persistentWritable('filter-name', '');
+export const filterSet = persistentWritable('filter-set', 'all');
+export const filterType = persistentWritable('filter-type', 'all');
+export const filterRarity = persistentWritable('filter-rarity', 'all');
+export const filterSupertype = persistentWritable('filter-supertype', 'all');
+export const filterArtist = persistentWritable('filter-artist', 'all');
+export const mostExpensiveOnly = persistentWritable('most-expensive-only', false);
 
-export const displayAll = persistentStore('display-all', true);
+export const displayAll = persistentWritable('display-all', true);
 
 export function resetFilters() {
 	filterNumero.set('');
@@ -24,9 +24,7 @@ export function resetFilters() {
 	filterSupertype.set('all');
 	filterArtist.set('all');
 	mostExpensiveOnly.set(false);
-	displayAll.set(true); // Reset displayAll as well, if desired
-	sortBy.set('sort-numero'); // Optionally reset sorting
-	sortOrder.set('asc'); // Optionally reset sorting order
+	displayAll.set(true);
 }
 
 export function isVisible(card: FullCard, cardPokemon: Pokemon | undefined, cardSet: Set) {

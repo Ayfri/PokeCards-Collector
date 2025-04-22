@@ -1,31 +1,29 @@
 <script lang="ts">
-	import { displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder } from '$helpers/filters';
-	import type { FullCard, Set, Pokemon } from '$lib/types';
-	import { page } from '$app/state';
+	import { filterArtist, filterNumero, filterRarity, filterSet, filterSupertype, filterType, mostExpensiveOnly, sortBy, sortOrder } from '$helpers/filters';
+	import type { Set } from '$lib/types';
 	import { onMount } from 'svelte';
-	import { filterStates, toggleBasicFilters, toggleTypeFilters, toggleCollectionFilters } from '$stores/filterStates';
+	import { filterStates } from '$stores/filterStates';
 
+	import Button from '$lib/components/filters/Button.svelte';
 	import Section from '$lib/components/filters/Section.svelte';
 	import Select from '$lib/components/filters/Select.svelte';
-	import TextInput from '$lib/components/filters/TextInput.svelte';
-	import Button from '$lib/components/filters/Button.svelte';
 	import SortControl from '$lib/components/filters/SortControl.svelte';
+	import TextInput from '$lib/components/filters/TextInput.svelte';
 
-	export let cards: FullCard[];
-	export let sets: Set[];
-	export let pokemons: Pokemon[];
-	export let rarities: string[];
-	export let types: string[];
+	// Log the initial store value when the script runs
+	console.log('[Filters.svelte] Initial $sortBy:', $sortBy);
+
 	export let artists: string[] = [];
+	export let rarities: string[];
+	export let sets: Set[];
+	export let types: string[];
 
 	// Inputs text variables
-	let searchName = '';
-	let searchNumero = '';
 	let debounceTimeout: number;
+	let searchNumero = '';
 
 	// Initialize search values from stores when component is loaded
 	onMount(() => {
-		searchName = $filterName;
 		searchNumero = $filterNumero;
 	});
 
@@ -39,53 +37,33 @@
 		};
 	}
 
-	const debouncedSetFilterName = debounce((value: string) => {
-		$filterName = value;
-	}, 300);
-
 	const debouncedSetFilterNumero = debounce((value: string) => {
 		$filterNumero = value;
 	}, 300);
 
-	function resetFilters() {
-		$filterNumero = '';
-		$filterName = '';
-		$filterSet = 'all';
-		$filterType = 'all';
-		$filterRarity = 'all';
-		$filterSupertype = 'all';
-		$filterArtist = 'all';
-		$displayAll = true;
-		$mostExpensiveOnly = false;
-
-		// Update local variables
-		searchName = '';
-		searchNumero = '';
-	}
-
 	// Options for sorting
 	const sortOptions = [
+		{ value: 'sort-artist', label: 'Illustrator' },
+		{ value: 'sort-id', label: 'ID' },
+		{ value: 'sort-name', label: 'Name' },
 		{ value: 'sort-pokedex', label: 'Pokédex' },
 		{ value: 'sort-price', label: 'Price' },
-		{ value: 'sort-name', label: 'Name' },
-		{ value: 'sort-id', label: 'ID' },
 		{ value: 'sort-rarity', label: 'Rarity' },
-		{ value: 'sort-release-date', label: 'Release Date' },
-		{ value: 'sort-artist', label: 'Illustrator' }
+		{ value: 'sort-release-date', label: 'Release Date' }
 	];
 
 	// Options for card types
 	const supertypeOptions = [
 		{ value: 'all', label: 'All supertypes' },
+		{ value: 'energy', label: 'Energy' },
 		{ value: 'pokémon', label: 'Pokémon' },
-		{ value: 'trainer', label: 'Trainer' },
-		{ value: 'energy', label: 'Energy' }
+		{ value: 'trainer', label: 'Trainer' }
 	];
 
 	// Prepare options for types, rarities, sets and illustrators
-	$: typeOptions = [
-		{ value: 'all', label: 'All types' },
-		...types.map(type => ({ value: type.toLowerCase(), label: type }))
+	$: artistOptions = [
+		{ value: 'all', label: 'All illustrators' },
+		...artists.map(artist => ({ value: artist.toLowerCase(), label: artist }))
 	];
 
 	$: rarityOptions = [
@@ -98,35 +76,10 @@
 		...sets.map(set => ({ value: set.name.toLowerCase(), label: set.name }))
 	];
 
-	$: artistOptions = [
-		{ value: 'all', label: 'All illustrators' },
-		...artists.map(artist => ({ value: artist.toLowerCase(), label: artist }))
+	$: typeOptions = [
+		{ value: 'all', label: 'All types' },
+		...types.map(type => ({ value: type.toLowerCase(), label: type }))
 	];
-
-	let visibleCardsCount = 0;
-	let uniquePokemonCount = 0;
-	let pokemonCardsCount = 0;
-	let trainerCardsCount = 0;
-	let energyCardsCount = 0;
-
-	// Update counters when cards or filters change
-	$: {
-		// This instruction ensures that this block will trigger when any filter changes
-		const _ = [$filterName, $filterNumero, $filterRarity, $filterSet, $filterType, $filterSupertype, $filterArtist, $displayAll, $sortBy, $sortOrder, $mostExpensiveOnly];
-
-		if (cards) {
-			const visibleCards = cards.filter(card => isVisible(card, pokemons.find(p => p.id === card.pokemonNumber)!!, sets.find(s => s.name === card.setName)!!));
-			visibleCardsCount = visibleCards.length;
-			uniquePokemonCount = new Set(visibleCards.filter(card => card.supertype === 'Pokémon').map(card => card.pokemonNumber)).size;
-
-			// Count by supertype
-			pokemonCardsCount = visibleCards.filter(card => card.supertype === 'Pokémon').length;
-			trainerCardsCount = visibleCards.filter(card => card.supertype === 'Trainer').length;
-			energyCardsCount = visibleCards.filter(card => card.supertype === 'Energy').length;
-		}
-	}
-
-	const stats = page.data.stats;
 </script>
 
 <div class="w-full">

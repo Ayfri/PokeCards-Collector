@@ -1,44 +1,56 @@
-import { writable } from 'svelte/store';
+import { writable, type Writable } from 'svelte/store';
 import { browser } from '$app/environment'; // Use SvelteKit's browser check
 
 /**
  * Creates a Svelte writable store that automatically persists its value
- * to localStorage and initializes from localStorage if a value exists.
+ * to localStorage and initializes from localStorage if a value exists,
+ * handling SSR correctly.
  * @param key The key to use for localStorage.
- * @param initialValue The initial value to use if nothing is found in localStorage.
+ * @param initialValue The initial value to use if nothing is found in localStorage or on the server.
  */
-export function persistentWritable<T>(key: string, initialValue: T) {
-	let storedValue: T | null = null;
+export function persistentWritable<T>(key: string, initialValue: T): Writable<T> {
+	const keyName = `pokestore-${key}`;
+	let value = initialValue; // Start with the default
+	console.log(`[persistentWritable ${keyName}] Initializing. Default value:`, initialValue);
 
-	// Check localStorage only on the client-side
+	// --- Step 1: If on client, try to load from localStorage ---
 	if (browser) {
-		const storedString = localStorage.getItem(key);
+		console.log(`[persistentWritable ${keyName}] Running on client. Trying to load from localStorage.`);
+		const storedString = localStorage.getItem(keyName);
 		if (storedString !== null) {
+			console.log(`[persistentWritable ${keyName}] Found value in localStorage:`, storedString);
 			try {
-				storedValue = JSON.parse(storedString);
+				value = JSON.parse(storedString); // Update the value *before* creating the store
+				console.log(`[persistentWritable ${keyName}] Parsed value from localStorage:`, value);
 			} catch (e) {
-				console.error(`Failed to parse localStorage key "${key}":`, e);
-				// Fallback to initial value if parsing fails
-				localStorage.removeItem(key); // Clear corrupted data
-				storedValue = initialValue;
+				console.error(`[persistentWritable ${keyName}] Failed to parse localStorage:`, e);
+				localStorage.removeItem(keyName); // Clear corrupted data
 			}
 		} else {
-			storedValue = initialValue;
+			console.log(`[persistentWritable ${keyName}] No value found in localStorage. Using default.`);
 		}
 	} else {
-		// On server-side or environments without localStorage, just use initial value
-		storedValue = initialValue;
+		console.log(`[persistentWritable ${keyName}] Running on server. Using default value.`);
 	}
 
+	// --- Step 2: Create the store with the determined initial value ---
+	const store = writable<T>(value);
+	console.log(`[persistentWritable ${keyName}] Store created with initial value:`, value);
 
-	const store = writable<T>(storedValue as T); // Initialize with stored or initial value
-
-	// Subscribe to store changes and update localStorage on the client
+	// --- Step 3: If on client, subscribe to write subsequent changes back ---
 	if (browser) {
-		store.subscribe(value => {
-			localStorage.setItem(key, JSON.stringify(value));
+		store.subscribe(currentValue => {
+			console.log(`[persistentWritable ${keyName}] Value changed. Saving to localStorage:`, currentValue);
+			// Prevent writing undefined/null back
+			if (currentValue !== undefined && currentValue !== null) {
+				localStorage.setItem(keyName, JSON.stringify(currentValue));
+			} else {
+				console.log(`[persistentWritable ${keyName}] Value is undefined/null. Removing from localStorage.`);
+				// Optionally clear the item if the store value becomes null/undefined
+				localStorage.removeItem(keyName);
+			}
 		});
 	}
 
 	return store;
-} 
+}

@@ -8,18 +8,18 @@
   import type { PageData } from './$types';
   import type { FullCard, Pokemon, Set, UserProfile } from '$lib/types';
   import { resetFilters } from '$lib/helpers/filters';
-  
+
   export let data: PageData;
-  
-  // --- State Variables --- 
+
+  // --- State Variables ---
   let isLoading = true; // Loading covers auth check AND potential client-side fetch
   let displayCards: FullCard[] = [];
   let pageTitleDisplay = data.title; // Start with title from server
   let statusMessage: string | null = null; // For errors like private/not found
   let loggedInUser: UserProfile | null = null;
   let isOwnProfile = false;
-  
-  // --- Reactive Data from Server --- 
+
+  // --- Reactive Data from Server ---
   $: allCards = data.allCards || [];
   $: pokemons = data.pokemons || [];
   $: sets = data.sets || [];
@@ -29,19 +29,18 @@
   $: isPublic = data.isPublic;
   $: serverWishlistCards = data.serverWishlistCards;
   $: targetUsername = data.targetUsername;
-  
+
   onMount(() => {
-    resetFilters();
     isLoading = true; // Ensure loading state is true initially
-    
+
     const unsubscribe = authStore.subscribe(async (state) => {
       if (!state.loading) {
         loggedInUser = state.profile;
-        
+
         if (targetUsername) {
-          // --- Case 1: Viewing a specific user (?user=...) --- 
+          // --- Case 1: Viewing a specific user (?user=...) ---
           isOwnProfile = loggedInUser?.username === targetUsername;
-          
+
           if (!targetProfile) {
             statusMessage = `User "${targetUsername}" not found.`;
             pageTitleDisplay = 'User Not Found';
@@ -59,7 +58,7 @@
             }
           }
         } else {
-          // --- Case 2: Viewing own wishlist (no ?user=...) --- 
+          // --- Case 2: Viewing own wishlist (no ?user=...) ---
           isOwnProfile = true;
           pageTitleDisplay = 'My Wishlist';
           if (loggedInUser) {
@@ -85,7 +84,7 @@
         isLoading = false; // Finish loading after logic completes
       }
     });
-    
+
     return unsubscribe;
   });
 </script>
@@ -97,7 +96,7 @@
     </div>
   {:else if statusMessage}
     <div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
-      <p 
+      <p
         class="font-bold mb-4 {statusMessage.includes('not found') ? 'text-4xl' : 'text-3xl'}"
       >
         {statusMessage}
@@ -105,8 +104,8 @@
       {#if statusMessage === 'Your wishlist is empty.'}
         <p class="mt-2 mb-4">Add cards to your wishlist by browsing card pages.</p>
       {/if}
-      <a 
-        href="/" 
+      <a
+        href="/"
         class="home-button animated-hover-button relative overflow-hidden bg-transparent border-2 border-white text-white text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4"
       >
         <span class="relative z-10 flex items-center">
@@ -119,14 +118,13 @@
       </a>
     </div>
   {:else}
-    <CardGrid 
-      cards={displayCards} 
-      {pokemons} 
-      {sets} 
-      {rarities} 
-      {types} 
-      pageTitle={pageTitleDisplay} 
-      showTitleAndControls={true}
+    <CardGrid
+      cards={displayCards}
+      {pokemons}
+      {sets}
+      {rarities}
+      {types}
+      pageTitle={pageTitleDisplay}
     />
   {/if}
-</div> 
+</div>

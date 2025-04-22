@@ -3,10 +3,7 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import {fade} from 'svelte/transition';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
-	import ArrowUp from 'lucide-svelte/icons/arrow-up';
-	import { persistentStore } from '$lib/helpers/persistentStore';
-	import Button from '@components/filters/Button.svelte';
-	import Select from '@components/filters/Select.svelte';
+	import { persistentWritable } from '$lib/stores/persistentStore';
 	import SortControl from '@components/filters/SortControl.svelte';
 
 	// --- Props ---
@@ -17,8 +14,8 @@
 	export let onCardSelect: (card: FullCard) => void;
 
 	// --- Persistent Sorting State ---
-	const relatedSortBy = persistentStore('related-cards-sort-by', 'sort-set');
-	const relatedSortOrder = persistentStore<'asc' | 'desc'>('related-cards-sort-order', 'asc');
+	const relatedSortBy = persistentWritable('related-cards-sort-by', 'sort-set');
+	const relatedSortOrder = persistentWritable<'asc' | 'desc'>('related-cards-sort-order', 'asc');
 
 	// --- Helper Functions ---
 	function getPokemon(pokemonNumber: number | undefined): Pokemon | undefined {

@@ -14,7 +14,7 @@ const initialFilterStates: FilterStates = {
 };
 
 // Create a persistent store for filter states
-export const filterStates = persistentWritable<FilterStates>('pokestore-filter-states', initialFilterStates);
+export const filterStates = persistentWritable<FilterStates>('filter-states', initialFilterStates);
 
 // Helper functions to toggle individual filter sections
 export function toggleBasicFilters() {
@@ -36,4 +36,4 @@ export function toggleCollectionFilters() {
 		...state,
 		collectionFilters: !state.collectionFilters
 	}));
-} 
+}
