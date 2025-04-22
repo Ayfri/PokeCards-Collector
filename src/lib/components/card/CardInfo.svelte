@@ -56,10 +56,11 @@
 							<dd class="text-white text-right">
 								<a 
 									href="/?artist={encodeURIComponent(card.artist.toLowerCase())}" 
-									class="hover:text-gold-400 transition-colors underline"
+									class="hover:text-gold-400 transition-colors underline group"
 									title="View all cards by this artist"
 								>
 									{card.artist}
+									<span class="text-xs opacity-80 italic ml-1 text-gray-400 group-hover:text-gold-300 transition-colors">(view all)</span>
 								</a>
 							</dd>
 						</div>
@@ -82,10 +83,11 @@
 						<dd class="flex items-center gap-2 justify-end">
 							<a 
 								href="/?set={encodeURIComponent(set.name)}" 
-								class="text-white hover:text-gold-400 transition-colors underline"
+								class="text-white hover:text-gold-400 transition-colors underline group"
 								title="View all cards in this set"
 							>
 								{set.name}
+								<span class="text-xs opacity-80 italic ml-1 text-gray-400 group-hover:text-gold-300 transition-colors">(view all)</span>
 							</a>
 							{#if set.logo}
 								<a href="/?set={encodeURIComponent(set.name)}" title="View all cards in this set">

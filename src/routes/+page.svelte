@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/auth';
 	import { getUserWishlist } from '$lib/services/wishlists';
-	import { filterSet, filterArtist } from '$lib/helpers/filters';
+	import { filterSet, filterArtist, resetFilters } from '$lib/helpers/filters';
 	import { page } from '$app/stores';
 
 	export let data: PageData;
@@ -18,23 +18,29 @@
 	$: pokemons = data.pokemons;
 
 	onMount(() => {
-		// Initialize set filter from URL parameter if present
+		// Check if we have any filter parameters in the URL
 		const setParam = $page.url.searchParams.get('set');
-		if (setParam) {
-			const decodedSetParam = decodeURIComponent(setParam);
-			const setExists = sets.some(set => set.name === decodedSetParam);
-			if (setExists) {
-				filterSet.set(decodedSetParam.toLowerCase());
-			}
-		}
-		
-		// Initialize artist filter from URL parameter if present
 		const artistParam = $page.url.searchParams.get('artist');
-		if (artistParam) {
-			const decodedArtistParam = decodeURIComponent(artistParam);
-			const artistExists = artists.some(artist => artist.toLowerCase() === decodedArtistParam);
-			if (artistExists) {
-				filterArtist.set(decodedArtistParam);
+		
+		// If we have any filter parameters, reset all filters first
+		if (setParam || artistParam) {
+			resetFilters();
+			
+			// Then apply the specific filter from the URL
+			if (setParam) {
+				const decodedSetParam = decodeURIComponent(setParam);
+				const setExists = sets.some(set => set.name === decodedSetParam);
+				if (setExists) {
+					filterSet.set(decodedSetParam.toLowerCase());
+				}
+			}
+			
+			if (artistParam) {
+				const decodedArtistParam = decodeURIComponent(artistParam);
+				const artistExists = artists.some(artist => artist.toLowerCase() === decodedArtistParam);
+				if (artistExists) {
+					filterArtist.set(decodedArtistParam);
+				}
 			}
 		}
 
