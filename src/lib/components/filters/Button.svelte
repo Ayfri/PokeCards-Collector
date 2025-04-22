@@ -7,7 +7,7 @@
 </script>
 
 <button
-	class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 rounded text-sm py-1 px-3 h-8 flex-1 transition-all duration-300 z-0 hover:text-black
+	class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 rounded text-sm py-1 px-3 h-8 transition-all duration-300 z-0 hover:text-black
 		   {isActive
 			? 'border-[#FFB700] text-[#FFB700]'
 			: 'border-white text-white hover:border-[#FFB700]'} {classNames}"

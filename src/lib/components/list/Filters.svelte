@@ -152,6 +152,7 @@
 
 			<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
 				<Button
+					class="w-full"
 					isActive={$mostExpensiveOnly}
 					onClick={() => $mostExpensiveOnly = !$mostExpensiveOnly}
 				>

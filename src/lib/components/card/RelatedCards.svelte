@@ -5,6 +5,9 @@
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import ArrowUp from 'lucide-svelte/icons/arrow-up';
 	import { persistentStore } from '$lib/helpers/persistentStore';
+	import Button from '@components/filters/Button.svelte';
+	import Select from '@components/filters/Select.svelte';
+	import SortControl from '@components/filters/SortControl.svelte';
 
 	// --- Props ---
 	export let cards: FullCard[];
@@ -94,31 +97,17 @@
 		</h2>
 
 		<div class="flex items-center gap-4">
-			<div class="form-element-container">
-				<button
-					class="sort-order-btn fill-white !w-8 flex justify-center items-center hover:fill-black {$relatedSortOrder !== 'asc' ? 'sort-active' : ''}"
-					on:click={() => ($relatedSortOrder = $relatedSortOrder === 'asc' ? 'desc' : 'asc')}
-					aria-label={$relatedSortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'}
-				>
-					<ArrowUp class={$relatedSortOrder === 'asc' ? 'rotate-180' : ''} size={16} />
-				</button>
-			</div>
-
-			<div class="form-element-container">
-				<select
-					bind:value={$relatedSortBy}
-					class="filter {$relatedSortBy !== 'sort-set' ? 'filter-active' : ''}"
-					id="sort"
-					name="sort"
-					aria-label="Sort by"
-				>
-					<option value="sort-set">Set Name</option>
-					<option value="sort-date">Release Date</option>
-					<option value="sort-price">Price</option>
-					<option value="sort-rarity">Rarity</option>
-					<option value="sort-artist">Artist</option>
-				</select>
-			</div>
+			<SortControl
+				bind:sortDirection={$relatedSortOrder}
+				bind:sortValue={$relatedSortBy}
+				options={[
+					{ value: 'sort-set', label: 'Set Name' },
+					{ value: 'sort-date', label: 'Release Date' },
+					{ value: 'sort-price', label: 'Price' },
+					{ value: 'sort-rarity', label: 'Rarity' },
+					{ value: 'sort-artist', label: 'Artist' }
+				]}
+			/>
 		</div>
 	</div>
 
@@ -194,113 +183,15 @@
 		align-items: center;
 	}
 
-	select:hover {
-		cursor: pointer;
-	}
-
-	select {
-		background: transparent;
-		border: 3px solid #FFF;
-		border-radius: 4px;
-		box-sizing: border-box;
-		color: white;
-		font-family: "Clash Display", serif;
-		font-weight: 500;
-		height: 2.2rem;
-		line-height: 1.4rem;
-		padding: 0.2rem 0.4rem;
-		width: 10rem;
-		transition: border-color 0.2s ease, color 0.2s ease;
-		font-size: 0.85rem;
-	}
-
-	.filter-active {
-		border-color: #FFB700;
-		color: #FFB700;
-	}
-
-	.sort-active {
-		fill: #FFB700;
-	}
-
-	select option {
-		background-color: black;
-		color: white;
-		font-size: 0.85rem;
-		padding: 8px;
-	}
-
-	.sort-order-btn {
-		background-color: transparent;
-		background-image: linear-gradient(to right, #FFF, #FFF);
-		background-position: 0 100%;
-		background-repeat: no-repeat;
-		background-size: 100% 0;
-		border: 3px solid #FFF;
-		border-radius: 4px;
-		box-sizing: border-box;
-		color: white;
-		font-weight: 500;
-		height: 2.2rem;
-		line-height: 1.4rem;
-		padding: 0.2rem 0.4rem;
-		transition: background-size 0.4s cubic-bezier(0.22, 1, 0.36, 1), color 0.4s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease;
-		width: 2.2rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.sort-order-btn:hover {
-		background-size: 100% 100%;
-		background-image: linear-gradient(to right, #FFB700, #FFB700);
-		color: #000;
-		cursor: pointer;
-		font-weight: 500;
-		border-color: #FFB700;
-	}
-
-	.sort-order-btn.sort-active {
-		border-color: #FFB700; /* Ensure border changes too */
-		color: #FFB700; /* Ensure icon color changes */
-	}
-
-	.sort-order-btn.sort-active:hover {
-		background-image: linear-gradient(to right, #FFB700, #FFB700); /* Keep gold background on hover when active */
-		color: #000; /* Text/Icon color on hover */
-	}
-
-
 	@media (max-width: 1024px) {
 		.form-element-container {
 			height: 36px;
-		}
-
-		select, .sort-order-btn {
-			border-width: 2px;
-			font-size: 0.75rem;
-			height: 2rem;
-		}
-
-		select {
-			width: 8rem;
 		}
 	}
 
 	@media (max-width: 420px) {
 		.form-element-container {
 			height: 32px;
-		}
-
-		select, .sort-order-btn {
-			font-size: 0.7rem;
-			height: 1.8rem;
-			line-height: normal;
-			padding: 0.1rem 0.2rem;
-		}
-
-		select {
-			width: 7rem;
 		}
 	}
 </style>

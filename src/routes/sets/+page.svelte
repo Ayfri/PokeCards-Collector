@@ -1,46 +1,54 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { NO_IMAGES } from '$lib/images';
-	
-	export let data: PageData;
-	
-	// Sort sets by release date (newest first by default)
-	$: sortedSets = [...data.sets].sort((a, b) => 
-		new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime()
-	);
+	import SortControl from '$lib/components/filters/SortControl.svelte';
 
-	let sortOrder = 'newest'; // 'newest' or 'oldest'
-	
-	function toggleSortOrder() {
-		sortOrder = sortOrder === 'newest' ? 'oldest' : 'newest';
-		sortedSets = [...data.sets].sort((a, b) => {
-			const aTime = new Date(a.releaseDate).getTime();
-			const bTime = new Date(b.releaseDate).getTime();
-			return sortOrder === 'newest' ? bTime - aTime : aTime - bTime;
-		});
+	export let data: PageData;
+	let sortDirection: 'desc' | 'asc' = 'desc';
+	let sortValue: 'releaseDate' | 'name' | 'printedTotal' = 'releaseDate';
+	let sortedSets = [...data.sets];
+
+	// Sort sets by release date (newest first by default)
+	$: if (sortValue && sortDirection) {
+		if (sortValue === 'releaseDate') {
+			sortedSets = [...data.sets].sort((a, b) => {
+				const aTime = new Date(a.releaseDate).getTime();
+				const bTime = new Date(b.releaseDate).getTime();
+				return sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
+			});
+		} else if (sortValue === 'name') {
+			sortedSets = [...data.sets].sort((a, b) => {
+				return sortDirection === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
+			});
+		} else if (sortValue === 'printedTotal') {
+			sortedSets = [...data.sets].sort((a, b) => {
+				return sortDirection === 'desc' ? b.printedTotal - a.printedTotal : a.printedTotal - b.printedTotal;
+			});
+		}
 	}
 </script>
 
 <div class="container mx-auto px-4 py-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
 		<h1 class="text-3xl font-bold mb-4 sm:mb-0">Pokémon TCG Sets</h1>
-		
-		<button 
-			on:click={toggleSortOrder}
-			class="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
-		>
-			<span>Sort: {sortOrder === 'newest' ? 'Newest first' : 'Oldest first'}</span>
-			<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-				<path d="M5 12a1 1 0 102 0V6.414l1.293 1.293a1 1 0 001.414-1.414l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L5 6.414V12z" />
-				<path d="M15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" />
-			</svg>
-		</button>
+
+		<div class="flex items-center gap-2">
+			<SortControl
+				bind:sortDirection={sortDirection}
+				bind:sortValue={sortValue}
+				options={[
+					{ value: 'name', label: 'Name' },
+					{ value: 'printedTotal', label: 'Total Cards' },
+					{ value: 'releaseDate', label: 'Release Date' }
+				]}
+			/>
+		</div>
 	</div>
-	
+
 	<p class="text-gray-400 mb-6">
-		Showing {sortedSets.length} Pokémon TCG sets in {sortOrder === 'newest' ? 'descending' : 'ascending'} release order.
+		Showing {sortedSets.length} Pokémon TCG sets in {sortDirection === 'desc' ? 'descending' : 'ascending'} release order.
 	</p>
-	
+
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 		{#each sortedSets as set}
 			<a href="/?set={encodeURIComponent(set.name)}" class="block h-full">
@@ -70,4 +78,4 @@
 			</a>
 		{/each}
 	</div>
-</div> 
+</div>
