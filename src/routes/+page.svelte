@@ -4,6 +4,8 @@
 	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/auth';
 	import { getUserWishlist } from '$lib/services/wishlists';
+	import { filterSet } from '$lib/helpers/filters';
+	import { page } from '$app/stores';
 
 	export let data: PageData;
 
@@ -16,18 +18,20 @@
 	$: pokemons = data.pokemons;
 
 	onMount(() => {
+		// Initialize set filter from URL parameter if present
+		const setParam = $page.url.searchParams.get('set');
+		if (setParam) {
+			const decodedSetParam = decodeURIComponent(setParam);
+			const setExists = sets.some(set => set.name === decodedSetParam);
+			if (setExists) {
+				filterSet.set(decodedSetParam.toLowerCase());
+			}
+		}
+
 		const unsubscribe = authStore.subscribe(async (state) => {
 			if (!state.loading) {
 				if (state.profile) {
-					// console.log('Auth state ready. Checking wishlist for user:', state.profile.username);
 					const { data: wishlistItems, error } = await getUserWishlist(state.profile.username);
-					if (error) {
-						// console.error('Error fetching wishlist for logging:', error);
-					} else {
-						// console.log('User Wishlist Items:', wishlistItems);
-					}
-				} else {
-					// console.log('Auth state ready. User not logged in, skipping wishlist log.');
 				}
 			}
 		});
