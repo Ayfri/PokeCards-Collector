@@ -84,7 +84,7 @@
 	aria-label={`Go to the card page of ${cardName}`}
 	class="card-link text-white"
 	draggable="false"
-	href={`/card/${pokemonId === '0' ? cardCode : pokemonId}/?set=${setCode}&number=${cardNumber}`}
+	href={`/card/${cardCode}/`}
 	rel="dofollow"
 >
 	<div class="card-pokestore group relative flex flex-col items-center w-fit cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.025]">

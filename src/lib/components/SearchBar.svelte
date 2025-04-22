@@ -227,7 +227,7 @@
 				{@const set = sets.find(s => s.name === card.setName)}
 				{@const cardNumber = extractCardNumberFromCode(card.cardCode)}
 				{@const cardImage = processCardImage(card.image)}
-				{@const cardLink = `/card/${set?.ptcgoCode || 'unknown'}/${cardNumber || 'unknown'}`}
+				{@const cardLink = `/card/${card.cardCode}/`}
 
 				<a
 					href={cardLink}

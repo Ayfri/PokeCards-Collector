@@ -79,6 +79,16 @@
 		}
 	}
 
+	// Helper function to get a representative card for a Pokemon
+	function getRepresentativeCardForPokemon(pokemonId: number): FullCard | undefined {
+		// Find all cards for this Pokemon
+		const pokemonCards = cards.filter(c => c.pokemonNumber === pokemonId);
+		if (pokemonCards.length === 0) return undefined;
+		
+		// Sort by price (highest first) and return the first one
+		return [...pokemonCards].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))[0];
+	}
+
 	// Helper function to get the image source for a Pokémon
 	function getPokemonImageSrc(pokemonId: number): string {
 		// Always try the official artwork first
@@ -93,9 +103,10 @@
 {#if uniqueChain.length > 1}
 	<div class="evolution-chain mb-4 flex items-center justify-center gap-4 max-w-full overflow-x-auto px-4 py-2">
 		{#each uniqueChain as pokemon, i}
+			{@const representativeCard = getRepresentativeCardForPokemon(pokemon.id)}
 			<div class="evolution-item flex flex-col items-center">
 				<a
-					href={`/card/${pokemon.id}/`}
+					href={representativeCard ? `/card/${representativeCard.cardCode}/` : `/card/${pokemon.id}/`}
 					class="evolution-image-wrapper relative"
 					class:current={pokemon.id === currentPokemon?.id}
 				>

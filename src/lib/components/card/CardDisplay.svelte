@@ -135,6 +135,16 @@
 		});
 	}
 
+	// Helper function to get a representative card for a Pokemon
+	function getRepresentativeCardForPokemon(pokemonId: number): FullCard | undefined {
+		// Find all cards for this Pokemon
+		const pokemonCards = cards.filter(c => c.pokemonNumber === pokemonId);
+		if (pokemonCards.length === 0) return undefined;
+		
+		// Sort by price (highest first) and return the first one
+		return [...pokemonCards].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))[0];
+	}
+
 	// --- Lifecycle ---
 	onMount(() => {
 		// Initialize history state only if it's a Pokemon card and the URL doesn't already match
@@ -214,7 +224,11 @@
 		<div class="mobile-nav-wrapper w-full flex justify-between items-center mt-4 lg:hidden order-2">
 			<!-- Previous Pokemon (Mobile) -->
 			{#if pokemon && previousPokemon}
-				<a href={`/card/${previousPokemon.id}/`} class="prev-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity">
+				{@const prevCard = getRepresentativeCardForPokemon(previousPokemon.id)}
+				<a 
+					href={prevCard ? `/card/${prevCard.cardCode}/` : `/card/${previousPokemon.id}/`} 
+					class="prev-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
+				>
 					<img
 						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
 						alt={pascalCase(previousPokemon.name)}
@@ -232,7 +246,11 @@
 
 			<!-- Next Pokemon (Mobile) -->
 			{#if pokemon && nextPokemon}
-				<a href={`/card/${nextPokemon.id}/`} class="next-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity">
+				{@const nextCard = getRepresentativeCardForPokemon(nextPokemon.id)}
+				<a 
+					href={nextCard ? `/card/${nextCard.cardCode}/` : `/card/${nextPokemon.id}/`} 
+					class="next-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
+				>
 					<img
 						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
 						alt={pascalCase(nextPokemon.name)}
@@ -252,46 +270,46 @@
 		<!-- Desktop Navigation -->
 		<!-- Previous Pokemon (Desktop) -->
 		{#if pokemon && previousPokemon}
-			<a href={`/card/${previousPokemon.id}/`} class="prev-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-1">
-				<div class="nav-pokemon-wrapper relative">
-					<div class="pokemon-sprite-container relative">
-						<img
-							src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
-							alt={pascalCase(previousPokemon.name)}
-							class="w-32 h-32 object-contain nav-pokemon-image"
-							title={pascalCase(previousPokemon.name)}
-							on:error={handlePokemonImageError}
-							data-pokemon-id={previousPokemon.id}
-						/>
-					</div>
-				</div>
-				<span class="nav-pokemon-name mt-2 text-center text-sm">{pascalCase(previousPokemon.name)}</span>
-				<span class="nav-pokemon-id text-xs text-gray-400 mt-1">#{previousPokemon.id}</span>
+			{@const prevCard = getRepresentativeCardForPokemon(previousPokemon.id)}
+			<a 
+				href={prevCard ? `/card/${prevCard.cardCode}/` : `/card/${previousPokemon.id}/`} 
+				class="prev-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-1"
+			>
+				<img
+					src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
+					alt={pascalCase(previousPokemon.name)}
+					class="w-24 h-24 object-contain nav-pokemon-image"
+					title={pascalCase(previousPokemon.name)}
+					on:error={handlePokemonImageError}
+					data-pokemon-id={previousPokemon.id}
+				/>
+				<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(previousPokemon.name)}</span>
+				<span class="nav-pokemon-id text-xs text-gray-400">#{previousPokemon.id}</span>
 			</a>
 		{:else}
-			<div class="w-48 prev-pokemon-placeholder hidden lg:block order-1"></div> <!-- Placeholder for alignment -->
+			<div class="hidden lg:block w-48 order-1"></div>
 		{/if}
 
 		<!-- Next Pokemon (Desktop) -->
 		{#if pokemon && nextPokemon}
-			<a href={`/card/${nextPokemon.id}/`} class="next-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-3">
-				<div class="nav-pokemon-wrapper relative">
-					<div class="pokemon-sprite-container relative">
-						<img
-							src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
-							alt={pascalCase(nextPokemon.name)}
-							class="w-32 h-32 object-contain nav-pokemon-image"
-							title={pascalCase(nextPokemon.name)}
-							on:error={handlePokemonImageError}
-							data-pokemon-id={nextPokemon.id}
-						/>
-					</div>
-				</div>
-				<span class="nav-pokemon-name mt-2 text-center text-sm">{pascalCase(nextPokemon.name)}</span>
-				<span class="nav-pokemon-id text-xs text-gray-400 mt-1">#{nextPokemon.id}</span>
+			{@const nextCard = getRepresentativeCardForPokemon(nextPokemon.id)}
+			<a 
+				href={nextCard ? `/card/${nextCard.cardCode}/` : `/card/${nextPokemon.id}/`} 
+				class="next-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-3"
+			>
+				<img
+					src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
+					alt={pascalCase(nextPokemon.name)}
+					class="w-24 h-24 object-contain nav-pokemon-image"
+					title={pascalCase(nextPokemon.name)}
+					on:error={handlePokemonImageError}
+					data-pokemon-id={nextPokemon.id}
+				/>
+				<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(nextPokemon.name)}</span>
+				<span class="nav-pokemon-id text-xs text-gray-400">#{nextPokemon.id}</span>
 			</a>
 		{:else}
-			<div class="w-48 next-pokemon-placeholder hidden lg:block order-3"></div> <!-- Placeholder for alignment -->
+			<div class="hidden lg:block w-48 order-3"></div>
 		{/if}
 	</div>
 
