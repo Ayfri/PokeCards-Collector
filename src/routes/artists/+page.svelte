@@ -108,7 +108,7 @@
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 		{#each sortedArtists as artist}
 			<a href="/?artist={encodeURIComponent(artist.name.toLowerCase())}" class="block h-full">
-				<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all hover:translate-y-[-4px] border border-transparent hover:border-gray-600 h-full flex flex-col">
+				<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gray-600 h-full flex flex-col">
 					<div class="bg-gray-700 p-2 {NO_IMAGES ? 'hidden' : ''}">
 						<div class="flex justify-center items-center gap-1 h-40 overflow-hidden perspective-500">
 							{#if artist.showcaseCards.length > 0}
