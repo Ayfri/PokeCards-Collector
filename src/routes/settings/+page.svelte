@@ -3,7 +3,7 @@
 	import { authStore } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import PageTitle from '$lib/components/PageTitle.svelte';
-
+	import Avatar from '$lib/components/auth/Avatar.svelte';
 	// Check if user is logged in
 	onMount(() => {
 		const unsubscribe = authStore.subscribe(state => {
@@ -37,9 +37,7 @@
 			<!-- Settings Navigation -->
 			<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
 				<div class="flex items-center gap-4 mb-6">
-					<div class="size-16 rounded-full bg-red-500 flex items-center justify-center text-white text-2xl uppercase font-bold">
-						{$authStore.profile.username.charAt(0)}
-					</div>
+					<Avatar username={$authStore.profile.username} size={16} />
 					<div>
 						<h2 class="text-xl font-semibold dark:text-white">{$authStore.profile.username}</h2>
 						<p class="text-sm text-gray-500 dark:text-gray-400">{$authStore.user.email}</p>
