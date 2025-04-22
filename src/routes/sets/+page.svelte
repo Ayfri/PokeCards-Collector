@@ -2,27 +2,33 @@
 	import type { PageData } from './$types';
 	import { NO_IMAGES } from '$lib/images';
 	import SortControl from '$lib/components/filters/SortControl.svelte';
-
+	import PageTitle from '$lib/components/PageTitle.svelte';
 	export let data: PageData;
 	let sortDirection: 'desc' | 'asc' = 'desc';
-	let sortValue: 'releaseDate' | 'name' | 'printedTotal' = 'releaseDate';
+	let sortValue: 'code' | 'name' | 'printedTotal' | 'releaseDate' = 'releaseDate';
 	let sortedSets = [...data.sets];
 
 	// Sort sets by release date (newest first by default)
 	$: if (sortValue && sortDirection) {
-		if (sortValue === 'releaseDate') {
+		if (sortValue === 'code') {
 			sortedSets = [...data.sets].sort((a, b) => {
-				const aTime = new Date(a.releaseDate).getTime();
-				const bTime = new Date(b.releaseDate).getTime();
-				return sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
+				const codeA = a.ptcgoCode || '';
+				const codeB = b.ptcgoCode || '';
+				return sortDirection === 'desc' ? codeB.localeCompare(codeA) : codeA.localeCompare(codeB);
 			});
 		} else if (sortValue === 'name') {
 			sortedSets = [...data.sets].sort((a, b) => {
 				return sortDirection === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
 			});
-		} else if (sortValue === 'printedTotal') {
+		}  else if (sortValue === 'printedTotal') {
 			sortedSets = [...data.sets].sort((a, b) => {
 				return sortDirection === 'desc' ? b.printedTotal - a.printedTotal : a.printedTotal - b.printedTotal;
+			});
+		} else if (sortValue === 'releaseDate') {
+			sortedSets = [...data.sets].sort((a, b) => {
+				const aTime = new Date(a.releaseDate).getTime();
+				const bTime = new Date(b.releaseDate).getTime();
+				return sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
 			});
 		}
 	}
@@ -30,23 +36,25 @@
 
 <div class="container mx-auto px-4 py-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
-		<h1 class="text-3xl font-bold mb-4 sm:mb-0">Pokémon TCG Sets</h1>
+		<PageTitle title="Pokémon TCG Sets" />
 
 		<div class="flex items-center gap-2">
 			<SortControl
-				bind:sortDirection={sortDirection}
-				bind:sortValue={sortValue}
-				options={[
-					{ value: 'name', label: 'Name' },
-					{ value: 'printedTotal', label: 'Total Cards' },
-					{ value: 'releaseDate', label: 'Release Date' }
-				]}
+			bind:sortDirection={sortDirection}
+			bind:sortValue={sortValue}
+			options={[
+				{ value: 'code', label: 'Code' },
+				{ value: 'name', label: 'Name' },
+				{ value: 'printedTotal', label: 'Total Cards' },
+				{ value: 'releaseDate', label: 'Release Date' }
+			]}
 			/>
 		</div>
 	</div>
+	<hr class="w-full border-t-[3px] border-white my-4" />
 
 	<p class="text-gray-400 mb-6">
-		Showing {sortedSets.length} Pokémon TCG sets in {sortDirection === 'desc' ? 'descending' : 'ascending'} release order.
+		Showing {sortedSets.length} Pokémon TCG sets.
 	</p>
 
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
