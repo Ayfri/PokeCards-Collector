@@ -34,7 +34,7 @@ export function processCardImage(imageUrl: string, highRes: boolean = true): str
 
 	// If no CDN URL is set, handle high-res if needed
 	if (!CDN_URL) {
-		return highRes ? getHighResCardImage(imageUrl) : imageUrl;
+		return highRes ? getHighResCardImage(imageUrl) : getLowResCardImage(imageUrl);
 	}
 
 	// Extract set code and card ID from the original URL
@@ -80,4 +80,14 @@ export function getHighResCardImage(imageUrl: string): string {
 	}
 
 	return imageUrl.substring(0, lastDotIndex) + '_hires' + imageUrl.substring(lastDotIndex);
+}
+
+/**
+ * Gets the low-resolution image URL for a card
+ *
+ * @param imageUrl The original image URL from the API
+ * @returns The low-resolution image URL
+ */
+export function getLowResCardImage(imageUrl: string): string {
+	return imageUrl.replace('_hires', '');
 }
