@@ -218,6 +218,7 @@ async function fetchAndFilterSets() {
 
 	console.log(`Found ${sets.length} sets!`);
 
+	// Create sets data with proper structure
 	const setsData = sets.map(set => ({
 		name: set.name,
 		logo: set.images.logo,
@@ -228,18 +229,87 @@ async function fetchAndFilterSets() {
 
 	try {
 		const cardsJson = JSON.parse(await fs.readFile(CARDS, 'utf-8'));
-
 		const cards = cardsJson.flat() as Card[];
+		
+		// Filter sets to only keep those that have cards
 		const setsWithCards = sets.filter(set => cards.some(card => card.setName === set.name));
-		const uniqueNames = [...new Set(setsWithCards.map(set => set.name))];
-
-		return uniqueNames.map(name => ({
-			name,
-			logo: sets.find(set => set.name === name)?.images?.logo,
-			printedTotal: sets.find(set => set.name === name)?.printedTotal,
-			ptcgoCode: sets.find(set => set.name === name)?.ptcgoCode,
-			releaseDate: sets.find(set => set.name === name)?.releaseDate,
-		}));
+		
+		// Group sets by ptcgoCode to find duplicates
+		const setsByCode = setsWithCards.reduce((acc, set) => {
+			if (!set.ptcgoCode) return acc;
+			
+			if (!acc[set.ptcgoCode]) {
+				acc[set.ptcgoCode] = [];
+			}
+			acc[set.ptcgoCode].push(set);
+			return acc;
+		}, {} as Record<string, FetchedSet[]>);
+		
+		// Process each group to merge duplicate sets
+		const mergedSets: Array<{
+			name: string;
+			logo: string | undefined;
+			printedTotal: number | undefined;
+			ptcgoCode: string | undefined;
+			releaseDate: string | undefined;
+		}> = [];
+		
+		for (const [ptcgoCode, codeSetGroup] of Object.entries(setsByCode)) {
+			if (codeSetGroup.length === 1) {
+				// If only one set with this code, add it directly
+				const set = codeSetGroup[0];
+				mergedSets.push({
+					name: set.name,
+					logo: set.images.logo,
+					printedTotal: set.printedTotal,
+					ptcgoCode: set.ptcgoCode,
+					releaseDate: set.releaseDate,
+				});
+			} else {
+				// If multiple sets with the same code, select the primary one with the shortest set code
+				console.log(`Found ${codeSetGroup.length} sets with the same ptcgoCode: ${ptcgoCode}`);
+				codeSetGroup.forEach(set => {
+					console.log(`- ${set.name}, Set code from logo: ${set.images.logo.split('/').at(-2)}`);
+				});
+				
+				// Get the set code from the logo URL (e.g., from https://images.pokemontcg.io/swsh12pt5/logo.png -> swsh12pt5)
+				const setsWithCodes = codeSetGroup.map(set => ({
+					set,
+					setCode: set.images.logo.split('/').at(-2) || ''
+				}));
+				
+				// Sort by set code length to get the shorter one first
+				setsWithCodes.sort((a, b) => a.setCode.length - b.setCode.length);
+				
+				const primarySet = setsWithCodes[0].set;
+				const primarySetCode = setsWithCodes[0].setCode;
+				
+				console.log(`Selected primary set: ${primarySet.name} with set code ${primarySetCode}`);
+				
+				// Add the primary set to our merged sets list
+				mergedSets.push({
+					name: primarySet.name,
+					logo: primarySet.images.logo,
+					printedTotal: primarySet.printedTotal,
+					ptcgoCode: primarySet.ptcgoCode,
+					releaseDate: primarySet.releaseDate,
+				});
+			}
+		}
+		
+		// Get any sets that don't have ptcgoCode but have cards
+		const setsWithoutCode = setsWithCards
+			.filter(set => !set.ptcgoCode)
+			.map(set => ({
+				name: set.name,
+				logo: set.images.logo,
+				printedTotal: set.printedTotal,
+				ptcgoCode: set.ptcgoCode,
+				releaseDate: set.releaseDate,
+			}));
+		
+		// Combine merged sets and sets without codes
+		return [...mergedSets, ...setsWithoutCode];
 	} catch (error) {
 		console.error(`Error reading ${CARDS}`, error);
 		return setsData;
@@ -249,26 +319,26 @@ async function fetchAndFilterSets() {
 export async function fetchCards() {
 	const cardGroups = [];
 
-	// Récupérer toutes les cartes sans filtrer par supertype
-	console.log('Récupération de toutes les cartes...');
+	// Get all cards without filtering by supertype
+	console.log('Retrieving all cards...');
 
 	let startPage = 1;
 	let hasMoreCards = true;
 	let totalCards = 0;
 	let totalAvailable = 0;
 
-	// Statistiques de temps
+	// Time statistics
 	const startTime = Date.now();
 	const pageProcessingTimes: number[] = [];
 
-	// Nombre de pages à traiter en parallèle
+	// Number of pages to process in parallel
 	const PAGES_BATCH_SIZE = 10;
 
 	const selectFields = 'name,rarity,images,set,cardmarket,types,nationalPokedexNumbers,supertype,artist,tcgplayer';
 
 	while (hasMoreCards) {
 		try {
-			// Traiter plusieurs pages en parallèle
+			// Process multiple pages in parallel
 			const pageBatchPromises = [];
 
 			for (let i = 0; i < PAGES_BATCH_SIZE; i++) {
@@ -278,7 +348,7 @@ export async function fetchCards() {
 
 			const results = await Promise.allSettled(pageBatchPromises);
 
-			// Vérifier si on a atteint la fin des pages
+			// Check if we've reached the end of pages
 			const successfulResults = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<{
 				cards: any[];
 				pageTime: number;
@@ -287,12 +357,12 @@ export async function fetchCards() {
 			}>[];
 
 			if (successfulResults.length === 0) {
-				console.log('Aucune page traitée avec succès, on arrête.');
+				console.log('No pages processed successfully, stopping.');
 				hasMoreCards = false;
 				continue;
 			}
 
-			// Mettre à jour les statistiques et les cartes
+			// Update statistics and cards
 			let shouldStop = false;
 
 			for (const result of successfulResults) {
@@ -301,10 +371,10 @@ export async function fetchCards() {
 					totalCards += result.value.cards.length;
 					pageProcessingTimes.push(result.value.pageTime);
 
-					// Mettre à jour le total disponible si on ne l'a pas encore
+					// Update total available if we don't have it yet
 					if (totalAvailable === 0 && result.value.totalCount) {
 						totalAvailable = result.value.totalCount;
-						console.log(`Total de cartes disponibles dans l'API: ${totalAvailable}`);
+						console.log(`Total cards available in API: ${totalAvailable}`);
 					}
 				}
 
@@ -313,40 +383,40 @@ export async function fetchCards() {
 				}
 			}
 
-			// Calcul des statistiques de temps
-			const elapsedTime = (Date.now() - startTime) / 1000; // en secondes
+			// Calculate time statistics
+			const elapsedTime = (Date.now() - startTime) / 1000; // in seconds
 			const avgPageTime = pageProcessingTimes.reduce((sum, time) => sum + time, 0) / pageProcessingTimes.length;
 			const pagesRemaining = Math.ceil((totalAvailable - totalCards) / 250);
 			const estimatedTimeRemaining = pagesRemaining * avgPageTime;
 
-			console.log(`Progression: ${totalCards}/${totalAvailable} cartes (${((totalCards/totalAvailable)*100).toFixed(2)}%)`);
-			console.log(`Temps écoulé: ${elapsedTime.toFixed(2)}s, Temps moyen par page: ${avgPageTime.toFixed(2)}s`);
-			console.log(`Estimation du temps restant: ${estimatedTimeRemaining.toFixed(2)}s (${(estimatedTimeRemaining/60).toFixed(2)} minutes)`);
+			console.log(`Progress: ${totalCards}/${totalAvailable} cards (${((totalCards/totalAvailable)*100).toFixed(2)}%)`);
+			console.log(`Elapsed time: ${elapsedTime.toFixed(2)}s, Average time per page: ${avgPageTime.toFixed(2)}s`);
+			console.log(`Estimated time remaining: ${estimatedTimeRemaining.toFixed(2)}s (${(estimatedTimeRemaining/60).toFixed(2)} minutes)`);
 			console.log('-----------------------------------');
 
-			// Incrémenter le compteur de pages
+			// Increment page counter
 			startPage += PAGES_BATCH_SIZE;
 
-			// Arrêter si on a atteint la dernière page
+			// Stop if we've reached the last page
 			if (shouldStop) {
 				hasMoreCards = false;
-				console.log('Toutes les pages ont été récupérées.');
+				console.log('All pages have been retrieved.');
 			}
 
-			// Petit délai avant de poursuivre
+			// Small delay before continuing
 			await new Promise(resolve => setTimeout(resolve, 100));
 		} catch (error) {
-			console.error(`Erreur lors du traitement des pages ${startPage}-${startPage + PAGES_BATCH_SIZE - 1}:`, error);
+			console.error(`Error processing pages ${startPage}-${startPage + PAGES_BATCH_SIZE - 1}:`, error);
 
-			// Attendre en cas d'erreur
+			// Wait in case of error
 			await new Promise(resolve => setTimeout(resolve, 2000));
 
-			// Continuer avec la page suivante
+			// Continue with the next page
 			startPage += 1;
 		}
 	}
 
-	// Analyse des cartes récupérées par type
+	// Analyze retrieved cards by type
 	const allCards = cardGroups.flat();
 	const pokemonCards = allCards.filter(card => card.supertype === 'Pokémon').length;
 	const energyCards = allCards.filter(card => card.supertype === 'Energy').length;
@@ -355,18 +425,18 @@ export async function fetchCards() {
 	const totalTime = (Date.now() - startTime) / 1000;
 
 	console.log('-----------------------------------');
-	console.log(`Récapitulatif des cartes récupérées :`);
-	console.log(`- Pokémon: ${pokemonCards} cartes`);
-	console.log(`- Energy: ${energyCards} cartes`);
-	console.log(`- Trainer: ${trainerCards} cartes`);
-	console.log(`- Total: ${allCards.length}/${totalAvailable} cartes (${((allCards.length/totalAvailable)*100).toFixed(2)}%)`);
-	console.log(`Temps total d'exécution: ${totalTime.toFixed(2)}s (${(totalTime/60).toFixed(2)} minutes)`);
+	console.log(`Card retrieval summary:`);
+	console.log(`- Pokémon: ${pokemonCards} cards`);
+	console.log(`- Energy: ${energyCards} cards`);
+	console.log(`- Trainer: ${trainerCards} cards`);
+	console.log(`- Total: ${allCards.length}/${totalAvailable} cards (${((allCards.length/totalAvailable)*100).toFixed(2)}%)`);
+	console.log(`Total execution time: ${totalTime.toFixed(2)}s (${(totalTime/60).toFixed(2)} minutes)`);
 	console.log('-----------------------------------');
 
 	await fs.writeFile(CARDS, JSON.stringify(allCards));
-	console.log(`Écriture de toutes les cartes dans ${CARDS} terminée !`);
+	console.log(`Finished writing all cards to ${CARDS}!`);
 
-	// Fonction pour traiter une page
+	// Function to process a page
 	async function processPage(page: number) {
 		const pageStartTime = Date.now();
 
@@ -376,7 +446,7 @@ export async function fetchCards() {
 			page: page.toString()
 		};
 
-		console.log(`Récupération de la page ${page}...`);
+		console.log(`Retrieving page ${page}...`);
 		const response = await fetchFromApi<FetchedCardsResponse & { totalCount: number }>('cards', params);
 
 		if (!response.data || response.data.length === 0) {
@@ -384,7 +454,63 @@ export async function fetchCards() {
 			return { cards: [], pageTime, isLastPage: true, totalCount: response.totalCount };
 		}
 
-		// Traitement des cartes - sans générer la couleur moyenne
+		// Load sets data to check for merged sets
+		let setMappings: Record<string, { primarySetName: string, primarySetCode: string }> = {};
+		try {
+			// Try to read existing sets data if available
+			const setsData = await fs.readFile(SETS, 'utf-8')
+				.then(data => JSON.parse(data))
+				.catch(() => {
+					console.log('Sets data not found, will be created during the sets scraper run');
+					return [];
+				});
+
+			// Check if we already have sets data
+			if (setsData.length > 0) {
+				console.log(`Loaded ${setsData.length} sets for reference`);
+				
+				// Create a mapping of set names to their proper codes
+				const setsByPtcgoCode: Record<string, Array<{name: string, setCode: string}>> = {};
+				
+				for (const set of setsData) {
+					if (!set.ptcgoCode) continue;
+					
+					const setCode = set.logo.split('/').at(-2) || '';
+					
+					if (!setsByPtcgoCode[set.ptcgoCode]) {
+						setsByPtcgoCode[set.ptcgoCode] = [];
+					}
+					
+					setsByPtcgoCode[set.ptcgoCode].push({
+						name: set.name,
+						setCode
+					});
+				}
+				
+				// For each ptcgoCode with multiple sets, determine the primary set
+				for (const [ptcgoCode, sets] of Object.entries(setsByPtcgoCode)) {
+					if (sets.length > 1) {
+						// Sort by set code length to get the shortest one
+						sets.sort((a, b) => a.setCode.length - b.setCode.length);
+						const primarySet = sets[0];
+						
+						// Create mappings for all non-primary sets to the primary one
+						for (let i = 1; i < sets.length; i++) {
+							const secondarySet = sets[i];
+							setMappings[secondarySet.name] = {
+								primarySetName: primarySet.name,
+								primarySetCode: primarySet.setCode
+							};
+							console.log(`Mapping ${secondarySet.name} (${secondarySet.setCode}) to primary set ${primarySet.name} (${primarySet.setCode})`);
+						}
+					}
+				}
+			}
+		} catch (error) {
+			console.error('Error loading sets data for reference:', error);
+		}
+
+		// Process cards - without generating average color
 		const processedCards = response.data.map((card: FetchedCard) => {
 			const tcgplayerPrices = card?.tcgplayer?.prices ?? {};
 
@@ -396,7 +522,18 @@ export async function fetchCards() {
 			const nationalPokedexNumbers = card.nationalPokedexNumbers ?? [];
 
 			// Extract set code from image URL
-			const setCode = card.images.large.split('/').at(-2);
+			let setCode = card.images.large.split('/').at(-2);
+			let setName = card.set.name;
+			
+			// Check if this card's set needs to be mapped to a primary set
+			if (setMappings[setName]) {
+				const mapping = setMappings[setName];
+				setName = mapping.primarySetName;
+				setCode = mapping.primarySetCode;
+				
+				// Note: We're keeping the original image URLs as requested
+				// Don't modify card.images.large or card.images.small
+			}
 
 			// Extract card number from filename
 			let cardNumber;
@@ -426,24 +563,24 @@ export async function fetchCards() {
 				cardMarketUpdatedAt: cardMarketUpdatedAt ?? tcgplayerUpdatedAt,
 				cardMarketUrl: cardMarketUrl ?? tcgplayerUrl?.replace('/tcgplayer/', '/cardmarket/'),
 				image: card.images.large,
-				meanColor: "FFFFFF", // Couleur par défaut au lieu de calculer la moyenne
+				meanColor: "FFFFFF", // Default color instead of calculating average
 				name: card.name,
 				pokemonNumber: parseInt(nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers.join(', ') : '-'),
 				price,
 				rarity: card.rarity ?? 'Unknown',
-				setName: card.set.name,
+				setName: setName,
 				supertype: card.supertype,
 				types: card.types?.join(', ') || '',
 			};
 		});
 
-		// Statistiques par supertype
+		// Statistics by supertype
 		const pokemonCount = processedCards.filter(card => card.supertype === 'Pokémon').length;
 		const energyCount = processedCards.filter(card => card.supertype === 'Energy').length;
 		const trainerCount = processedCards.filter(card => card.supertype === 'Trainer').length;
 
 		const pageTime = (Date.now() - pageStartTime) / 1000;
-		console.log(`Page ${page}: ${processedCards.length} cartes (Pokémon: ${pokemonCount}, Energy: ${energyCount}, Trainer: ${trainerCount}) en ${pageTime.toFixed(2)}s`);
+		console.log(`Page ${page}: ${processedCards.length} cards (Pokémon: ${pokemonCount}, Energy: ${energyCount}, Trainer: ${trainerCount}) in ${pageTime.toFixed(2)}s`);
 
 		return {
 			cards: processedCards,

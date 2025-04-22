@@ -149,7 +149,17 @@
 
 	let filteredCards = displayedCards;
 	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $filterArtist || $displayAll || $sortBy || $sortOrder || $mostExpensiveOnly) {
-		filteredCards = displayedCards.filter(card => isVisible(card, pokemons.find(p => p.id === card.pokemonNumber), sets.find(s => s.name === card.setName)!!));
+		filteredCards = displayedCards.filter(card => {
+			const cardSet = sets.find(s => s.name === card.setName);
+			// Si le set de la carte n'est pas trouvé, créons un set factice
+			const fallbackSet: Set = cardSet || {
+				name: card.setName,
+				logo: '',
+				printedTotal: 0,
+				releaseDate: new Date()
+			};
+			return isVisible(card, pokemons.find(p => p.id === card.pokemonNumber), fallbackSet);
+		});
 	}
 
 	// Count active filters
