@@ -30,6 +30,11 @@
 	export let height: number | undefined = undefined;
 
 	/**
+	 * Style of the image
+	 */
+	export let style: string | undefined = undefined;
+
+	/**
 	 * Width of the image
 	 * Optional if height is specified
 	 */
@@ -79,6 +84,7 @@
 		sizes={sizesValue}
 		src={standardImageUrl}
 		srcset={srcsetValue}
+		style={style}
 		{width}
 	/>
 {/if}
