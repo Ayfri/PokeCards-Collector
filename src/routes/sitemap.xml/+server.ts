@@ -1,7 +1,11 @@
 import { getCards } from '$lib/helpers/data';
-import { BASE_URL, POKEMONS_COUNT } from '~/constants';
+import { BASE_URL } from '~/constants';
+
 export async function GET() {
 	const mainPage = `${BASE_URL}/`;
+
+	const simplePages = ['/artists', '/sets']
+	const cards = await getCards();
 
 	return new Response(
 		`
@@ -20,11 +24,17 @@ export async function GET() {
 				<changefreq>weekly</changefreq>
 				<priority>1</priority>
 			</url>
-			${new Array(POKEMONS_COUNT).fill(0).map((_, index) => `<url>
-				<loc>${`${BASE_URL}/card/${index + 1}/`}</loc>
+			${simplePages.map(page => `<url>
+				<loc>${`${BASE_URL}${page}`}</loc>
+				<lastmod>${new Date().toISOString()}</lastmod>
+				<changefreq>monthly</changefreq>
+				<priority>0.8</priority>
+			</url>`).join('\n')}
+			${cards.map(card => `<url>
+				<loc>${`${BASE_URL}/card/${card.cardCode}/`}</loc>
 				<lastmod>${new Date().toISOString()}</lastmod>
 				<changefreq>weekly</changefreq>
-				<priority>0.8</priority>
+				<priority>0.6</priority>
 			</url>`).join('\n')}
 		</urlset>`.trim(),
 		{
