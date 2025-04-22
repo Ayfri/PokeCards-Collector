@@ -13,7 +13,7 @@
 			: 'border-white text-white hover:border-[#FFB700]'} {classNames}"
 	on:click={onClick}
 >
-	<span class="relative z-10"><slot /></span>
+	<span class="relative z-10 flex items-center gap-2"><slot /></span>
 </button>
 
 <style>

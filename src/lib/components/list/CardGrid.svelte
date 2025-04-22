@@ -243,9 +243,7 @@
 					isActive={activeFiltersCount > 0}
 					class="px-4"
 				>
-					<span class="relative z-10 flex items-center">
-						<SlidersHorizontalIcon size={16} class="mr-1"/> Filters
-					</span>
+					<SlidersHorizontalIcon size={16}/> Filters
 				</Button>
 				{#if activeFiltersCount > 0}
 					<span class="absolute -bottom-1 -right-1 bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full pointer-events-none z-20">
