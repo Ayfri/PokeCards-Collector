@@ -16,7 +16,7 @@
 	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
 	import Button from '$lib/components/filters/Button.svelte';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { findSetByCardCode } from "$helpers/set-utils";
 	
 	export let cards: FullCard[];
@@ -57,7 +57,7 @@
 		searchName = ''; // Reset the local searchName bound to the TextInput
 		
 		// Also clear URL parameters to match the UI state
-		const currentPath = $page.url.pathname;
+		const currentPath = page.url.pathname;
 		goto(currentPath, { replaceState: true });
 	}
 
