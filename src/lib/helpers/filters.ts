@@ -2,7 +2,7 @@ import { get } from 'svelte/store';
 import type { FullCard, Pokemon, Set } from '$lib/types';
 import { persistentWritable } from '$lib/stores/persistentStore';
 
-export const sortBy = persistentWritable('sort-by', 'sort-id');
+export const sortBy = persistentWritable('sort-by', 'sort-pokedex');
 export const sortOrder = persistentWritable<'asc' | 'desc'>('sort-order', 'asc');
 export const filterNumero = persistentWritable('filter-numero', '');
 export const filterName = persistentWritable('filter-name', '');
@@ -25,6 +25,8 @@ export function resetFilters() {
 	filterArtist.set('all');
 	mostExpensiveOnly.set(false);
 	displayAll.set(true);
+	sortBy.set('sort-pokedex');
+	sortOrder.set('asc');
 }
 
 export function isVisible(card: FullCard, cardPokemon: Pokemon | undefined, cardSet: Set) {

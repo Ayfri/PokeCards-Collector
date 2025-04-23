@@ -1,6 +1,7 @@
 <script lang="ts">
 	export let isActive: boolean = false;
 	export let onClick: () => void;
+	export let disabled: boolean = false;
 
 	let classNames = '';
 	export { classNames as class };
@@ -10,8 +11,11 @@
 	class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 rounded text-sm py-1 px-3 h-8 transition-all duration-300 z-0 hover:text-black
 		   {isActive
 			? 'border-[#FFB700] text-[#FFB700]'
-			: 'border-white text-white hover:border-[#FFB700]'} {classNames}"
+			: 'border-white text-white hover:border-[#FFB700]'}
+		   {disabled ? 'opacity-50 cursor-not-allowed border-gray-600 text-gray-600 hover:text-gray-600 hover:border-gray-600' : ''}
+		   {classNames}"
 	on:click={onClick}
+	disabled={disabled}
 >
 	<span class="relative z-10 flex items-center gap-2"><slot /></span>
 </button>
@@ -29,7 +33,11 @@
 		z-index: 0;
 	}
 
-	.animated-hover-button:hover::before {
+	.animated-hover-button:not(:disabled):hover::before {
 		height: 100%;
+	}
+	
+	.animated-hover-button:disabled::before {
+		display: none;
 	}
 </style>

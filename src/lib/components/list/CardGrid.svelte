@@ -171,7 +171,8 @@
 		$filterType !== 'all',
 		$filterSupertype !== 'all',
 		$filterArtist !== 'all',
-		$mostExpensiveOnly
+		$mostExpensiveOnly,
+		$sortBy !== 'sort-pokedex'
 	].filter(Boolean).length;
 
 	let visibleCardsCount = 0;
@@ -263,17 +264,13 @@
 			</div>
 
 			<!-- Reset Button (Should be always visible) -->
-			<button
-				class="animated-hover-button reset-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 border-white text-white rounded text-sm p-1.5 h-8 transition-all duration-300 z-0
-					   disabled:border-gray-600 disabled:text-gray-600 disabled:cursor-not-allowed"
-				on:click={localResetFilters}
-				aria-label="Reset filters"
+			<Button
+				onClick={localResetFilters}
 				disabled={activeFiltersCount === 0}
+				class="p-1.5"
 			>
-				<span class="relative z-10 flex items-center">
-					<RotateCcwIcon size={16}/>
-				</span>
-			</button>
+				<RotateCcwIcon size={16}/>
+			</Button>
 		</div>
 	</div>
 
