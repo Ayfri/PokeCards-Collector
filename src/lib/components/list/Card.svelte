@@ -4,10 +4,12 @@
 	import {authStore} from '$lib/stores/auth';
 	import {wishlistStore} from '$lib/stores/wishlist';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
+	import { parseCardCode } from '$lib/helpers/card-utils';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import Heart from 'lucide-svelte/icons/heart';
 	import { onMount } from 'svelte';
+	import { findSetByCardCode } from '$lib/helpers/set-utils';
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];
@@ -17,17 +19,13 @@
 	const {
 		image,
 		rarity,
-		pokemonNumber,
-		setName,
 		types,
 		cardCode,  // `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`
 	} = card;
 
-	// Get set code from set object or image name
-	const cardNumber = cardCode.split('_')[3];
-
+	const { pokemonNumber, cardNumber } = parseCardCode(cardCode);	
 	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
-	const set = sets.find(s => s.name === setName)!!;
+	const set = findSetByCardCode(cardCode, sets)!!;
 
 	// Détermine si la carte est dans la wishlist en fonction du store
 	$: isInWishlist = $wishlistStore.has(cardCode);

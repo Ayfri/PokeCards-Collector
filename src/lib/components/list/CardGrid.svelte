@@ -17,6 +17,7 @@
 	import Button from '$lib/components/filters/Button.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	
 	export let cards: FullCard[];
 	export let sets: Set[];
 	export let pokemons: Pokemon[];
@@ -295,7 +296,7 @@
 		let:item
 		marginTop={clientWidth ? 15 + clientWidth * 0.025 : 50}
 	>
-		<CardComponent card={item} {pokemons} {sets} {prices} />
+		<CardComponent card={item} {pokemons} {sets} prices={prices[item.cardCode]} />
 
 		<div slot="empty">
 			<p class="text-white text-center mt-32 text-2xl">No cards found</p>

@@ -35,6 +35,16 @@ export function generateUniqueCardCode(
 	return `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`;
 }
 
+export function parseCardCode(cardCode: string): { supertype?: string, setCode?: string, pokemonNumber?: number, cardNumber?: string } {
+	const parts = cardCode.split('_');
+	return {
+		cardNumber: parts[3],
+		pokemonNumber: parseInt(parts[1]),
+		setCode: parts[2],
+		supertype: parts[0],
+	}
+}
+
 /**
  * Parse a card code from a card image URL
  */
