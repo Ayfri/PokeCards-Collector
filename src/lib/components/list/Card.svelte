@@ -1,7 +1,8 @@
 <script lang="ts">
 	import {NO_IMAGES} from '$lib/images';
-	import {addCardToWishlist, isCardInWishlist, removeCardFromWishlist} from '$lib/services/wishlists';
+	import {addCardToWishlist, removeCardFromWishlist} from '$lib/services/wishlists';
 	import {authStore} from '$lib/stores/auth';
+	import {wishlistStore} from '$lib/stores/wishlist';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
@@ -28,27 +29,9 @@
 	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
 	const set = sets.find(s => s.name === setName)!!;
 
-	let isInWishlist = false;
+	// Détermine si la carte est dans la wishlist en fonction du store
+	$: isInWishlist = $wishlistStore.has(cardCode);
 	let isAddingToWishlist = false;
-
-	onMount(() => {
-		// Subscribe to auth state changes
-		const unsubscribe = authStore.subscribe(async (state) => {
-			if (!state.loading) { // Wait for auth to finish loading
-				if (state.profile) {
-					// User is logged in, check wishlist status for this card
-					const { exists } = await isCardInWishlist(state.profile.username, cardCode);
-					isInWishlist = exists; // Update state based on result
-				} else {
-					// User is not logged in, ensure heart is empty
-					isInWishlist = false;
-				}
-			}
-		});
-
-		// Cleanup subscription on component destroy
-		return unsubscribe;
-	});
 
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
@@ -61,10 +44,10 @@
 		try {
 			if (isInWishlist) {
 				await removeCardFromWishlist($authStore.profile.username, cardCode);
-				isInWishlist = false;
+				// Pas besoin de mettre à jour isInWishlist car removeCardFromWishlist met déjà à jour le store
 			} else {
 				await addCardToWishlist($authStore.profile.username, cardCode);
-				isInWishlist = true;
+				// Pas besoin de mettre à jour isInWishlist car addCardToWishlist met déjà à jour le store
 			}
 		} catch (error) {
 			console.error('Error toggling wishlist status:', error);

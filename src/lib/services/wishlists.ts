@@ -1,4 +1,5 @@
 import { supabase } from '../supabase';
+import { addToWishlistStore, removeFromWishlistStore } from '$lib/stores/wishlist';
 
 // Add a card to user's wishlist
 export async function addCardToWishlist(username: string, cardCode: string) {
@@ -13,6 +14,7 @@ export async function addCardToWishlist(username: string, cardCode: string) {
 
 		if (existingCard) {
 			// Card already in wishlist, return it
+			addToWishlistStore(cardCode); // Ajoute au store local
 			return { data: existingCard, error: null };
 		} else {
 			// Insert new card if it doesn't exist
@@ -23,6 +25,10 @@ export async function addCardToWishlist(username: string, cardCode: string) {
 					card_code: cardCode,
 				})
 				.select();
+
+			if (!error) {
+				addToWishlistStore(cardCode); // Ajoute au store local
+			}
 
 			return { data, error };
 		}
@@ -41,6 +47,10 @@ export async function removeCardFromWishlist(username: string, cardCode: string)
 			.eq('username', username)
 			.eq('card_code', cardCode)
 			.select();
+
+		if (!error) {
+			removeFromWishlistStore(cardCode); // Retire du store local
+		}
 
 		return { data, error };
 	} catch (error) {

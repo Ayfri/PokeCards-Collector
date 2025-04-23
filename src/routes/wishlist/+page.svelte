@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { authStore } from '$lib/stores/auth';
   import { getUserWishlist } from '$lib/services/wishlists';
+  import { wishlistStore, loadWishlist } from '$lib/stores/wishlist';
   import { goto } from '$app/navigation';
   import PageTitle from '$lib/components/PageTitle.svelte';
   import CardGrid from '$lib/components/list/CardGrid.svelte';
@@ -62,14 +63,20 @@
           isOwnProfile = true;
           pageTitleDisplay = 'My Wishlist';
           if (loggedInUser) {
-            // Fetch own wishlist client-side
-            const { data: wishlistItems, error } = await getUserWishlist(loggedInUser.username);
-            if (error) {
-              console.error('Error loading own wishlist:', error);
-              statusMessage = 'Could not load your wishlist.';
-              displayCards = [];
+            // Pour l'utilisateur connecté, utiliser le store si possible
+            if ($wishlistStore.size > 0) {
+              // Si le store a déjà des données, les utiliser
+              const wishlistCardCodes = $wishlistStore;
+              displayCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
+              if (displayCards.length === 0) {
+                statusMessage = 'Your wishlist is empty.';
+              }
+              isLoading = false;
             } else {
-              const wishlistCardCodes = new Set(wishlistItems?.map(item => item.card_code) || []);
+              // Sinon, charger la wishlist (ce qui mettra aussi à jour le store)
+              await loadWishlist();
+              // Après chargement, filtrer les cartes avec le store mis à jour
+              const wishlistCardCodes = $wishlistStore;
               displayCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
               if (displayCards.length === 0) {
                 statusMessage = 'Your wishlist is empty.';

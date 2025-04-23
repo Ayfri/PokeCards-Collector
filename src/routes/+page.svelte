@@ -3,7 +3,6 @@
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/auth';
-	import { getUserWishlist } from '$lib/services/wishlists';
 	import { filterSet, filterArtist, resetFilters } from '$lib/helpers/filters';
 	import { page } from '$app/stores';
 
@@ -44,15 +43,6 @@
 				}
 			}
 		}
-
-		const unsubscribe = authStore.subscribe(async (state) => {
-			if (!state.loading) {
-				if (state.profile) {
-					const { data: wishlistItems, error } = await getUserWishlist(state.profile.username);
-				}
-			}
-		});
-		return unsubscribe;
 	});
 </script>
 
