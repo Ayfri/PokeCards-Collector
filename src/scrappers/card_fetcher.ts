@@ -1,9 +1,9 @@
 import * as fs from 'node:fs/promises';
 import { POKEMONS_COUNT } from '~/constants';
-import { CARDS, PRICES, SETS } from './files';
+import { CARDS, POKEMONS, PRICES, SETS } from './files';
 import { generateUniqueCardCode } from '$lib/helpers/card-utils';
 import { fetchFromApi } from './api_utils';
-import type { PriceData } from '$lib/types';
+import type { Pokemon, PriceData } from '$lib/types';
 import type { FetchedCard, FetchedCardsResponse, ProcessedCard, SetMappings } from './tcg_api_types';
 
 const SELECT_FIELDS = "name,rarity,images,number,set,types,nationalPokedexNumbers,supertype,artist,cardmarket,tcgplayer";
@@ -66,6 +66,13 @@ export async function fetchAndSaveAllCards() {
 	const pageProcessingTimes: number[] = [];
 	const PAGES_BATCH_SIZE = 10;
 
+	const pokemons = await fs.readFile(POKEMONS, 'utf-8')
+		.then(data => JSON.parse(data))
+		.catch(() => {
+			console.log('Pokemons data not found or empty, cannot create set mappings.');
+			return [];
+		});
+
 	// Load set mappings for merging sets during card processing
 	const setMappings = await loadSetMappings();
 
@@ -74,7 +81,7 @@ export async function fetchAndSaveAllCards() {
 			const pageBatchPromises = [];
 			for (let i = 0; i < PAGES_BATCH_SIZE; i++) {
 				const currentPage = startPage + i;
-				pageBatchPromises.push(processPage(currentPage, setMappings));
+				pageBatchPromises.push(processPage(currentPage, setMappings, pokemons));
 			}
 
 			const results = await Promise.allSettled(pageBatchPromises);
@@ -140,7 +147,7 @@ export async function fetchAndSaveAllCards() {
  * Helper function to process a single page of cards.
  * Returns processed cards and their associated prices.
  */
-async function processPage(page: number, setMappings: SetMappings) {
+async function processPage(page: number, setMappings: SetMappings, pokemons: Pokemon[]) {
 	const pageStartTime = Date.now();
 	console.log(`Retrieving page ${page}...`);
 
@@ -162,7 +169,7 @@ async function processPage(page: number, setMappings: SetMappings) {
 	const pricesForPage: Record<string, PriceData> = {};
 
 	for (const rawCard of fetchedCardsRaw) {
-		const card = mapFetchedCardToProcessed(rawCard, setMappings);
+		const card = mapFetchedCardToProcessed(rawCard, setMappings, pokemons);
 		processedCards.push(card);
 
 		const cardmarket = rawCard.cardmarket;
@@ -257,25 +264,34 @@ async function loadSetMappings(): Promise<SetMappings> {
 /**
  * Maps a raw FetchedCard from the API to our ProcessedCard structure.
  */
-function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings): ProcessedCard {
+function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings, pokemons: Pokemon[]): ProcessedCard {
 	const nationalPokedexNumbers = card.nationalPokedexNumbers ?? [];
 	let originalSetName = card.set.name;
 	let urlCode = card.images.large.split('/').at(-2) || setMappings[originalSetName]?.primarySetCode || '';
-
-	// Log inputs for card code generation
-	const pokemonNumberForCode = nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0;
-
-	const cardCode = generateUniqueCardCode(
-		pokemonNumberForCode,
-		urlCode,
-		card.number,
-		card.supertype
-	);
 
 	const cardMarketUrl = card.cardmarket?.url;
 	const tcgplayerUrl = card.tcgplayer?.url;
 	const cardMarketUpdatedAt = card.cardmarket?.updatedAt;
 	const tcgplayerUpdatedAt = card.tcgplayer?.updatedAt;
+
+	let nationalPokedexNumber = nationalPokedexNumbers.at(0);
+
+	if (card.supertype === 'Pokémon' && !nationalPokedexNumber) {
+		console.log(`Trying to find Pokémon for '${card.name}'...`);
+		const foundPokemon = pokemons.find(p => {
+			const pokemonName = p.name.toLowerCase().replaceAll('-', ' ');
+			const cardName = card.name.toLowerCase().replaceAll('-', ' ');
+			return cardName.includes(pokemonName) || pokemonName.includes(cardName);
+		});
+		nationalPokedexNumber = foundPokemon?.id;
+		if (!nationalPokedexNumber) {
+			console.log(`No Pokémon found for '${card.name}'`);
+		} else {
+			console.log(`Found Pokémon '${foundPokemon?.name}' number ${nationalPokedexNumber} for '${card.name}'`);
+		}
+	}
+
+	const cardCode = generateUniqueCardCode(nationalPokedexNumber ?? 0, urlCode, card.number, card.supertype);
 
 	return {
 		artist: card.artist ?? 'Unknown',
@@ -285,7 +301,7 @@ function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings):
 		image: card.images.large,
 		meanColor: 'FFFFFF',
 		name: card.name,
-		pokemonNumber: nationalPokedexNumbers.at(0),
+		pokemonNumber: nationalPokedexNumber,
 		rarity: card.rarity ?? 'Common',
 		setName: originalSetName,
 		supertype: card.supertype,
