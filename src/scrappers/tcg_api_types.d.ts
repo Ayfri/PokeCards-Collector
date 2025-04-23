@@ -4,6 +4,7 @@ export type FetchedCard = {
 	id: string;
 	name: string;
 	rarity: string;
+	number: string;
 	images: {
 		small: string;
 		large: string;

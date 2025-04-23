@@ -6,7 +6,7 @@ import { fetchFromApi } from './api_utils';
 import type { PriceData } from '$lib/types';
 import type { FetchedCard, FetchedCardsResponse, ProcessedCard, SetMappings } from './tcg_api_types';
 
-const SELECT_FIELDS = "name,rarity,images,set,types,nationalPokedexNumbers,supertype,artist,cardmarket,tcgplayer";
+const SELECT_FIELDS = "name,rarity,images,number,set,types,nationalPokedexNumbers,supertype,artist,cardmarket,tcgplayer";
 
 /**
  * Fetches cards for a specific Pokémon by name and Pokédex index.
@@ -262,20 +262,13 @@ function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings):
 	let originalSetName = card.set.name;
 	let urlCode = card.images.large.split('/').at(-2) || setMappings[originalSetName]?.primarySetCode || '';
 
-	let cardNumber: string | undefined;
-	const filename = card.images.large.split('/').at(-1);
-	if (filename) {
-		const match = filename.match(/^\w*(\d+)_\w*\.png$/i);
-		cardNumber = match ? match[1] : undefined;
-	}
-
 	// Log inputs for card code generation
 	const pokemonNumberForCode = nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0;
 
 	const cardCode = generateUniqueCardCode(
 		pokemonNumberForCode,
 		urlCode,
-		cardNumber,
+		card.number,
 		card.supertype
 	);
 
@@ -292,7 +285,7 @@ function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings):
 		image: card.images.large,
 		meanColor: 'FFFFFF',
 		name: card.name,
-		pokemonNumber: nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0,
+		pokemonNumber: nationalPokedexNumbers.at(0),
 		rarity: card.rarity ?? 'Common',
 		setName: originalSetName,
 		supertype: card.supertype,
