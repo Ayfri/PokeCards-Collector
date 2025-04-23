@@ -99,7 +99,7 @@
 			/>
 		</div>
 	</div>
-	<hr class="w-full border-t-[3px] border-white my-4" />
+	<hr class="w-full border-t-[3px] border-gold-400 my-4" />
 
 	<p class="text-gray-400 mb-6">
 		Artists are the creators of the cards, they are responsible for the design and artwork of the cards.<br>
@@ -109,8 +109,8 @@
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 		{#each sortedArtists as artist}
 			<a href="/?artist={encodeURIComponent(artist.name.toLowerCase())}" class="block h-full">
-				<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gray-600 h-full flex flex-col">
-					<div class="bg-gray-700 p-2 {NO_IMAGES ? 'hidden' : ''}">
+				<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
+					<div class="bg-gray-900 p-2 {NO_IMAGES ? 'hidden' : ''}">
 						<div class="flex justify-center items-center gap-1 h-40 overflow-hidden perspective-500">
 							{#if artist.showcaseCards.length > 0}
 								{#each artist.showcaseCards as card, index}
@@ -139,7 +139,7 @@
 					<div class="p-4 flex-1 flex flex-col">
 						<h2 class="text-lg font-semibold text-white">{artist.name}</h2>
 						<div class="mt-2 text-sm text-gray-400 flex justify-between">
-							<span>{artist.totalCards} {artist.totalCards === 1 ? 'card' : 'cards'}</span>
+							<span class="text-gold-400">{artist.totalCards} {artist.totalCards === 1 ? 'card' : 'cards'}</span>
 							<span>{artist.firstReleaseDate.getFullYear()} - {artist.lastReleaseDate.getFullYear()}</span>
 						</div>
 					</div>
@@ -148,3 +148,9 @@
 		{/each}
 	</div>
 </div>
+
+<style>
+	.perspective-500 {
+		perspective: 500px;
+	}
+</style>

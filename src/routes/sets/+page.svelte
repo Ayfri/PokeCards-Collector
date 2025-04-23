@@ -51,7 +51,7 @@
 			/>
 		</div>
 	</div>
-	<hr class="w-full border-t-[3px] border-white my-4" />
+	<hr class="w-full border-t-[3px] border-gold-400 my-4" />
 
 	<p class="text-gray-400 mb-6">
 		Sets are collections of cards that are released together.<br>
@@ -61,8 +61,8 @@
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 		{#each sortedSets as set}
 			<a href="/?set={encodeURIComponent(set.name)}" class="block h-full">
-				<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gray-600 h-full flex flex-col">
-					<div class="h-36 bg-gray-700 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
+				<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
+					<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
 						{#if set.logo}
 							<img src={set.logo} alt="{set.name} logo" class="max-h-full object-contain" loading="lazy" />
 						{:else}
@@ -77,7 +77,7 @@
 						</div>
 						<div class="mt-2 text-sm flex-grow flex items-end">
 							{#if set.ptcgoCode}
-								<span class="px-2 py-1 bg-gray-700 rounded text-gray-300">Code: {set.ptcgoCode}</span>
+								<span class="px-2 py-1 bg-gray-700 rounded text-gold-400">{set.ptcgoCode}</span>
 							{:else}
 								<span class="px-2 py-1 bg-transparent">&nbsp;</span>
 							{/if}
