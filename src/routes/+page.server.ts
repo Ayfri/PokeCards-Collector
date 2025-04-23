@@ -1,4 +1,4 @@
-import { getCards, getRarities, getSets, getTypes, getArtists, getPokemons } from '$helpers/data';
+import { getCards, getRarities, getSets, getTypes, getArtists, getPokemons, getPrices } from '$helpers/data';
 import type { FullCard } from '$lib/types'; // Import FullCard type
 import type { PageServerLoad } from './$types'; // Added import for type
 
@@ -31,6 +31,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const rarities = await getRarities();
 	const types = await getTypes();
 	const artists = await getArtists();
+	const prices = await getPrices();
 
 	// Trier les sets par ordre alphabétique
 	sets.sort((a, b) => a.name.localeCompare(b.name));
@@ -48,6 +49,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		types,
 		artists,
 		pokemons,
+		prices,
 		stats: {
 			totalCards: allCards.length,
 			uniquePokemon,

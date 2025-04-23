@@ -2,7 +2,7 @@
 	import {NO_IMAGES} from '$lib/images';
 	import {addCardToWishlist, isCardInWishlist, removeCardFromWishlist} from '$lib/services/wishlists';
 	import {authStore} from '$lib/stores/auth';
-	import type {FullCard, Pokemon, Set} from '$lib/types';
+	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import Heart from 'lucide-svelte/icons/heart';
@@ -10,11 +10,11 @@
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];
+	export let prices: PriceData
 	export let sets: Set[];
 
 	const {
 		image,
-		price,
 		rarity,
 		pokemonNumber,
 		setName,
@@ -23,9 +23,7 @@
 	} = card;
 
 	// Get set code from set object or image name
-	const setCode = cardCode.split('_')[2];
 	const cardNumber = cardCode.split('_')[3];
-	const pokemonId = cardCode.split('_')[1];
 
 	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
 	const set = sets.find(s => s.name === setName)!!;
@@ -125,8 +123,8 @@
 				{cardName}
 			{/if}
 			<span class="uppercase text-sm opacity-85">
-				{#if setCode}
-					{setCode}
+				{#if set.ptcgoCode}
+					{set.ptcgoCode}
 				{/if}
 				#{cardNumber}/{set?.printedTotal}
 			</span>
@@ -142,7 +140,7 @@
 					aria-label="View on Cardmarket"
 				>
 					<div class="flex items-center justify-center whitespace-nowrap">
-						<span>{price && price !== 100_000 ? `${price} $` : 'Priceless'}</span>
+						<span>{prices.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</span>
 						<span class="mx-1">-</span>
 						<span class="text-gold-400 font-bold underline flex items-center">
 							Cardmarket
@@ -151,7 +149,7 @@
 					</div>
 				</a>
 			{:else}
-				<h3 class="text-center">{price && price !== 100_000 ? `${price} $` : 'Priceless'}</h3>
+				<h3 class="text-center">{prices.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</h3>
 			{/if}
 		</div>
 	</div>

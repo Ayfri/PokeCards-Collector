@@ -1,19 +1,19 @@
 <script lang="ts">
 	import PageTitle from '@components/PageTitle.svelte';
-	import type {FullCard, Pokemon, CardMarketPrices, Set} from '$lib/types';
+	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import CardPrice from './CardPrice.svelte';
 
 	export let set: Set;
 	export let card: FullCard;
+	export let cardPrices: PriceData | undefined = undefined;
 	export let pokemon: Pokemon | undefined = undefined;
-	export let cardmarket: CardMarketPrices | undefined = undefined;
 
 	const cardNumber = card.cardCode.split('_')[3];
 
 	// Compute the display name: Pokemon name if available, otherwise card name
 	$: displayName = pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name;
 	// Compute description: Pokemon description if available, otherwise card rules/basic info
-	$: displayDescription = pokemon ? pokemon.description : ((card as any).rules?.join('\n') || `Details for ${card?.name}`);
+	$: displayDescription = pokemon ? pokemon.description : `Details for ${card?.name}`;
 
 	function formatDate(date: Date) {
 		return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -116,15 +116,15 @@
 
 		<!-- Right Column: Prices -->
 		<div class="flex flex-col items-center">
-			{#if cardmarket !== undefined}
-				<CardPrice {card} {cardmarket} />
+			{#if cardPrices}
+				<CardPrice {card} {cardPrices} />
 			{:else}
 				<!-- Fallback display if cardmarket data is not available -->
 				<div class="bg-gray-800 border-2 border-gold-400 rounded-xl p-4 w-full">
 					<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Price</h3>
 					<div class="bg-gray-900 border-2 border-gold-400 rounded-lg p-3 mb-4 text-center">
 						<span class="text-2xl font-bold">
-							{card.price ? `${card.price} $` : 'Priceless'}
+							Priceless
 						</span>
 						<span class="text-sm text-gray-400 block">Main Price</span>
 					</div>

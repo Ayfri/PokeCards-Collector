@@ -2,10 +2,11 @@
 	import { pascalCase } from '$helpers/strings.js';
 	import { processCardImage } from '$helpers/card-images';
 	import { NO_IMAGES } from '$lib/images';
-	import type { FullCard, Pokemon } from '~/lib/types';
+	import type { FullCard, Pokemon, PriceData } from '~/lib/types';
 
 	export let cards: FullCard[];
 	export let pokemons: Pokemon[];
+	export let prices: Record<string, PriceData>;
 	export let card: FullCard;
 
 	function buildEvolutionChain(card: FullCard) {
@@ -87,7 +88,7 @@
 		if (pokemonCards.length === 0) return undefined;
 		
 		// Sort by price (highest first) and return the first one
-		return [...pokemonCards].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))[0];
+		return [...pokemonCards].sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
 	}
 
 	// Helper function to get the image source for a Pokémon

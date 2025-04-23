@@ -9,7 +9,7 @@
 	import ScrollProgress from '@components/list/ScrollProgress.svelte';
 	import TextInput from '$lib/components/filters/TextInput.svelte';
 	import { onMount } from 'svelte';
-	import type {FullCard, Set, Pokemon} from '$lib/types';
+	import type {FullCard, Set, Pokemon, PriceData} from '$lib/types';
 	import { fade, fly } from 'svelte/transition';
 	import XIcon from 'lucide-svelte/icons/x';
 	import SlidersHorizontalIcon from 'lucide-svelte/icons/sliders-horizontal';
@@ -20,6 +20,7 @@
 	export let cards: FullCard[];
 	export let sets: Set[];
 	export let pokemons: Pokemon[];
+	export let prices: Record<string, PriceData>;
 	export let rarities: string[];
 	export let types: string[];
 	export let artists: string[] = [];
@@ -27,7 +28,6 @@
 
 	let clientWidth: number = 0;
 	let showFilters = false;
-	let filterOverlay = false;
 	let searchName = '';
 	let debounceTimeout: number;
 
@@ -85,7 +85,7 @@
 				const existingCard = cardGroups.get(groupKey);
 
 				// Only keep the most expensive card in each group
-				if (!existingCard || (card.price ?? 0) > (existingCard.price ?? 0)) {
+				if (!existingCard || (prices[card.cardCode]?.simple ?? 0) > (prices[existingCard.cardCode]?.simple ?? 0)) {
 					cardGroups.set(groupKey, card);
 				}
 			});
@@ -106,7 +106,9 @@
 			const bCardCode = parseInt(b.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
 
 			if ($sortBy === 'sort-price') {
-				return $sortOrder === 'asc' ? (a.price ?? -1) - (b.price ?? 0) : (b.price ?? 0) - (a.price ?? -1);
+				const aPrice = prices[a.cardCode]?.simple ?? 0;
+				const bPrice = prices[b.cardCode]?.simple ?? 0;
+				return $sortOrder === 'asc' ? aPrice - bPrice : bPrice - aPrice;
 			} else if ($sortBy === 'sort-name') {
 				const aPokemon = pokemons.find(p => p.id === a.pokemonNumber) ?? {name: a.name};
 				const bPokemon = pokemons.find(p => p.id === b.pokemonNumber) ?? {name: b.name};
@@ -158,7 +160,7 @@
 		filteredCards = displayedCards.filter(card => {
 			const cardSet = sets.find(s => s.name === card.setName);
 			// Si le set de la carte n'est pas trouvé, créons un set factice
-			const fallbackSet: Set = cardSet || {
+			const fallbackSet: Set = cardSet ?? {
 				name: card.setName,
 				logo: '',
 				printedTotal: 0,
@@ -293,7 +295,7 @@
 		let:item
 		marginTop={clientWidth ? 15 + clientWidth * 0.025 : 50}
 	>
-		<CardComponent card={item} {pokemons} {sets} />
+		<CardComponent card={item} {pokemons} {sets} {prices} />
 
 		<div slot="empty">
 			<p class="text-white text-center mt-32 text-2xl">No cards found</p>

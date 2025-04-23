@@ -46,8 +46,8 @@
 		// Sort cards by price (most expensive first)
 		const sortedByPrice = [...cards].sort((a, b) => {
 			// Treat null or undefined prices as 0
-			const priceA = a.price ?? 0;
-			const priceB = b.price ?? 0;
+			const priceA = data.prices[a.cardCode]?.simple ?? 0;
+			const priceB = data.prices[b.cardCode]?.simple ?? 0;
 			return priceB - priceA;
 		});
 

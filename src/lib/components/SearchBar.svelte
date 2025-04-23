@@ -4,10 +4,11 @@
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
 	import { processCardImage } from '$helpers/card-images';
-	import type { FullCard, Set } from '$lib/types';
+	import type { FullCard, Set, PriceData } from '$lib/types';
 	import { browser } from '$app/environment';
 
 	// --- Props ---
+	export let prices: Record<string, PriceData>;
 	export let allCards: FullCard[];
 	export let autoFocus: boolean = false;
 	export let mobileMode: boolean = false;
@@ -243,8 +244,14 @@
 					<div class="flex-grow text-sm">
 						<p class="font-semibold text-white truncate">{card.name}</p>
 						<p class="text-gray-400 truncate">{set?.name || 'Unknown Set'}</p>
-						{#if card.price}
-							<p class="text-gold-400 font-medium mt-1">{card.price.toFixed(2)} $</p>
+						{#if prices[card.cardCode]?.simple}
+							<p class="text-gold-400 font-medium mt-1">
+								{#if prices[card.cardCode]?.simple}
+									{prices[card.cardCode]?.simple?.toFixed(2)} $
+								{:else}
+									Priceless
+								{/if}
+							</p>
 						{/if}
 					</div>
 					<div class="text-xs text-gray-500 ml-2 text-right flex-shrink-0">

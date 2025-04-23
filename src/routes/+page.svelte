@@ -16,6 +16,7 @@
 	$: types = data.types;
 	$: artists = data.artists;
 	$: pokemons = data.pokemons;
+	$: prices = data.prices;
 
 	onMount(() => {
 		// Check if we have any filter parameters in the URL
@@ -56,7 +57,7 @@
 </script>
 
 <main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
-	<CardGrid cards={allCards} {sets} {rarities} {types} {artists} {pokemons} />
+	<CardGrid cards={allCards} {sets} {rarities} {types} {artists} {pokemons} {prices} />
 </main>
 
 <style>

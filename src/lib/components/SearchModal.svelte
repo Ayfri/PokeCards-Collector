@@ -2,11 +2,12 @@
 	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import SearchBar from './SearchBar.svelte';
-	import type { FullCard, Set } from '~/lib/types';
+	import type { FullCard, Set, PriceData } from '~/lib/types';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
 
 	export let allCards: FullCard[] = [];
+	export let prices: Record<string, PriceData> = {};
 	export let sets: Set[] = [];
 	let isOpen = false;
 
@@ -55,6 +56,7 @@
 			<div class="w-full">
 				<SearchBar
 					{allCards}
+					{prices}
 					{sets}
 					autoFocus={true}
 					mobileMode={true}

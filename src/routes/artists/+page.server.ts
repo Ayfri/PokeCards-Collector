@@ -1,15 +1,15 @@
-import { getCards, getArtists, getSets } from '$helpers/data';
+import { getCards, getArtists, getSets, getPrices } from '$helpers/data';
 import type { PageServerLoad } from './$types';
-import type { FullCard } from '$lib/types';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	// Get layout data which contains default SEO values
 	const layoutData = await parent();
 
 	// Get all cards and artists
-	const allCards: FullCard[] = await getCards();
+	const allCards = await getCards();
 	const artists = await getArtists();
 	const sets = await getSets();
+	const prices = await getPrices();
 
 	// Define page-specific SEO data
 	const pageSeoData: Partial<typeof layoutData> = {
@@ -22,6 +22,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		allCards,
 		artists,
 		sets,
+		prices,
 		...pageSeoData
 	};
 };

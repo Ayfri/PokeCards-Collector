@@ -8,27 +8,9 @@ export interface Card {
 	name: string;
 	pokemonNumber?: number;
 	rarity: string;
-	setCode: string;
+	setName: string;
 	supertype: string;
 	types: string;
-}
-
-export interface CardMarketPrices {
-	averageSellPrice: number;
-	lowPrice: number;
-	trendPrice: number;
-	germanProLow: number;
-	suggestedPrice: number;
-	reverseHoloSell: number;
-	reverseHoloLow: number;
-	reverseHoloTrend: number;
-	lowPriceExPlus: number;
-	avg1: number;
-	avg7: number;
-	avg30: number;
-	reverseHoloAvg1: number;
-	reverseHoloAvg7: number;
-	reverseHoloAvg30: number;
 }
 
 export type FullCard = Card;
@@ -39,6 +21,21 @@ export interface Pokemon {
 	description: string;
 	evolves_from?: number;
 	evolves_to?: number[];
+}
+
+export interface PriceData {
+	simple?: number;
+	low?: number;
+	trend?: number;
+	avg1?: number;
+	avg7?: number;
+	avg30?: number;
+	reverseSimple?: number;
+	reverseLow?: number;
+	reverseTrend?: number;
+	reverseAvg1?: number;
+	reverseAvg7?: number;
+	reverseAvg30?: number;
 }
 
 export interface Set {

@@ -1,9 +1,10 @@
-import type { Card, FullCard, Pokemon, Set } from '~/lib/types';
+import type { Card, FullCard, Pokemon, PriceData, Set } from "$lib/types";
 import pokemonCards from '~/assets/cards-full.json';
 import pokemons from '~/assets/pokemons-full.json';
 import holoCards from '~/assets/holo-cards.json';
 import pokemonSets from '~/assets/sets-full.json';
 import pokemonTypes from '~/assets/types.json';
+import prices from '~/assets/prices.json';
 
 export async function getPokemons(): Promise<Pokemon[]> {
 	return pokemons;
@@ -11,6 +12,10 @@ export async function getPokemons(): Promise<Pokemon[]> {
 
 export async function getCards(): Promise<FullCard[]> {
 	return pokemonCards as FullCard[];
+}
+
+export async function getPrices(): Promise<Record<string, PriceData>> {
+	return prices;
 }
 
 export async function getSets(): Promise<Set[]> {

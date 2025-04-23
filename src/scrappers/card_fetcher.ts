@@ -3,7 +3,8 @@ import { POKEMONS_COUNT } from '~/constants';
 import { CARDS, PRICES, SETS } from './files';
 import { generateUniqueCardCode } from '$lib/helpers/card-utils';
 import { fetchFromApi } from './api_utils';
-import type { FetchedCard, FetchedCardsResponse, PriceData, ProcessedCard, SetMappings } from './tcg_api_types';
+import type { PriceData } from '$lib/types';
+import type { FetchedCard, FetchedCardsResponse, ProcessedCard, SetMappings } from './tcg_api_types';
 
 const SELECT_FIELDS = "name,rarity,images,set,types,nationalPokedexNumbers,supertype,artist,cardmarket,tcgplayer";
 
@@ -166,20 +167,30 @@ async function processPage(page: number, setMappings: SetMappings) {
 
 		const cardmarket = rawCard.cardmarket;
 		const tcgplayer = rawCard.tcgplayer;
-		pricesForPage[card.cardCode] = {
-			simple: cardmarket?.prices?.suggestedPrice ?? cardmarket?.prices?.averageSellPrice ?? tcgplayer?.prices?.normal?.market,
-			low: cardmarket?.prices?.lowPrice ?? tcgplayer?.prices?.normal?.low,
-			trend: cardmarket?.prices?.trendPrice ?? tcgplayer?.prices?.normal?.market,
-			avg1: cardmarket?.prices?.avg1,
-			avg7: cardmarket?.prices?.avg7,
-			avg30: cardmarket?.prices?.avg30,
+        const cardPrices = {
+            simple: cardmarket?.prices?.suggestedPrice || cardmarket?.prices?.averageSellPrice || tcgplayer?.prices?.normal?.market,
+            low: cardmarket?.prices?.lowPrice || tcgplayer?.prices?.normal?.low,
+            trend: cardmarket?.prices?.trendPrice || tcgplayer?.prices?.normal?.market,
+            avg1: cardmarket?.prices?.avg1,
+            avg7: cardmarket?.prices?.avg7,
+            avg30: cardmarket?.prices?.avg30,
             reverseSimple: cardmarket?.prices?.reverseHoloSell ?? tcgplayer?.prices?.reverseHolofoil?.market,
             reverseLow: cardmarket?.prices?.reverseHoloLow ?? tcgplayer?.prices?.reverseHolofoil?.low,
             reverseTrend: cardmarket?.prices?.reverseHoloTrend ?? tcgplayer?.prices?.reverseHolofoil?.market,
             reverseAvg1: cardmarket?.prices?.reverseHoloAvg1,
             reverseAvg7: cardmarket?.prices?.reverseHoloAvg7,
             reverseAvg30: cardmarket?.prices?.reverseHoloAvg30
-		};
+        };
+
+        // Remove undefined prices
+        Object.keys(cardPrices).forEach(key => {
+            const price = cardPrices[key as keyof PriceData];
+            if (price === undefined || price === null) {
+                delete cardPrices[key as keyof PriceData];
+            }
+        });
+
+        pricesForPage[card.cardCode] = cardPrices;
 	}
 
 	const pokemonCount = processedCards.filter(card => card.supertype === 'Pokémon').length;
@@ -214,12 +225,10 @@ async function loadSetMappings(): Promise<SetMappings> {
 			const setsByPtcgoCode: Record<string, Array<{ name: string, setCode: string }>> = {};
 			for (const set of setsData) {
 				if (!set.ptcgoCode || !set.logo) continue;
-				const setCode = set.logo.split('/').at(-2) || '';
+				const setCode = set.ptcgoCode;
 				if (!setCode) continue;
 
-				if (!setsByPtcgoCode[set.ptcgoCode]) {
-					setsByPtcgoCode[set.ptcgoCode] = [];
-				}
+				setsByPtcgoCode[set.ptcgoCode] ??= [];
 				setsByPtcgoCode[set.ptcgoCode].push({ name: set.name, setCode });
 			}
 
@@ -251,12 +260,7 @@ async function loadSetMappings(): Promise<SetMappings> {
 function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings): ProcessedCard {
 	const nationalPokedexNumbers = card.nationalPokedexNumbers ?? [];
 	let originalSetName = card.set.name;
-	let setCode = card.images.large.split('/').at(-2) || '';
-
-	if (setMappings[originalSetName]) {
-		const mapping = setMappings[originalSetName];
-		setCode = mapping.primarySetCode;
-	}
+	let setCode = card.images.large.split('/').at(-2) || setMappings[originalSetName]?.primarySetCode || '';
 
 	let cardNumber: string | undefined;
 	const filename = card.images.large.split('/').at(-1);
@@ -290,7 +294,7 @@ function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings):
 		name: card.name,
 		pokemonNumber: nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0,
 		rarity: card.rarity ?? 'Common',
-		setCode,
+		setName: originalSetName,
 		supertype: card.supertype,
 		types: card.types?.join(', ') || '',
 	};

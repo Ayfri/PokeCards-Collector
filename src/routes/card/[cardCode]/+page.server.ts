@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getCards, getPokemons, getSets } from '$helpers/data';
+import { getCards, getPokemons, getPrices, getSets } from '$helpers/data';
 import type { FullCard, Pokemon, Set } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -35,10 +35,11 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	}
 
 	// Load all necessary data
-	const [allPokemons, allSets, allCards] = await Promise.all([
+	const [allPokemons, allSets, allCards, allPrices] = await Promise.all([
 		getPokemons(),
 		getSets(),
-		getCards()
+		getCards(),
+		getPrices(),
 	]);
 
 	// Find the specific card by cardCode
@@ -73,7 +74,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	}
 
 	// Sort cards by price (highest first)
-	relevantCards.sort((a, b) => (b.price ?? 0) - (a.price ?? 0));
+	relevantCards.sort((a, b) => (allPrices[b.cardCode]?.simple ?? 0) - (allPrices[a.cardCode]?.simple ?? 0));
 
 	// Make sure the target card is the first in the array
 	if (relevantCards[0].cardCode !== cardCode) {
@@ -103,6 +104,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		sets: allSets,
 		pokemons: allPokemons,
 		pokemon: associatedPokemon,
+		prices: allPrices,
 		title: pageTitle,
 		description: pageDescription,
 		image: pageImage

@@ -4,38 +4,23 @@
 	import RelatedCards from '@components/card/RelatedCards.svelte';
 	import {NO_IMAGES} from '$lib/images';
 	import {fade} from 'svelte/transition';
-	import type {FullCard, Pokemon, Set, CardMarketPrices} from '$lib/types';
+	import type {FullCard, Pokemon, Set, PriceData} from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
 	import CardImage from '@components/card/CardImage.svelte';
 	import { onMount } from 'svelte';
-	import { goto, pushState } from '$app/navigation';
+	import { pushState } from '$app/navigation';
 
 	// --- Props ---
 	export let cards: FullCard[]; // Expects the primary card to be the first element
 	export let pokemons: Pokemon[]; // Full list for lookups (prev/next, evolutions)
+	export let prices: Record<string, PriceData>;
 	export let sets: Set[];
 	export let pokemon: Pokemon | undefined = undefined; // Make Pokemon optional
-	export let cardmarket: CardMarketPrices = {
-		averageSellPrice: 0,
-		avg1: 0,
-		avg7: 0,
-		avg30: 0,
-		reverseHoloAvg1: 0,
-		reverseHoloAvg7: 0,
-		reverseHoloAvg30: 0,
-		germanProLow: 0,
-		lowPrice: 0,
-		reverseHoloLow: 0,
-		lowPriceExPlus: 0,
-		trendPrice: 0,
-		suggestedPrice: 0,
-		reverseHoloSell: 0,
-		reverseHoloTrend: 0
-	};
 
 	// --- Reactive State ---
 	// The primary card to display is the first one in the sorted list
 	$: card = cards[0];
+	$: cardPrices = prices[card.cardCode];
 
 	// Safely find the current set
 	$: currentSet = sets.find(set => set.name === card?.setName);
@@ -143,7 +128,7 @@
 		if (pokemonCards.length === 0) return undefined;
 		
 		// Sort by price (highest first) and return the first one
-		return [...pokemonCards].sort((a, b) => (b.price ?? 0) - (a.price ?? 0))[0];
+		return [...pokemonCards].sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
 	}
 
 	// --- Lifecycle ---
@@ -180,7 +165,7 @@
 <div class="flex flex-col gap-1 lg:gap-8 content-center">
 	<!-- Evolution Chain Component (Only for Pokemon) -->
 	{#if pokemon && isInitialRenderComplete}
-		<EvolutionChain {card} {pokemons} {cards} />
+		<EvolutionChain {card} {pokemons} {cards} {prices} />
 	{/if}
 
 	<!-- Pokédex number indicator (Only for Pokemon) -->
@@ -204,7 +189,7 @@
 			<div
 				class="w-[21rem] h-[29rem] sm:w-[20rem] sm:h-[28rem] lg:w-[23rem] lg:h-[32rem] max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {pokemon ? '' : 'non-pokemon'}"
 				bind:this={centerCard}
-				data-card-id={currentSet?.ptcgoCode}
+				data-card-id={currentSet?.name}
 				data-card-type={currentType}
 			>
 				{#key card?.image} <!-- Use key for smooth transitions -->
@@ -340,12 +325,12 @@
 
 	<!-- Card Information Component -->
 	{#if card && currentSet}
-		<CardInfo {card} set={currentSet} {cardmarket} {pokemon} />
+		<CardInfo {card} set={currentSet} {cardPrices} {pokemon} />
 	{/if}
 
 	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
 	{#if cards.length > 1 && shouldRenderAllCards}
-		<RelatedCards {cards} {pokemons} {sets} {pokemon} onCardSelect={handleCardSelect} />
+		<RelatedCards {cards} {pokemons} {sets} {prices} {pokemon} onCardSelect={handleCardSelect} />
 	{/if}
 </div>
 

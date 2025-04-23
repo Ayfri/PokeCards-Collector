@@ -26,19 +26,11 @@ async function fetchAndFilterSets() {
 	}));
 
 	try {
-		const cardsJson = JSON.parse(await fs.readFile(CARDS, 'utf-8'));
-		const cards = cardsJson.flat() as Card[];
-
-		// Filter sets to only keep those that have cards
-		const setsWithCards = sets.filter(set => cards.some(card => card.setCode === set.ptcgoCode));
-
 		// Group sets by ptcgoCode to find duplicates
-		const setsByCode = setsWithCards.reduce((acc, set) => {
+		const setsByCode = sets.reduce((acc, set) => {
 			if (!set.ptcgoCode) return acc;
 
-			if (!acc[set.ptcgoCode]) {
-				acc[set.ptcgoCode] = [];
-			}
+			acc[set.ptcgoCode] ??= [];
 			acc[set.ptcgoCode].push(set);
 			return acc;
 		}, {} as Record<string, FetchedSet[]>);
@@ -95,19 +87,8 @@ async function fetchAndFilterSets() {
 			}
 		}
 
-		// Get any sets that don't have ptcgoCode but have cards
-		const setsWithoutCode = setsWithCards
-			.filter(set => !set.ptcgoCode)
-			.map(set => ({
-				name: set.name,
-				logo: set.images.logo,
-				printedTotal: set.printedTotal,
-				ptcgoCode: set.ptcgoCode,
-				releaseDate: set.releaseDate,
-			}));
-
 		// Combine merged sets and sets without codes
-		return [...mergedSets, ...setsWithoutCode];
+		return mergedSets;
 	} catch (error) {
 		console.error(`Error reading ${CARDS} for set filtering:`, error);
 		return initialSetsData; // Return initial list if card reading fails

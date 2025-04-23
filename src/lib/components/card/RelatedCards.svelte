@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type {FullCard, Pokemon, Set} from '$lib/types';
+	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import {fade} from 'svelte/transition';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
@@ -10,6 +10,7 @@
 	// --- Props ---
 	export let cards: FullCard[];
 	export let pokemons: Pokemon[]; // Still needed for lookups if a card *is* a pokemon
+	export let prices: Record<string, PriceData>;
 	export let sets: Set[];
 	export let pokemon: Pokemon | undefined = undefined; // Optional Pokemon context
 	export let onCardSelect: (card: FullCard) => void;
@@ -38,8 +39,8 @@
 		switch (sortType) {
 			case 'sort-price':
 				sorted = sorted.sort((a, b) => {
-					const priceA = a.price ?? 0; // Handle null/undefined price
-					const priceB = b.price ?? 0;
+					const priceA = prices[a.cardCode]?.simple ?? 0; // Handle null/undefined price
+					const priceB = prices[b.cardCode]?.simple ?? 0;
 					return order === 'asc' ? priceA - priceB : priceB - priceA;
 				});
 				break;
@@ -68,9 +69,11 @@
 				break;
 			default: // sort-set (default)
 				sorted = sorted.sort((a, b) => {
-					const nameA = a.setName ?? ''; // Handle null/undefined set name
-					const nameB = b.setName ?? '';
-					return order === 'asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+					const aSet = getSet(a.setName);
+					const bSet = getSet(b.setName);
+					const aName = aSet?.name ?? '';
+					const bName = bSet?.name ?? '';
+					return order === 'asc' ? aName.localeCompare(bName) : bName.localeCompare(aName);
 				});
 				break;
 		}
@@ -159,7 +162,13 @@
 									aria-label="View on Cardmarket"
 								>
 									<div class="flex items-center justify-center whitespace-nowrap">
-										<span class="text-sm">{card.price != null ? `${card.price.toFixed(2)} $` : 'Priceless'}</span>
+										<span class="text-sm">
+											{#if prices[card.cardCode]?.simple}
+												{prices[card.cardCode]?.simple?.toFixed(2)} $
+											{:else}
+												Priceless
+											{/if}
+										</span>
 										<span class="mx-1 text-sm">-</span>
 										<span class="text-gold-400 font-bold underline text-sm flex items-center">
 											Cardmarket
@@ -168,7 +177,13 @@
 									</div>
 								</a>
 							{:else}
-								<div class="text-sm">{card.price != null ? `${card.price.toFixed(2)} $` : 'Priceless'}</div>
+								<div class="text-sm">
+									{#if prices[card.cardCode]?.simple}
+										{prices[card.cardCode]?.simple?.toFixed(2)} $
+									{:else}
+										Priceless
+									{/if}
+								</div>
 							{/if}
 						</div>
 					</div>

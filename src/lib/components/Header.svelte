@@ -1,13 +1,14 @@
 <script lang="ts">
 	import {page} from '$app/state';
 	import {NO_IMAGES} from '$lib/images';
-	import type {FullCard, Set} from '$lib/types';
+	import type {FullCard, Set, PriceData} from '$lib/types';
 	import UserMenu from '@components/auth/UserMenu.svelte';
 	import SearchBar from '@components/SearchBar.svelte';
 	import SearchModal from '@components/SearchModal.svelte';
 	import pokestore from '~/assets/pokestore.png';
 
 	// Use allCards from layout data instead of page-specific data
+	$: prices = page.data.prices as Record<string, PriceData> || {};
 	$: allCards = page.data.allCards as FullCard[] || [];
 	$: sets = page.data.sets as Set[] || [];
 </script>
@@ -31,11 +32,11 @@
 		</a>
 		<!-- Search on desktop: visible on sm screens and up -->
 		<div class="w-60 sm:w-80 md:w-96 max-sm:hidden">
-			<SearchBar {allCards} {sets} />
+			<SearchBar {allCards} {prices} {sets} />
 		</div>
 
 		<!-- Mobile search using the Svelte component -->
-		<SearchModal {allCards} {sets}/>
+		<SearchModal {allCards} {prices} {sets}/>
 
 		<!-- User menu -->
 		<UserMenu/>
