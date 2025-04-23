@@ -5,7 +5,7 @@
 	import { authStore } from '$lib/stores/auth';
 	import { getUserWishlist } from '$lib/services/wishlists';
 	import { filterSet, filterArtist, resetFilters } from '$lib/helpers/filters';
-	import { page } from '$app/state';
+	import { page } from '$app/stores';
 
 	export let data: PageData;
 
@@ -19,8 +19,8 @@
 
 	onMount(() => {
 		// Check if we have any filter parameters in the URL
-		const setParam = page.url.searchParams.get('set');
-		const artistParam = page.url.searchParams.get('artist');
+		const setParam = $page.url.searchParams.get('set');
+		const artistParam = $page.url.searchParams.get('artist');
 
 		// If we have any filter parameters, reset all filters first
 		if (setParam || artistParam) {
