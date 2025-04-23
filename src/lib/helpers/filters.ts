@@ -12,9 +12,8 @@ export const filterType = persistentWritable('filter-type', 'all');
 export const filterRarity = persistentWritable('filter-rarity', 'all');
 export const filterSupertype = persistentWritable('filter-supertype', 'all');
 export const filterArtist = persistentWritable('filter-artist', 'all');
-export const mostExpensiveOnly = persistentWritable('most-expensive-only', false);
 
-export const displayAll = persistentWritable('display-all', true);
+export const mostExpensiveOnly = persistentWritable('most-expensive-only', false);
 
 export function resetFilters() {
 	filterNumero.set('');
@@ -25,7 +24,6 @@ export function resetFilters() {
 	filterSupertype.set('all');
 	filterArtist.set('all');
 	mostExpensiveOnly.set(false);
-	displayAll.set(true);
 }
 
 export function resetSort() {

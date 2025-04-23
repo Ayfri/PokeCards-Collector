@@ -1,6 +1,6 @@
 <script lang="ts">
 	import "~/styles/colors.css";
-	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder, resetFilters, resetSort} from '$lib/helpers/filters';
+	import {filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder, resetFilters, resetSort} from '$lib/helpers/filters';
 	import { getRarityLevel } from '$lib/helpers/rarity';
 	import CardComponent from '@components/list/Card.svelte';
 	import Filters from '@components/list/Filters.svelte';
@@ -62,51 +62,45 @@
 	}
 
 	let displayedCards = cards;
-	$: {
-		if ($mostExpensiveOnly) {
-			// Group cards by appropriate ID based on supertype
-			const cardGroups = new Map<string, FullCard>();
+	$: if ($mostExpensiveOnly) {
+		// Group cards by appropriate ID based on supertype
+		const cardGroups = new Map<string, FullCard>();
 
-			cards.forEach(card => {
-				let groupKey = '';
+		cards.forEach(card => {
+			let groupKey = '';
 
-				// Use different keys based on supertype
-				if (card.supertype === 'Pokémon' && card.pokemonNumber) {
-					// For Pokémon cards, group by Pokémon ID
-					groupKey = `pokemon_${card.pokemonNumber}`;
-				} else if (card.supertype === 'Trainer') {
-					// For Trainer cards, group by name to keep different trainers separate
-					groupKey = `trainer_${card.name.toLowerCase()}`;
-				} else if (card.supertype === 'Energy') {
-					// For Energy cards, group by name to keep different energies separate
-					groupKey = `energy_${card.name.toLowerCase()}`;
-				} else {
-					// Fallback for any other types
-					groupKey = `other_${card.name.toLowerCase()}`;
-				}
+			// Use different keys based on supertype
+			if (card.supertype === 'Pokémon' && card.pokemonNumber) {
+				// For Pokémon cards, group by Pokémon ID
+				groupKey = `pokemon_${card.pokemonNumber}`;
+			} else if (card.supertype === 'Trainer') {
+				// For Trainer cards, group by name to keep different trainers separate
+				groupKey = `trainer_${card.name.toLowerCase()}`;
+			} else if (card.supertype === 'Energy') {
+				// For Energy cards, group by name to keep different energies separate
+				groupKey = `energy_${card.name.toLowerCase()}`;
+			} else {
+				// Fallback for any other types
+				groupKey = `other_${card.name.toLowerCase()}`;
+			}
 
-				const existingCard = cardGroups.get(groupKey);
+			const existingCard = cardGroups.get(groupKey);
 
-				// Only keep the most expensive card in each group
-				if (!existingCard || (prices[card.cardCode]?.simple ?? 0) > (prices[existingCard.cardCode]?.simple ?? 0)) {
-					cardGroups.set(groupKey, card);
-				}
-			});
+			// Only keep the most expensive card in each group
+			if (!existingCard || (prices[card.cardCode]?.simple ?? 0) > (prices[existingCard.cardCode]?.simple ?? 0)) {
+				cardGroups.set(groupKey, card);
+			}
+		});
 
-			displayedCards = Array.from(cardGroups.values());
-		} else {
-			displayedCards = $displayAll ? cards : cards.filter((card, index, self) =>
-				card.supertype === 'Pokémon' &&
-				card.pokemonNumber &&
-				self.findIndex(c => c.pokemonNumber === card.pokemonNumber) === index
-			);
-		}
+		displayedCards = Array.from(cardGroups.values());
+	} else {
+		displayedCards = cards;
 	}
 
 	$: if ($sortOrder || $sortBy) {
 		displayedCards = displayedCards.sort((a, b) => {
-			const aCardCode = parseInt(a.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
-			const bCardCode = parseInt(b.image.split('/').at(-1)?.split('_')[0].replace(/[a-z]*(\d+)[a-z]*/gi, '$1') || '0');
+			const aCardCode = a.cardCode;
+			const bCardCode = b.cardCode;
 
 			if ($sortBy === 'sort-price') {
 				const aPrice = prices[a.cardCode]?.simple ?? 0;
@@ -117,7 +111,7 @@
 				const bPokemon = pokemons.find(p => p.id === b.pokemonNumber) ?? {name: b.name};
 				return $sortOrder === 'asc' ? aPokemon.name.localeCompare(bPokemon.name) : bPokemon.name.localeCompare(aPokemon.name);
 			} else if ($sortBy === 'sort-id') {
-				return $sortOrder === 'asc' ? aCardCode - bCardCode : bCardCode - aCardCode;
+				return $sortOrder === 'asc' ? aCardCode.localeCompare(bCardCode) : bCardCode.localeCompare(aCardCode);
 			} else if ($sortBy === 'sort-rarity') {
 				const aLevel = getRarityLevel(a.rarity);
 				const bLevel = getRarityLevel(b.rarity);
@@ -132,21 +126,6 @@
 				const aArtist = a.artist || '';
 				const bArtist = b.artist || '';
 				return $sortOrder === 'asc' ? aArtist.localeCompare(bArtist) : bArtist.localeCompare(aArtist);
-			} else if ($sortBy === 'sort-pokedex') {
-				const aNum = a.pokemonNumber;
-				const bNum = b.pokemonNumber;
-
-				if (aNum === null && bNum !== null) {
-					return 1;
-				}
-				if (bNum === null && aNum !== null) {
-					return -1;
-				}
-				if (aNum === null && bNum === null) {
-					return a.name.localeCompare(b.name);
-				}
-
-				return $sortOrder === 'asc' ? aNum! - bNum! : bNum! - aNum!;
 			}
 
 			const aNumDefault = a.pokemonNumber;
@@ -154,15 +133,15 @@
 			if (aNumDefault === null && bNumDefault !== null) return 1;
 			if (bNumDefault === null && aNumDefault !== null) return -1;
 			if (aNumDefault === null && bNumDefault === null) return a.name.localeCompare(b.name);
-			return aNumDefault! - bNumDefault!;
+			return $sortOrder === 'asc' ? aNumDefault! - bNumDefault! : bNumDefault! - aNumDefault!;
 		});
 	}
 
 	let filteredCards = displayedCards;
-	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $filterArtist || $displayAll || $sortBy || $sortOrder || $mostExpensiveOnly) {
+	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $filterArtist || $sortBy || $sortOrder || $mostExpensiveOnly) {
 		filteredCards = displayedCards.filter(card => {
 			const cardSet = findSetByCardCode(card.cardCode, sets);
-			const fallbackSet: Set = cardSet ?? {
+			const fallbackSet: Set = {
 				name: card.setName,
 				logo: card.image?.replace(/\/[^\/]*$/, '/logo.png') ?? '', // Attempt to guess logo path for fallback
 				printedTotal: 0,
