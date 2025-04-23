@@ -9,7 +9,6 @@ import { fetchPokemons } from './src/scrappers/pokemon_scraper.ts';
 import { fetchPokemonTypes } from './src/scrappers/types_scraper.ts';
 import { fetchSets } from './src/scrappers/set_fetcher.ts';
 import { getCardMasks } from './src/scrappers/foil_scraper.ts';
-import { mergeSetsInExistingCards } from './src/scrappers/merge_sets.ts';
 
 interface ScraperOption {
     name: string;
@@ -37,11 +36,6 @@ const baseScrapers: ScraperOption[] = [
         name: 'holo',
         description: 'Extract holographic cards from cards dataset',
         action: fetchHoloCards
-    },
-    {
-        name: 'merge-sets',
-        description: 'Merge sets with the same ptcgoCode and update card references',
-        action: mergeSetsInExistingCards
     },
     {
         name: 'pokemons',

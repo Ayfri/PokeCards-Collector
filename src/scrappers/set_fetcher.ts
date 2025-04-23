@@ -30,7 +30,7 @@ async function fetchAndFilterSets() {
 		const cards = cardsJson.flat() as Card[];
 
 		// Filter sets to only keep those that have cards
-		const setsWithCards = sets.filter(set => cards.some(card => card.setName === set.name));
+		const setsWithCards = sets.filter(set => cards.some(card => card.setCode === set.ptcgoCode));
 
 		// Group sets by ptcgoCode to find duplicates
 		const setsByCode = setsWithCards.reduce((acc, set) => {

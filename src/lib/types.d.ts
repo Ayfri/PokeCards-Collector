@@ -8,7 +8,7 @@ export interface Card {
 	name: string;
 	pokemonNumber?: number;
 	rarity: string;
-	setName: string;
+	setCode: string;
 	supertype: string;
 	types: string;
 }

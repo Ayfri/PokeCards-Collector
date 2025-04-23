@@ -251,12 +251,10 @@ async function loadSetMappings(): Promise<SetMappings> {
 function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings): ProcessedCard {
 	const nationalPokedexNumbers = card.nationalPokedexNumbers ?? [];
 	let originalSetName = card.set.name;
-	let setName = originalSetName;
 	let setCode = card.images.large.split('/').at(-2) || '';
 
 	if (setMappings[originalSetName]) {
 		const mapping = setMappings[originalSetName];
-		setName = mapping.primarySetName;
 		setCode = mapping.primarySetCode;
 	}
 
@@ -292,7 +290,7 @@ function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings):
 		name: card.name,
 		pokemonNumber: nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0,
 		rarity: card.rarity ?? 'Common',
-		setName: setName,
+		setCode,
 		supertype: card.supertype,
 		types: card.types?.join(', ') || '',
 	};

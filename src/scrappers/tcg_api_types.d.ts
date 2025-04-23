@@ -120,7 +120,4 @@ export type SetMappingInfo = {
 
 export type SetMappings = Record<string, SetMappingInfo>;
 
-export type ProcessedCard = Omit<Card, 'id' | 'setId' | 'pokemonId' | 'variants'> & {
-	meanColor: string; // Keeping meanColor here temporarily
-	pokemonNumber: number;
-}; 
+export type ProcessedCard = Card;
