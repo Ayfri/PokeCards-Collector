@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { pascalCase } from '$helpers/strings.js';
 	import { processCardImage } from '$helpers/card-images';
+	import { NO_IMAGES } from '$lib/images';
 	import type { FullCard, Pokemon } from '~/lib/types';
 
 	export let cards: FullCard[];
@@ -114,6 +115,7 @@
 						{pokemon.id}
 					</div>
 
+					{#if !NO_IMAGES}
 					<img
 						src={getPokemonImageSrc(pokemon.id)}
 						alt={pokemon.name}
@@ -122,6 +124,11 @@
 						on:error={(e) => handlePokemonImageError(e, pokemon.id)}
 						data-pokemon-id={pokemon.id}
 					/>
+					{:else}
+					<div class="evolution-image w-16 h-16 flex items-center justify-center text-white text-xs bg-gray-800 rounded-full">
+						#{pokemon.id}
+					</div>
+					{/if}
 
 					{#if pokemon.id === currentPokemon?.id}
 						<div class="current-marker absolute inset-0 border-2 border-gold-400 rounded-full"></div>

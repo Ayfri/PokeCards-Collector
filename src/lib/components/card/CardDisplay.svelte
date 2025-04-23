@@ -2,6 +2,7 @@
 	import CardInfo from '@components/card/CardInfo.svelte';
 	import EvolutionChain from '@components/card/EvolutionChain.svelte';
 	import RelatedCards from '@components/card/RelatedCards.svelte';
+	import {NO_IMAGES} from '$lib/images';
 	import {fade} from 'svelte/transition';
 	import type {FullCard, Pokemon, Set, CardMarketPrices} from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
@@ -197,7 +198,7 @@
 		<!-- Center Card -->
 		<div class="center-card-wrapper relative flex-shrink-0 order-1 lg:order-2">
 			<!-- Conditional Aura for Pokemon Types -->
-			{#if pokemon}
+			{#if pokemon && !NO_IMAGES}
 				<div class="card-aura {currentType}" id="card-aura"></div>
 			{/if}
 			<div
@@ -229,6 +230,7 @@
 					href={prevCard ? `/card/${prevCard.cardCode}/` : `/card/${previousPokemon.id}/`} 
 					class="prev-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
 				>
+					{#if !NO_IMAGES}
 					<img
 						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
 						alt={pascalCase(previousPokemon.name)}
@@ -237,6 +239,11 @@
 						on:error={handlePokemonImageError}
 						data-pokemon-id={previousPokemon.id}
 					/>
+					{:else}
+					<div class="w-16 h-16 flex items-center justify-center text-white text-xs bg-gray-800 rounded-full">
+						#{previousPokemon.id}
+					</div>
+					{/if}
 					<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(previousPokemon.name)}</span>
 					<span class="nav-pokemon-id text-xs text-gray-400">#{previousPokemon.id}</span>
 				</a>
@@ -251,6 +258,7 @@
 					href={nextCard ? `/card/${nextCard.cardCode}/` : `/card/${nextPokemon.id}/`} 
 					class="next-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
 				>
+					{#if !NO_IMAGES}
 					<img
 						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
 						alt={pascalCase(nextPokemon.name)}
@@ -259,6 +267,11 @@
 						on:error={handlePokemonImageError}
 						data-pokemon-id={nextPokemon.id}
 					/>
+					{:else}
+					<div class="w-16 h-16 flex items-center justify-center text-white text-xs bg-gray-800 rounded-full">
+						#{nextPokemon.id}
+					</div>
+					{/if}
 					<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(nextPokemon.name)}</span>
 					<span class="nav-pokemon-id text-xs text-gray-400">#{nextPokemon.id}</span>
 				</a>
@@ -275,6 +288,7 @@
 				href={prevCard ? `/card/${prevCard.cardCode}/` : `/card/${previousPokemon.id}/`} 
 				class="prev-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-1"
 			>
+				{#if !NO_IMAGES}
 				<img
 					src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
 					alt={pascalCase(previousPokemon.name)}
@@ -283,6 +297,11 @@
 					on:error={handlePokemonImageError}
 					data-pokemon-id={previousPokemon.id}
 				/>
+				{:else}
+				<div class="w-24 h-24 flex items-center justify-center text-white bg-gray-800 rounded-full">
+					#{previousPokemon.id}
+				</div>
+				{/if}
 				<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(previousPokemon.name)}</span>
 				<span class="nav-pokemon-id text-xs text-gray-400">#{previousPokemon.id}</span>
 			</a>
@@ -297,6 +316,7 @@
 				href={nextCard ? `/card/${nextCard.cardCode}/` : `/card/${nextPokemon.id}/`} 
 				class="next-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-3"
 			>
+				{#if !NO_IMAGES}
 				<img
 					src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
 					alt={pascalCase(nextPokemon.name)}
@@ -305,6 +325,11 @@
 					on:error={handlePokemonImageError}
 					data-pokemon-id={nextPokemon.id}
 				/>
+				{:else}
+				<div class="w-24 h-24 flex items-center justify-center text-white bg-gray-800 rounded-full">
+					#{nextPokemon.id}
+				</div>
+				{/if}
 				<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(nextPokemon.name)}</span>
 				<span class="nav-pokemon-id text-xs text-gray-400">#{nextPokemon.id}</span>
 			</a>
@@ -325,7 +350,7 @@
 </div>
 
 <!-- Background Filter (Conditional on Pokemon Type?) -->
-{#if pokemon}
+{#if pokemon && !NO_IMAGES}
 	<div class="filter {currentType}" id="filter" transition:fade></div>
 {/if}
 

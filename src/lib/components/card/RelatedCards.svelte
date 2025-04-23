@@ -5,6 +5,7 @@
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import { persistentWritable } from '$lib/stores/persistentStore';
 	import SortControl from '@components/filters/SortControl.svelte';
+	import { NO_IMAGES } from '$lib/images';
 
 	// --- Props ---
 	export let cards: FullCard[];
@@ -120,6 +121,7 @@
 					aria-label={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
 				>
 					<div class="relative rounded-lg overflow-hidden shadow-lg w-full" style="aspect-ratio: 63/88;">
+						{#if !NO_IMAGES}
 						<CardImage
 							imageUrl={card.image}
 							alt={cardPokemon ? cardPokemon.name : card.name}
@@ -127,8 +129,12 @@
 							lazy={true}
 							highRes={false}
 						/>
+						{:else}
+						<div class="w-full h-full"></div>
+						{/if}
 						{#if cardSet}
 							<div class="absolute bottom-1 right-1 bg-black/70 rounded-full p-0.5 border border-gold-400">
+								{#if !NO_IMAGES}
 								<img
 									src={cardSet.logo}
 									alt={cardSet.name}
@@ -136,6 +142,7 @@
 									title={cardSet.name}
 									loading="lazy"
 								/>
+								{/if}
 							</div>
 						{/if}
 					</div>
