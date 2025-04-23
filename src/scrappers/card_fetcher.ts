@@ -289,6 +289,10 @@ function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings, 
 		} else {
 			console.log(`Found Pokémon '${foundPokemon?.name}' number ${nationalPokedexNumber} for '${card.name}'`);
 		}
+
+		if (nationalPokedexNumber === 0) {
+			nationalPokedexNumber = 99999;
+		}
 	}
 
 	const cardCode = generateUniqueCardCode(nationalPokedexNumber ?? 0, urlCode, card.number, card.supertype);
