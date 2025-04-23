@@ -39,6 +39,7 @@ export interface PriceData {
 }
 
 export interface Set {
+	aliases?: string[];
 	name: string;
 	logo: string;
 	printedTotal: number;

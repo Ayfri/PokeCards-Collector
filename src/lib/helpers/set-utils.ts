@@ -8,9 +8,9 @@ export function getSetCodeFromImage(imageUrl: string): string | undefined {
 
 export function findSetByCardCode(cardCode: string, sets: Set[]): Set | undefined {
     const { setCode } = parseCardCode(cardCode);
+    if (!setCode) return undefined;
     return sets.find(set => {
-        const setCodeFromImage = getSetCodeFromImage(set.logo);
-        return setCodeFromImage === setCode;
+        return set.aliases?.includes(setCode) || getSetCodeFromImage(set.logo) === setCode;
     });
 }
 

@@ -13,7 +13,7 @@
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];
-	export let prices: PriceData
+	export let prices: PriceData | undefined;
 	export let sets: Set[];
 
 	const {
@@ -26,6 +26,9 @@
 	const { pokemonNumber, cardNumber } = parseCardCode(cardCode);	
 	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
 	const set = findSetByCardCode(cardCode, sets)!!;
+	if (!prices) {
+		console.log(card);
+	}
 
 	// Détermine si la carte est dans la wishlist en fonction du store
 	$: isInWishlist = $wishlistStore.has(cardCode);
@@ -121,7 +124,7 @@
 					aria-label="View on Cardmarket"
 				>
 					<div class="flex items-center justify-center whitespace-nowrap">
-						<span>{prices.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</span>
+						<span>{prices?.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</span>
 						<span class="mx-1">-</span>
 						<span class="text-gold-400 font-bold underline flex items-center">
 							Cardmarket
@@ -130,7 +133,7 @@
 					</div>
 				</a>
 			{:else}
-				<h3 class="text-center">{prices.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</h3>
+				<h3 class="text-center">{prices?.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</h3>
 			{/if}
 		</div>
 	</div>

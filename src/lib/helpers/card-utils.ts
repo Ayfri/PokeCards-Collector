@@ -8,7 +8,7 @@
  */
 export function generateUniqueCardCode(
 	pokemonId: number | string,
-	setCode: string | undefined,
+	urlCode: string | undefined,
 	cardNumber: string | undefined,
 	supertype: string = 'pokemon'
 ): string {
@@ -22,7 +22,7 @@ export function generateUniqueCardCode(
 	const finalSupertype = normalizedSupertype === "pokmon" ? "pokemon" : normalizedSupertype;
 
 	// Normalize set code
-	const normalizedSetCode = (setCode || '')
+	const normalizedUrlCode = (urlCode || '')
 		.toLowerCase()
 		.normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
 		.replace(/[^a-z0-9]/g, '');
@@ -32,7 +32,7 @@ export function generateUniqueCardCode(
 		.replace(/[^a-z0-9]/g, '');
 
 	// Generate unique code in format: supertype_pokemonid_setcode_cardnumber
-	return `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`;
+	return `${finalSupertype}_${pokemonId}_${normalizedUrlCode}_${normalizedCardNumber}`;
 }
 
 export function parseCardCode(cardCode: string): { supertype?: string, setCode?: string, pokemonNumber?: number, cardNumber?: string } {

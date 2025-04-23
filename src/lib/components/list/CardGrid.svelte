@@ -17,6 +17,7 @@
 	import Button from '$lib/components/filters/Button.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { findSetByCardCode } from "$helpers/set-utils";
 	
 	export let cards: FullCard[];
 	export let sets: Set[];
@@ -121,8 +122,8 @@
 				const bLevel = getRarityLevel(b.rarity);
 				return $sortOrder === 'asc' ? aLevel - bLevel : bLevel - aLevel;
 			} else if ($sortBy === 'sort-release-date') {
-				const aSet = sets.find(s => s.name === a.setName);
-				const bSet = sets.find(s => s.name === b.setName);
+				const aSet = findSetByCardCode(a.cardCode, sets);
+				const bSet = findSetByCardCode(b.cardCode, sets);
 				const aReleaseDate = aSet?.releaseDate.getTime() ?? 0;
 				const bReleaseDate = bSet?.releaseDate.getTime() ?? 0;
 				return $sortOrder === 'asc' ? aReleaseDate - bReleaseDate : bReleaseDate - aReleaseDate;
@@ -159,15 +160,14 @@
 	let filteredCards = displayedCards;
 	$: if ($filterName || $filterNumero || $filterRarity || $filterSet || $filterType || $filterSupertype || $filterArtist || $displayAll || $sortBy || $sortOrder || $mostExpensiveOnly) {
 		filteredCards = displayedCards.filter(card => {
-			const cardSet = sets.find(s => s.name === card.setName);
-			// Si le set de la carte n'est pas trouvé, créons un set factice
+			const cardSet = findSetByCardCode(card.cardCode, sets);
 			const fallbackSet: Set = cardSet ?? {
 				name: card.setName,
-				logo: '',
+				logo: card.image?.replace(/\/[^\/]*$/, '/logo.png') ?? '', // Attempt to guess logo path for fallback
 				printedTotal: 0,
 				releaseDate: new Date()
 			};
-			return isVisible(card, pokemons.find(p => p.id === card.pokemonNumber), fallbackSet);
+			return isVisible(card, pokemons.find(p => p.id === card.pokemonNumber), cardSet ?? fallbackSet, selectedSet ?? null);
 		});
 	}
 
@@ -192,6 +192,10 @@
 			uniquePokemonCount = new Set(filteredCards.filter(card => card.supertype === 'Pokémon').map(card => card.pokemonNumber)).size;
 		}
 	}
+
+	// Find the selected set based on the filter and determine the correct total count to display
+	$: selectedSet = $filterSet && $filterSet !== 'all' ? findSetByCardCode($filterSet, sets) : null;
+	$: displayTotalCards = selectedSet ? selectedSet.printedTotal ?? 0 : visibleCardsCount; // Use ?? 0 as fallback
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape' && showFilters) {
@@ -236,15 +240,15 @@
 			{/if}
 			<!-- Desktop Counts (always rendered in this position) -->
 			<span class:ml-4={!!pageTitle} class="text-gold-400 text-sm hidden md:block">
-				({uniquePokemonCount} Pokémon, {visibleCardsCount} cards)
+				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
 			</span>
 		</div>
 
 		<!-- Right Side (Controls) -->
 		<div class="flex items-end gap-2">
 			<!-- Mobile Count -->
-			<span class="text-gold-400 text-sm ml-4 md:hidden">
-				({uniquePokemonCount} Pokémon, {visibleCardsCount} cards)
+			<span class="texalGold-400 text-sm ml-4 md:hidden">
+				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
 			</span>
 			<!-- Name Search (Should be always visible) -->
 			<div class="w-48">

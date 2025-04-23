@@ -1,14 +1,15 @@
 <script lang="ts">
 	import PageTitle from '@components/PageTitle.svelte';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
-	import CardPrice from './CardPrice.svelte';
+	import CardPrice from '@components/card/CardPrice.svelte';
+	import { parseCardCode } from '$helpers/card-utils';
 
 	export let set: Set;
 	export let card: FullCard;
 	export let cardPrices: PriceData | undefined = undefined;
 	export let pokemon: Pokemon | undefined = undefined;
 
-	const cardNumber = card.cardCode.split('_')[3];
+	const cardNumber = parseCardCode(card.cardCode).cardNumber;
 
 	// Compute the display name: Pokemon name if available, otherwise card name
 	$: displayName = pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name;

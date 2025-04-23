@@ -6,6 +6,7 @@
 	import CardImage from '$lib/components/card/CardImage.svelte';
 	import TextInput from '$lib/components/filters/TextInput.svelte';
 	import type { Card } from '$lib/types';
+	import { findSetByCardCode } from '$helpers/set-utils';
 
 	export let data: PageData;
 
@@ -58,13 +59,13 @@
 		const totalCards = cards.length;
 
 		const firstReleaseDate = cards.reduce((earliest, card) => {
-			const set = data.sets.find(s => s.name === card.setName);
+			const set = findSetByCardCode(card.cardCode, data.sets);
 			const cardReleaseDate = set ? new Date(set.releaseDate) : new Date('0000-01-01');
 			return cardReleaseDate < earliest ? cardReleaseDate : earliest;
 		}, new Date('9999-01-01'));
 
 		const lastReleaseDate = cards.reduce((latest, card) => {
-			const set = data.sets.find(s => s.name === card.setName);
+			const set = findSetByCardCode(card.cardCode, data.sets);
 			const cardReleaseDate = set ? new Date(set.releaseDate) : new Date('0000-01-01');
 			return cardReleaseDate > latest ? cardReleaseDate : latest;
 		}, new Date('0000-01-01'));

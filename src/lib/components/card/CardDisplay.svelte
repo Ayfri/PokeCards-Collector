@@ -9,6 +9,7 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import { onMount } from 'svelte';
 	import { pushState } from '$app/navigation';
+	import { findSetByCardCode } from '$helpers/set-utils';
 
 	// --- Props ---
 	export let cards: FullCard[]; // Expects the primary card to be the first element
@@ -23,7 +24,7 @@
 	$: cardPrices = prices[card.cardCode];
 
 	// Safely find the current set
-	$: currentSet = sets.find(set => set.name === card?.setName);
+	$: currentSet = findSetByCardCode(card.cardCode, sets);
 	// Safely determine the card type
 	$: currentType = card?.types?.toLowerCase().split(',')[0] || 'unknown';
 

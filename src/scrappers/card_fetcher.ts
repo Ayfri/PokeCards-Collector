@@ -260,21 +260,21 @@ async function loadSetMappings(): Promise<SetMappings> {
 function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings): ProcessedCard {
 	const nationalPokedexNumbers = card.nationalPokedexNumbers ?? [];
 	let originalSetName = card.set.name;
-	let setCode = card.images.large.split('/').at(-2) || setMappings[originalSetName]?.primarySetCode || '';
+	let urlCode = card.images.large.split('/').at(-2) || setMappings[originalSetName]?.primarySetCode || '';
 
 	let cardNumber: string | undefined;
 	const filename = card.images.large.split('/').at(-1);
 	if (filename) {
-		const match = filename.match(/^(?:[a-zA-Z]+[-a-zA-Z0-9]*)?_?en_?(\d+)([a-zA-Z]*)(?:_.*)?\.png$/i)
-			?? filename.match(/^[a-zA-Z]+(\d+)\.png$/i)
-			?? filename.match(/^([a-zA-Z]+[-a-zA-Z0-9]*)?(\d+)([a-zA-Z]*)(?:_.*)?\.png$/i);
-
-		cardNumber = match ? match[1] ?? match[2] : undefined;
+		const match = filename.match(/^\w*(\d+)_\w*\.png$/i);
+		cardNumber = match ? match[1] : undefined;
 	}
 
+	// Log inputs for card code generation
+	const pokemonNumberForCode = nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0;
+
 	const cardCode = generateUniqueCardCode(
-		nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0,
-		setCode,
+		pokemonNumberForCode,
+		urlCode,
 		cardNumber,
 		card.supertype
 	);

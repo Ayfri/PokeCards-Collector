@@ -6,6 +6,7 @@
 	import { persistentWritable } from '$lib/stores/persistentStore';
 	import SortControl from '@components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '$lib/images';
+	import { findSetByCardCode } from '$helpers/set-utils';
 
 	// --- Props ---
 	export let cards: FullCard[];
@@ -23,11 +24,6 @@
 	function getPokemon(pokemonNumber: number | undefined): Pokemon | undefined {
 		if (!pokemonNumber) return undefined;
 		return pokemons.find(p => p.id === pokemonNumber);
-	}
-
-	function getSet(setName: string | undefined): Set | undefined {
-		if (!setName) return undefined;
-		return sets.find(s => s.name === setName);
 	}
 
 	// Sort the cards based on the current sort settings
@@ -60,8 +56,8 @@
 				break;
 			case 'sort-date':
 				sorted = sorted.sort((a, b) => {
-					const aSet = getSet(a.setName);
-					const bSet = getSet(b.setName);
+					const aSet = findSetByCardCode(a.cardCode, sets);
+					const bSet = findSetByCardCode(b.cardCode, sets);
 					const aTime = aSet?.releaseDate?.getTime() ?? 0; // Handle null/undefined date
 					const bTime = bSet?.releaseDate?.getTime() ?? 0;
 					return order === 'asc' ? aTime - bTime : bTime - aTime;
@@ -69,8 +65,8 @@
 				break;
 			default: // sort-set (default)
 				sorted = sorted.sort((a, b) => {
-					const aSet = getSet(a.setName);
-					const bSet = getSet(b.setName);
+					const aSet = findSetByCardCode(a.cardCode, sets);
+					const bSet = findSetByCardCode(b.cardCode, sets);
 					const aName = aSet?.name ?? '';
 					const bName = bSet?.name ?? '';
 					return order === 'asc' ? aName.localeCompare(bName) : bName.localeCompare(aName);
@@ -116,7 +112,7 @@
 		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-4">
 			{#each sortedCards as card (card.image || card.cardCode)} <!-- Add cardCode as fallback key -->
 				{@const cardPokemon = getPokemon(card.pokemonNumber)}
-				{@const cardSet = getSet(card.setName)}
+				{@const cardSet = findSetByCardCode(card.cardCode, sets)}
 				<button
 					class="flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5 cursor-pointer"
 					transition:fade={{ duration: 200 }}

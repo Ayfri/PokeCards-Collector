@@ -6,6 +6,7 @@
 	import { processCardImage } from '$helpers/card-images';
 	import type { FullCard, Set, PriceData } from '$lib/types';
 	import { browser } from '$app/environment';
+	import { findSetByCardCode } from '$helpers/set-utils';
 
 	// --- Props ---
 	export let prices: Record<string, PriceData>;
@@ -48,7 +49,7 @@
 		}
 
 		searchResults = allCards.filter(card => {
-			const set = sets.find(s => s.name === card.setName);
+			const set = findSetByCardCode(card.cardCode, sets)!!;
 			const cardName = card.name.toLowerCase();
 			const cardNumber = extractCardNumberFromCode(card.cardCode).toLowerCase();
 			const setName = set?.name.toLowerCase() || '';
@@ -225,7 +226,7 @@
 			transition:fade={{ duration: 150 }}
 		>
 			{#each searchResults as card (card.cardCode)}
-				{@const set = sets.find(s => s.name === card.setName)}
+				{@const set = findSetByCardCode(card.cardCode, sets)}
 				{@const cardNumber = extractCardNumberFromCode(card.cardCode)}
 				{@const cardImage = processCardImage(card.image)}
 				{@const cardLink = `/card/${card.cardCode}/`}
