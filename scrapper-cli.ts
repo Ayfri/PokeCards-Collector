@@ -2,12 +2,13 @@
 
 import { select } from '@inquirer/prompts';
 import chalk from 'chalk';
-import { fetchPokemonTypes } from './src/scrappers/types_scraper.ts';
-import { fetchPokemons } from './src/scrappers/pokemon_scraper.ts';
-import { fetchHoloCards } from './src/scrappers/holo_scraper.ts';
-import { fetchCards, fetchSets } from './src/scrappers/tcg_call.ts';
-import { getCardMasks } from './src/scrappers/foil_scraper.ts';
 import { downloadAllImages } from './src/scrappers/download_images.ts';
+import { fetchAndSaveAllCards } from './src/scrappers/card_fetcher.ts';
+import { fetchHoloCards } from './src/scrappers/holo_scraper.ts';
+import { fetchPokemons } from './src/scrappers/pokemon_scraper.ts';
+import { fetchPokemonTypes } from './src/scrappers/types_scraper.ts';
+import { fetchSets } from './src/scrappers/set_fetcher.ts';
+import { getCardMasks } from './src/scrappers/foil_scraper.ts';
 import { mergeSetsInExistingCards } from './src/scrappers/merge_sets.ts';
 
 interface ScraperOption {
@@ -20,7 +21,7 @@ const baseScrapers: ScraperOption[] = [
     {
         name: 'cards',
         description: 'Fetch all Pokémon cards from TCG API',
-        action: fetchCards
+        action: fetchAndSaveAllCards
     },
     {
         name: 'download-images',
