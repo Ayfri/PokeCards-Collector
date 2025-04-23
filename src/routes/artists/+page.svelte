@@ -4,6 +4,7 @@
 	import SortControl from '$lib/components/filters/SortControl.svelte';
 	import PageTitle from '$lib/components/PageTitle.svelte';
 	import CardImage from '$lib/components/card/CardImage.svelte';
+	import TextInput from '$lib/components/filters/TextInput.svelte';
 	import type { Card } from '$lib/types';
 
 	export let data: PageData;
@@ -19,6 +20,23 @@
 	// Sorting state
 	let sortDirection: 'asc' | 'desc' = 'asc'; // Default to A-Z
 	let sortValue: 'firstReleaseDate' | 'lastReleaseDate' | 'name' | 'totalCards' = 'name'; // Default sort by name
+    
+    // Search state
+    let searchTerm = '';
+    let debounceTimeout: number;
+
+    function debounce(fn: Function, delay: number) {
+        return (...args: any[]) => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = window.setTimeout(() => {
+                fn(...args);
+            }, delay);
+        };
+    }
+
+    const debouncedSetSearchTerm = debounce((value: string) => {
+        searchTerm = value;
+    }, 300);
 
 	// Group cards by artist
 	$: artistsWithCards = data.artists.map(artist => {
@@ -80,6 +98,13 @@
 		}
 		return 0;
 	});
+    
+    // Filter artists based on search term
+    $: filteredArtists = searchTerm 
+        ? sortedArtists.filter(artist => 
+            artist.name.toLowerCase().includes(searchTerm.toLowerCase())
+          ) 
+        : sortedArtists;
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -87,6 +112,15 @@
 		<PageTitle title="Artists" />
 
 		<div class="flex items-center gap-2">
+            <div class="w-48">
+                <TextInput
+                    id="artistSearch"
+                    label="Search"
+                    bind:value={searchTerm}
+                    placeholder="Search artists..."
+                    debounceFunction={debouncedSetSearchTerm}
+                />
+            </div>
 			<SortControl
 				bind:sortDirection={sortDirection}
 				bind:sortValue={sortValue}
@@ -103,11 +137,11 @@
 
 	<p class="text-gray-400 mb-6">
 		Artists are the creators of the cards, they are responsible for the design and artwork of the cards.<br>
-		<span class="text-sm">Showing {sortedArtists.length} artists.</span>
+		<span class="text-sm">Showing {filteredArtists.length} of {sortedArtists.length} artists.</span>
 	</p>
 
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-		{#each sortedArtists as artist}
+		{#each filteredArtists as artist}
 			<a href="/?artist={encodeURIComponent(artist.name.toLowerCase())}" class="block h-full">
 				<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
 					<div class="bg-gray-900 p-2 {NO_IMAGES ? 'hidden' : ''}">

@@ -3,10 +3,28 @@
 	import { NO_IMAGES } from '$lib/images';
 	import SortControl from '$lib/components/filters/SortControl.svelte';
 	import PageTitle from '$lib/components/PageTitle.svelte';
+	import TextInput from '$lib/components/filters/TextInput.svelte';
 	export let data: PageData;
 	let sortDirection: 'desc' | 'asc' = 'desc';
 	let sortValue: 'code' | 'name' | 'printedTotal' | 'releaseDate' = 'releaseDate';
 	let sortedSets = [...data.sets];
+	
+	// Search state
+	let searchTerm = '';
+	let debounceTimeout: number;
+
+	function debounce(fn: Function, delay: number) {
+		return (...args: any[]) => {
+			clearTimeout(debounceTimeout);
+			debounceTimeout = window.setTimeout(() => {
+				fn(...args);
+			}, delay);
+		};
+	}
+
+	const debouncedSetSearchTerm = debounce((value: string) => {
+		searchTerm = value;
+	}, 300);
 
 	// Sort sets by release date (newest first by default)
 	$: if (sortValue && sortDirection) {
@@ -32,6 +50,14 @@
 			});
 		}
 	}
+	
+	// Filter sets based on search term
+	$: filteredSets = searchTerm 
+		? sortedSets.filter(set => 
+			set.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+			(set.ptcgoCode && set.ptcgoCode.toLowerCase().includes(searchTerm.toLowerCase()))
+		) 
+		: sortedSets;
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -39,6 +65,15 @@
 		<PageTitle title="Sets" />
 
 		<div class="flex items-center gap-2">
+			<div class="w-48">
+				<TextInput
+					id="setSearch"
+					label="Search"
+					bind:value={searchTerm}
+					placeholder="Search sets..."
+					debounceFunction={debouncedSetSearchTerm}
+				/>
+			</div>
 			<SortControl
 			bind:sortDirection={sortDirection}
 			bind:sortValue={sortValue}
@@ -55,11 +90,11 @@
 
 	<p class="text-gray-400 mb-6">
 		Sets are collections of cards that are released together.<br>
-		<span class="text-sm">Showing {sortedSets.length} sets.</span>
+		<span class="text-sm">Showing {filteredSets.length} of {sortedSets.length} sets.</span>
 	</p>
 
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-		{#each sortedSets as set}
+		{#each filteredSets as set}
 			<a href="/?set={encodeURIComponent(set.name)}" class="block h-full">
 				<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
 					<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
