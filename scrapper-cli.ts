@@ -20,7 +20,7 @@ interface ScraperOption {
 const baseScrapers: ScraperOption[] = [
     {
         name: 'cards',
-        description: 'Fetch all Pokémon cards from TCG API',
+        description: 'Fetch all Pokémon cards and prices from TCG API',
         action: fetchAndSaveAllCards
     },
     {

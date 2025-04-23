@@ -1,5 +1,20 @@
 import type { Card } from '$lib/types';
 
+export interface PriceData {
+	simple?: number;
+	low?: number;
+	trend?: number;
+	avg1?: number;
+	avg7?: number;
+	avg30?: number;
+	reverseSimple?: number;
+	reverseLow?: number;
+	reverseTrend?: number;
+	reverseAvg1?: number;
+	reverseAvg7?: number;
+	reverseAvg30?: number;
+}
+
 export type FetchedCard = {
 	id: string;
 	name: string;

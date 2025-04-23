@@ -2,10 +2,14 @@ import * as fs from 'node:fs/promises';
 import type { Card } from '$lib/types';
 import { CARDS, SETS } from './files';
 import { fetchFromApi } from './api_utils';
-import type { FetchedSet, FetchedSetsResponse } from './tcg_api_types';
+import type { FetchedSet } from './tcg_api_types';
+
+interface ResponseSets {
+    data: FetchedSet[];
+}
 
 async function fetchAndFilterSets() {
-	const response = await fetchFromApi<FetchedSetsResponse>('sets', {
+	const response = await fetchFromApi<ResponseSets>('sets', {
 		select: 'name,images,printedTotal,ptcgoCode,releaseDate',
 	});
 	const sets = response.data;

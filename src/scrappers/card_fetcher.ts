@@ -1,11 +1,11 @@
 import * as fs from 'node:fs/promises';
 import { POKEMONS_COUNT } from '~/constants';
-import { CARDS, SETS } from './files';
+import { CARDS, PRICES, SETS } from './files';
 import { generateUniqueCardCode } from '$lib/helpers/card-utils';
 import { fetchFromApi } from './api_utils';
-import type { FetchedCard, FetchedCardsResponse, ProcessedCard, SetMappings } from './tcg_api_types';
+import type { FetchedCard, FetchedCardsResponse, PriceData, ProcessedCard, SetMappings } from './tcg_api_types';
 
-const SELECT_FIELDS = 'name,rarity,images,set,cardmarket,types,nationalPokedexNumbers,supertype,artist,tcgplayer';
+const SELECT_FIELDS = "name,rarity,images,set,types,nationalPokedexNumbers,supertype,artist,cardmarket,tcgplayer";
 
 /**
  * Fetches cards for a specific Pokémon by name and Pokédex index.
@@ -49,11 +49,12 @@ export async function fetchPokemon(name: string, index: number): Promise<Fetched
 
 /**
  * Fetches all cards from the API, handling pagination and parallel processing.
- * Saves the results to the CARDS file.
+ * Saves the results to the CARDS file and prices to the PRICES file.
  */
 export async function fetchAndSaveAllCards() {
-	const cardGroups: ProcessedCard[][] = [];
-	console.log('Retrieving all cards...');
+	const allCards: ProcessedCard[] = [];
+	const allPrices: Record<string, PriceData> = {};
+	console.log('Retrieving all cards and prices...');
 
 	let startPage = 1;
 	let hasMoreCards = true;
@@ -78,6 +79,7 @@ export async function fetchAndSaveAllCards() {
 			const results = await Promise.allSettled(pageBatchPromises);
 			const successfulResults = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<{
 				cards: ProcessedCard[];
+				prices: Record<string, PriceData>;
 				pageTime: number;
 				isLastPage: boolean;
 				totalCount?: number;
@@ -85,15 +87,16 @@ export async function fetchAndSaveAllCards() {
 
 			if (successfulResults.length === 0 && results.some(r => r.status === 'rejected')) {
 				console.log('All pages in batch failed, stopping.');
-				hasMoreCards = false; // Or implement retry for the batch
+				hasMoreCards = false;
 				continue;
 			}
 
 			let shouldStop = false;
 			for (const result of successfulResults) {
-				const { cards, pageTime, isLastPage, totalCount } = result.value;
+				const { cards, prices, pageTime, isLastPage, totalCount } = result.value;
 				if (cards.length > 0) {
-					cardGroups.push(cards);
+					allCards.push(...cards);
+					Object.assign(allPrices, prices);
 					totalCardsRetrieved += cards.length;
 					pageProcessingTimes.push(pageTime);
 
@@ -103,11 +106,10 @@ export async function fetchAndSaveAllCards() {
 					}
 				}
 				if (isLastPage) {
-					shouldStop = true; // Found the last page in this batch
+					shouldStop = true;
 				}
 			}
 
-			// Log progress
 			logProgress(startTime, pageProcessingTimes, totalCardsRetrieved, totalCardsAvailable);
 
 			startPage += PAGES_BATCH_SIZE;
@@ -116,24 +118,26 @@ export async function fetchAndSaveAllCards() {
 				console.log('All pages have been retrieved.');
 			}
 
-			await new Promise(resolve => setTimeout(resolve, 100)); // Small delay between batches
+			await new Promise(resolve => setTimeout(resolve, 100));
 		} catch (error) {
 			console.error(`Error processing pages ${startPage}-${startPage + PAGES_BATCH_SIZE - 1}:`, error);
-			await new Promise(resolve => setTimeout(resolve, 2000)); // Wait longer on error
-			startPage += 1; // Consider retrying the failed batch instead of skipping
+			await new Promise(resolve => setTimeout(resolve, 2000));
 		}
 	}
 
-	// Final summary and save
-	const allCards = cardGroups.flat();
 	logFinalSummary(startTime, allCards, totalCardsAvailable);
 
-	await fs.writeFile(CARDS, JSON.stringify(allCards));
+	await Promise.all([
+		fs.writeFile(CARDS, JSON.stringify(allCards)),
+		fs.writeFile(PRICES, JSON.stringify(allPrices))
+	]);
 	console.log(`Finished writing ${allCards.length} cards to ${CARDS}!`);
+	console.log(`Finished writing prices for ${Object.keys(allPrices).length} cards to ${PRICES}!`);
 }
 
 /**
  * Helper function to process a single page of cards.
+ * Returns processed cards and their associated prices.
  */
 async function processPage(page: number, setMappings: SetMappings) {
 	const pageStartTime = Date.now();
@@ -146,15 +150,38 @@ async function processPage(page: number, setMappings: SetMappings) {
 	};
 
 	const response = await fetchFromApi<FetchedCardsResponse>('cards', params);
+	const fetchedCardsRaw = response.data ?? [];
 
-	if (!response.data || response.data.length === 0) {
+	if (fetchedCardsRaw.length === 0) {
 		const pageTime = (Date.now() - pageStartTime) / 1000;
-		return { cards: [], pageTime, isLastPage: true, totalCount: response.totalCount };
+		return { cards: [], prices: {}, pageTime, isLastPage: true, totalCount: response.totalCount };
 	}
 
-	const processedCards = response.data.map((card: FetchedCard) => mapFetchedCardToProcessed(card, setMappings));
+	const processedCards: ProcessedCard[] = [];
+	const pricesForPage: Record<string, PriceData> = {};
 
-	// Log stats for the page
+	for (const rawCard of fetchedCardsRaw) {
+		const card = mapFetchedCardToProcessed(rawCard, setMappings);
+		processedCards.push(card);
+
+		const cardmarket = rawCard.cardmarket;
+		const tcgplayer = rawCard.tcgplayer;
+		pricesForPage[card.cardCode] = {
+			simple: cardmarket?.prices?.suggestedPrice ?? cardmarket?.prices?.averageSellPrice ?? tcgplayer?.prices?.normal?.market,
+			low: cardmarket?.prices?.lowPrice ?? tcgplayer?.prices?.normal?.low,
+			trend: cardmarket?.prices?.trendPrice ?? tcgplayer?.prices?.normal?.market,
+			avg1: cardmarket?.prices?.avg1,
+			avg7: cardmarket?.prices?.avg7,
+			avg30: cardmarket?.prices?.avg30,
+            reverseSimple: cardmarket?.prices?.reverseHoloSell ?? tcgplayer?.prices?.reverseHolofoil?.market,
+            reverseLow: cardmarket?.prices?.reverseHoloLow ?? tcgplayer?.prices?.reverseHolofoil?.low,
+            reverseTrend: cardmarket?.prices?.reverseHoloTrend ?? tcgplayer?.prices?.reverseHolofoil?.market,
+            reverseAvg1: cardmarket?.prices?.reverseHoloAvg1,
+            reverseAvg7: cardmarket?.prices?.reverseHoloAvg7,
+            reverseAvg30: cardmarket?.prices?.reverseHoloAvg30
+		};
+	}
+
 	const pokemonCount = processedCards.filter(card => card.supertype === 'Pokémon').length;
 	const energyCount = processedCards.filter(card => card.supertype === 'Energy').length;
 	const trainerCount = processedCards.filter(card => card.supertype === 'Trainer').length;
@@ -163,8 +190,9 @@ async function processPage(page: number, setMappings: SetMappings) {
 
 	return {
 		cards: processedCards,
+		prices: pricesForPage,
 		pageTime,
-		isLastPage: processedCards.length < 250, // API returns less than page size on the last page
+		isLastPage: processedCards.length < 250,
 		totalCount: response.totalCount
 	};
 }
@@ -197,7 +225,7 @@ async function loadSetMappings(): Promise<SetMappings> {
 
 			for (const sets of Object.values(setsByPtcgoCode)) {
 				if (sets.length > 1) {
-					sets.sort((a, b) => a.setCode.length - b.setCode.length); // Shortest code is primary
+					sets.sort((a, b) => a.setCode.length - b.setCode.length);
 					const primarySet = sets[0];
 					for (let i = 1; i < sets.length; i++) {
 						const secondarySet = sets[i];
@@ -221,39 +249,30 @@ async function loadSetMappings(): Promise<SetMappings> {
  * Maps a raw FetchedCard from the API to our ProcessedCard structure.
  */
 function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings): ProcessedCard {
-	const tcgplayerPrices = card?.tcgplayer?.prices ?? {};
-	const price = card.cardmarket?.prices?.averageSellPrice
-		|| tcgplayerPrices.holofoil?.market
-		|| tcgplayerPrices.reverseHolofoil?.market
-		|| tcgplayerPrices.normal?.market
-		|| tcgplayerPrices['1stEditionHolofoil']?.market
-		|| tcgplayerPrices['1stEditionNormal']?.market;
-
 	const nationalPokedexNumbers = card.nationalPokedexNumbers ?? [];
 	let originalSetName = card.set.name;
 	let setName = originalSetName;
-	let setCode = card.images.large.split('/').at(-2) || ''; // Default set code from image
+	let setCode = card.images.large.split('/').at(-2) || '';
 
-	// Apply set mapping if this set name is mapped to a primary set
 	if (setMappings[originalSetName]) {
 		const mapping = setMappings[originalSetName];
-		setName = mapping.primarySetName; // Use primary set name
-		setCode = mapping.primarySetCode; // Use primary set code
+		setName = mapping.primarySetName;
+		setCode = mapping.primarySetCode;
 	}
 
-	// Extract card number from filename (e.g., 'swsh9_en_001.png' -> '001')
 	let cardNumber: string | undefined;
 	const filename = card.images.large.split('/').at(-1);
 	if (filename) {
-		// Improved regex to handle variations like 'g1_en_rc1', 'sma_en_sv1', etc.
-		const match = filename.match(/^([a-zA-Z]+[-a-zA-Z0-9]*)?(\d+)([a-zA-Z]*)(?:_.*)?\.png$/i);
-		cardNumber = match ? match[2] : undefined; // Group 2 should be the number
+		const match = filename.match(/^(?:[a-zA-Z]+[-a-zA-Z0-9]*)?_?en_?(\d+)([a-zA-Z]*)(?:_.*)?\.png$/i)
+			?? filename.match(/^[a-zA-Z]+(\d+)\.png$/i)
+			?? filename.match(/^([a-zA-Z]+[-a-zA-Z0-9]*)?(\d+)([a-zA-Z]*)(?:_.*)?\.png$/i);
+
+		cardNumber = match ? match[1] ?? match[2] : undefined;
 	}
 
-	// Generate unique card code
 	const cardCode = generateUniqueCardCode(
 		nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0,
-		setCode, // Use the potentially remapped setCode
+		setCode,
 		cardNumber,
 		card.supertype
 	);
@@ -267,14 +286,13 @@ function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings):
 		artist: card.artist ?? 'Unknown',
 		cardCode,
 		cardMarketUpdatedAt: cardMarketUpdatedAt ?? tcgplayerUpdatedAt,
-		cardMarketUrl: cardMarketUrl ?? tcgplayerUrl?.replace('/tcgplayer/', '/cardmarket/'), // Derive market URL if missing
+		cardMarketUrl: cardMarketUrl ?? tcgplayerUrl?.replace('/tcgplayer/', '/cardmarket/'),
 		image: card.images.large,
-		meanColor: 'FFFFFF', // Placeholder - average color calculation removed
+		meanColor: 'FFFFFF',
 		name: card.name,
-		pokemonNumber: nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0, // Use first number or 0
-		price: price ?? 0, // Default to 0 if no price found
-		rarity: card.rarity ?? 'Common', // Default rarity
-		setName: setName, // Use potentially remapped set name
+		pokemonNumber: nationalPokedexNumbers.length > 0 ? nationalPokedexNumbers[0] : 0,
+		rarity: card.rarity ?? 'Common',
+		setName: setName,
 		supertype: card.supertype,
 		types: card.types?.join(', ') || '',
 	};
@@ -317,7 +335,6 @@ function logFinalSummary(startTime: number, allCards: ProcessedCard[], totalCard
 	console.log('-----------------------------------');
 }
 
-
 /**
  * Fetches all cards of a specific supertype (Energy or Trainer).
  */
@@ -333,7 +350,7 @@ export async function fetchCardsByType(supertype: 'Energy' | 'Trainer'): Promise
 		while (hasMoreCards) {
 			const params = {
 				q: query,
-				select: SELECT_FIELDS, // Use same select fields
+				select: SELECT_FIELDS,
 				pageSize: '250',
 				page: page.toString()
 			};
@@ -347,7 +364,6 @@ export async function fetchCardsByType(supertype: 'Energy' | 'Trainer'): Promise
 			} else {
 				hasMoreCards = false;
 			}
-			// Avoid rate limiting
 			await new Promise(resolve => setTimeout(resolve, 500));
 		}
 
@@ -356,6 +372,6 @@ export async function fetchCardsByType(supertype: 'Energy' | 'Trainer'): Promise
 	} catch (e) {
 		console.error(`Error fetching ${supertype} cards: ${e instanceof Error ? e.message : e}, retrying...`);
 		await new Promise(resolve => setTimeout(resolve, 2500));
-		return fetchCardsByType(supertype); // Recursive retry
+		return fetchCardsByType(supertype);
 	}
 } 

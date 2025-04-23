@@ -7,7 +7,6 @@ export interface Card {
 	meanColor: string;
 	name: string;
 	pokemonNumber?: number;
-	price: number;
 	rarity: string;
 	setName: string;
 	supertype: string;
