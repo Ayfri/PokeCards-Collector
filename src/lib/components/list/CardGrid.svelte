@@ -18,6 +18,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { findSetByCardCode } from "$helpers/set-utils";
+	import { parseCardCode } from "$helpers/card-utils";
 	
 	export let cards: FullCard[];
 	export let sets: Set[];
@@ -128,8 +129,8 @@
 				return $sortOrder === 'asc' ? aArtist.localeCompare(bArtist) : bArtist.localeCompare(aArtist);
 			}
 
-			const aNumDefault = a.pokemonNumber;
-			const bNumDefault = b.pokemonNumber;
+			const aNumDefault = parseCardCode(a.cardCode).pokemonNumber;
+			const bNumDefault = parseCardCode(b.cardCode).pokemonNumber;
 			if (aNumDefault === null && bNumDefault !== null) return 1;
 			if (bNumDefault === null && aNumDefault !== null) return -1;
 			if (aNumDefault === null && bNumDefault === null) return a.name.localeCompare(b.name);
