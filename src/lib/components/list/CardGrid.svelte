@@ -1,6 +1,6 @@
 <script lang="ts">
 	import "~/styles/colors.css";
-	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder, resetFilters} from '$lib/helpers/filters';
+	import {displayAll, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, filterArtist, isVisible, mostExpensiveOnly, sortBy, sortOrder, resetFilters, resetSort} from '$lib/helpers/filters';
 	import { getRarityLevel } from '$lib/helpers/rarity';
 	import CardComponent from '@components/list/Card.svelte';
 	import Filters from '@components/list/Filters.svelte';
@@ -53,6 +53,7 @@
 	// Local reset function to clear both store and local state
 	function localResetFilters() {
 		resetFilters(); // Call the imported helper to reset stores
+		resetSort();
 		searchName = ''; // Reset the local searchName bound to the TextInput
 		
 		// Also clear URL parameters to match the UI state

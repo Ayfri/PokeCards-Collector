@@ -2,9 +2,8 @@
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
-	import { authStore } from '$lib/stores/auth';
 	import { filterSet, filterArtist, resetFilters } from '$lib/helpers/filters';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 
 	export let data: PageData;
 
@@ -19,8 +18,8 @@
 
 	onMount(() => {
 		// Check if we have any filter parameters in the URL
-		const setParam = $page.url.searchParams.get('set');
-		const artistParam = $page.url.searchParams.get('artist');
+		const setParam = page.url.searchParams.get('set');
+		const artistParam = page.url.searchParams.get('artist');
 
 		// If we have any filter parameters, reset all filters first
 		if (setParam || artistParam) {

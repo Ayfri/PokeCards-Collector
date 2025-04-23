@@ -26,6 +26,9 @@ export function resetFilters() {
 	filterArtist.set('all');
 	mostExpensiveOnly.set(false);
 	displayAll.set(true);
+}
+
+export function resetSort() {
 	sortBy.set('sort-pokedex');
 	sortOrder.set('asc');
 }
