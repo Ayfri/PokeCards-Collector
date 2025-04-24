@@ -374,12 +374,16 @@
 								<span class="font-medium dark:text-white">{collectionStats.total_cards}</span>
 							</div>
 							<div class="flex justify-between">
-								<span class="text-gray-500 dark:text-gray-400">Total Value:</span>
-								<span class="font-medium dark:text-white">{formatCurrency(collectionStats.total_value)}</span>
+								<span class="text-gray-500 dark:text-gray-400">Wishlist Cards:</span>
+								<span class="font-medium dark:text-white">{collectionStats.wishlist_count}</span>
 							</div>
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Sets in Collection:</span>
 								<span class="font-medium dark:text-white">{Object.keys(collectionStats.set_completion).length}</span>
+							</div>
+							<div class="flex justify-between">
+								<span class="text-gray-500 dark:text-gray-400">Total Value:</span>
+								<span class="font-medium dark:text-white">{formatCurrency(collectionStats.total_value)}</span>
 							</div>
 						</div>
 					</div>

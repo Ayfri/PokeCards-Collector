@@ -121,6 +121,13 @@ export async function getCollectionStats(username: string) {
 			return { data: null, error };
 		}
 
+		// Get user's wishlist
+		const { getUserWishlist } = await import('$lib/services/wishlists');
+		const { data: wishlist, error: wishlistError } = await getUserWishlist(username);
+		
+		// Default wishlist count to 0 if there's an error
+		const wishlistCount = wishlistError || !wishlist ? 0 : wishlist.length;
+
 		// Import necessary data
 		const { getCards, getSets, getPrices } = await import('$helpers/data');
 		const allCards = await getCards();
@@ -180,7 +187,8 @@ export async function getCollectionStats(username: string) {
 				total_cards: totalCards,
 				total_value: Math.round(totalValue * 100) / 100,
 				cards_by_rarity: cardsByRarity,
-				set_completion: setStats
+				set_completion: setStats,
+				wishlist_count: wishlistCount
 			},
 			error: null
 		};

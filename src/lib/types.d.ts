@@ -90,6 +90,7 @@ export interface CollectionStats {
 	total_value: number;
 	cards_by_rarity: Record<string, number>;
 	set_completion: Record<string, { count: number; total: number; percentage: number }>;
+	wishlist_count: number;
 }
 
 export interface Image {
