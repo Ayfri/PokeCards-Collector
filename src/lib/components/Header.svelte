@@ -15,10 +15,10 @@
 
 <header class="w-full p-2 pb-6 lg:pb-12">
 	<div class="relative py-1.5 xs:py-2.5 lg:py-3 px-4 xs:px-6 lg:px-8 flex items-center justify-between gap-4 rounded-full z-50 bg-gray-800">
-		<a class="text-gray-400 max-xs:text-sm" href="/">Cards</a>
-		<a class="text-gray-400 max-xs:text-sm" href="/sets">Sets</a>
-		<a class="text-gray-400 max-xs:text-sm" href="/artists">Artists</a>
-		<a class="text-gray-400 max-xs:text-sm" href="/random">Random Card</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/">Cards</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/sets">Sets</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/artists">Artists</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/random">Random Card</a>
 		<span class="flex-1"></span>
 		<a class="logo-link absolute left-1/2 top-full xs:top-3/4 lg:top-full -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full z-20" href="/">
 			{#if !NO_IMAGES}
@@ -46,5 +46,35 @@
 <style lang="postcss">
 	.logo-link {
 		background-image: linear-gradient(transparent 50%, theme(textColor.gray.800) 50%);
+	}
+	
+	.nav-link {
+		position: relative;
+	}
+	
+	.nav-link:hover::after {
+		content: '';
+		position: absolute;
+		bottom: -4px;
+		left: 0;
+		width: 100%;
+		height: 2px;
+		background-color: theme(colors.gold.400);
+		transform-origin: center;
+		transform: scaleX(1);
+		transition: transform 0.3s ease;
+	}
+	
+	.nav-link::after {
+		content: '';
+		position: absolute;
+		bottom: -4px;
+		left: 0;
+		width: 100%;
+		height: 2px;
+		background-color: theme(colors.gold.400);
+		transform-origin: center;
+		transform: scaleX(0);
+		transition: transform 0.3s ease;
 	}
 </style>
