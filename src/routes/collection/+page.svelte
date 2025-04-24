@@ -8,6 +8,7 @@
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import type { FullCard, Pokemon, Set, UserProfile, PriceData } from '$lib/types';
+	import { page } from '$app/stores';
 
 	export let data: PageData;
 
@@ -21,6 +22,8 @@
 	let pokemonCount = 0;
 	let profileNotFound = false;
 	let profileIsPrivate = false;
+	let currentUrl = '';
+	let previousUrl = '';
 
 	// --- Reactive Data from Server ---
 	$: allCards = data.allCards || [];
@@ -48,65 +51,82 @@
 		pokemonCount = 0;
 	}
 
+	// React to changes in the URL
+	$: currentUrl = $page.url.toString();
+	$: if (currentUrl !== previousUrl) {
+		previousUrl = currentUrl;
+		if (loggedInUser) {
+			loadDataBasedOnUrl();
+		}
+	}
+
+	async function loadDataBasedOnUrl() {
+		if (!loggedInUser) return;
+		
+		// Reset state variables before loading new data
+		displayCards = [];
+		statusMessage = null;
+		profileNotFound = false;
+		profileIsPrivate = false;
+		
+		// Get the updated user parameter from the URL
+		const urlParams = new URLSearchParams($page.url.search);
+		const urlUsername = urlParams.get('user');
+		
+		// Process based on the new URL parameters
+		if (urlUsername) {
+			// Viewing specific user's collection
+			if (data.targetUsername !== urlUsername) {
+				// URL changed but page didn't reload, manually reload page
+				await goto(`/collection?user=${encodeURIComponent(urlUsername)}`, { invalidateAll: true });
+				return;
+			}
+			
+			isOwnProfile = loggedInUser?.username === urlUsername;
+			
+			if (!targetProfile) {
+				statusMessage = `User "${urlUsername}" not found.`;
+				pageTitleDisplay = 'User Not Found';
+				profileNotFound = true;
+			} else if (!isPublic && !isOwnProfile) {
+				statusMessage = `Collection for "${urlUsername}" is private.`;
+				pageTitleDisplay = 'Private Collection';
+				profileIsPrivate = true;
+			} else {
+				// Profile is public or own profile
+				displayCards = serverCollectionCards || [];
+				pageTitleDisplay = isOwnProfile 
+					? 'My Collection'
+					: `${urlUsername}'s Collection`;
+				if (displayCards.length === 0) {
+					statusMessage = isOwnProfile ? 'Your collection is empty.' : `"${urlUsername}" collection is empty.`;
+				}
+			}
+		} else {
+			// Viewing own collection
+			isOwnProfile = true;
+			pageTitleDisplay = 'My Collection';
+			
+			if (loggedInUser) {
+				// Force reload the collection store
+				await loadCollection(true);
+				const collectionCardCodes = $collectionStore;
+				displayCards = allCards.filter(card => collectionCardCodes.has(card.cardCode));
+				if (displayCards.length === 0) {
+					statusMessage = 'Your collection is empty.';
+				}
+			} else {
+				goto('/');
+				return;
+			}
+		}
+	}
+
 	onMount(() => {
 		const unsubscribe = authStore.subscribe(async (state) => {
 			if (!state.loading) {
 				loggedInUser = state.profile;
-
-				if (targetUsername) {
-					// --- Case 1: Viewing a specific user (?user=...) ---
-					isOwnProfile = loggedInUser?.username === targetUsername;
-
-					if (!targetProfile) {
-						statusMessage = `User "${targetUsername}" not found.`;
-						pageTitleDisplay = 'User Not Found';
-						displayCards = [];
-						profileNotFound = true;
-					} else if (!isPublic && !isOwnProfile) {
-						statusMessage = `Collection for "${targetUsername}" is private.`;
-						pageTitleDisplay = 'Private Collection';
-						displayCards = [];
-						profileIsPrivate = true;
-					} else {
-						// Profile is public or own profile
-						displayCards = serverCollectionCards || []; // Use cards from server
-						pageTitleDisplay = isOwnProfile 
-							? `My Collection`
-							: `${targetUsername}'s Collection`;
-						if (displayCards.length === 0) {
-							statusMessage = isOwnProfile ? 'Your collection is empty.' : `"${targetUsername}" collection is empty.`;
-						}
-					}
-				} else {
-					// --- Case 2: Viewing own collection (no ?user=...) ---
-					isOwnProfile = true;
-					
-					if (loggedInUser) {
-						// For logged-in user, use the store if possible
-						if ($collectionStore.size > 0) {
-							// If the store already has data, use it
-							const collectionCardCodes = $collectionStore;
-							displayCards = allCards.filter(card => collectionCardCodes.has(card.cardCode));
-							if (displayCards.length === 0) {
-								statusMessage = 'Your collection is empty.';
-							}
-						} else {
-							// Otherwise, load the collection (which will also update the store)
-							await loadCollection();
-							// After loading, filter cards with the updated store
-							const collectionCardCodes = $collectionStore;
-							displayCards = allCards.filter(card => collectionCardCodes.has(card.cardCode));
-							if (displayCards.length === 0) {
-								statusMessage = 'Your collection is empty.';
-							}
-						}
-						pageTitleDisplay = 'My Collection';
-					} else {
-						// Not logged in and no target user -> redirect
-						goto('/');
-						return; // Prevent further processing
-					}
-				}
+				await loadDataBasedOnUrl();
 			}
 		});
 

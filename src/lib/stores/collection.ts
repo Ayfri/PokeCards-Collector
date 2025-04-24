@@ -12,15 +12,15 @@ let isLoadingCollection = false;
 let collectionLoaded = false;
 
 // Function to load the complete collection
-export async function loadCollection() {
+export async function loadCollection(forceReload: boolean = false) {
 	const authState = get(authStore);
 	if (!authState.profile?.username) return;
 	
 	// Avoid multiple simultaneous loadings
 	if (isLoadingCollection) return;
 	
-	// If the collection is already loaded and the store has elements, don't reload
-	if (collectionLoaded && get(collectionStore).size > 0) return;
+	// If the collection is already loaded and the store has elements, don't reload unless forced
+	if (!forceReload && collectionLoaded && get(collectionStore).size > 0) return;
 
 	try {
 		isLoadingCollection = true;

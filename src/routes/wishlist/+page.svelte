@@ -9,16 +9,20 @@
   import type { PageData } from './$types';
   import type { FullCard, Pokemon, Set, UserProfile, PriceData } from '$lib/types';
   import { resetFilters } from '$lib/helpers/filters';
+  import { page } from '$app/stores';
+  import { afterUpdate } from 'svelte';
 
   export let data: PageData;
 
   // --- State Variables ---
-  let isLoading = false; // Modifié à false pour ne pas afficher le loader
+  let isLoading = false;
   let displayCards: FullCard[] = [];
   let pageTitleDisplay = data.title; // Start with title from server
   let statusMessage: string | null = null; // For errors like private/not found
   let loggedInUser: UserProfile | null = null;
   let isOwnProfile = false;
+  let currentUrl = '';
+  let previousUrl = '';
 
   // --- Reactive Data from Server ---
   $: allCards = data.allCards || [];
@@ -32,61 +36,77 @@
   $: isPublic = data.isPublic;
   $: serverWishlistCards = data.serverWishlistCards;
   $: targetUsername = data.targetUsername;
+  
+  // React to changes in the URL
+  $: currentUrl = $page.url.toString();
+  $: if (currentUrl !== previousUrl) {
+    previousUrl = currentUrl;
+    if (loggedInUser) {
+      loadDataBasedOnUrl();
+    }
+  }
+
+  async function loadDataBasedOnUrl() {
+    if (!loggedInUser) return;
+    
+    // Get the updated user parameter from the URL
+    const urlParams = new URLSearchParams($page.url.search);
+    const urlUsername = urlParams.get('user');
+    
+    // Reset state variables before loading new data
+    displayCards = [];
+    statusMessage = null;
+    
+    // Process based on the new URL parameters
+    if (urlUsername) {
+      // Viewing specific user's wishlist
+      if (data.targetUsername !== urlUsername) {
+        // URL changed but page didn't reload, manually reload page
+        await goto(`/wishlist?user=${encodeURIComponent(urlUsername)}`, { invalidateAll: true });
+        return;
+      }
+      
+      isOwnProfile = loggedInUser?.username === urlUsername;
+      
+      if (!targetProfile) {
+        statusMessage = `User "${urlUsername}" not found.`;
+        pageTitleDisplay = 'User Not Found';
+      } else if (!isPublic && !isOwnProfile) {
+        statusMessage = `Profile for "${urlUsername}" is private.`;
+        pageTitleDisplay = 'Private Wishlist';
+      } else {
+        // Profile is public or own profile
+        displayCards = serverWishlistCards || [];
+        pageTitleDisplay = isOwnProfile ? 'My Wishlist' : `${urlUsername}'s Wishlist`;
+        if (displayCards.length === 0) {
+          statusMessage = isOwnProfile ? 'Your wishlist is empty.' : `"${urlUsername}" wishlist is empty.`;
+        }
+      }
+    } else {
+      // Viewing own wishlist
+      isOwnProfile = true;
+      pageTitleDisplay = 'My Wishlist';
+      
+      if (loggedInUser) {
+        // Force reload the wishlist store
+        await loadWishlist(true);
+        const wishlistCardCodes = $wishlistStore;
+        displayCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
+        if (displayCards.length === 0) {
+          statusMessage = 'Your wishlist is empty.';
+        }
+      } else {
+        goto('/');
+        return;
+      }
+    }
+  }
 
   onMount(() => {
     const unsubscribe = authStore.subscribe(async (state) => {
       if (!state.loading) {
         loggedInUser = state.profile;
-
-        if (targetUsername) {
-          // --- Case 1: Viewing a specific user (?user=...) ---
-          isOwnProfile = loggedInUser?.username === targetUsername;
-
-          if (!targetProfile) {
-            statusMessage = `User "${targetUsername}" not found.`;
-            pageTitleDisplay = 'User Not Found';
-            displayCards = [];
-          } else if (!isPublic && !isOwnProfile) {
-            statusMessage = `Profile for "${targetUsername}" is private.`;
-            pageTitleDisplay = 'Private Wishlist';
-            displayCards = [];
-          } else {
-            // Profile is public or own profile
-            displayCards = serverWishlistCards || []; // Use cards from server
-            pageTitleDisplay = isOwnProfile ? 'My Wishlist' : `${targetUsername}'s Wishlist`;
-            if (displayCards.length === 0) {
-              statusMessage = isOwnProfile ? 'Your wishlist is empty.' : `"${targetUsername}" wishlist is empty.`;
-            }
-          }
-        } else {
-          // --- Case 2: Viewing own wishlist (no ?user=...) ---
-          isOwnProfile = true;
-          pageTitleDisplay = 'My Wishlist';
-          if (loggedInUser) {
-            // Pour l'utilisateur connecté, utiliser le store si possible
-            if ($wishlistStore.size > 0) {
-              // Si le store a déjà des données, les utiliser
-              const wishlistCardCodes = $wishlistStore;
-              displayCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
-              if (displayCards.length === 0) {
-                statusMessage = 'Your wishlist is empty.';
-              }
-            } else {
-              // Sinon, charger la wishlist (ce qui mettra aussi à jour le store)
-              await loadWishlist();
-              // Après chargement, filtrer les cartes avec le store mis à jour
-              const wishlistCardCodes = $wishlistStore;
-              displayCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
-              if (displayCards.length === 0) {
-                statusMessage = 'Your wishlist is empty.';
-              }
-            }
-          } else {
-            // Not logged in and no target user -> redirect
-            goto('/');
-            return; // Prevent further processing
-          }
-        }
+        await loadDataBasedOnUrl();
       }
     });
 
@@ -95,16 +115,13 @@
 </script>
 
 <div class="px-10 flex flex-col flex-grow">
-  {#if statusMessage}
+  {#if statusMessage && (statusMessage.includes('not found') || statusMessage.includes('private'))}
     <div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
       <p
         class="font-bold mb-4 {statusMessage.includes('not found') ? 'text-4xl' : 'text-3xl'}"
       >
         {statusMessage}
       </p>
-      {#if statusMessage === 'Your wishlist is empty.'}
-        <p class="mt-2 mb-4">Add cards to your wishlist by browsing card pages.</p>
-      {/if}
       <a
         href="/"
         class="home-button animated-hover-button relative overflow-hidden bg-transparent border-2 border-white text-white text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4"
@@ -130,5 +147,12 @@
       pageTitle={pageTitleDisplay}
       disableLoader={true}
     />
+    
+    {#if statusMessage && statusMessage === 'Your wishlist is empty.'}
+      <div class="text-center p-8 mt-8">
+        <p class="text-lg">{statusMessage}</p>
+        <p class="mt-2 mb-4">Add cards to your wishlist by browsing card pages.</p>
+      </div>
+    {/if}
   {/if}
 </div>

@@ -12,7 +12,7 @@ let isLoadingWishlist = false;
 let wishlistLoaded = false;
 
 // Fonction pour charger la wishlist complète
-export async function loadWishlist() {
+export async function loadWishlist(forceReload: boolean = false) {
 	const authState = get(authStore);
 	if (!authState.profile?.username) return;
 	
@@ -20,7 +20,7 @@ export async function loadWishlist() {
 	if (isLoadingWishlist) return;
 	
 	// Si la wishlist est déjà chargée et que le store a des éléments, ne pas recharger
-	if (wishlistLoaded && get(wishlistStore).size > 0) return;
+	if (!forceReload && wishlistLoaded && get(wishlistStore).size > 0) return;
 
 	try {
 		isLoadingWishlist = true;
