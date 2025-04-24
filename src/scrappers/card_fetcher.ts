@@ -289,10 +289,17 @@ function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings, 
 		} else {
 			console.log(`Found Pokémon '${foundPokemon?.name}' number ${nationalPokedexNumber} for '${card.name}'`);
 		}
-
-		if (nationalPokedexNumber === 0) {
+		
+		// If pokemon name is "Buried Fossil" swap supertype to "Trainer"
+		if (card.name.toLowerCase().includes('buried fossil')) {
+			card.supertype = 'Trainer';
+		}
+		
+		// If nationalPokedexNumber is undefined and supertype is Pokémon, set to 99999
+		if (nationalPokedexNumber === undefined && card.supertype === 'Pokémon') {
 			nationalPokedexNumber = 99999;
 		}
+
 	}
 
 	const cardCode = generateUniqueCardCode(nationalPokedexNumber ?? 0, urlCode, card.number, card.supertype);
