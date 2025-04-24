@@ -7,13 +7,13 @@
   import PageTitle from '$lib/components/PageTitle.svelte';
   import CardGrid from '$lib/components/list/CardGrid.svelte';
   import type { PageData } from './$types';
-  import type { FullCard, Pokemon, Set, UserProfile } from '$lib/types';
+  import type { FullCard, Pokemon, Set, UserProfile, PriceData } from '$lib/types';
   import { resetFilters } from '$lib/helpers/filters';
 
   export let data: PageData;
 
   // --- State Variables ---
-  let isLoading = true; // Loading covers auth check AND potential client-side fetch
+  let isLoading = false; // Modifié à false pour ne pas afficher le loader
   let displayCards: FullCard[] = [];
   let pageTitleDisplay = data.title; // Start with title from server
   let statusMessage: string | null = null; // For errors like private/not found
@@ -26,14 +26,14 @@
   $: sets = data.sets || [];
   $: rarities = data.rarities || [];
   $: types = data.types || [];
+  $: prices = data.prices || {};
+  $: artists = data.artists || [];
   $: targetProfile = data.targetProfile;
   $: isPublic = data.isPublic;
   $: serverWishlistCards = data.serverWishlistCards;
   $: targetUsername = data.targetUsername;
 
   onMount(() => {
-    isLoading = true; // Ensure loading state is true initially
-
     const unsubscribe = authStore.subscribe(async (state) => {
       if (!state.loading) {
         loggedInUser = state.profile;
@@ -71,7 +71,6 @@
               if (displayCards.length === 0) {
                 statusMessage = 'Your wishlist is empty.';
               }
-              isLoading = false;
             } else {
               // Sinon, charger la wishlist (ce qui mettra aussi à jour le store)
               await loadWishlist();
@@ -88,7 +87,6 @@
             return; // Prevent further processing
           }
         }
-        isLoading = false; // Finish loading after logic completes
       }
     });
 
@@ -97,11 +95,7 @@
 </script>
 
 <div class="px-10 flex flex-col flex-grow">
-  {#if isLoading}
-    <div class="flex justify-center items-center p-8 flex-grow">
-      <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
-    </div>
-  {:else if statusMessage}
+  {#if statusMessage}
     <div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
       <p
         class="font-bold mb-4 {statusMessage.includes('not found') ? 'text-4xl' : 'text-3xl'}"
@@ -131,7 +125,10 @@
       {sets}
       {rarities}
       {types}
+      {prices}
+      {artists}
       pageTitle={pageTitleDisplay}
+      disableLoader={true}
     />
   {/if}
 </div>

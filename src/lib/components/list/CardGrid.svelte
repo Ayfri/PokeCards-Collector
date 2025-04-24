@@ -19,6 +19,7 @@
 	import { page } from '$app/state';
 	import { findSetByCardCode } from "$helpers/set-utils";
 	import { parseCardCode } from "$helpers/card-utils";
+	import Loader from '$lib/components/Loader.svelte';
 	
 	export let cards: FullCard[];
 	export let sets: Set[];
@@ -28,14 +29,32 @@
 	export let types: string[];
 	export let artists: string[] = [];
 	export let pageTitle: string | null = "Card List";
+	export let disableLoader: boolean = false;
 
 	let clientWidth: number = 0;
 	let showFilters = false;
 	let searchName = '';
 	let debounceTimeout: number;
+	let showLoader = true;
 
 	onMount(() => {
 		searchName = $filterName;
+		
+		// Set up a MutationObserver to watch for card-link elements
+		const observer = new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				if (mutation.type === 'childList') {
+					if (document.querySelector('.card-link')) {
+						showLoader = false;
+						observer.disconnect();
+						break;
+					}
+				}
+			}
+		});
+		
+		// Start observing the document with the configured parameters
+		observer.observe(document.body, { childList: true, subtree: true });
 	});
 
 	function debounce(fn: Function, delay: number) {
@@ -301,6 +320,10 @@
 		<ScrollProgress />
 	</div>
 
+	{#if showLoader && !disableLoader}
+		<Loader message="Loading cards..." />
+	{/if}
+
 	<VirtualGrid
 		gapX={100 + clientWidth * 0.035}
 		gapY={50}
@@ -317,3 +340,11 @@
 		</div>
 	</VirtualGrid>
 </div>
+
+<style>
+	:global(body) {
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
+	}
+</style>

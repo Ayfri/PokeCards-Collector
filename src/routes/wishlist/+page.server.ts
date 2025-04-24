@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import { getCards, getPokemons, getSets, getRarities, getTypes } from '$helpers/data';
+import { getCards, getPokemons, getSets, getRarities, getTypes, getPrices, getArtists } from '$helpers/data';
 import { getUserWishlist } from '$lib/services/wishlists';
 import { getProfileByUsername } from '$lib/services/profiles';
 import type { PageServerLoad } from './$types';
@@ -15,12 +15,16 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	let sets = [];
 	let rarities = [];
 	let types = [];
+	let prices = {};
+	let artists = [];
 	try {
 		allCards = await getCards();
 		pokemons = await getPokemons();
 		sets = await getSets();
 		rarities = await getRarities();
 		types = await getTypes();
+		prices = await getPrices();
+		artists = await getArtists();
 	} catch (e) {
 		console.error("Error loading global card data:", e);
 		throw error(500, 'Failed to load necessary card data');
@@ -39,7 +43,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			// We can refine this, but for now, assume user not found or error
 			console.error(`Error fetching profile for ${targetUsername}:`, profileError);
 			return {
-				allCards, pokemons, sets, rarities, types, // Base data
+				allCards, pokemons, sets, rarities, types, prices, artists, // Base data
 				targetProfile: null,
 				isPublic: false,
 				serverWishlistCards: null,
@@ -52,7 +56,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		if (!targetProfile) {
 			// User specifically not found (query succeeded but returned no profile)
 			return {
-				allCards, pokemons, sets, rarities, types,
+				allCards, pokemons, sets, rarities, types, prices, artists,
 				targetProfile: null,
 				isPublic: false,
 				serverWishlistCards: null,
@@ -81,7 +85,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 			const wishlistCards: FullCard[] = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
 
 			return {
-				allCards, pokemons, sets, rarities, types,
+				allCards, pokemons, sets, rarities, types, prices, artists,
 				targetProfile, 
 				isPublic: true,
 				serverWishlistCards: wishlistCards,
@@ -92,7 +96,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		} else {
 			// Profile is private
 			return {
-				allCards, pokemons, sets, rarities, types,
+				allCards, pokemons, sets, rarities, types, prices, artists,
 				targetProfile, 
 				isPublic: false,
 				serverWishlistCards: null, 
@@ -107,7 +111,7 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		// We can't reliably get logged-in user here due to locals issues.
 		// Client will handle fetching own wishlist.
 		return {
-			allCards, pokemons, sets, rarities, types, // Provide base data
+			allCards, pokemons, sets, rarities, types, prices, artists, // Provide base data
 			targetProfile: null, // Indicate no specific target user from URL
 			isPublic: false, // Not applicable
 			serverWishlistCards: null, // Client needs to fetch

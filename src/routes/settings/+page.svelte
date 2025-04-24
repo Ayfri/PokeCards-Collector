@@ -24,11 +24,7 @@
 </div>
 
 <div class="container mx-auto px-4 py-8">
-	{#if $authStore.loading}
-		<div class="flex justify-center items-center p-8">
-			<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
-		</div>
-	{:else if !$authStore.user || !$authStore.profile}
+	{#if !$authStore.user || !$authStore.profile}
 		<div class="text-center p-8">
 			<p class="text-lg">Please sign in to view settings.</p>
 		</div>

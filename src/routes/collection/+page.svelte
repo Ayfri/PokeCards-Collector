@@ -6,7 +6,7 @@
 	import PageTitle from '$lib/components/PageTitle.svelte';
 	import type { UserCollection, Card, CollectionStats } from '$lib/types';
 
-	let isLoading = true;
+	let isLoading = false;
 	let collection: UserCollection[] = [];
 	let stats: CollectionStats | null = null;
 	let cards: Card[] = [];
@@ -65,11 +65,7 @@
 </div>
 
 <div class="container mx-auto px-4 py-8">
-	{#if isLoading}
-		<div class="flex justify-center items-center p-8">
-			<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-500"></div>
-		</div>
-	{:else if !$authStore.user}
+	{#if !$authStore.user}
 		<div class="text-center p-8">
 			<p class="text-lg">Please sign in to view your collection.</p>
 		</div>
