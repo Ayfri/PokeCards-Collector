@@ -16,7 +16,7 @@ export async function addCardToCollection(username: string, cardCode: string) {
 		if (existingCard) {
 			// Card already exists, just return it
 			if (!existingCard.error) {
-				addToCollectionStore(cardCode); // Ajoute au store local
+				addToCollectionStore(cardCode); // Add to local store
 			}
 			return { data: existingCard, error: null };
 		} else {
@@ -30,7 +30,7 @@ export async function addCardToCollection(username: string, cardCode: string) {
 				.select();
 
 			if (!error) {
-				addToCollectionStore(cardCode); // Ajoute au store local
+				addToCollectionStore(cardCode); // Add to local store
 			}
 
 			return { data, error };
@@ -69,7 +69,7 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 			.select();
 
 		if (!error) {
-			removeFromCollectionStore(cardCode); // Retire du store local
+			removeFromCollectionStore(cardCode); // Remove from local store
 		}
 
 		return { data, error };

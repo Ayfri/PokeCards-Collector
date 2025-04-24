@@ -36,7 +36,7 @@
 	$: targetUsername = data.targetUsername;
 
 	$: if (displayCards.length > 0) {
-		// Calcul du nombre de Pokémon uniques dans la collection
+		// Calculate the number of unique Pokémon in the collection
 		const uniquePokemonIds = new Set<number>();
 		displayCards.forEach(card => {
 			if (card.pokemonNumber) {
@@ -82,18 +82,18 @@
 					isOwnProfile = true;
 					
 					if (loggedInUser) {
-						// Pour l'utilisateur connecté, utiliser le store si possible
+						// For logged-in user, use the store if possible
 						if ($collectionStore.size > 0) {
-							// Si le store a déjà des données, les utiliser
+							// If the store already has data, use it
 							const collectionCardCodes = $collectionStore;
 							displayCards = allCards.filter(card => collectionCardCodes.has(card.cardCode));
 							if (displayCards.length === 0) {
 								statusMessage = 'Your collection is empty.';
 							}
 						} else {
-							// Sinon, charger la collection (ce qui mettra aussi à jour le store)
+							// Otherwise, load the collection (which will also update the store)
 							await loadCollection();
-							// Après chargement, filtrer les cartes avec le store mis à jour
+							// After loading, filter cards with the updated store
 							const collectionCardCodes = $collectionStore;
 							displayCards = allCards.filter(card => collectionCardCodes.has(card.cardCode));
 							if (displayCards.length === 0) {
@@ -134,7 +134,7 @@
 			</a>
 		</div>
 	{:else}
-		<!-- Toujours afficher CardGrid même si la collection est vide -->
+		<!-- Always display CardGrid even if collection is empty -->
 		<CardGrid 
 			cards={displayCards} 
 			pokemons={pokemons} 

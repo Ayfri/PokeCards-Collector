@@ -75,10 +75,10 @@
 		try {
 			if (isInCollection) {
 				await removeCardFromCollection($authStore.profile.username, cardCode);
-				// Pas besoin de mettre à jour isInCollection car removeCardFromCollection met déjà à jour le store
+				// No need to update isInCollection as removeCardFromCollection already updates the store
 			} else {
 				await addCardToCollection($authStore.profile.username, cardCode);
-				// Pas besoin de mettre à jour isInCollection car addCardToCollection met déjà à jour le store
+				// No need to update isInCollection as addCardToCollection already updates the store
 			}
 		} catch (error) {
 			console.error('Error toggling collection status:', error);

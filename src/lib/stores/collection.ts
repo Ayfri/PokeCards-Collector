@@ -3,23 +3,23 @@ import { getUserCollection } from '$lib/services/collections';
 import { authStore } from './auth';
 import { browser } from '$app/environment';
 
-// Store pour les cardCodes des cartes dans la collection
+// Store for the cardCodes of cards in the collection
 export const collectionStore = writable<Set<string>>(new Set());
 
-// Variable pour suivre si un chargement est en cours
+// Variable to track if a loading is in progress
 let isLoadingCollection = false;
-// Variable pour suivre si la collection a déjà été chargée au moins une fois
+// Variable to track if the collection has already been loaded at least once
 let collectionLoaded = false;
 
-// Fonction pour charger la collection complète
+// Function to load the complete collection
 export async function loadCollection() {
 	const authState = get(authStore);
 	if (!authState.profile?.username) return;
 	
-	// Éviter les chargements multiples simultanés
+	// Avoid multiple simultaneous loadings
 	if (isLoadingCollection) return;
 	
-	// Si la collection est déjà chargée et que le store a des éléments, ne pas recharger
+	// If the collection is already loaded and the store has elements, don't reload
 	if (collectionLoaded && get(collectionStore).size > 0) return;
 
 	try {
@@ -31,7 +31,7 @@ export async function loadCollection() {
 			return;
 		}
 
-		// Créer un Set de cardCodes pour une recherche O(1)
+		// Create a Set of cardCodes for O(1) lookup
 		const collectionCardCodes = new Set(collectionItems?.map(item => item.card_code) || []);
 		collectionStore.set(collectionCardCodes);
 		collectionLoaded = true;
@@ -42,7 +42,7 @@ export async function loadCollection() {
 	}
 }
 
-// Fonction pour ajouter une carte à la collection locale
+// Function to add a card to the local collection
 export function addToCollectionStore(cardCode: string) {
 	collectionStore.update(set => {
 		const newSet = new Set(set);
@@ -51,7 +51,7 @@ export function addToCollectionStore(cardCode: string) {
 	});
 }
 
-// Fonction pour supprimer une carte de la collection locale
+// Function to remove a card from the local collection
 export function removeFromCollectionStore(cardCode: string) {
 	collectionStore.update(set => {
 		const newSet = new Set(set);
@@ -60,16 +60,16 @@ export function removeFromCollectionStore(cardCode: string) {
 	});
 }
 
-// Initialisation côté client
+// Client-side initialization
 if (browser) {
-	// S'abonner aux changements d'authentification pour charger/vider la collection
+	// Subscribe to authentication changes to load/clear the collection
 	authStore.subscribe(state => {
 		if (state.initialized && !state.loading) {
 			if (state.profile) {
-				// Utilisateur connecté, charger sa collection
+				// User is logged in, load their collection
 				loadCollection();
 			} else {
-				// Utilisateur déconnecté, vider la collection
+				// User is logged out, clear the collection
 				collectionStore.set(new Set());
 				collectionLoaded = false;
 			}
