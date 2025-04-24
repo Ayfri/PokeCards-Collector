@@ -93,6 +93,7 @@ export type FetchedSet = {
 	printedTotal: number;
 	ptcgoCode: string;
 	releaseDate: string; // YYYY/MM/DD
+	series: string;
 };
 
 export type FetchedSetsResponse = {

@@ -4,28 +4,32 @@
 		"logo": "https://images.pokemontcg.io/sv3pt5/logo.png",
 		"printedTotal": 165,
 		"ptcgoCode": "MEW",
-		"releaseDate": "2023/09/22"
+		"releaseDate": "2023/09/22",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Ancient Origins",
 		"logo": "https://images.pokemontcg.io/xy7/logo.png",
 		"printedTotal": 98,
 		"ptcgoCode": "AOR",
-		"releaseDate": "2015/08/12"
+		"releaseDate": "2015/08/12",
+		"series": "XY"
 	},
 	{
 		"name": "Aquapolis",
 		"logo": "https://images.pokemontcg.io/ecard2/logo.png",
 		"printedTotal": 147,
 		"ptcgoCode": "AQ",
-		"releaseDate": "2003/01/15"
+		"releaseDate": "2003/01/15",
+		"series": "E-Card"
 	},
 	{
 		"name": "Arceus",
 		"logo": "https://images.pokemontcg.io/pl4/logo.png",
 		"printedTotal": 99,
 		"ptcgoCode": "AR",
-		"releaseDate": "2009/11/04"
+		"releaseDate": "2009/11/04",
+		"series": "Platinum"
 	},
 	{
 		"name": "Astral Radiance",
@@ -33,6 +37,7 @@
 		"printedTotal": 219,
 		"ptcgoCode": "ASR",
 		"releaseDate": "2022/05/27",
+		"series": "Sword & Shield",
 		"aliases": [
 			"swsh10tg"
 		]
@@ -42,56 +47,64 @@
 		"logo": "https://images.pokemontcg.io/base1/logo.png",
 		"printedTotal": 102,
 		"ptcgoCode": "BS",
-		"releaseDate": "1999/01/09"
+		"releaseDate": "1999/01/09",
+		"series": "Base"
 	},
 	{
 		"name": "Base Set 2",
 		"logo": "https://images.pokemontcg.io/base4/logo.png",
 		"printedTotal": 130,
 		"ptcgoCode": "B2",
-		"releaseDate": "2000/02/24"
+		"releaseDate": "2000/02/24",
+		"series": "Base"
 	},
 	{
 		"name": "Battle Styles",
 		"logo": "https://images.pokemontcg.io/swsh5/logo.png",
 		"printedTotal": 163,
 		"ptcgoCode": "BST",
-		"releaseDate": "2021/03/19"
+		"releaseDate": "2021/03/19",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "Best of Game",
 		"logo": "https://images.pokemontcg.io/bp/logo.png",
 		"printedTotal": 9,
 		"ptcgoCode": "BP",
-		"releaseDate": "2002/12/01"
+		"releaseDate": "2002/12/01",
+		"series": "Other"
 	},
 	{
 		"name": "Black & White",
 		"logo": "https://images.pokemontcg.io/bw1/logo.png",
 		"printedTotal": 114,
 		"ptcgoCode": "BLW",
-		"releaseDate": "2011/04/25"
+		"releaseDate": "2011/04/25",
+		"series": "Black & White"
 	},
 	{
 		"name": "Boundaries Crossed",
 		"logo": "https://images.pokemontcg.io/bw7/logo.png",
 		"printedTotal": 149,
 		"ptcgoCode": "BCR",
-		"releaseDate": "2012/11/07"
+		"releaseDate": "2012/11/07",
+		"series": "Black & White"
 	},
 	{
 		"name": "BREAKpoint",
 		"logo": "https://images.pokemontcg.io/xy9/logo.png",
 		"printedTotal": 122,
 		"ptcgoCode": "BKP",
-		"releaseDate": "2016/02/03"
+		"releaseDate": "2016/02/03",
+		"series": "XY"
 	},
 	{
 		"name": "BREAKthrough",
 		"logo": "https://images.pokemontcg.io/xy8/logo.png",
 		"printedTotal": 162,
 		"ptcgoCode": "BKT",
-		"releaseDate": "2015/11/04"
+		"releaseDate": "2015/11/04",
+		"series": "XY"
 	},
 	{
 		"name": "Brilliant Stars",
@@ -99,6 +112,7 @@
 		"printedTotal": 202,
 		"ptcgoCode": "BRS",
 		"releaseDate": "2022/02/25",
+		"series": "Sword & Shield",
 		"aliases": [
 			"swsh9tg"
 		]
@@ -108,21 +122,24 @@
 		"logo": "https://images.pokemontcg.io/sm3/logo.png",
 		"printedTotal": 147,
 		"ptcgoCode": "BUS",
-		"releaseDate": "2017/08/05"
+		"releaseDate": "2017/08/05",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "BW Black Star Promos",
 		"logo": "https://images.pokemontcg.io/bwp/logo.png",
 		"printedTotal": 101,
 		"ptcgoCode": "PR-BLW",
-		"releaseDate": "2011/03/01"
+		"releaseDate": "2011/03/01",
+		"series": "Black & White"
 	},
 	{
 		"name": "Call of Legends",
 		"logo": "https://images.pokemontcg.io/col1/logo.png",
 		"printedTotal": 95,
 		"ptcgoCode": "CL",
-		"releaseDate": "2011/02/09"
+		"releaseDate": "2011/02/09",
+		"series": "HeartGold & SoulSilver"
 	},
 	{
 		"name": "Celebrations",
@@ -130,6 +147,7 @@
 		"printedTotal": 50,
 		"ptcgoCode": "CEL",
 		"releaseDate": "2021/10/08",
+		"series": "Sword & Shield",
 		"aliases": [
 			"cel25c"
 		]
@@ -139,35 +157,40 @@
 		"logo": "https://images.pokemontcg.io/sm7/logo.png",
 		"printedTotal": 168,
 		"ptcgoCode": "CES",
-		"releaseDate": "2018/08/03"
+		"releaseDate": "2018/08/03",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Champion's Path",
 		"logo": "https://images.pokemontcg.io/swsh35/logo.png",
 		"printedTotal": 73,
 		"ptcgoCode": "CPA",
-		"releaseDate": "2020/09/25"
+		"releaseDate": "2020/09/25",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "Chilling Reign",
 		"logo": "https://images.pokemontcg.io/swsh6/logo.png",
 		"printedTotal": 198,
 		"ptcgoCode": "CRE",
-		"releaseDate": "2021/06/18"
+		"releaseDate": "2021/06/18",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "Cosmic Eclipse",
 		"logo": "https://images.pokemontcg.io/sm12/logo.png",
 		"printedTotal": 236,
 		"ptcgoCode": "CEC",
-		"releaseDate": "2019/11/01"
+		"releaseDate": "2019/11/01",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Crimson Invasion",
 		"logo": "https://images.pokemontcg.io/sm4/logo.png",
 		"printedTotal": 111,
 		"ptcgoCode": "CIN",
-		"releaseDate": "2017/11/03"
+		"releaseDate": "2017/11/03",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Crown Zenith",
@@ -175,6 +198,7 @@
 		"printedTotal": 229,
 		"ptcgoCode": "CRZ",
 		"releaseDate": "2023/01/20",
+		"series": "Sword & Shield",
 		"aliases": [
 			"swsh12pt5gg"
 		]
@@ -184,255 +208,292 @@
 		"logo": "https://images.pokemontcg.io/ex14/logo.png",
 		"printedTotal": 100,
 		"ptcgoCode": "CG",
-		"releaseDate": "2006/08/01"
+		"releaseDate": "2006/08/01",
+		"series": "EX"
 	},
 	{
 		"name": "Dark Explorers",
 		"logo": "https://images.pokemontcg.io/bw5/logo.png",
 		"printedTotal": 108,
 		"ptcgoCode": "DEX",
-		"releaseDate": "2012/05/09"
+		"releaseDate": "2012/05/09",
+		"series": "Black & White"
 	},
 	{
 		"name": "Darkness Ablaze",
 		"logo": "https://images.pokemontcg.io/swsh3/logo.png",
 		"printedTotal": 189,
 		"ptcgoCode": "DAA",
-		"releaseDate": "2020/08/14"
+		"releaseDate": "2020/08/14",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "Delta Species",
 		"logo": "https://images.pokemontcg.io/ex11/logo.png",
 		"printedTotal": 113,
 		"ptcgoCode": "DS",
-		"releaseDate": "2005/10/31"
+		"releaseDate": "2005/10/31",
+		"series": "EX"
 	},
 	{
 		"name": "Deoxys",
 		"logo": "https://images.pokemontcg.io/ex8/logo.png",
 		"printedTotal": 107,
 		"ptcgoCode": "DX",
-		"releaseDate": "2005/02/01"
+		"releaseDate": "2005/02/01",
+		"series": "EX"
 	},
 	{
 		"name": "Detective Pikachu",
 		"logo": "https://images.pokemontcg.io/det1/logo.png",
 		"printedTotal": 18,
 		"ptcgoCode": "DET",
-		"releaseDate": "2019/04/05"
+		"releaseDate": "2019/04/05",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Diamond & Pearl",
 		"logo": "https://images.pokemontcg.io/dp1/logo.png",
 		"printedTotal": 130,
 		"ptcgoCode": "DP",
-		"releaseDate": "2007/05/01"
+		"releaseDate": "2007/05/01",
+		"series": "Diamond & Pearl"
 	},
 	{
 		"name": "Double Crisis",
 		"logo": "https://images.pokemontcg.io/dc1/logo.png",
 		"printedTotal": 34,
 		"ptcgoCode": "DCR",
-		"releaseDate": "2015/03/25"
+		"releaseDate": "2015/03/25",
+		"series": "XY"
 	},
 	{
 		"name": "DP Black Star Promos",
 		"logo": "https://images.pokemontcg.io/dpp/logo.png",
 		"printedTotal": 56,
 		"ptcgoCode": "PR-DPP",
-		"releaseDate": "2007/05/01"
+		"releaseDate": "2007/05/01",
+		"series": "Diamond & Pearl"
 	},
 	{
 		"name": "Dragon",
 		"logo": "https://images.pokemontcg.io/ex3/logo.png",
 		"printedTotal": 97,
 		"ptcgoCode": "DR",
-		"releaseDate": "2003/11/24"
+		"releaseDate": "2003/11/24",
+		"series": "EX"
 	},
 	{
 		"name": "Dragon Frontiers",
 		"logo": "https://images.pokemontcg.io/ex15/logo.png",
 		"printedTotal": 101,
 		"ptcgoCode": "DF",
-		"releaseDate": "2006/11/01"
+		"releaseDate": "2006/11/01",
+		"series": "EX"
 	},
 	{
 		"name": "Dragon Majesty",
 		"logo": "https://images.pokemontcg.io/sm75/logo.png",
 		"printedTotal": 70,
 		"ptcgoCode": "DRM",
-		"releaseDate": "2018/09/07"
+		"releaseDate": "2018/09/07",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Dragon Vault",
 		"logo": "https://images.pokemontcg.io/dv1/logo.png",
 		"printedTotal": 20,
 		"ptcgoCode": "DRV",
-		"releaseDate": "2012/10/05"
+		"releaseDate": "2012/10/05",
+		"series": "Black & White"
 	},
 	{
 		"name": "Dragons Exalted",
 		"logo": "https://images.pokemontcg.io/bw6/logo.png",
 		"printedTotal": 124,
 		"ptcgoCode": "DRX",
-		"releaseDate": "2012/08/15"
+		"releaseDate": "2012/08/15",
+		"series": "Black & White"
 	},
 	{
 		"name": "Emerald",
 		"logo": "https://images.pokemontcg.io/ex9/logo.png",
 		"printedTotal": 106,
 		"ptcgoCode": "EM",
-		"releaseDate": "2005/05/01"
+		"releaseDate": "2005/05/01",
+		"series": "EX"
 	},
 	{
 		"name": "Emerging Powers",
 		"logo": "https://images.pokemontcg.io/bw2/logo.png",
 		"printedTotal": 98,
 		"ptcgoCode": "EPO",
-		"releaseDate": "2011/08/31"
+		"releaseDate": "2011/08/31",
+		"series": "Black & White"
 	},
 	{
 		"name": "Evolutions",
 		"logo": "https://images.pokemontcg.io/xy12/logo.png",
 		"printedTotal": 108,
 		"ptcgoCode": "EVO",
-		"releaseDate": "2016/11/02"
+		"releaseDate": "2016/11/02",
+		"series": "XY"
 	},
 	{
 		"name": "Evolving Skies",
 		"logo": "https://images.pokemontcg.io/swsh7/logo.png",
 		"printedTotal": 203,
 		"ptcgoCode": "EVS",
-		"releaseDate": "2021/08/27"
+		"releaseDate": "2021/08/27",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "EX Trainer Kit 2 Minun",
 		"logo": "https://images.pokemontcg.io/tk2b/logo.png",
 		"printedTotal": 12,
-		"releaseDate": "2006/03/01"
+		"releaseDate": "2006/03/01",
+		"series": "EX"
 	},
 	{
 		"name": "EX Trainer Kit 2 Plusle",
 		"logo": "https://images.pokemontcg.io/tk2a/logo.png",
 		"printedTotal": 12,
-		"releaseDate": "2006/03/01"
+		"releaseDate": "2006/03/01",
+		"series": "EX"
 	},
 	{
 		"name": "EX Trainer Kit Latias",
 		"logo": "https://images.pokemontcg.io/tk1a/logo.png",
 		"printedTotal": 10,
-		"releaseDate": "2004/06/01"
+		"releaseDate": "2004/06/01",
+		"series": "EX"
 	},
 	{
 		"name": "EX Trainer Kit Latios",
 		"logo": "https://images.pokemontcg.io/tk1b/logo.png",
 		"printedTotal": 10,
-		"releaseDate": "2004/06/01"
+		"releaseDate": "2004/06/01",
+		"series": "EX"
 	},
 	{
 		"name": "Expedition Base Set",
 		"logo": "https://images.pokemontcg.io/ecard1/logo.png",
 		"printedTotal": 165,
 		"ptcgoCode": "EX",
-		"releaseDate": "2002/09/15"
+		"releaseDate": "2002/09/15",
+		"series": "E-Card"
 	},
 	{
 		"name": "Fates Collide",
 		"logo": "https://images.pokemontcg.io/xy10/logo.png",
 		"printedTotal": 124,
 		"ptcgoCode": "FCO",
-		"releaseDate": "2016/05/02"
+		"releaseDate": "2016/05/02",
+		"series": "XY"
 	},
 	{
 		"name": "FireRed & LeafGreen",
 		"logo": "https://images.pokemontcg.io/ex6/logo.png",
 		"printedTotal": 112,
 		"ptcgoCode": "RG",
-		"releaseDate": "2004/09/01"
+		"releaseDate": "2004/09/01",
+		"series": "EX"
 	},
 	{
 		"name": "Flashfire",
 		"logo": "https://images.pokemontcg.io/xy2/logo.png",
 		"printedTotal": 106,
 		"ptcgoCode": "FLF",
-		"releaseDate": "2014/05/07"
+		"releaseDate": "2014/05/07",
+		"series": "XY"
 	},
 	{
 		"name": "Forbidden Light",
 		"logo": "https://images.pokemontcg.io/sm6/logo.png",
 		"printedTotal": 131,
 		"ptcgoCode": "FLI",
-		"releaseDate": "2018/05/04"
+		"releaseDate": "2018/05/04",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Fossil",
 		"logo": "https://images.pokemontcg.io/base3/logo.png",
 		"printedTotal": 62,
 		"ptcgoCode": "FO",
-		"releaseDate": "1999/10/10"
+		"releaseDate": "1999/10/10",
+		"series": "Base"
 	},
 	{
 		"name": "Furious Fists",
 		"logo": "https://images.pokemontcg.io/xy3/logo.png",
 		"printedTotal": 111,
 		"ptcgoCode": "FFI",
-		"releaseDate": "2014/08/13"
+		"releaseDate": "2014/08/13",
+		"series": "XY"
 	},
 	{
 		"name": "Fusion Strike",
 		"logo": "https://images.pokemontcg.io/swsh8/logo.png",
 		"printedTotal": 264,
 		"ptcgoCode": "FST",
-		"releaseDate": "2021/11/12"
+		"releaseDate": "2021/11/12",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "Generations",
 		"logo": "https://images.pokemontcg.io/g1/logo.png",
 		"printedTotal": 83,
 		"ptcgoCode": "GEN",
-		"releaseDate": "2016/02/22"
+		"releaseDate": "2016/02/22",
+		"series": "XY"
 	},
 	{
 		"name": "Great Encounters",
 		"logo": "https://images.pokemontcg.io/dp4/logo.png",
 		"printedTotal": 106,
 		"ptcgoCode": "GE",
-		"releaseDate": "2008/02/01"
+		"releaseDate": "2008/02/01",
+		"series": "Diamond & Pearl"
 	},
 	{
 		"name": "Guardians Rising",
 		"logo": "https://images.pokemontcg.io/sm2/logo.png",
 		"printedTotal": 145,
 		"ptcgoCode": "GRI",
-		"releaseDate": "2017/05/05"
+		"releaseDate": "2017/05/05",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Gym Challenge",
 		"logo": "https://images.pokemontcg.io/gym2/logo.png",
 		"printedTotal": 132,
 		"ptcgoCode": "G2",
-		"releaseDate": "2000/10/16"
+		"releaseDate": "2000/10/16",
+		"series": "Gym"
 	},
 	{
 		"name": "Gym Heroes",
 		"logo": "https://images.pokemontcg.io/gym1/logo.png",
 		"printedTotal": 132,
 		"ptcgoCode": "G1",
-		"releaseDate": "2000/08/14"
+		"releaseDate": "2000/08/14",
+		"series": "Gym"
 	},
 	{
 		"name": "HeartGold & SoulSilver",
 		"logo": "https://images.pokemontcg.io/hgss1/logo.png",
 		"printedTotal": 123,
 		"ptcgoCode": "HS",
-		"releaseDate": "2010/02/10"
+		"releaseDate": "2010/02/10",
+		"series": "HeartGold & SoulSilver"
 	},
 	{
 		"name": "HGSS Black Star Promos",
 		"logo": "https://images.pokemontcg.io/hsp/logo.png",
 		"printedTotal": 25,
 		"ptcgoCode": "PR-HS",
-		"releaseDate": "2010/02/10"
+		"releaseDate": "2010/02/10",
+		"series": "HeartGold & SoulSilver"
 	},
 	{
 		"name": "Hidden Fates",
@@ -440,6 +501,7 @@
 		"printedTotal": 162,
 		"ptcgoCode": "HIF",
 		"releaseDate": "2019/08/23",
+		"series": "Sun & Moon",
 		"aliases": [
 			"sma"
 		]
@@ -449,84 +511,96 @@
 		"logo": "https://images.pokemontcg.io/ex5/logo.png",
 		"printedTotal": 101,
 		"ptcgoCode": "HL",
-		"releaseDate": "2004/06/01"
+		"releaseDate": "2004/06/01",
+		"series": "EX"
 	},
 	{
 		"name": "Holon Phantoms",
 		"logo": "https://images.pokemontcg.io/ex13/logo.png",
 		"printedTotal": 110,
 		"ptcgoCode": "HP",
-		"releaseDate": "2006/05/01"
+		"releaseDate": "2006/05/01",
+		"series": "EX"
 	},
 	{
 		"name": "HS—Triumphant",
 		"logo": "https://images.pokemontcg.io/hgss4/logo.png",
 		"printedTotal": 102,
 		"ptcgoCode": "TM",
-		"releaseDate": "2010/11/03"
+		"releaseDate": "2010/11/03",
+		"series": "HeartGold & SoulSilver"
 	},
 	{
 		"name": "HS—Undaunted",
 		"logo": "https://images.pokemontcg.io/hgss3/logo.png",
 		"printedTotal": 90,
 		"ptcgoCode": "UD",
-		"releaseDate": "2010/08/18"
+		"releaseDate": "2010/08/18",
+		"series": "HeartGold & SoulSilver"
 	},
 	{
 		"name": "HS—Unleashed",
 		"logo": "https://images.pokemontcg.io/hgss2/logo.png",
 		"printedTotal": 95,
 		"ptcgoCode": "UL",
-		"releaseDate": "2010/05/12"
+		"releaseDate": "2010/05/12",
+		"series": "HeartGold & SoulSilver"
 	},
 	{
 		"name": "Journey Together",
 		"logo": "https://images.pokemontcg.io/sv9/logo.png",
 		"printedTotal": 159,
 		"ptcgoCode": "JTG",
-		"releaseDate": "2025/03/28"
+		"releaseDate": "2025/03/28",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Jungle",
 		"logo": "https://images.pokemontcg.io/base2/logo.png",
 		"printedTotal": 64,
 		"ptcgoCode": "JU",
-		"releaseDate": "1999/06/16"
+		"releaseDate": "1999/06/16",
+		"series": "Base"
 	},
 	{
 		"name": "Kalos Starter Set",
 		"logo": "https://images.pokemontcg.io/xy0/logo.png",
 		"printedTotal": 39,
 		"ptcgoCode": "KSS",
-		"releaseDate": "2013/11/08"
+		"releaseDate": "2013/11/08",
+		"series": "XY"
 	},
 	{
 		"name": "Legend Maker",
 		"logo": "https://images.pokemontcg.io/ex12/logo.png",
 		"printedTotal": 92,
 		"ptcgoCode": "LM",
-		"releaseDate": "2006/02/01"
+		"releaseDate": "2006/02/01",
+		"series": "EX"
 	},
 	{
 		"name": "Legendary Collection",
 		"logo": "https://images.pokemontcg.io/base6/logo.png",
 		"printedTotal": 110,
 		"ptcgoCode": "LC",
-		"releaseDate": "2002/05/24"
+		"releaseDate": "2002/05/24",
+		"series": "Other"
 	},
 	{
 		"name": "Legendary Treasures",
 		"logo": "https://images.pokemontcg.io/bw11/logo.png",
 		"printedTotal": 113,
 		"ptcgoCode": "LTR",
-		"releaseDate": "2013/11/06"
+		"releaseDate": "2013/11/06",
+		"series": "Black & White"
 	},
 	{
 		"name": "Legends Awakened",
 		"logo": "https://images.pokemontcg.io/dp6/logo.png",
 		"printedTotal": 146,
 		"ptcgoCode": "LA",
-		"releaseDate": "2008/08/01"
+		"releaseDate": "2008/08/01",
+		"series": "Diamond & Pearl"
 	},
 	{
 		"name": "Lost Origin",
@@ -534,6 +608,7 @@
 		"printedTotal": 226,
 		"ptcgoCode": "LOR",
 		"releaseDate": "2022/09/09",
+		"series": "Sword & Shield",
 		"aliases": [
 			"swsh11tg"
 		]
@@ -543,351 +618,404 @@
 		"logo": "https://images.pokemontcg.io/sm8/logo.png",
 		"printedTotal": 214,
 		"ptcgoCode": "LOT",
-		"releaseDate": "2018/11/02"
+		"releaseDate": "2018/11/02",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Majestic Dawn",
 		"logo": "https://images.pokemontcg.io/dp5/logo.png",
 		"printedTotal": 100,
 		"ptcgoCode": "MD",
-		"releaseDate": "2008/05/01"
+		"releaseDate": "2008/05/01",
+		"series": "Diamond & Pearl"
 	},
 	{
 		"name": "McDonald's Collection 2011",
 		"logo": "https://images.pokemontcg.io/mcd11/logo.png",
 		"printedTotal": 12,
-		"releaseDate": "2011/06/17"
+		"releaseDate": "2011/06/17",
+		"series": "Other"
 	},
 	{
 		"name": "McDonald's Collection 2012",
 		"logo": "https://images.pokemontcg.io/mcd12/logo.png",
 		"printedTotal": 12,
-		"releaseDate": "2012/06/15"
+		"releaseDate": "2012/06/15",
+		"series": "Other"
 	},
 	{
 		"name": "McDonald's Collection 2014",
 		"logo": "https://images.pokemontcg.io/mcd14/logo.png",
 		"printedTotal": 12,
-		"releaseDate": "2014/05/23"
+		"releaseDate": "2014/05/23",
+		"series": "Other"
 	},
 	{
 		"name": "McDonald's Collection 2015",
 		"logo": "https://images.pokemontcg.io/mcd15/logo.png",
 		"printedTotal": 12,
-		"releaseDate": "2015/11/27"
+		"releaseDate": "2015/11/27",
+		"series": "Other"
 	},
 	{
 		"name": "McDonald's Collection 2016",
 		"logo": "https://images.pokemontcg.io/mcd16/logo.png",
 		"printedTotal": 12,
-		"releaseDate": "2016/08/19"
+		"releaseDate": "2016/08/19",
+		"series": "Other"
 	},
 	{
 		"name": "McDonald's Collection 2017",
 		"logo": "https://images.pokemontcg.io/mcd17/logo.png",
 		"printedTotal": 12,
-		"releaseDate": "2017/11/07"
+		"releaseDate": "2017/11/07",
+		"series": "Other"
 	},
 	{
 		"name": "McDonald's Collection 2018",
 		"logo": "https://images.pokemontcg.io/mcd18/logo.png",
 		"printedTotal": 12,
-		"releaseDate": "2018/10/16"
+		"releaseDate": "2018/10/16",
+		"series": "Other"
 	},
 	{
 		"name": "McDonald's Collection 2019",
 		"logo": "https://images.pokemontcg.io/mcd19/logo.png",
 		"printedTotal": 12,
-		"releaseDate": "2019/10/15"
+		"releaseDate": "2019/10/15",
+		"series": "Other"
 	},
 	{
 		"name": "McDonald's Collection 2021",
 		"logo": "https://images.pokemontcg.io/mcd21/logo.png",
 		"printedTotal": 25,
-		"releaseDate": "2021/02/09"
+		"releaseDate": "2021/02/09",
+		"series": "Other"
 	},
 	{
 		"name": "McDonald's Collection 2022",
 		"logo": "https://images.pokemontcg.io/mcd22/logo.png",
 		"printedTotal": 15,
-		"releaseDate": "2022/08/03"
+		"releaseDate": "2022/08/03",
+		"series": "Other"
 	},
 	{
 		"name": "Mysterious Treasures",
 		"logo": "https://images.pokemontcg.io/dp2/logo.png",
 		"printedTotal": 123,
 		"ptcgoCode": "MT",
-		"releaseDate": "2007/08/01"
+		"releaseDate": "2007/08/01",
+		"series": "Diamond & Pearl"
 	},
 	{
 		"name": "Neo Destiny",
 		"logo": "https://images.pokemontcg.io/neo4/logo.png",
 		"printedTotal": 105,
 		"ptcgoCode": "N4",
-		"releaseDate": "2002/02/28"
+		"releaseDate": "2002/02/28",
+		"series": "Neo"
 	},
 	{
 		"name": "Neo Discovery",
 		"logo": "https://images.pokemontcg.io/neo2/logo.png",
 		"printedTotal": 75,
 		"ptcgoCode": "N2",
-		"releaseDate": "2001/06/01"
+		"releaseDate": "2001/06/01",
+		"series": "Neo"
 	},
 	{
 		"name": "Neo Genesis",
 		"logo": "https://images.pokemontcg.io/neo1/logo.png",
 		"printedTotal": 111,
 		"ptcgoCode": "N1",
-		"releaseDate": "2000/12/16"
+		"releaseDate": "2000/12/16",
+		"series": "Neo"
 	},
 	{
 		"name": "Neo Revelation",
 		"logo": "https://images.pokemontcg.io/neo3/logo.png",
 		"printedTotal": 64,
 		"ptcgoCode": "N3",
-		"releaseDate": "2001/09/21"
+		"releaseDate": "2001/09/21",
+		"series": "Neo"
 	},
 	{
 		"name": "Next Destinies",
 		"logo": "https://images.pokemontcg.io/bw4/logo.png",
 		"printedTotal": 99,
 		"ptcgoCode": "NXD",
-		"releaseDate": "2012/02/08"
+		"releaseDate": "2012/02/08",
+		"series": "Black & White"
 	},
 	{
 		"name": "Nintendo Black Star Promos",
 		"logo": "https://images.pokemontcg.io/np/logo.png",
 		"printedTotal": 40,
 		"ptcgoCode": "PR-NP",
-		"releaseDate": "2003/10/01"
+		"releaseDate": "2003/10/01",
+		"series": "NP"
 	},
 	{
 		"name": "Noble Victories",
 		"logo": "https://images.pokemontcg.io/bw3/logo.png",
 		"printedTotal": 101,
 		"ptcgoCode": "NVI",
-		"releaseDate": "2011/11/16"
+		"releaseDate": "2011/11/16",
+		"series": "Black & White"
 	},
 	{
 		"name": "Obsidian Flames",
 		"logo": "https://images.pokemontcg.io/sv3/logo.png",
 		"printedTotal": 197,
 		"ptcgoCode": "OBF",
-		"releaseDate": "2023/08/11"
+		"releaseDate": "2023/08/11",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Paldea Evolved",
 		"logo": "https://images.pokemontcg.io/sv2/logo.png",
 		"printedTotal": 193,
 		"ptcgoCode": "PAL",
-		"releaseDate": "2023/06/09"
+		"releaseDate": "2023/06/09",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Paldean Fates",
 		"logo": "https://images.pokemontcg.io/sv4pt5/logo.png",
 		"printedTotal": 91,
 		"ptcgoCode": "PAF",
-		"releaseDate": "2024/01/26"
+		"releaseDate": "2024/01/26",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Paradox Rift",
 		"logo": "https://images.pokemontcg.io/sv4/logo.png",
 		"printedTotal": 182,
 		"ptcgoCode": "PAR",
-		"releaseDate": "2023/11/03"
+		"releaseDate": "2023/11/03",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Phantom Forces",
 		"logo": "https://images.pokemontcg.io/xy4/logo.png",
 		"printedTotal": 119,
 		"ptcgoCode": "PHF",
-		"releaseDate": "2014/11/05"
+		"releaseDate": "2014/11/05",
+		"series": "XY"
 	},
 	{
 		"name": "Plasma Blast",
 		"logo": "https://images.pokemontcg.io/bw10/logo.png",
 		"printedTotal": 101,
 		"ptcgoCode": "PLB",
-		"releaseDate": "2013/08/14"
+		"releaseDate": "2013/08/14",
+		"series": "Black & White"
 	},
 	{
 		"name": "Plasma Freeze",
 		"logo": "https://images.pokemontcg.io/bw9/logo.png",
 		"printedTotal": 116,
 		"ptcgoCode": "PLF",
-		"releaseDate": "2013/05/08"
+		"releaseDate": "2013/05/08",
+		"series": "Black & White"
 	},
 	{
 		"name": "Plasma Storm",
 		"logo": "https://images.pokemontcg.io/bw8/logo.png",
 		"printedTotal": 135,
 		"ptcgoCode": "PLS",
-		"releaseDate": "2013/02/06"
+		"releaseDate": "2013/02/06",
+		"series": "Black & White"
 	},
 	{
 		"name": "Platinum",
 		"logo": "https://images.pokemontcg.io/pl1/logo.png",
 		"printedTotal": 127,
 		"ptcgoCode": "PL",
-		"releaseDate": "2009/02/11"
+		"releaseDate": "2009/02/11",
+		"series": "Platinum"
 	},
 	{
 		"name": "Pokémon Futsal Collection",
 		"logo": "https://images.pokemontcg.io/fut20/logo.png",
 		"printedTotal": 5,
 		"ptcgoCode": "FUT20",
-		"releaseDate": "2020/09/11"
+		"releaseDate": "2020/09/11",
+		"series": "Other"
 	},
 	{
 		"name": "Pokémon GO",
 		"logo": "https://images.pokemontcg.io/pgo/logo.png",
 		"printedTotal": 78,
 		"ptcgoCode": "PGO",
-		"releaseDate": "2022/07/01"
+		"releaseDate": "2022/07/01",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "Pokémon Rumble",
 		"logo": "https://images.pokemontcg.io/ru1/logo.png",
 		"printedTotal": 16,
-		"releaseDate": "2009/12/02"
+		"releaseDate": "2009/12/02",
+		"series": "Other"
 	},
 	{
 		"name": "POP Series 1",
 		"logo": "https://images.pokemontcg.io/pop1/logo.png",
 		"printedTotal": 17,
-		"releaseDate": "2004/09/01"
+		"releaseDate": "2004/09/01",
+		"series": "POP"
 	},
 	{
 		"name": "POP Series 2",
 		"logo": "https://images.pokemontcg.io/pop2/logo.png",
 		"printedTotal": 17,
-		"releaseDate": "2005/08/01"
+		"releaseDate": "2005/08/01",
+		"series": "POP"
 	},
 	{
 		"name": "POP Series 3",
 		"logo": "https://images.pokemontcg.io/pop3/logo.png",
 		"printedTotal": 17,
-		"releaseDate": "2006/04/01"
+		"releaseDate": "2006/04/01",
+		"series": "POP"
 	},
 	{
 		"name": "POP Series 4",
 		"logo": "https://images.pokemontcg.io/pop4/logo.png",
 		"printedTotal": 17,
-		"releaseDate": "2006/08/01"
+		"releaseDate": "2006/08/01",
+		"series": "POP"
 	},
 	{
 		"name": "POP Series 5",
 		"logo": "https://images.pokemontcg.io/pop5/logo.png",
 		"printedTotal": 17,
-		"releaseDate": "2007/03/01"
+		"releaseDate": "2007/03/01",
+		"series": "POP"
 	},
 	{
 		"name": "POP Series 6",
 		"logo": "https://images.pokemontcg.io/pop6/logo.png",
 		"printedTotal": 17,
-		"releaseDate": "2007/09/01"
+		"releaseDate": "2007/09/01",
+		"series": "POP"
 	},
 	{
 		"name": "POP Series 7",
 		"logo": "https://images.pokemontcg.io/pop7/logo.png",
 		"printedTotal": 17,
-		"releaseDate": "2008/03/01"
+		"releaseDate": "2008/03/01",
+		"series": "POP"
 	},
 	{
 		"name": "POP Series 8",
 		"logo": "https://images.pokemontcg.io/pop8/logo.png",
 		"printedTotal": 17,
-		"releaseDate": "2008/09/01"
+		"releaseDate": "2008/09/01",
+		"series": "POP"
 	},
 	{
 		"name": "POP Series 9",
 		"logo": "https://images.pokemontcg.io/pop9/logo.png",
 		"printedTotal": 17,
-		"releaseDate": "2009/03/01"
+		"releaseDate": "2009/03/01",
+		"series": "POP"
 	},
 	{
 		"name": "Power Keepers",
 		"logo": "https://images.pokemontcg.io/ex16/logo.png",
 		"printedTotal": 108,
 		"ptcgoCode": "PK",
-		"releaseDate": "2007/02/02"
+		"releaseDate": "2007/02/02",
+		"series": "EX"
 	},
 	{
 		"name": "Primal Clash",
 		"logo": "https://images.pokemontcg.io/xy5/logo.png",
 		"printedTotal": 160,
 		"ptcgoCode": "PRC",
-		"releaseDate": "2015/02/04"
+		"releaseDate": "2015/02/04",
+		"series": "XY"
 	},
 	{
 		"name": "Prismatic Evolutions",
 		"logo": "https://images.pokemontcg.io/sv8pt5/logo.png",
 		"printedTotal": 131,
 		"ptcgoCode": "PRE",
-		"releaseDate": "2025/01/17"
+		"releaseDate": "2025/01/17",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Rebel Clash",
 		"logo": "https://images.pokemontcg.io/swsh2/logo.png",
 		"printedTotal": 192,
 		"ptcgoCode": "RCL",
-		"releaseDate": "2020/05/01"
+		"releaseDate": "2020/05/01",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "Rising Rivals",
 		"logo": "https://images.pokemontcg.io/pl2/logo.png",
 		"printedTotal": 111,
 		"ptcgoCode": "RR",
-		"releaseDate": "2009/05/16"
+		"releaseDate": "2009/05/16",
+		"series": "Platinum"
 	},
 	{
 		"name": "Roaring Skies",
 		"logo": "https://images.pokemontcg.io/xy6/logo.png",
 		"printedTotal": 108,
 		"ptcgoCode": "ROS",
-		"releaseDate": "2015/05/06"
+		"releaseDate": "2015/05/06",
+		"series": "XY"
 	},
 	{
 		"name": "Ruby & Sapphire",
 		"logo": "https://images.pokemontcg.io/ex1/logo.png",
 		"printedTotal": 109,
 		"ptcgoCode": "RS",
-		"releaseDate": "2003/07/01"
+		"releaseDate": "2003/07/01",
+		"series": "EX"
 	},
 	{
 		"name": "Sandstorm",
 		"logo": "https://images.pokemontcg.io/ex2/logo.png",
 		"printedTotal": 100,
 		"ptcgoCode": "SS",
-		"releaseDate": "2003/09/18"
+		"releaseDate": "2003/09/18",
+		"series": "EX"
 	},
 	{
 		"name": "Scarlet & Violet",
 		"logo": "https://images.pokemontcg.io/sv1/logo.png",
 		"printedTotal": 198,
 		"ptcgoCode": "SVI",
-		"releaseDate": "2023/03/31"
+		"releaseDate": "2023/03/31",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Scarlet & Violet Black Star Promos",
 		"logo": "https://images.pokemontcg.io/svp/logo.png",
 		"printedTotal": 102,
 		"ptcgoCode": "PR-SV",
-		"releaseDate": "2023/01/01"
+		"releaseDate": "2023/01/01",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Scarlet & Violet Energies",
 		"logo": "https://images.pokemontcg.io/sve/logo.png",
 		"printedTotal": 8,
 		"ptcgoCode": "SVE",
-		"releaseDate": "2023/03/31"
+		"releaseDate": "2023/03/31",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Secret Wonders",
 		"logo": "https://images.pokemontcg.io/dp3/logo.png",
 		"printedTotal": 132,
 		"ptcgoCode": "SW",
-		"releaseDate": "2007/11/01"
+		"releaseDate": "2007/11/01",
+		"series": "Diamond & Pearl"
 	},
 	{
 		"name": "Shining Fates",
@@ -895,6 +1023,7 @@
 		"printedTotal": 194,
 		"ptcgoCode": "SHF",
 		"releaseDate": "2021/02/19",
+		"series": "Sword & Shield",
 		"aliases": [
 			"swsh45sv"
 		]
@@ -904,14 +1033,16 @@
 		"logo": "https://images.pokemontcg.io/sm35/logo.png",
 		"printedTotal": 73,
 		"ptcgoCode": "SLG",
-		"releaseDate": "2017/10/06"
+		"releaseDate": "2017/10/06",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Shrouded Fable",
 		"logo": "https://images.pokemontcg.io/sv6pt5/logo.png",
 		"printedTotal": 64,
 		"ptcgoCode": "SFA",
-		"releaseDate": "2024/08/02"
+		"releaseDate": "2024/08/02",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Silver Tempest",
@@ -919,6 +1050,7 @@
 		"printedTotal": 225,
 		"ptcgoCode": "SIT",
 		"releaseDate": "2022/11/11",
+		"series": "Sword & Shield",
 		"aliases": [
 			"swsh12tg"
 		]
@@ -928,173 +1060,198 @@
 		"logo": "https://images.pokemontcg.io/ecard3/logo.png",
 		"printedTotal": 144,
 		"ptcgoCode": "SK",
-		"releaseDate": "2003/05/12"
+		"releaseDate": "2003/05/12",
+		"series": "E-Card"
 	},
 	{
 		"name": "SM Black Star Promos",
 		"logo": "https://images.pokemontcg.io/smp/logo.png",
 		"printedTotal": 248,
 		"ptcgoCode": "PR-SM",
-		"releaseDate": "2017/02/03"
+		"releaseDate": "2017/02/03",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Southern Islands",
 		"logo": "https://images.pokemontcg.io/si1/logo.png",
 		"printedTotal": 18,
-		"releaseDate": "2001/07/31"
+		"releaseDate": "2001/07/31",
+		"series": "Other"
 	},
 	{
 		"name": "Steam Siege",
 		"logo": "https://images.pokemontcg.io/xy11/logo.png",
 		"printedTotal": 114,
 		"ptcgoCode": "STS",
-		"releaseDate": "2016/08/03"
+		"releaseDate": "2016/08/03",
+		"series": "XY"
 	},
 	{
 		"name": "Stellar Crown",
 		"logo": "https://images.pokemontcg.io/sv7/logo.png",
 		"printedTotal": 142,
 		"ptcgoCode": "SCR",
-		"releaseDate": "2024/09/13"
+		"releaseDate": "2024/09/13",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Stormfront",
 		"logo": "https://images.pokemontcg.io/dp7/logo.png",
 		"printedTotal": 100,
 		"ptcgoCode": "SF",
-		"releaseDate": "2008/11/01"
+		"releaseDate": "2008/11/01",
+		"series": "Diamond & Pearl"
 	},
 	{
 		"name": "Sun & Moon",
 		"logo": "https://images.pokemontcg.io/sm1/logo.png",
 		"printedTotal": 149,
 		"ptcgoCode": "SUM",
-		"releaseDate": "2017/02/03"
+		"releaseDate": "2017/02/03",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Supreme Victors",
 		"logo": "https://images.pokemontcg.io/pl3/logo.png",
 		"printedTotal": 147,
 		"ptcgoCode": "SV",
-		"releaseDate": "2009/08/19"
+		"releaseDate": "2009/08/19",
+		"series": "Platinum"
 	},
 	{
 		"name": "Surging Sparks",
 		"logo": "https://images.pokemontcg.io/sv8/logo.png",
 		"printedTotal": 191,
 		"ptcgoCode": "SSP",
-		"releaseDate": "2024/11/08"
+		"releaseDate": "2024/11/08",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Sword & Shield",
 		"logo": "https://images.pokemontcg.io/swsh1/logo.png",
 		"printedTotal": 202,
 		"ptcgoCode": "SSH",
-		"releaseDate": "2020/02/07"
+		"releaseDate": "2020/02/07",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "SWSH Black Star Promos",
 		"logo": "https://images.pokemontcg.io/swshp/logo.png",
 		"printedTotal": 307,
 		"ptcgoCode": "PR-SW",
-		"releaseDate": "2019/11/15"
+		"releaseDate": "2019/11/15",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "Team Magma vs Team Aqua",
 		"logo": "https://images.pokemontcg.io/ex4/logo.png",
 		"printedTotal": 95,
 		"ptcgoCode": "MA",
-		"releaseDate": "2004/03/01"
+		"releaseDate": "2004/03/01",
+		"series": "EX"
 	},
 	{
 		"name": "Team Rocket",
 		"logo": "https://images.pokemontcg.io/base5/logo.png",
 		"printedTotal": 82,
 		"ptcgoCode": "TR",
-		"releaseDate": "2000/04/24"
+		"releaseDate": "2000/04/24",
+		"series": "Base"
 	},
 	{
 		"name": "Team Rocket Returns",
 		"logo": "https://images.pokemontcg.io/ex7/logo.png",
 		"printedTotal": 109,
 		"ptcgoCode": "TRR",
-		"releaseDate": "2004/11/01"
+		"releaseDate": "2004/11/01",
+		"series": "EX"
 	},
 	{
 		"name": "Team Up",
 		"logo": "https://images.pokemontcg.io/sm9/logo.png",
 		"printedTotal": 181,
 		"ptcgoCode": "TEU",
-		"releaseDate": "2019/02/01"
+		"releaseDate": "2019/02/01",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Temporal Forces",
 		"logo": "https://images.pokemontcg.io/sv5/logo.png",
 		"printedTotal": 162,
 		"ptcgoCode": "TEF",
-		"releaseDate": "2024/03/22"
+		"releaseDate": "2024/03/22",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Twilight Masquerade",
 		"logo": "https://images.pokemontcg.io/sv6/logo.png",
 		"printedTotal": 167,
 		"ptcgoCode": "TWM",
-		"releaseDate": "2024/05/24"
+		"releaseDate": "2024/05/24",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Ultra Prism",
 		"logo": "https://images.pokemontcg.io/sm5/logo.png",
 		"printedTotal": 156,
 		"ptcgoCode": "UPR",
-		"releaseDate": "2018/02/02"
+		"releaseDate": "2018/02/02",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Unbroken Bonds",
 		"logo": "https://images.pokemontcg.io/sm10/logo.png",
 		"printedTotal": 214,
 		"ptcgoCode": "UNB",
-		"releaseDate": "2019/05/03"
+		"releaseDate": "2019/05/03",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Unified Minds",
 		"logo": "https://images.pokemontcg.io/sm11/logo.png",
 		"printedTotal": 236,
 		"ptcgoCode": "UNM",
-		"releaseDate": "2019/08/02"
+		"releaseDate": "2019/08/02",
+		"series": "Sun & Moon"
 	},
 	{
 		"name": "Unseen Forces",
 		"logo": "https://images.pokemontcg.io/ex10/logo.png",
 		"printedTotal": 115,
 		"ptcgoCode": "UF",
-		"releaseDate": "2005/08/01"
+		"releaseDate": "2005/08/01",
+		"series": "EX"
 	},
 	{
 		"name": "Vivid Voltage",
 		"logo": "https://images.pokemontcg.io/swsh4/logo.png",
 		"printedTotal": 185,
 		"ptcgoCode": "VIV",
-		"releaseDate": "2020/11/13"
+		"releaseDate": "2020/11/13",
+		"series": "Sword & Shield"
 	},
 	{
 		"name": "Wizards Black Star Promos",
 		"logo": "https://images.pokemontcg.io/basep/logo.png",
 		"printedTotal": 53,
 		"ptcgoCode": "PR",
-		"releaseDate": "1999/07/01"
+		"releaseDate": "1999/07/01",
+		"series": "Base"
 	},
 	{
 		"name": "XY",
 		"logo": "https://images.pokemontcg.io/xy1/logo.png",
 		"printedTotal": 146,
 		"ptcgoCode": "XY",
-		"releaseDate": "2014/02/05"
+		"releaseDate": "2014/02/05",
+		"series": "XY"
 	},
 	{
 		"name": "XY Black Star Promos",
 		"logo": "https://images.pokemontcg.io/xyp/logo.png",
 		"printedTotal": 211,
 		"ptcgoCode": "PR-XY",
-		"releaseDate": "2013/10/12"
+		"releaseDate": "2013/10/12",
+		"series": "XY"
 	}
 ]

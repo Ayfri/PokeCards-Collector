@@ -45,6 +45,7 @@ export interface Set {
 	printedTotal: number;
 	ptcgoCode?: string;
 	releaseDate: Date;
+	series?: string;
 }
 
 export interface User {

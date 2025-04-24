@@ -27,6 +27,7 @@ interface ProcessedSet {
 	printedTotal: number | undefined;
 	ptcgoCode: string | undefined;
 	releaseDate: string | undefined;
+	series: string | undefined;
 }
 
 // Helper to safely add printed totals (treat undefined as 0)
@@ -42,7 +43,7 @@ export function getSetCodeFromImage(imageUrl: string): string | undefined {
 
 async function fetchAndFilterSets() {
 	const response = await fetchFromApi<ResponseSets>('sets', {
-		select: 'name,images,printedTotal,ptcgoCode,releaseDate',
+		select: 'name,images,printedTotal,ptcgoCode,releaseDate,series',
 	});
 	let allSets = response.data; // Use let as we'll filter it
 
@@ -162,6 +163,7 @@ async function fetchAndFilterSets() {
 				printedTotal: finalTotal > 0 ? finalTotal : undefined, // Store final sum, or undefined if 0
 				ptcgoCode: primarySet.ptcgoCode,
 				releaseDate: primarySet.releaseDate,
+				series: primarySet.series,
 				// Store unique aliases, only if there are any
 				aliases: combinedAliases.length > 0 ? [...new Set(combinedAliases)] : undefined
 			});
@@ -182,6 +184,7 @@ async function fetchAndFilterSets() {
 					printedTotal: finalTotal > 0 ? finalTotal : undefined,
 					ptcgoCode: set.ptcgoCode, // Will be undefined/null
 					releaseDate: set.releaseDate,
+					series: set.series,
 					// Store unique aliases, only if there are any
 					aliases: combinedAliases.length > 0 ? [...new Set(combinedAliases)] : undefined
 				};
@@ -202,6 +205,7 @@ async function fetchAndFilterSets() {
 			printedTotal: set.printedTotal,
 			ptcgoCode: set.ptcgoCode,
 			releaseDate: set.releaseDate,
+			series: set.series,
 		}));
 	}
 }
