@@ -132,6 +132,14 @@
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<a
+						href={`/collection/summary?user=${encodeURIComponent($authStore.profile.username)}`}
+						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+					>
+						<h3 class="text-lg font-medium mb-2 dark:text-white">Collection Summary</h3>
+						<p class="text-sm text-gray-500 dark:text-gray-400">View stats and set completion rates</p>
+					</a>
+
+					<a
 						href={`/collection?user=${encodeURIComponent($authStore.profile.username)}`}
 						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
 					>

@@ -89,7 +89,7 @@ export interface CollectionStats {
 	total_cards: number;
 	total_value: number;
 	cards_by_rarity: Record<string, number>;
-	cards_by_set: Record<string, number>;
+	set_completion: Record<string, { count: number; total: number; percentage: number }>;
 }
 
 export interface Image {

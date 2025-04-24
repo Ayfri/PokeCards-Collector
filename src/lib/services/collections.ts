@@ -114,23 +114,73 @@ export async function getCardInCollection(username: string, cardCode: string) {
 // Get collection stats (count by rarity, set, total value, etc.)
 export async function getCollectionStats(username: string) {
 	try {
+		// Get user's collection
 		const { data: collection, error } = await getUserCollection(username);
 
 		if (error || !collection) {
 			return { data: null, error };
 		}
 
+		// Import necessary data
+		const { getCards, getSets, getPrices } = await import('$helpers/data');
+		const allCards = await getCards();
+		const allSets = await getSets();
+		const prices = await getPrices();
+		
+		// Create a set of cardCodes for quick lookup
+		const collectionCardCodes = new Set(collection.map(item => item.card_code));
+		
 		// Calculate basic stats
 		const totalCards = collection.length;
-
-		// We'd need to fetch card details to calculate total value and other stats
-		// For now, return basic stats
+		
+		// Calculate total value
+		let totalValue = 0;
+		const cardsInCollection = allCards.filter(card => collectionCardCodes.has(card.cardCode));
+		cardsInCollection.forEach(card => {
+			const cardPrice = prices[card.cardCode];
+			if (cardPrice && cardPrice.trend) {
+				totalValue += cardPrice.trend;
+			}
+		});
+		
+		// Calculate cards by rarity
+		const cardsByRarity: Record<string, number> = {};
+		cardsInCollection.forEach(card => {
+			if (!cardsByRarity[card.rarity]) {
+				cardsByRarity[card.rarity] = 0;
+			}
+			cardsByRarity[card.rarity]++;
+		});
+		
+		// Calculate cards by set and completion percentages
+		const setStats: Record<string, { count: number; total: number; percentage: number }> = {};
+		
+		// Initialize sets with cards in collection
+		const setsWithCards = new Set<string>();
+		cardsInCollection.forEach(card => {
+			setsWithCards.add(card.setName);
+		});
+		
+		// Calculate completion for each set in the collection
+		allSets.forEach(set => {
+			if (setsWithCards.has(set.name)) {
+				const setCards = allCards.filter(card => card.setName === set.name);
+				const collectionSetCards = cardsInCollection.filter(card => card.setName === set.name);
+				
+				setStats[set.name] = {
+					count: collectionSetCards.length,
+					total: setCards.length,
+					percentage: Math.round((collectionSetCards.length / setCards.length) * 100)
+				};
+			}
+		});
+		
 		return {
 			data: {
 				total_cards: totalCards,
-				total_value: 0, // Would require fetching card prices
-				cards_by_rarity: {},
-				cards_by_set: {}
+				total_value: Math.round(totalValue * 100) / 100,
+				cards_by_rarity: cardsByRarity,
+				set_completion: setStats
 			},
 			error: null
 		};
