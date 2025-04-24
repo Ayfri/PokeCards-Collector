@@ -1,13 +1,16 @@
 <script lang="ts">
 	import {NO_IMAGES} from '$lib/images';
 	import {addCardToWishlist, removeCardFromWishlist} from '$lib/services/wishlists';
+	import {addCardToCollection, removeCardFromCollection} from '$lib/services/collections';
 	import {authStore} from '$lib/stores/auth';
 	import {wishlistStore} from '$lib/stores/wishlist';
+	import {collectionStore} from '$lib/stores/collection';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import { parseCardCode } from '$lib/helpers/card-utils';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import Heart from 'lucide-svelte/icons/heart';
+	import Package from 'lucide-svelte/icons/package';
 	import { onMount } from 'svelte';
 	import { findSetByCardCode } from '$lib/helpers/set-utils';
 
@@ -34,6 +37,10 @@
 	$: isInWishlist = $wishlistStore.has(cardCode);
 	let isAddingToWishlist = false;
 
+	// Détermine si la carte est dans la collection en fonction du store
+	$: isInCollection = $collectionStore.has(cardCode);
+	let isAddingToCollection = false;
+
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
@@ -54,6 +61,29 @@
 			console.error('Error toggling wishlist status:', error);
 		} finally {
 			isAddingToWishlist = false;
+		}
+	}
+
+	async function toggleCollection(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+
+		if (!$authStore.user || !$authStore.profile) return;
+
+		isAddingToCollection = true;
+
+		try {
+			if (isInCollection) {
+				await removeCardFromCollection($authStore.profile.username, cardCode);
+				// Pas besoin de mettre à jour isInCollection car removeCardFromCollection met déjà à jour le store
+			} else {
+				await addCardToCollection($authStore.profile.username, cardCode);
+				// Pas besoin de mettre à jour isInCollection car addCardToCollection met déjà à jour le store
+			}
+		} catch (error) {
+			console.error('Error toggling collection status:', error);
+		} finally {
+			isAddingToCollection = false;
 		}
 	}
 
@@ -79,17 +109,30 @@
 		{/if}
 		<div class="relative h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px]">
 			{#if $authStore.user && $authStore.profile}
-				<button
-					aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-					class="absolute bottom-2 right-2 z-10 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors duration-200"
-					on:click={toggleWishlist}
-					disabled={isAddingToWishlist}
-				>
-					<Heart
-						size={24}
-						class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'}
-					/>
-				</button>
+				<div class="absolute bottom-2 right-2 z-10 flex gap-2">
+					<button
+						aria-label={isInCollection ? 'Remove from collection' : 'Add to collection'}
+						class="p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors duration-200"
+						on:click={toggleCollection}
+						disabled={isAddingToCollection}
+					>
+						<Package
+							size={24}
+							class={isInCollection ? 'text-green-500 fill-green-500' : 'text-white'}
+						/>
+					</button>
+					<button
+						aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+						class="p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors duration-200"
+						on:click={toggleWishlist}
+						disabled={isAddingToWishlist}
+					>
+						<Heart
+							size={24}
+							class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'}
+						/>
+					</button>
+				</div>
 			{/if}
 			<CardImage
 				alt={cardName}

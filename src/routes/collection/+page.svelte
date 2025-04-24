@@ -1,56 +1,112 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/auth';
-	import { getUserCollection, getCollectionStats } from '$lib/services/collections';
+	import { getUserCollection } from '$lib/services/collections';
+	import { collectionStore, loadCollection } from '$lib/stores/collection';
 	import { goto } from '$app/navigation';
 	import PageTitle from '$lib/components/PageTitle.svelte';
-	import type { UserCollection, Card, CollectionStats } from '$lib/types';
+	import CardGrid from '$lib/components/list/CardGrid.svelte';
+	import type { PageData } from './$types';
+	import type { FullCard, Pokemon, Set, UserProfile, PriceData } from '$lib/types';
 
+	export let data: PageData;
+
+	// --- State Variables ---
 	let isLoading = false;
-	let collection: UserCollection[] = [];
-	let stats: CollectionStats | null = null;
-	let cards: Card[] = [];
+	let displayCards: FullCard[] = [];
+	let pageTitleDisplay = data.title; // Start with title from server
+	let statusMessage: string | null = null;
+	let loggedInUser: UserProfile | null = null;
+	let isOwnProfile = false;
+	let pokemonCount = 0;
+	let profileNotFound = false;
+	let profileIsPrivate = false;
 
-	async function loadCollection() {
-		if (!$authStore.user || !$authStore.profile) {
-			return;
-		}
+	// --- Reactive Data from Server ---
+	$: allCards = data.allCards || [];
+	$: pokemons = data.pokemons || [];
+	$: sets = data.sets || [];
+	$: rarities = data.rarities || [];
+	$: types = data.types || [];
+	$: prices = data.prices || {};
+	$: artists = data.artists || [];
+	$: targetProfile = data.targetProfile;
+	$: isPublic = data.isPublic;
+	$: serverCollectionCards = data.serverCollectionCards;
+	$: targetUsername = data.targetUsername;
 
-		isLoading = true;
-
-		try {
-			// Get collection
-			const { data: collectionData, error: collectionError } = await getUserCollection($authStore.profile.username);
-
-			if (collectionError) {
-				console.error('Error loading collection:', collectionError);
-				return;
+	$: if (displayCards.length > 0) {
+		// Calcul du nombre de Pokémon uniques dans la collection
+		const uniquePokemonIds = new Set<number>();
+		displayCards.forEach(card => {
+			if (card.pokemonNumber) {
+				uniquePokemonIds.add(card.pokemonNumber);
 			}
-
-			collection = collectionData || [];
-
-			// Get stats
-			const { data: statsData } = await getCollectionStats($authStore.profile.username);
-			stats = statsData;
-
-			// TODO: Fetch card details using card_ids from collection
-			// This would depend on your API for fetching cards
-
-		} catch (error) {
-			console.error('Error in loadCollection:', error);
-		} finally {
-			isLoading = false;
-		}
+		});
+		pokemonCount = uniquePokemonIds.size;
+	} else {
+		pokemonCount = 0;
 	}
 
-	// Check if user is logged in
 	onMount(() => {
-		const unsubscribe = authStore.subscribe(state => {
-			if (state.user === null && !state.loading) {
-				// Redirect to home if not logged in
-				goto('/');
-			} else if (state.user && !state.loading) {
-				loadCollection();
+		const unsubscribe = authStore.subscribe(async (state) => {
+			if (!state.loading) {
+				loggedInUser = state.profile;
+
+				if (targetUsername) {
+					// --- Case 1: Viewing a specific user (?user=...) ---
+					isOwnProfile = loggedInUser?.username === targetUsername;
+
+					if (!targetProfile) {
+						statusMessage = `User "${targetUsername}" not found.`;
+						pageTitleDisplay = 'User Not Found';
+						displayCards = [];
+						profileNotFound = true;
+					} else if (!isPublic && !isOwnProfile) {
+						statusMessage = `Collection for "${targetUsername}" is private.`;
+						pageTitleDisplay = 'Private Collection';
+						displayCards = [];
+						profileIsPrivate = true;
+					} else {
+						// Profile is public or own profile
+						displayCards = serverCollectionCards || []; // Use cards from server
+						pageTitleDisplay = isOwnProfile 
+							? `My Collection`
+							: `${targetUsername}'s Collection`;
+						if (displayCards.length === 0) {
+							statusMessage = isOwnProfile ? 'Your collection is empty.' : `"${targetUsername}" collection is empty.`;
+						}
+					}
+				} else {
+					// --- Case 2: Viewing own collection (no ?user=...) ---
+					isOwnProfile = true;
+					
+					if (loggedInUser) {
+						// Pour l'utilisateur connecté, utiliser le store si possible
+						if ($collectionStore.size > 0) {
+							// Si le store a déjà des données, les utiliser
+							const collectionCardCodes = $collectionStore;
+							displayCards = allCards.filter(card => collectionCardCodes.has(card.cardCode));
+							if (displayCards.length === 0) {
+								statusMessage = 'Your collection is empty.';
+							}
+						} else {
+							// Sinon, charger la collection (ce qui mettra aussi à jour le store)
+							await loadCollection();
+							// Après chargement, filtrer les cartes avec le store mis à jour
+							const collectionCardCodes = $collectionStore;
+							displayCards = allCards.filter(card => collectionCardCodes.has(card.cardCode));
+							if (displayCards.length === 0) {
+								statusMessage = 'Your collection is empty.';
+							}
+						}
+						pageTitleDisplay = 'My Collection';
+					} else {
+						// Not logged in and no target user -> redirect
+						goto('/');
+						return; // Prevent further processing
+					}
+				}
 			}
 		});
 
@@ -58,55 +114,46 @@
 	});
 </script>
 
-<div class="w-full mx-auto pb-4 lg:pb-5">
-	<div class="flex justify-between mx-28 max-lg:mx-4 items-center">
-		<PageTitle title="My Collection" />
-	</div>
-</div>
-
-<div class="container mx-auto px-4 py-8">
-	{#if !$authStore.user}
-		<div class="text-center p-8">
-			<p class="text-lg">Please sign in to view your collection.</p>
-		</div>
-	{:else if collection.length === 0}
-		<div class="text-center p-8">
-			<p class="text-lg">Your collection is empty.</p>
-			<p class="mt-2">Add cards to your collection by browsing card pages.</p>
+<div class="px-10 flex flex-col flex-grow">
+	{#if profileNotFound || profileIsPrivate}
+		<div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
+			<p class="font-bold mb-4 {statusMessage?.includes('not found') ? 'text-4xl' : 'text-3xl'}">
+				{statusMessage}
+			</p>
+			<a
+				href="/"
+				class="home-button animated-hover-button relative overflow-hidden bg-transparent border-2 border-white text-white text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4"
+			>
+				<span class="relative z-10 flex items-center">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+						<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+						<polyline points="9 22 9 12 15 12 15 22"/>
+					</svg>
+					Return to Home
+				</span>
+			</a>
 		</div>
 	{:else}
-		<!-- Stats section -->
-		{#if stats}
-			<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-				<h2 class="text-xl font-semibold mb-4">Statistics</h2>
-				<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-					<div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
-						<p class="text-sm text-gray-500 dark:text-gray-400">Total cards</p>
-						<p class="text-2xl font-bold">{stats.total_cards}</p>
-					</div>
-					<div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
-						<p class="text-sm text-gray-500 dark:text-gray-400">Estimated value</p>
-						<p class="text-2xl font-bold">{stats.total_value}€</p>
-					</div>
-					<div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
-						<p class="text-sm text-gray-500 dark:text-gray-400">Unique cards</p>
-						<p class="text-2xl font-bold">{collection.length}</p>
-					</div>
-				</div>
+		<!-- Toujours afficher CardGrid même si la collection est vide -->
+		<CardGrid 
+			cards={displayCards} 
+			pokemons={pokemons} 
+			sets={sets}
+			rarities={rarities}
+			types={types}
+			prices={prices}
+			artists={artists}
+			pageTitle={pageTitleDisplay}
+			disableLoader={true}
+		/>
+		
+		{#if statusMessage && !profileNotFound && !profileIsPrivate}
+			<div class="text-center p-8 mt-8">
+				<p class="text-lg">{statusMessage}</p>
+				{#if statusMessage === 'Your collection is empty.'}
+					<p class="mt-2">Add cards to your collection by browsing card pages.</p>
+				{/if}
 			</div>
 		{/if}
-
-		<!-- Collection cards -->
-		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-			{#each collection as item}
-				<div class="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-					<div class="p-4">
-						<p class="text-sm font-semibold">ID: {item.card_id}</p>
-						<p class="text-xs text-gray-500">Quantity: {item.quantity}</p>
-						<!-- TODO: Display card image and details once fetched -->
-					</div>
-				</div>
-			{/each}
-		</div>
 	{/if}
 </div>

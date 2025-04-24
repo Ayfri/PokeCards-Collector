@@ -132,7 +132,7 @@
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<a
-						href="/collection"
+						href={`/collection?user=${encodeURIComponent($authStore.profile.username)}`}
 						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
 					>
 						<h3 class="text-lg font-medium mb-2 dark:text-white">My Collection</h3>
@@ -140,7 +140,7 @@
 					</a>
 
 					<a
-						href="/wishlist"
+						href={`/wishlist?user=${encodeURIComponent($authStore.profile.username)}`}
 						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
 					>
 						<h3 class="text-lg font-medium mb-2 dark:text-white">My Wishlist</h3>

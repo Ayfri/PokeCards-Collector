@@ -1,36 +1,37 @@
 import { supabase } from '../supabase';
 import type { UserCollection } from '../types';
+import { addToCollectionStore, removeFromCollectionStore } from '$lib/stores/collection';
 
 // Add a card to user's collection
-export async function addCardToCollection(username: string, cardId: string, quantity: number = 1) {
+export async function addCardToCollection(username: string, cardCode: string) {
 	try {
 		// Check if card already exists in collection
 		const { data: existingCard } = await supabase
 			.from('collections')
 			.select('*')
 			.eq('username', username)
-			.eq('card_id', cardId)
-			.single();
+			.eq('card_code', cardCode)
+			.maybeSingle();
 
 		if (existingCard) {
-			// Update quantity if card exists
-			const { data, error } = await supabase
-				.from('collections')
-				.update({ quantity: existingCard.quantity + quantity })
-				.eq('id', existingCard.id)
-				.select();
-
-			return { data, error };
+			// Card already exists, just return it
+			if (!existingCard.error) {
+				addToCollectionStore(cardCode); // Ajoute au store local
+			}
+			return { data: existingCard, error: null };
 		} else {
 			// Insert new card if it doesn't exist
 			const { data, error } = await supabase
 				.from('collections')
 				.insert({
 					username,
-					card_id: cardId,
-					quantity,
+					card_code: cardCode,
 				})
 				.select();
+
+			if (!error) {
+				addToCollectionStore(cardCode); // Ajoute au store local
+			}
 
 			return { data, error };
 		}
@@ -57,39 +58,21 @@ export async function updateCardQuantity(collectionId: string, quantity: number)
 }
 
 // Remove a card from user's collection
-export async function removeCardFromCollection(username: string, cardId: string, quantity: number = 1) {
+export async function removeCardFromCollection(username: string, cardCode: string) {
 	try {
-		// Get current card in collection
-		const { data: existingCard } = await supabase
+		// Delete the card
+		const { data, error } = await supabase
 			.from('collections')
-			.select('*')
+			.delete()
 			.eq('username', username)
-			.eq('card_id', cardId)
-			.single();
+			.eq('card_code', cardCode)
+			.select();
 
-		if (!existingCard) {
-			return { data: null, error: new Error('Card not found in collection') };
+		if (!error) {
+			removeFromCollectionStore(cardCode); // Retire du store local
 		}
 
-		if (existingCard.quantity <= quantity) {
-			// Delete the card if quantity will be 0 or less
-			const { data, error } = await supabase
-				.from('collections')
-				.delete()
-				.eq('id', existingCard.id)
-				.select();
-
-			return { data, error };
-		} else {
-			// Reduce the quantity
-			const { data, error } = await supabase
-				.from('collections')
-				.update({ quantity: existingCard.quantity - quantity })
-				.eq('id', existingCard.id)
-				.select();
-
-			return { data, error };
-		}
+		return { data, error };
 	} catch (error) {
 		console.error('Error removing card from collection:', error);
 		return { data: null, error };
@@ -112,14 +95,14 @@ export async function getUserCollection(username: string) {
 }
 
 // Get collection for a specific card
-export async function getCardInCollection(username: string, cardId: string) {
+export async function getCardInCollection(username: string, cardCode: string) {
 	try {
 		const { data, error } = await supabase
 			.from('collections')
 			.select('*')
 			.eq('username', username)
-			.eq('card_id', cardId)
-			.single();
+			.eq('card_code', cardCode)
+			.maybeSingle();
 
 		return { data, error };
 	} catch (error) {
@@ -138,7 +121,7 @@ export async function getCollectionStats(username: string) {
 		}
 
 		// Calculate basic stats
-		const totalCards = collection.reduce((sum, item) => sum + item.quantity, 0);
+		const totalCards = collection.length;
 
 		// We'd need to fetch card details to calculate total value and other stats
 		// For now, return basic stats
