@@ -35,7 +35,9 @@
 	<meta content="width=device-width" name="viewport"/>
 
 	<link href="/sitemap-index.xml" rel="sitemap"/>
+	{#if !NO_IMAGES}
 	<link href="/favicon.png" rel="icon" type="image/png"/>
+	{/if}
 	<link href={BASE_URL} hreflang="en" rel="alternate"/>
 	<link href={BASE_URL} hreflang="x-default" rel="alternate"/>
 
