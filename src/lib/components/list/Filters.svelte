@@ -55,9 +55,9 @@
 	// Options for card types
 	const supertypeOptions = [
 		{ value: 'all', label: 'All supertypes' },
-		{ value: 'energy', label: 'Energy' },
 		{ value: 'pokémon', label: 'Pokémon' },
-		{ value: 'trainer', label: 'Trainer' }
+		{ value: 'trainer', label: 'Trainer' },
+		{ value: 'energy', label: 'Energy' }
 	];
 
 	// Prepare options for types, rarities, sets and illustrators

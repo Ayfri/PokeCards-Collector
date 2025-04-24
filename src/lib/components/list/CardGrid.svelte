@@ -129,6 +129,18 @@
 				return $sortOrder === 'asc' ? aArtist.localeCompare(bArtist) : bArtist.localeCompare(aArtist);
 			}
 
+			// Order by supertype first (Pokémon, Trainer, Energy)
+			if ($filterSupertype === 'all') {
+				// Priority ordering: 1-Pokémon, 2-Trainer, 3-Energy
+				const supertypeOrder: Record<string, number> = { 'Pokémon': 1, 'Trainer': 2, 'Energy': 3 };
+				const aOrder = supertypeOrder[a.supertype] || 99;
+				const bOrder = supertypeOrder[b.supertype] || 99;
+				
+				if (aOrder !== bOrder) {
+					return aOrder - bOrder;
+				}
+			}
+
 			const aNumDefault = parseCardCode(a.cardCode).pokemonNumber;
 			const bNumDefault = parseCardCode(b.cardCode).pokemonNumber;
 			if (aNumDefault === null && bNumDefault !== null) return 1;
@@ -150,6 +162,23 @@
 			};
 			return isVisible(card, pokemons.find(p => p.id === card.pokemonNumber), cardSet ?? fallbackSet, selectedSet ?? null);
 		});
+
+		// Order cards by supertype (Pokémon, Trainer, Energy) when all supertypes are selected
+		if ($filterSupertype === 'all') {
+			filteredCards = filteredCards.sort((a, b) => {
+				// Priority ordering: 1-Pokémon, 2-Trainer, 3-Energy
+				const supertypeOrder: Record<string, number> = { 'Pokémon': 1, 'Trainer': 2, 'Energy': 3 };
+				const aOrder = supertypeOrder[a.supertype] || 99;
+				const bOrder = supertypeOrder[b.supertype] || 99;
+				
+				if (aOrder !== bOrder) {
+					return aOrder - bOrder;
+				}
+				
+				// Keep existing sort order within same supertype
+				return 0;
+			});
+		}
 	}
 
 	// Count active filters
