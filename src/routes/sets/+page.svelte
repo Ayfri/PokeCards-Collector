@@ -5,12 +5,13 @@
 	import PageTitle from '$lib/components/PageTitle.svelte';
 	import TextInput from '$lib/components/filters/TextInput.svelte';
 	import type { Set } from '$lib/types';
+	import { persistentWritable } from '$stores/persistentStore';
 	export let data: PageData;
 	
 	type SetWithPrice = Set & { totalPrice: number; };
 	
-	let sortDirection: 'desc' | 'asc' = 'desc';
-	let sortValue: 'code' | 'name' | 'printedTotal' | 'releaseDate' | 'totalPrice' = 'releaseDate';
+	let sortDirection = persistentWritable<'desc' | 'asc'>('sortDirection', 'desc');
+	let sortValue = persistentWritable<'code' | 'name' | 'printedTotal' | 'releaseDate' | 'totalPrice'>('sortValue', 'releaseDate');
 	
 	$: typedSets = data.sets;
 	let sortedSets = data.sets;
@@ -32,29 +33,29 @@
 	}, 300);
 
 	$: if (sortValue && sortDirection && typedSets) {
-		if (sortValue === 'code') {
+		if ($sortValue === 'code') {
 			sortedSets = [...typedSets].sort((a, b) => {
 				const codeA = a.ptcgoCode || '';
 				const codeB = b.ptcgoCode || '';
-				return sortDirection === 'desc' ? codeB.localeCompare(codeA) : codeA.localeCompare(codeB);
+				return $sortDirection === 'desc' ? codeB.localeCompare(codeA) : codeA.localeCompare(codeB);
 			});
-		} else if (sortValue === 'name') {
+		} else if ($sortValue === 'name') {
 			sortedSets = [...typedSets].sort((a, b) => {
-				return sortDirection === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
+				return $sortDirection === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
 			});
-		}  else if (sortValue === 'printedTotal') {
+		}  else if ($sortValue === 'printedTotal') {
 			sortedSets = [...typedSets].sort((a, b) => {
-				return sortDirection === 'desc' ? b.printedTotal - a.printedTotal : a.printedTotal - b.printedTotal;
+				return $sortDirection === 'desc' ? b.printedTotal - a.printedTotal : a.printedTotal - b.printedTotal;
 			});
-		} else if (sortValue === 'releaseDate') {
+		} else if ($sortValue === 'releaseDate') {
 			sortedSets = [...typedSets].sort((a, b) => {
 				const aTime = new Date(a.releaseDate).getTime();
 				const bTime = new Date(b.releaseDate).getTime();
-				return sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
+				return $sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
 			});
-		} else if (sortValue === 'totalPrice') {
+		} else if ($sortValue === 'totalPrice') {
 			sortedSets = [...typedSets].sort((a, b) => {
-				return sortDirection === 'desc' ? b.totalPrice - a.totalPrice : a.totalPrice - b.totalPrice;
+				return $sortDirection === 'desc' ? b.totalPrice - a.totalPrice : a.totalPrice - b.totalPrice;
 			});
 		}
 	}
@@ -77,20 +78,20 @@
 		const firstSetA = groupedSets[a][0];
 		const firstSetB = groupedSets[b][0];
 		
-		if (sortValue === 'code') {
+		if ($sortValue === 'code') {
 			const codeA = firstSetA.ptcgoCode || '';
 			const codeB = firstSetB.ptcgoCode || '';
-			return sortDirection === 'desc' ? codeB.localeCompare(codeA) : codeA.localeCompare(codeB);
-		} else if (sortValue === 'name') {
-			return sortDirection === 'desc' ? b.localeCompare(a) : a.localeCompare(b);
-		} else if (sortValue === 'printedTotal') {
-			return sortDirection === 'desc' ? firstSetB.printedTotal - firstSetA.printedTotal : firstSetA.printedTotal - firstSetB.printedTotal;
-		} else if (sortValue === 'releaseDate') {
+			return $sortDirection === 'desc' ? codeB.localeCompare(codeA) : codeA.localeCompare(codeB);
+		} else if ($sortValue === 'name') {
+			return $sortDirection === 'desc' ? b.localeCompare(a) : a.localeCompare(b);
+		} else if ($sortValue === 'printedTotal') {
+			return $sortDirection === 'desc' ? firstSetB.printedTotal - firstSetA.printedTotal : firstSetA.printedTotal - firstSetB.printedTotal;
+		} else if ($sortValue === 'releaseDate') {
 			const aTime = new Date(firstSetA.releaseDate).getTime();
 			const bTime = new Date(firstSetB.releaseDate).getTime();
-			return sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
-		} else if (sortValue === 'totalPrice') {
-			return sortDirection === 'desc' ? firstSetB.totalPrice - firstSetA.totalPrice : firstSetA.totalPrice - firstSetB.totalPrice;
+			return $sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
+		} else if ($sortValue === 'totalPrice') {
+			return $sortDirection === 'desc' ? firstSetB.totalPrice - firstSetA.totalPrice : firstSetA.totalPrice - firstSetB.totalPrice;
 		}
 		return 0;
 	});
@@ -115,8 +116,8 @@
 				/>
 			</div>
 			<SortControl
-			bind:sortDirection={sortDirection}
-			bind:sortValue={sortValue}
+			bind:sortDirection={$sortDirection}
+			bind:sortValue={$sortValue}
 			options={[
 				{ value: 'code', label: 'Code' },
 				{ value: 'name', label: 'Name' },
