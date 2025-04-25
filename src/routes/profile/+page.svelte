@@ -242,17 +242,18 @@
 	<div class="flex justify-between mx-28 max-lg:mx-4 items-center">
 		<PageTitle title={pageTitle} />
 	</div>
+	<div class="w-full max-w-[800px] mx-auto my-2 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
 </div>
 
 <div class="container mx-auto px-4 py-8">
 	{#if profileNotFound || profileIsPrivate}
 		<div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
-			<p class="font-bold mb-4 {errorMessage?.includes('not found') ? 'text-4xl' : 'text-3xl'}">
+			<p class="font-bold mb-4 {errorMessage?.includes('not found') ? 'text-4xl' : 'text-3xl'} text-gold-400">
 				{errorMessage}
 			</p>
 			<a
 				href="/"
-				class="home-button animated-hover-button relative overflow-hidden bg-transparent border-2 border-white text-white text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4"
+				class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
 			>
 				<span class="relative z-10 flex items-center">
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
@@ -312,20 +313,22 @@
 
 						<button
 							type="button"
-							class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+							class="animated-hover-button relative overflow-hidden w-full py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:text-black"
 							on:click={handleToggleVisibility}
 							disabled={isLoading}
 						>
-							{#if isLoading}
-								<div class="loader-spin mr-2" style="width: 16px; height: 16px;">
-									<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-									</svg>
-								</div>
-								Processing...
-							{:else}
-								{$authStore.profile.is_public ? 'Make my profile private' : 'Make my profile public'}
-							{/if}
+							<span class="relative z-10 flex items-center">
+								{#if isLoading}
+									<div class="loader-spin mr-2" style="width: 16px; height: 16px;">
+										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+										</svg>
+									</div>
+									Processing...
+								{:else}
+									{$authStore.profile.is_public ? 'Make my profile private' : 'Make my profile public'}
+								{/if}
+							</span>
 						</button>
 					</div>
 				{/if}
@@ -333,14 +336,14 @@
 
 			<!-- Quick links -->
 			<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 lg:col-span-2">
-				<h2 class="text-xl font-semibold mb-4 dark:text-white">My Collections</h2>
+				<h2 class="text-xl font-semibold mb-4 text-gold-400">My Collections</h2>
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<a
 						href={isOwnProfile 
 							? `/collection` 
 							: `/collection?user=${encodeURIComponent(targetUsername || '')}`}
-						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-transparent hover:border-gold-400"
 					>
 						<h3 class="text-lg font-medium mb-2 dark:text-white">
 							{isOwnProfile ? 'My Collection' : `${targetUsername}'s Collection`}
@@ -352,7 +355,7 @@
 						href={isOwnProfile 
 							? `/wishlist` 
 							: `/wishlist?user=${encodeURIComponent(targetUsername || '')}`}
-						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-transparent hover:border-gold-400"
 					>
 						<h3 class="text-lg font-medium mb-2 dark:text-white">
 							{isOwnProfile ? 'My Wishlist' : `${targetUsername}'s Wishlist`}
@@ -366,12 +369,13 @@
 		<!-- Collection Stats Section -->
 		{#if collectionStats}
 			<div class="mt-8">
-				<h2 class="text-xl font-semibold mb-4 dark:text-white">Collection Stats</h2>
+				<h2 class="text-xl font-semibold mb-2 text-gold-400">Collection Stats</h2>
+				<div class="w-full max-w-[200px] h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent mb-4"></div>
 				
 				<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
 					<!-- Collection Overview Card -->
 					<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-						<h3 class="text-lg font-semibold mb-4 dark:text-white">Overview</h3>
+						<h3 class="text-lg font-semibold mb-4 text-gold-400">Overview</h3>
 						<div class="space-y-4">
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Total Cards:</span>
@@ -394,7 +398,7 @@
 
 					<!-- Cards by Rarity Card -->
 					<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-						<h3 class="text-lg font-semibold mb-4 dark:text-white">Cards by Rarity</h3>
+						<h3 class="text-lg font-semibold mb-4 text-gold-400">Cards by Rarity</h3>
 						<div class="space-y-2">
 							{#each Object.entries(collectionStats.cards_by_rarity).sort((a, b) => b[1] - a[1]).slice(0, 5) as [rarity, count]}
 								<div class="flex justify-between items-center">
@@ -415,7 +419,7 @@
 					
 					<!-- Collection Summary -->
 					<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-						<h3 class="text-lg font-semibold mb-4 dark:text-white">Collection Info</h3>
+						<h3 class="text-lg font-semibold mb-4 text-gold-400">Collection Info</h3>
 						<div class="space-y-4">
 							<p class="text-gray-500 dark:text-gray-400">
 								Below you can see your set completion rates.
@@ -429,7 +433,7 @@
 
 				<!-- Set Completion Section -->
 				<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-					<h3 class="text-lg font-semibold mb-4 dark:text-white">Set Completion</h3>
+					<h3 class="text-lg font-semibold mb-4 text-gold-400">Set Completion</h3>
 					
 					{#if getSortedSets().length === 0}
 						<p class="text-gray-500 dark:text-gray-400 text-center py-4">No set completion data available</p>
@@ -437,7 +441,7 @@
 						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 							{#each getSortedSets() as [setName, stats]}
 								{@const set = getSetByName(setName)}
-								<div class="border dark:border-gray-700 rounded-lg p-4">
+								<div class="border dark:border-gray-700 rounded-lg p-4 hover:border-gold-400 transition-colors">
 									<div class="flex items-center mb-2">
 										{#if !NO_IMAGES && set?.logo}
 											<img src={set.logo} alt={setName} class="h-6 mr-2" />
@@ -459,7 +463,7 @@
 											<span class="font-medium dark:text-white">{stats.percentage}%</span>
 										</div>
 										<div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-											<div class="bg-red-600 h-2 rounded-full" style="width: {stats.percentage}%"></div>
+											<div class="bg-gold-400 h-2 rounded-full" style="width: {stats.percentage}%"></div>
 										</div>
 									</div>
 								</div>
@@ -485,5 +489,29 @@
 	.loader-spin {
 		animation: spin 2s linear infinite;
 		display: inline-flex;
+	}
+	
+	:global(html) {
+		--gold-400: #fbc54a;
+	}
+
+	.animated-hover-button::before {
+		background-color: var(--gold-400);
+		bottom: 0;
+		content: '';
+		height: 0;
+		left: 0;
+		position: absolute;
+		transition: height 0.3s ease-in-out;
+		width: 100%;
+		z-index: 0;
+	}
+
+	.animated-hover-button:not(:disabled):hover::before {
+		height: 100%;
+	}
+	
+	.animated-hover-button:disabled::before {
+		display: none;
 	}
 </style>
