@@ -45,7 +45,7 @@
 	<div class="overflow-y-auto flex-1 pr-1 -mr-1">
 		{#if $cards.length === 0}
 			<p class="text-gray-500 text-center py-4 text-sm">
-				No cards in storage. Add cards using the URL field above.
+				No cards in storage. Use the search bar at the top or the "Add set" button to add cards.
 			</p>
 		{:else}
 			<div class="grid grid-cols-2 gap-2">
