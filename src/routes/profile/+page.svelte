@@ -10,6 +10,7 @@
 	import { page } from '$app/stores';
 	import type { CollectionStats, Set, UserProfile } from '$lib/types';
 	import Avatar from '$lib/components/auth/Avatar.svelte';
+	import { NO_IMAGES } from '$lib/images';
 
 	export let data: PageData;
 
@@ -437,8 +438,11 @@
 								{@const set = getSetByName(setName)}
 								<div class="border dark:border-gray-700 rounded-lg p-4">
 									<div class="flex items-center mb-2">
-										{#if set?.logo}
+										{#if !NO_IMAGES && set?.logo}
 											<img src={set.logo} alt={setName} class="h-6 mr-2" />
+										{:else if NO_IMAGES && set?.logo}
+											<!-- Placeholder for the image -->
+											<div class="h-6 w-6 mr-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
 										{/if}
 										<h4 class="font-medium text-sm dark:text-white truncate">{setName}</h4>
 									</div>
