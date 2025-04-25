@@ -1,4 +1,5 @@
 import { getCards, getPrices, getSets } from '$helpers/data';
+import { findSetByCardCode } from '$helpers/set-utils';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
@@ -11,16 +12,16 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const prices = rawPrices;
 
 	const setsWithPrices = sets.map(set => {
-		const setCards = cards.filter(card => card.setName === set.name);
+		const setCards = cards.filter(card => findSetByCardCode(card.cardCode, [set]));
 		const totalPrice = setCards.reduce((sum, card) => {
 			const priceData = prices[card.cardCode];
-			const price = priceData?.simple;
-			return sum + (price || 0);
+			const price = priceData?.simple ?? 0;
+			return sum + price;
 		}, 0);
-
+		
 		return {
-			...set,
-			totalPrice
+			totalPrice,
+			...set
 		};
 	});
 
