@@ -19,6 +19,7 @@
 		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/sets">Sets</a>
 		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/artists">Artists</a>
 		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/random">Random Card</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/binder">Binder</a>
 		<span class="flex-1"></span>
 		<a class="logo-link absolute left-1/2 top-full xs:top-3/4 lg:top-full -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full z-20" href="/">
 			{#if !NO_IMAGES}

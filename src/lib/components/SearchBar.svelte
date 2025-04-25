@@ -1,12 +1,16 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import { onDestroy, onMount } from 'svelte';
 	import Search from 'lucide-svelte/icons/search';
 	import X from 'lucide-svelte/icons/x';
+	import PlusCircle from 'lucide-svelte/icons/plus-circle';
+	import Check from 'lucide-svelte/icons/check';
 	import { processCardImage } from '$helpers/card-images';
 	import type { FullCard, Set, PriceData } from '$lib/types';
 	import { browser } from '$app/environment';
 	import { findSetByCardCode } from '$helpers/set-utils';
+	import { page } from '$app/stores';
+	import { getContext } from 'svelte';
 
 	// --- Props ---
 	export let prices: Record<string, PriceData>;
@@ -21,6 +25,53 @@
 	let searchQuery = '';
 	let searchResults: FullCard[] = [];
 	let showResults = false;
+	let isBinderPage = false;
+	let addedCards = new Set<string>(); // Pour stocker les IDs des cartes ajoutées
+
+	// Check if we're on the Binder page
+	$: isBinderPage = $page.url.pathname === '/binder';
+
+	// Try to get the storedCards store from context if on binder page
+	let binderStoredCards: any = null;
+	onMount(() => {
+		if (isBinderPage) {
+			try {
+				binderStoredCards = getContext('storedCards');
+			} catch (e) {
+				console.error('Failed to get storedCards from context:', e);
+			}
+		}
+	});
+
+	// Function to add a card to the binder storage
+	function addToBinderStorage(card: FullCard) {
+		if (!binderStoredCards) {
+			// Dispatch a custom event if we couldn't get the store directly
+			const event = new CustomEvent('add-to-binder', { 
+				detail: { cardUrl: card.image },
+				bubbles: true 
+			});
+			document.dispatchEvent(event);
+		} else {
+			// Add directly to the store
+			binderStoredCards.update((cards: any[]) => [
+				...cards, 
+				{ 
+					id: crypto.randomUUID(), 
+					url: card.image 
+				}
+			]);
+		}
+		
+		// Marquer la carte comme ajoutée pour l'effet visuel
+		addedCards.add(card.cardCode);
+		
+		// Réinitialiser l'état après un délai
+		setTimeout(() => {
+			addedCards.delete(card.cardCode);
+			addedCards = addedCards; // Force la réactivité en Svelte
+		}, 1500);
+	}
 
 	// Helper to extract card number from cardCode (preferred)
 	function extractCardNumberFromCode(cardCode: string): string {
@@ -121,7 +172,7 @@
 
 			return false;
 		})
-		.slice(0, mobileMode ? 10 : 5); // Limit results
+		.slice(0, 10); // Limit to 10 search results for all devices
 
 		showResults = searchResults.length > 0;
 	};
@@ -230,36 +281,92 @@
 				{@const cardNumber = extractCardNumberFromCode(card.cardCode)}
 				{@const cardImage = processCardImage(card.image)}
 				{@const cardLink = `/card/${card.cardCode}/`}
+				{@const isAdded = addedCards.has(card.cardCode)}
 
-				<a
-					href={cardLink}
-					class="flex items-center p-3 hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700 last:border-b-0"
-					on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
-				>
+				<div class="flex items-center p-3 hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700 last:border-b-0 relative">
 					<img
 						src={cardImage}
 						alt={card.name}
 						class="h-20 w-14 object-contain rounded mr-4 flex-shrink-0"
 						loading="lazy"
 					/>
-					<div class="flex-grow text-sm">
-						<p class="font-semibold text-white truncate">{card.name}</p>
-						<p class="text-gray-400 truncate">{set?.name || 'Unknown Set'}</p>
+
+					<div class="flex-grow min-w-0 pr-2 flex flex-col">
+						<a
+							href={cardLink}
+							class="text-sm"
+							on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
+						>
+							<p class="font-semibold text-white truncate">{card.name}</p>
+						</a>
+						
+						<div class="flex justify-between items-center mt-1">
+							<a
+								href={cardLink}
+								class="flex-grow min-w-0 flex items-center"
+								on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
+							>
+								<p class="text-sm text-gray-400 truncate max-w-[70%]">{set?.name || 'Unknown Set'}</p>
+								<div class="text-xs text-gray-500 text-right ml-1 flex-shrink-0">
+									#{cardNumber || '?'}{#if set?.printedTotal}/{set.printedTotal}{/if}
+								</div>
+							</a>
+							
+							{#if isBinderPage}
+								<!-- Button to add to binder storage when on binder page -->
+								<div class="flex-shrink-0 ml-2">
+									<button 
+										class="py-1 px-2 rounded flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white hover:bg-gray-700'} hover:shadow-lg transform hover:translate-y-[-1px]"
+										on:click={(e) => {
+											e.preventDefault();
+											e.stopPropagation();
+											if (!isAdded) addToBinderStorage(card);
+										}}
+										title={isAdded ? "Added to binder" : "Add to binder storage"}
+										disabled={isAdded}
+									>
+										{#if isAdded}
+											<div in:fly={{ y: 10, duration: 200 }}>
+												<Check size={14} />
+											</div>
+											<span class="text-xs" in:fly={{ x: 5, duration: 200 }}>Added</span>
+										{:else}
+											<PlusCircle size={14} />
+											<span class="text-xs">Add</span>
+										{/if}
+									</button>
+								</div>
+							{/if}
+						</div>
+						
 						{#if prices[card.cardCode]?.simple}
-							<p class="text-gold-400 font-medium mt-1">
-								{#if prices[card.cardCode]?.simple}
-									{prices[card.cardCode]?.simple?.toFixed(2)} $
-								{:else}
-									Priceless
-								{/if}
-							</p>
+							<a
+								href={cardLink}
+								class="block"
+								on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
+							>
+								<p class="text-gold-400 font-medium mt-1 text-sm">
+									{#if prices[card.cardCode]?.simple}
+										{prices[card.cardCode]?.simple?.toFixed(2)} $
+									{:else}
+										Priceless
+									{/if}
+								</p>
+							</a>
 						{/if}
 					</div>
-					<div class="text-xs text-gray-500 ml-2 text-right flex-shrink-0">
-						#{cardNumber || '?'}{#if set?.printedTotal}/{set.printedTotal}{/if}
-					</div>
-				</a>
+				</div>
 			{/each}
 		</div>
 	{/if}
 </div>
+
+<style>
+	button {
+		-webkit-tap-highlight-color: transparent;
+	}
+	
+	button:active:not(:disabled) {
+		transform: scale(0.95);
+	}
+</style>
