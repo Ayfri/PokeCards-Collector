@@ -4,12 +4,17 @@
 	import SortControl from '$lib/components/filters/SortControl.svelte';
 	import PageTitle from '$lib/components/PageTitle.svelte';
 	import TextInput from '$lib/components/filters/TextInput.svelte';
+	import type { Set } from '$lib/types';
 	export let data: PageData;
-	let sortDirection: 'desc' | 'asc' = 'desc';
-	let sortValue: 'code' | 'name' | 'printedTotal' | 'releaseDate' = 'releaseDate';
-	let sortedSets = [...data.sets];
 	
-	// Search state
+	type SetWithPrice = Set & { totalPrice: number; };
+	
+	let sortDirection: 'desc' | 'asc' = 'desc';
+	let sortValue: 'code' | 'name' | 'printedTotal' | 'releaseDate' | 'totalPrice' = 'releaseDate';
+	
+	$: typedSets = data.sets;
+	let sortedSets = data.sets;
+	
 	let searchTerm = '';
 	let debounceTimeout: number;
 
@@ -26,32 +31,34 @@
 		searchTerm = value;
 	}, 300);
 
-	// Sort sets by release date (newest first by default)
-	$: if (sortValue && sortDirection) {
+	$: if (sortValue && sortDirection && typedSets) {
 		if (sortValue === 'code') {
-			sortedSets = [...data.sets].sort((a, b) => {
+			sortedSets = [...typedSets].sort((a, b) => {
 				const codeA = a.ptcgoCode || '';
 				const codeB = b.ptcgoCode || '';
 				return sortDirection === 'desc' ? codeB.localeCompare(codeA) : codeA.localeCompare(codeB);
 			});
 		} else if (sortValue === 'name') {
-			sortedSets = [...data.sets].sort((a, b) => {
+			sortedSets = [...typedSets].sort((a, b) => {
 				return sortDirection === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
 			});
 		}  else if (sortValue === 'printedTotal') {
-			sortedSets = [...data.sets].sort((a, b) => {
+			sortedSets = [...typedSets].sort((a, b) => {
 				return sortDirection === 'desc' ? b.printedTotal - a.printedTotal : a.printedTotal - b.printedTotal;
 			});
 		} else if (sortValue === 'releaseDate') {
-			sortedSets = [...data.sets].sort((a, b) => {
+			sortedSets = [...typedSets].sort((a, b) => {
 				const aTime = new Date(a.releaseDate).getTime();
 				const bTime = new Date(b.releaseDate).getTime();
 				return sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
 			});
+		} else if (sortValue === 'totalPrice') {
+			sortedSets = [...typedSets].sort((a, b) => {
+				return sortDirection === 'desc' ? b.totalPrice - a.totalPrice : a.totalPrice - b.totalPrice;
+			});
 		}
 	}
 	
-	// Filter sets based on search term
 	$: filteredSets = searchTerm 
 		? sortedSets.filter(set => 
 			set.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -59,23 +66,17 @@
 		) 
 		: sortedSets;
 
-	// Group sets by series
 	$: groupedSets = filteredSets.reduce((acc, set) => {
 		const series = set.series || 'Other';
-		if (!acc[series]) {
-			acc[series] = [];
-		}
+		acc[series] ??= [];
 		acc[series].push(set);
 		return acc;
-	}, {} as Record<string, typeof filteredSets>);
+	}, {} as Record<string, SetWithPrice[]>);
 
-	// Get sorted series keys based on the original sort order
 	$: seriesKeys = Object.keys(groupedSets).sort((a, b) => {
-		// For each series, find the "first" set according to current sort
 		const firstSetA = groupedSets[a][0];
 		const firstSetB = groupedSets[b][0];
 		
-		// Use the same sorting logic as for sets
 		if (sortValue === 'code') {
 			const codeA = firstSetA.ptcgoCode || '';
 			const codeB = firstSetB.ptcgoCode || '';
@@ -83,14 +84,20 @@
 		} else if (sortValue === 'name') {
 			return sortDirection === 'desc' ? b.localeCompare(a) : a.localeCompare(b);
 		} else if (sortValue === 'printedTotal') {
-			return 0; // Series don't have a printedTotal, just sort by series name
+			return sortDirection === 'desc' ? firstSetB.printedTotal - firstSetA.printedTotal : firstSetA.printedTotal - firstSetB.printedTotal;
 		} else if (sortValue === 'releaseDate') {
 			const aTime = new Date(firstSetA.releaseDate).getTime();
 			const bTime = new Date(firstSetB.releaseDate).getTime();
 			return sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
+		} else if (sortValue === 'totalPrice') {
+			return sortDirection === 'desc' ? firstSetB.totalPrice - firstSetA.totalPrice : firstSetA.totalPrice - firstSetB.totalPrice;
 		}
 		return 0;
 	});
+	
+	function formatCurrency(value: number): string {
+		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+	}
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -114,6 +121,7 @@
 				{ value: 'code', label: 'Code' },
 				{ value: 'name', label: 'Name' },
 				{ value: 'printedTotal', label: 'Total Cards' },
+				{ value: 'totalPrice', label: 'Total Value' },
 				{ value: 'releaseDate', label: 'Release Date' }
 			]}
 			/>
@@ -148,11 +156,12 @@
 								<h2 class="text-lg font-semibold text-white">{set.name}</h2>
 								<div class="flex justify-between mt-2 text-sm text-gray-400">
 									<span>{set.printedTotal} cards</span>
-									<span>{new Date(set.releaseDate).toLocaleDateString()}</span>
+									<span class="text-gold-400">{formatCurrency(set.totalPrice)}</span>
 								</div>
-								<div class="mt-2 text-sm flex-grow flex items-end">
+								<div class="flex justify-between mt-1 text-sm text-gray-400">
+									<span>{new Date(set.releaseDate).toLocaleDateString()}</span>
 									{#if set.ptcgoCode}
-										<span class="px-2 py-1 bg-gray-700 rounded text-gold-400">{set.ptcgoCode}</span>
+										<span class="px-2 py-1 bg-gray-700 rounded text-gold-400 text-xs">{set.ptcgoCode}</span>
 									{:else}
 										<span class="px-2 py-1 bg-transparent">&nbsp;</span>
 									{/if}
