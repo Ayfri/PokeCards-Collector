@@ -1,6 +1,7 @@
 import { supabase } from '../supabase';
-import type { UserCollection } from '../types';
 import { addToCollectionStore, removeFromCollectionStore } from '$lib/stores/collection';
+import type { Card, PriceData, Set } from '../types';
+import { findSetByCardCode } from '$helpers/set-utils';
 
 // Add a card to user's collection
 export async function addCardToCollection(username: string, cardCode: string) {
@@ -112,7 +113,7 @@ export async function getCardInCollection(username: string, cardCode: string) {
 }
 
 // Get collection stats (count by rarity, set, total value, etc.)
-export async function getCollectionStats(username: string) {
+export async function getCollectionStats(username: string, allCards: Card[], allSets: Set[], prices: Record<string, PriceData>) {
 	try {
 		// Get user's collection
 		const { data: collection, error } = await getUserCollection(username);
@@ -127,12 +128,6 @@ export async function getCollectionStats(username: string) {
 		
 		// Default wishlist count to 0 if there's an error
 		const wishlistCount = wishlistError || !wishlist ? 0 : wishlist.length;
-
-		// Import necessary data
-		const { getCards, getSets, getPrices } = await import('$helpers/data');
-		const allCards = await getCards();
-		const allSets = await getSets();
-		const prices = await getPrices();
 		
 		// Create a set of cardCodes for quick lookup
 		const collectionCardCodes = new Set(collection.map(item => item.card_code));
@@ -145,17 +140,15 @@ export async function getCollectionStats(username: string) {
 		const cardsInCollection = allCards.filter(card => collectionCardCodes.has(card.cardCode));
 		cardsInCollection.forEach(card => {
 			const cardPrice = prices[card.cardCode];
-			if (cardPrice && cardPrice.trend) {
-				totalValue += cardPrice.trend;
+			if (cardPrice && cardPrice.simple) {
+				totalValue += cardPrice.simple;
 			}
 		});
 		
 		// Calculate cards by rarity
 		const cardsByRarity: Record<string, number> = {};
 		cardsInCollection.forEach(card => {
-			if (!cardsByRarity[card.rarity]) {
-				cardsByRarity[card.rarity] = 0;
-			}
+			cardsByRarity[card.rarity] ??= 0;
 			cardsByRarity[card.rarity]++;
 		});
 		
@@ -171,9 +164,9 @@ export async function getCollectionStats(username: string) {
 		// Calculate completion for each set in the collection
 		allSets.forEach(set => {
 			if (setsWithCards.has(set.name)) {
-				const setCards = allCards.filter(card => card.setName === set.name);
-				const collectionSetCards = cardsInCollection.filter(card => card.setName === set.name);
-				
+				const setCards = allCards.filter(card => findSetByCardCode(card.cardCode, [set]));
+				const collectionSetCards = cardsInCollection.filter(card => findSetByCardCode(card.cardCode, [set]));
+
 				setStats[set.name] = {
 					count: collectionSetCards.length,
 					total: setCards.length,

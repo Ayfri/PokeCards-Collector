@@ -34,7 +34,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	if (profileError || !targetProfile) {
 		return {
-			allCards, sets, prices,
+			allCards,
+			sets,
+			prices,
 			targetProfile: null,
 			isPublic: false,
 			collectionStats: null,
@@ -52,13 +54,15 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 
 	if (targetProfile.is_public) {
 		// Get collection stats for public profile
-		const { data: collectionStats, error: statsError } = await getCollectionStats(targetProfile.username);
+		const { data: collectionStats, error: statsError } = await getCollectionStats(targetProfile.username, allCards, sets, prices);
 		
 		if (statsError) {
 			console.error(`Error fetching collection stats for ${targetProfile.username}:`, statsError);
 			// Don't throw an error here, just return null stats
 			return {
-				allCards, sets, prices,
+				allCards,
+				sets,
+				prices,
 				targetProfile,
 				isPublic: true,
 				collectionStats: null,
@@ -69,7 +73,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		}
 
 		return {
-			allCards, sets, prices,
+			allCards,
+			sets,
+			prices,
 			targetProfile,
 			isPublic: true,
 			collectionStats,
@@ -80,7 +86,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	} else {
 		// Profile is private
 		return {
-			allCards, sets, prices,
+			allCards,
+			sets,
+			prices,
 			targetProfile,
 			isPublic: false,
 			collectionStats: null,

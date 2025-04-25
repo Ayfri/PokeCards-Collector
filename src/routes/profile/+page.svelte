@@ -28,6 +28,7 @@
 	// Reactive data from server
 	$: allCards = data.allCards;
 	$: sets = data.sets || [];
+	$: prices = data.prices;
 	$: targetProfile = data.targetProfile;
 	$: isPublic = data.isPublic;
 	$: serverCollectionStats = data.collectionStats;
@@ -154,7 +155,7 @@
 			
 			if (loggedInUser) {
 				try {
-					const { data: stats, error } = await getCollectionStats(loggedInUser.username);
+					const { data: stats, error } = await getCollectionStats(loggedInUser.username, allCards, sets, prices);
 					if (error) {
 						console.error('Failed to load collection stats:', error);
 					} else {
