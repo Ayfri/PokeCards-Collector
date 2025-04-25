@@ -138,7 +138,11 @@
 	{#each seriesKeys as series}
 		<div class="mb-8">
 			<div class="mb-4">
-				<h2 class="text-xl font-bold text-gold-400">{series}</h2>
+				<div class="flex items-center gap-4">
+					<h2 class="text-xl font-bold text-gold-400">{series}</h2>
+					<p class="text-sm text-gray-400">{groupedSets[series].length} sets</p>
+					<p class="text-sm text-gold-400 ml-auto">{formatCurrency(groupedSets[series].reduce((acc, set) => acc + set.totalPrice, 0))}</p>
+				</div>
 				<hr class="w-full border-t border-gray-700 my-2" />
 			</div>
 			
