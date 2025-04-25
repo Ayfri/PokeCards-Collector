@@ -3,22 +3,27 @@
 	import { writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import { setContext } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
 	import PageTitle from '@components/PageTitle.svelte';
 	import Button from '$lib/components/filters/Button.svelte';
 	import BinderGrid from './BinderGrid.svelte';
 	import BinderStorage from './BinderStorage.svelte';
 	import README from './README.svelte';
-	import DownloadIcon from 'lucide-svelte/icons/download';
-	import UploadIcon from 'lucide-svelte/icons/upload';
 	import HelpCircleIcon from 'lucide-svelte/icons/help-circle';
+	import LayersIcon from 'lucide-svelte/icons/layers';
+	import XIcon from 'lucide-svelte/icons/x';
+	
+	// Page data from server
+	export let data;
 	
 	// Binder configuration
 	const rows = writable(3);
 	const columns = writable(3);
 	const binderCards = writable<Array<{id: string; url: string; position: number} | null>>([]);
 	const storedCards = writable<Array<{id: string; url: string}>>([]);
-	const cardUrl = writable('');
 	const showHelp = writable(false);
+	const showSetModal = writable(false);
+	const selectedSet = writable('');
 	
 	// Rendre storedCards disponible via setContext pour SearchBar
 	setContext('storedCards', storedCards);
@@ -130,17 +135,6 @@
 		};
 	});
 	
-	// Function to store a card from URL
-	function storeCard() {
-		if ($cardUrl.trim()) {
-			$storedCards = [...$storedCards, {
-				id: crypto.randomUUID(),
-				url: $cardUrl.trim()
-			}];
-			$cardUrl = '';
-		}
-	}
-	
 	// Function to reset binder grid
 	function resetBinderGrid() {
 		// S'assurer que rows et columns sont au moins 2
@@ -166,63 +160,47 @@
 		}
 	}
 	
-	// Export binder data
-	function exportBinderData() {
-		const data = {
-			grid: {
-				rows: $rows,
-				columns: $columns,
-				cards: $binderCards
-			},
-			storage: $storedCards
-		};
-		
-		const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-		const url = URL.createObjectURL(blob);
-		
-		const a = document.createElement('a');
-		a.href = url;
-		a.download = 'pokebinder-export.json';
-		document.body.appendChild(a);
-		a.click();
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
-	}
-	
-	// Import binder data
-	function importBinderData(event: Event) {
-		const input = event.target as HTMLInputElement;
-		if (!input.files?.length) return;
-		
-		const file = input.files[0];
-		const reader = new FileReader();
-		
-		reader.onload = (e) => {
-			try {
-				const data = JSON.parse(e.target?.result as string);
-				if (data.grid && data.storage) {
-					$rows = Math.max(2, data.grid.rows);
-					$columns = Math.max(2, data.grid.columns);
-					$binderCards = data.grid.cards;
-					$storedCards = data.storage;
-				}
-			} catch (error) {
-				console.error('Error importing data:', error);
-				alert('Invalid file format');
-			}
-		};
-		
-		reader.readAsText(file);
-		input.value = ''; // Reset input
-	}
-	
 	// Toggle help modal
 	function toggleHelp() {
 		$showHelp = !$showHelp;
 	}
 	
-	// Fonction vide pour le bouton d'upload (pour le linter)
-	function handleUpload() {}
+	// Toggle set modal
+	function toggleSetModal() {
+		$showSetModal = !$showSetModal;
+		if (!$showSetModal) {
+			$selectedSet = '';
+		}
+	}
+	
+	// Function to add all cards from a set
+	function addSetToStorage() {
+		if (!$selectedSet) return;
+		
+		const setToAdd = data.sets.find((set: any) => set.name === $selectedSet);
+		if (!setToAdd) return;
+		
+		const cardsFromSet = data.allCards.filter((card: any) => {
+			// Extract setCode from the card's cardCode (format: supertype_pokemonid_setcode_cardnumber)
+			const parts = card.cardCode.split('_');
+			const cardSetCode = parts[2];
+			
+			// Check if the card belongs to the selected set by comparing with set aliases or the code from the logo URL
+			const setCode = setToAdd.logo.split('/').at(-2);
+			return setToAdd.aliases?.includes(cardSetCode) || setCode === cardSetCode;
+		});
+		
+		// Add all cards from the set to storage
+		const newCards = cardsFromSet.map((card: any) => ({
+			id: crypto.randomUUID(),
+			url: card.image
+		}));
+		
+		$storedCards = [...$storedCards, ...newCards];
+		
+		// Close the modal
+		toggleSetModal();
+	}
 </script>
 
 <README showHelp={$showHelp} toggleHelp={toggleHelp} />
@@ -261,33 +239,97 @@
 				/>
 			</div>
 			
-			<Button onClick={resetBinderGrid} class="px-3">Reset Grid</Button>
+			<Button onClick={resetBinderGrid} class="text-sm">Reset Grid</Button>
 			
-			<div class="flex gap-2">
-				<Button onClick={exportBinderData} class="p-2">
-					<DownloadIcon size={16} />
-				</Button>
-				
-				<label class="cursor-pointer">
-					<Button class="p-2" onClick={handleUpload}>
-						<UploadIcon size={16} />
-					</Button>
-					<input 
-						type="file" 
-						accept=".json" 
-						on:change={importBinderData} 
-						class="hidden"
-					/>
-				</label>
-			</div>
+			<Button onClick={toggleSetModal} class="text-sm flex items-center gap-1 px-3 py-2">
+				<LayersIcon size={16} />
+				<span>Add set</span>
+			</Button>
 		</div>
 	</div>
 	
-	<div class="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6">
-		<BinderGrid {binderCards} {storedCards} {rows} {columns} />
+	<!-- Binder Grid and Storage -->
+	<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+		<div class="lg:col-span-9 h-full">
+			<BinderGrid {binderCards} {storedCards} {rows} {columns} />
+		</div>
 		
-		<div class="flex flex-col gap-4">
+		<div class="lg:col-span-3 h-full">
 			<BinderStorage cards={storedCards} />
 		</div>
 	</div>
-</div>	
+</div>
+
+<!-- Set Selection Modal -->
+{#if $showSetModal}
+<div 
+	class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+	transition:fade={{ duration: 200 }}
+>
+	<div 
+		class="bg-gray-800 border border-gray-700 rounded-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
+		transition:fly={{ y: 20, duration: 200 }}
+	>
+		<div class="flex justify-between items-center mb-4">
+			<h2 class="text-xl text-gold-400 font-medium">Add complete set</h2>
+			<button class="text-gray-400 hover:text-white" on:click={toggleSetModal}>
+				<XIcon size={20} />
+			</button>
+		</div>
+		
+		<p class="text-gray-300 mb-4 text-sm">
+			Choose a set to add all its cards to storage.
+		</p>
+		
+		<div class="mb-4">
+			<label for="setSelect" class="block text-gray-300 mb-2">Choose a set:</label>
+			<select 
+				id="setSelect"
+				bind:value={$selectedSet}
+				class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+			>
+				<option value="">-- Select a set --</option>
+				{#each data.sets.sort((a, b) => a.name.localeCompare(b.name)) as set}
+					<option value={set.name}>{set.name} ({set.printedTotal} cards)</option>
+				{/each}
+			</select>
+		</div>
+		
+		<div class="flex justify-end gap-3">
+			<Button 
+				onClick={toggleSetModal} 
+				class="text-sm px-4 py-2 border border-gray-600"
+			>
+				Cancel
+			</Button>
+			<Button 
+				onClick={addSetToStorage} 
+				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
+				disabled={!$selectedSet}
+			>
+				Add set
+			</Button>
+		</div>
+	</div>
+</div>
+{/if}
+
+<style>
+	/* Custom scrollbar for modal */
+	.overflow-y-auto::-webkit-scrollbar {
+		width: 6px;
+	}
+	
+	.overflow-y-auto::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	
+	.overflow-y-auto::-webkit-scrollbar-thumb {
+		background-color: #4a4a4a;
+		border-radius: 20px;
+	}
+	
+	.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+		background-color: #FFB700;
+	}
+</style>	
