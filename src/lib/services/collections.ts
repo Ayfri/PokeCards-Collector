@@ -152,8 +152,14 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 			cardsByRarity[card.rarity]++;
 		});
 		
-		// Calculate cards by set and completion percentages
-		const setStats: Record<string, { count: number; total: number; percentage: number }> = {};
+		// Calculate cards by set, completion percentages, and values
+		const setStats: Record<string, {
+			count: number;
+			total: number;
+			percentage: number;
+			collectedValue: number;
+			totalValue: number;
+		}> = {};
 		
 		// Initialize sets with cards in collection
 		const setsWithCards = new Set<string>();
@@ -161,16 +167,34 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 			setsWithCards.add(card.setName);
 		});
 		
-		// Calculate completion for each set in the collection
+		// Calculate stats for each set in the collection
 		allSets.forEach(set => {
 			if (setsWithCards.has(set.name)) {
 				const setCards = allCards.filter(card => findSetByCardCode(card.cardCode, [set]));
 				const collectionSetCards = cardsInCollection.filter(card => findSetByCardCode(card.cardCode, [set]));
 
+				let collectedSetValue = 0;
+				collectionSetCards.forEach(card => {
+					const cardPrice = prices[card.cardCode];
+					if (cardPrice && cardPrice.simple) {
+						collectedSetValue += cardPrice.simple;
+					}
+				});
+
+				let totalSetValue = 0;
+				setCards.forEach(card => {
+					const cardPrice = prices[card.cardCode];
+					if (cardPrice && cardPrice.simple) {
+						totalSetValue += cardPrice.simple;
+					}
+				});
+
 				setStats[set.name] = {
 					count: collectionSetCards.length,
 					total: setCards.length,
-					percentage: Math.round((collectionSetCards.length / setCards.length) * 100)
+					percentage: setCards.length > 0 ? Math.round((collectionSetCards.length / setCards.length) * 100) : 0,
+					collectedValue: Math.round(collectedSetValue * 100) / 100,
+					totalValue: Math.round(totalSetValue * 100) / 100,
 				};
 			}
 		});

@@ -100,10 +100,11 @@
 	}
 
 	// Sort sets by completion percentage (descending)
-	function getSortedSets(): [string, { count: number; total: number; percentage: number }][] {
+	function getSortedSets(): [string, { count: number; total: number; percentage: number; collectedValue: number; totalValue: number }][] {
 		if (!collectionStats || !collectionStats.set_completion) return [];
 		
-		return Object.entries(collectionStats.set_completion)
+		// Assert the correct type for Object.entries
+		return (Object.entries(collectionStats.set_completion) as [string, { count: number; total: number; percentage: number; collectedValue: number; totalValue: number }][])
 			.sort((a, b) => b[1].percentage - a[1].percentage);
 	}
 
@@ -445,6 +446,11 @@
 											<div class="h-6 w-6 mr-2 bg-gray-300 dark:bg-gray-600 rounded"></div>
 										{/if}
 										<h4 class="font-medium text-sm dark:text-white truncate">{setName}</h4>
+									</div>
+									
+									<div class="flex justify-between text-sm mb-1">
+										<span class="text-gray-500 dark:text-gray-400">Value:</span>
+										<span class="font-medium dark:text-white">{formatCurrency(stats.collectedValue)} / {formatCurrency(stats.totalValue)}</span>
 									</div>
 									
 									<div class="mt-2">
