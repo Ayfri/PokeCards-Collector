@@ -28,7 +28,7 @@
 </script>
 
 <div class="bg-gray-800 rounded-lg p-4 flex flex-col h-[calc(100%-88px)]">
-	<div class="flex justify-between items-center mb-3">
+	<div class="flex justify-between items-center mb-1">
 		<h3 class="text-gold-400 text-lg">Storage ({$cards.length})</h3>
 		
 		{#if $cards.length > 0}
@@ -37,6 +37,10 @@
 			</Button>
 		{/if}
 	</div>
+	
+	<p class="text-xs text-gray-400 mb-3">
+		Drag cards from here to position them in your binder grid.
+	</p>
 	
 	<div class="overflow-y-auto flex-1 pr-1 -mr-1">
 		{#if $cards.length === 0}
@@ -71,10 +75,6 @@
 			</div>
 		{/if}
 	</div>
-	
-	<p class="text-xs text-gray-400 mt-3">
-		Drag cards from here to position them in your binder grid.
-	</p>
 </div>
 
 <style>

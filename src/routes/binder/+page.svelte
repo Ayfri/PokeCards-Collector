@@ -249,13 +249,17 @@
 	</div>
 	
 	<!-- Binder Grid and Storage -->
-	<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-		<div class="lg:col-span-9 h-full">
-			<BinderGrid {binderCards} {storedCards} {rows} {columns} />
+	<div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+		<div class="lg:col-span-9">
+			<div class="binder-container bg-gray-800 rounded-lg">
+				<BinderGrid {binderCards} {storedCards} {rows} {columns} />
+			</div>
 		</div>
 		
-		<div class="lg:col-span-3 h-full">
-			<BinderStorage cards={storedCards} />
+		<div class="lg:col-span-3">
+			<div class="overflow-y-auto storage-container">
+				<BinderStorage cards={storedCards} />
+			</div>
 		</div>
 	</div>
 </div>
@@ -333,5 +337,18 @@
 	
 	.overflow-y-auto::-webkit-scrollbar-thumb:hover {
 		background-color: #FFB700;
+	}
+	
+	/* Container styles */
+	.binder-container {
+		height: calc(100vh - 200px);
+		min-height: 450px;
+		aspect-ratio: auto; /* Laisser la hauteur contrôler le ratio */
+		display: flex;
+		align-items: stretch;
+	}
+	
+	.storage-container {
+		max-height: calc(100vh - 200px);
 	}
 </style>	

@@ -82,72 +82,134 @@
 	}
 </script>
 
-<div class="bg-gray-800 rounded-lg p-4 h-full flex justify-center">
-	<table class="border-collapse w-full max-w-[1200px]">
-		<tbody>
-			{#each Array(Math.ceil($binderCards.length / $columns)) as _, rowIndex}
-				<tr>
-					{#each Array($columns) as _, colIndex}
-						{@const index = rowIndex * $columns + colIndex}
-						{@const card = index < $binderCards.length ? $binderCards[index] : null}
-						<td 
-							class="p-0 border border-gray-700 relative"
-							style="height: 0; padding-bottom: calc(140% / {$columns});"
-							on:dragover={onDragOver}
-							on:dragleave={onDragLeave}
-							on:drop={(e) => onDrop(e, index)}
-						>
-							<div class="absolute inset-0 flex items-center justify-center binder-cell">
-								{#if card}
-									<div
-										class="absolute inset-0 flex items-center justify-center group"
-										draggable="true"
-										on:dragstart={(e) => onDragStart(e, card)}
-									>
-										<img 
-											src={card.url} 
-											alt="Pokémon card" 
-											class="w-full h-full object-contain p-1"
-											loading="lazy"
-										/>
-										<button 
-											class="absolute top-1 right-1 bg-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-											on:click={() => removeCard(index)}
-										>
-											<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
-												<path d="M18 6 6 18"></path>
-												<path d="m6 6 12 12"></path>
-											</svg>
-										</button>
-									</div>
-								{:else}
-									<div class="text-gray-600 text-sm">Drop card here</div>
-								{/if}
+<div class="w-full h-full p-2">
+	<div class="grid-wrapper">
+		<div class="binder-grid" style="grid-template-rows: repeat({$rows}, 1fr); grid-template-columns: repeat({$columns}, 1fr);">
+			{#each Array($rows * $columns) as _, index}
+				{@const rowIndex = Math.floor(index / $columns)}
+				{@const colIndex = index % $columns}
+				{@const card = index < $binderCards.length ? $binderCards[index] : null}
+				
+				<div 
+					class="binder-cell-container"
+					on:dragover={onDragOver}
+					on:dragleave={onDragLeave}
+					on:drop={(e) => onDrop(e, index)}
+				>
+					<div class="binder-cell">
+						{#if card}
+							<div
+								class="card-content group"
+								draggable="true"
+								on:dragstart={(e) => onDragStart(e, card)}
+							>
+								<img 
+									src={card.url} 
+									alt="Pokémon card" 
+									class="card-image"
+									loading="lazy"
+								/>
+								<button 
+									class="remove-btn"
+									on:click={() => removeCard(index)}
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+										<path d="M18 6 6 18"></path>
+										<path d="m6 6 12 12"></path>
+									</svg>
+								</button>
 							</div>
-						</td>
-					{/each}
-				</tr>
+						{:else}
+							<div class="drop-placeholder">Drop card here</div>
+						{/if}
+					</div>
+				</div>
 			{/each}
-		</tbody>
-	</table>
+		</div>
+	</div>
 </div>
 
 <style>
+	.grid-wrapper {
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	
+	.binder-grid {
+		display: grid;
+		width: 100%;
+		height: 100%;
+		gap: 2px;
+	}
+	
+	.binder-cell-container {
+		position: relative;
+		aspect-ratio: 2.5/3.5; /* Correct aspect ratio for Pokémon cards */
+		justify-self: center;
+		width: 100%;
+	}
+	
 	.binder-cell {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		background-color: #1f2937;
+		border: 1px solid #374151;
+		border-radius: 2px;
+		padding: 1px;
+	}
+	
+	.binder-cell:hover {
+		border-color: #4b5563;
+	}
+	
+	.card-content {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	
+	.card-image {
+		max-width: 100%;
+		max-height: 100%;
+		object-fit: contain;
+	}
+	
+	.drop-placeholder {
+		color: #6b7280;
+		font-size: 0.75rem;
+		text-align: center;
+	}
+	
+	.remove-btn {
+		position: absolute;
+		top: 1px;
+		right: 1px;
+		background-color: #ef4444;
+		border-radius: 9999px;
+		padding: 1px;
+		opacity: 0;
+		transition: opacity 0.2s;
+	}
+	
+	.group:hover .remove-btn {
+		opacity: 1;
 	}
 	
 	.drag-over {
 		border-color: #FFB700 !important;
 		background-color: rgba(255, 183, 0, 0.1);
 		transform: scale(1.02);
-	}
-	
-	:global(table) {
-		border-spacing: 0;
-	}
-	
-	:global(td) {
-		overflow: hidden;
 	}
 </style> 
