@@ -265,10 +265,12 @@
 <div 
 	class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
 	transition:fade={{ duration: 200 }}
+	on:click={toggleSetModal}
 >
 	<div 
 		class="bg-gray-800 border border-gray-700 rounded-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
 		transition:fly={{ y: 20, duration: 200 }}
+		on:click|stopPropagation
 	>
 		<div class="flex justify-between items-center mb-4">
 			<h2 class="text-xl text-gold-400 font-medium">Add complete set</h2>
