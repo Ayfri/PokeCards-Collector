@@ -26,6 +26,7 @@
 	let lastUsername = ''; // Track the last username we loaded
 	
 	// Reactive data from server
+	$: allCards = data.allCards;
 	$: sets = data.sets || [];
 	$: targetProfile = data.targetProfile;
 	$: isPublic = data.isPublic;
@@ -371,7 +372,7 @@
 						<div class="space-y-4">
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Total Cards:</span>
-								<span class="font-medium dark:text-white">{collectionStats.total_cards}</span>
+								<span class="font-medium dark:text-white">{collectionStats.total_cards}/{allCards.length}</span>
 							</div>
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Wishlist Cards:</span>

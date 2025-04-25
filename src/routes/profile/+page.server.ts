@@ -8,18 +8,9 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const targetUsername = url.searchParams.get('user');
 
 	// Load base data needed for stats
-	let allCards = [];
-	let sets = [];
-	let prices = {};
-	
-	try {
-		allCards = await getCards();
-		sets = await getSets();
-		prices = await getPrices();
-	} catch (e) {
-		console.error("Error loading global card data:", e);
-		throw error(500, 'Failed to load necessary card data');
-	}
+	let allCards = await getCards();
+	let sets = await getSets();
+	let prices = await getPrices();
 
 	// If no username specified, don't try to load profile data
 	// The client-side will handle the current user's profile
