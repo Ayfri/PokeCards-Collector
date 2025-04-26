@@ -12,6 +12,7 @@
 	import HelpCircleIcon from 'lucide-svelte/icons/help-circle';
 	import LayersIcon from 'lucide-svelte/icons/layers';
 	import XIcon from 'lucide-svelte/icons/x';
+	import LinkIcon from 'lucide-svelte/icons/link';
 	
 	// Page data from server
 	export let data;
@@ -24,6 +25,9 @@
 	const showHelp = writable(false);
 	const showSetModal = writable(false);
 	const selectedSet = writable('');
+	const showUrlModal = writable(false);
+	const cardUrl = writable('');
+	const multipleCardUrls = writable('');
 	
 	// Rendre storedCards disponible via setContext pour SearchBar
 	setContext('storedCards', storedCards);
@@ -173,6 +177,15 @@
 		}
 	}
 	
+	// Toggle URL modal
+	function toggleUrlModal() {
+		$showUrlModal = !$showUrlModal;
+		if (!$showUrlModal) {
+			$cardUrl = '';
+			$multipleCardUrls = '';
+		}
+	}
+	
 	// Function to add all cards from a set
 	function addSetToStorage() {
 		if (!$selectedSet) return;
@@ -200,6 +213,49 @@
 		
 		// Close the modal
 		toggleSetModal();
+	}
+	
+	// Function to add a card from a URL
+	function addCardFromUrl() {
+		if (!$cardUrl && !$multipleCardUrls) return;
+		
+		const newCards = [];
+		
+		// Add single URL if provided
+		if ($cardUrl) {
+			newCards.push({
+				id: crypto.randomUUID(),
+				url: $cardUrl
+			});
+		}
+		
+		// Process multiple URLs if provided
+		if ($multipleCardUrls) {
+			// Split by newlines and process each line
+			const lines = $multipleCardUrls.split('\n');
+			
+			for (const line of lines) {
+				// Remove semicolons or periods from the end of the URL
+				const trimmedLine = line.trim();
+				if (trimmedLine) {
+					const url = trimmedLine.replace(/[;.]$/, '').trim();
+					if (url) {
+						newCards.push({
+							id: crypto.randomUUID(),
+							url: url
+						});
+					}
+				}
+			}
+		}
+		
+		// Add all new cards to storage
+		if (newCards.length > 0) {
+			$storedCards = [...$storedCards, ...newCards];
+		}
+		
+		// Close the modal
+		toggleUrlModal();
 	}
 </script>
 
@@ -244,6 +300,11 @@
 			<Button onClick={toggleSetModal} class="text-sm flex items-center gap-1 px-3 py-2">
 				<LayersIcon size={16} />
 				<span>Add set</span>
+			</Button>
+			
+			<Button onClick={toggleUrlModal} class="text-sm flex items-center gap-1 px-3 py-2">
+				<LinkIcon size={16} />
+				<span>Add from URL</span>
 			</Button>
 		</div>
 	</div>
@@ -314,6 +375,72 @@
 				disabled={!$selectedSet}
 			>
 				Add set
+			</Button>
+		</div>
+	</div>
+</div>
+{/if}
+
+<!-- URL Card Modal -->
+{#if $showUrlModal}
+<div 
+	class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+	transition:fade={{ duration: 200 }}
+	on:click={toggleUrlModal}
+>
+	<div 
+		class="bg-gray-800 border border-gray-700 rounded-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
+		transition:fly={{ y: 20, duration: 200 }}
+		on:click|stopPropagation
+	>
+		<div class="flex justify-between items-center mb-4">
+			<h2 class="text-xl text-gold-400 font-medium">Add card from URL</h2>
+			<button class="text-gray-400 hover:text-white" on:click={toggleUrlModal}>
+				<XIcon size={20} />
+			</button>
+		</div>
+		
+		<p class="text-gray-300 mb-4 text-sm">
+			Paste the URL of a Pokémon card image to add it to your storage.
+		</p>
+		
+		<div class="mb-4">
+			<label for="cardUrl" class="block text-gray-300 mb-2">Card image URL:</label>
+			<input 
+				id="cardUrl"
+				type="url" 
+				bind:value={$cardUrl}
+				placeholder="https://example.com/card-image.jpg"
+				class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+			/>
+		</div>
+		
+		<div class="mb-4">
+			<label for="multipleCardUrls" class="block text-gray-300 mb-2">Or multiple URLs (one per line ending with ; or .):</label>
+			<textarea 
+				id="multipleCardUrls"
+				bind:value={$multipleCardUrls}
+				placeholder="https://example.com/card1.jpg;
+https://example.com/card2.jpg;
+https://example.com/card3.jpg."
+				rows="4"
+				class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+			></textarea>
+		</div>
+		
+		<div class="flex justify-end gap-3">
+			<Button 
+				onClick={toggleUrlModal} 
+				class="text-sm px-4 py-2 border border-gray-600"
+			>
+				Cancel
+			</Button>
+			<Button 
+				onClick={addCardFromUrl} 
+				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
+				disabled={!$cardUrl && !$multipleCardUrls}
+			>
+				Add card
 			</Button>
 		</div>
 	</div>
