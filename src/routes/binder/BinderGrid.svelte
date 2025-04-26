@@ -53,13 +53,27 @@
 			if (sourcePosition === -1) return;
 			
 			// Get the card from the source position
-			const card = $binderCards[sourcePosition];
-			if (!card) return;
+			const sourceCard = $binderCards[sourcePosition];
+			if (!sourceCard) return;
 			
-			// Remove card from source position and add to target position
+			// Get the card at the target position (if any)
+			const targetCard = $binderCards[position];
+			
+			// Create updated array
 			const updatedBinderCards = [...$binderCards];
-			updatedBinderCards[sourcePosition] = null;
-			updatedBinderCards[position] = { ...card, position };
+			
+			// If there's a card at the target position, swap the cards
+			if (targetCard) {
+				// Place target card at source position with updated position property
+				updatedBinderCards[sourcePosition] = { ...targetCard, position: sourcePosition };
+				// Place source card at target position with updated position property
+				updatedBinderCards[position] = { ...sourceCard, position };
+			} else {
+				// If target position is empty, just move the card
+				updatedBinderCards[sourcePosition] = null;
+				updatedBinderCards[position] = { ...sourceCard, position };
+			}
+			
 			$binderCards = updatedBinderCards;
 		}
 	}
