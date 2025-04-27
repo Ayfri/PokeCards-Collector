@@ -18,6 +18,8 @@
 	export let pokemons: Pokemon[];
 	export let prices: PriceData | undefined;
 	export let sets: Set[];
+	export let customWidth: number | null = null;
+	export let customHeight: number | null = null;
 
 	const {
 		image,
@@ -25,6 +27,12 @@
 		types,
 		cardCode,  // `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`
 	} = card;
+
+	// Calculer les dimensions réelles à utiliser
+	$: width = customWidth || 300;
+	$: height = customHeight || 420;
+	$: mobileWidth = customWidth ? Math.floor(customWidth * 0.82) : 245;
+	$: mobileHeight = customHeight ? Math.floor(customHeight * 0.82) : 342;
 
 	const { pokemonNumber, cardNumber } = parseCardCode(cardCode);	
 	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
@@ -99,15 +107,16 @@
 	href={`/card/${cardCode}/`}
 	rel="dofollow"
 >
-	<div class="card-pokestore group relative flex flex-col items-center w-fit cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.025]">
+	<div class="card-pokestore group relative flex flex-col items-center w-fit cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.025] hover:z-10" style="margin-bottom: {Math.floor(height * 0.25)}px; z-index: 1;">
 		<div class:list={rarity.toLowerCase()}></div>
 		{#if !NO_IMAGES}
 			<div
-				class={`aura h-[26rem] max-2xs:h-[22rem] w-[20rem] max-2xs:w-[16rem] absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-[var(--type-color)]
+				class={`aura absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-[var(--type-color)]
 				transition-all duration-700 ease-out group-hover:blur-[2.5rem] ${types.toLowerCase().split(',')}`}
+				style="width: {width * 0.8}px; height: {height * 0.85}px;"
 			></div>
 		{/if}
-		<div class="relative h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px]">
+		<div class="relative" style="width: {width}px; height: {height}px; max-width: 100%;">
 			{#if $authStore.user && $authStore.profile}
 				<div class="absolute bottom-2 right-2 z-10 flex gap-2">
 					<button
@@ -117,7 +126,7 @@
 						disabled={isAddingToCollection}
 					>
 						<Package
-							size={24}
+							size={Math.min(24, Math.floor(width/12))}
 							class={isInCollection ? 'text-green-500 fill-green-500' : 'text-white'}
 						/>
 					</button>
@@ -128,7 +137,7 @@
 						disabled={isAddingToWishlist}
 					>
 						<Heart
-							size={24}
+							size={Math.min(24, Math.floor(width/12))}
 							class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'}
 						/>
 					</button>
@@ -136,48 +145,42 @@
 			{/if}
 			<CardImage
 				alt={cardName}
-				class="rounded-lg h-[420px] max-2xs:h-[342px] w-[300px] max-2xs:w-[245px] transition-opacity duration-300 absolute top-0 left-0"
-				height={420}
+				class="rounded-lg transition-opacity duration-300 absolute top-0 left-0"
+				style="width: {width}px; height: {height}px; max-width: 100%;"
 				imageUrl={image}
 				lazy={true}
-				width={300}
+				width={width}
+				height={height}
 			/>
 		</div>
-		<h2 class="text-center font-bold text-lg text-pretty w-[300px] max-2xs:w-[245px] leading-none pt-2 flex flex-col gap-[0.1rem]">
-			{#if card.pokemonNumber}
+		<div class="card-info-container bg-black/30 backdrop-blur-sm rounded-lg p-2 mt-1" style="width: {width}px; max-width: 100%;">
+			<h2 class="text-center font-bold text-lg text-pretty leading-none">
 				{cardName}
-			{:else}
-				{cardName}
-			{/if}
-			<span class="uppercase text-sm opacity-85">
-				{#if set.ptcgoCode}
-					{set.ptcgoCode}
+				<span class="uppercase text-sm opacity-85 ml-2">{#if set.ptcgoCode}{set.ptcgoCode}{/if} #{cardNumber}/{set?.printedTotal}</span>
+			</h2>
+			<div class="flex items-center justify-center">
+				{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
+					<a
+						href={card.cardMarketUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-center hover:text-gold-300 transition-colors duration-200"
+						on:click|stopPropagation
+						aria-label="View on Cardmarket"
+					>
+						<div class="flex items-center justify-center whitespace-nowrap">
+							<span>{prices?.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</span>
+							<span class="mx-1">-</span>
+							<span class="text-gold-400 font-bold underline flex items-center">
+								Cardmarket
+								<ExternalLink size={Math.min(12, Math.floor(width/25))} class="ml-1"/>
+							</span>
+						</div>
+					</a>
+				{:else}
+					<h3 class="text-center">{prices?.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</h3>
 				{/if}
-				#{cardNumber}/{set?.printedTotal}
-			</span>
-		</h2>
-		<div class="flex items-center justify-center">
-			{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
-				<a
-					href={card.cardMarketUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="text-center hover:text-gold-300 transition-colors duration-200"
-					on:click|stopPropagation
-					aria-label="View on Cardmarket"
-				>
-					<div class="flex items-center justify-center whitespace-nowrap">
-						<span>{prices?.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</span>
-						<span class="mx-1">-</span>
-						<span class="text-gold-400 font-bold underline flex items-center">
-							Cardmarket
-							<ExternalLink size={12} class="ml-1"/>
-						</span>
-					</div>
-				</a>
-			{:else}
-				<h3 class="text-center">{prices?.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</h3>
-			{/if}
+			</div>
 		</div>
 	</div>
 </a>

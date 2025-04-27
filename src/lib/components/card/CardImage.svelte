@@ -54,9 +54,14 @@
 	const standardImageUrl = processCardImage(imageUrl, highRes);
 	const lowResImageUrl = processCardImage(imageUrl, false);
 
-	// For small screen devices, use the standard resolution rather than high-res
-	const srcsetValue = `${lowResImageUrl} 245w, ${standardImageUrl} 300w`;
-	const sizesValue = '(max-width: 245px) 245px, 300w';
+	// Prepare srcset based on actual dimensions
+	$: srcsetValue = width ? 
+		`${lowResImageUrl} ${Math.floor(width*0.82)}w, ${standardImageUrl} ${width}w` :
+		`${lowResImageUrl} 245w, ${standardImageUrl} 300w`;
+
+	$: sizesValue = width ? 
+		`(max-width: ${Math.floor(width*0.82)}px) ${Math.floor(width*0.82)}px, ${width}w` :
+		'(max-width: 245px) 245px, 300w';
 
 	// Handle error case
 	function handleError() {
@@ -68,7 +73,7 @@
 	}
 </script>
 {#if error}
-	<div class="flex items-center justify-center bg-red-900 text-white rounded-lg {classNames}">
+	<div class="flex items-center justify-center bg-red-900 text-white rounded-lg {classNames}" style="{style || ''} {width ? `width: ${width}px;` : ''} {height ? `height: ${height}px;` : ''}">
 		<span>Image not available</span>
 	</div>
 {:else}
@@ -105,14 +110,14 @@
 	.holo::after {
 		background-repeat: no-repeat;
 		content: "";
-		height: 420px;
+		height: var(--card-height, 420px);
+		width: var(--card-width, 300px);
 		left: 50%;
 		mix-blend-mode: color-dodge;
 		position: absolute;
 		top: 43%;
 		transform: translate(-50%, -50%);
 		transition: all 0.33s ease;
-		width: 300px;
 	}
 
 	@-webkit-keyframes holoSparkle {
@@ -308,8 +313,6 @@
 			transform: scale3d(1, 1, 1);
 		}
 	}
-
-
 
 	@keyframes placeHolderShimmer {
 		0% {
