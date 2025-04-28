@@ -5,10 +5,10 @@
 	import { setContext } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import PageTitle from '@components/PageTitle.svelte';
-	import Button from '$lib/components/filters/Button.svelte';
-	import BinderGrid from './BinderGrid.svelte';
-	import BinderStorage from './BinderStorage.svelte';
-	import README from './README.svelte';
+	import Button from '@components/filters/Button.svelte';
+	import BinderGrid from '@components/binder/BinderGrid.svelte';
+	import BinderStorage from '@components/binder/BinderStorage.svelte';
+	import README from '@components/binder/README.svelte';
 	import HelpCircleIcon from 'lucide-svelte/icons/help-circle';
 	import LayersIcon from 'lucide-svelte/icons/layers';
 	import XIcon from 'lucide-svelte/icons/x';
