@@ -368,7 +368,7 @@
 						<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-xs text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity truncate text-center">
 							<div class="font-semibold">{getCardIdentifier(card)}</div>
 							<div class="flex justify-center items-center gap-1 mt-0.5">
-								<span class="px-1 text-xxs">{getCardSet(card)}</span>
+								<span class="px-1 text-[0.65rem]">{getCardSet(card)}</span>
 							</div>
 						</div>
 						<button 
@@ -404,10 +404,5 @@
 	
 	.overflow-y-auto::-webkit-scrollbar-thumb:hover {
 		background-color: #FFB700;
-	}
-	
-	/* Extra small text size */
-	.text-xxs {
-		font-size: 0.65rem;
 	}
 </style> 

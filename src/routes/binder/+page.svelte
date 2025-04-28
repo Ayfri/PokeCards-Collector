@@ -312,13 +312,13 @@
 	<!-- Binder Grid and Storage -->
 	<div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
 		<div class="lg:col-span-9">
-			<div class="binder-container bg-gray-800 rounded-lg">
+			<div class="bg-gray-800 rounded-lg h-[calc(100vh-200px)] min-h-[450px] flex items-stretch">
 				<BinderGrid {binderCards} {storedCards} {rows} {columns} />
 			</div>
 		</div>
 		
 		<div class="lg:col-span-3">
-			<div class="overflow-y-auto storage-container">
+			<div class="overflow-y-auto max-h-[calc(100vh-200px)]">
 				<BinderStorage cards={storedCards} />
 			</div>
 		</div>
@@ -464,18 +464,5 @@ https://example.com/card3.jpg."
 	
 	.overflow-y-auto::-webkit-scrollbar-thumb:hover {
 		background-color: #FFB700;
-	}
-	
-	/* Container styles */
-	.binder-container {
-		height: calc(100vh - 200px);
-		min-height: 450px;
-		aspect-ratio: auto; /* Laisser la hauteur contrôler le ratio */
-		display: flex;
-		align-items: stretch;
-	}
-	
-	.storage-container {
-		max-height: calc(100vh - 200px);
 	}
 </style>	
