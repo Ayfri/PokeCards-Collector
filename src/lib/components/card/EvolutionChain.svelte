@@ -104,7 +104,7 @@
 					class="evolution-image-wrapper relative"
 					class:current={pokemon.id === currentPokemon?.id}
 				>
-					<div class="pokemon-number text-[0.6rem] absolute -top-1 -right-1 bg-black text-white rounded-full w-5 h-5 flex items-center justify-center z-10">
+					<div class="pokemon-number text-[0.6rem] absolute -top-1 -right-1 bg-black text-white rounded-full w-6 h-6 flex items-center justify-center z-10">
 						{pokemon.id}
 					</div>
 
@@ -192,7 +192,7 @@
 
 	.pokemon-number {
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-		font-weight: bold;
+		font-weight: 600;
 		border: 1px solid #f3d02c;
 	}
 </style>
