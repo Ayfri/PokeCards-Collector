@@ -13,6 +13,7 @@
 	import Package from 'lucide-svelte/icons/package';
 	import { onMount } from 'svelte';
 	import { findSetByCardCode } from '$lib/helpers/set-utils';
+	import { Plus } from 'lucide-svelte';
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];
@@ -125,9 +126,9 @@
 						on:click={toggleCollection}
 						disabled={isAddingToCollection}
 					>
-						<Package
+						<Plus
 							size={Math.min(24, Math.floor(width/12))}
-							class={isInCollection ? 'text-green-500 fill-green-500' : 'text-white'}
+							class={isInCollection ? 'text-green-500' : 'text-white'}
 						/>
 					</button>
 					<button
