@@ -13,7 +13,7 @@
 	import Package from 'lucide-svelte/icons/package';
 	import { onMount } from 'svelte';
 	import { findSetByCardCode } from '$lib/helpers/set-utils';
-	import { Plus } from 'lucide-svelte';
+	import { Plus, Minus } from 'lucide-svelte';
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];
@@ -44,11 +44,11 @@
 
 	// Détermine si la carte est dans la wishlist en fonction du store
 	$: isInWishlist = $wishlistStore.has(cardCode);
-	let isAddingToWishlist = false;
+	let isUpdatingWishlist = false;
 
-	// Détermine si la carte est dans la collection en fonction du store
-	$: isInCollection = $collectionStore.has(cardCode);
-	let isAddingToCollection = false;
+	// Get the count of the card in the collection from the store
+	$: collectionCount = $collectionStore.get(cardCode) || 0;
+	let isUpdatingCollection = false;
 
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
@@ -56,43 +56,52 @@
 
 		if (!$authStore.user || !$authStore.profile) return;
 
-		isAddingToWishlist = true;
+		isUpdatingWishlist = true;
 
 		try {
 			if (isInWishlist) {
 				await removeCardFromWishlist($authStore.profile.username, cardCode);
-				// Pas besoin de mettre à jour isInWishlist car removeCardFromWishlist met déjà à jour le store
 			} else {
 				await addCardToWishlist($authStore.profile.username, cardCode);
-				// Pas besoin de mettre à jour isInWishlist car addCardToWishlist met déjà à jour le store
 			}
 		} catch (error) {
 			console.error('Error toggling wishlist status:', error);
 		} finally {
-			isAddingToWishlist = false;
+			isUpdatingWishlist = false;
 		}
 	}
 
-	async function toggleCollection(event: MouseEvent) {
+	async function handleAddCard(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
 
-		if (!$authStore.user || !$authStore.profile) return;
+		if (!$authStore.user || !$authStore.profile || isUpdatingCollection) return;
 
-		isAddingToCollection = true;
+		isUpdatingCollection = true;
 
 		try {
-			if (isInCollection) {
-				await removeCardFromCollection($authStore.profile.username, cardCode);
-				// No need to update isInCollection as removeCardFromCollection already updates the store
-			} else {
-				await addCardToCollection($authStore.profile.username, cardCode);
-				// No need to update isInCollection as addCardToCollection already updates the store
-			}
+			await addCardToCollection($authStore.profile.username, cardCode);
 		} catch (error) {
-			console.error('Error toggling collection status:', error);
+			console.error('Error adding card to collection:', error);
 		} finally {
-			isAddingToCollection = false;
+			isUpdatingCollection = false;
+		}
+	}
+
+	async function handleRemoveCard(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+
+		if (!$authStore.user || !$authStore.profile || isUpdatingCollection || collectionCount === 0) return;
+
+		isUpdatingCollection = true;
+
+		try {
+			await removeCardFromCollection($authStore.profile.username, cardCode);
+		} catch (error) {
+			console.error('Error removing card from collection:', error);
+		} finally {
+			isUpdatingCollection = false;
 		}
 	}
 
@@ -119,28 +128,50 @@
 		{/if}
 		<div class="relative" style="width: {width}px; height: {height}px; max-width: 100%;">
 			{#if $authStore.user && $authStore.profile}
-				<div class="absolute bottom-2 right-2 z-10 flex gap-2">
+				<div class="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/50 p-1">
+					{#if collectionCount > 0}
+						<button
+							aria-label="Remove one copy from collection"
+							class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+							on:click={handleRemoveCard}
+							disabled={isUpdatingCollection}
+						>
+							<Minus 
+								size={Math.min(18, Math.floor(width/16))} 
+								class="text-white"
+							/> 
+						</button>
+						<span 
+							class="text-sm font-semibold text-green-400 px-1 min-w-[1.5ch] text-center select-none"
+							title={`You have ${collectionCount} cop${collectionCount > 1 ? 'ies' : 'y'}`}
+						>
+							{collectionCount}
+						</span>
+					{/if}
 					<button
-						aria-label={isInCollection ? 'Remove from collection' : 'Add to collection'}
-						class="p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors duration-200"
-						on:click={toggleCollection}
-						disabled={isAddingToCollection}
+						aria-label="Add one copy to collection"
+						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+						on:click={handleAddCard}
+						disabled={isUpdatingCollection}
 					>
-						<Plus
-							size={Math.min(24, Math.floor(width/12))}
-							class={isInCollection ? 'text-green-500' : 'text-white'}
-						/>
+						<Plus 
+							size={Math.min(18, Math.floor(width/16))}
+							class={collectionCount > 0 ? 'text-green-400' : 'text-white'}
+						/> 
 					</button>
+
+					<div class="w-px h-5 bg-white/30 mx-1"></div>
+
 					<button
 						aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-						class="p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors duration-200"
+						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 						on:click={toggleWishlist}
-						disabled={isAddingToWishlist}
+						disabled={isUpdatingWishlist}
 					>
-						<Heart
-							size={Math.min(24, Math.floor(width/12))}
+						<Heart 
+							size={Math.min(18, Math.floor(width/16))}
 							class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'}
-						/>
+						/> 
 					</button>
 				</div>
 			{/if}

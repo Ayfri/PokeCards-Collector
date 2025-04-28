@@ -1,118 +1,107 @@
 import { supabase } from '../supabase';
-import { addToCollectionStore, removeFromCollectionStore } from '$lib/stores/collection';
+import { updateCollectionStoreCount } from '$lib/stores/collection';
 import type { Card, PriceData, Set } from '../types';
 import { findSetByCardCode } from '$helpers/set-utils';
 
-// Add a card to user's collection
+// Add a new instance of a card to user's collection
 export async function addCardToCollection(username: string, cardCode: string) {
 	try {
-		// Check if card already exists in collection
-		const { data: existingCard } = await supabase
-			.from('collections')
-			.select('*')
-			.eq('username', username)
-			.eq('card_code', cardCode)
-			.maybeSingle();
-
-		if (existingCard) {
-			// Card already exists, just return it
-			if (!existingCard.error) {
-				addToCollectionStore(cardCode); // Add to local store
-			}
-			return { data: existingCard, error: null };
-		} else {
-			// Insert new card if it doesn't exist
-			const { data, error } = await supabase
-				.from('collections')
-				.insert({
-					username,
-					card_code: cardCode,
-				})
-				.select();
-
-			if (!error) {
-				addToCollectionStore(cardCode); // Add to local store
-			}
-
-			return { data, error };
-		}
-	} catch (error) {
-		console.error('Error adding card to collection:', error);
-		return { data: null, error };
-	}
-}
-
-// Update card quantity in collection
-export async function updateCardQuantity(collectionId: string, quantity: number) {
-	try {
+		// Insert a new row for this card instance
 		const { data, error } = await supabase
 			.from('collections')
-			.update({ quantity })
-			.eq('id', collectionId)
-			.select();
+			.insert({
+				username,
+				card_code: cardCode,
+			})
+			.select('card_code') // Select to confirm insertion
+			.single();
 
-		return { data, error };
+		if (!error && data) {
+			// Increment the count in the local store
+			updateCollectionStoreCount(data.card_code, 1);
+		}
+
+		// Return minimal data, error handling happens in component
+		return { data: data ? { card_code: data.card_code } : null, error };
 	} catch (error) {
-		console.error('Error updating card quantity:', error);
+		console.error('Error adding card instance to collection:', error);
 		return { data: null, error };
 	}
 }
 
-// Remove a card from user's collection
+// Remove one instance of a card from user's collection
 export async function removeCardFromCollection(username: string, cardCode: string) {
 	try {
-		// Delete the card
-		const { data, error } = await supabase
+		// Find *one* specific row ID for this card to delete
+		const { data: rowToDelete, error: fetchError } = await supabase
 			.from('collections')
-			.delete()
+			.select('id') // Select only the id
 			.eq('username', username)
 			.eq('card_code', cardCode)
-			.select();
-
-		if (!error) {
-			removeFromCollectionStore(cardCode); // Remove from local store
+			.limit(1) // Ensure we only get one row
+			.maybeSingle();
+		
+		if (fetchError) throw fetchError;
+		
+		if (!rowToDelete) {
+			// Card not found, maybe store count was out of sync
+			console.warn('Attempted to remove a card instance not found in DB:', cardCode);
+			updateCollectionStoreCount(cardCode, 0); // Reset store count if needed
+			return { data: null, error: { message: 'Card instance not found in collection' } };
 		}
 
-		return { data, error };
+		// Delete the specific row found
+		const { error: deleteError } = await supabase
+			.from('collections')
+			.delete()
+			.eq('id', rowToDelete.id);
+
+		if (!deleteError) {
+			// Decrement the count in the local store
+			updateCollectionStoreCount(cardCode, -1);
+		}
+
+		// Return minimal data, error handling happens in component
+		return { data: !deleteError ? { card_code: cardCode } : null, error: deleteError }; 
+
 	} catch (error) {
-		console.error('Error removing card from collection:', error);
+		console.error('Error removing card instance from collection:', error);
 		return { data: null, error };
 	}
 }
 
-// Get user's collection
+// Get user's collection (only card codes needed for counting)
 export async function getUserCollection(username: string) {
 	try {
 		const { data, error } = await supabase
 			.from('collections')
-			.select('*')
+			.select('card_code') // Select ONLY card_code
 			.eq('username', username);
 
 		return { data, error };
 	} catch (error) {
-		console.error('Error getting user collection:', error);
+		console.error('Error getting user collection card codes:', error);
 		return { data: null, error };
 	}
 }
 
-// Get collection for a specific card
-export async function getCardInCollection(username: string, cardCode: string) {
+// Get *all instances* for a specific card (might be useful later)
+export async function getCardInstancesInCollection(username: string, cardCode: string) {
 	try {
 		const { data, error } = await supabase
 			.from('collections')
-			.select('*')
+			.select('*') // Select all columns for potential future use
 			.eq('username', username)
-			.eq('card_code', cardCode)
-			.maybeSingle();
+			.eq('card_code', cardCode);
 
 		return { data, error };
 	} catch (error) {
-		console.error('Error getting card in collection:', error);
+		console.error('Error getting card instances in collection:', error);
 		return { data: null, error };
 	}
 }
 
-// Get collection stats (count by rarity, set, total value, etc.)
+// Get collection stats (count by rarity, set, total value, etc. - BASED ON UNIQUE CARDS)
 export async function getCollectionStats(username: string, allCards: Card[], allSets: Set[], prices: Record<string, PriceData>) {
 	try {
 		// Get user's collection
