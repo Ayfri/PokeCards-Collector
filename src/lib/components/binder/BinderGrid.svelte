@@ -99,10 +99,11 @@
 </script>
 
 <div class="w-full h-full p-2">
-	<div class="w-full h-full flex items-center justify-center">
+	<!-- This div handles scrolling -->
+	<div class="h-full overflow-y-auto">
 		<div 
-			class="grid w-full h-full gap-[2px]"
-			style="grid-template-rows: repeat({$rows}, 1fr); grid-template-columns: repeat({$columns}, 1fr);"
+			class="grid gap-[2px] mx-auto max-w-full"
+			style="grid-template-rows: repeat({$rows}, minmax(0, 1fr)); grid-template-columns: repeat({$columns}, minmax(0, 1fr));"
 		>
 			{#each Array($rows * $columns) as _, index}
 				{@const card = index < $binderCards.length ? $binderCards[index] : null}

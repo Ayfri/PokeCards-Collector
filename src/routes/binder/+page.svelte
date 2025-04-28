@@ -261,7 +261,7 @@
 
 <README showHelp={$showHelp} toggleHelp={toggleHelp} />
 
-<div class="flex flex-col p-6 gap-6 min-h-[calc(100vh-64px)]">
+<div class="flex flex-col p-6 gap-6">
 	<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 		<div class="flex items-center gap-3">
 			<PageTitle title="Binder Builder" />
@@ -312,13 +312,13 @@
 	<!-- Binder Grid and Storage -->
 	<div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
 		<div class="lg:col-span-9">
-			<div class="bg-gray-800 rounded-lg h-[calc(100vh-200px)] min-h-[450px] flex items-stretch">
+			<div class="bg-gray-800 rounded-lg h-[calc(100vh-250px)] min-h-[450px] flex items-stretch">
 				<BinderGrid {binderCards} {storedCards} {rows} {columns} />
 			</div>
 		</div>
 		
 		<div class="lg:col-span-3">
-			<div class="overflow-y-auto max-h-[calc(100vh-200px)]">
+			<div class="h-[calc(100vh-250px)] min-h-[450px]">
 				<BinderStorage cards={storedCards} />
 			</div>
 		</div>

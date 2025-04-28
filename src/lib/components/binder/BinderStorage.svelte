@@ -262,7 +262,7 @@
 	}
 </script>
 
-<div class="bg-gray-800 rounded-lg p-4 flex flex-col h-[calc(100%-88px)]">
+<div class="bg-gray-800 rounded-lg p-4 flex flex-col h-full">
 	<div class="flex justify-between items-center mb-1">
 		<h3 class="text-gold-400 text-lg">Storage ({$cards.length})</h3>
 		
@@ -341,7 +341,7 @@
 		{/if}
 	{/if}
 	
-	<div class="overflow-y-auto flex-1 pr-1 -mr-1">
+	<div class="overflow-y-auto flex-1 pr-1 -mr-1 min-h-0">
 		{#if $cards.length === 0}
 			<p class="text-gray-500 text-center py-4 text-sm">
 				No cards in storage. Use the search bar at the top or the "Add set" button to add cards.
