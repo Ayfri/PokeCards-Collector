@@ -28,4 +28,33 @@ PokéStore is a web application built using the SvelteKit framework for the fron
     *   Data can also be fetched client-side within Svelte components (`<script>` blocks) using the Supabase client (`src/lib/supabase.ts`).
 4.  **Rendering:** SvelteKit renders the page, combining fetched data with Svelte components (`.svelte` files).
 5.  **API Interaction:** Client-side interactions (e.g., adding to collection) directly call Supabase functions or potentially custom API endpoints defined in `src/routes/api/`.
-6.  **Authentication:** Supabase handles user sign-up, login, and session management. The Supabase client makes user information available throughout the app. 
+6.  **Authentication:** Supabase handles user sign-up, login, and session management. The Supabase client makes user information available throughout the app.
+
+## Alias Configuration
+
+In addition to the structure described above, the following aliases have been configured in `svelte.config.js` to streamline module imports and improve code readability. These include custom aliases as well as SvelteKit's default aliases:
+
+```js
+alias: {
+  '@components': 'src/lib/components/*',
+  '$helpers': 'src/lib/helpers/*',
+  '$stores': 'src/lib/stores/*',
+  '$scrappers': 'src/scrappers/*',
+  '~': 'src/*',
+},
+```
+
+- **@components:** Access shared components located in `src/lib/components/`.
+- **$helpers:** Import utility functions from `src/lib/helpers/`.
+- **$stores:** Easily import Svelte stores from `src/lib/stores/`.
+- **$scrappers:** Reference data scraping scripts located in `src/scrappers/`.
+- **~:** A global alias to reference any file within `src/`.
+
+Additionally, SvelteKit provides some default aliases:
+
+- **$app**: Provides access to SvelteKit's runtime modules (e.g., navigation, stores, forms, and paths).
+- **$lib**: Points to the `src/lib`.
+- **$env/dynamic/private**: Exposes private environment variables at runtime.
+- **$env/dynamic/public**: Exposes public environment variables at runtime.
+- **$env/static/private**: Exposes private environment variables at build time.
+- **$env/static/public**: Exposes public environment variables at build time. 
