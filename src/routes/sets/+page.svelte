@@ -148,7 +148,7 @@
 			
 			<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 				{#each groupedSets[series] as set}
-					<a href="/?set={encodeURIComponent(set.name)}" class="block h-full">
+					<a href="/cards-list?set={encodeURIComponent(set.name)}" class="block h-full">
 						<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
 							<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
 								{#if set.logo}

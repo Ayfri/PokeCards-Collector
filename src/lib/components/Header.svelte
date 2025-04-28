@@ -6,6 +6,12 @@
 	import SearchBar from '@components/SearchBar.svelte';
 	import SearchModal from '@components/SearchModal.svelte';
 	import pokestore from '~/assets/pokestore.png';
+	// Import icons
+	import HomeIcon from 'lucide-svelte/icons/home';
+	import CardStackIcon from 'lucide-svelte/icons/layers';
+	import LibraryIcon from 'lucide-svelte/icons/library';
+	import ArtistIcon from 'lucide-svelte/icons/paintbrush';
+	import ShuffleIcon from 'lucide-svelte/icons/shuffle';
 
 	// Use allCards from layout data instead of page-specific data
 	$: prices = page.data.prices as Record<string, PriceData> || {};
@@ -15,10 +21,36 @@
 
 <header class="w-full p-2 pb-6 lg:pb-12">
 	<div class="relative py-1.5 xs:py-2.5 lg:py-3 px-4 xs:px-6 lg:px-8 flex items-center justify-between gap-4 rounded-full z-50 bg-gray-800">
-		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/">Cards</a>
-		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/sets">Sets</a>
-		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/artists">Artists</a>
-		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/random">Random Card</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/">
+			{#if !NO_IMAGES}
+			<HomeIcon size={16} />
+			{/if}
+			Home
+		</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/cards-list">
+			{#if !NO_IMAGES}
+			<CardStackIcon size={16} />
+			{/if}
+			Cards
+		</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/sets">
+			{#if !NO_IMAGES}
+			<LibraryIcon size={16} />
+			{/if}
+			Sets
+		</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/artists">
+			{#if !NO_IMAGES}
+			<ArtistIcon size={16} />
+			{/if}
+			Artists
+		</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/random">
+			{#if !NO_IMAGES}
+			<ShuffleIcon size={16} />
+			{/if}
+			Random Card
+		</a>
 		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/binder">Binder</a>
 		<span class="flex-1"></span>
 		<a class="logo-link absolute left-1/2 top-full xs:top-3/4 lg:top-full -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full z-20" href="/">

@@ -1,6 +1,6 @@
 import { getCards, getRarities, getSets, getTypes, getArtists, getPokemons, getPrices } from '$helpers/data';
-import type { FullCard } from '$lib/types'; // Import FullCard type
-import type { PageServerLoad } from './$types'; // Added import for type
+import type { FullCard, Set } from '$lib/types';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	// Get layout data which contains default SEO values
@@ -28,26 +28,42 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	const pokemons = await getPokemons();
 	const sets = await getSets();
-	const rarities = await getRarities();
-	const types = await getTypes();
-	const artists = await getArtists();
 	const prices = await getPrices();
 
-	// Trier les sets par ordre alphabétique
-	sets.sort((a, b) => a.name.localeCompare(b.name));
+	// Get latest set based on release date
+	const latestSet = [...sets].sort((a, b) => {
+		const dateA = new Date(a.releaseDate).getTime();
+		const dateB = new Date(b.releaseDate).getTime();
+		return dateB - dateA;
+	})[0];
 
-	// Define page-specific SEO data (or use layout defaults if not specified)
+	// Filter cards from the latest set
+	const latestSetCards = allCards.filter(card => {
+		// Check if the card belongs to the latest set
+		const cardSetName = card.setName?.toLowerCase();
+		return cardSetName === latestSet.name.toLowerCase();
+	});
+
+	// Get the most expensive cards from the latest set
+	const mostExpensiveCards = [...latestSetCards]
+		.sort((a, b) => {
+			const priceA = prices[a.cardCode]?.simple || prices[a.cardCode]?.trend || 0;
+			const priceB = prices[b.cardCode]?.simple || prices[b.cardCode]?.trend || 0;
+			return priceB - priceA;
+		})
+		.slice(0, 5); // Get top 5 most expensive cards
+
+	// Define page-specific SEO data
 	const pageSeoData = {
-		title: 'PokéStore Home',
+		title: 'PokéStore - Votre référence Pokémon TCG',
+		description: 'Explorez l\'univers des cartes Pokémon. Découvrez le dernier set, consultez les prix des cartes les plus rares et gérez votre collection.'
 	};
 
 	return {
-		...layoutData, // Start with layout data (including its SEO defaults)
-		allCards, // Return the loaded and filtered cards
+		...layoutData,
+		latestSet,
+		mostExpensiveCards,
 		sets,
-		rarities,
-		types,
-		artists,
 		pokemons,
 		prices,
 		stats: {
@@ -57,6 +73,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 			trainerCards: trainerCards.length,
 			energyCards: energyCards.length,
 		},
-		...pageSeoData, // Override with page-specific SEO data
+		...pageSeoData
 	};
 }
