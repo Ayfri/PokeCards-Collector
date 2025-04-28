@@ -3,6 +3,7 @@
 	import { processCardImage } from '$helpers/card-images';
 	import { NO_IMAGES } from '$lib/images';
 	import type { FullCard, Pokemon, PriceData } from '~/lib/types';
+	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 
 	export let allCards: FullCard[];
 	export let pokemons: Pokemon[];
@@ -82,16 +83,6 @@
 		}
 	}
 
-	// Helper function to get a representative card for a Pokemon
-	function getRepresentativeCardForPokemon(pokemonId: number): FullCard | undefined {
-		// Find all cards for this Pokemon
-		const filteredCards = allCards.filter(c => c.pokemonNumber === pokemonId);
-		if (filteredCards.length === 0) return undefined;
-		
-		// Sort by price (highest first) and return the first one
-		return [...filteredCards].sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
-	}
-
 	// Helper function to get the image source for a Pokémon
 	function getPokemonImageSrc(pokemonId: number): string {
 		// Always try the official artwork first
@@ -106,7 +97,7 @@
 {#if uniqueChain.length > 1}
 	<div class="evolution-chain mb-4 flex items-center justify-center gap-4 max-w-full overflow-x-auto px-4 py-2">
 		{#each uniqueChain as pokemon, i}
-			{@const representativeCard = getRepresentativeCardForPokemon(pokemon.id)}
+			{@const representativeCard = getRepresentativeCardForPokemon(pokemon.id, allCards, prices)}
 			<div class="evolution-item flex flex-col items-center">
 				<a
 					href={representativeCard ? `/card/${representativeCard.cardCode}/` : `/card/${pokemon.id}/`}

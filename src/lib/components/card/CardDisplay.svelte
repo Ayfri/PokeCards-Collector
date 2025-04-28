@@ -8,44 +8,20 @@
 	import { pascalCase } from '$helpers/strings';
 	import CardImage from '@components/card/CardImage.svelte';
 	import { onMount } from 'svelte';
-	import { pushState } from '$app/navigation';
+	import { afterNavigate, pushState, replaceState } from '$app/navigation';
 	import { findSetByCardCode } from '$helpers/set-utils';
+	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 
 	// --- Props ---
 	export let allCards: FullCard[];
 	export let pokemons: Pokemon[]; // Full list for lookups (prev/next, evolutions)
 	export let prices: Record<string, PriceData>;
 	export let sets: Set[];
-	export let pokemon: Pokemon | undefined = undefined;
-	export let pokemonCards: FullCard[]; // Expects the primary card to be the first element
-	let previousPokemon: Pokemon | undefined = undefined;
-	let nextPokemon: Pokemon | undefined = undefined;
-	let nextPokemonCard: FullCard | undefined = undefined;
-	let previousPokemonCard: FullCard | undefined = undefined;
+	export let pokemonCards: FullCard[]; // Expects the primary card to be the first element for the *initial* pokemon
 
-	// --- Reactive State ---
-	// The primary card to display is the first one in the sorted list
-	$: card = pokemonCards[0];
-	$: cardPrices = prices[card.cardCode];
-
-	// Safely find the current set
-	$: currentSet = findSetByCardCode(card.cardCode, sets);
-	// Safely determine the card type
-	$: currentType = card?.types?.toLowerCase().split(',')[0] || 'unknown';
-
-	// Find previous/next Pokémon only if the current card is a Pokémon card
-	if (pokemon) {
-		previousPokemon = pokemons.find(p => p.id === pokemon.id - 1);
-		nextPokemon = pokemons.find(p => p.id === pokemon.id + 1);
-
-		console.log(previousPokemon, nextPokemon);
-
-		nextPokemonCard = nextPokemon ? getRepresentativeCardForPokemon(nextPokemon.id) : undefined;
-		previousPokemonCard = previousPokemon ? getRepresentativeCardForPokemon(previousPokemon.id) : undefined;
-
-		console.log(nextPokemonCard, previousPokemonCard);
-	}
-
+	// --- Internal State ---
+	// Initialize directly from the prop. This should update if pokemonCards prop changes.
+	let currentCard: FullCard | undefined = undefined; // Start undefined, set in onMount/afterNavigate
 	// Indicator for when initial loading is complete
 	let isInitialRenderComplete = false;
 	let shouldRenderAllCards = false;
@@ -55,6 +31,26 @@
 	let cursorX = 0;
 	let cursorY = 0;
 	let maxRotate = 25; // Max rotation in degrees
+
+	// --- Reactive Computations ---
+	// Reactive state derived from the currentCard
+	$: cardPrices = currentCard ? prices[currentCard.cardCode] : undefined;
+	$: currentSet = currentCard ? findSetByCardCode(currentCard.cardCode, sets) : undefined;
+	$: currentType = currentCard?.types?.toLowerCase().split(',')[0] || 'unknown';
+	$: currentPokemonId = currentCard?.pokemonNumber;
+
+	// Reactive calculation for current, previous, and next Pokemon and their representative cards
+	$: currentPokemon = currentPokemonId ? pokemons.find(p => p.id === currentPokemonId) : undefined;
+	$: previousPokemon = currentPokemonId ? pokemons.find(p => p.id === currentPokemonId - 1) : undefined;
+	$: nextPokemon = currentPokemonId ? pokemons.find(p => p.id === currentPokemonId + 1) : undefined;
+	$: previousPokemonCard = previousPokemon ? getRepresentativeCardForPokemon(previousPokemon.id, allCards, prices) : undefined;
+	$: nextPokemonCard = nextPokemon ? getRepresentativeCardForPokemon(nextPokemon.id, allCards, prices) : undefined;
+
+	// Reactive calculation for all cards related to the current Pokemon
+	// Ensure sorting logic matches how pokemonCards was initially provided if needed.
+	$: currentPokemonCards = currentPokemonId
+		? allCards.filter(c => c.pokemonNumber === currentPokemonId)
+		: [];
 
 	// --- Functions ---
 	function handlePokemonImageError(event: Event) {
@@ -128,7 +124,7 @@
 
 	// Update the displayed card and URL when a related card is selected
 	function handleCardSelect(selectedCard: FullCard) {
-		card = selectedCard;
+		currentCard = selectedCard; // Update the reactive state
 		pushState(`/card/${selectedCard.cardCode}/`, {});
 		window.scroll({
 			top: 150,
@@ -136,32 +132,29 @@
 		});
 	}
 
-	// Helper function to get a representative card for a Pokemon
-	function getRepresentativeCardForPokemon(pokemonId: number): FullCard | undefined {
-		// Find all cards for this Pokemon
-		const filteredCards = allCards.filter(c => c.pokemonNumber === pokemonId);
-		if (filteredCards.length === 0) return undefined;
-		
-		// Sort by price (highest first) and return the first one
-		return filteredCards.sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
-	}
-
 	// --- Lifecycle ---
 	onMount(() => {
-		// Initialize history state only if it's a Pokemon card and the URL doesn't already match
-		if (pokemon && card?.pokemonNumber && currentSet) {
-			const filenameParts = card.image?.split('/').at(-1)?.split('_') || [];
+		// Set initial card on first mount
+		currentCard = pokemonCards?.[0];
+
+		// Initialize history state based on the *initial* card/pokemon from props
+		const initialCard = pokemonCards?.[0]; // Use the prop directly for initial state
+		const initialSet = initialCard ? findSetByCardCode(initialCard.cardCode, sets) : undefined;
+		const initialPokemon = initialCard?.pokemonNumber ? pokemons.find(p => p.id === initialCard.pokemonNumber) : undefined;
+
+		if (initialPokemon && initialCard?.pokemonNumber && initialSet) {
+			const filenameParts = initialCard.image?.split('/').at(-1)?.split('_') || [];
 			const cardNumberRaw = filenameParts[0] || '';
 			const cardNumberMatch = cardNumberRaw.match(/[a-z]*(\d+)[a-z]*/i);
 			const cardNumber = cardNumberMatch ? cardNumberMatch[1] : undefined;
 
-			if (currentSet.ptcgoCode && cardNumber) {
+			if (initialSet.ptcgoCode && cardNumber) {
 				const initialState = {
-					pokemonId: pokemon.id,
-					setCode: currentSet.ptcgoCode,
+					pokemonId: initialPokemon.id,
+					setCode: initialSet.ptcgoCode,
 					cardNumber: cardNumber
 				};
-				history.replaceState(initialState, '', window.location.href);
+				replaceState(window.location.href, initialState);
 			}
 		}
 
@@ -172,6 +165,19 @@
 		setTimeout(() => {
 			shouldRenderAllCards = true;
 		}, 100);
+
+	});
+
+	afterNavigate((navigation) => {
+		// When navigating between card pages (component reused),
+		// check if the primary pokemon context changed.
+		const newPrimaryCard = pokemonCards?.[0];
+		if (newPrimaryCard && currentCard && newPrimaryCard.pokemonNumber !== currentCard.pokemonNumber) {
+			console.log('afterNavigate: Pokemon context changed, resetting currentCard');
+			currentCard = newPrimaryCard;
+			// Optionally scroll to top if needed after navigation
+			window.scroll({ top: 0, behavior: 'smooth' });
+		}
 	});
 </script>
 
@@ -179,15 +185,15 @@
 
 <div class="flex flex-col gap-1 lg:gap-8 content-center">
 	<!-- Evolution Chain Component (Only for Pokemon) -->
-	{#if pokemon && isInitialRenderComplete}
-		<EvolutionChain {card} {pokemons} {allCards} pokemonCards={pokemonCards} {prices} />
+	{#if currentPokemon && isInitialRenderComplete}
+		<EvolutionChain card={currentCard} {pokemons} {allCards} pokemonCards={currentPokemonCards} {prices} />
 	{/if}
 
 	<!-- Pokédex number indicator (Only for Pokemon) -->
-	{#if pokemon && card?.pokemonNumber}
+	{#if currentPokemon && currentCard?.pokemonNumber}
 		<div class="pokedex-number-display text-center mb-2">
 			<div class="pokedex-number text-gold-400 bg-black/60 font-bold px-3 py-1 rounded-md inline-block z-10">
-				#{card.pokemonNumber}
+				#{currentCard.pokemonNumber}
 			</div>
 		</div>
 	{/if}
@@ -198,19 +204,19 @@
 		<!-- Center Card -->
 		<div class="center-card-wrapper relative flex-shrink-0 order-1 lg:order-2">
 			<!-- Conditional Aura for Pokemon Types -->
-			{#if pokemon && !NO_IMAGES}
+			{#if currentPokemon && !NO_IMAGES}
 				<div class="card-aura {currentType}" id="card-aura"></div>
 			{/if}
 			<div
-				class="w-[21rem] h-[29rem] sm:w-[20rem] sm:h-[28rem] lg:w-[23rem] lg:h-[32rem] max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {pokemon ? '' : 'non-pokemon'}"
+				class="w-[21rem] h-[29rem] sm:w-[20rem] sm:h-[28rem] lg:w-[23rem] lg:h-[32rem] max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {currentPokemon ? '' : 'non-pokemon'}"
 				bind:this={centerCard}
 				data-card-id={currentSet?.name}
 				data-card-type={currentType}
 			>
-				{#key card?.image} <!-- Use key for smooth transitions -->
+				{#key currentCard?.image}
 					<CardImage
-						alt={pokemon ? pokemon.name : card?.name || 'Card image'}
-						imageUrl={card?.image}
+						alt={currentPokemon ? currentPokemon.name : currentCard?.name || 'Card image'}
+						imageUrl={currentCard?.image}
 						highRes={true}
 						height={544}
 						width={384}
@@ -224,10 +230,9 @@
 		<!-- Mobile Navigation Wrapper -->
 		<div class="mobile-nav-wrapper w-full flex justify-between items-center mt-4 lg:hidden order-2">
 			<!-- Previous Pokemon (Mobile) -->
-			{#if pokemon && previousPokemon}
-				{@const prevCard = getRepresentativeCardForPokemon(previousPokemon.id)}
-				<a 
-					href={prevCard ? `/card/${prevCard.cardCode}/` : `/card/${previousPokemon.id}/`} 
+			{#if previousPokemon && previousPokemonCard}
+				<a
+					href={`/card/${previousPokemonCard.cardCode}/`}
 					class="prev-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
 				>
 					{#if !NO_IMAGES}
@@ -248,14 +253,13 @@
 					<span class="nav-pokemon-id text-xs text-gray-400">#{previousPokemon.id}</span>
 				</a>
 			{:else}
-				<div class="w-16"></div> <!-- Placeholder for alignment -->
+				<div class="w-16"></div>
 			{/if}
 
 			<!-- Next Pokemon (Mobile) -->
-			{#if pokemon && nextPokemon}
-				{@const nextCard = getRepresentativeCardForPokemon(nextPokemon.id)}
-				<a 
-					href={nextCard ? `/card/${nextCard.cardCode}/` : `/card/${nextPokemon.id}/`} 
+			{#if nextPokemon && nextPokemonCard}
+				<a
+					href={`/card/${nextPokemonCard.cardCode}/`}
 					class="next-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
 				>
 					{#if !NO_IMAGES}
@@ -276,15 +280,15 @@
 					<span class="nav-pokemon-id text-xs text-gray-400">#{nextPokemon.id}</span>
 				</a>
 			{:else}
-				<div class="w-16"></div> <!-- Placeholder for alignment -->
+				<div class="w-16"></div>
 			{/if}
 		</div>
 
 		<!-- Desktop Navigation -->
 		<!-- Previous Pokemon (Desktop) -->
-		{#if pokemon && previousPokemon && previousPokemonCard}
-			<a 
-				href={`/card/${previousPokemonCard.cardCode}/`} 
+		{#if previousPokemon && previousPokemonCard}
+			<a
+				href={`/card/${previousPokemonCard.cardCode}/`}
 				class="prev-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-1"
 			>
 				{#if !NO_IMAGES}
@@ -309,9 +313,9 @@
 		{/if}
 
 		<!-- Next Pokemon (Desktop) -->
-		{#if pokemon && nextPokemon && nextPokemonCard}
-			<a 
-				href={`/card/${nextPokemonCard.cardCode}/`} 
+		{#if nextPokemon && nextPokemonCard}
+			<a
+				href={`/card/${nextPokemonCard.cardCode}/`}
 				class="next-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-3"
 			>
 				{#if !NO_IMAGES}
@@ -337,18 +341,18 @@
 	</div>
 
 	<!-- Card Information Component -->
-	{#if card && currentSet}
-		<CardInfo {card} set={currentSet} {cardPrices} {pokemon} />
+	{#if currentCard && currentSet}
+		<CardInfo card={currentCard} set={currentSet} {cardPrices} pokemon={currentPokemon} />
 	{/if}
 
 	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
-	{#if pokemonCards.length > 1 && shouldRenderAllCards}
-		<RelatedCards cards={pokemonCards} {pokemons} {sets} {prices} {pokemon} onCardSelect={handleCardSelect} />
+	{#if currentPokemonCards.length > 1 && shouldRenderAllCards}
+		<RelatedCards cards={currentPokemonCards} {pokemons} {sets} {prices} pokemon={currentPokemon} onCardSelect={handleCardSelect} />
 	{/if}
 </div>
 
 <!-- Background Filter (Conditional on Pokemon Type?) -->
-{#if pokemon && !NO_IMAGES}
+{#if currentPokemon && !NO_IMAGES}
 	<div class="filter {currentType}" id="filter" transition:fade></div>
 {/if}
 
@@ -432,58 +436,7 @@
 		}
 	}
 
-	@media (max-width: 1023px) { /* Adjusted breakpoint slightly */
-		/* Styles moved to Tailwind classes */
-		/* .card-navigation-container {
-			flex-direction: column;
-			align-items: center;
-			padding: 0;
-			gap: 1rem;
-		} */
-
-		/* Updated styles for mobile navigation */
-		/* .prev-pokemon-nav, .next-pokemon-nav {
-			width: 8rem;
-			opacity: 1;
-			margin-top: 1rem;
-		} */
-
-		/* .prev-pokemon-nav {
-			order: 1;
-		} */
-
-		/* .center-card-wrapper {
-			order: 2;
-			margin: 0;
-			width: 100%;
-			display: flex;
-			justify-content: center;
-			margin-top: 1rem;
-		} */
-
-		/* .next-pokemon-nav {
-			order: 3;
-		} */
-
-		/* .prev-pokemon-placeholder, .next-pokemon-placeholder {
-			display: none;
-		} */
-
-		/* .nav-pokemon-image {
-			width: 4rem;
-			height: 4rem;
-		} */
-
-		/* .nav-pokemon-name, .nav-pokemon-id {
-			display: block;
-		} */
-
-		/* Moved card size adjustments to Tailwind */
-		/* .interactive-card {
-			width: 18rem;
-			height: 25rem;
-		} */
-
+	@media (max-width: 1023px) {
 		.card-aura {
 			filter: blur(20px);
 			opacity: 0.5;
@@ -491,17 +444,9 @@
 	}
 
 	@media (max-width: 640px) {
-		/* Moved card size adjustments to Tailwind */
-		/* .interactive-card {
-			width: 15rem;
-			height: 21rem;
-		} */
-
 		.card-aura {
 			filter: blur(15px);
 			opacity: 0.4;
 		}
-
-		/* Further mobile adjustments if needed */
 	}
 </style>

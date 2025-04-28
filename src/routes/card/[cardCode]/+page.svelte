@@ -18,7 +18,7 @@
 		{#if !pokemonCards || pokemonCards.length === 0}
 			<p class="text-center text-lg">Chargement en cours...</p>
 		{:else}
-			<CardDisplay allCards={allCards} pokemonCards={pokemonCards} {pokemons} {sets} {prices} pokemon={pokemon} />
+			<CardDisplay allCards={allCards} pokemonCards={pokemonCards} {pokemons} {sets} {prices} />
 		{/if}
 	</div>
 </main> 

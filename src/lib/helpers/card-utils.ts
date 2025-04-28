@@ -1,3 +1,5 @@
+import type { FullCard, PriceData } from '$lib/types';
+
 /**
  * Utilities for card manipulation and identification
  */
@@ -66,4 +68,19 @@ export function parseCardCodeFromImage(imageUrl: string): { setCode?: string, ca
 	}
 
 	return { setCode, cardNumber };
+}
+
+/**
+ * Helper function to get a representative card for a Pokemon
+ * @param pokemonId The ID of the Pokemon
+ * @param allCards Array of all cards to search within
+ * @param prices Record of card prices to determine the most valuable card
+ */
+export function getRepresentativeCardForPokemon(pokemonId: number, allCards: FullCard[], prices: Record<string, PriceData>): FullCard | undefined {
+	// Find all cards for this Pokemon
+	const filteredCards = allCards.filter(c => c.pokemonNumber === pokemonId);
+	if (filteredCards.length === 0) return undefined;
+
+	// Sort by price (highest first) and return the first one
+	return [...filteredCards].sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
 }
