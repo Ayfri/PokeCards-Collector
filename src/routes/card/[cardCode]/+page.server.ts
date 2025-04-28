@@ -100,10 +100,11 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	};
 
 	const pageData = {
-		cards: relevantCards,
+		allCards: allCards,
 		sets: allSets,
 		pokemons: allPokemons,
 		pokemon: associatedPokemon,
+		pokemonCards: relevantCards,
 		prices: allPrices,
 		title: pageTitle,
 		description: pageDescription,

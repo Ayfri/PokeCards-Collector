@@ -12,15 +12,20 @@
 	import { findSetByCardCode } from '$helpers/set-utils';
 
 	// --- Props ---
-	export let cards: FullCard[]; // Expects the primary card to be the first element
+	export let allCards: FullCard[];
 	export let pokemons: Pokemon[]; // Full list for lookups (prev/next, evolutions)
 	export let prices: Record<string, PriceData>;
 	export let sets: Set[];
-	export let pokemon: Pokemon | undefined = undefined; // Make Pokemon optional
+	export let pokemon: Pokemon | undefined = undefined;
+	export let pokemonCards: FullCard[]; // Expects the primary card to be the first element
+	let previousPokemon: Pokemon | undefined = undefined;
+	let nextPokemon: Pokemon | undefined = undefined;
+	let nextPokemonCard: FullCard | undefined = undefined;
+	let previousPokemonCard: FullCard | undefined = undefined;
 
 	// --- Reactive State ---
 	// The primary card to display is the first one in the sorted list
-	$: card = cards[0];
+	$: card = pokemonCards[0];
 	$: cardPrices = prices[card.cardCode];
 
 	// Safely find the current set
@@ -29,8 +34,17 @@
 	$: currentType = card?.types?.toLowerCase().split(',')[0] || 'unknown';
 
 	// Find previous/next Pokémon only if the current card is a Pokémon card
-	$: previousPokemon = pokemon ? pokemons.find(p => p.id === pokemon!!.id - 1) : undefined;
-	$: nextPokemon = pokemon ? pokemons.find(p => p.id === pokemon!!.id + 1) : undefined;
+	if (pokemon) {
+		previousPokemon = pokemons.find(p => p.id === pokemon.id - 1);
+		nextPokemon = pokemons.find(p => p.id === pokemon.id + 1);
+
+		console.log(previousPokemon, nextPokemon);
+
+		nextPokemonCard = nextPokemon ? getRepresentativeCardForPokemon(nextPokemon.id) : undefined;
+		previousPokemonCard = previousPokemon ? getRepresentativeCardForPokemon(previousPokemon.id) : undefined;
+
+		console.log(nextPokemonCard, previousPokemonCard);
+	}
 
 	// Indicator for when initial loading is complete
 	let isInitialRenderComplete = false;
@@ -125,11 +139,11 @@
 	// Helper function to get a representative card for a Pokemon
 	function getRepresentativeCardForPokemon(pokemonId: number): FullCard | undefined {
 		// Find all cards for this Pokemon
-		const pokemonCards = cards.filter(c => c.pokemonNumber === pokemonId);
-		if (pokemonCards.length === 0) return undefined;
+		const filteredCards = allCards.filter(c => c.pokemonNumber === pokemonId);
+		if (filteredCards.length === 0) return undefined;
 		
 		// Sort by price (highest first) and return the first one
-		return [...pokemonCards].sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
+		return filteredCards.sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
 	}
 
 	// --- Lifecycle ---
@@ -166,7 +180,7 @@
 <div class="flex flex-col gap-1 lg:gap-8 content-center">
 	<!-- Evolution Chain Component (Only for Pokemon) -->
 	{#if pokemon && isInitialRenderComplete}
-		<EvolutionChain {card} {pokemons} {cards} {prices} />
+		<EvolutionChain {card} {pokemons} {allCards} pokemonCards={pokemonCards} {prices} />
 	{/if}
 
 	<!-- Pokédex number indicator (Only for Pokemon) -->
@@ -268,10 +282,9 @@
 
 		<!-- Desktop Navigation -->
 		<!-- Previous Pokemon (Desktop) -->
-		{#if pokemon && previousPokemon}
-			{@const prevCard = getRepresentativeCardForPokemon(previousPokemon.id)}
+		{#if pokemon && previousPokemon && previousPokemonCard}
 			<a 
-				href={prevCard ? `/card/${prevCard.cardCode}/` : `/card/${previousPokemon.id}/`} 
+				href={`/card/${previousPokemonCard.cardCode}/`} 
 				class="prev-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-1"
 			>
 				{#if !NO_IMAGES}
@@ -296,10 +309,9 @@
 		{/if}
 
 		<!-- Next Pokemon (Desktop) -->
-		{#if pokemon && nextPokemon}
-			{@const nextCard = getRepresentativeCardForPokemon(nextPokemon.id)}
+		{#if pokemon && nextPokemon && nextPokemonCard}
 			<a 
-				href={nextCard ? `/card/${nextCard.cardCode}/` : `/card/${nextPokemon.id}/`} 
+				href={`/card/${nextPokemonCard.cardCode}/`} 
 				class="next-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-3"
 			>
 				{#if !NO_IMAGES}
@@ -330,8 +342,8 @@
 	{/if}
 
 	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
-	{#if cards.length > 1 && shouldRenderAllCards}
-		<RelatedCards {cards} {pokemons} {sets} {prices} {pokemon} onCardSelect={handleCardSelect} />
+	{#if pokemonCards.length > 1 && shouldRenderAllCards}
+		<RelatedCards cards={pokemonCards} {pokemons} {sets} {prices} {pokemon} onCardSelect={handleCardSelect} />
 	{/if}
 </div>
 

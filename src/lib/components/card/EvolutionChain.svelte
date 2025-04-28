@@ -4,8 +4,9 @@
 	import { NO_IMAGES } from '$lib/images';
 	import type { FullCard, Pokemon, PriceData } from '~/lib/types';
 
-	export let cards: FullCard[];
+	export let allCards: FullCard[];
 	export let pokemons: Pokemon[];
+	export let pokemonCards: FullCard[];
 	export let prices: Record<string, PriceData>;
 	export let card: FullCard;
 
@@ -65,7 +66,7 @@
 	// Handle error for Pokemon evolution image
 	function handlePokemonImageError(event: Event, pokemonId: number) {
 		const img = event.currentTarget as HTMLImageElement;
-		const pokemonCard = cards.find(c => c.pokemonNumber === pokemonId);
+		const pokemonCard = pokemonCards.find(c => c.pokemonNumber === pokemonId);
 		if (pokemonCard) {
 			img.src = processCardImage(pokemonCard.image);
 		} else {
@@ -84,11 +85,11 @@
 	// Helper function to get a representative card for a Pokemon
 	function getRepresentativeCardForPokemon(pokemonId: number): FullCard | undefined {
 		// Find all cards for this Pokemon
-		const pokemonCards = cards.filter(c => c.pokemonNumber === pokemonId);
-		if (pokemonCards.length === 0) return undefined;
+		const filteredCards = allCards.filter(c => c.pokemonNumber === pokemonId);
+		if (filteredCards.length === 0) return undefined;
 		
 		// Sort by price (highest first) and return the first one
-		return [...pokemonCards].sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
+		return [...filteredCards].sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
 	}
 
 	// Helper function to get the image source for a Pokémon
