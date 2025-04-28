@@ -27,6 +27,8 @@
 	let showResults = false;
 	let isBinderPage = false;
 	let addedCards = new Set<string>(); // Pour stocker les IDs des cartes ajoutées
+	let platformModifierKey = ''; // Will be 'Ctrl' or 'Cmd'
+	let inputFocused = false; // Track input focus state
 
 	// Check if we're on the Binder page
 	$: isBinderPage = $page.url.pathname === '/binder';
@@ -194,6 +196,7 @@
 			performSearch();
 			showResults = true;
 		}
+		inputFocused = true; // Set focus state
 	};
 
 	const handleKeydown = (event: KeyboardEvent) => {
@@ -216,8 +219,9 @@
 	// --- Lifecycle ---
 	onMount(() => {
 		if (browser) {
+			platformModifierKey = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'Cmd' : 'Ctrl';
 			document.addEventListener('click', handleClickOutside);
-			document.addEventListener('keydown', handleKeydown);
+			document.addEventListener('keydown', handleGlobalKeydown); // Use the new global handler
 
 			if (autoFocus && inputElement) {
 				setTimeout(() => {
@@ -230,9 +234,27 @@
 	onDestroy(() => {
 		if (browser) {
 			document.removeEventListener('click', handleClickOutside);
-			document.removeEventListener('keydown', handleKeydown);
+			document.removeEventListener('keydown', handleGlobalKeydown); // Clean up global handler
 		}
 	});
+
+	// Global keydown handler for Ctrl+K
+	const handleGlobalKeydown = (event: KeyboardEvent) => {
+		// Handle Escape key for closing results/modal
+		if (event.key === 'Escape') {
+			if (mobileMode && onToggleModal) {
+				onToggleModal();
+			} else {
+				showResults = false;
+			}
+		}
+
+		// Handle Ctrl+K / Cmd+K for focusing search
+		if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+			event.preventDefault(); // Prevent browser's default Ctrl+K action
+			inputElement?.focus();
+		}
+	};
 
 	// --- Reactive Statements ---
 	// Trigger search only when query changes (and is not undefined/null)
@@ -255,8 +277,9 @@
 		<input
 			bind:this={inputElement}
 			bind:value={searchQuery}
-			class="bg-black text-white px-4 py-2 rounded-full w-full outline-none focus:ring-2 focus:ring-gold-400 pl-10 pr-10"
+			class="bg-black text-white px-4 py-2 rounded-full w-full outline-none focus:ring-2 focus:ring-gold-400 pl-10 pr-10 {mobileMode ? '' : 'pr-24'}"
 			on:focus={handleInputFocus}
+			on:blur={() => inputFocused = false}
 			placeholder="Search cards..."
 			type="text"
 		/>
@@ -268,6 +291,12 @@
 			>
 				<X />
 			</button>
+		{:else if !inputFocused && platformModifierKey && !mobileMode}
+			<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 text-xs text-gray-500 pointer-events-none">
+				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded">{platformModifierKey === 'Cmd' ? '⌘' : 'Ctrl'}</kbd>
+				<span class="text-base">+</span>
+				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded">K</kbd>
+			</div>
 		{/if}
 	</div>
 
