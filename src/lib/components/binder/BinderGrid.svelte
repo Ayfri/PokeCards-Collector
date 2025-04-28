@@ -108,7 +108,7 @@
 				{@const card = index < $binderCards.length ? $binderCards[index] : null}
 				
 				<div 
-					class="relative aspect-[2.5/3.5] justify-self-center w-full"
+					class="relative aspect-[2.5/3.7] justify-self-center w-full"
 					on:dragover={onDragOver}
 					on:dragleave={onDragLeave}
 					on:drop={(e) => onDrop(e, index)}
@@ -123,7 +123,7 @@
 								<CardImage
 									imageUrl={card.url}
 									alt="Pokémon card" 
-									class="card-image {NO_IMAGES ? 'border border-gold-400' : ''}"
+									class="card-image {NO_IMAGES ? 'ring-1 ring-gold-400 ring-inset' : ''}"
 									lazy={true}
 									highRes={false}
 								/>
