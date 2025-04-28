@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { type Writable } from 'svelte/store';
-	
+	import CardImage from '@components/card/CardImage.svelte';
+	import { NO_IMAGES } from '~/lib/images';
 	export let binderCards: Writable<Array<{id: string; url: string; position: number} | null>>;
 	export let storedCards: Writable<Array<{id: string; url: string}>>;
 	export let rows: Writable<number>;
@@ -100,8 +101,6 @@
 	<div class="grid-wrapper">
 		<div class="binder-grid" style="grid-template-rows: repeat({$rows}, 1fr); grid-template-columns: repeat({$columns}, 1fr);">
 			{#each Array($rows * $columns) as _, index}
-				{@const rowIndex = Math.floor(index / $columns)}
-				{@const colIndex = index % $columns}
 				{@const card = index < $binderCards.length ? $binderCards[index] : null}
 				
 				<div 
@@ -117,11 +116,12 @@
 								draggable="true"
 								on:dragstart={(e) => onDragStart(e, card)}
 							>
-								<img 
-									src={card.url} 
+								<CardImage
+									imageUrl={card.url}
 									alt="Pokémon card" 
-									class="card-image"
-									loading="lazy"
+									class="card-image {NO_IMAGES ? 'border border-gold-400' : ''}"
+									lazy={true}
+									highRes={false}
 								/>
 								<button 
 									class="remove-btn"

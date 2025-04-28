@@ -7,6 +7,7 @@
 	import ArrowUpDownIcon from 'lucide-svelte/icons/arrow-up-down';
 	import FilterIcon from 'lucide-svelte/icons/filter';
 	import XIcon from 'lucide-svelte/icons/x';
+	import CardImage from '@components/card/CardImage.svelte';
 	
 	export let cards: Writable<Array<{id: string; url: string}>>;
 	
@@ -357,11 +358,12 @@
 						draggable="true"
 						on:dragstart={(e) => onDragStart(e, card)}
 					>
-						<img 
-							src={card.url} 
+						<CardImage
+							imageUrl={card.url}
 							alt="Pokémon card" 
 							class="w-full h-full object-contain p-1"
-							loading="lazy"
+							lazy={true}
+							highRes={false}
 						/>
 						<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-xs text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity truncate text-center">
 							<div class="font-semibold">{getCardIdentifier(card)}</div>
