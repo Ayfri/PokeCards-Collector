@@ -35,7 +35,7 @@
 	import { parseCardCode } from "$helpers/card-utils";
 	import Loader from "$lib/components/Loader.svelte";
 	import { cardSize, getCardDimensions } from "$lib/stores/gridStore";
-	import Grid2x2Icon from "lucide-svelte/icons/grid-2x2";
+	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
 
 	export let cards: FullCard[];
 	export let sets: Set[];
@@ -55,7 +55,6 @@
 
 	// Référence vers le composant VirtualGrid
 	let virtualGridComponent: VirtualGrid;
-	let isSliderChanging = false;
 
 	onMount(() => {
 		searchName = $filterName;
@@ -303,27 +302,6 @@
 			showFilters = false;
 		}
 	}
-
-	// Force une mise à jour complète lorsque le slider change, avec debounce
-	function handleSizeChange() {
-		// Indiquer que le slider est en train de changer
-		isSliderChanging = true;
-		
-		// Annuler le timeout précédent s'il existe
-		if (debounceTimeout) {
-			clearTimeout(debounceTimeout);
-		}
-		
-		// Définir un nouveau timeout pour limiter les mises à jour
-		debounceTimeout = window.setTimeout(() => {
-			isSliderChanging = false;
-			
-			// Appliquer le changement une fois le slider stabilisé
-			if (virtualGridComponent) {
-				virtualGridComponent.reinitializeGrid();
-			}
-		}, 150); // Attendre 150ms après le dernier mouvement
-	}
 </script>
 
 <svelte:window bind:innerWidth={clientWidth} on:keydown={handleKeydown} />
@@ -388,30 +366,10 @@
 				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
 			</span>
 			<!-- Grid Size Slider -->
-			<div
-				class="grid-size-slider flex items-center gap-3 mr-3 px-1 ml-1"
-			>
-				<div class="slider-container relative w-24">
-					<input
-						type="range"
-						min="1"
-						max="3"
-						step="1"
-						bind:value={$cardSize}
-						on:input={handleSizeChange}
-						class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
-						aria-label="Adjust card size"
-					/>
-					{#if isSliderChanging}
-						<div class="absolute -right-6 top-0">
-							<div class="animate-spin h-4 w-4 border-2 border-gold-400 rounded-full border-t-transparent"></div>
-						</div>
-					{/if}
-				</div>
-				<div class="text-white/80 flex items-center">
-					<Grid2x2Icon size={18} />
-				</div>
+			<div class="mr-3 ml-1">
+				<SizeSlider />
 			</div>
+
 			<!-- Name Search (Should be always visible) -->
 			<div class="w-48">
 				<TextInput
@@ -491,47 +449,5 @@
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
-	}
-
-	/* Slider custom styles */
-	input[type="range"] {
-		-webkit-appearance: none;
-		appearance: none;
-		height: 6px;
-		background: #374151;
-		border-radius: 999px;
-		overflow: hidden;
-	}
-
-	input[type="range"]::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		width: 14px;
-		height: 14px;
-		border-radius: 50%;
-		background: #ffb700;
-		cursor: pointer;
-		border: 2px solid #1f2937;
-		box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
-	}
-
-	input[type="range"]::-moz-range-thumb {
-		width: 14px;
-		height: 14px;
-		border-radius: 50%;
-		background: #ffb700;
-		cursor: pointer;
-		border: 2px solid #1f2937;
-		box-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
-	}
-
-	/* Progress fill */
-	input[type="range"]::-webkit-slider-runnable-track {
-		height: 6px;
-		border-radius: 999px;
-	}
-
-	input[type="range"]::-moz-range-track {
-		height: 6px;
-		border-radius: 999px;
 	}
 </style>
