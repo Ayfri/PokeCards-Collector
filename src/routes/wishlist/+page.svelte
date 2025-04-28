@@ -114,7 +114,7 @@
   });
 </script>
 
-<div class="px-10 flex flex-col flex-grow">
+<div class="flex flex-col flex-grow">
   {#if statusMessage && (statusMessage.includes('not found') || statusMessage.includes('private'))}
     <div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
       <p

@@ -134,7 +134,7 @@
 	});
 </script>
 
-<div class="px-10 flex flex-col flex-grow">
+<div class="flex flex-col flex-grow">
 	{#if profileNotFound || profileIsPrivate}
 		<div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
 			<p class="font-bold mb-4 {statusMessage?.includes('not found') ? 'text-4xl' : 'text-3xl'}">
