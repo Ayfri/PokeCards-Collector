@@ -33,7 +33,7 @@
 	let viewportHeight: number = 800; // Default height, updated on mount
 
 	// Reactive statement: Recalculate layout when props or container width change after init
-	$: if (isInitialized && (itemWidth || itemHeight || gapX || gapY || forcedItemsPerRow || clientWidth || $filterStates)) {
+	$: if (isInitialized && (itemWidth || itemHeight || gapX || gapY || forcedItemsPerRow || clientWidth)) {
 		recalculateLayout();
 	}
 
@@ -52,7 +52,7 @@
 	});
 
 	// Recalculates grid layout parameters and updates visible items
-	function recalculateLayout() {
+	export function recalculateLayout() {
 		if (!isInitialized || !container) return;
 
 		// Ensure clientWidth is current (important after resize)

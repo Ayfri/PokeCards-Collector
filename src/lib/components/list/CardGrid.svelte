@@ -335,7 +335,7 @@
 			</button>
 		</div>
 		<div class="flex-1 overflow-y-auto p-6 pointer-events-auto">
-			<Filters {rarities} {sets} {types} {artists} />
+			<Filters {rarities} {sets} {types} {artists} onUpdate={() => virtualGridComponent.recalculateLayout()} />
 		</div>
 	</div>
 {/if}

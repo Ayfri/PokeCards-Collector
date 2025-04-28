@@ -1,22 +1,19 @@
 <script lang="ts">
 	import { filterArtist, filterNumero, filterRarity, filterSet, filterSupertype, filterType, mostExpensiveOnly, sortBy, sortOrder } from '$helpers/filters';
 	import type { Set } from '$lib/types';
-	import { onMount } from 'svelte';
+	import { afterUpdate, onMount } from 'svelte';
 	import { filterStates } from '$stores/filterStates';
-
-	import Button from '$lib/components/filters/Button.svelte';
-	import Section from '$lib/components/filters/Section.svelte';
-	import Select from '$lib/components/filters/Select.svelte';
-	import SortControl from '$lib/components/filters/SortControl.svelte';
-	import TextInput from '$lib/components/filters/TextInput.svelte';
-
-	// Log the initial store value when the script runs
-	console.log('[Filters.svelte] Initial $sortBy:', $sortBy);
+	import Button from '@components/filters/Button.svelte';
+	import Section from '@components/filters/Section.svelte';
+	import Select from '@components/filters/Select.svelte';
+	import SortControl from '@components/filters/SortControl.svelte';
+	import TextInput from '@components/filters/TextInput.svelte';
 
 	export let artists: string[] = [];
 	export let rarities: string[];
 	export let sets: Set[];
 	export let types: string[];
+	export let onUpdate: () => void = () => {};
 
 	// Inputs text variables
 	let debounceTimeout: number;
@@ -26,6 +23,8 @@
 	onMount(() => {
 		searchNumero = $filterNumero;
 	});
+
+	afterUpdate(onUpdate);
 
 	// Debounce functions
 	function debounce(fn: Function, delay: number) {
