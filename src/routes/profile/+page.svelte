@@ -373,10 +373,14 @@
 					<!-- Collection Overview Card -->
 					<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
 						<h3 class="text-lg font-semibold mb-4 text-gold-400">Overview</h3>
-						<div class="space-y-4">
+						<div class="space-y-3">
+							<div class="flex justify-between">
+								<span class="text-gray-500 dark:text-gray-400">Unique Cards:</span>
+								<span class="font-medium dark:text-white">{collectionStats.unique_cards}/{allCards.length}</span>
+							</div>
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Total Cards:</span>
-								<span class="font-medium dark:text-white">{collectionStats.total_cards}/{allCards.length}</span>
+								<span class="font-medium dark:text-white">{collectionStats.total_instances}</span>
 							</div>
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Wishlist Cards:</span>

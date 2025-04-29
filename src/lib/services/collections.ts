@@ -151,19 +151,22 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 		const collectionCardCodes = new Set(collection.map(item => item.card_code));
 		
 		// Calculate basic stats
-		const totalCards = collection.length;
+		const uniqueCards = collectionCardCodes.size; // Unique card count
+		const totalInstances = collection.length; // Total instances including duplicates
 		
-		// Calculate total value
+		// Calculate total value based on ALL instances
 		let totalValue = 0;
-		const cardsInCollection = allCards.filter(card => collectionCardCodes.has(card.cardCode));
-		cardsInCollection.forEach(card => {
-			const cardPrice = prices[card.cardCode];
+		collection.forEach(item => { // Iterate over the original collection array (with duplicates)
+			const cardPrice = prices[item.card_code];
 			if (cardPrice && cardPrice.simple) {
 				totalValue += cardPrice.simple;
 			}
 		});
 		
-		// Calculate cards by rarity
+		// Filter unique cards for rarity and set calculations (keep this)
+		const cardsInCollection = allCards.filter(card => collectionCardCodes.has(card.cardCode));
+
+		// Calculate cards by rarity (based on unique cards)
 		const cardsByRarity: Record<string, number> = {};
 		cardsInCollection.forEach(card => {
 			cardsByRarity[card.rarity] ??= 0;
@@ -219,7 +222,8 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 		
 		return {
 			data: {
-				total_cards: totalCards,
+				unique_cards: uniqueCards, // Renamed from total_cards
+				total_instances: totalInstances, // Added total count
 				total_value: Math.round(totalValue * 100) / 100,
 				cards_by_rarity: cardsByRarity,
 				set_completion: setStats,

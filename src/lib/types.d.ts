@@ -86,10 +86,20 @@ export interface UserWishlist {
 }
 
 export interface CollectionStats {
-	total_cards: number;
-	total_value: number;
 	cards_by_rarity: Record<string, number>;
-	set_completion: Record<string, { count: number; total: number; percentage: number }>;
+	set_completion: Record<
+		string,
+		{
+			collectedValue: number;
+			count: number;
+			percentage: number;
+			total: number;
+			totalValue: number;
+		}
+	>;
+	total_instances: number;
+	total_value: number;
+	unique_cards: number;
 	wishlist_count: number;
 }
 
