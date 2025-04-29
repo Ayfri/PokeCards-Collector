@@ -13,6 +13,7 @@
 	import LayersIcon from 'lucide-svelte/icons/layers';
 	import LinkIcon from 'lucide-svelte/icons/link';
 	import MaximizeIcon from 'lucide-svelte/icons/maximize';
+	import DownloadIcon from 'lucide-svelte/icons/download';
 	import type { PageData } from './$types';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import TextArea from '@components/filters/TextArea.svelte';
@@ -258,6 +259,83 @@
 		// Close the modal
 		toggleUrlModal();
 	}
+
+	// Function to generate binder image
+	async function generateBinderImage() {
+		if (!browser) return;
+
+		const cardWidth = 150; // Width of each card image in pixels
+		const cardHeight = 210; // Approximate height based on aspect ratio
+		const padding = 10; // Padding around cards
+
+		const canvasWidth = $columns * (cardWidth + padding) + padding;
+		const canvasHeight = $rows * (cardHeight + padding) + padding;
+
+		const canvas = document.createElement('canvas');
+		canvas.width = canvasWidth;
+		canvas.height = canvasHeight;
+		const ctx = canvas.getContext('2d');
+
+		if (!ctx) {
+			console.error('Could not get canvas context');
+			// Optionally show an error message to the user
+			alert('Could not generate image: Canvas context unavailable.');
+			return;
+		}
+
+		// Set background color (optional)
+		ctx.fillStyle = '#1f2937'; // bg-gray-800
+		ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+		const imageLoadPromises = $binderCards.map((card, index) => {
+			if (!card || !card.url) return Promise.resolve(); // Skip empty slots
+
+			return new Promise<void>((resolve, reject) => {
+				const img = new Image();
+				img.crossOrigin = 'Anonymous'; // Attempt to avoid CORS issues if images are hosted elsewhere
+				img.onload = () => {
+					const col = index % $columns;
+					const row = Math.floor(index / $columns);
+					const x = padding + col * (cardWidth + padding);
+					const y = padding + row * (cardHeight + padding);
+					ctx.drawImage(img, x, y, cardWidth, cardHeight);
+					resolve();
+				};
+				img.onerror = (error) => {
+					console.error(`Error loading image ${card.url}:`, error);
+					// Draw a placeholder for failed images (optional)
+					const col = index % $columns;
+					const row = Math.floor(index / $columns);
+					const x = padding + col * (cardWidth + padding);
+					const y = padding + row * (cardHeight + padding);
+					ctx.fillStyle = '#4b5563'; // bg-gray-600
+					ctx.fillRect(x, y, cardWidth, cardHeight);
+					ctx.fillStyle = '#d1d5db'; // text-gray-300
+					ctx.textAlign = 'center';
+					ctx.fillText('Error', x + cardWidth / 2, y + cardHeight / 2);
+					resolve(); // Resolve even on error to not break Promise.all
+				};
+				img.src = card.url;
+			});
+		});
+
+		try {
+			await Promise.all(imageLoadPromises);
+
+			// Trigger download
+			const dataUrl = canvas.toDataURL('image/png');
+			const link = document.createElement('a');
+			link.href = dataUrl;
+			link.download = 'pokestore-binder.png';
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+
+		} catch (error) {
+			console.error('Error generating binder image:', error);
+			alert('An error occurred while generating the image.');
+		}
+	}
 </script>
 
 <README showHelp={$showHelp} toggleHelp={toggleHelp} />
@@ -307,6 +385,11 @@
 			<Button onClick={toggleUrlModal} class="text-sm flex items-center gap-1 px-3 py-2">
 				<LinkIcon size={16} />
 				<span>Add from URL</span>
+			</Button>
+
+			<Button onClick={generateBinderImage} class="text-sm flex items-center gap-1 px-3 py-2">
+				<DownloadIcon size={16} />
+				<span>Export as Image</span>
 			</Button>
 		</div>
 	</div>
