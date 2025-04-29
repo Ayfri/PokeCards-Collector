@@ -118,18 +118,18 @@
 		
 		<div class="flex-1 flex justify-center items-center">
 			{#if latestSet && !NO_IMAGES}
-				<div class="relative w-full max-w-md transform hover:scale-105 transition-transform duration-300">
+				<a href="/cards-list?set={encodeURIComponent(latestSet.name)}" class="relative w-full max-w-md transform hover:scale-105 transition-transform duration-300">
 					<img src={latestSet.logo} alt="{latestSet.name} logo" class="w-full object-contain mx-auto" />
 					<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-transparent p-4">
 						<h3 class="text-xl font-bold text-gold-400">{latestSet.name}</h3>
 						<p class="text-sm text-gray-300">Released on {formatDate(latestSet.releaseDate)}</p>
 					</div>
-				</div>
+				</a>
 			{:else if latestSet}
-				<div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full">
+				<a href="/cards-list?set={encodeURIComponent(latestSet.name)}" class="bg-gray-800 p-6 rounded-lg shadow-lg w-full hover:bg-gray-700 transition-colors border border-transparent hover:border-gold-400">
 					<h3 class="text-xl font-bold text-gold-400">{latestSet.name}</h3>
 					<p class="text-sm text-gray-300">Released on {formatDate(latestSet.releaseDate)}</p>
-				</div>
+				</a>
 			{/if}
 		</div>
 	</section>
