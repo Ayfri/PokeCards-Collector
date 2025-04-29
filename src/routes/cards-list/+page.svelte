@@ -2,7 +2,7 @@
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
-	import { filterSet, filterArtist, resetFilters } from '$lib/helpers/filters';
+	import { filterSet, filterArtist, filterSupertype, resetFilters } from '$lib/helpers/filters';
 	import { page } from '$app/state';
 
 	export let data: PageData;
@@ -20,9 +20,10 @@
 		// Check if we have any filter parameters in the URL
 		const setParam = page.url.searchParams.get('set');
 		const artistParam = page.url.searchParams.get('artist');
+		const typeParam = page.url.searchParams.get('type');
 
 		// If we have any filter parameters, reset all filters first
-		if (setParam || artistParam) {
+		if (setParam || artistParam || typeParam) {
 			resetFilters(); // Removed to prevent resetting filters on page load
 
 			// Then apply the specific filter from the URL
@@ -39,6 +40,21 @@
 				const artistExists = artists.some(artist => artist.toLowerCase() === decodedArtistParam);
 				if (artistExists) {
 					filterArtist.set(decodedArtistParam);
+				}
+			}
+			
+			if (typeParam) {
+				// Convert the type parameter to match the expected supertype values
+				// Map "pokemon" to "Pokémon", "trainer" to "Trainer", etc.
+				const typeMap: Record<string, string> = {
+					'pokemon': 'Pokémon',
+					'trainer': 'Trainer',
+					'energy': 'Energy'
+				};
+				
+				const supertypeValue = typeMap[typeParam.toLowerCase()];
+				if (supertypeValue) {
+					filterSupertype.set(supertypeValue.toLowerCase());
 				}
 			}
 		}

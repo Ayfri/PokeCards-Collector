@@ -13,6 +13,8 @@
 	import PokemonIcon from 'lucide-svelte/icons/gamepad-2';
 	import SetIcon from 'lucide-svelte/icons/layers';
 	import CardIcon from 'lucide-svelte/icons/layout-grid';
+	import PaintbrushIcon from 'lucide-svelte/icons/paintbrush';
+	import { getArtists } from '$helpers/data';
 
 	export let data: PageData;
 	
@@ -22,6 +24,17 @@
 	$: sets = data.sets;
 	$: pokemons = data.pokemons;
 	$: prices = data.prices;
+
+	// Artists count
+	let artistsCount = 0;
+	onMount(async () => {
+		try {
+			const artists = await getArtists();
+			artistsCount = artists.length;
+		} catch (error) {
+			console.error('Failed to load artists count:', error);
+		}
+	});
 
 	// Format date
 	const formatDate = (date: Date) => {
@@ -48,8 +61,8 @@
 				Your ultimate resource for Pokémon TCG cards. Explore our complete collection, track price trends, and manage your personal collection.
 			</p>
 			
-			<div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-				<div class="bg-gray-800 p-4 rounded-lg shadow-lg text-center">
+			<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+				<a href="/cards-list" class="bg-gray-800 p-4 rounded-lg shadow-lg text-center hover:bg-gray-700 transition-colors border border-transparent hover:border-gold-400">
 					{#if !NO_IMAGES}
 					<div class="flex justify-center mb-2">
 						<CardIcon size={24} class="text-gold-400" />
@@ -57,8 +70,8 @@
 					{/if}
 					<span class="text-xl md:text-2xl font-bold text-gold-400">{stats.totalCards}</span>
 					<p class="text-sm text-gray-400">Cards</p>
-				</div>
-				<div class="bg-gray-800 p-4 rounded-lg shadow-lg text-center">
+				</a>
+				<a href="/cards-list?type=pokemon" class="bg-gray-800 p-4 rounded-lg shadow-lg text-center hover:bg-gray-700 transition-colors border border-transparent hover:border-gold-400">
 					{#if !NO_IMAGES}
 					<div class="flex justify-center mb-2">
 						<PokemonIcon size={24} class="text-gold-400" />
@@ -66,8 +79,8 @@
 					{/if}
 					<span class="text-xl md:text-2xl font-bold text-gold-400">{stats.uniquePokemon}</span>
 					<p class="text-sm text-gray-400">Pokémon</p>
-				</div>
-				<div class="bg-gray-800 p-4 rounded-lg shadow-lg text-center">
+				</a>
+				<a href="/sets" class="bg-gray-800 p-4 rounded-lg shadow-lg text-center hover:bg-gray-700 transition-colors border border-transparent hover:border-gold-400">
 					{#if !NO_IMAGES}
 					<div class="flex justify-center mb-2">
 						<SetIcon size={24} class="text-gold-400" />
@@ -75,7 +88,16 @@
 					{/if}
 					<span class="text-xl md:text-2xl font-bold text-gold-400">{sets.length}</span>
 					<p class="text-sm text-gray-400">Sets</p>
-				</div>
+				</a>
+				<a href="/artists" class="bg-gray-800 p-4 rounded-lg shadow-lg text-center hover:bg-gray-700 transition-colors border border-transparent hover:border-gold-400">
+					{#if !NO_IMAGES}
+					<div class="flex justify-center mb-2">
+						<PaintbrushIcon size={24} class="text-gold-400" />
+					</div>
+					{/if}
+					<span class="text-xl md:text-2xl font-bold text-gold-400">{artistsCount}</span>
+					<p class="text-sm text-gray-400">Artists</p>
+				</a>
 			</div>
 			
 			<div class="flex flex-wrap gap-4">
