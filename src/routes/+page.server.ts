@@ -61,6 +61,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	return {
 		...layoutData,
+		allCards,
 		latestSet,
 		mostExpensiveCards,
 		sets,
