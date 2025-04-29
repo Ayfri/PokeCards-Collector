@@ -12,7 +12,6 @@
 	import HelpCircleIcon from 'lucide-svelte/icons/help-circle';
 	import LayersIcon from 'lucide-svelte/icons/layers';
 	import LinkIcon from 'lucide-svelte/icons/link';
-	import MaximizeIcon from 'lucide-svelte/icons/maximize';
 	import DownloadIcon from 'lucide-svelte/icons/download';
 	import type { PageData } from './$types';
 	import TextInput from '@components/filters/TextInput.svelte';
@@ -35,7 +34,6 @@
 	const showUrlModal = writable(false);
 	const cardUrl = writable('');
 	const multipleCardUrls = writable('');
-	const isFullscreen = writable(false);
 
 	// Rendre storedCards disponible via setContext pour SearchBar
 	setContext('storedCards', storedCards);
@@ -372,11 +370,6 @@
 
 			<Button onClick={resetBinderGrid} class="text-sm">Reset Grid</Button>
 
-			<Button onClick={() => isFullscreen.set(true)} class="text-sm flex items-center gap-1 px-3 py-2">
-				<MaximizeIcon size={16} />
-				<span>Fullscreen</span>
-			</Button>
-
 			<Button onClick={toggleSetModal} class="text-sm flex items-center gap-1 px-3 py-2">
 				<LayersIcon size={16} />
 				<span>Add set</span>
@@ -409,21 +402,6 @@
 		</div>
 	</div>
 </div>
-
-<!-- Fullscreen Modal -->
-<Modal bind:open={$isFullscreen} title="Binder Fullscreen View" fullscreen={true}>
-	<div class="w-full h-[calc(95vh-150px)]"> 
-		<BinderGrid {binderCards} {storedCards} {rows} {columns} />
-	</div>
-	 <svelte:fragment slot="footer">
-		<Button
-			onClick={() => isFullscreen.set(false)}
-			class="text-sm px-4 py-2 border border-gray-600"
-		>
-			Close Fullscreen
-		</Button>
-	</svelte:fragment>
-</Modal>
 
 <!-- Set Selection Modal -->
 <Modal bind:open={$showSetModal} onClose={toggleSetModal} title="Add complete set">
