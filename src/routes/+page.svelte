@@ -7,6 +7,8 @@
 	import { NO_IMAGES } from "$lib/images";
 	import { fly, fade } from 'svelte/transition';
 	import { getArtists } from "$helpers/data";
+	import { ChevronLeft, ChevronRight } from "lucide-svelte";
+
 
 	import CountUp from '$lib/components/ui/CountUp.svelte';
 	// Import icons
