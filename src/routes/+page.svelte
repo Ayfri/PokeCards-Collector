@@ -91,15 +91,15 @@
 <main class="container mx-auto px-4 py-8 text-white overflow-x-hidden">
 	<!-- Hero section with welcome message -->
 	{#if ready}
-		<section class="flex flex-col md:flex-row gap-8 mb-12" in:fly={{ y: 20, duration: 500, delay: 100 }} out:fade={{ duration: 200 }}>
+		<section class="flex flex-col md:flex-row gap-8 mb-20" in:fly={{ y: 20, duration: 500, delay: 100 }} out:fade={{ duration: 200 }}>
 			<div class="flex-1">
-				<h1 class="text-3xl md:text-4xl font-bold text-gold-400 mb-4">Welcome to PokéStore</h1>
-				<p class="text-gray-300 text-lg mb-6">
+				<h1 class="text-3xl md:text-4xl font-bold text-gold-400 mb-8">Welcome to PokéStore</h1>
+				<p class="text-gray-300 text-lg mb-10">
 					Your ultimate resource for Pokémon TCG cards. Explore our complete collection, track price trends, and manage your personal
 					collection.
 				</p>
 
-				<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+				<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
 					<a
 						href="/cards-list"
 						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-visible"
@@ -166,7 +166,7 @@
 					</a>
 				</div>
 
-				<div class="flex flex-wrap gap-4">
+				<div class="flex flex-wrap gap-4 mb-10 md:mb-0">
 					<a
 						href="/cards-list"
 						class="group px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-[400ms] flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900"
@@ -199,12 +199,12 @@
 	{/if}
 
 	<!-- Separator after hero section -->
-	<div class="w-full max-w-[800px] mx-auto my-8 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" class:hidden={!ready}></div>
+	<div class="w-full max-w-[800px] mx-auto my-16 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" class:hidden={!ready}></div>
 
 	<!-- Latest set section -->
 	{#if latestSet && ready}
-		<section class="mb-12" in:fly={{ y: 20, duration: 500, delay: 200 }} out:fade={{ duration: 200 }}>
-			<div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+		<section class="mb-20" in:fly={{ y: 20, duration: 500, delay: 200 }} out:fade={{ duration: 200 }}>
+			<div class="flex flex-col sm:flex-row justify-between items-center mb-8">
 				<a href="/cards-list?set={encodeURIComponent(latestSet.name)}" class="text-gold-400 hover:text-gold-300 transition-colors">
 					<h2 class="text-2xl font-bold flex items-center gap-2">
 						{#if !NO_IMAGES}
@@ -224,7 +224,7 @@
 				</a>
 			</div>
 
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
 				<a
 					href="/cards-list?set={encodeURIComponent(latestSet.name)}"
 					class="block bg-gray-800 p-6 rounded-lg shadow-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
@@ -296,12 +296,12 @@
 	{/if}
 
 	<!-- Separator before Most Expensive Cards section -->
-	<div class="w-full max-w-[200px] mx-auto my-6 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" class:hidden={!ready}></div>
+	<div class="w-full max-w-[200px] mx-auto my-12 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" class:hidden={!ready}></div>
 
 	<!-- Most expensive cards latest set section -->
 	{#if mostExpensiveLatestSetCards && mostExpensiveLatestSetCards.length > 0 && ready}
-		<section in:fly={{ y: 20, duration: 500, delay: 300 }} out:fade={{ duration: 200 }}>
-			<div class="flex justify-between items-center mb-4">
+		<section class="mb-20" in:fly={{ y: 20, duration: 500, delay: 300 }} out:fade={{ duration: 200 }}>
+			<div class="flex justify-between items-center mb-8">
 				<h2 class="text-2xl font-bold text-gold-400 flex items-center gap-2">
 					{#if !NO_IMAGES}
 						<Tag size={24} />
@@ -349,8 +349,8 @@
 
 	<!-- Most expensive cards section -->
 	{#if mostExpensiveCards && mostExpensiveCards.length > 0 && ready}
-		<section class="mt-12" in:fly={{ y: 20, duration: 500, delay: 300 }} out:fade={{ duration: 200 }}>
-			<div class="flex justify-between items-center mb-4">
+		<section class="mt-20 mb-20" in:fly={{ y: 20, duration: 500, delay: 300 }} out:fade={{ duration: 200 }}>
+			<div class="flex justify-between items-center mb-8">
 				<h2 class="text-2xl font-bold text-gold-400 flex items-center gap-2">
 					{#if !NO_IMAGES}
 						<Tag size={24} />
@@ -397,12 +397,12 @@
 	{/if}
 
 	<!-- Separator -->
-	<div class="w-full max-w-[800px] mx-auto my-12 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" class:hidden={!ready}></div>
+	<div class="w-full max-w-[800px] mx-auto my-20 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" class:hidden={!ready}></div>
 
 	<!-- Feature Highlights Section -->
 	{#if ready}
-		<section class="mb-12" in:fly={{ y: 30, duration: 600, delay: 400 }} out:fade={{ duration: 200 }}>
-			<h2 class="text-2xl md:text-3xl font-bold text-center text-gold-400 mb-8">Discover PokéStore Features</h2>
+		<section class="mb-20" in:fly={{ y: 30, duration: 600, delay: 400 }} out:fade={{ duration: 200 }}>
+			<h2 class="text-2xl md:text-3xl font-bold text-center text-gold-400 mb-12">Discover PokéStore Features</h2>
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
 				<div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all transform hover:-translate-y-1">
 					{#if !NO_IMAGES}
@@ -439,14 +439,14 @@
 	{/if}
 
 	<!-- Separator -->
-	<div class="w-full max-w-[200px] mx-auto my-12 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" class:hidden={!ready}></div>
+	<div class="w-full max-w-[200px] mx-auto my-20 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" class:hidden={!ready}></div>
 
 	<!-- Call to Action Section -->
 	{#if ready}
-		<section class="text-center bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-lg shadow-xl mb-12 border border-gold-600/30" in:fade={{ duration: 700, delay: 500 }} out:fade={{ duration: 200 }}>
+		<section class="text-center bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-lg shadow-xl mb-20 border border-gold-600/30" in:fade={{ duration: 700, delay: 500 }} out:fade={{ duration: 200 }}>
 			{#if session}
-				<h2 class="text-2xl md:text-3xl font-bold text-gold-400 mb-4">Welcome back, {session.user.email}!</h2>
-				<p class="text-gray-300 text-lg mb-6">Ready to manage your collection or check your wishlist?</p>
+				<h2 class="text-2xl md:text-3xl font-bold text-gold-400 mb-8">Welcome back, {session.user.email}!</h2>
+				<p class="text-gray-300 text-lg mb-10">Ready to manage your collection or check your wishlist?</p>
 				<div class="flex flex-wrap justify-center gap-4">
 					<a href="/collection" class="px-6 py-3 bg-gold-400 hover:bg-gold-500 text-black font-bold rounded-lg transition-colors flex items-center gap-2">
 						Go to Collection
@@ -462,8 +462,8 @@
 					</a>
 				</div>
 			{:else}
-				<h2 class="text-2xl md:text-3xl font-bold text-gold-400 mb-4">Join PokéStore Today!</h2>
-				<p class="text-gray-300 text-lg mb-6">Sign up or log in to start managing your Pokémon card collection and wishlist.</p>
+				<h2 class="text-2xl md:text-3xl font-bold text-gold-400 mb-8">Join PokéStore Today!</h2>
+				<p class="text-gray-300 text-lg mb-10">Sign up or log in to start managing your Pokémon card collection and wishlist.</p>
 				<div class="flex flex-wrap justify-center gap-4">
 					<a href="/login" class="px-6 py-3 bg-gold-400 hover:bg-gold-500 text-black font-bold rounded-lg transition-colors flex items-center gap-2">
 						Log In
