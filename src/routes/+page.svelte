@@ -110,11 +110,13 @@
 								<CardIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
-						<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
-						<span class="text-xl md:text-2xl font-bold text-gold-400">
-							<CountUp end={stats.totalCards} duration={4} />
-						</span>
-						<ChevronLeft size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+						<div class="flex items-center justify-between w-full px-2">
+							<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+							<span class="text-xl md:text-2xl font-bold text-gold-400">
+								<CountUp end={stats.totalCards} duration={4} />
+							</span>
+							<ChevronLeft size={16} class="text-gold-400" style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+						</div>
 						<p class="text-sm text-gray-400">Cards</p>
 					</a>
 					<a
@@ -126,11 +128,13 @@
 								<PokemonIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
-						<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
-						<span class="text-xl md:text-2xl font-bold text-gold-400">
-							<CountUp end={stats.uniquePokemon} duration={3.5} />
-						</span>
-						<ChevronLeft size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+						<div class="flex items-center justify-between w-full px-2">
+							<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+							<span class="text-xl md:text-2xl font-bold text-gold-400">
+								<CountUp end={stats.uniquePokemon} duration={3.5} />
+							</span>
+							<ChevronLeft size={16} class="text-gold-400" style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+						</div>
 						<p class="text-sm text-gray-400">Pokémon</p>
 					</a>
 					<a
@@ -142,11 +146,13 @@
 								<SetIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
-						<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
-						<span class="text-xl md:text-2xl font-bold text-gold-400">
-							<CountUp end={sets.length} duration={2} />
-						</span>
-						<ChevronLeft size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+						<div class="flex items-center justify-between w-full px-2">
+							<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+							<span class="text-xl md:text-2xl font-bold text-gold-400">
+								<CountUp end={sets.length} duration={2} />
+							</span>
+							<ChevronLeft size={16} class="text-gold-400" style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+						</div>
 						<p class="text-sm text-gray-400">Sets</p>
 					</a>
 					<a
@@ -158,11 +164,13 @@
 								<PaintbrushIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
-						<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
-						<span class="text-xl md:text-2xl font-bold text-gold-400">
-							<CountUp end={artistsCount} duration={2.5} />
-						</span>
-						<ChevronLeft size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+						<div class="flex items-center justify-between w-full px-2">
+							<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+							<span class="text-xl md:text-2xl font-bold text-gold-400">
+								<CountUp end={artistsCount} duration={2.5} />
+							</span>
+							<ChevronLeft size={16} class="text-gold-400" style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
+						</div>
 						<p class="text-sm text-gray-400">Artists</p>
 					</a>
 				</div>
