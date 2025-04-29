@@ -9,6 +9,7 @@
 	export let transitionFn = fly; // Default transition
 	export let transitionParams = { y: 20, duration: 200 }; // Default params
 	export let containerClass = 'max-w-md';
+	export let fullscreen = false; // Add fullscreen prop
 
 	const dispatch = createEventDispatcher<{ close: void }>();
 
@@ -39,7 +40,7 @@
 		role="presentation"
 	>
 		<div
-			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto modal-content {containerClass}"
+			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto modal-content {containerClass} {fullscreen ? 'w-[95vw] h-[95vh] max-w-none max-h-none' : ''}"
 			transition:transitionFn={transitionParams}
 			on:click|stopPropagation
 			role="dialog"
