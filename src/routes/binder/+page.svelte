@@ -343,7 +343,7 @@
 		<div class="flex items-center gap-3">
 			<PageTitle title="Binder Builder" />
 			<Button onClick={toggleHelp} class="p-1.5 mt-1">
-				<HelpCircleIcon size={16} />
+				<HelpCircleIcon size={20} />
 			</Button>
 		</div>
 
