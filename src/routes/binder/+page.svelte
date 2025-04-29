@@ -16,6 +16,7 @@
 	import TextInput from '@components/filters/TextInput.svelte';
 	import TextArea from '@components/filters/TextArea.svelte';
 	import Select from '@components/filters/Select.svelte';
+	import NumberInput from '@components/filters/NumberInput.svelte';
 
 	// Page data from server
 	export let data: PageData;
@@ -273,28 +274,24 @@
 			</Button>
 		</div>
 
-		<div class="flex flex-wrap gap-3 items-center">
+		<div class="flex flex-wrap gap-3 items-end">
 			<div class="flex gap-2 items-center">
-				<label for="rows" class="text-gray-300 text-sm">Rows:</label>
-				<input
+				<NumberInput
 					id="rows"
-					type="number"
 					bind:value={$rows}
-					min="2"
-					max="6"
-					class="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+					min={2}
+					max={6}
+					label="Rows:"
 				/>
 			</div>
 
 			<div class="flex gap-2 items-center">
-				<label for="columns" class="text-gray-300 text-sm">Columns:</label>
-				<input
+				<NumberInput
 					id="columns"
-					type="number"
 					bind:value={$columns}
-					min="2"
-					max="6"
-					class="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
+					min={2}
+					max={6}
+					label="Columns:"
 				/>
 			</div>
 
