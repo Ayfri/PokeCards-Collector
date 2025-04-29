@@ -8,13 +8,15 @@
 	import X from 'lucide-svelte/icons/x';
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
-	export let cards: Writable<Array<{id: string; url: string}>>;
+	import type { BinderStoredCard } from '$lib/types';
+	
+	export let cards: Writable<Array<BinderStoredCard>>;
 	
 	// Search and filter state
 	let searchTerm = '';
 	let sortBy = 'number'; // Default will be overwritten if localStorage value exists
 	let sortOrder = 'asc'; // Default will be overwritten if localStorage value exists
-	let filteredCards: Array<{id: string; url: string}> = [];
+	let filteredCards: Array<BinderStoredCard> = [];
 	let showFilters = false;
 	
 	// Card metadata cache for more efficient sorting

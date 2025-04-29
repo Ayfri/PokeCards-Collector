@@ -3,9 +3,10 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import { NO_IMAGES } from '$lib/images';
 	import { X } from 'lucide-svelte';
+	import type { BinderStoredCard, BinderCards } from '$lib/types';
 
-	export let binderCards: Writable<Array<{id: string; url: string; position: number} | null>>;
-	export let storedCards: Writable<Array<{id: string; url: string}>>;
+	export let binderCards: Writable<Array<BinderCards | null>>;
+	export let storedCards: Writable<Array<BinderStoredCard>>;
 	export let rows: Writable<number>;
 	export let columns: Writable<number>;
 	
