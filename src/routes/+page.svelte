@@ -6,6 +6,7 @@
 	import { onMount } from "svelte";
 	import { NO_IMAGES } from "$lib/images";
 	import { fly, fade } from 'svelte/transition';
+	import CountUp from '$lib/components/ui/CountUp.svelte';
 	// Import icons
 	import GiftIcon from "lucide-svelte/icons/gift";
 	import Tag from "lucide-svelte/icons/tag";
@@ -100,7 +101,9 @@
 								<CardIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
-						<span class="text-xl md:text-2xl font-bold text-gold-400">{stats.totalCards}</span>
+						<span class="text-xl md:text-2xl font-bold text-gold-400">
+							<CountUp end={stats.totalCards} duration={4} />
+						</span>
 						<p class="text-sm text-gray-400">Cards</p>
 					</a>
 					<a
@@ -112,7 +115,9 @@
 								<PokemonIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
-						<span class="text-xl md:text-2xl font-bold text-gold-400">{stats.uniquePokemon}</span>
+						<span class="text-xl md:text-2xl font-bold text-gold-400">
+							<CountUp end={stats.uniquePokemon} duration={3.5} />
+						</span>
 						<p class="text-sm text-gray-400">Pokémon</p>
 					</a>
 					<a
@@ -124,7 +129,9 @@
 								<SetIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
-						<span class="text-xl md:text-2xl font-bold text-gold-400">{sets.length}</span>
+						<span class="text-xl md:text-2xl font-bold text-gold-400">
+							<CountUp end={sets.length} duration={2} />
+						</span>
 						<p class="text-sm text-gray-400">Sets</p>
 					</a>
 					<a
@@ -136,7 +143,9 @@
 								<PaintbrushIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
-						<span class="text-xl md:text-2xl font-bold text-gold-400">{artistsCount}</span>
+						<span class="text-xl md:text-2xl font-bold text-gold-400">
+							<CountUp end={artistsCount} duration={2.5} />
+						</span>
 						<p class="text-sm text-gray-400">Artists</p>
 					</a>
 				</div>
