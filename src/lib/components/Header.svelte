@@ -21,12 +21,12 @@
 	interface NavLink {
 		href: string;
 		name: string;
-		icon: typeof Icon;
+		icon: typeof Icon | null;
 	}
 
 	// Navigation links data
 	const navLinks: NavLink[] = [
-		{ href: '/', name: 'Home', icon: HomeIcon },
+		{ href: '/', name: 'PokéStore', icon: null },
 		{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
 		{ href: '/sets', name: 'Sets', icon: LibraryIcon },
 		{ href: '/artists', name: 'Artists', icon: ArtistIcon },
@@ -69,10 +69,14 @@
 			<!-- Home link added back for desktop -->
 			{#each navLinks as link}
 				<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href}>
-					{#if !NO_IMAGES}
+					{#if !NO_IMAGES && link.icon}
 						<svelte:component this={link.icon} size={16} />
 					{/if}
-					{link.name}
+					{#if link.name === 'PokéStore'}
+						<span class="font-bold text-lg">{link.name}</span>
+					{:else}
+						{link.name}
+					{/if}
 				</a>
 			{/each}
 		</nav>
@@ -121,10 +125,14 @@
 			<nav class="flex flex-col gap-3">
 				{#each navLinks as link}
 					<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
-						{#if !NO_IMAGES}
+						{#if !NO_IMAGES && link.icon}
 							<svelte:component this={link.icon} size={20} />
 						{/if}
-						{link.name}
+						{#if link.name === 'PokéStore'}
+							<span class="font-bold text-lg">{link.name}</span>
+						{:else}
+							{link.name}
+						{/if}
 					</a>
 				{/each}
 			</nav>
