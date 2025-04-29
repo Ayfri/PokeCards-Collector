@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, afterUpdate } from 'svelte';
 	import { authStore } from '$lib/stores/auth';
 	import { getUserCollection } from '$lib/services/collections';
 	import { collectionStore, loadCollection } from '$lib/stores/collection';
@@ -9,6 +9,7 @@
 	import type { PageData } from './$types';
 	import type { FullCard, Pokemon, Set, UserProfile, PriceData } from '$lib/types';
 	import { page } from '$app/stores';
+	import { browser } from '$app/environment';
 
 	export let data: PageData;
 
@@ -122,6 +123,20 @@
 		}
 	}
 
+	// Add link modifiers to force page reload
+	function modifyCollectionLinks() {
+		if (!browser) return;
+		
+		// Modify all collection links to force a page reload
+		document.querySelectorAll('a[href^="/collection"]').forEach(link => {
+			link.setAttribute('target', '_self');
+		});
+	}
+
+	afterUpdate(() => {
+		modifyCollectionLinks();
+	});
+
 	onMount(() => {
 		const unsubscribe = authStore.subscribe(async (state) => {
 			if (!state.loading) {
@@ -130,9 +145,29 @@
 			}
 		});
 
+		modifyCollectionLinks();
+
 		return unsubscribe;
 	});
 </script>
+
+<svelte:head>
+	{#if browser}
+		<script>
+			// Script executed on the client side
+			document.addEventListener('DOMContentLoaded', function() {
+				// Get the requested username from the URL
+				const urlParams = new URLSearchParams(window.location.search);
+				const urlUsername = urlParams.get('user');
+				
+				// Force reload if we detect any inconsistency
+				if (urlUsername && document.querySelector('h1')?.textContent?.indexOf(urlUsername) === -1) {
+					window.location.reload();
+				}
+			});
+		</script>
+	{/if}
+</svelte:head>
 
 <div class="flex flex-col flex-grow">
 	{#if profileNotFound || profileIsPrivate}

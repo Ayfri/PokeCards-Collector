@@ -130,6 +130,7 @@
 					</a>
 					<a
 						href={`/collection?user=${encodeURIComponent($authStore.profile.username)}`}
+						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
 						on:click={closeMenu}
@@ -139,6 +140,7 @@
 					</a>
 					<a
 						href={`/wishlist?user=${encodeURIComponent($authStore.profile.username)}`}
+						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
 						on:click={closeMenu}

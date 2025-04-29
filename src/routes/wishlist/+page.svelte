@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, afterUpdate } from 'svelte';
   import { authStore } from '$lib/stores/auth';
   import { getUserWishlist } from '$lib/services/wishlists';
   import { wishlistStore, loadWishlist } from '$lib/stores/wishlist';
@@ -10,7 +10,7 @@
   import type { FullCard, Pokemon, Set, UserProfile, PriceData } from '$lib/types';
   import { resetFilters } from '$lib/helpers/filters';
   import { page } from '$app/stores';
-  import { afterUpdate } from 'svelte';
+  import { browser } from '$app/environment';
 
   export let data: PageData;
 
@@ -102,6 +102,20 @@
     }
   }
 
+  // Add link modifiers to force page reload
+  function modifyWishlistLinks() {
+    if (!browser) return;
+    
+    // Modify all wishlist links to force a page reload
+    document.querySelectorAll('a[href^="/wishlist"]').forEach(link => {
+      link.setAttribute('target', '_self');
+    });
+  }
+
+  afterUpdate(() => {
+    modifyWishlistLinks();
+  });
+
   onMount(() => {
     const unsubscribe = authStore.subscribe(async (state) => {
       if (!state.loading) {
@@ -110,9 +124,29 @@
       }
     });
 
+    modifyWishlistLinks();
+
     return unsubscribe;
   });
 </script>
+
+<svelte:head>
+  {#if browser}
+    <script>
+      // Script executed on the client side
+      document.addEventListener('DOMContentLoaded', function() {
+        // Get the requested username from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlUsername = urlParams.get('user');
+        
+        // Force reload if we detect any inconsistency
+        if (urlUsername && document.querySelector('h1')?.textContent?.indexOf(urlUsername) === -1) {
+          window.location.reload();
+        }
+      });
+    </script>
+  {/if}
+</svelte:head>
 
 <div class="flex flex-col flex-grow">
   {#if statusMessage && (statusMessage.includes('not found') || statusMessage.includes('private'))}
