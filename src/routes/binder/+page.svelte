@@ -3,19 +3,19 @@
 	import { writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import { setContext } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
 	import PageTitle from '@components/PageTitle.svelte';
 	import Button from '@components/filters/Button.svelte';
 	import BinderGrid from '@components/binder/BinderGrid.svelte';
 	import BinderStorage from '@components/binder/BinderStorage.svelte';
 	import README from '@components/binder/README.svelte';
+	import Modal from '@components/ui/Modal.svelte';
 	import HelpCircleIcon from 'lucide-svelte/icons/help-circle';
 	import LayersIcon from 'lucide-svelte/icons/layers';
-	import XIcon from 'lucide-svelte/icons/x';
 	import LinkIcon from 'lucide-svelte/icons/link';
+	import type { PageData } from './$types';
 	
 	// Page data from server
-	export let data;
+	export let data: PageData;
 	
 	// Binder configuration
 	const rows = writable(3);
@@ -173,7 +173,7 @@
 	function toggleSetModal() {
 		$showSetModal = !$showSetModal;
 		if (!$showSetModal) {
-			$selectedSet = '';
+			$selectedSet = ''; // Reset on close
 		}
 	}
 	
@@ -181,7 +181,7 @@
 	function toggleUrlModal() {
 		$showUrlModal = !$showUrlModal;
 		if (!$showUrlModal) {
-			$cardUrl = '';
+			$cardUrl = ''; // Reset on close
 			$multipleCardUrls = '';
 		}
 	}
@@ -326,143 +326,85 @@
 </div>
 
 <!-- Set Selection Modal -->
-{#if $showSetModal}
-<div 
-	class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
-	transition:fade={{ duration: 200 }}
-	on:click={toggleSetModal}
->
-	<div 
-		class="bg-gray-800 border border-gray-700 rounded-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
-		transition:fly={{ y: 20, duration: 200 }}
-		on:click|stopPropagation
-	>
-		<div class="flex justify-between items-center mb-4">
-			<h2 class="text-xl text-gold-400 font-medium">Add complete set</h2>
-			<button class="text-gray-400 hover:text-white" on:click={toggleSetModal}>
-				<XIcon size={20} />
-			</button>
-		</div>
-		
-		<p class="text-gray-300 mb-4 text-sm">
-			Choose a set to add all its cards to storage.
-		</p>
-		
-		<div class="mb-4">
-			<label for="setSelect" class="block text-gray-300 mb-2">Choose a set:</label>
-			<select 
-				id="setSelect"
-				bind:value={$selectedSet}
-				class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-			>
-				<option value="">-- Select a set --</option>
-				{#each data.sets.sort((a, b) => a.name.localeCompare(b.name)) as set}
-					<option value={set.name}>{set.name} ({set.printedTotal} cards)</option>
-				{/each}
-			</select>
-		</div>
-		
-		<div class="flex justify-end gap-3">
-			<Button 
-				onClick={toggleSetModal} 
-				class="text-sm px-4 py-2 border border-gray-600"
-			>
-				Cancel
-			</Button>
-			<Button 
-				onClick={addSetToStorage} 
-				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
-				disabled={!$selectedSet}
-			>
-				Add set
-			</Button>
-		</div>
+<Modal bind:open={$showSetModal} on:close={toggleSetModal} title="Add complete set">
+	<p class="text-gray-300 mb-4 text-sm">
+		Choose a set to add all its cards to storage.
+	</p>
+	
+	<div class="mb-4">
+		<label for="setSelect" class="block text-gray-300 mb-2">Choose a set:</label>
+		<select 
+			id="setSelect"
+			bind:value={$selectedSet}
+			class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+		>
+			<option value="">-- Select a set --</option>
+			{#each data.sets.sort((a, b) => a.name.localeCompare(b.name)) as set}
+				<option value={set.name}>{set.name} ({set.printedTotal} cards)</option>
+			{/each}
+		</select>
 	</div>
-</div>
-{/if}
+	
+	<svelte:fragment slot="footer">
+		<Button 
+			onClick={toggleSetModal} 
+			class="text-sm px-4 py-2 border border-gray-600"
+		>
+			Cancel
+		</Button>
+		<Button 
+			onClick={addSetToStorage} 
+			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
+			disabled={!$selectedSet}
+		>
+			Add set
+		</Button>
+	</svelte:fragment>
+</Modal>
 
 <!-- URL Card Modal -->
-{#if $showUrlModal}
-<div 
-	class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
-	transition:fade={{ duration: 200 }}
-	on:click={toggleUrlModal}
->
-	<div 
-		class="bg-gray-800 border border-gray-700 rounded-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto"
-		transition:fly={{ y: 20, duration: 200 }}
-		on:click|stopPropagation
-	>
-		<div class="flex justify-between items-center mb-4">
-			<h2 class="text-xl text-gold-400 font-medium">Add card from URL</h2>
-			<button class="text-gray-400 hover:text-white" on:click={toggleUrlModal}>
-				<XIcon size={20} />
-			</button>
-		</div>
-		
-		<p class="text-gray-300 mb-4 text-sm">
-			Paste the URL of a Pokémon card image to add it to your storage.
-		</p>
-		
-		<div class="mb-4">
-			<label for="cardUrl" class="block text-gray-300 mb-2">Card image URL:</label>
-			<input 
-				id="cardUrl"
-				type="url" 
-				bind:value={$cardUrl}
-				placeholder="https://example.com/card-image.jpg"
-				class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-			/>
-		</div>
-		
-		<div class="mb-4">
-			<label for="multipleCardUrls" class="block text-gray-300 mb-2">Or multiple URLs (one per line ending with ; or .):</label>
-			<textarea 
-				id="multipleCardUrls"
-				bind:value={$multipleCardUrls}
-				placeholder="https://example.com/card1.jpg;
+<Modal bind:open={$showUrlModal} on:close={toggleUrlModal} title="Add card from URL">
+	<p class="text-gray-300 mb-4 text-sm">
+		Paste the URL of a Pokémon card image to add it to your storage.
+	</p>
+	
+	<div class="mb-4">
+		<label for="cardUrl" class="block text-gray-300 mb-2">Card image URL:</label>
+		<input 
+			id="cardUrl"
+			type="url" 
+			bind:value={$cardUrl}
+			placeholder="https://example.com/card-image.jpg"
+			class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+		/>
+	</div>
+	
+	<div class="mb-4">
+		<label for="multipleCardUrls" class="block text-gray-300 mb-2">Or multiple URLs (one per line ending with ; or .):</label>
+		<textarea 
+			id="multipleCardUrls"
+			bind:value={$multipleCardUrls}
+			placeholder="https://example.com/card1.jpg;
 https://example.com/card2.jpg;
 https://example.com/card3.jpg."
-				rows="4"
-				class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-			></textarea>
-		</div>
-		
-		<div class="flex justify-end gap-3">
-			<Button 
-				onClick={toggleUrlModal} 
-				class="text-sm px-4 py-2 border border-gray-600"
-			>
-				Cancel
-			</Button>
-			<Button 
-				onClick={addCardFromUrl} 
-				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
-				disabled={!$cardUrl && !$multipleCardUrls}
-			>
-				Add card
-			</Button>
-		</div>
+			rows="4"
+			class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
+		></textarea>
 	</div>
-</div>
-{/if}
-
-<style>
-	/* Custom scrollbar for modal */
-	.overflow-y-auto::-webkit-scrollbar {
-		width: 6px;
-	}
 	
-	.overflow-y-auto::-webkit-scrollbar-track {
-		background: transparent;
-	}
-	
-	.overflow-y-auto::-webkit-scrollbar-thumb {
-		background-color: #4a4a4a;
-		border-radius: 20px;
-	}
-	
-	.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-		background-color: #FFB700;
-	}
-</style>	
+	<svelte:fragment slot="footer">
+		<Button 
+			onClick={toggleUrlModal} 
+			class="text-sm px-4 py-2 border border-gray-600"
+		>
+			Cancel
+		</Button>
+		<Button 
+			onClick={addCardFromUrl} 
+			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
+			disabled={!$cardUrl && !$multipleCardUrls}
+		>
+			Add card
+		</Button>
+	</svelte:fragment>
+</Modal>
