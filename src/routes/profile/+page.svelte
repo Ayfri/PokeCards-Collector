@@ -11,7 +11,7 @@
 	import type { CollectionStats, Set, UserProfile } from '$lib/types';
 	import Avatar from '$lib/components/auth/Avatar.svelte';
 	import { NO_IMAGES } from '$lib/images';
-
+	import { Home } from 'lucide-svelte';
 	export let data: PageData;
 
 	// State variables
@@ -255,11 +255,8 @@
 				href="/"
 				class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
 			>
-				<span class="relative z-10 flex items-center">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
-						<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-						<polyline points="9 22 9 12 15 12 15 22"/>
-					</svg>
+				<span class="relative z-10 flex items-center gap-2">
+					<Home size={16} />
 					Return to Home
 				</span>
 			</a>
