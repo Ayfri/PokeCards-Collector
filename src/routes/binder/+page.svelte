@@ -342,7 +342,7 @@
 </Modal>
 
 <!-- Set Selection Modal -->
-<Modal bind:open={$showSetModal} on:close={toggleSetModal} title="Add complete set">
+<Modal bind:open={$showSetModal} onClose={toggleSetModal} title="Add complete set">
 	<p class="text-gray-300 mb-4 text-sm">
 		Choose a set to add all its cards to storage.
 	</p>
@@ -379,7 +379,7 @@
 </Modal>
 
 <!-- URL Card Modal -->
-<Modal bind:open={$showUrlModal} on:close={toggleUrlModal} title="Add card from URL">
+<Modal bind:open={$showUrlModal} onClose={toggleUrlModal} title="Add card from URL">
 	<p class="text-gray-300 mb-4 text-sm">
 		Paste the URL of a Pokémon card image to add it to your storage.
 	</p>

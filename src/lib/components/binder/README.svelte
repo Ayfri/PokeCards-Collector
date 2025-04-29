@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Button from '@components/filters/Button.svelte';
 	import { fly } from 'svelte/transition';
 	import Modal from '@components/ui/Modal.svelte';
 

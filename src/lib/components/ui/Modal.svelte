@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import XIcon from 'lucide-svelte/icons/x';
 	import { browser } from '$app/environment';
@@ -10,12 +10,12 @@
 	export let transitionParams = { y: 20, duration: 200 }; // Default params
 	export let containerClass = 'max-w-md';
 	export let fullscreen = false; // Add fullscreen prop
+	export let onClose: () => void = () => {};
 
-	const dispatch = createEventDispatcher<{ close: void }>();
-
+	
 	function handleKeydown(event: KeyboardEvent) {
 		if (open && event.key === 'Escape') {
-			dispatch('close');
+			onClose();
 		}
 	}
 
@@ -36,7 +36,7 @@
 	<div
 		class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center"
 		transition:fade={{ duration: 200 }}
-		on:click={() => dispatch('close')}
+		on:click={onClose}
 		role="presentation"
 	>
 		<div
@@ -56,7 +56,7 @@
 					</slot>
 					<button
 						class="text-gray-400 hover:text-white"
-						on:click={() => dispatch('close')}
+						on:click={onClose}
 						aria-label="Close modal"
 					>
 						<XIcon size={20} />
