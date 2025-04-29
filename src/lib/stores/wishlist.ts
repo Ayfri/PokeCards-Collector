@@ -2,6 +2,7 @@ import { writable, get } from 'svelte/store';
 import { getUserWishlist } from '$lib/services/wishlists';
 import { authStore } from './auth';
 import { browser } from '$app/environment';
+import { setLoading } from './loading';
 
 // Store pour les cardCodes des cartes dans la wishlist
 export const wishlistStore = writable<Set<string>>(new Set());
@@ -24,6 +25,7 @@ export async function loadWishlist(forceReload: boolean = false) {
 
 	try {
 		isLoadingWishlist = true;
+		setLoading(true);
 		const { data: wishlistItems, error } = await getUserWishlist(authState.profile.username);
 		
 		if (error) {
@@ -39,6 +41,7 @@ export async function loadWishlist(forceReload: boolean = false) {
 		console.error('Exception loading wishlist:', error);
 	} finally {
 		isLoadingWishlist = false;
+		setLoading(false);
 	}
 }
 

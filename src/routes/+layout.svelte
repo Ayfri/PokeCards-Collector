@@ -5,6 +5,7 @@
 	import {page} from '$app/state';
 	import {NO_IMAGES} from '$lib/images';
 	import Header from '@components/Header.svelte';
+	import LoadingBar from '$lib/components/ui/LoadingBar.svelte';
 	import pokeballSvg from '~/assets/pokeball.svg?raw';
 	import {BASE_URL} from '~/constants';
 	import Seo from '$lib/components/seo/Seo.svelte';
@@ -66,6 +67,7 @@
 <Seo {title} {description} {image} type={page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
 
 <div class="flex flex-col min-h-screen">
+	<LoadingBar />
 	<Header/>
 	<slot/>
 	<div class="background fixed top-[15%] -z-50 flex place-content-center h-[100lvh] w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">

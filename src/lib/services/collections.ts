@@ -2,6 +2,7 @@ import { supabase } from '../supabase';
 import { updateCollectionStoreCount } from '$lib/stores/collection';
 import type { Card, PriceData, Set } from '../types';
 import { findSetByCardCode } from '$helpers/set-utils';
+import { setLoading } from '$lib/stores/loading';
 
 // --- Constants ---
 const MAX_CARD_QUANTITY = 99; // Define the maximum allowed quantity per card
@@ -9,6 +10,7 @@ const MAX_CARD_QUANTITY = 99; // Define the maximum allowed quantity per card
 // Add a new instance of a card to user's collection
 export async function addCardToCollection(username: string, cardCode: string) {
 	try {
+		setLoading(true);
 		// --- Check current count against the limit ---
 		const { count, error: countError } = await supabase
 			.from('collections')
@@ -48,12 +50,15 @@ export async function addCardToCollection(username: string, cardCode: string) {
 	} catch (error) {
 		console.error('Error adding card instance to collection:', error);
 		return { data: null, error };
+	} finally {
+		setLoading(false);
 	}
 }
 
 // Remove one instance of a card from user's collection
 export async function removeCardFromCollection(username: string, cardCode: string) {
 	try {
+		setLoading(true);
 		// Find *one* specific row ID for this card to delete
 		const { data: rowToDelete, error: fetchError } = await supabase
 			.from('collections')
@@ -89,6 +94,8 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 	} catch (error) {
 		console.error('Error removing card instance from collection:', error);
 		return { data: null, error };
+	} finally {
+		setLoading(false);
 	}
 }
 

@@ -2,6 +2,7 @@ import { writable, get } from 'svelte/store';
 import { getUserCollection } from '$lib/services/collections';
 import { authStore } from './auth';
 import { browser } from '$app/environment';
+import { setLoading } from './loading';
 
 // Store for the cardCodes and their counts in the collection
 export const collectionStore = writable<Map<string, number>>(new Map());
@@ -22,6 +23,7 @@ export async function loadCollection(forceReload: boolean = false) {
 
 	try {
 		isLoadingCollection = true;
+		setLoading(true);
 		// Fetch all collection entries (just need card_code)
 		const { data: collectionItems, error } = await getUserCollection(authState.profile.username);
 		
@@ -47,6 +49,7 @@ export async function loadCollection(forceReload: boolean = false) {
 		collectionLoaded = false;
 	} finally {
 		isLoadingCollection = false;
+		setLoading(false);
 	}
 }
 

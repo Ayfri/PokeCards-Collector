@@ -1,9 +1,11 @@
 import { supabase } from '../supabase';
 import { addToWishlistStore, removeFromWishlistStore } from '$lib/stores/wishlist';
+import { setLoading } from '$lib/stores/loading';
 
 // Add a card to user's wishlist
 export async function addCardToWishlist(username: string, cardCode: string) {
 	try {
+		setLoading(true);
 		// Check if card already exists in wishlist
 		const { data: existingCard } = await supabase
 			.from('wishlists')
@@ -35,12 +37,15 @@ export async function addCardToWishlist(username: string, cardCode: string) {
 	} catch (error) {
 		console.error('Error adding card to wishlist:', error);
 		return { data: null, error };
+	} finally {
+		setLoading(false);
 	}
 }
 
 // Remove a card from user's wishlist
 export async function removeCardFromWishlist(username: string, cardCode: string) {
 	try {
+		setLoading(true);
 		const { data, error } = await supabase
 			.from('wishlists')
 			.delete()
@@ -56,6 +61,8 @@ export async function removeCardFromWishlist(username: string, cardCode: string)
 	} catch (error) {
 		console.error('Error removing card from wishlist:', error);
 		return { data: null, error };
+	} finally {
+		setLoading(false);
 	}
 }
 
