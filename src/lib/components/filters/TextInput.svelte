@@ -6,6 +6,8 @@
 	export let autocomplete: string | undefined = undefined;
 	export let debounceFunction: (value: string) => void = () => {};
 	export let type: "email" | "password" | "text" | "url" = "text";
+	let className: string = "";
+	export {className as class};
 
 	function handleInput(event: Event) {
 		const target = event.target as HTMLInputElement;
@@ -17,7 +19,7 @@
 	<label for={id} class="text-xs text-gray-300">{label}</label>
 	{#if type === "email"}
 		<input
-			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'}"
+			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
 			{autocomplete}
 			{id}
 			{placeholder}
@@ -27,7 +29,7 @@
 		/>
 	{:else if type === "password"}
 		<input
-			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'}"
+			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
 			{autocomplete}
 			{id}
 			{placeholder}
@@ -37,7 +39,7 @@
 		/>
 	{:else if type === "text"}
 		<input
-			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'}"
+			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
 			{autocomplete}
 			{id}
 			{placeholder}
@@ -47,7 +49,7 @@
 		/>
 	{:else if type === "url"}
 		<input
-			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'}"
+			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
 			{autocomplete}
 			{id}
 			{placeholder}
