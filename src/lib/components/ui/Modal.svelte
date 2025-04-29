@@ -8,6 +8,7 @@
 	export let title = '';
 	export let transitionFn = fly; // Default transition
 	export let transitionParams = { y: 20, duration: 200 }; // Default params
+	export let containerClass = 'max-w-md';
 
 	const dispatch = createEventDispatcher<{ close: void }>();
 
@@ -38,7 +39,7 @@
 		role="presentation"
 	>
 		<div
-			class="bg-gray-800 border border-gray-700 rounded-lg w-full max-w-md p-6 max-h-[90vh] overflow-y-auto modal-content"
+			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto modal-content {containerClass}"
 			transition:transitionFn={transitionParams}
 			on:click|stopPropagation
 			role="dialog"
