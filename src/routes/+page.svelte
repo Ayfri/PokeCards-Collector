@@ -192,14 +192,14 @@
 				{#if latestSet}
 					<a
 						href="/cards-list?set={encodeURIComponent(latestSet.name)}"
-						class="relative w-full max-w-md transform transition-all duration-300 hover:scale-105"
+						class="relative w-full max-w-lg transform transition-all duration-300 hover:scale-105 block"
 					>
 						{#if !NO_IMAGES}
-							<img src={latestSet.logo} alt="{latestSet.name} logo" class="w-full object-contain mx-auto" />
+							<img src={latestSet.logo} alt="{latestSet.name} logo" class="w-[95%] mb-2 object-contain mx-auto rounded-lg shadow-md" />
 						{/if}
-						<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900 to-transparent p-4">
-							<h3 class="text-xl font-bold text-gold-400">{latestSet.name}</h3>
-							<p class="text-sm text-gray-300">Released on {formatDate(latestSet.releaseDate)}</p>
+						<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900/90 via-gray-900/50 to-transparent p-4 rounded-b-2xl">
+							<h3 class="text-xl font-bold text-gold-400 w-fit drop-shadow-[0_0_7px_black]">{latestSet.name}</h3>
+							<p class="text-sm text-gray-300 w-fit drop-shadow-[0_0_7px_black]">Released on {formatDate(latestSet.releaseDate)}</p>
 						</div>
 					</a>
 				{/if}
