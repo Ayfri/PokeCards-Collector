@@ -263,15 +263,21 @@
 
 					<div class="grid grid-cols-3 gap-4 mb-4">
 						<div class="bg-gray-700 p-3 rounded text-center">
-							<p class="text-lg font-bold text-gold-400">{latestSetPokemonCards.length}</p>
+							<p class="text-lg font-bold text-gold-400">
+								<CountUp end={latestSetPokemonCards.length} duration={3} />
+							</p>
 							<p class="text-xs text-gray-300">Pokémon Cards</p>
 						</div>
 						<div class="bg-gray-700 p-3 rounded text-center">
-							<p class="text-lg font-bold text-gold-400">{latestSetTrainerCards.length}</p>
+							<p class="text-lg font-bold text-gold-400">
+								<CountUp end={latestSetTrainerCards.length} duration={2} />
+							</p>
 							<p class="text-xs text-gray-300">Trainer Cards</p>
 						</div>
 						<div class="bg-gray-700 p-3 rounded text-center">
-							<p class="text-lg font-bold text-gold-400">{latestSetEnergyCards.length}</p>
+							<p class="text-lg font-bold text-gold-400">
+								<CountUp end={latestSetEnergyCards.length} duration={2} />
+							</p>
 							<p class="text-xs text-gray-300">Energy Cards</p>
 						</div>
 					</div>
@@ -279,7 +285,9 @@
 					<div>
 						<p class="text-sm text-gray-300">
 							<span class="text-gray-400">Completion value:</span>
-							<span class="text-gold-400">{formatPrice(totalSetValue)}</span>
+							<span class="text-gold-400">
+								<CountUp end={totalSetValue} duration={2} options={{decimalPlaces: 2, prefix: "$"}} />
+							</span>
 						</p>
 					</div>
 				</div>

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { CountUp as CountUpJs } from 'countup.js';
+	import { CountUp as CountUpJs, type CountUpOptions } from 'countup.js';
 	import { onMount } from 'svelte';
 
 	export let duration = 2;
 	export let end: number;
 	export let start = 0;
-	export let options = {};
+	export let options: CountUpOptions = {};
 
 	let countUpAnim: CountUpJs;
 	let spanElement: HTMLSpanElement;
