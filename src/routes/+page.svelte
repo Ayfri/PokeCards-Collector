@@ -413,7 +413,7 @@
 		<section class="mb-20" in:fly={{ y: 30, duration: 600, delay: 400 }} out:fade={{ duration: 200 }}>
 			<h2 class="text-2xl md:text-3xl font-bold text-center text-gold-400 mb-12">Discover PokéStore Features</h2>
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-				<div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all transform hover:-translate-y-1">
+				<div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1">
 					{#if !NO_IMAGES}
 						<div class="flex justify-center mb-4">
 							<BookOpenCheckIcon size={40} class="text-gold-400" />
@@ -423,7 +423,7 @@
 					<p class="text-gray-400">Keep track of every card you own, organized by set and rarity.</p>
 					<a href="/collection" class="text-gold-400 hover:underline mt-4 inline-block">My Collection</a>
 				</div>
-				<div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all transform hover:-translate-y-1">
+				<div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1">
 					{#if !NO_IMAGES}
 						<div class="flex justify-center mb-4">
 							<HeartIcon size={40} class="text-gold-400" />
@@ -433,7 +433,7 @@
 					<p class="text-gray-400">Curate a list of cards you desire to complete your collection goals.</p>
 					<a href="/wishlist" class="text-gold-400 hover:underline mt-4 inline-block">My Wishlist</a>
 				</div>
-				<div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all transform hover:-translate-y-1">
+				<div class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1">
 					{#if !NO_IMAGES}
 						<div class="flex justify-center mb-4">
 							<SearchIcon size={40} class="text-gold-400" />
@@ -474,7 +474,7 @@
 				<h2 class="text-2xl md:text-3xl font-bold text-gold-400 mb-8">Join PokéStore Today!</h2>
 				<p class="text-gray-300 text-lg mb-10">Sign up or log in to start managing your Pokémon card collection and wishlist.</p>
 				<div class="flex flex-wrap justify-center gap-4">
-					<a href="/login" class="px-6 py-3 bg-gold-400 hover:bg-gold-500 text-black font-bold rounded-lg transition-colors flex items-center gap-2">
+					<a href="/login" class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900">
 						Log In
 						{#if !NO_IMAGES}<LogInIcon size={18} />{/if}
 					</a>
