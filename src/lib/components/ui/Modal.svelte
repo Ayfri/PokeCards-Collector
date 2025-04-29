@@ -2,6 +2,7 @@
 	import { createEventDispatcher, onMount, onDestroy } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import XIcon from 'lucide-svelte/icons/x';
+	import { browser } from '$app/environment';
 
 	export let open = false;
 	export let title = '';
@@ -17,11 +18,15 @@
 	}
 
 	onMount(() => {
-		window.addEventListener('keydown', handleKeydown);
+		if (browser) {
+			window.addEventListener('keydown', handleKeydown);
+		}
 	});
 
 	onDestroy(() => {
-		window.removeEventListener('keydown', handleKeydown);
+		if (browser) {
+			window.removeEventListener('keydown', handleKeydown);
+		}
 	});
 </script>
 
