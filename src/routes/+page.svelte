@@ -155,7 +155,7 @@
 			</div>
 			
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-				<div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+				<a href="/cards-list?set={encodeURIComponent(latestSet.name)}" class="block bg-gray-800 p-6 rounded-lg shadow-lg hover:bg-gray-700 transition-colors border border-transparent hover:border-gold-400">
 					<div class="flex flex-col sm:flex-row gap-6 items-center">
 						{#if !NO_IMAGES}
 						<img src={latestSet.logo} alt="{latestSet.name} logo" class="w-32 h-32 object-contain" />
@@ -173,9 +173,9 @@
 							{/if}
 						</div>
 					</div>
-				</div>
+				</a>
 				
-				<div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+				<a href="/cards-list?set={encodeURIComponent(latestSet.name)}" class="block bg-gray-800 p-6 rounded-lg shadow-lg hover:bg-gray-700 transition-colors border border-transparent hover:border-gold-400">
 					<h3 class="text-xl font-bold text-gold-400 mb-4 flex items-center gap-2">
 						{#if !NO_IMAGES}
 						<Info size={20} />
@@ -189,7 +189,7 @@
 					<p class="text-gray-300">
 						Explore the complete collection and discover the rarest and most valuable cards.
 					</p>
-				</div>
+				</a>
 			</div>
 		</section>
 	{/if}
