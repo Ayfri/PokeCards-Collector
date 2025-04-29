@@ -110,6 +110,8 @@
 				
 				<div 
 					class="relative aspect-[2.5/3.7] justify-self-center w-full"
+					role="gridcell"
+					tabindex="0"
 					on:dragover={onDragOver}
 					on:dragleave={onDragLeave}
 					on:drop={(e) => onDrop(e, index)}
@@ -119,6 +121,8 @@
 							<div
 								class="relative w-full h-full flex items-center justify-center group"
 								draggable="true"
+								role="button"
+								tabindex="-1"
 								on:dragstart={(e) => onDragStart(e, card)}
 							>
 								<CardImage
