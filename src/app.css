@@ -17,3 +17,22 @@ html {
 body {
 	@apply font-clash bg-black m-0 p-0;
 }
+
+/* Custom animations for the bouncing chevrons */
+@keyframes bounceLeft {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(4px);
+	}
+}
+
+@keyframes bounceRight {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(-4px);
+	}
+}

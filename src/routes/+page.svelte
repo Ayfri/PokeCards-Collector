@@ -74,6 +74,14 @@
 		return `$${price.toFixed(2)}`;
 	};
 
+	// Animation for chevrons
+	const bounceAnimation = {
+		duration: 1000,
+		iterationCount: 'infinite',
+		direction: 'alternate',
+		easing: 'cubic-bezier(0.5, 0, 0.5, 1)'
+	};
+
 	let ready = false;
 	onMount(() => {
 		ready = true;
@@ -101,9 +109,11 @@
 								<CardIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
+						<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
 						<span class="text-xl md:text-2xl font-bold text-gold-400">
 							<CountUp end={stats.totalCards} duration={4} />
 						</span>
+						<ChevronLeft size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
 						<p class="text-sm text-gray-400">Cards</p>
 					</a>
 					<a
@@ -115,9 +125,11 @@
 								<PokemonIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
+						<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
 						<span class="text-xl md:text-2xl font-bold text-gold-400">
 							<CountUp end={stats.uniquePokemon} duration={3.5} />
 						</span>
+						<ChevronLeft size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
 						<p class="text-sm text-gray-400">Pokémon</p>
 					</a>
 					<a
@@ -129,9 +141,11 @@
 								<SetIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
+						<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
 						<span class="text-xl md:text-2xl font-bold text-gold-400">
 							<CountUp end={sets.length} duration={2} />
 						</span>
+						<ChevronLeft size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
 						<p class="text-sm text-gray-400">Sets</p>
 					</a>
 					<a
@@ -143,9 +157,11 @@
 								<PaintbrushIcon size={24} class="text-gold-400" />
 							</div>
 						{/if}
+						<ChevronRight size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
 						<span class="text-xl md:text-2xl font-bold text-gold-400">
 							<CountUp end={artistsCount} duration={2.5} />
 						</span>
+						<ChevronLeft size={16} class="text-gold-400" style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}" />
 						<p class="text-sm text-gray-400">Artists</p>
 					</a>
 				</div>
@@ -158,15 +174,6 @@
 						Explore Cards
 						{#if !NO_IMAGES}
 							<ArrowRight size={18} class="group-hover:translate-x-1 transition-all duration-[400ms]" />
-						{/if}
-					</a>
-					<a
-						href="/sets"
-						class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-all duration-300 flex items-center gap-2"
-					>
-						View All Sets
-						{#if !NO_IMAGES}
-							<SetIcon size={18} />
 						{/if}
 					</a>
 				</div>
