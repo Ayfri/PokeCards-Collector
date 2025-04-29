@@ -12,6 +12,7 @@
 	import LibraryIcon from 'lucide-svelte/icons/library';
 	import ArtistIcon from 'lucide-svelte/icons/paintbrush';
 	import ShuffleIcon from 'lucide-svelte/icons/shuffle';
+	import BinderIcon from 'lucide-svelte/icons/book-open';
 
 	// Use allCards from layout data instead of page-specific data
 	$: prices = page.data.prices as Record<string, PriceData> || {};
@@ -51,7 +52,12 @@
 			{/if}
 			Random Card
 		</a>
-		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200" href="/binder">Binder</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/binder">
+			{#if !NO_IMAGES}
+			<BinderIcon size={16} />
+			{/if}
+			Binder
+		</a>
 		<span class="flex-1"></span>
 		<a class="logo-link absolute left-1/2 top-full xs:top-3/4 lg:top-full -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full z-20" href="/">
 			{#if !NO_IMAGES}
