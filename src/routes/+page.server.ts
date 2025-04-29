@@ -45,7 +45,15 @@ export const load: PageServerLoad = async ({ parent }) => {
 	});
 
 	// Get the most expensive cards from the latest set
-	const mostExpensiveCards = [...latestSetCards]
+	const mostExpensiveLatestSetCards = [...latestSetCards]
+		.sort((a, b) => {
+			const priceA = prices[a.cardCode]?.simple || prices[a.cardCode]?.trend || 0;
+			const priceB = prices[b.cardCode]?.simple || prices[b.cardCode]?.trend || 0;
+			return priceB - priceA;
+		})
+		.slice(0, 5); // Get top 5 most expensive cards
+	
+	const mostExpensiveCards = [...allCards]
 		.sort((a, b) => {
 			const priceA = prices[a.cardCode]?.simple || prices[a.cardCode]?.trend || 0;
 			const priceB = prices[b.cardCode]?.simple || prices[b.cardCode]?.trend || 0;
@@ -63,6 +71,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		...layoutData,
 		allCards,
 		latestSet,
+		mostExpensiveLatestSetCards,
 		mostExpensiveCards,
 		sets,
 		pokemons,
