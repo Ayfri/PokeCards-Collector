@@ -271,8 +271,8 @@
 
 <div class="relative {mobileMode ? 'flex flex-col w-full' : ''}">
 	<div class="search-container relative">
-		<div class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-			<Search />
+		<div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+			<Search size={18} />
 		</div>
 		<input
 			bind:this={inputElement}
