@@ -15,10 +15,11 @@
 	import type { PageData } from './$types';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import TextArea from '@components/filters/TextArea.svelte';
-	
+	import Select from '@components/filters/Select.svelte';
+
 	// Page data from server
 	export let data: PageData;
-	
+
 	// Binder configuration
 	const rows = writable(3);
 	const columns = writable(3);
@@ -30,14 +31,14 @@
 	const showUrlModal = writable(false);
 	const cardUrl = writable('');
 	const multipleCardUrls = writable('');
-	
+
 	// Rendre storedCards disponible via setContext pour SearchBar
 	setContext('storedCards', storedCards);
-	
+
 	// Load and save functions
 	function saveToLocalStorage() {
 		if (!browser) return;
-		
+
 		try {
 			// Sauvegarde du binder
 			const binderData = {
@@ -46,10 +47,10 @@
 				columns: $columns
 			};
 			window.localStorage.setItem('binderGridData', JSON.stringify(binderData));
-			
+
 			// Sauvegarde des cartes stockées
 			window.localStorage.setItem('binderStoredCards', JSON.stringify($storedCards));
-			
+
 			console.log('Données sauvegardées:', {
 				binderCards: $binderCards.filter(c => c !== null).length,
 				storedCards: $storedCards.length
@@ -58,10 +59,10 @@
 			console.error('Erreur de sauvegarde:', e);
 		}
 	}
-	
+
 	function loadFromLocalStorage() {
 		if (!browser) return;
-		
+
 		try {
 			// Charger les cartes stockées
 			const storedCardsString = window.localStorage.getItem('binderStoredCards');
@@ -72,18 +73,18 @@
 					console.log('Cartes stockées chargées:', parsed.length);
 				}
 			}
-			
+
 			// Charger la configuration du binder
 			const binderDataString = window.localStorage.getItem('binderGridData');
 			if (binderDataString) {
 				const data = JSON.parse(binderDataString);
-				
+
 				// Dimensions
 				if (typeof data.rows === 'number' && typeof data.columns === 'number') {
 					$rows = Math.max(2, data.rows);
 					$columns = Math.max(2, data.columns);
 				}
-				
+
 				// Cartes
 				if (Array.isArray(data.cards)) {
 					$binderCards = data.cards;
@@ -97,33 +98,33 @@
 			resetBinderGrid();
 		}
 	}
-	
+
 	// Appliquer les changements et sauvegarder
 	function applyChanges() {
 		saveToLocalStorage();
 	}
-	
+
 	// Initialize on mount
 	onMount(() => {
 		loadFromLocalStorage();
-		
+
 		// Configuration des écouteurs d'événements
 		binderCards.subscribe(() => {
 			applyChanges();
 		});
-		
+
 		storedCards.subscribe(() => {
 			applyChanges();
 		});
-		
+
 		rows.subscribe(() => {
 			applyChanges();
 		});
-		
+
 		columns.subscribe(() => {
 			applyChanges();
 		});
-		
+
 		// Écouter l'événement personnalisé pour ajouter une carte au stockage
 		const handleAddToBinder = (event: CustomEvent) => {
 			if (event.detail && event.detail.cardUrl) {
@@ -133,24 +134,24 @@
 				}];
 			}
 		};
-		
+
 		document.addEventListener('add-to-binder', handleAddToBinder as EventListener);
-		
+
 		return () => {
 			document.removeEventListener('add-to-binder', handleAddToBinder as EventListener);
 		};
 	});
-	
+
 	// Function to reset binder grid
 	function resetBinderGrid() {
 		// S'assurer que rows et columns sont au moins 2
 		if ($rows < 2) $rows = 2;
 		if ($columns < 2) $columns = 2;
-		
+
 		const totalCells = $rows * $columns;
 		$binderCards = Array(totalCells).fill(null);
 	}
-	
+
 	// Update grid when rows/columns change
 	$: {
 		const totalCells = $rows * $columns;
@@ -165,12 +166,12 @@
 			$binderCards = newGrid;
 		}
 	}
-	
+
 	// Toggle help modal
 	function toggleHelp() {
 		$showHelp = !$showHelp;
 	}
-	
+
 	// Toggle set modal
 	function toggleSetModal() {
 		$showSetModal = !$showSetModal;
@@ -178,7 +179,7 @@
 			$selectedSet = ''; // Reset on close
 		}
 	}
-	
+
 	// Toggle URL modal
 	function toggleUrlModal() {
 		$showUrlModal = !$showUrlModal;
@@ -187,42 +188,42 @@
 			$multipleCardUrls = '';
 		}
 	}
-	
+
 	// Function to add all cards from a set
 	function addSetToStorage() {
 		if (!$selectedSet) return;
-		
+
 		const setToAdd = data.sets.find((set: any) => set.name === $selectedSet);
 		if (!setToAdd) return;
-		
+
 		const cardsFromSet = data.allCards.filter((card: any) => {
 			// Extract setCode from the card's cardCode (format: supertype_pokemonid_setcode_cardnumber)
 			const parts = card.cardCode.split('_');
 			const cardSetCode = parts[2];
-			
+
 			// Check if the card belongs to the selected set by comparing with set aliases or the code from the logo URL
 			const setCode = setToAdd.logo.split('/').at(-2);
 			return setToAdd.aliases?.includes(cardSetCode) || setCode === cardSetCode;
 		});
-		
+
 		// Add all cards from the set to storage
 		const newCards = cardsFromSet.map((card: any) => ({
 			id: crypto.randomUUID(),
 			url: card.image
 		}));
-		
+
 		$storedCards = [...$storedCards, ...newCards];
-		
+
 		// Close the modal
 		toggleSetModal();
 	}
-	
+
 	// Function to add a card from a URL
 	function addCardFromUrl() {
 		if (!$cardUrl && !$multipleCardUrls) return;
-		
+
 		const newCards = [];
-		
+
 		// Add single URL if provided
 		if ($cardUrl) {
 			newCards.push({
@@ -230,12 +231,12 @@
 				url: $cardUrl
 			});
 		}
-		
+
 		// Process multiple URLs if provided
 		if ($multipleCardUrls) {
 			// Split by newlines and process each line
 			const lines = $multipleCardUrls.split('\n');
-			
+
 			for (const line of lines) {
 				// Remove semicolons or periods from the end of the URL
 				const trimmedLine = line.trim();
@@ -250,12 +251,12 @@
 				}
 			}
 		}
-		
+
 		// Add all new cards to storage
 		if (newCards.length > 0) {
 			$storedCards = [...$storedCards, ...newCards];
 		}
-		
+
 		// Close the modal
 		toggleUrlModal();
 	}
@@ -271,46 +272,46 @@
 				<HelpCircleIcon size={16} />
 			</Button>
 		</div>
-		
+
 		<div class="flex flex-wrap gap-3 items-center">
 			<div class="flex gap-2 items-center">
 				<label for="rows" class="text-gray-300 text-sm">Rows:</label>
-				<input 
+				<input
 					id="rows"
-					type="number" 
-					bind:value={$rows} 
-					min="2" 
-					max="6" 
+					type="number"
+					bind:value={$rows}
+					min="2"
+					max="6"
 					class="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
 				/>
 			</div>
-			
+
 			<div class="flex gap-2 items-center">
 				<label for="columns" class="text-gray-300 text-sm">Columns:</label>
-				<input 
+				<input
 					id="columns"
-					type="number" 
-					bind:value={$columns} 
-					min="2" 
-					max="6" 
+					type="number"
+					bind:value={$columns}
+					min="2"
+					max="6"
 					class="w-16 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white"
 				/>
 			</div>
-			
+
 			<Button onClick={resetBinderGrid} class="text-sm">Reset Grid</Button>
-			
+
 			<Button onClick={toggleSetModal} class="text-sm flex items-center gap-1 px-3 py-2">
 				<LayersIcon size={16} />
 				<span>Add set</span>
 			</Button>
-			
+
 			<Button onClick={toggleUrlModal} class="text-sm flex items-center gap-1 px-3 py-2">
 				<LinkIcon size={16} />
 				<span>Add from URL</span>
 			</Button>
 		</div>
 	</div>
-	
+
 	<!-- Binder Grid and Storage -->
 	<div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
 		<div class="lg:col-span-9">
@@ -318,7 +319,7 @@
 				<BinderGrid {binderCards} {storedCards} {rows} {columns} />
 			</div>
 		</div>
-		
+
 		<div class="lg:col-span-3">
 			<div class="h-[calc(100vh-250px)] min-h-[450px]">
 				<BinderStorage cards={storedCards} />
@@ -332,30 +333,30 @@
 	<p class="text-gray-300 mb-4 text-sm">
 		Choose a set to add all its cards to storage.
 	</p>
-	
+
 	<div class="mb-4">
 		<label for="setSelect" class="block text-gray-300 mb-2">Choose a set:</label>
-		<select 
-			id="setSelect"
+		<Select
+			id="set-select"
 			bind:value={$selectedSet}
-			class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-		>
-			<option value="">-- Select a set --</option>
-			{#each data.sets.sort((a, b) => a.name.localeCompare(b.name)) as set}
-				<option value={set.name}>{set.name} ({set.printedTotal} cards)</option>
-			{/each}
-		</select>
+			label="Choose a set:"
+			placeholder="-- Select a set --"
+			options={data.sets.sort((a, b) => a.name.localeCompare(b.name)).map(set => ({
+				value: set.name,
+				label: `${set.name} (${set.printedTotal} cards)`
+			}))}
+		/>
 	</div>
-	
+
 	<svelte:fragment slot="footer">
-		<Button 
-			onClick={toggleSetModal} 
+		<Button
+			onClick={toggleSetModal}
 			class="text-sm px-4 py-2 border border-gray-600"
 		>
 			Cancel
 		</Button>
-		<Button 
-			onClick={addSetToStorage} 
+		<Button
+			onClick={addSetToStorage}
 			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
 			disabled={!$selectedSet}
 		>
@@ -369,7 +370,7 @@
 	<p class="text-gray-300 mb-4 text-sm">
 		Paste the URL of a Pokémon card image to add it to your storage.
 	</p>
-	
+
 	<div class="mb-4">
 		<label for="cardUrl" class="block text-gray-300 mb-2">Card image URL:</label>
 		<TextInput
@@ -380,10 +381,10 @@
 			placeholder="https://example.com/card-image.jpg"
 		/>
 	</div>
-	
+
 	<div class="mb-4">
 		<label for="multipleCardUrls" class="block text-gray-300 mb-2">Or multiple URLs (one per line ending with ; or .):</label>
-		<TextArea 
+		<TextArea
 			id="multipleCardUrls"
 			bind:value={$multipleCardUrls}
 			placeholder="https://example.com/card1.jpg;
@@ -394,16 +395,16 @@ https://example.com/card3.jpg."
 			class="max-h-[20rem] overflow-y-auto"
 		/>
 	</div>
-	
+
 	<svelte:fragment slot="footer">
-		<Button 
-			onClick={toggleUrlModal} 
+		<Button
+			onClick={toggleUrlModal}
 			class="text-sm px-4 py-2 border border-gray-600"
 		>
 			Cancel
 		</Button>
-		<Button 
-			onClick={addCardFromUrl} 
+		<Button
+			onClick={addCardFromUrl}
 			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
 			disabled={!$cardUrl && !$multipleCardUrls}
 		>

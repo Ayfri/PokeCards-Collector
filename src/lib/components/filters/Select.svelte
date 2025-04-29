@@ -2,6 +2,7 @@
 	export let id: string;
 	export let label: string;
 	export let value: string;
+	export let placeholder: string | undefined = undefined;
 	export let options: { value: string; label: string }[];
 	export let activeCondition: boolean = value !== 'all';
 
@@ -22,6 +23,9 @@
 		value={value}
 		class="bg-transparent border-2 cursor-pointer rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {activeCondition ? 'border-amber-400 text-amber-400' : 'border-white'}"
 	>
+		{#if placeholder}
+			<option value="" selected disabled>{placeholder}</option>
+		{/if}
 		{#each options as option}
 			<option class="bg-black text-white" value={option.value}>{option.label}</option>
 		{/each}
