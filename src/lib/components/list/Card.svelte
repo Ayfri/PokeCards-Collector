@@ -50,6 +50,10 @@
 	$: collectionCount = $collectionStore.get(cardCode) || 0;
 	let isUpdatingCollection = false;
 
+	// Define the maximum quantity allowed (should match backend)
+	const MAX_CARD_QUANTITY = 99;
+	$: isCollectionLimitReached = collectionCount >= MAX_CARD_QUANTITY;
+
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
@@ -75,7 +79,7 @@
 		event.preventDefault();
 		event.stopPropagation();
 
-		if (!$authStore.user || !$authStore.profile || isUpdatingCollection) return;
+		if (!$authStore.user || !$authStore.profile || isUpdatingCollection || isCollectionLimitReached) return;
 
 		isUpdatingCollection = true;
 
@@ -152,7 +156,8 @@
 						aria-label="Add one copy to collection"
 						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 						on:click={handleAddCard}
-						disabled={isUpdatingCollection}
+						disabled={isUpdatingCollection || isCollectionLimitReached}
+						title={isCollectionLimitReached ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 					>
 						<Plus 
 							size={Math.min(18, Math.floor(width/16))}

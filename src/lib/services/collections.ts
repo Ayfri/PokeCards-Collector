@@ -3,9 +3,31 @@ import { updateCollectionStoreCount } from '$lib/stores/collection';
 import type { Card, PriceData, Set } from '../types';
 import { findSetByCardCode } from '$helpers/set-utils';
 
+// --- Constants ---
+const MAX_CARD_QUANTITY = 99; // Define the maximum allowed quantity per card
+
 // Add a new instance of a card to user's collection
 export async function addCardToCollection(username: string, cardCode: string) {
 	try {
+		// --- Check current count against the limit ---
+		const { count, error: countError } = await supabase
+			.from('collections')
+			.select('*', { count: 'exact', head: true }) // Use head: true for efficiency
+			.eq('username', username)
+			.eq('card_code', cardCode);
+
+		if (countError) {
+			console.error('Error checking card count:', countError);
+			return { data: null, error: countError };
+		}
+
+		if (count !== null && count >= MAX_CARD_QUANTITY) {
+			console.warn(`User ${username} reached quantity limit for card ${cardCode}`);
+			// Return a specific error or indicator that limit was reached
+			return { data: null, error: { message: `Maximum quantity (${MAX_CARD_QUANTITY}) reached for this card.` } };
+		}
+		// --- End Check ---
+
 		// Insert a new row for this card instance
 		const { data, error } = await supabase
 			.from('collections')
