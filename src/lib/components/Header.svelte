@@ -46,17 +46,17 @@
 			{/if}
 			Artists
 		</a>
-		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/random">
-			{#if !NO_IMAGES}
-			<ShuffleIcon size={16} />
-			{/if}
-			Random Card
-		</a>
 		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/binder">
 			{#if !NO_IMAGES}
 			<BinderIcon size={16} />
 			{/if}
 			Binder
+		</a>
+		<a class="nav-link max-xs:text-sm text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/random">
+			{#if !NO_IMAGES}
+			<ShuffleIcon size={16} />
+			{/if}
+			Random Card
 		</a>
 		<span class="flex-1"></span>
 		<a class="logo-link absolute left-1/2 top-full xs:top-3/4 lg:top-full -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full z-20" href="/">
