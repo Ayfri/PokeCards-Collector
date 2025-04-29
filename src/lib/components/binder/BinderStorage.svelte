@@ -3,10 +3,9 @@
 	import { onMount } from 'svelte';
 	import Button from '$lib/components/filters/Button.svelte';
 	import TrashIcon from 'lucide-svelte/icons/trash';
-	import SearchIcon from 'lucide-svelte/icons/search';
 	import ArrowUpDownIcon from 'lucide-svelte/icons/arrow-up-down';
 	import FilterIcon from 'lucide-svelte/icons/filter';
-	import XIcon from 'lucide-svelte/icons/x';
+	import X from 'lucide-svelte/icons/x';
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	export let cards: Writable<Array<{id: string; url: string}>>;
@@ -358,13 +357,10 @@
 							</div>
 						</div>
 						<button 
-							class="absolute top-1 right-1 bg-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+							class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
 							on:click={() => removeCard(card.id)}
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
-								<path d="M18 6 6 18"></path>
-								<path d="m6 6 12 12"></path>
-							</svg>
+							<X size={14} />
 						</button>
 					</div>
 				{/each}

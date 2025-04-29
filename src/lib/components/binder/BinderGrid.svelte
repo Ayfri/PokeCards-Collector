@@ -2,6 +2,7 @@
 	import { type Writable } from 'svelte/store';
 	import CardImage from '@components/card/CardImage.svelte';
 	import { NO_IMAGES } from '$lib/images';
+	import { X } from 'lucide-svelte';
 
 	export let binderCards: Writable<Array<{id: string; url: string; position: number} | null>>;
 	export let storedCards: Writable<Array<{id: string; url: string}>>;
@@ -133,13 +134,10 @@
 									highRes={false}
 								/>
 								<button 
-									class="absolute top-px right-px bg-red-500 rounded-full p-px opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+									class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
 									on:click={() => removeCard(index)}
 								>
-									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-white">
-										<path d="M18 6 6 18"></path>
-										<path d="m6 6 12 12"></path>
-									</svg>
+									<X size={14} />
 								</button>
 							</div>
 						{:else}
