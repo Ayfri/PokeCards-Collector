@@ -36,3 +36,22 @@ body {
 		transform: translateX(-4px);
 	}
 }
+
+/* Custom animations for the bouncing chevrons */
+@keyframes bounceLeft {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(4px);
+	}
+}
+
+@keyframes bounceRight {
+	0% {
+		transform: translateX(0);
+	}
+	100% {
+		transform: translateX(-4px);
+	}
+}
