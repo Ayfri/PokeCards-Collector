@@ -214,15 +214,21 @@
 				data-card-type={currentType}
 			>
 				{#key currentCard?.image}
-					<CardImage
-						alt={currentPokemon ? currentPokemon.name : currentCard?.name || 'Card image'}
-						imageUrl={currentCard?.image}
-						highRes={true}
-						height={544}
-						width={384}
-						class="image rounded-xl"
-						lazy={false}
-					/>
+					{#if currentCard?.image}
+						<CardImage
+							alt={currentPokemon ? currentPokemon.name : currentCard?.name || 'Card image'}
+							imageUrl={currentCard?.image}
+							highRes={true}
+							height={544}
+							width={384}
+							class="image rounded-xl"
+							lazy={false}
+						/>
+					{:else}
+						<div class="w-full h-full flex items-center justify-center">
+							<div class="text-gray-400 text-sm">No image available</div>
+						</div>
+					{/if}
 				{/key}
 			</div>
 		</div>
