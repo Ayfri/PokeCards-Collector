@@ -391,6 +391,7 @@ https://example.com/card2.jpg;
 https://example.com/card3.jpg."
 			rows={4}
 			label="Or multiple URLs (one per line ending with ; or .):"
+			class="max-h-[20rem] overflow-y-auto"
 		/>
 	</div>
 	
