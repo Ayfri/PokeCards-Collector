@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CountUp as CountUpJs, type CountUpOptions } from 'countup.js';
+	import { CountUp as CountUpJs, type CountUpOptions } from '$lib/countup-wrapper';
 	import { onMount } from 'svelte';
 
 	export let duration = 2;
