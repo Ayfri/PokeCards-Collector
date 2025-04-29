@@ -46,8 +46,8 @@
 	$: page.url, isMobileMenuOpen = false;
 </script>
 
-<header class="relative w-full p-2 pb-6 lg:pb-12 z-40">
-	<div class="relative py-1.5 xs:py-2.5 lg:py-3 px-4 xs:px-6 lg:px-8 flex items-center justify-between gap-4 rounded-full bg-gray-800 z-50">
+<header class="relative w-full p-2 pb-6 lg:pb-12 z-30">
+	<div class="relative py-1.5 xs:py-2.5 lg:py-3 px-4 xs:px-6 lg:px-8 flex items-center justify-between gap-4 rounded-full bg-gray-800">
 		<!-- Hamburger Menu and Optional Mobile Logo -->
 		<div class="flex items-center gap-2">
 			<!-- Hamburger Menu Button (Visible on Mobile) -->
@@ -97,7 +97,7 @@
 
 	<!-- Centered Logo (Desktop) - Placed outside the main flex container -->
 	<a
-		class="logo-link absolute left-1/2 top-[2/3] -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full z-50"
+		class="logo-link absolute left-1/2 top-[2/3] -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full"
 		href="/"
 	>
 		{#if !NO_IMAGES}
