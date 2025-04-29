@@ -56,6 +56,9 @@
 	// Référence vers le composant VirtualGrid
 	let virtualGridComponent: VirtualGrid;
 
+	// Fixed height for the info container in Card.svelte
+	const infoContainerHeight = 70;
+
 	onMount(() => {
 		searchName = $filterName;
 
@@ -421,7 +424,7 @@
 		bind:this={virtualGridComponent}
 		gapX={getCardDimensions($cardSize, clientWidth).gapX}
 		gapY={getCardDimensions($cardSize, clientWidth).gapY}
-		itemHeight={getCardDimensions($cardSize, clientWidth).height}
+		itemHeight={getCardDimensions($cardSize, clientWidth).height + infoContainerHeight}
 		itemWidth={getCardDimensions($cardSize, clientWidth).width}
 		forcedItemsPerRow={getCardDimensions($cardSize, clientWidth)
 			.cardsPerRow}

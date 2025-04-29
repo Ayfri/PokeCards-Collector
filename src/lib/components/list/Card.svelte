@@ -117,7 +117,7 @@
 	href={`/card/${cardCode}/`}
 	rel="dofollow"
 >
-	<div class="card-pokestore group relative flex flex-col items-center w-fit cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.025] hover:z-10" style="margin-bottom: {Math.floor(height * 0.25)}px; z-index: 1;">
+	<div class="card-pokestore group relative flex flex-col items-center w-fit cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.025] hover:z-10" style="z-index: 1;">
 		<div class:list={rarity.toLowerCase()}></div>
 		{#if !NO_IMAGES}
 			<div
@@ -185,7 +185,7 @@
 				height={height}
 			/>
 		</div>
-		<div class="card-info-container bg-black/30 backdrop-blur-sm rounded-lg p-2 mt-1" style="width: {width}px; max-width: 100%;">
+		<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-sm rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
 			<h2 class="text-center font-bold text-lg text-pretty leading-none">
 				{cardName}
 				<span class="uppercase text-sm opacity-85 ml-2">{#if set.ptcgoCode}{set.ptcgoCode}{/if} #{cardNumber}/{set?.printedTotal}</span>
