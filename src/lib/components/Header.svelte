@@ -7,6 +7,7 @@
 	import SearchModal from '@components/SearchModal.svelte';
 	import pokestore from '~/assets/pokestore.png';
 	// Import icons
+	import type { Icon } from 'lucide-svelte';
 	import HomeIcon from 'lucide-svelte/icons/home';
 	import CardStackIcon from 'lucide-svelte/icons/layers';
 	import LibraryIcon from 'lucide-svelte/icons/library';
@@ -16,6 +17,22 @@
 	import MenuIcon from 'lucide-svelte/icons/menu'; // Hamburger icon
 	import XIcon from 'lucide-svelte/icons/x'; // Close icon
 	import { slide } from 'svelte/transition';
+
+	interface NavLink {
+		href: string;
+		name: string;
+		icon: typeof Icon;
+	}
+
+	// Navigation links data
+	const navLinks: NavLink[] = [
+		{ href: '/', name: 'Home', icon: HomeIcon },
+		{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
+		{ href: '/sets', name: 'Sets', icon: LibraryIcon },
+		{ href: '/artists', name: 'Artists', icon: ArtistIcon },
+		{ href: '/binder', name: 'Binder', icon: BinderIcon },
+		{ href: '/random', name: 'Random Card', icon: ShuffleIcon },
+	];
 
 	// State for mobile menu
 	let isMobileMenuOpen = false;
@@ -50,42 +67,14 @@
 		<!-- Desktop Navigation Links (Hidden on Mobile) -->
 		<nav class="hidden lg:flex items-center gap-4">
 			<!-- Home link added back for desktop -->
-			<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/">
-				{#if !NO_IMAGES}
-					<HomeIcon size={16} />
-				{/if}
-				Home
-			</a>
-			<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/cards-list">
-				{#if !NO_IMAGES}
-				<CardStackIcon size={16} />
-				{/if}
-				Cards
-			</a>
-			<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/sets">
-				{#if !NO_IMAGES}
-				<LibraryIcon size={16} />
-				{/if}
-				Sets
-			</a>
-			<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/artists">
-				{#if !NO_IMAGES}
-				<ArtistIcon size={16} />
-				{/if}
-				Artists
-			</a>
-			<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/binder">
-				{#if !NO_IMAGES}
-				<BinderIcon size={16} />
-				{/if}
-				Binder
-			</a>
-			<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href="/random">
-				{#if !NO_IMAGES}
-				<ShuffleIcon size={16} />
-				{/if}
-				Random Card
-			</a>
+			{#each navLinks as link}
+				<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href}>
+					{#if !NO_IMAGES}
+						<svelte:component this={link.icon} size={16} />
+					{/if}
+					{link.name}
+				</a>
+			{/each}
 		</nav>
 
 		<!-- Spacer -->
@@ -130,24 +119,14 @@
 			transition:slide={{ duration: 150, axis: 'y' }}
 		>
 			<nav class="flex flex-col gap-3">
-				<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href="/">
-					<HomeIcon size={20} /> Home
-				</a>
-				<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href="/cards-list">
-					<CardStackIcon size={20} /> Cards
-				</a>
-				<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href="/sets">
-					<LibraryIcon size={20} /> Sets
-				</a>
-				<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href="/artists">
-					<ArtistIcon size={20} /> Artists
-				</a>
-				<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href="/binder">
-					<BinderIcon size={20} /> Binder
-				</a>
-				<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href="/random">
-					<ShuffleIcon size={20} /> Random Card
-				</a>
+				{#each navLinks as link}
+					<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
+						{#if !NO_IMAGES}
+							<svelte:component this={link.icon} size={20} />
+						{/if}
+						{link.name}
+					</a>
+				{/each}
 			</nav>
 		</div>
 	{/if}
