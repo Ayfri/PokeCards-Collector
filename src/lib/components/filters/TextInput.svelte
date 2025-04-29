@@ -4,7 +4,7 @@
 	export let value: string;
 	export let placeholder: string = "";
 	export let autocomplete: string | undefined = undefined;
-	export let debounceFunction: (value: string) => void;
+	export let debounceFunction: (value: string) => void = () => {};
 	export let type: "email" | "password" | "text" | "url" = "text";
 
 	function handleInput(event: Event) {

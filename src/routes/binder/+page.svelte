@@ -13,6 +13,8 @@
 	import LayersIcon from 'lucide-svelte/icons/layers';
 	import LinkIcon from 'lucide-svelte/icons/link';
 	import type { PageData } from './$types';
+	import TextInput from '@components/filters/TextInput.svelte';
+	import TextArea from '@components/filters/TextArea.svelte';
 	
 	// Page data from server
 	export let data: PageData;
@@ -370,26 +372,26 @@
 	
 	<div class="mb-4">
 		<label for="cardUrl" class="block text-gray-300 mb-2">Card image URL:</label>
-		<input 
+		<TextInput
 			id="cardUrl"
-			type="url" 
+			label="Card image URL"
 			bind:value={$cardUrl}
+			type="url"
 			placeholder="https://example.com/card-image.jpg"
-			class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
 		/>
 	</div>
 	
 	<div class="mb-4">
 		<label for="multipleCardUrls" class="block text-gray-300 mb-2">Or multiple URLs (one per line ending with ; or .):</label>
-		<textarea 
+		<TextArea 
 			id="multipleCardUrls"
 			bind:value={$multipleCardUrls}
 			placeholder="https://example.com/card1.jpg;
 https://example.com/card2.jpg;
 https://example.com/card3.jpg."
-			rows="4"
-			class="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white"
-		></textarea>
+			rows={4}
+			label="Or multiple URLs (one per line ending with ; or .):"
+		/>
 	</div>
 	
 	<svelte:fragment slot="footer">
