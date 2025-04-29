@@ -460,7 +460,7 @@
 									<div class="mt-2">
 										<div class="flex justify-between text-sm mb-1">
 											<span class="text-gray-500 dark:text-gray-400">{stats.count} / {stats.total} cards</span>
-											<span class="font-medium dark:text-white">{stats.percentage}%</span>
+											<span class="font-medium dark:text-white">{stats.percentage.toFixed(2)}%</span>
 										</div>
 										<div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
 											<div class="bg-gold-400 h-2 rounded-full" style="width: {stats.percentage}%"></div>

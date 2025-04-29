@@ -203,7 +203,7 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 				setStats[set.name] = {
 					count: collectionSetCards.length,
 					total: setCards.length,
-					percentage: setCards.length > 0 ? Math.round((collectionSetCards.length / setCards.length) * 100) : 0,
+					percentage: setCards.length > 0 ? (collectionSetCards.length / setCards.length) * 100 : 0,
 					collectedValue: Math.round(collectedSetValue * 100) / 100,
 					totalValue: Math.round(totalSetValue * 100) / 100,
 				};
