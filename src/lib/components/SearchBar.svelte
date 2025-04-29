@@ -11,6 +11,8 @@
 	import { findSetByCardCode } from '$helpers/set-utils';
 	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
+	import type { Writable } from 'svelte/store';
+	import type { BinderStoredCard } from '$lib/types';
 
 	// --- Props ---
 	export let prices: Record<string, PriceData>;
@@ -33,17 +35,14 @@
 	// Check if we're on the Binder page
 	$: isBinderPage = $page.url.pathname === '/binder';
 
-	// Try to get the storedCards store from context if on binder page
-	let binderStoredCards: any = null;
-	onMount(() => {
-		if (isBinderPage) {
-			try {
-				binderStoredCards = getContext('storedCards');
-			} catch (e) {
-				console.error('Failed to get storedCards from context:', e);
-			}
+	// Try to get the storedCards store from context ONLY during initialization if on binder page
+	let binderStoredCards: Writable<BinderStoredCard[]> | null = null;
+	try {
+		// getContext MUST be called during component initialization
+		if ($page.url.pathname === '/binder') { // Check initial path directly
+			binderStoredCards = getContext('storedCards');
 		}
-	});
+	} catch (e) {}
 
 	// Function to add a card to the binder storage
 	function addToBinderStorage(card: FullCard) {

@@ -106,3 +106,9 @@ export interface SetLogoUrls {
 export type CardFilter = {
 	set?: string[];
 }
+
+
+export interface BinderStoredCard {
+	id: string;
+	url: string;
+}

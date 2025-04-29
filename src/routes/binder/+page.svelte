@@ -18,15 +18,16 @@
 	import TextArea from '@components/filters/TextArea.svelte';
 	import Select from '@components/filters/Select.svelte';
 	import NumberInput from '@components/filters/NumberInput.svelte';
-
+	import type { BinderStoredCard } from '$lib/types';
+	
 	// Page data from server
 	export let data: PageData;
 
 	// Binder configuration
 	const rows = writable(3);
 	const columns = writable(3);
-	const binderCards = writable<Array<{id: string; url: string; position: number} | null>>([]);
-	const storedCards = writable<Array<{id: string; url: string}>>([]);
+	const binderCards = writable<Array<BinderStoredCard | null>>([]);
+	const storedCards = writable<Array<BinderStoredCard>>([]);
 	const showHelp = writable(false);
 	const showSetModal = writable(false);
 	const selectedSet = writable('');
