@@ -131,7 +131,7 @@
 									alt="Pokémon card" 
 									class="card-image {NO_IMAGES ? 'ring-1 ring-gold-400 ring-inset' : ''}"
 									lazy={true}
-									highRes={false}
+									highRes={true}
 								/>
 								<button 
 									class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"

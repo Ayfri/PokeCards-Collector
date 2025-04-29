@@ -51,11 +51,6 @@
 
 			// Sauvegarde des cartes stockées
 			window.localStorage.setItem('binderStoredCards', JSON.stringify($storedCards));
-
-			console.log('Données sauvegardées:', {
-				binderCards: $binderCards.filter(c => c !== null).length,
-				storedCards: $storedCards.length
-			});
 		} catch (e) {
 			console.error('Erreur de sauvegarde:', e);
 		}
@@ -89,7 +84,6 @@
 				// Cartes
 				if (Array.isArray(data.cards)) {
 					$binderCards = data.cards;
-					console.log('Binder chargé:', data.cards.filter((c: any) => c !== null).length);
 				}
 			} else {
 				resetBinderGrid();
