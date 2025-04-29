@@ -3,13 +3,15 @@
 	import { onMount } from 'svelte';
 	import Button from '$lib/components/filters/Button.svelte';
 	import TrashIcon from 'lucide-svelte/icons/trash';
-	import ArrowUpDownIcon from 'lucide-svelte/icons/arrow-up-down';
 	import FilterIcon from 'lucide-svelte/icons/filter';
 	import X from 'lucide-svelte/icons/x';
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import type { BinderStoredCard } from '$lib/types';
-	
+	import { slide } from 'svelte/transition';
+	import ArrowUp from 'lucide-svelte/icons/arrow-up';
+	import ArrowDown from 'lucide-svelte/icons/arrow-down';
+
 	export let cards: Writable<Array<BinderStoredCard>>;
 	
 	// Search and filter state
@@ -297,15 +299,18 @@
 		</div>
 		
 		{#if showFilters}
-			<div class="mb-2 p-2 bg-gray-700 rounded text-sm">
+			<div class="mb-2 p-2 rounded text-sm" transition:slide={{ duration: 200 }}>
 				<div class="flex justify-between items-center mb-1">
 					<span class="text-gray-300">Sort by:</span>
 					<Button 
 						onClick={toggleSortOrder} 
 						class="px-2 py-1 text-xs h-auto"
 					>
-						{sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-						<ArrowUpDownIcon size={12} class="ml-1" />
+						{#if sortOrder === 'asc'}
+							<ArrowUp size={12} />
+						{:else}
+							<ArrowDown size={12} />
+						{/if}
 					</Button>
 				</div>
 				<div class="grid grid-cols-2 gap-1">
