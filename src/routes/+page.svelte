@@ -6,6 +6,8 @@
 	import { onMount } from "svelte";
 	import { NO_IMAGES } from "$lib/images";
 	import { fly, fade } from 'svelte/transition';
+	import { getArtists } from "$helpers/data";
+
 	import CountUp from '$lib/components/ui/CountUp.svelte';
 	// Import icons
 	import GiftIcon from "lucide-svelte/icons/gift";
@@ -21,9 +23,6 @@
 	import BookOpenCheckIcon from 'lucide-svelte/icons/book-open-check';
 	import LogInIcon from 'lucide-svelte/icons/log-in';
 	import UserPlusIcon from 'lucide-svelte/icons/user-plus';
-
-	import { getArtists } from "$helpers/data";
-	import { ChevronLeft, ChevronRight } from "lucide-svelte";
 
 	export let data: PageData;
 
@@ -179,7 +178,7 @@
 				</div>
 			</div>
 
-			<div class="flex-1 flex justify-center items-center">
+			<div class="flex-1 flex justify-center items-center mt-8 lg:mt-0">
 				{#if latestSet}
 					<a
 						href="/cards-list?set={encodeURIComponent(latestSet.name)}"
