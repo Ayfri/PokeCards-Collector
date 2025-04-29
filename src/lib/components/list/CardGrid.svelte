@@ -60,7 +60,13 @@
 	const infoContainerHeight = 70;
 
 	onMount(() => {
-		searchName = $filterName;
+		// Initialize searchName from URL parameter or from store
+		const nameParam = page.url.searchParams.get('name');
+		if (nameParam) {
+			searchName = decodeURIComponent(nameParam);
+		} else {
+			searchName = $filterName;
+		}
 
 		// Set up a MutationObserver to watch for card-link elements
 		const observer = new MutationObserver((mutations) => {
@@ -90,6 +96,49 @@
 
 	const debouncedSetFilterName = debounce((value: string) => {
 		$filterName = value;
+
+		// Update URL with name parameter when search is used
+		const url = new URL(page.url);
+		if (value) {
+			url.searchParams.set('name', value);
+		} else {
+			url.searchParams.delete('name');
+		}
+		
+		// Keep existing parameters
+		const preserveParams = ['set', 'artist', 'type'];
+		preserveParams.forEach(param => {
+			const paramValue = page.url.searchParams.get(param);
+			if (paramValue) {
+				url.searchParams.set(param, paramValue);
+			}
+		});
+
+		// Save current active element to restore focus later
+		const activeElement = document.activeElement as HTMLElement;
+		const activeElementId = activeElement?.id;
+
+		goto(url.toString(), { replaceState: true }).then(() => {
+			// Force recalculation of VirtualGrid layout after filter and URL update
+			if (virtualGridComponent) {
+				setTimeout(() => {
+					virtualGridComponent.recalculateLayout();
+					
+					// Restore focus to the input if it was active
+					if (activeElementId === 'name') {
+						const inputElement = document.getElementById('name') as HTMLInputElement;
+						if (inputElement) {
+							inputElement.focus();
+							// Preserve cursor position if possible
+							if (typeof inputElement.selectionStart === 'number') {
+								const len = inputElement.value.length;
+								inputElement.setSelectionRange(len, len);
+							}
+						}
+					}
+				}, 50); // Small delay to ensure filters have been applied
+			}
+		});
 	}, 300);
 
 	// Local reset function to clear both store and local state
@@ -100,7 +149,14 @@
 
 		// Also clear URL parameters to match the UI state
 		const currentPath = page.url.pathname;
-		goto(currentPath, { replaceState: true });
+		goto(currentPath, { replaceState: true }).then(() => {
+			// Force recalculation of layout after filters have been reset
+			if (virtualGridComponent) {
+				setTimeout(() => {
+					virtualGridComponent.recalculateLayout();
+				}, 50); // Small delay to ensure all stores are updated
+			}
+		});
 	}
 
 	let displayedCards = cards;

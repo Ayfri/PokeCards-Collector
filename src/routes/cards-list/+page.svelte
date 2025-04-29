@@ -2,7 +2,7 @@
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
-	import { filterSet, filterArtist, filterSupertype, resetFilters } from '$lib/helpers/filters';
+	import { filterSet, filterArtist, filterSupertype, filterName, filterType, sortBy, sortOrder, mostExpensiveOnly, filterRarity, resetFilters } from '$lib/helpers/filters';
 	import { page } from '$app/state';
 
 	export let data: PageData;
@@ -21,9 +21,15 @@
 		const setParam = page.url.searchParams.get('set');
 		const artistParam = page.url.searchParams.get('artist');
 		const typeParam = page.url.searchParams.get('type');
+		const nameParam = page.url.searchParams.get('name');
+		const pokemonTypeParam = page.url.searchParams.get('pokemontype');
+		const sortByParam = page.url.searchParams.get('sortby');
+		const sortOrderParam = page.url.searchParams.get('sortorder');
+		const mostExpensiveParam = page.url.searchParams.get('mostexpensive');
+		const rarityParam = page.url.searchParams.get('rarity');
 
 		// If we have any filter parameters, reset all filters first
-		if (setParam || artistParam || typeParam) {
+		if (setParam || artistParam || typeParam || nameParam || pokemonTypeParam || sortByParam || sortOrderParam || mostExpensiveParam || rarityParam) {
 			resetFilters(); // Removed to prevent resetting filters on page load
 
 			// Then apply the specific filter from the URL
@@ -55,6 +61,53 @@
 				const supertypeValue = typeMap[typeParam.toLowerCase()];
 				if (supertypeValue) {
 					filterSupertype.set(supertypeValue.toLowerCase());
+				}
+			}
+
+			if (nameParam) {
+				const decodedNameParam = decodeURIComponent(nameParam);
+				filterName.set(decodedNameParam);
+			}
+			
+			if (pokemonTypeParam) {
+				const decodedPokemonTypeParam = decodeURIComponent(pokemonTypeParam);
+				const typeExists = types.some(type => type.toLowerCase() === decodedPokemonTypeParam.toLowerCase());
+				if (typeExists) {
+					filterType.set(decodedPokemonTypeParam.toLowerCase());
+				}
+			}
+			
+			// Apply sort settings from URL
+			if (sortByParam) {
+				// Validate that the sort param matches one of our expected values
+				const validSortValues = [
+					'sort-pokedex', 'sort-price', 'sort-name', 'sort-id', 
+					'sort-rarity', 'sort-release-date', 'sort-artist'
+				];
+				
+				if (validSortValues.includes(sortByParam)) {
+					sortBy.set(sortByParam);
+				}
+			}
+			
+			if (sortOrderParam) {
+				// Validate sort order is either 'asc' or 'desc'
+				if (sortOrderParam === 'asc' || sortOrderParam === 'desc') {
+					sortOrder.set(sortOrderParam);
+				}
+			}
+			
+			// Apply most expensive filter from URL
+			if (mostExpensiveParam === 'true') {
+				mostExpensiveOnly.set(true);
+			}
+			
+			// Apply rarity filter from URL
+			if (rarityParam) {
+				const decodedRarityParam = decodeURIComponent(rarityParam);
+				const rarityExists = rarities.some(rarity => rarity.toLowerCase() === decodedRarityParam.toLowerCase());
+				if (rarityExists) {
+					filterRarity.set(decodedRarityParam.toLowerCase());
 				}
 			}
 		}
