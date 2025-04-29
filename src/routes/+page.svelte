@@ -112,6 +112,9 @@
 		</div>
 	</section>
 	
+	<!-- Separator after hero section -->
+	<div class="w-full max-w-[800px] mx-auto my-4 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
+	
 	<!-- Latest set section -->
 	{#if latestSet}
 		<section class="mb-12">
@@ -171,6 +174,9 @@
 			</div>
 		</section>
 	{/if}
+	
+	<!-- Separator before Most Expensive Cards section -->
+	<div class="w-full max-w-[200px] mx-auto my-4 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
 	
 	<!-- Most expensive cards section -->
 	{#if mostExpensiveCards && mostExpensiveCards.length > 0}
