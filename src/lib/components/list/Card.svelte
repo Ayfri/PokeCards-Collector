@@ -139,6 +139,7 @@
 							class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 							on:click={handleRemoveCard}
 							disabled={isUpdatingCollection}
+							title="Remove one copy from collection"
 						>
 							<Minus 
 								size={Math.min(18, Math.floor(width/16))} 
@@ -172,6 +173,7 @@
 						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 						on:click={toggleWishlist}
 						disabled={isUpdatingWishlist}
+						title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
 					>
 						<Heart 
 							size={Math.min(18, Math.floor(width/16))}
