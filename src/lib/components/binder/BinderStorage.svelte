@@ -8,7 +8,7 @@
 	import FilterIcon from 'lucide-svelte/icons/filter';
 	import XIcon from 'lucide-svelte/icons/x';
 	import CardImage from '@components/card/CardImage.svelte';
-	
+	import TextInput from '@components/filters/TextInput.svelte';
 	export let cards: Writable<Array<{id: string; url: string}>>;
 	
 	// Search and filter state
@@ -280,33 +280,19 @@
 	</p>
 	
 	{#if $cards.length > 0}
-		<div class="relative mb-2">
-			<div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-				<SearchIcon size={14} class="text-gray-400" />
-			</div>
-			
-			<input 
-				type="text" 
+		<div class="relative mb-2 flex gap-1 items-end">
+			<TextInput
+				id="search"
+				label="Search cards:"
 				bind:value={searchTerm}
 				placeholder="Search cards..." 
-				class="w-full bg-gray-700 border border-gray-600 rounded pl-8 pr-8 py-1 text-sm text-white"
 			/>
 			
-			{#if searchTerm}
-				<button 
-					class="absolute inset-y-0 right-8 pr-1 flex items-center text-gray-400 hover:text-white"
-					on:click={clearSearch}
-				>
-					<XIcon size={14} />
-				</button>
-			{/if}
-			
-			<button 
-				class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-white"
-				on:click={toggleFilters}
+			<Button
+				onClick={toggleFilters}
 			>
 				<FilterIcon size={14} />
-			</button>
+			</Button>
 		</div>
 		
 		{#if showFilters}
