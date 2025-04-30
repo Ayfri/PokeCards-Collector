@@ -49,19 +49,18 @@
 		if (!binderStoredCards) {
 			// Dispatch a custom event if we couldn't get the store directly
 			const event = new CustomEvent('add-to-binder', { 
-				detail: { cardUrl: card.image },
+				detail: { cardCode: card.cardCode },
 				bubbles: true 
 			});
 			document.dispatchEvent(event);
 		} else {
 			// Add directly to the store
-			binderStoredCards.update((cards: any[]) => [
-				...cards, 
-				{ 
-					id: crypto.randomUUID(), 
-					url: card.image 
+			binderStoredCards.update((cards: string[]) => {
+				if (!cards.includes(card.cardCode)) {
+					return [...cards, card.cardCode];
 				}
-			]);
+				return cards;
+			});
 		}
 		
 		// Marquer la carte comme ajoutée pour l'effet visuel
