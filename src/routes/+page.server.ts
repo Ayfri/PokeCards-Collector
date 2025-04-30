@@ -1,5 +1,5 @@
-import { getCards, getRarities, getSets, getTypes, getArtists, getPokemons, getPrices } from '$helpers/data';
-import type { FullCard, Set } from '$lib/types';
+import { getCards, getSets, getPokemons, getPrices } from '$helpers/data';
+import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {

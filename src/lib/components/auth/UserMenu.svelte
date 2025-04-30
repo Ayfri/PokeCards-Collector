@@ -6,22 +6,28 @@
 	import Heart from 'lucide-svelte/icons/heart';
 	import Library from 'lucide-svelte/icons/library';
 	import Settings from 'lucide-svelte/icons/settings';
-	import { authStore } from '$lib/stores/auth';
-	import { signOut } from '$lib/services/auth';
+	import { page } from '$app/state';
 	import AuthModal from './AuthModal.svelte';
-	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import Avatar from './Avatar.svelte';
+	import { setNavigationLoading } from '$lib/stores/loading';
 	import type { UserProfile } from '$lib/types';
 	import type { User as AuthUser } from '@supabase/supabase-js';
-	import { setNavigationLoading } from '$lib/stores/loading';
-
-	export let user: AuthUser | null = null;
-	export let profile: UserProfile | null = null;
 
 	let isMenuOpen = false;
 	let isAuthModalOpen = false;
 	let menuElement: HTMLElement;
+
+	$: user = page.data.user as AuthUser | null;
+	$: profile = page.data.profile as UserProfile | null;
+
+	export let userProp: AuthUser | null = user;
+	export let profileProp: UserProfile | null = profile;
+
+	$: (
+		userProp = user,
+		profileProp = profile
+	);
 
 	function toggleMenu() {
 		isMenuOpen = !isMenuOpen;
@@ -55,20 +61,22 @@
 	}
 
 	async function handleSignOut() {
+		closeMenu();
 		try {
-			closeMenu();
+			const response = await fetch('/api/auth/logout', {
+				method: 'POST',
+			});
 
-			if (browser) {
-				localStorage.removeItem('supabase.auth.token');
+			if (!response.ok) {
+				console.error('Logout failed:', response.statusText);
+				return;
 			}
 
-			authStore.reset();
+			window.location.href = '/';
 
-			await signOut();
-
-			await goto('/');
 		} catch (error) {
-			await goto('/');
+			console.error('An error occurred during sign out:', error);
+			window.location.href = '/';
 		}
 	}
 
@@ -94,9 +102,9 @@
 		on:click={toggleMenu}
 		aria-expanded={isMenuOpen}
 	>
-		{#if user && profile}
+		{#if userProp && profileProp}
 			<span class="sr-only">Open user menu</span>
-			<Avatar username={$authStore.profile?.username ?? profile.username} />
+			<Avatar username={profileProp.username} />
 		{:else}
 			<span class="sr-only">Sign in</span>
 			<User size={24} />
@@ -113,14 +121,14 @@
 			aria-labelledby="user-menu-button"
 			tabindex="-1"
 		>
-			{#if user && profile}
+			{#if userProp && profileProp}
 				<div class="py-2 px-3 border-b dark:border-gray-700">
-					<p class="text-sm font-medium text-gray-900 dark:text-white">{$authStore.profile?.username ?? profile.username}</p>
-					<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{$authStore.user?.email ?? user.email}</p>
+					<p class="text-sm font-medium text-gray-900 dark:text-white">{profileProp.username}</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{userProp.email}</p>
 				</div>
 				<div class="py-1">
 					<a
-						href={`/profile?user=${encodeURIComponent($authStore.profile?.username ?? profile.username)}`}
+						href={`/profile?user=${encodeURIComponent(profileProp.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
@@ -130,7 +138,7 @@
 						My profile
 					</a>
 					<a
-						href={`/collection?user=${encodeURIComponent($authStore.profile?.username ?? profile.username)}`}
+						href={`/collection?user=${encodeURIComponent(profileProp.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
@@ -140,7 +148,7 @@
 						My collection
 					</a>
 					<a
-						href={`/wishlist?user=${encodeURIComponent($authStore.profile?.username ?? profile.username)}`}
+						href={`/wishlist?user=${encodeURIComponent(profileProp.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"

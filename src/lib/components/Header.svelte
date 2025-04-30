@@ -1,15 +1,13 @@
 <script lang="ts">
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { NO_IMAGES } from '$lib/images';
-	import type { FullCard, Set, PriceData, UserProfile } from '$lib/types';
-	import type { User } from '@supabase/supabase-js';
+	import type { FullCard, Set, PriceData } from '$lib/types';
 	import UserMenu from '@components/auth/UserMenu.svelte';
 	import SearchBar from '@components/SearchBar.svelte';
 	import SearchModal from '@components/SearchModal.svelte';
 	import pokestore from '~/assets/pokestore.png';
 	// Import icons
 	import type { Icon } from 'lucide-svelte';
-	import HomeIcon from 'lucide-svelte/icons/home';
 	import CardStackIcon from 'lucide-svelte/icons/layers';
 	import LibraryIcon from 'lucide-svelte/icons/library';
 	import ArtistIcon from 'lucide-svelte/icons/paintbrush';
@@ -18,10 +16,6 @@
 	import MenuIcon from 'lucide-svelte/icons/menu'; // Hamburger icon
 	import XIcon from 'lucide-svelte/icons/x'; // Close icon
 	import { slide } from 'svelte/transition';
-
-	// Re-add props received from layout
-	export let user: User | null = null;
-	export let profile: UserProfile | null = null;
 
 	// Re-add NavLink interface and constant
 	interface NavLink {
@@ -42,13 +36,15 @@
 	// State for mobile menu
 	let isMobileMenuOpen = false;
 
-	// Use data from layout store
-	$: prices = $page.data.prices as Record<string, PriceData> || {};
-	$: allCards = $page.data.allCards as FullCard[] || [];
-	$: sets = $page.data.sets as Set[] || [];
+	// Use data from page state directly
+	$: user = page.data.user;
+	$: profile = page.data.profile;
+	$: prices = page.data.prices as Record<string, PriceData> || {};
+	$: allCards = page.data.allCards as FullCard[] || [];
+	$: sets = page.data.sets as Set[] || [];
 
 	// Close mobile menu on navigation
-	$: $page.url, isMobileMenuOpen = false;
+	$: page.url, isMobileMenuOpen = false;
 </script>
 
 <header class="relative w-full p-2 pb-6 lg:pb-12 z-30">
@@ -99,8 +95,8 @@
 			<!-- Mobile search using the Svelte component -->
 			<SearchModal {allCards} {prices} {sets} />
 
-			<!-- User menu - Pass down user and profile props -->
-			<UserMenu {user} {profile} />
+			<!-- User menu - Pass down user and profile props with correct names -->
+			<UserMenu userProp={user} profileProp={profile} />
 		</div>
 	</div>
 

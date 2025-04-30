@@ -11,10 +11,32 @@
 	import Seo from '$lib/components/seo/Seo.svelte';
 	import { setNavigationLoading } from '$lib/stores/loading';
 	import { onMount } from 'svelte';
+	import { wishlistStore } from '$lib/stores/wishlist';
+	import { collectionStore } from '$lib/stores/collection';
+	import type { UserWishlist, UserCollection } from '$lib/types';
 
-	// Access all data from the page store
-	$: data = page.data;
-	$: ({title, description, image, user, profile} = data);
+	// Access all data from the page state
+	$: ({title, description, image, user, profile, wishlistItems, collectionItems} = page.data);
+
+	// Reactive statement to update stores when server data changes
+	$: {
+		// Update wishlist store
+		const wishlistSet = new Set<string>();
+		if (wishlistItems && Array.isArray(wishlistItems)) {
+			(wishlistItems as UserWishlist[]).forEach(item => wishlistSet.add(item.card_code));
+		}
+		wishlistStore.set(wishlistSet);
+
+		// Update collection store
+		const collectionMap = new Map<string, number>();
+		if (collectionItems && Array.isArray(collectionItems)) {
+			(collectionItems as UserCollection[]).forEach(item => {
+				const currentCount = collectionMap.get(item.card_code) || 0;
+				collectionMap.set(item.card_code, currentCount + 1);
+			});
+		}
+		collectionStore.set(collectionMap);
+	}
 
 	// Capture clicks on links before navigation starts
 	onMount(() => {

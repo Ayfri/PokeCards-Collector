@@ -1,24 +1,28 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { authStore } from '$lib/stores/auth';
+	import { page } from '$app/state'; // Use $app/state
 	import { goto } from '$app/navigation';
 	import PageTitle from '$lib/components/PageTitle.svelte';
 	import Avatar from '$lib/components/auth/Avatar.svelte';
 	import { fly, fade } from 'svelte/transition';
-	
+	import { browser } from '$app/environment'; // Import browser
+
+	// Removed authStore import
+
 	let ready = false;
-	
-	// Check if user is logged in
+
+	// Get user/profile reactively from page state
+	$: user = page.data.user;
+	$: profile = page.data.profile;
+
 	onMount(() => {
-		const unsubscribe = authStore.subscribe(state => {
-			if (state.user === null && !state.loading) {
-				// Redirect to home if not logged in
-				goto('/');
-			}
-		});
-		
+		// Check directly if user data is available from the server load
+		if (browser && !user) {
+			// If no user data loaded from the server, redirect
+			goto('/');
+		}
 		ready = true;
-		return unsubscribe;
+		// No need for unsubscribe
 	});
 </script>
 
@@ -31,7 +35,8 @@
 	</div>
 
 	{#if ready}
-		{#if !$authStore.user || !$authStore.profile}
+		<!-- Use reactive user/profile variables -->
+		{#if !user || !profile}
 			<div class="text-center p-8 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl my-10" in:fade={{ duration: 700 }}>
 				<p class="text-xl text-gold-400 font-bold mb-4">Please sign in to view settings.</p>
 				<div class="flex flex-wrap justify-center gap-4 mt-6">
@@ -48,10 +53,13 @@
 				<!-- Settings Navigation -->
 				<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6">
 					<div class="flex items-center gap-4 mb-6">
-						<Avatar username={$authStore.profile.username} size="size-12 text-xl" />
+						<!-- Use reactive profile variable -->
+						<Avatar username={profile.username} size="size-12 text-xl" />
 						<div>
-							<h2 class="text-xl font-semibold text-gold-400">{$authStore.profile.username}</h2>
-							<p class="text-sm text-gray-400">{$authStore.user.email}</p>
+							<!-- Use reactive profile variable -->
+							<h2 class="text-xl font-semibold text-gold-400">{profile.username}</h2>
+							<!-- Use reactive user variable -->
+							<p class="text-sm text-gray-400">{user.email}</p>
 						</div>
 					</div>
 
@@ -80,7 +88,7 @@
 								<input
 									id="email"
 									type="email"
-									value={$authStore.user.email}
+									value={user.email}
 									disabled
 									class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800/60 text-gray-400"
 								/>
@@ -94,7 +102,7 @@
 								<input
 									id="username"
 									type="text"
-									value={$authStore.profile.username}
+									value={profile.username}
 									disabled
 									class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800/60 text-gray-400"
 								/>
@@ -110,7 +118,7 @@
 							<p class="text-sm text-gray-300">
 								Your data is stored securely. You can visit your profile page to toggle your profile visibility.
 							</p>
-							
+
 							<a
 								href="/profile"
 								class="animated-hover-button relative overflow-hidden inline-block py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent transition-all duration-300 hover:text-black mt-2"
@@ -123,7 +131,7 @@
 			</div>
 		{/if}
 	{:else}
-		<!-- Pas de placeholder de chargement, la barre de progression en haut suffit -->
+		<!-- Loading state (can be empty if relying on top loading bar) -->
 	{/if}
 </main>
 
@@ -132,7 +140,7 @@
 		0% { transform: rotate(0deg); }
 		100% { transform: rotate(360deg); }
 	}
-	
+
 	.loader-spin {
 		animation: spin 2s linear infinite;
 		display: inline-flex;

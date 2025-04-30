@@ -1,36 +1,28 @@
 import { writable, get } from 'svelte/store';
 import { getUserCollection } from '$lib/services/collections';
-import { authStore } from './auth';
 import { browser } from '$app/environment';
 import { setLoading } from './loading';
 
 // Store for the cardCodes and their counts in the collection
 export const collectionStore = writable<Map<string, number>>(new Map());
 
-// Variable to track if a loading is in progress
-let isLoadingCollection = false;
-// Variable to track if the collection has already been loaded at least once
-let collectionLoaded = false;
+// Function to load the complete collection for a specific user
+// It now requires the username to be passed explicitly.
+export async function loadCollection(username: string) {
+	if (!username) {
+		console.warn('[CollectionStore] loadCollection called without username.');
+		collectionStore.set(new Map()); // Ensure store is empty if no user
+		return;
+	}
 
-// Function to load the complete collection and count card occurrences
-export async function loadCollection(forceReload: boolean = false) {
-	const authState = get(authStore);
-	if (!authState.profile?.username) return;
-	
-	if (isLoadingCollection) return;
-	
-	if (!forceReload && collectionLoaded && get(collectionStore).size > 0) return;
-
+	// Consider managing loading state differently if still needed
 	try {
-		isLoadingCollection = true;
-		setLoading(true);
-		// Fetch all collection entries (just need card_code)
-		const { data: collectionItems, error } = await getUserCollection(authState.profile.username);
-		
+		setLoading(true); // Use global loading store if appropriate
+		const { data: collectionItems, error } = await getUserCollection(username);
+
 		if (error) {
 			console.error('Error loading collection:', error);
 			collectionStore.set(new Map()); // Reset on error
-			collectionLoaded = false;
 			return;
 		}
 
@@ -40,15 +32,13 @@ export async function loadCollection(forceReload: boolean = false) {
 			const currentCount = collectionMap.get(item.card_code) || 0;
 			collectionMap.set(item.card_code, currentCount + 1);
 		});
-		
+
 		collectionStore.set(collectionMap);
-		collectionLoaded = true;
+
 	} catch (error) {
 		console.error('Exception loading collection:', error);
 		collectionStore.set(new Map()); // Reset on error
-		collectionLoaded = false;
 	} finally {
-		isLoadingCollection = false;
 		setLoading(false);
 	}
 }
@@ -81,14 +71,5 @@ export function updateCollectionStoreCount(cardCode: string, change: number) {
 
 // Client-side initialization
 if (browser) {
-	authStore.subscribe(state => {
-		if (state.initialized && !state.loading) {
-			if (state.profile) {
-				loadCollection();
-			} else {
-				collectionStore.set(new Map());
-				collectionLoaded = false;
-			}
-		}
-	});
+	// Removed client-side initialization block that subscribed to authStore
 } 

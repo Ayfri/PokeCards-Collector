@@ -18,13 +18,15 @@
 	$: isPublic = data.isPublic;
 	$: displayCards = data.serverWishlistCards || []; // Use server data
 	$: targetUsername = data.targetUsername;
-	$: pageTitleDisplay = data.title;
 	$: description = data.description;
 	$: loggedInUsername = page.data.profile?.username; // Get logged-in user from layout
 	$: isOwnWishlist = !targetUsername || (loggedInUsername === targetUsername);
 	$: profileNotFound = !targetProfile && !!targetUsername;
 	$: profileIsPrivate = !!targetProfile && !isPublic && !isOwnWishlist;
-	
+
+	// Determine the title to display based on ownership
+	$: pageTitleDisplay = isOwnWishlist ? 'My Wishlist' : data.title;
+
 	$: statusMessage = (() => {
 		if (profileNotFound) return `User "${targetUsername}" not found.`;
 		if (profileIsPrivate) return `Wishlist for "${targetUsername}" is private.`;

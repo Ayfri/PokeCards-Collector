@@ -1,11 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { signIn } from '$lib/services/auth';
-  import { isUsernameTaken, getProfileByAuthId } from '$lib/services/profiles';
+  import { isUsernameTaken } from '$lib/services/profiles';
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { authStore } from '$lib/stores/auth';
-  import Loader from '$lib/components/Loader.svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -102,16 +99,14 @@
       loading = true;
       errorMessage = '';
       
-      // Ajouter un timeout visible pour l'utilisateur
       const registerTimeout = setTimeout(() => {
         if (loading) {
-          errorMessage = "L'inscription prend plus de temps que prévu. Vérifiez votre connexion internet ou réessayez plus tard.";
+          errorMessage = 'Registration is taking longer than expected. Please check your internet connection or try again later.';
           loading = false;
         }
       }, 15000);
 
       try {
-        // Vérifier la connectivité réseau
         if (!navigator.onLine) {
           clearTimeout(registerTimeout);
           errorMessage = 'No internet connection. Please check your network.';
@@ -119,110 +114,76 @@
           return;
         }
         
-        try {
-          const response = await fetch('/api/auth/signup', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              email,
-              password,
-              username
-            })
-          });
-          
-          let data;
-          try {
-            const responseText = await response.text();
-            
-            try {
-              data = JSON.parse(responseText);
-            } catch (jsonError) {
-              throw new Error('Réponse non-JSON: ' + responseText);
-            }
-          } catch (parseError) {
-            clearTimeout(registerTimeout);
-            errorMessage = 'Error processing server response';
-            loading = false;
-            return;
-          }
-          
-          if (!response.ok || !data.success) {
-            clearTimeout(registerTimeout);
-            if (data.error && data.error.includes('already registered')) {
-              errorMessage = 'This email is already registered';
-            } else if (data.error && data.error.includes('already taken')) {
-              errorMessage = 'This username is already taken';
-            } else if (data.error && data.error.includes('Profile creation')) {
-              errorMessage = 'Error creating profile. Please try again.';
-            } else {
-              errorMessage = data.error || 'Error during registration';
-            }
-            loading = false;
-            return;
-          }
-          
-          // Inscription réussie -> Connexion automatique
-          try {
-            console.log('Signup successful, attempting automatic sign in...');
-            const { user, session, error: loginError } = await signIn(email, password);
-            
-            if (loginError || !user || !session) {
-              console.error('Automatic sign in failed:', loginError);
-              clearTimeout(registerTimeout);
-              errorMessage = 'Registration successful, but automatic login failed: ' + (loginError?.message || 'Unknown error');
-              loading = false;
-              dispatch('switch', 'login');
-              return;
-            }
-            
-            // Connexion automatique réussie -> Mettre à jour le store MANUELLEMENT
-            console.log('Automatic sign in successful! Manually updating store...');
-            authStore.setUser(user);
-            const { data: profile, error: profileError } = await getProfileByAuthId(user.id);
-            if (profileError) {
-              console.warn('Could not fetch profile immediately after sign in:', profileError);
-              authStore.setProfile(null);
-            } else {
-              authStore.setProfile(profile);
-            }
+        // 1. Attempt Signup via API
+        const signupResponse = await fetch('/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, username }),
+        });
 
-            clearTimeout(registerTimeout);
-            loading = false;
-
-            // Dispatch success event BEFORE navigation
-            console.log('Dispatching success event...');
-            dispatch('success'); 
-            
-            console.log('Store updated. Navigating to /...');
-            await goto('/', { invalidateAll: true });
-            return;
-          } catch (loginCatchError: unknown) {
-            clearTimeout(registerTimeout);
-            errorMessage = 'Registration successful, but an error occurred during automatic login. Please log in manually.';
-            if (loginCatchError instanceof Error) {
-                errorMessage += ` (${loginCatchError.message})`;
-            }
-            loading = false;
-            
-            // Switch to login tab
-            dispatch('switch', 'login');
-            return;
-          }
-        } catch (fetchError) {
+        if (!signupResponse.ok) {
           clearTimeout(registerTimeout);
-          errorMessage = 'An error occurred while communicating with the server. Please try again.';
+          let signupErrorMsg = 'Error during registration';
+          try {
+            const errorData = await signupResponse.json();
+            signupErrorMsg = errorData.message || errorData.error || signupErrorMsg;
+            if (signupErrorMsg.includes('already registered')) {
+              signupErrorMsg = 'This email is already registered';
+            } else if (signupErrorMsg.includes('already taken')) {
+              signupErrorMsg = 'This username is already taken';
+            }
+          } catch (e) { /* Ignore parsing error, use default */ }
+          errorMessage = signupErrorMsg;
           loading = false;
+          return;
         }
-      } catch (error: unknown) {
+
+        // Signup successful, now attempt automatic login via API
+        console.log('Signup successful, attempting automatic sign in via API...');
+        const loginResponse = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
         clearTimeout(registerTimeout);
-        alert(`Error during submission: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
+        if (!loginResponse.ok) {
+          console.error('Automatic sign in failed after signup:', loginResponse.status);
+          let loginErrorMsg = 'Registration successful, but automatic login failed.';
+          try {
+            const errorData = await loginResponse.json();
+            loginErrorMsg += ` ${errorData.message || 'Please log in manually.'}`;
+          } catch(e) { loginErrorMsg += ' Please log in manually.'; }
+          errorMessage = loginErrorMsg;
+          loading = false;
+          dispatch('switch', 'login'); // Switch to login tab
+          return;
+        }
+
+        // Automatic login successful via API (cookies are set)
+        console.log('Automatic sign in successful via API!');
+        loading = false;
+
+        // Dispatch success event
+        dispatch('success');
+
+        // Navigate to home - SSR should pick up the new session from cookies
+        await goto('/', { invalidateAll: true }); // invalidateAll helps ensure layout re-runs
+
+      } catch (fetchError) {
+        clearTimeout(registerTimeout);
+        console.error('Network or fetch error during signup/login process:', fetchError);
+        errorMessage = 'An error occurred while communicating with the server. Please try again.';
         loading = false;
       }
     } catch (error: unknown) {
-      alert(`Error during submission: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      loading = false;
+      console.error('Unexpected error during form submission:', error);
+      loading = false; // Ensure loading is stopped
+      // Use a generic error message for unexpected errors
+      errorMessage = `An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      // alert is generally discouraged, using the errorMessage div is better UX
+      // alert(`Error during submission: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 </script>

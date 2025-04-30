@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { authStore } from '$lib/stores/auth';
 	import { toggleProfileVisibility } from '$lib/services/profiles';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
+	import { page } from '$app/state';
 	import PageTitle from '$lib/components/PageTitle.svelte';
 	import type { PageData } from './$types';
-	import type { Set } from '$lib/types';
+	import type { Set, UserProfile } from '$lib/types';
 	import Avatar from '$lib/components/auth/Avatar.svelte';
 	import { NO_IMAGES } from '$lib/images';
 	import { Home, UserCog, BookOpen, ListTodo } from 'lucide-svelte';
 	import { fly, fade } from 'svelte/transition';
-	
+
 	export let data: PageData;
 
 	// State variables
@@ -20,29 +20,26 @@
 	let successMessage = '';
 	let ready = false;
 
-	// Reactive data from server
-	$: allCards = data.allCards;
-	$: sets = data.sets || [];
-	$: prices = data.prices;
-	$: targetProfile = data.targetProfile;
-	$: isPublic = data.isPublic;
-	$: collectionStats = data.collectionStats;
-	$: isOwnProfile = data.isOwnProfile;
-	$: loggedInUsername = data.loggedInUsername;
-	$: pageTitle = data.title;
-	$: description = data.description;
+	// Reactive data from page state - use page.data directly
+	$: ({ allCards, sets = [], prices, targetProfile, isPublic, collectionStats, isOwnProfile, loggedInUsername, title: pageTitle, description } = page.data);
+	$: user = page.data.user;
+	$: profile = page.data.profile;
+
+	// Local reactive state for visibility, initialized from server data
+	let currentVisibility = isPublic;
+	$: currentVisibility = isPublic;
 
 	// Toggle profile visibility
 	async function handleToggleVisibility() {
-		if (!$authStore.user || !$authStore.profile) return;
+		if (!user || !profile) return;
 
 		isLoading = true;
 		errorMessage = '';
 		successMessage = '';
 
 		try {
-			const newVisibility = !$authStore.profile.is_public;
-			const { data: updatedProfile, error } = await toggleProfileVisibility($authStore.profile.username, newVisibility);
+			const newVisibility = !currentVisibility;
+			const { data: updatedProfile, error } = await toggleProfileVisibility(profile.username, newVisibility);
 
 			if (error) {
 				errorMessage = `Failed to update profile visibility: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
@@ -50,7 +47,7 @@
 			}
 
 			if (updatedProfile) {
-				authStore._update({ profile: updatedProfile });
+				currentVisibility = updatedProfile.is_public;
 				successMessage = `Profile visibility changed to ${newVisibility ? 'public' : 'private'}`;
 			} else {
 				errorMessage = 'No data returned from server after toggle';
@@ -60,7 +57,6 @@
 		} finally {
 			isLoading = false;
 
-			// Auto-hide success message after 3 seconds
 			if (successMessage) {
 				setTimeout(() => {
 					successMessage = '';
@@ -87,7 +83,6 @@
 	function getSortedSets(): [string, { count: number; total: number; percentage: number; collectedValue: number; totalValue: number }][] {
 		if (!collectionStats?.set_completion) return [];
 		
-		// Assert the correct type for Object.entries
 		return (Object.entries(collectionStats.set_completion) as [string, { count: number; total: number; percentage: number; collectedValue: number; totalValue: number }][])
 			.sort((a, b) => b[1].percentage - a[1].percentage);
 	}
@@ -111,36 +106,20 @@
 	
 	function getCompletionPercentage(): number {
 		if (!collectionStats?.set_completion) return 0;
-		const sets = Object.values(collectionStats.set_completion);
-		if (sets.length === 0) return 0;
-		
-		const totalPercentage = sets.reduce((sum, set) => sum + set.percentage, 0);
-		return totalPercentage / sets.length;
+		const setCompletionData = collectionStats.set_completion as Record<string, { percentage: number }>;
+		const totalPercentage = Object.values(setCompletionData).reduce((sum: number, set: { percentage: number }) => sum + set.percentage, 0);
+		const setCount = Object.keys(setCompletionData).length;
+		return setCount > 0 ? totalPercentage / setCount : 0;
 	}
 
-	// Simplified onMount - remove subscription and profile loading
+	// Simplified onMount
 	onMount(() => {
-		// Example: If you need other client-side initialization, it goes here
-		// Check if user *should* be logged in but isn't (e.g., session expired client-side)
 		const urlParams = new URLSearchParams(window.location.search);
 		const urlUsername = urlParams.get('user');
 		if (!urlUsername && !loggedInUsername && browser) {
-			// Trying to view own profile but not logged in according to server data
-			// This might indicate an issue or just an anonymous user hitting /profile
-			// Depending on desired behavior, could redirect to login
-			// goto('/login'); 
+			goto('/');
 		}
-
-		// If needed, still check authStore state for UI elements not covered by server data
-		const unsubscribe = authStore.subscribe(state => {
-			if (!state.loading && state.user === null && !urlUsername && browser) {
-				// If auth store confirms no user and we are on /profile, redirect
-				goto('/');
-			}
-		});
-		
 		ready = true;
-		return unsubscribe; // Make sure to return unsubscribe
 	});
 	
 	// Animation for stats numbers
@@ -156,7 +135,6 @@
 	<!-- Use server-provided title and description -->
 	<title>{pageTitle}</title>
 	<meta name="description" content={description} />
-	<!-- Removed client-side script for username mismatch check -->
 </svelte:head>
 
 <main class="container mx-auto px-4 pb-8 text-white overflow-x-hidden">
@@ -169,11 +147,11 @@
 
 	<!-- Conditional rendering based on server data -->
 	{#if ready}
-		{#if !targetProfile && data.title === 'User Not Found'}
+		{#if !targetProfile && pageTitle === 'User Not Found'}
 			<!-- User Not Found -->
 			<div class="text-center p-8 flex flex-col items-center justify-center flex-grow" in:fly={{ y: 20, duration: 500, delay: 100 }} out:fade={{ duration: 200 }}>
 				<p class="font-bold mb-4 text-4xl text-gold-400">
-					{pageTitle} <!-- Display server title: User Not Found -->
+					{pageTitle}
 				</p>
 				<p class="mb-4 text-gray-300">{description}</p>
 				<a
@@ -190,7 +168,7 @@
 			<!-- Private Profile -->
 			<div class="text-center p-8 flex flex-col items-center justify-center flex-grow" in:fly={{ y: 20, duration: 500, delay: 100 }} out:fade={{ duration: 200 }}>
 				<p class="font-bold mb-4 text-3xl text-gold-400">
-					{pageTitle} <!-- Display server title: Private Profile -->
+					{pageTitle}
 				</p>
 				<p class="mb-4 text-gray-300">{description}</p>
 				<a
@@ -216,7 +194,7 @@
 					</a>
 				</div>
 			</div>
-		{:else}
+		{:else if targetProfile}
 			<!-- Display Profile (Own or Public) -->
 			
 			<!-- Success message -->
@@ -241,8 +219,8 @@
 						<Avatar username={targetProfile.username} size="size-16 text-3xl" />
 						<div>
 							<h2 class="text-xl font-semibold text-gold-400">{targetProfile.username}</h2>
-							{#if isOwnProfile && $authStore.user?.email}
-								<p class="text-sm text-gray-400">{$authStore.user.email}</p>
+							{#if isOwnProfile && user?.email}
+								<p class="text-sm text-gray-400">{user.email}</p>
 							{/if}
 						</div>
 					</div>
@@ -252,8 +230,7 @@
 							<div class="mb-4">
 								<span class="text-sm font-medium text-gray-400">Profile visibility:</span>
 								<span class="ml-2 text-sm text-gold-400">
-									<!-- Use authStore state for real-time update after toggle -->
-									{$authStore.profile?.is_public ? 'Public' : 'Private'}
+									{currentVisibility ? 'Public' : 'Private'}
 								</span>
 							</div>
 
@@ -272,7 +249,7 @@
 										</div>
 										Processing...
 									{:else}
-										{$authStore.profile?.is_public ? 'Make my profile private' : 'Make my profile public'}
+										{currentVisibility ? 'Make my profile private' : 'Make my profile public'}
 									{/if}
 								</span>
 							</button>
@@ -394,12 +371,14 @@
 						<p class="text-gray-400">No set completion data available.</p>
 					{/if}
 				</div>
-			{:else if !targetProfile && !isOwnProfile} 
-				<!-- Catch-all for potentially unloaded profile state -->
+			{:else if !targetProfile && !isOwnProfile && loggedInUsername}
 				<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 text-center" in:fade={{ duration: 300 }}>
-					<p class="text-gray-400">Profile data is loading or not available.</p>
+					<p class="text-gray-400">Could not load the requested profile.</p>
+					<a href="/" class="text-gold-400 hover:underline mt-2 inline-block">Return Home</a>
 				</div>
 			{/if}
+		{:else}
+			<!-- Pas de placeholder de chargement, la barre de progression en haut suffit -->
 		{/if}
 	{:else}
 		<!-- Pas de placeholder de chargement, la barre de progression en haut suffit -->

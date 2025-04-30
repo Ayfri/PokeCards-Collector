@@ -2,9 +2,9 @@
 	import {NO_IMAGES} from '$lib/images';
 	import {addCardToWishlist, removeCardFromWishlist} from '$lib/services/wishlists';
 	import {addCardToCollection, removeCardFromCollection} from '$lib/services/collections';
-	import {authStore} from '$lib/stores/auth';
 	import {wishlistStore} from '$lib/stores/wishlist';
 	import {collectionStore} from '$lib/stores/collection';
+	import { page } from '$app/state';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import { parseCardCode } from '$lib/helpers/card-utils';
 	import CardImage from '@components/card/CardImage.svelte';
@@ -34,12 +34,16 @@
 	$: mobileWidth = customWidth ? Math.floor(customWidth * 0.82) : 245;
 	$: mobileHeight = customHeight ? Math.floor(customHeight * 0.82) : 342;
 
-	const { pokemonNumber, cardNumber } = parseCardCode(cardCode);	
+	const { pokemonNumber, cardNumber } = parseCardCode(cardCode);
 	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
 	const set = findSetByCardCode(cardCode, sets)!!;
 	if (!prices) {
 		console.log(card);
 	}
+
+	// Access user and profile from page state
+	$: user = page.data.user;
+	$: profile = page.data.profile;
 
 	// Détermine si la carte est dans la wishlist en fonction du store
 	$: isInWishlist = $wishlistStore.has(cardCode);
@@ -57,15 +61,18 @@
 		event.preventDefault();
 		event.stopPropagation();
 
-		if (!$authStore.user || !$authStore.profile) return;
+		// Use user/profile from $page.data
+		if (!user || !profile) return;
 
 		isUpdatingWishlist = true;
 
 		try {
 			if (isInWishlist) {
-				await removeCardFromWishlist($authStore.profile.username, cardCode);
+				// Use profile.username from $page.data
+				await removeCardFromWishlist(profile.username, cardCode);
 			} else {
-				await addCardToWishlist($authStore.profile.username, cardCode);
+				// Use profile.username from $page.data
+				await addCardToWishlist(profile.username, cardCode);
 			}
 		} catch (error) {
 			console.error('Error toggling wishlist status:', error);
@@ -78,12 +85,14 @@
 		event.preventDefault();
 		event.stopPropagation();
 
-		if (!$authStore.user || !$authStore.profile || isUpdatingCollection || isCollectionLimitReached) return;
+		// Use user/profile from $page.data
+		if (!user || !profile || isUpdatingCollection || isCollectionLimitReached) return;
 
 		isUpdatingCollection = true;
 
 		try {
-			await addCardToCollection($authStore.profile.username, cardCode);
+			// Use profile.username from $page.data
+			await addCardToCollection(profile.username, cardCode);
 		} catch (error) {
 			console.error('Error adding card to collection:', error);
 		} finally {
@@ -95,12 +104,14 @@
 		event.preventDefault();
 		event.stopPropagation();
 
-		if (!$authStore.user || !$authStore.profile || isUpdatingCollection || collectionCount === 0) return;
+		// Use user/profile from $page.data
+		if (!user || !profile || isUpdatingCollection || collectionCount === 0) return;
 
 		isUpdatingCollection = true;
 
 		try {
-			await removeCardFromCollection($authStore.profile.username, cardCode);
+			// Use profile.username from $page.data
+			await removeCardFromCollection(profile.username, cardCode);
 		} catch (error) {
 			console.error('Error removing card from collection:', error);
 		} finally {
@@ -130,7 +141,7 @@
 			></div>
 		{/if}
 		<div class="relative" style="width: {width}px; height: {height}px; max-width: 100%;">
-			{#if $authStore.user && $authStore.profile}
+			{#if user && profile}
 				<div class="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/50 p-1">
 					{#if collectionCount > 0}
 						<button

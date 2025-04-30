@@ -95,7 +95,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		: `Card details for ${targetCard.name}`;
 		
 	const pageImage = {
-		url: targetCard.image || layoutData.image?.url || '',
+		url: targetCard.image || layoutData.image || '',
 		alt: pageTitle
 	};
 
