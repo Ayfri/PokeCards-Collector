@@ -438,7 +438,7 @@
 
 <div class="w-full">
 	<Section title="Basic Filters" bind:isOpen={$filterStates.basicFilters}>
-		<div class="flex flex-col gap-4">
+		<div class="flex flex-col gap-2 md:gap-4">
 			<div class="flex flex-wrap gap-4">
 				<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
 					<label for="sort" class="text-xs text-gray-300">Sort by</label>
@@ -503,7 +503,7 @@
 	</Section>
 
 	<Section title="Type Filters" bind:isOpen={$filterStates.typeFilters}>
-		<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
+		<div class="flex flex-wrap gap-2 md:gap-4 sm:flex-row flex-col">
 			<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
 				<label for="supertype" class="text-xs text-gray-300">Card Type</label>
 				<select
@@ -549,7 +549,7 @@
 	</Section>
 
 	<Section title="Collection Filters" bind:isOpen={$filterStates.collectionFilters}>
-		<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
+		<div class="flex flex-wrap gap-2 md:gap-4 sm:flex-row flex-col">
 			<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
 				<label for="set" class="text-xs text-gray-300">Set</label>
 				<select
