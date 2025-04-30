@@ -1,54 +1,35 @@
 <script lang="ts">
-	import { onMount, afterUpdate } from 'svelte';
+	import { onMount } from 'svelte';
 	import { authStore } from '$lib/stores/auth';
 	import { toggleProfileVisibility } from '$lib/services/profiles';
-	import { getCollectionStats } from '$lib/services/collections';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import PageTitle from '$lib/components/PageTitle.svelte';
 	import type { PageData } from './$types';
-	import { page } from '$app/stores';
-	import type { CollectionStats, Set, UserProfile } from '$lib/types';
+	import type { Set } from '$lib/types';
 	import Avatar from '$lib/components/auth/Avatar.svelte';
 	import { NO_IMAGES } from '$lib/images';
 	import { Home } from 'lucide-svelte';
+	
 	export let data: PageData;
 
 	// State variables
 	let isLoading = false;
 	let errorMessage = '';
 	let successMessage = '';
-	let collectionStats: CollectionStats | null = null;
-	let loggedInUser: UserProfile | null = null;
-	let isOwnProfile = false;
-	let profileNotFound = false;
-	let profileIsPrivate = false;
-	let pageTitle = 'My Profile';
-	let lastUsername = ''; // Track the last username we loaded
-	
+
 	// Reactive data from server
 	$: allCards = data.allCards;
 	$: sets = data.sets || [];
 	$: prices = data.prices;
 	$: targetProfile = data.targetProfile;
 	$: isPublic = data.isPublic;
-	$: serverCollectionStats = data.collectionStats;
-	$: targetUsername = data.targetUsername;
-	
-	// React to data and URL changes
-	$: {
-		const urlUsername = $page.url.searchParams.get('user');
-		
-		// If we're viewing a different profile than before, force a reload
-		if (browser && urlUsername !== lastUsername && lastUsername !== '') {
-			window.location.href = `/profile?user=${encodeURIComponent(urlUsername || '')}`;
-		}
-		
-		if (loggedInUser) {
-			loadProfileData();
-		}
-	}
-	
+	$: collectionStats = data.collectionStats;
+	$: isOwnProfile = data.isOwnProfile;
+	$: loggedInUsername = data.loggedInUsername;
+	$: pageTitle = data.title;
+	$: description = data.description;
+
 	// Toggle profile visibility
 	async function handleToggleVisibility() {
 		if (!$authStore.user || !$authStore.profile) return;
@@ -58,19 +39,19 @@
 		successMessage = '';
 
 		try {
-			const isPublic = !$authStore.profile.is_public;
-			const { data, error } = await toggleProfileVisibility($authStore.profile.username, isPublic);
+			const newVisibility = !$authStore.profile.is_public;
+			const { data: updatedProfile, error } = await toggleProfileVisibility($authStore.profile.username, newVisibility);
 
 			if (error) {
 				errorMessage = `Failed to update profile visibility: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
 				return;
 			}
 
-			if (data) {
-				authStore._update({ profile: data });
-				successMessage = `Profile visibility changed to ${isPublic ? 'public' : 'private'}`;
+			if (updatedProfile) {
+				authStore._update({ profile: updatedProfile });
+				successMessage = `Profile visibility changed to ${newVisibility ? 'public' : 'private'}`;
 			} else {
-				errorMessage = 'No data returned from server';
+				errorMessage = 'No data returned from server after toggle';
 			}
 		} catch (error) {
 			errorMessage = `An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -87,7 +68,8 @@
 	}
 
 	// Format currency for display
-	function formatCurrency(value: number): string {
+	function formatCurrency(value: number | undefined | null): string {
+		if (value === undefined || value === null) return 'N/A';
 		return new Intl.NumberFormat('en-US', {
 			style: 'currency',
 			currency: 'EUR'
@@ -101,141 +83,43 @@
 
 	// Sort sets by completion percentage (descending)
 	function getSortedSets(): [string, { count: number; total: number; percentage: number; collectedValue: number; totalValue: number }][] {
-		if (!collectionStats || !collectionStats.set_completion) return [];
+		if (!collectionStats?.set_completion) return [];
 		
 		// Assert the correct type for Object.entries
 		return (Object.entries(collectionStats.set_completion) as [string, { count: number; total: number; percentage: number; collectedValue: number; totalValue: number }][])
 			.sort((a, b) => b[1].percentage - a[1].percentage);
 	}
 
-	// Handle clicks on My Profile from user menu
-	function handleMyProfileClick() {
-		if (loggedInUser && loggedInUser.username) {
-			const currentUsername = new URLSearchParams($page.url.search).get('user');
-			
-			// Only navigate if we're not already viewing our own profile
-			if (currentUsername !== loggedInUser.username) {
-				goto(`/profile?user=${encodeURIComponent(loggedInUser.username)}`, { invalidateAll: true });
-			}
-		}
-	}
-
-	async function loadProfileData() {
-		if (!loggedInUser) return;
-		
-		profileNotFound = false;
-		profileIsPrivate = false;
-		
-		// Get the user parameter from the URL
-		const urlParams = new URLSearchParams($page.url.search);
-		const urlUsername = urlParams.get('user');
-		lastUsername = urlUsername || ''; // Update the tracked username
-		
-		if (urlUsername) {
-			// Viewing specific user's profile
-			isOwnProfile = loggedInUser?.username === urlUsername;
-			pageTitle = isOwnProfile ? 'My Profile' : `${urlUsername}'s Profile`;
-			
-			if (!targetProfile) {
-				errorMessage = `User "${urlUsername}" not found.`;
-				pageTitle = 'User Not Found';
-				profileNotFound = true;
-				return;
-			} else if (!isPublic && !isOwnProfile) {
-				errorMessage = `Profile for "${urlUsername}" is private.`;
-				pageTitle = 'Private Profile';
-				profileIsPrivate = true;
-				return;
-			} else {
-				// Profile is public or own profile
-				collectionStats = serverCollectionStats;
-			}
-		} else {
-			// Viewing own profile
-			isOwnProfile = true;
-			pageTitle = 'My Profile';
-			
-			if (loggedInUser) {
-				try {
-					const { data: stats, error } = await getCollectionStats(loggedInUser.username, allCards, sets, prices);
-					if (error) {
-						console.error('Failed to load collection stats:', error);
-					} else {
-						collectionStats = stats;
-					}
-				} catch (err) {
-					console.error('Error loading collection stats:', err);
-				}
-			} else {
-				goto('/');
-				return;
-			}
-		}
-	}
-
-	// Add link modifiers to force page reload
-	function modifyProfileLinks() {
-		if (!browser) return;
-		
-		// Modify all profile links to force a page reload
-		document.querySelectorAll('a[href^="/profile"]').forEach(link => {
-			link.setAttribute('target', '_self');
-		});
-	}
-
-	afterUpdate(() => {
-		modifyProfileLinks();
-	});
-
-	// Check if user is logged in and load profile data
+	// Simplified onMount - remove subscription and profile loading
 	onMount(() => {
-		// Override the link in the user menu to use our handler
-		setTimeout(() => {
-			const myProfileLink = document.querySelector('a[href^="/profile?user="]');
-			if (myProfileLink) {
-				myProfileLink.addEventListener('click', (e) => {
-					e.preventDefault();
-					handleMyProfileClick();
-				});
-			}
-		}, 500);
-		
-		const unsubscribe = authStore.subscribe(async (state) => {
-			if (!state.loading) {
-				loggedInUser = state.profile;
-				
-				if (state.user === null) {
-					goto('/');
-					return;
-				}
-				
-				await loadProfileData();
-				modifyProfileLinks();
+		// Example: If you need other client-side initialization, it goes here
+		// Check if user *should* be logged in but isn't (e.g., session expired client-side)
+		const urlParams = new URLSearchParams(window.location.search);
+		const urlUsername = urlParams.get('user');
+		if (!urlUsername && !loggedInUsername && browser) {
+			// Trying to view own profile but not logged in according to server data
+			// This might indicate an issue or just an anonymous user hitting /profile
+			// Depending on desired behavior, could redirect to login
+			// goto('/login'); 
+		}
+
+		// If needed, still check authStore state for UI elements not covered by server data
+		const unsubscribe = authStore.subscribe(state => {
+			if (!state.loading && state.user === null && !urlUsername && browser) {
+				// If auth store confirms no user and we are on /profile, redirect
+				goto('/');
 			}
 		});
-
-		return unsubscribe;
+		
+		return unsubscribe; // Make sure to return unsubscribe
 	});
 </script>
 
 <svelte:head>
-	{#if browser}
-		<script>
-			// Script executed on the client side
-			document.addEventListener('DOMContentLoaded', function() {
-				// Get the displayed username from the page
-				const displayedUsername = document.querySelector('h2.text-xl')?.textContent?.trim() || '';
-				// Get the requested username from the URL
-				const urlParams = new URLSearchParams(window.location.search);
-				const urlUsername = urlParams.get('user');
-				
-				// If there's a mismatch, force reload the page
-				if (urlUsername && displayedUsername && !displayedUsername.includes(urlUsername)) {
-					window.location.reload();
-				}
-			});
-		</script>
-	{/if}
+	<!-- Use server-provided title and description -->
+	<title>{pageTitle}</title>
+	<meta name="description" content={description} />
+	<!-- Removed client-side script for username mismatch check -->
 </svelte:head>
 
 <div class="w-full mx-auto pb-4 lg:pb-5">
@@ -246,11 +130,14 @@
 </div>
 
 <div class="container mx-auto px-4 py-8">
-	{#if profileNotFound || profileIsPrivate}
+	<!-- Conditional rendering based on server data -->
+	{#if !targetProfile && data.title === 'User Not Found'}
+		<!-- User Not Found -->
 		<div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
-			<p class="font-bold mb-4 {errorMessage?.includes('not found') ? 'text-4xl' : 'text-3xl'} text-gold-400">
-				{errorMessage}
+			<p class="font-bold mb-4 text-4xl text-gold-400">
+				{pageTitle} <!-- Display server title: User Not Found -->
 			</p>
+			<p class="mb-4">{description}</p>
 			<a
 				href="/"
 				class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
@@ -261,11 +148,32 @@
 				</span>
 			</a>
 		</div>
-	{:else if !$authStore.user || !$authStore.profile}
-		<div class="text-center p-8">
-			<p class="text-lg">Please sign in to view your profile.</p>
+	{:else if targetProfile && !isPublic && !isOwnProfile}
+		<!-- Private Profile -->
+		<div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
+			<p class="font-bold mb-4 text-3xl text-gold-400">
+				{pageTitle} <!-- Display server title: Private Profile -->
+			</p>
+			<p class="mb-4">{description}</p>
+			<a
+				href="/"
+				class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
+			>
+				<span class="relative z-10 flex items-center gap-2">
+					<Home size={16} />
+					Return to Home
+				</span>
+			</a>
 		</div>
-	{:else}
+	{:else if !loggedInUsername && !targetProfile}
+		<!-- Not logged in, trying to view own profile -->
+		<div class="text-center p-8">
+			<p class="text-lg">{description} <!-- Sign in to view your profile. --></p>
+			<!-- Optionally add a login button here -->
+		</div>
+	{:else if targetProfile}
+		<!-- Display Profile (Own or Public) -->
+		
 		<!-- Success message -->
 		{#if successMessage}
 			<div class="mb-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded">
@@ -273,8 +181,8 @@
 			</div>
 		{/if}
 
-		<!-- Error message -->
-		{#if errorMessage && !profileNotFound && !profileIsPrivate}
+		<!-- Error message for toggle -->
+		{#if errorMessage}
 			<div class="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded">
 				<p>{errorMessage}</p>
 			</div>
@@ -285,18 +193,13 @@
 			<!-- Profile Information -->
 			<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
 				<div class="flex items-center gap-4 mb-6">
-					{#if isOwnProfile}
-						<Avatar username={$authStore.profile.username} size="size-16 text-3xl" />
-						<div>
-							<h2 class="text-xl font-semibold dark:text-white">{$authStore.profile.username}</h2>
+					<Avatar username={targetProfile.username} size="size-16 text-3xl" />
+					<div>
+						<h2 class="text-xl font-semibold dark:text-white">{targetProfile.username}</h2>
+						{#if isOwnProfile && $authStore.user?.email}
 							<p class="text-sm text-gray-500 dark:text-gray-400">{$authStore.user.email}</p>
-						</div>
-					{:else if targetProfile}
-						<Avatar username={targetProfile.username} size="size-16 text-3xl" />
-						<div>
-							<h2 class="text-xl font-semibold dark:text-white">{targetProfile.username}</h2>
-						</div>
-					{/if}
+						{/if}
+					</div>
 				</div>
 
 				{#if isOwnProfile}
@@ -304,7 +207,8 @@
 						<div class="mb-4">
 							<span class="text-sm font-medium text-gray-500 dark:text-gray-400">Profile visibility:</span>
 							<span class="ml-2 text-sm text-gray-700 dark:text-gray-300">
-								{$authStore.profile.is_public ? 'Public' : 'Private'}
+								<!-- Use authStore state for real-time update after toggle -->
+								{$authStore.profile?.is_public ? 'Public' : 'Private'}
 							</span>
 						</div>
 
@@ -323,7 +227,7 @@
 									</div>
 									Processing...
 								{:else}
-									{$authStore.profile.is_public ? 'Make my profile private' : 'Make my profile public'}
+									{$authStore.profile?.is_public ? 'Make my profile private' : 'Make my profile public'}
 								{/if}
 							</span>
 						</button>
@@ -333,17 +237,17 @@
 
 			<!-- Quick links -->
 			<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 lg:col-span-2">
-				<h2 class="text-xl font-semibold mb-4 text-gold-400">My Collections</h2>
+				<h2 class="text-xl font-semibold mb-4 text-gold-400">{isOwnProfile ? 'My' : `${targetProfile.username}'s`} Collections</h2>
 
 				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 					<a
 						href={isOwnProfile 
 							? `/collection` 
-							: `/collection?user=${encodeURIComponent(targetUsername || '')}`}
+							: `/collection?user=${encodeURIComponent(targetProfile.username)}`}
 						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-transparent hover:border-gold-400"
 					>
 						<h3 class="text-lg font-medium mb-2 dark:text-white">
-							{isOwnProfile ? 'My Collection' : `${targetUsername}'s Collection`}
+							{isOwnProfile ? 'My Collection' : `${targetProfile.username}'s Collection`}
 						</h3>
 						<p class="text-sm text-gray-500 dark:text-gray-400">Browse all collected cards</p>
 					</a>
@@ -351,11 +255,11 @@
 					<a
 						href={isOwnProfile 
 							? `/wishlist` 
-							: `/wishlist?user=${encodeURIComponent(targetUsername || '')}`}
+							: `/wishlist?user=${encodeURIComponent(targetProfile.username)}`}
 						class="block p-6 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors border border-transparent hover:border-gold-400"
 					>
 						<h3 class="text-lg font-medium mb-2 dark:text-white">
-							{isOwnProfile ? 'My Wishlist' : `${targetUsername}'s Wishlist`}
+							{isOwnProfile ? 'My Wishlist' : `${targetProfile.username}'s Wishlist`}
 						</h3>
 						<p class="text-sm text-gray-500 dark:text-gray-400">Cards to be acquired</p>
 					</a>
@@ -376,19 +280,19 @@
 						<div class="space-y-3">
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Unique Cards:</span>
-								<span class="font-medium dark:text-white">{collectionStats.unique_cards}/{allCards.length}</span>
+								<span class="font-medium dark:text-white">{collectionStats.unique_cards ?? 0}/{allCards.length}</span>
 							</div>
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Total Cards:</span>
-								<span class="font-medium dark:text-white">{collectionStats.total_instances}</span>
+								<span class="font-medium dark:text-white">{collectionStats.total_instances ?? 0}</span>
 							</div>
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Wishlist Cards:</span>
-								<span class="font-medium dark:text-white">{collectionStats.wishlist_count}</span>
+								<span class="font-medium dark:text-white">{collectionStats.wishlist_count ?? 0}</span>
 							</div>
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Sets in Collection:</span>
-								<span class="font-medium dark:text-white">{Object.keys(collectionStats.set_completion).length}</span>
+								<span class="font-medium dark:text-white">{Object.keys(collectionStats.set_completion ?? {}).length}</span>
 							</div>
 							<div class="flex justify-between">
 								<span class="text-gray-500 dark:text-gray-400">Total Value:</span>
@@ -401,7 +305,7 @@
 					<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
 						<h3 class="text-lg font-semibold mb-4 text-gold-400">Cards by Rarity</h3>
 						<div class="space-y-2">
-							{#each Object.entries(collectionStats.cards_by_rarity).sort((a, b) => b[1] - a[1]).slice(0, 5) as [rarity, count]}
+							{#each Object.entries(collectionStats.cards_by_rarity ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 5) as [rarity, count]}
 								<div class="flex justify-between items-center">
 									<span class="text-gray-500 dark:text-gray-400">{rarity}</span>
 									<span class="font-medium dark:text-white">{count}</span>
@@ -410,9 +314,9 @@
 								<p class="text-gray-500 dark:text-gray-400 text-center">No rarity data available</p>
 							{/each}
 							
-							{#if Object.entries(collectionStats.cards_by_rarity).length > 5}
+							{#if Object.entries(collectionStats.cards_by_rarity ?? {}).length > 5}
 								<div class="text-center mt-2 text-sm text-gray-500">
-									+ {Object.entries(collectionStats.cards_by_rarity).length - 5} more
+									+ {Object.entries(collectionStats.cards_by_rarity ?? {}).length - 5} more
 								</div>
 							{/if}
 						</div>
@@ -473,11 +377,17 @@
 					{/if}
 				</div>
 			</div>
-		{:else if !profileNotFound && !profileIsPrivate}
+		{:else if !targetProfile && !isOwnProfile} 
+			<!-- Catch-all for potentially unloaded profile state -->
 			<div class="mt-8 text-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
-				<p class="text-gray-500 dark:text-gray-400">No collection data available.</p>
+				<p class="text-gray-500 dark:text-gray-400">Profile data is loading or not available.</p>
 			</div>
 		{/if}
+	{:else}
+		<!-- Fallback for unexpected states, e.g., targetProfile is null but title isn't 'User Not Found' -->
+		<div class="text-center p-8">
+			<p class="text-lg">Unable to display profile information.</p>
+		</div>
 	{/if}
 </div>
 

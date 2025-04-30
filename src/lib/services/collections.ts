@@ -3,6 +3,7 @@ import { updateCollectionStoreCount } from '$lib/stores/collection';
 import type { Card, PriceData, Set } from '../types';
 import { findSetByCardCode } from '$helpers/set-utils';
 import { setLoading } from '$lib/stores/loading';
+import { getUserWishlist } from './wishlists';
 
 // --- Constants ---
 const MAX_CARD_QUANTITY = 99; // Define the maximum allowed quantity per card
@@ -139,9 +140,7 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 		if (error || !collection) {
 			return { data: null, error };
 		}
-
-		// Get user's wishlist
-		const { getUserWishlist } = await import('$lib/services/wishlists');
+		
 		const { data: wishlist, error: wishlistError } = await getUserWishlist(username);
 		
 		// Default wishlist count to 0 if there's an error
