@@ -19,6 +19,7 @@
 	import type { BinderCards, FullCard } from '$lib/types';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import TextArea from '@components/filters/TextArea.svelte';
+	import RotateCwIcon from 'lucide-svelte/icons/rotate-cw';
 
 	// Page data from server
 	export let data: PageData;
@@ -286,7 +287,10 @@
 				/>
 			</div>
 
-			<Button onClick={resetBinderGrid} class="text-sm">Reset Grid</Button>
+			<Button onClick={resetBinderGrid} class="text-sm">
+				<RotateCwIcon size={16} />
+				Reset Grid
+			</Button>
 
 			<Button onClick={toggleSetModal} class="text-sm flex items-center gap-1 px-3 py-2">
 				<LayersIcon size={16} />
