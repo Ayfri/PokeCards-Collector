@@ -126,5 +126,5 @@ export interface BinderCards {
 	id: string;
 	url: string;
 	position: number;
-	cardCode: string;
+	cardCode: string | undefined;
 }

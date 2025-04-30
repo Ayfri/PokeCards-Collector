@@ -48,6 +48,17 @@ export function parseCardCode(cardCode: string): { supertype?: string, setCode?:
 }
 
 /**
+ * Checks if a given string matches the expected cardCode format.
+ * Assumes card codes contain underscores and URLs generally don't in relevant parts.
+ */
+export function isCardCode(item: string): boolean {
+	if (!item) return false;
+	// Basic check: Does it contain underscores, which are part of our cardCode format?
+	// And does it NOT start with http, which indicates a URL?
+	return item.includes('_') && !item.startsWith('http');
+}
+
+/**
  * Parse a card code from a card image URL
  */
 export function parseCardCodeFromImage(imageUrl: string): { setCode?: string, cardNumber?: string } {

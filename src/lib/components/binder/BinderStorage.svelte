@@ -11,15 +11,17 @@
 	import { slide } from 'svelte/transition';
 	import ArrowUp from 'lucide-svelte/icons/arrow-up';
 	import ArrowDown from 'lucide-svelte/icons/arrow-down';
-	import { parseCardCode } from '$helpers/card-utils';
+	import { parseCardCode, isCardCode } from '$helpers/card-utils';
 
 	export let cards: Writable<string[]>;
 	export let allCards: FullCard[];
 	export let sets: Set[];
 	
+	$: cardDataMap = new Map(allCards.map(card => [card.cardCode, card]));
+	
 	// Search and filter state
 	let searchTerm = '';
-	let sortBy = 'number';
+	let sortBy = 'type'; // Default sort: card codes first, then URLs
 	let sortOrder = 'asc';
 	let filteredCardCodes: string[] = [];
 	let showFilters = false;
@@ -41,24 +43,42 @@
 		
 		if (searchTerm.trim()) {
 			const term = searchTerm.toLowerCase();
-			filtered = filtered.filter(cardCode => {
-				const fullCard = allCards?.find(c => c.cardCode === cardCode);
-				return cardCode.toLowerCase().includes(term) || 
-					fullCard?.name.toLowerCase().includes(term) || 
-					fullCard?.setName.toLowerCase().includes(term);
+			filtered = filtered.filter(item => {
+				if (isCardCode(item)) {
+					const fullCard = cardDataMap.get(item);
+					return item.toLowerCase().includes(term) || 
+						fullCard?.name.toLowerCase().includes(term) || 
+						fullCard?.setName.toLowerCase().includes(term);
+				} else { // It's a URL
+					return item.toLowerCase().includes(term);
+				}
 			});
 		}
 		
-		filtered.sort((codeA, codeB) => {
-			const {cardNumber: cardNumberA = "0", pokemonNumber: pokemonNumberA = 0, setCode: setCodeA = ''} = parseCardCode(codeA);
-			const {cardNumber: cardNumberB = "0", pokemonNumber: pokemonNumberB = 0, setCode: setCodeB = ''} = parseCardCode(codeB);
+		filtered.sort((itemA, itemB) => {
+			const isCodeA = isCardCode(itemA);
+			const isCodeB = isCardCode(itemB);
+
+			// Group card codes before URLs
+			if (isCodeA && !isCodeB) return -1;
+			if (!isCodeA && isCodeB) return 1;
+
 			let comparison = 0;
-			if (sortBy === 'number') {
-				comparison = parseInt(cardNumberA) - parseInt(cardNumberB);
-				if (comparison === 0) comparison = pokemonNumberA - pokemonNumberB;
-			} else if (sortBy === 'set') {
-				comparison = setCodeA.localeCompare(setCodeB);
+			if (isCodeA && isCodeB) { // Both are card codes
+				const {cardNumber: cardNumberA = "0", pokemonNumber: pokemonNumberA = 0, setCode: setCodeA = ''} = parseCardCode(itemA);
+				const {cardNumber: cardNumberB = "0", pokemonNumber: pokemonNumberB = 0, setCode: setCodeB = ''} = parseCardCode(itemB);
+				if (sortBy === 'number') {
+					comparison = parseInt(cardNumberA) - parseInt(cardNumberB);
+					if (comparison === 0) comparison = pokemonNumberA - pokemonNumberB;
+				} else if (sortBy === 'set') {
+					comparison = setCodeA.localeCompare(setCodeB);
+				} else { // Default type sort already handled grouping
+					comparison = 0; // Keep original relative order within codes if not sorting by number/set
+				}
+			} else if (!isCodeA && !isCodeB) { // Both are URLs
+				comparison = itemA.localeCompare(itemB); // Sort URLs alphabetically
 			}
+
 			return sortOrder === 'asc' ? comparison : -comparison;
 		});
 		
@@ -66,27 +86,39 @@
 	}
 	
 	// Handle drag start for stored cards
-	function onDragStart(e: DragEvent, cardCode: string) {
+	function onDragStart(e: DragEvent, item: string) {
 		if (!e.dataTransfer) return;
-		const fullCard = allCards?.find(c => c.cardCode === cardCode);
-		if (!fullCard) {
-			console.error(`Cannot start drag, card details not found for code: ${cardCode}`);
-			e.preventDefault();
-			return;
+		
+		if (isCardCode(item)) {
+			const fullCard = cardDataMap.get(item);
+			if (!fullCard) {
+				console.error(`Cannot start drag, card details not found for code: ${item}`);
+				e.preventDefault();
+				return;
+			}
+			e.dataTransfer.setData('text/plain', crypto.randomUUID()); // For Firefox compatibility
+			e.dataTransfer.setData('cardCode', item);
+			e.dataTransfer.setData('cardUrl', fullCard.image);
+			e.dataTransfer.setData('source-type', 'storage');
+			e.dataTransfer.effectAllowed = 'copy';
+		} else { // It's a URL
+			e.dataTransfer.setData('text/plain', crypto.randomUUID());
+			e.dataTransfer.setData('cardUrl', item);
+			e.dataTransfer.setData('source-type', 'storage-url'); // Distinguish URL source
+			e.dataTransfer.effectAllowed = 'copy';
 		}
-		e.dataTransfer.setData('text/plain', crypto.randomUUID());
-		e.dataTransfer.setData('cardCode', cardCode);
-		e.dataTransfer.setData('cardUrl', fullCard.image);
-		e.dataTransfer.setData('source-type', 'storage');
-		e.dataTransfer.effectAllowed = 'copy';
 	}
 	
-	function removeCard(codeToRemove: string) { $cards = $cards.filter(code => code !== codeToRemove); }
+	function removeItem(itemToRemove: string) { $cards = $cards.filter(item => item !== itemToRemove); }
 	function clearStorage() { if (confirm('Are you sure you want to remove all stored cards?')) { $cards = []; } }
 	function toggleFilters() { showFilters = !showFilters; localStorage.setItem('binderStorageShowFilters', showFilters.toString()); }
 	function setSortBy(field: string) {
 		if (sortBy === field) { sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; } 
-		else { sortBy = field; sortOrder = 'asc'; localStorage.setItem('binderStorageSortBy', sortBy); }
+		else { 
+			sortBy = field; 
+			sortOrder = 'asc'; // Reset to asc when changing sort field
+			localStorage.setItem('binderStorageSortBy', sortBy); 
+		}
 		localStorage.setItem('binderStorageSortOrder', sortOrder);
 	}
 	function toggleSortOrder() { sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; localStorage.setItem('binderStorageSortOrder', sortOrder); }
@@ -126,31 +158,47 @@
 		{#if $cards.length === 0}
 			<p class="text-gray-500 text-center py-4 text-sm">No cards in storage...</p>
 		{:else if filteredCardCodes.length === 0}
-			<p class="text-gray-500 text-center py-4 text-sm">No cards match your search/filters.</p>
+			<p class="text-gray-500 text-center py-4 text-sm">No items match your search/filters.</p>
 		{:else}
 			<div class="grid grid-cols-2 gap-2">
-				{#each filteredCardCodes as cardCode (cardCode)}
-					{@const fullCard = allCards?.find(c => c.cardCode === cardCode)}
-					{@const set = sets.find(s => s.name === fullCard?.setName)}
-					{@const setIndex = parseCardCode(cardCode).cardNumber}
-					{#if fullCard}
+				{#each filteredCardCodes as item (item)}
+					{#if isCardCode(item)}
+						{@const fullCard = cardDataMap.get(item)}
+						{@const set = sets.find(s => s.name === fullCard?.setName)}
+						{@const setIndex = parseCardCode(item).cardNumber}
+						{#if fullCard}
+							<div 
+								class="relative aspect-[2/3] border-2 border-gray-700 rounded group transition-all duration-200 hover:border-gold-400"
+								draggable="true"
+								on:dragstart={(e) => onDragStart(e, item)}
+							>
+								<CardImage imageUrl={fullCard.image} alt={fullCard.name} class="w-full h-full object-contain p-1" lazy={true} highRes={false} />
+								<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-[0.6rem] leading-tight text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">
+									<div class="font-semibold truncate">{fullCard.name}</div>
+									<div class="truncate">#{setIndex}/{set?.printedTotal}</div>
+									<div class="truncate text-gray-300">{fullCard.rarity}</div>
+								</div>
+								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" on:click={() => removeItem(item)} > <X size={14} /> </button>
+							</div>
+						{:else}
+							<div class="relative aspect-[2/3] border-2 border-dashed border-red-700 rounded flex items-center justify-center text-center p-1">
+								<span class="text-red-400 text-xs">Data missing for {item}</span>
+								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5" on:click={() => removeItem(item)} > <X size={14} /> </button>
+							</div>
+						{/if}
+					{:else} 
+						<!-- Handle URL item -->
 						<div 
 							class="relative aspect-[2/3] border-2 border-gray-700 rounded group transition-all duration-200 hover:border-gold-400"
 							draggable="true"
-							on:dragstart={(e) => onDragStart(e, cardCode)}
+							on:dragstart={(e) => onDragStart(e, item)}
 						>
-							<CardImage imageUrl={fullCard.image} alt={fullCard.name} class="w-full h-full object-contain p-1" lazy={true} highRes={false} />
+							<CardImage imageUrl={item} alt="Imported from URL" class="w-full h-full object-contain p-1" lazy={true} highRes={false} />
 							<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-[0.6rem] leading-tight text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">
-								<div class="font-semibold truncate">{fullCard.name}</div>
-								<div class="truncate">#{setIndex}/{set?.printedTotal}</div>
-								<div class="truncate text-gray-300">{fullCard.rarity}</div>
+								<div class="font-semibold truncate">Imported from URL</div>
+								<div class="truncate text-gray-300 break-all">{item}</div> 
 							</div>
-							<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" on:click={() => removeCard(cardCode)} > <X size={14} /> </button>
-						</div>
-					{:else}
-						<div class="relative aspect-[2/3] border-2 border-dashed border-red-700 rounded flex items-center justify-center text-center p-1">
-							<span class="text-red-400 text-xs">Data missing for {cardCode}</span>
-							<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5" on:click={() => removeCard(cardCode)} > <X size={14} /> </button>
+							<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" on:click={() => removeItem(item)} > <X size={14} /> </button>
 						</div>
 					{/if}
 				{/each}

@@ -57,6 +57,24 @@
 				console.error('Drop from storage missing cardCode or cardUrl in dataTransfer');
 			}
 
+		} else if (sourceType === 'storage-url') {
+			// Handle drop from storage when it's just a URL
+			const cardUrl = e.dataTransfer?.getData('cardUrl');
+
+			if (cardUrl) {
+				const updatedBinderCards = [...$binderCards];
+				// Create a BinderCards object with only URL and position
+				updatedBinderCards[position] = { 
+					id: crypto.randomUUID(), 
+					url: cardUrl, 
+					cardCode: undefined, // Explicitly undefined for URL-only items
+					position: position 
+				};
+				$binderCards = updatedBinderCards;
+			} else {
+				console.error('Drop from storage-url missing cardUrl in dataTransfer');
+			}
+
 		} else if (sourceType === 'binder') {
 			// Handle drag/drop within the grid (swap or move)
 			const sourcePosition = parseInt(e.dataTransfer?.getData('source-position') || '-1');

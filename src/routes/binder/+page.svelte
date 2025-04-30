@@ -17,6 +17,8 @@
 	import Select from '@components/filters/Select.svelte';
 	import NumberInput from '@components/filters/NumberInput.svelte';
 	import type { BinderCards, FullCard } from '$lib/types';
+	import TextInput from '@components/filters/TextInput.svelte';
+	import TextArea from '@components/filters/TextArea.svelte';
 
 	// Page data from server
 	export let data: PageData;
@@ -171,29 +173,34 @@
 
 	function addCardFromUrl() {
 		if (!$cardUrl && !$multipleCardUrls) return;
-		const codesToAdd: string[] = [];
+		const urlsToAdd: string[] = [];
+		const currentStored = new Set($storedCards); // Use Set for efficient checking
+
+		// Helper to validate and add URL
+		const validateAndAdd = (url: string) => {
+			const trimmedUrl = url.trim();
+			if (trimmedUrl.startsWith('http') && !currentStored.has(trimmedUrl) && !urlsToAdd.includes(trimmedUrl)) {
+				urlsToAdd.push(trimmedUrl);
+			} else if (!trimmedUrl.startsWith('http')) {
+				console.warn(`Invalid URL format (must start with http): ${trimmedUrl}`);
+			}
+		};
 
 		if ($cardUrl) {
-			const foundCard = data.allCards.find(c => c.image === $cardUrl.trim());
-			if (foundCard && !$storedCards.includes(foundCard.cardCode)) {
-				codesToAdd.push(foundCard.cardCode);
-			} else if (!foundCard) { console.warn(`Card URL not found: ${$cardUrl}`); }
+			validateAndAdd($cardUrl);
 		}
 
 		if ($multipleCardUrls) {
-			const lines = $multipleCardUrls.split('\n');
+			const lines = $multipleCardUrls.split('\\n');
 			for (const line of lines) {
-				const url = line.trim().replace(/[;.]$/, '').trim();
+				const url = line.trim().replace(/[;.]$/, '').trim(); // Clean up potential trailing chars
 				if (url) {
-					const foundCard = data.allCards.find(c => c.image === url);
-					if (foundCard && !codesToAdd.includes(foundCard.cardCode) && !$storedCards.includes(foundCard.cardCode)) {
-						codesToAdd.push(foundCard.cardCode);
-					} else if (!foundCard) { console.warn(`Card URL not found: ${url}`); }
+					validateAndAdd(url);
 				}
 			}
 		}
 
-		if (codesToAdd.length > 0) $storedCards = [...$storedCards, ...codesToAdd];
+		if (urlsToAdd.length > 0) $storedCards = [...$storedCards, ...urlsToAdd];
 		toggleUrlModal();
 	}
 
@@ -232,7 +239,8 @@
 					ctx.fillStyle = '#d1d5db'; ctx.textAlign = 'center';
 					ctx.fillText('Error', x + cardWidth / 2, y + cardHeight / 2); resolve();
 				};
-				img.src = binderSlot.url;
+				// Use the proxy endpoint to avoid CORS issues
+				img.src = `/api/image-proxy?url=${encodeURIComponent(binderSlot.url)}`;
 			});
 		});
 
@@ -286,7 +294,7 @@
 			</Button>
 
 			<!-- Will later add this feature -->
-			<Button onClick={toggleUrlModal} disabled={true} class="text-sm flex items-center gap-1 px-3 py-2"><LinkIcon size={16} /> <span>Add from URL</span></Button>
+			<Button onClick={toggleUrlModal} class="text-sm flex items-center gap-1 px-3 py-2"><LinkIcon size={16} /> <span>Add from URL</span></Button>
 
 			<Button onClick={generateBinderImage} class="text-sm flex items-center gap-1 px-3 py-2">
 				<DownloadIcon size={16} />
@@ -352,10 +360,9 @@
 </Modal>
 
 <!-- Commented out URL Card Modal -->
-<!-- 
 <Modal bind:open={$showUrlModal} onClose={toggleUrlModal} title="Add card from URL">
 	<p class="text-gray-300 mb-4 text-sm">
-		Paste image URLs to find their corresponding cardCodes and add them to storage. URLs must match exactly those in the database.
+		Paste image URLs to add them to storage. URLs must start with 'http'.
 	</p>
 	<div class="mb-4">
 		<label for="cardUrl" class="block text-gray-300 mb-2">Single card image URL:</label>
@@ -363,14 +370,22 @@
 	</div>
 	<div class="mb-4">
 		<label for="multipleCardUrls" class="block text-gray-300 mb-2">Or multiple URLs (one per line):</label>
-		<TextArea id="multipleCardUrls" bind:value={$multipleCardUrls} placeholder="https://images.pokemontcg.io/card1.png\nhttps://images.pokemontcg.io/card2.png" rows={4} label="Or multiple URLs (one per line)" class="max-h-[20rem] overflow-y-auto" />
+		<TextArea
+			bind:value={$multipleCardUrls}
+			class="max-h-[20rem] overflow-y-auto"
+			id="multipleCardUrls"
+			label="Or multiple URLs (one per line)"
+			placeholder="https://images.pokemontcg.io/card1.png;
+https://images.pokemontcg.io/card2.png;
+https://images.pokemontcg.io/card3.png;"
+			rows={4}
+		/>
 	</div>
 	<svelte:fragment slot="footer">
 		<Button onClick={toggleUrlModal} class="text-sm px-4 py-2 border border-gray-600">Cancel</Button>
 		<Button onClick={addCardFromUrl} class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50" disabled={!$cardUrl && !$multipleCardUrls}> Add card(s) </Button>
 	</svelte:fragment>
 </Modal>
--->
 
 <!-- Empty Slots Confirmation Modal -->
 <Modal bind:open={$showEmptySlotsModal} title="Incomplete Binder" onClose={() => $showEmptySlotsModal = false}>
