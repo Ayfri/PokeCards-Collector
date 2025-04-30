@@ -12,7 +12,6 @@
 	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
-	import type { BinderStoredCard } from '$lib/types';
 
 	// --- Props ---
 	export let prices: Record<string, PriceData>;
@@ -36,7 +35,7 @@
 	$: isBinderPage = $page.url.pathname === '/binder';
 
 	// Try to get the storedCards store from context ONLY during initialization if on binder page
-	let binderStoredCards: Writable<BinderStoredCard[]> | null = null;
+	let binderStoredCards: Writable<string[]> | null = null;
 	try {
 		// getContext MUST be called during component initialization
 		if ($page.url.pathname === '/binder') { // Check initial path directly

@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import { NO_IMAGES } from '$lib/images';
-	import SortControl from '$lib/components/filters/SortControl.svelte';
-	import PageTitle from '$lib/components/PageTitle.svelte';
-	import CardImage from '$lib/components/card/CardImage.svelte';
-	import TextInput from '$lib/components/filters/TextInput.svelte';
+	import SortControl from '@components/filters/SortControl.svelte';
+	import PageTitle from '@components/PageTitle.svelte';
+	import CardImage from '@components/card/CardImage.svelte';
+	import TextInput from '@components/filters/TextInput.svelte';
 	import type { Card } from '$lib/types';
 	import { findSetByCardCode } from '$helpers/set-utils';
 	import { fade, fly } from 'svelte/transition';
