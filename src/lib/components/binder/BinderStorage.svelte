@@ -16,6 +16,7 @@
 	export let cards: Writable<string[]>;
 	export let allCards: FullCard[];
 	export let sets: Set[];
+	export let toggleClearStorageModal: () => void;
 	
 	$: cardDataMap = new Map(allCards.map(card => [card.cardCode, card]));
 	
@@ -110,7 +111,6 @@
 	}
 	
 	function removeItem(itemToRemove: string) { $cards = $cards.filter(item => item !== itemToRemove); }
-	function clearStorage() { if (confirm('Are you sure you want to remove all stored cards?')) { $cards = []; } }
 	function toggleFilters() { showFilters = !showFilters; localStorage.setItem('binderStorageShowFilters', showFilters.toString()); }
 	function setSortBy(field: string) {
 		if (sortBy === field) { sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'; } 
@@ -129,7 +129,7 @@
 	<!-- Header -->
 	<div class="flex justify-between items-center mb-1">
 		<h3 class="text-gold-400 text-lg">Storage ({$cards.length})</h3>
-		<div class="flex gap-1"> {#if $cards.length > 0}<Button onClick={clearStorage} class="p-1"><TrashIcon size={14} /></Button>{/if} </div>
+		<div class="flex gap-1"> {#if $cards.length > 0}<Button onClick={toggleClearStorageModal} class="p-1"><TrashIcon size={14} /></Button>{/if} </div>
 	</div>
 	<p class="text-xs text-gray-400 mb-2">Drag cards from here to position them in your binder grid.</p>
 	

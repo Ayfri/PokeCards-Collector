@@ -38,6 +38,7 @@
 	const selectedSet = writable('');
 	const showUrlModal = writable(false);
 	const showEmptySlotsModal = writable(false);
+	const showClearStorageModal = writable(false);
 	const cardUrl = writable('');
 	const multipleCardUrls = writable('');
 	
@@ -159,6 +160,15 @@
 	}
 	function toggleMyCardsModal() {
 		$showMyCardsModal = !$showMyCardsModal;
+	}
+
+	function toggleClearStorageModal() {
+		$showClearStorageModal = !$showClearStorageModal;
+	}
+
+	function clearAllStoredCards() {
+		$storedCards = [];
+		toggleClearStorageModal();
 	}
 
 	function addSetToStorage() {
@@ -362,7 +372,7 @@
 
 		<div class="lg:col-span-3">
 			<div class="h-[calc(100vh-250px)] min-h-[450px]">
-				<BinderStorage cards={storedCards} allCards={data.allCards} {sets} />
+				<BinderStorage cards={storedCards} allCards={data.allCards} {sets} {toggleClearStorageModal} />
 			</div>
 		</div>
 	</div>
@@ -514,6 +524,28 @@ https://images.pokemontcg.io/card3.png;"
 			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black"
 		>
 			Export Anyway
+		</Button>
+	</svelte:fragment>
+</Modal>
+
+<!-- Clear Storage Confirmation Modal -->
+<Modal bind:open={$showClearStorageModal} onClose={toggleClearStorageModal} title="Clear Storage">
+	<p class="text-gray-300 mb-4">
+		Are you sure you want to remove all stored cards? This cannot be undone.
+	</p>
+
+	<svelte:fragment slot="footer">
+		<Button
+			onClick={toggleClearStorageModal}
+			class="text-sm px-4 py-2 border border-gray-600"
+		>
+			Cancel
+		</Button>
+		<Button
+			onClick={clearAllStoredCards}
+			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black"
+		>
+			Clear All Cards
 		</Button>
 	</svelte:fragment>
 </Modal>
