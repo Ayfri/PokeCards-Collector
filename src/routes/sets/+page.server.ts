@@ -1,7 +1,7 @@
 import { getCards, getPrices, getSets } from '$helpers/data';
 import { findSetByCardCode } from '$helpers/set-utils';
 import type { PageServerLoad } from './$types';
-
+import type { SetWithPrice } from '$lib/types';
 export const load: PageServerLoad = async ({ parent }) => {
 	const layoutData = await parent();
 
@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		return {
 			totalPrice,
 			...set
-		};
+		} as SetWithPrice;
 	});
 
 	const pageSeoData: Partial<typeof layoutData> = {

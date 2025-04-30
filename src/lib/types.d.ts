@@ -48,6 +48,11 @@ export interface Set {
 	series?: string;
 }
 
+
+export interface SetWithPrice extends Set {
+	totalPrice: number;
+}
+
 export interface User {
 	id: number;
 	username: string;

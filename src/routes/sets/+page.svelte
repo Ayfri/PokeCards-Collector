@@ -4,21 +4,20 @@
 	import SortControl from '$lib/components/filters/SortControl.svelte';
 	import PageTitle from '$lib/components/PageTitle.svelte';
 	import TextInput from '$lib/components/filters/TextInput.svelte';
-	import type { Set } from '$lib/types';
 	import { persistentWritable } from '$stores/persistentStore';
+	import type { SetWithPrice } from '$lib/types';
+
 	export let data: PageData;
-	
-	type SetWithPrice = Set & { totalPrice: number; };
-	
+
 	let sortDirection = persistentWritable<'desc' | 'asc'>('sortDirection', 'desc');
 	let sortValue = persistentWritable<'code' | 'name' | 'printedTotal' | 'releaseDate' | 'totalPrice'>('sortValue', 'releaseDate');
-	
-	$: typedSets = data.sets;
 	let sortedSets = data.sets;
 	
 	let searchTerm = '';
 	let debounceTimeout: number;
-
+	
+	$: typedSets = data.sets;
+	
 	function debounce(fn: Function, delay: number) {
 		return (...args: any[]) => {
 			clearTimeout(debounceTimeout);
