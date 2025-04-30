@@ -1,6 +1,6 @@
 import { writable, get } from 'svelte/store';
-import type { User } from '@supabase/supabase-js';
-import { supabase } from '../supabase';
+import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '../supabase';
 import type { UserProfile } from '../types';
 import { browser } from '$app/environment';
 
@@ -25,9 +25,11 @@ const initialState: AuthState = {
 // --- Profile Fetch Helper ---
 // Fetches the user profile from the database
 async function fetchProfile(user: User | null): Promise<UserProfile | null> {
-	if (!user) return null;
+	if (!user || !browser) return null;
+	const client = getSupabaseBrowserClient();
+	if (!client) return null;
 	try {
-		const { data: profile, error } = await supabase
+		const { data: profile, error } = await client
 			.from('profiles')
 			.select('*')
 			.eq('auth_id', user.id)
@@ -70,56 +72,51 @@ export const authStore = createAuthStore();
 // --- Auth State Change Listener (Client-side only) ---
 // This runs once when the module loads on the client.
 if (browser) {
-	supabase.auth.onAuthStateChange(async (event, session) => {
-		const currentState = get(authStore);
+	const client = getSupabaseBrowserClient();
 
-		if (!currentState.initialized && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT')) {
-			// Mark as initialized on the first relevant event to sync loading state
-			authStore._update({ initialized: true, loading: false }); // Set loading false once initialized
-		}
+	if (client) {
+		client.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+			const currentState = get(authStore);
 
-		if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-			if (session?.user) {
-				const user = session.user;
-				// Update user state immediately, profile might follow
-				authStore._update({
-					user: user,
-					profile: currentState.profile?.auth_id === user.id ? currentState.profile : null, // Keep profile if user is same
-					loading: true, // Set loading true while potentially fetching profile
-					error: null
-				});
+			if (!currentState.initialized && (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT')) {
+				authStore._update({ initialized: true, loading: false });
+			}
 
-				// Decouple profile fetch from the auth callback using setTimeout
-				// This seems necessary to prevent hangs in certain environments/timings.
-				setTimeout(async () => {
+			if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+				if (session?.user) {
+					const user = session.user;
+					authStore._update({
+						user: user,
+						profile: currentState.profile?.auth_id === user.id ? currentState.profile : null,
+						loading: true,
+						error: null
+					});
+
+					// Fetch profile directly
 					const latestState = get(authStore);
-					// Only fetch if the user is still the same and profile hasn't been loaded
 					if (latestState.user?.id === user.id && !latestState.profile) {
 						const profile = await fetchProfile(user);
 						authStore._update({
-							// User should still be set
 							profile: profile || null,
 							loading: false,
 							error: profile ? null : 'Failed to fetch profile'
 						});
 					} else if (latestState.user?.id === user.id) {
-						// User is correct, profile already loaded or fetch wasn't needed
-						authStore._update({ loading: false });
+						authStore._update({ loading: false }); // Profile already loaded or fetch failed
 					}
-					// If user changed before timeout, do nothing
-				}, 0);
-
-			} else {
-				// Event received without session/user - treat as logged out
-				console.warn(`[AuthStore] ${event} event received without session/user.`);
+				} else {
+					// Event received without session/user - treat as logged out
+					console.warn(`[AuthStore] ${event} event received without session/user.`);
+					authStore.reset(); // Reset state if session/user is null
+				}
+			} else if (event === 'SIGNED_OUT') {
 				authStore.reset();
+			} else if (event === 'USER_UPDATED' && session?.user) {
+				authStore._update({ user: session.user });
 			}
-		} else if (event === 'SIGNED_OUT') {
-			authStore.reset();
-		} else if (event === 'USER_UPDATED' && session?.user) {
-			// If user email/phone etc. changes, update it.
-			// Profile might need re-fetching depending on what can change.
-			authStore._update({ user: session.user });
-		}
-	});
+		});
+	} else {
+		console.error('[AuthStore] Failed to initialize Supabase browser client.');
+		authStore._update({ loading: false, initialized: true, error: 'Supabase client init failed' });
+	}
 }

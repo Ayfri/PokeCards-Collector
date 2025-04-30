@@ -12,6 +12,12 @@
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import Avatar from './Avatar.svelte';
+	import type { UserProfile } from '$lib/types';
+	import type { User as AuthUser } from '@supabase/supabase-js';
+
+	export let user: AuthUser | null = null;
+	export let profile: UserProfile | null = null;
+
 	let isMenuOpen = false;
 	let isAuthModalOpen = false;
 	let menuElement: HTMLElement;
@@ -46,34 +52,27 @@
 		try {
 			closeMenu();
 
-			// Supprimer le token manuellement (client-side only)
 			if (browser) {
 				localStorage.removeItem('supabase.auth.token');
 			}
 
-			// Réinitialiser le store
 			authStore.reset();
 
-			// Appeler la fonction de déconnexion
 			await signOut();
 
-			// Use goto for navigation
 			await goto('/');
 		} catch (error) {
-			// En cas d'erreur, rediriger quand même
 			await goto('/');
 		}
 	}
 
 	onMount(() => {
-		// Add click listener on mount (client-side only)
 		if (browser) {
 			window.addEventListener('click', handleClickOutside, true);
 		}
 	});
 
 	onDestroy(() => {
-		// Remove click listener on destroy (client-side only)
 		if (browser) {
 			window.removeEventListener('click', handleClickOutside, true);
 		}
@@ -81,26 +80,23 @@
 </script>
 
 <div class="relative">
-	<!-- Auth modal -->
 	<AuthModal isOpen={isAuthModalOpen} on:close={closeAuthModal} />
 
-	<!-- User button -->
 	<button
 		type="button"
 		class="flex items-center justify-center size-9 text-gray-400 hover:text-white rounded-full focus:outline-none"
 		on:click={toggleMenu}
 		aria-expanded={isMenuOpen}
 	>
-		{#if $authStore.user && $authStore.profile}
+		{#if user && profile}
 			<span class="sr-only">Open user menu</span>
-			<Avatar username={$authStore.profile.username} />
+			<Avatar username={$authStore.profile?.username ?? profile.username} />
 		{:else}
 			<span class="sr-only">Sign in</span>
 			<User size={24} />
 		{/if}
 	</button>
 
-	<!-- Dropdown menu -->
 	{#if isMenuOpen}
 		<div
 			bind:this={menuElement}
@@ -111,15 +107,14 @@
 			aria-labelledby="user-menu-button"
 			tabindex="-1"
 		>
-			{#if $authStore.user && $authStore.profile}
-				<!-- Logged in menu items -->
+			{#if user && profile}
 				<div class="py-2 px-3 border-b dark:border-gray-700">
-					<p class="text-sm font-medium text-gray-900 dark:text-white">{$authStore.profile.username}</p>
-					<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{$authStore.user.email}</p>
+					<p class="text-sm font-medium text-gray-900 dark:text-white">{$authStore.profile?.username ?? profile.username}</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{$authStore.user?.email ?? user.email}</p>
 				</div>
 				<div class="py-1">
 					<a
-						href={`/profile?user=${encodeURIComponent($authStore.profile.username)}`}
+						href={`/profile?user=${encodeURIComponent($authStore.profile?.username ?? profile.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
@@ -129,7 +124,7 @@
 						My profile
 					</a>
 					<a
-						href={`/collection?user=${encodeURIComponent($authStore.profile.username)}`}
+						href={`/collection?user=${encodeURIComponent($authStore.profile?.username ?? profile.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
@@ -139,7 +134,7 @@
 						My collection
 					</a>
 					<a
-						href={`/wishlist?user=${encodeURIComponent($authStore.profile.username)}`}
+						href={`/wishlist?user=${encodeURIComponent($authStore.profile?.username ?? profile.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
@@ -168,7 +163,6 @@
 					</button>
 				</div>
 			{:else}
-				<!-- Not logged in -->
 				<div class="py-1">
 					<button
 						type="button"

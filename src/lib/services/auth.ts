@@ -1,7 +1,8 @@
-import { supabase } from '../supabase';
-import type { Session, User, AuthError as SupabaseAuthError } from '@supabase/supabase-js';
+import { getSupabaseBrowserClient } from '../supabase';
+import type { Session, User, AuthError as SupabaseAuthError, AuthChangeEvent } from '@supabase/supabase-js';
 import { authStore } from '../stores/auth';
 import { get } from 'svelte/store';
+import { browser } from '$app/environment';
 
 // Define a simpler error type for internal error reporting if needed
 interface SimpleAuthError {
@@ -26,30 +27,23 @@ function _createSimpleError(message: string, name: string = 'UnknownAuthError'):
 	return { name, message };
 }
 
-// Helper to fetch user profile
-async function _fetchUserProfile(userId: string): Promise<any | null> {
-	try {
-		const { data: profile, error } = await supabase
-			.from('profiles')
-			.select('*')
-			.eq('auth_id', userId)
-			.single();
-
-		if (error) {
-			console.error('Error fetching user profile:', error);
-			return null;
-		}
-		return profile || null;
-	} catch (error) {
-		console.error('Exception fetching user profile:', error);
-		return null;
-	}
-}
-
 // --- Public Auth Functions ---
 
 // Flag to prevent multiple concurrent refresh attempts
 let isRefreshing = false;
+
+// Function to get the client, ensures it's called client-side
+function getClient() {
+	if (!browser) {
+		console.warn('[AuthService] Attempted to get Supabase client on the server. Use locals.supabase instead.');
+		return null; // Or throw error? Returning null for now.
+	}
+	const client = getSupabaseBrowserClient();
+	if (!client) {
+		throw new Error('Supabase browser client not initialized.');
+	}
+	return client;
+}
 
 export function isSessionExpired(session: Session | null): boolean {
 	if (!session?.expires_at) {
@@ -61,19 +55,13 @@ export function isSessionExpired(session: Session | null): boolean {
 	return currentTime > expiryTime - fiveMinutesInMs;
 }
 
-// Note: getCurrentUser and getSession might not be strictly needed now
-// if the authStore is the single source of truth derived from onAuthStateChange.
-// However, they can be useful for imperative checks if required.
-
+// Deprecate direct use? Store should be source of truth client-side.
 export async function getCurrentUser(): Promise<{ user: User | null; error: SupabaseAuthError | SimpleAuthError | null }> {
+	if (!browser) return { user: null, error: _createSimpleError('Cannot get user on server') };
+	const client = getClient();
+	if (!client) return { user: null, error: _createSimpleError('Client not available') };
 	try {
-		// Use the store as the primary source if initialized
-		const currentStore = get(authStore);
-		if (currentStore.initialized) {
-			return { user: currentStore.user, error: currentStore.error ? _createSimpleError(currentStore.error) : null };
-		}
-		// Fallback to Supabase if store not initialized (e.g., server-side context?)
-		const { data, error } = await supabase.auth.getUser();
+		const { data, error } = await client.auth.getUser();
 		if (error) {
 			_logAuthError(error.message, 'getting user', error);
 			return { user: null, error };
@@ -85,16 +73,20 @@ export async function getCurrentUser(): Promise<{ user: User | null; error: Supa
 	}
 }
 
+// Deprecate direct use?
 export async function getSession(): Promise<{ session: Session | null; error: SupabaseAuthError | SimpleAuthError | null }> {
+	if (!browser) return { session: null, error: _createSimpleError('Cannot get session on server') };
+	const client = getClient();
+	if (!client) return { session: null, error: _createSimpleError('Client not available') };
 	try {
-		const { data, error } = await supabase.auth.getSession();
+		const { data, error } = await client.auth.getSession();
 		if (error) {
 			_logAuthError(error.message, 'getting session', error);
 			return { session: null, error };
 		}
 		if (data.session && isSessionExpired(data.session)) {
 			console.log('[AuthService] Session expired, attempting refresh...');
-			return await refreshToken(); // refreshToken interacts with store via events
+			return await refreshToken(); // Ensure refreshToken uses the correct client
 		}
 		return { session: data.session, error: null };
 	} catch (error: any) {
@@ -104,17 +96,19 @@ export async function getSession(): Promise<{ session: Session | null; error: Su
 }
 
 export async function refreshToken(): Promise<{ session: Session | null; error: SupabaseAuthError | SimpleAuthError | null }> {
+	if (!browser) return { session: null, error: _createSimpleError('Cannot refresh token on server') };
+	const client = getClient();
+	if (!client) return { session: null, error: _createSimpleError('Client not available') };
+
 	if (isRefreshing) {
 		return { session: null, error: null };
 	}
 	isRefreshing = true;
 	console.log('[AuthService] Refreshing authentication token...');
 	try {
-		// refreshSession will trigger onAuthStateChange, updating the store
-		const { data, error } = await supabase.auth.refreshSession();
+		const { data, error } = await client.auth.refreshSession(); // Use client instance
 		if (error) {
 			_logAuthError(error.message, 'token refresh', error);
-			// Don't manually update store, let listener handle SIGNED_OUT/error
 			return { session: null, error };
 		}
 		console.log('[AuthService] Token refreshed successfully via refreshSession.');
@@ -128,9 +122,11 @@ export async function refreshToken(): Promise<{ session: Session | null; error: 
 }
 
 export async function signIn(email: string, password: string): Promise<AuthResponse> {
+	if (!browser) return { user: null, session: null, error: _createSimpleError('Cannot sign in on server') };
+	const client = getClient();
+	if (!client) return { user: null, session: null, error: _createSimpleError('Client not available') };
 	try {
-		// signInWithPassword will trigger onAuthStateChange (SIGNED_IN)
-		const { data, error } = await supabase.auth.signInWithPassword({
+		const { data, error } = await client.auth.signInWithPassword({ // Use client instance
 			email,
 			password,
 		});
@@ -143,7 +139,6 @@ export async function signIn(email: string, password: string): Promise<AuthRespo
 			_logAuthError(errMsg, 'sign in');
 			return { user: null, session: null, error: _createSimpleError(errMsg, 'SignInError') };
 		}
-		// Success state will be handled by the authStore listener
 		return { user: data.user, session: data.session, error: null };
 	} catch (error: any) {
 		_logAuthError(error.message, 'sign in', error);
@@ -152,16 +147,14 @@ export async function signIn(email: string, password: string): Promise<AuthRespo
 }
 
 export async function signOut(): Promise<{ error: SupabaseAuthError | SimpleAuthError | null }> {
+	if (!browser) return { error: _createSimpleError('Cannot sign out on server') };
+	const client = getClient();
+	if (!client) return { error: _createSimpleError('Client not available') };
 	try {
-		// Store reset is now handled by the listener on SIGNED_OUT event
-		// localStorage is also handled by the store reset method
-		const { error } = await supabase.auth.signOut();
+		const { error } = await client.auth.signOut(); // Use client instance
 		if (error) {
 			_logAuthError(error.message, 'sign out', error);
-			// Still proceed with potential reload
 		}
-		// Reloading might still be desired depending on app structure
-		// Consider using goto('/', { invalidateAll: true }) for cleaner state reset in SvelteKit
 		setTimeout(() => window.location.reload(), 100);
 		return { error };
 	} catch (error: any) {
@@ -172,11 +165,16 @@ export async function signOut(): Promise<{ error: SupabaseAuthError | SimpleAuth
 }
 
 export async function signUp(email: string, password: string, username: string): Promise<AuthResponse> {
+	console.warn('[AuthService] signUp called client-side. Consider moving to server action.');
+	if (!browser) return { user: null, session: null, error: _createSimpleError('Cannot sign up on server') };
+	const client = getClient();
+	if (!client) return { user: null, session: null, error: _createSimpleError('Client not available') };
 	try {
-		// 1. Sign up user - may trigger onAuthStateChange if auto-confirm/sign-in
-		const { data: authData, error: authError } = await supabase.auth.signUp({
+		// 1. Sign up user
+		const { data: authData, error: authError } = await client.auth.signUp({ // Use client instance
 			email,
 			password,
+			// Note: Passing metadata/profile data here depends on Supabase settings
 		});
 		if (authError) {
 			_logAuthError(authError.message, 'sign up', authError);
@@ -188,9 +186,11 @@ export async function signUp(email: string, password: string, username: string):
 			return { user: null, session: null, error: _createSimpleError(errMsg, 'UserCreationError') };
 		}
 
-		// 2. Create profile entry
-		// WARNING: Still potentially insecure from client-side.
-		const { error: profileError } = await supabase
+		// 2. Create profile entry - THIS SHOULD NOT BE DONE CLIENT SIDE
+		// It bypasses RLS and is insecure. Profile creation MUST happen server-side.
+		// Commenting out, assuming the API endpoint /api/auth/signup handles this.
+		/*
+		const { error: profileError } = await client // <-- Make sure this would use client too if uncommented
 			.from('profiles')
 			.insert({
 				auth_id: authData.user.id,
@@ -201,14 +201,12 @@ export async function signUp(email: string, password: string, username: string):
 			.single();
 
 		if (profileError) {
-			const errMsg = `Profile creation failed: ${profileError.message}`;
-			_logAuthError(errMsg, 'sign up profile creation', profileError);
-			// User exists in auth but profile creation failed.
-			return { user: null, session: null, error: _createSimpleError(errMsg, 'ProfileCreationError') };
+			// ... (error handling) ...
 		}
+		*/
+		console.log('[AuthService] SignUp successful via client. Profile creation MUST be handled by server API.');
 
-		// Success. If auto-confirm is on, listener will handle SIGNED_IN.
-		// If email confirmation needed, user/session is returned but store won't auto-update profile yet.
+		// Return auth data, session might be null if email confirmation is needed
 		return { user: authData.user, session: authData.session, error: null };
 
 	} catch (error: any) {

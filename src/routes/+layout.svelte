@@ -12,7 +12,9 @@
 	import { setNavigationLoading } from '$lib/stores/loading';
 	import { onMount } from 'svelte';
 
-	$: ({title, description, image} = page.data);
+	// Access all data from the page store
+	$: data = page.data;
+	$: ({title, description, image, user, profile} = data);
 
 	// Capture clicks on links before navigation starts
 	onMount(() => {
@@ -105,7 +107,7 @@
 
 <div class="flex flex-col min-h-screen">
 	<LoadingBar />
-	<Header/>
+	<Header {user} {profile} />
 	<slot/>
 	<div class="background fixed top-[15%] -z-50 flex place-content-center h-[100lvh] w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
 		{@html pokeballSvg}
