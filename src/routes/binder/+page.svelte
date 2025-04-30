@@ -32,6 +32,7 @@
 	const showSetModal = writable(false);
 	const selectedSet = writable('');
 	const showUrlModal = writable(false);
+	const showEmptySlotsModal = writable(false);
 	const cardUrl = writable('');
 	const multipleCardUrls = writable('');
 
@@ -262,6 +263,18 @@
 	async function generateBinderImage() {
 		if (!browser) return;
 
+		// Check if all binder slots are filled
+		const hasEmptySlots = $binderCards.some(card => card === null);
+		if (hasEmptySlots) {
+			$showEmptySlotsModal = true;
+			return;
+		}
+
+		generateBinderImageProcess();
+	}
+
+	// Process to actually generate the image
+	async function generateBinderImageProcess() {
 		const cardWidth = 150; // Width of each card image in pixels
 		const cardHeight = 210; // Approximate height based on aspect ratio
 		const padding = 10; // Padding around cards
@@ -484,6 +497,31 @@ https://example.com/card3.jpg."
 			disabled={!$cardUrl && !$multipleCardUrls}
 		>
 			Add card
+		</Button>
+	</svelte:fragment>
+</Modal>
+
+<!-- Empty Slots Confirmation Modal -->
+<Modal bind:open={$showEmptySlotsModal} title="Incomplete Binder" onClose={() => $showEmptySlotsModal = false}>
+	<p class="text-gray-300 mb-4">
+		Your binder has empty slots. Do you still want to export it as an image?
+	</p>
+
+	<svelte:fragment slot="footer">
+		<Button
+			onClick={() => $showEmptySlotsModal = false}
+			class="text-sm px-4 py-2 border border-gray-600"
+		>
+			Cancel
+		</Button>
+		<Button
+			onClick={() => {
+				$showEmptySlotsModal = false;
+				generateBinderImageProcess();
+			}}
+			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black"
+		>
+			Export Anyway
 		</Button>
 	</svelte:fragment>
 </Modal>
