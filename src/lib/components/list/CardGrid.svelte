@@ -404,7 +404,7 @@
 
 <div class="min-h-[calc(100vh)] flex flex-col">
 	<!-- Header Row -->
-	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-10 mb-0">
+	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-4 lg:px-10 gap-1 md:gap-0 mb-0">
 		<!-- Left Side (Title conditional based on prop, Counts always present) -->
 		<div class="flex items-center gap-3 md:ml-14">
 			{#if pageTitle}
@@ -422,7 +422,7 @@
 		<!-- Right Side (Controls) -->
 		<div class="flex items-end gap-2">
 			<!-- Mobile Count -->
-			<span class="texalGold-400 text-sm ml-4 md:hidden">
+			<span class="text-gold-400 text-xs md:hidden 2xs:mr-4">
 				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
 			</span>
 			<!-- Grid Size Slider -->

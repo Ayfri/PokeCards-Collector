@@ -10,8 +10,6 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from 'lucide-svelte/icons/external-link';
 	import Heart from 'lucide-svelte/icons/heart';
-	import Package from 'lucide-svelte/icons/package';
-	import { onMount } from 'svelte';
 	import { findSetByCardCode } from '$lib/helpers/set-utils';
 	import { Plus, Minus } from 'lucide-svelte';
 
