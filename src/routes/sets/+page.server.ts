@@ -26,13 +26,13 @@ export const load: PageServerLoad = async ({ parent }) => {
 	});
 
 	const pageSeoData: Partial<typeof layoutData> = {
-		title: 'Pokémon TCG Sets - PokéStore',
+		title: 'Sets',
 		description: 'Browse all Pokémon Trading Card Game sets in chronological order, view set information including release dates and card counts.'
 	};
 
 	return {
 		...layoutData,
-		sets: setsWithPrices,
+		setsWithPrices,
 		...pageSeoData
 	};
 };

@@ -7,6 +7,7 @@
 	import TextInput from '$lib/components/filters/TextInput.svelte';
 	import type { Card } from '$lib/types';
 	import { findSetByCardCode } from '$helpers/set-utils';
+	import { fade, fly } from 'svelte/transition';
 
 	export let data: PageData;
 
@@ -110,9 +111,11 @@
 
 <div class="container mx-auto px-4 py-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
-		<PageTitle title="Artists" />
+		<div transition:fly={{ y: 50, duration: 400, delay: 200 }}>
+			<PageTitle title="Artists" />
+		</div>
 
-		<div class="flex items-center gap-2">
+		<div class="flex items-center gap-2" transition:fly={{ y: 50, duration: 500, delay: 250 }}>
             <div class="w-48">
                 <TextInput
                     id="artistSearch"
@@ -134,52 +137,55 @@
 			/>
 		</div>
 	</div>
-	<hr class="w-full border-t-[3px] border-gold-400 my-4" />
+	
+	<hr class="w-full border-t-[3px] border-gold-400 my-4" transition:fade={{ duration: 400, delay: 300 }} />
 
-	<p class="text-gray-400 mb-6">
+	<p class="text-gray-400 mb-6" transition:fade={{ duration: 400, delay: 300 }}>
 		Artists are the creators of the cards, they are responsible for the design and artwork of the cards.<br>
 		<span class="text-sm">Showing {filteredArtists.length} of {sortedArtists.length} artists.</span>
 	</p>
 
-	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-		{#each filteredArtists as artist}
-			<a href="/cards-list?artist={encodeURIComponent(artist.name.toLowerCase())}" class="block h-full">
-				<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
-					<div class="bg-gray-900 p-2 {NO_IMAGES ? 'hidden' : ''}">
-						<div class="flex justify-center items-center gap-1 h-40 overflow-hidden perspective-500">
-							{#if artist.showcaseCards.length > 0}
-								{#each artist.showcaseCards as card, index}
-									<div
-										class="h-full flex-1 relative {index > 0 ? '-ml-16' : ''}"
-										style="z-index: {3 - index}"
-									>
-										<CardImage
-											alt="{card.name} by {artist.name}"
-											imageUrl={card.image}
-											highRes={false}
-											lazy={true}
-											class="h-full w-auto max-w-none object-contain mx-auto transform-gpu"
-											style="
-												transform: rotate({index * 10}deg) translateY({index * -5}px);
-												filter: drop-shadow({index * 2}px {index * 3}px 10px rgba(0, 0, 0, {0.7 - index * 0.15}));
-											"
-										/>
-									</div>
-								{/each}
-							{:else}
-								<div class="text-gray-500 text-center">No cards available</div>
-							{/if}
+	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ y: 50, duration: 400, delay: 400 }}>
+		{#each filteredArtists as artist (artist.name)}
+			<div in:fly={{ y: 20, duration: 300, delay: 50 }}>
+				<a href="/cards-list?artist={encodeURIComponent(artist.name.toLowerCase())}" class="block h-full">
+					<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
+						<div class="bg-gray-900 p-2 {NO_IMAGES ? 'hidden' : ''}">
+							<div class="flex justify-center items-center gap-1 h-40 overflow-hidden perspective-500">
+								{#if artist.showcaseCards.length > 0}
+									{#each artist.showcaseCards as card, index}
+										<div
+											class="h-full flex-1 relative {index > 0 ? '-ml-16' : ''}"
+											style="z-index: {3 - index}"
+										>
+											<CardImage
+												alt="{card.name} by {artist.name}"
+												imageUrl={card.image}
+												highRes={false}
+												lazy={true}
+												class="h-full w-auto max-w-none object-contain mx-auto transform-gpu"
+												style="
+													transform: rotate({index * 10}deg) translateY({index * -5}px);
+													filter: drop-shadow({index * 2}px {index * 3}px 10px rgba(0, 0, 0, {0.7 - index * 0.15}));
+												"
+											/>
+										</div>
+									{/each}
+								{:else}
+									<div class="text-gray-500 text-center">No cards available</div>
+								{/if}
+							</div>
+						</div>
+						<div class="p-4 flex-1 flex flex-col">
+							<h2 class="text-lg font-semibold text-white">{artist.name}</h2>
+							<div class="mt-2 text-sm text-gray-400 flex justify-between">
+								<span class="text-gold-400">{artist.totalCards} {artist.totalCards === 1 ? 'card' : 'cards'}</span>
+								<span>{artist.firstReleaseDate.getFullYear()} - {artist.lastReleaseDate.getFullYear()}</span>
+							</div>
 						</div>
 					</div>
-					<div class="p-4 flex-1 flex flex-col">
-						<h2 class="text-lg font-semibold text-white">{artist.name}</h2>
-						<div class="mt-2 text-sm text-gray-400 flex justify-between">
-							<span class="text-gold-400">{artist.totalCards} {artist.totalCards === 1 ? 'card' : 'cards'}</span>
-							<span>{artist.firstReleaseDate.getFullYear()} - {artist.lastReleaseDate.getFullYear()}</span>
-						</div>
-					</div>
-				</div>
-			</a>
+				</a>
+			</div>
 		{/each}
 	</div>
 </div>

@@ -13,7 +13,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	// Define page-specific SEO data
 	const pageSeoData: Partial<typeof layoutData> = {
-		title: 'Pokémon TCG Artists - PokéStore',
+		title: 'Artists',
 		description: 'Browse all Pokémon Trading Card Game artists, view their cards and explore their artwork.'
 	};
 

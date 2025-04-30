@@ -14,7 +14,10 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		sets,
 		prices,
 		// Pass user and profile from locals (populated by hooks.server.ts)
-		user: locals.user, 
+		user: locals.user,
 		profile: locals.profile,
+		title: "PokéStore",
+		description: "Browse all Pokémon Trading Card Game artists, view their cards and explore their artwork.",
+		image: "/images/og-image.png",
 	};
 };
