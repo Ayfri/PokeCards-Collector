@@ -6,7 +6,7 @@
 	import {fade} from 'svelte/transition';
 	import type {FullCard, Pokemon, Set, PriceData} from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
-	import CardImage from '@components/card/CardImage.svelte';
+	import InteractiveCard from '@components/card/InteractiveCard.svelte';
 	import { onMount } from 'svelte';
 	import { afterNavigate, pushState, replaceState } from '$app/navigation';
 	import { findSetByCardCode } from '$helpers/set-utils';
@@ -25,12 +25,6 @@
 	// Indicator for when initial loading is complete
 	let isInitialRenderComplete = false;
 	let shouldRenderAllCards = false;
-
-	let centerCard: HTMLElement;
-	let debounceTimer: number;
-	let cursorX = 0;
-	let cursorY = 0;
-	let maxRotate = 25; // Max rotation in degrees
 
 	// --- Reactive Computations ---
 	// Reactive state derived from the currentCard
@@ -74,52 +68,6 @@
 			img.src = loadingSpinner;
 			img.onerror = null; // Prevent infinite loop
 		}
-	}
-
-	function throttle(fn: Function, delay: number) {
-		let canRun = true;
-		return (...args: any[]) => {
-			if (canRun) {
-				fn(...args);
-				canRun = false;
-				setTimeout(() => {
-					canRun = true;
-				}, delay);
-			}
-		};
-	}
-
-	const throttledUpdateCardStyle = throttle((clientX: number, clientY: number) => {
-		const rect = centerCard?.getBoundingClientRect();
-		if (!rect) return;
-
-		const isInCard = clientX >= rect.left && clientX <= rect.right &&
-			clientY >= rect.top && clientY <= rect.bottom;
-
-		if (isInCard) {
-			centerCard.classList.remove('inactive');
-			const l = clientX - rect.left;
-			const t = clientY - rect.top;
-			const h = rect.height;
-			const w = rect.width;
-			const rotateY = ((l / w) * 2 - 1) * maxRotate;
-			const rotateX = (1 - (t / h) * 2) * maxRotate;
-			centerCard.style.setProperty('--rx', `${rotateX.toFixed(2)}deg`);
-			centerCard.style.setProperty('--ry', `${rotateY.toFixed(2)}deg`);
-		} else {
-			if (!centerCard.classList.contains('inactive')) {
-				centerCard.classList.add('inactive');
-				centerCard.style.removeProperty('--rx');
-				centerCard.style.removeProperty('--ry');
-			}
-		}
-	}, 16);
-
-	function handleMouseMove(event: MouseEvent) {
-		const {clientX, clientY} = event;
-		cursorX = clientX;
-		cursorY = clientY;
-		throttledUpdateCardStyle(clientX, clientY);
 	}
 
 	// Update the displayed card and URL when a related card is selected
@@ -181,8 +129,6 @@
 	});
 </script>
 
-<svelte:window on:mousemove={handleMouseMove}/>
-
 <div class="flex flex-col gap-1 lg:gap-4 items-center content-center">
 	<!-- Evolution Chain Component (Only for Pokemon) -->
 	{#if currentPokemon && isInitialRenderComplete && currentCard}
@@ -191,7 +137,7 @@
 
 	<!-- Pokédex number indicator (Only for Pokemon) -->
 	{#if currentPokemon && currentCard?.pokemonNumber}
-		<div class="pokedex-number-display text-center">
+		<div class="pokedex-number-display relative text-center">
 			<div class="pokedex-number text-gold-400 bg-black/60 font-bold px-3 py-1 rounded-md inline-block z-10">
 				#{currentCard.pokemonNumber}
 			</div>
@@ -202,35 +148,18 @@
 	<div class="card-display-area w-full px-4 md:px-12 max-w-8xl mx-auto perspective-container flex flex-col items-center">
 
 		<!-- Center Card -->
-		<div class="center-card-wrapper relative flex-shrink-0 order-1 lg:order-2">
+		<div class="center-card-wrapper relative flex-shrink-0 order-1 lg:order-2 perspective-container">
 			<!-- Conditional Aura for Pokemon Types -->
 			{#if currentPokemon && !NO_IMAGES}
 				<div class="card-aura {currentType}" id="card-aura"></div>
 			{/if}
-			<div
-				class="w-[21rem] h-[29rem] sm:w-[20rem] sm:h-[28rem] lg:w-[23rem] lg:h-[32rem] max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {currentPokemon ? '' : 'non-pokemon'}"
-				bind:this={centerCard}
-				data-card-id={currentSet?.name}
-				data-card-type={currentType}
-			>
-				{#key currentCard?.image}
-					{#if currentCard?.image}
-						<CardImage
-							alt={currentPokemon ? currentPokemon.name : currentCard?.name || 'Card image'}
-							imageUrl={currentCard?.image}
-							highRes={true}
-							height={544}
-							width={384}
-							class="image rounded-xl"
-							lazy={false}
-						/>
-					{:else}
-						<div class="w-full h-full flex items-center justify-center">
-							<div class="text-gray-400 text-sm">No image available</div>
-						</div>
-					{/if}
-				{/key}
-			</div>
+			<InteractiveCard
+				card={currentCard}
+				pokemon={currentPokemon}
+				currentType={currentType}
+				currentSet={currentSet}
+				handlePokemonImageError={handlePokemonImageError}
+			/>
 		</div>
 
 		<!-- Mobile Navigation Wrapper -->
@@ -369,16 +298,6 @@
 		perspective: 1000px;
 	}
 
-	.interactive-card {
-		transform-style: preserve-3d;
-		transition: transform 0.05s linear, filter 0.3s ease;
-		transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-	}
-
-	.interactive-card.inactive {
-		transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); /* Smooth return */
-	}
-
 	/* Card Aura Styles */
 	.card-aura {
 		aspect-ratio: 1 / 1;
@@ -426,14 +345,6 @@
 
 	.nav-pokemon-image {
 		transition: filter 0.3s ease;
-	}
-
-	.nav-pokemon-name {
-		font-weight: bold;
-	}
-
-	.pokedex-number-display {
-		position: relative;
 	}
 
 	@media (min-width: 1024px) {
