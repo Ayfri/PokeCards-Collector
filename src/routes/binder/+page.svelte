@@ -77,7 +77,6 @@
 						saveToLocalStorage();
 					} else if (parsed.every(item => typeof item === 'string')) {
 						$storedCards = parsed;
-						console.log('CardCodes stockés chargées:', parsed.length);
 					} else {
 						console.warn('Invalid format found in binderStoredCards, resetting.');
 						$storedCards = [];
