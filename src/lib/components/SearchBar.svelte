@@ -311,68 +311,58 @@
 				{@const cardLink = `/card/${card.cardCode}/`}
 				{@const isAdded = addedCards.has(card.cardCode)}
 
-				<div class="flex items-center p-3 hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700 last:border-b-0 relative">
-					<img
-						src={cardImage}
-						alt={card.name}
-						class="h-20 w-14 object-contain rounded mr-4 flex-shrink-0"
-						loading="lazy"
-					/>
+				<a 
+					href={cardLink}
+					class="block hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700 last:border-b-0 relative"
+					on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
+				>
+					<div class="flex items-center p-3 relative">
+						<img
+							src={cardImage}
+							alt={card.name}
+							class="h-20 w-14 object-contain rounded mr-4 flex-shrink-0"
+							loading="lazy"
+						/>
 
-					<div class="flex-grow min-w-0 pr-2 flex flex-col">
-						<a
-							href={cardLink}
-							class="text-sm"
-							on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
-						>
+						<div class="flex-grow min-w-0 pr-2 flex flex-col">
 							<p class="font-semibold text-white truncate">{card.name}</p>
-						</a>
-						
-						<div class="flex justify-between items-center mt-1">
-							<a
-								href={cardLink}
-								class="flex-grow min-w-0 flex items-center"
-								on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
-							>
-								<p class="text-sm text-gray-400 truncate max-w-[70%]">{set?.name || 'Unknown Set'}</p>
-								<div class="text-xs text-gray-500 text-right ml-1 flex-shrink-0">
-									#{cardNumber || '?'}{#if set?.printedTotal}/{set.printedTotal}{/if}
-								</div>
-							</a>
 							
-							{#if isBinderPage}
-								<!-- Button to add to binder storage when on binder page -->
-								<div class="flex-shrink-0 ml-2">
-									<button 
-										class="py-1 px-2 rounded flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white hover:bg-gray-700'} hover:shadow-lg transform hover:translate-y-[-1px]"
-										on:click={(e) => {
-											e.preventDefault();
-											e.stopPropagation();
-											if (!isAdded) addToBinderStorage(card);
-										}}
-										title={isAdded ? "Added to binder" : "Add to binder storage"}
-										disabled={isAdded}
-									>
-										{#if isAdded}
-											<div in:fly={{ y: 10, duration: 200 }}>
-												<Check size={14} />
-											</div>
-											<span class="text-xs" in:fly={{ x: 5, duration: 200 }}>Added</span>
-										{:else}
-											<PlusCircle size={14} />
-											<span class="text-xs">Add</span>
-										{/if}
-									</button>
+							<div class="flex justify-between items-center mt-1">
+								<div class="flex-grow min-w-0 flex items-center">
+									<p class="text-sm text-gray-400 truncate max-w-[70%]">{set?.name || 'Unknown Set'}</p>
+									<div class="text-xs text-gray-500 text-right ml-1 flex-shrink-0">
+										#{cardNumber || '?'}{#if set?.printedTotal}/{set.printedTotal}{/if}
+									</div>
 								</div>
-							{/if}
-						</div>
-						
-						{#if prices[card.cardCode]?.simple}
-							<a
-								href={cardLink}
-								class="block"
-								on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
-							>
+								
+								{#if isBinderPage}
+									<!-- Button to add to binder storage when on binder page -->
+									<div class="flex-shrink-0 ml-2">
+										<button 
+											class="py-1 px-2 rounded flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white hover:bg-gray-700'} hover:shadow-lg transform hover:translate-y-[-1px]"
+											on:click={(e) => {
+												e.preventDefault();
+												e.stopPropagation();
+												if (!isAdded) addToBinderStorage(card);
+											}}
+											title={isAdded ? "Added to binder" : "Add to binder storage"}
+											disabled={isAdded}
+										>
+											{#if isAdded}
+												<div in:fly={{ y: 10, duration: 200 }}>
+													<Check size={14} />
+												</div>
+												<span class="text-xs" in:fly={{ x: 5, duration: 200 }}>Added</span>
+											{:else}
+												<PlusCircle size={14} />
+												<span class="text-xs">Add</span>
+											{/if}
+										</button>
+									</div>
+								{/if}
+							</div>
+							
+							{#if prices[card.cardCode]?.simple}
 								<p class="text-gold-400 font-medium mt-1 text-sm">
 									{#if prices[card.cardCode]?.simple}
 										{prices[card.cardCode]?.simple?.toFixed(2)} $
@@ -380,10 +370,10 @@
 										Priceless
 									{/if}
 								</p>
-							</a>
-						{/if}
+							{/if}
+						</div>
 					</div>
-				</div>
+				</a>
 			{/each}
 		</div>
 	{/if}
