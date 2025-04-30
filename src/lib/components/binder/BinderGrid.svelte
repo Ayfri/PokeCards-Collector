@@ -3,10 +3,9 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import { NO_IMAGES } from '$lib/images';
 	import { X } from 'lucide-svelte';
-	import type { BinderStoredCard, BinderCards } from '$lib/types';
+	import type { BinderCards } from '$lib/types';
 
 	export let binderCards: Writable<Array<BinderCards | null>>;
-	export let storedCards: Writable<Array<BinderStoredCard>>;
 	export let rows: Writable<number>;
 	export let columns: Writable<number>;
 	
@@ -14,68 +13,70 @@
 	function onDragOver(e: DragEvent) {
 		e.preventDefault();
 		const target = e.target as HTMLElement;
-		if (target.classList.contains('binder-cell')) {
-			target.classList.add('drag-over');
+		if (target.closest('.binder-cell')) {
+			target.closest('.binder-cell')!.classList.add('drag-over');
 		}
 	}
 	
 	function onDragLeave(e: DragEvent) {
 		e.preventDefault();
 		const target = e.target as HTMLElement;
-		if (target.classList.contains('binder-cell')) {
-			target.classList.remove('drag-over');
+		if (target.closest('.binder-cell')) {
+			target.closest('.binder-cell')!.classList.remove('drag-over');
 		}
 	}
 	
 	function onDrop(e: DragEvent, position: number) {
 		e.preventDefault();
 		const target = e.target as HTMLElement;
-		target.classList.remove('drag-over');
+		if (target.closest('.binder-cell')) {
+			target.closest('.binder-cell')!.classList.remove('drag-over');
+		}
 		
-		const cardId = e.dataTransfer?.getData('text/plain');
-		if (!cardId) return;
-		
-		// Check if this is a card from storage or from another cell
 		const sourceType = e.dataTransfer?.getData('source-type');
 		
 		if (sourceType === 'storage') {
-			// Find the card in storage
-			const cardIndex = $storedCards.findIndex(card => card.id === cardId);
-			if (cardIndex !== -1) {
-				const card = $storedCards[cardIndex];
-				
+			// Get data directly from transfer
+			const cardCode = e.dataTransfer?.getData('cardCode');
+			const cardUrl = e.dataTransfer?.getData('cardUrl');
+			
+			if (cardCode && cardUrl) {
 				// Update the binder grid
 				const updatedBinderCards = [...$binderCards];
-				updatedBinderCards[position] = { ...card, position };
+				// Create a new BinderCards object for the grid
+				updatedBinderCards[position] = { 
+					id: crypto.randomUUID(), // Assign a unique ID for this grid instance
+					url: cardUrl, 
+					cardCode: cardCode, 
+					position: position 
+				};
 				$binderCards = updatedBinderCards;
 				
-				// No need to remove from storage since we're just creating a copy
+				// No interaction with storedCards needed here anymore
+			} else {
+				console.error('Drop from storage missing cardCode or cardUrl in dataTransfer');
 			}
+
 		} else if (sourceType === 'binder') {
-			// Find the source position
+			// Handle drag/drop within the grid (swap or move)
 			const sourcePosition = parseInt(e.dataTransfer?.getData('source-position') || '-1');
-			if (sourcePosition === -1) return;
+			if (sourcePosition === -1 || sourcePosition === position) return; // Ignore drop on same spot
 			
-			// Get the card from the source position
 			const sourceCard = $binderCards[sourcePosition];
-			if (!sourceCard) return;
+			if (!sourceCard) return; // Source card doesn't exist (shouldn't happen)
 			
-			// Get the card at the target position (if any)
-			const targetCard = $binderCards[position];
+			const targetCard = $binderCards[position]; // Card at the drop position
 			
-			// Create updated array
 			const updatedBinderCards = [...$binderCards];
 			
-			// If there's a card at the target position, swap the cards
 			if (targetCard) {
-				// Place target card at source position with updated position property
+				// Swap cards: Place target card at source, source card at target
 				updatedBinderCards[sourcePosition] = { ...targetCard, position: sourcePosition };
-				// Place source card at target position with updated position property
-				updatedBinderCards[position] = { ...sourceCard, position };
+				updatedBinderCards[position] = { ...sourceCard, position: position };
 			} else {
-				// If target position is empty, just move the card
+				// Move card: Clear source, place source card at target
 				updatedBinderCards[sourcePosition] = null;
-				updatedBinderCards[position] = { ...sourceCard, position };
+				updatedBinderCards[position] = { ...sourceCard, position: position };
 			}
 			
 			$binderCards = updatedBinderCards;
@@ -83,7 +84,7 @@
 	}
 	
 	// Handle starting drag from a cell
-	function onDragStart(e: DragEvent, card: {id: string; url: string; position: number}) {
+	function onDragStart(e: DragEvent, card: BinderCards) {
 		if (!e.dataTransfer) return;
 		
 		e.dataTransfer.setData('text/plain', card.id);
@@ -101,52 +102,65 @@
 </script>
 
 <div class="w-full h-full p-2">
-	<!-- This div handles scrolling -->
 	<div class="h-full overflow-y-auto">
 		<div 
-			class="grid gap-[2px] mx-auto max-w-full"
-			style="grid-template-rows: repeat({$rows}, minmax(0, 1fr)); grid-template-columns: repeat({$columns}, minmax(0, 1fr));"
+			class="grid gap-[2px] mx-auto max-w-full binder-grid"
+			style:--rows={$rows} 
+			style:--columns={$columns}
 		>
-			{#each Array($rows * $columns) as _, index}
+			{#each Array($rows * $columns) as _, index (index)} 
 				{@const card = index < $binderCards.length ? $binderCards[index] : null}
-				
 				<div 
-					class="relative aspect-[2.5/3.7] justify-self-center w-full"
+					class="relative binder-cell justify-self-center w-full border border-gray-700 rounded-sm hover:border-gray-600 {card ? 'bg-gray-900' : 'bg-gray-800/50'}"
+					style="aspect-ratio: 2.5 / 3.5;"
 					role="gridcell"
 					tabindex="0"
 					on:dragover={onDragOver}
 					on:dragleave={onDragLeave}
 					on:drop={(e) => onDrop(e, index)}
 				>
-					<div class="absolute inset-0 w-full h-full flex items-center justify-center bg-gray-900 border border-gray-700 rounded-sm p-px hover:border-gray-600">
-						{#if card}
-							<div
-								class="relative w-full h-full flex items-center justify-center group"
-								draggable="true"
-								role="button"
-								tabindex="-1"
-								on:dragstart={(e) => onDragStart(e, card)}
+					{#if card}
+						<div
+							class="absolute inset-0 w-full h-full flex items-center justify-center group p-px"
+							draggable="true"
+							role="button"
+							tabindex="-1"
+							on:dragstart={(e) => onDragStart(e, card)}
+						>
+							<CardImage
+								imageUrl={card.url}
+								alt={card.cardCode}
+								class="card-image max-w-full max-h-full object-contain {NO_IMAGES ? 'ring-1 ring-gold-400 ring-inset' : ''}"
+								lazy={true}
+								highRes={true}
+							/>
+							<button 
+								class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+								on:click={() => removeCard(index)}
 							>
-								<CardImage
-									imageUrl={card.url}
-									alt="Pokémon card" 
-									class="card-image {NO_IMAGES ? 'ring-1 ring-gold-400 ring-inset' : ''}"
-									lazy={true}
-									highRes={true}
-								/>
-								<button 
-									class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-									on:click={() => removeCard(index)}
-								>
-									<X size={14} />
-								</button>
-							</div>
-						{:else}
-							<div class="text-gray-500 text-xs text-center">Drop card here</div>
-						{/if}
-					</div>
+								<X size={14} />
+							</button>
+						</div>
+					{:else}
+						<div class="absolute inset-0 flex items-center justify-center text-gray-600 text-xs text-center pointer-events-none">
+							Drop here
+						</div>
+					{/if}
 				</div>
 			{/each}
 		</div>
 	</div>
-</div> 
+</div>
+
+<style>
+	.binder-grid {
+		display: grid;
+		grid-template-rows: repeat(var(--rows), minmax(0, 1fr));
+		grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+		gap: 2px;
+	}
+	.binder-cell:focus {
+		outline: 2px solid #FFB700;
+		outline-offset: 1px;
+	}
+</style> 

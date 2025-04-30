@@ -126,10 +126,5 @@ export interface BinderCards {
 	id: string;
 	url: string;
 	position: number;
-}
-
-
-export interface BinderStoredCard {
-	id: string;
-	url: string;
+	cardCode: string;
 }

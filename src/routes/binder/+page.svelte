@@ -14,20 +14,20 @@
 	import LinkIcon from 'lucide-svelte/icons/link';
 	import DownloadIcon from 'lucide-svelte/icons/download';
 	import type { PageData } from './$types';
-	import TextInput from '@components/filters/TextInput.svelte';
-	import TextArea from '@components/filters/TextArea.svelte';
 	import Select from '@components/filters/Select.svelte';
 	import NumberInput from '@components/filters/NumberInput.svelte';
-	import type { BinderStoredCard, BinderCards } from '$lib/types';
+	import type { BinderCards, FullCard } from '$lib/types';
 
 	// Page data from server
 	export let data: PageData;
+
+	$: sets = data.sets;
 
 	// Binder configuration
 	const rows = writable(3);
 	const columns = writable(3);
 	const binderCards = writable<Array<BinderCards | null>>([]);
-	const storedCards = writable<Array<BinderStoredCard>>([]);
+	const storedCards = writable<string[]>([]);
 	const showHelp = writable(false);
 	const showSetModal = writable(false);
 	const selectedSet = writable('');
@@ -42,310 +42,207 @@
 	// Load and save functions
 	function saveToLocalStorage() {
 		if (!browser) return;
-
 		try {
-			// Sauvegarde du binder
-			const binderData = {
-				cards: $binderCards,
-				rows: $rows,
-				columns: $columns
-			};
+			const binderData = { cards: $binderCards, rows: $rows, columns: $columns };
 			window.localStorage.setItem('binderGridData', JSON.stringify(binderData));
-
-			// Sauvegarde des cartes stockées
 			window.localStorage.setItem('binderStoredCards', JSON.stringify($storedCards));
-		} catch (e) {
-			console.error('Erreur de sauvegarde:', e);
-		}
+		} catch (e) { console.error('Erreur de sauvegarde:', e); }
 	}
 
 	function loadFromLocalStorage() {
 		if (!browser) return;
-
 		try {
-			// Charger les cartes stockées
-			const storedCardsString = window.localStorage.getItem('binderStoredCards');
-			if (storedCardsString) {
-				const parsed = JSON.parse(storedCardsString);
+			const storedDataString = window.localStorage.getItem('binderStoredCards');
+			if (storedDataString) {
+				const parsed = JSON.parse(storedDataString);
 				if (Array.isArray(parsed)) {
-					$storedCards = parsed;
-					console.log('Cartes stockées chargées:', parsed.length);
+					if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0] !== null && 'url' in parsed[0]) {
+						console.warn('Migrating old storedCards format...');
+						const migratedCardCodes: string[] = [];
+						for (const oldCard of parsed) {
+							if (typeof oldCard.url === 'string') {
+								const foundCard = data.allCards.find(c => c.image === oldCard.url);
+								if (foundCard) {
+									migratedCardCodes.push(foundCard.cardCode);
+								} else {
+									console.warn(`Could not find cardCode for old stored URL: ${oldCard.url}`);
+								}
+							}
+						}
+						$storedCards = [...new Set(migratedCardCodes)];
+						console.log('Migration complete, loaded cardCodes:', $storedCards.length);
+						saveToLocalStorage();
+					} else if (parsed.every(item => typeof item === 'string')) {
+						$storedCards = parsed;
+						console.log('CardCodes stockés chargées:', parsed.length);
+					} else {
+						console.warn('Invalid format found in binderStoredCards, resetting.');
+						$storedCards = [];
+					}
 				}
 			}
 
-			// Charger la configuration du binder
 			const binderDataString = window.localStorage.getItem('binderGridData');
 			if (binderDataString) {
-				const data = JSON.parse(binderDataString);
-
-				// Dimensions
-				if (typeof data.rows === 'number' && typeof data.columns === 'number') {
-					$rows = Math.max(2, data.rows);
-					$columns = Math.max(2, data.columns);
+				const binderData = JSON.parse(binderDataString);
+				if (typeof binderData.rows === 'number' && typeof binderData.columns === 'number') {
+					$rows = Math.max(2, binderData.rows);
+					$columns = Math.max(2, binderData.columns);
 				}
-
-				// Cartes
-				if (Array.isArray(data.cards)) {
-					$binderCards = data.cards;
-				}
-			} else {
-				resetBinderGrid();
-			}
+				if (Array.isArray(binderData.cards)) { $binderCards = binderData.cards; }
+			} else { resetBinderGrid(); }
 		} catch (e) {
 			console.error('Erreur de chargement:', e);
 			resetBinderGrid();
+			$storedCards = [];
 		}
 	}
 
-	// Appliquer les changements et sauvegarder
-	function applyChanges() {
-		saveToLocalStorage();
-	}
+	function applyChanges() { saveToLocalStorage(); }
 
-	// Initialize on mount
 	onMount(() => {
 		loadFromLocalStorage();
+		binderCards.subscribe(applyChanges);
+		storedCards.subscribe(applyChanges);
+		rows.subscribe(applyChanges);
+		columns.subscribe(applyChanges);
 
-		// Configuration des écouteurs d'événements
-		binderCards.subscribe(() => {
-			applyChanges();
-		});
-
-		storedCards.subscribe(() => {
-			applyChanges();
-		});
-
-		rows.subscribe(() => {
-			applyChanges();
-		});
-
-		columns.subscribe(() => {
-			applyChanges();
-		});
-
-		// Écouter l'événement personnalisé pour ajouter une carte au stockage
 		const handleAddToBinder = (event: CustomEvent) => {
-			if (event.detail && event.detail.cardUrl) {
-				$storedCards = [...$storedCards, {
-					id: crypto.randomUUID(),
-					url: event.detail.cardUrl
-				}];
+			const codeToAdd: string | undefined = event.detail?.cardCode;
+
+			if (codeToAdd && !$storedCards.includes(codeToAdd)) {
+				$storedCards = [...$storedCards, codeToAdd];
+			} else if (!codeToAdd) {
+				 console.warn('add-to-binder event triggered without cardCode in detail.');
 			}
 		};
-
 		document.addEventListener('add-to-binder', handleAddToBinder as EventListener);
-
-		return () => {
-			document.removeEventListener('add-to-binder', handleAddToBinder as EventListener);
-		};
+		return () => { document.removeEventListener('add-to-binder', handleAddToBinder as EventListener); };
 	});
 
-	// Function to reset binder grid
 	function resetBinderGrid() {
-		// S'assurer que rows et columns sont au moins 2
 		if ($rows < 2) $rows = 2;
 		if ($columns < 2) $columns = 2;
-
 		const totalCells = $rows * $columns;
 		$binderCards = Array(totalCells).fill(null);
 	}
 
-	// Update grid when rows/columns change
 	$: {
 		const totalCells = $rows * $columns;
 		if ($binderCards.length !== totalCells) {
-			// Keep existing cards if possible
 			const newGrid = Array(totalCells).fill(null);
 			$binderCards.forEach((card, index) => {
-				if (card && index < totalCells) {
-					newGrid[index] = { ...card, position: index };
-				}
+				if (card && index < totalCells) { newGrid[index] = { ...card, position: index }; }
 			});
 			$binderCards = newGrid;
 		}
 	}
 
-	// Toggle help modal
-	function toggleHelp() {
-		$showHelp = !$showHelp;
-	}
-
-	// Toggle set modal
+	function toggleHelp() { $showHelp = !$showHelp; }
 	function toggleSetModal() {
 		$showSetModal = !$showSetModal;
-		if (!$showSetModal) {
-			$selectedSet = ''; // Reset on close
-		}
+		if (!$showSetModal) $selectedSet = '';
 	}
-
-	// Toggle URL modal
 	function toggleUrlModal() {
 		$showUrlModal = !$showUrlModal;
-		if (!$showUrlModal) {
-			$cardUrl = ''; // Reset on close
-			$multipleCardUrls = '';
-		}
+		if (!$showUrlModal) { $cardUrl = ''; $multipleCardUrls = ''; }
 	}
 
-	// Function to add all cards from a set
 	function addSetToStorage() {
 		if (!$selectedSet) return;
 
-		const setToAdd = data.sets.find((set: any) => set.name === $selectedSet);
-		if (!setToAdd) return;
+		// Filter allCards directly by setName matching the selected set name
+		const cardCodesFromSet = data.allCards
+			.filter((card: FullCard) => card.setName === $selectedSet)
+			.map((card: FullCard) => card.cardCode);
 
-		const cardsFromSet = data.allCards.filter((card: any) => {
-			// Extract setCode from the card's cardCode (format: supertype_pokemonid_setcode_cardnumber)
-			const parts = card.cardCode.split('_');
-			const cardSetCode = parts[2];
+		// Ensure the codes from the set are unique first
+		const uniqueCodesFromSet = [...new Set(cardCodesFromSet)];
 
-			// Check if the card belongs to the selected set by comparing with set aliases or the code from the logo URL
-			const setCode = setToAdd.logo.split('/').at(-2);
-			return setToAdd.aliases?.includes(cardSetCode) || setCode === cardSetCode;
-		});
+		// Add only those unique codes that are not already in storage
+		const currentStoredCodes = new Set($storedCards);
+		const newCardCodesToAdd = uniqueCodesFromSet.filter(code => !currentStoredCodes.has(code));
+		if (newCardCodesToAdd.length > 0) {
+			$storedCards = [...$storedCards, ...newCardCodesToAdd];
+		}
 
-		// Add all cards from the set to storage
-		const newCards = cardsFromSet.map((card: any) => ({
-			id: crypto.randomUUID(),
-			url: card.image
-		}));
-
-		$storedCards = [...$storedCards, ...newCards];
-
-		// Close the modal
 		toggleSetModal();
 	}
 
-	// Function to add a card from a URL
 	function addCardFromUrl() {
 		if (!$cardUrl && !$multipleCardUrls) return;
+		const codesToAdd: string[] = [];
 
-		const newCards = [];
-
-		// Add single URL if provided
 		if ($cardUrl) {
-			newCards.push({
-				id: crypto.randomUUID(),
-				url: $cardUrl
-			});
+			const foundCard = data.allCards.find(c => c.image === $cardUrl.trim());
+			if (foundCard && !$storedCards.includes(foundCard.cardCode)) {
+				codesToAdd.push(foundCard.cardCode);
+			} else if (!foundCard) { console.warn(`Card URL not found: ${$cardUrl}`); }
 		}
 
-		// Process multiple URLs if provided
 		if ($multipleCardUrls) {
-			// Split by newlines and process each line
 			const lines = $multipleCardUrls.split('\n');
-
 			for (const line of lines) {
-				// Remove semicolons or periods from the end of the URL
-				const trimmedLine = line.trim();
-				if (trimmedLine) {
-					const url = trimmedLine.replace(/[;.]$/, '').trim();
-					if (url) {
-						newCards.push({
-							id: crypto.randomUUID(),
-							url: url
-						});
-					}
+				const url = line.trim().replace(/[;.]$/, '').trim();
+				if (url) {
+					const foundCard = data.allCards.find(c => c.image === url);
+					if (foundCard && !codesToAdd.includes(foundCard.cardCode) && !$storedCards.includes(foundCard.cardCode)) {
+						codesToAdd.push(foundCard.cardCode);
+					} else if (!foundCard) { console.warn(`Card URL not found: ${url}`); }
 				}
 			}
 		}
 
-		// Add all new cards to storage
-		if (newCards.length > 0) {
-			$storedCards = [...$storedCards, ...newCards];
-		}
-
-		// Close the modal
+		if (codesToAdd.length > 0) $storedCards = [...$storedCards, ...codesToAdd];
 		toggleUrlModal();
 	}
 
-	// Function to generate binder image
 	async function generateBinderImage() {
 		if (!browser) return;
-
-		// Check if all binder slots are filled
 		const hasEmptySlots = $binderCards.some(card => card === null);
-		if (hasEmptySlots) {
-			$showEmptySlotsModal = true;
-			return;
-		}
-
+		if (hasEmptySlots) { $showEmptySlotsModal = true; return; }
 		generateBinderImageProcess();
 	}
 
-	// Process to actually generate the image
 	async function generateBinderImageProcess() {
-		const cardWidth = 150; // Width of each card image in pixels
-		const cardHeight = 210; // Approximate height based on aspect ratio
-		const padding = 10; // Padding around cards
-
+		const cardWidth = 150, cardHeight = 210, padding = 10;
 		const canvasWidth = $columns * (cardWidth + padding) + padding;
 		const canvasHeight = $rows * (cardHeight + padding) + padding;
-
 		const canvas = document.createElement('canvas');
-		canvas.width = canvasWidth;
-		canvas.height = canvasHeight;
+		canvas.width = canvasWidth; canvas.height = canvasHeight;
 		const ctx = canvas.getContext('2d');
+		if (!ctx) { console.error('Could not get canvas context'); alert('Could not generate image: Canvas context unavailable.'); return; }
 
-		if (!ctx) {
-			console.error('Could not get canvas context');
-			// Optionally show an error message to the user
-			alert('Could not generate image: Canvas context unavailable.');
-			return;
-		}
+		ctx.fillStyle = '#1f2937'; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-		// Set background color (optional)
-		ctx.fillStyle = '#1f2937'; // bg-gray-800
-		ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-		const imageLoadPromises = $binderCards.map((card, index) => {
-			if (!card || !card.url) return Promise.resolve(); // Skip empty slots
-
-			return new Promise<void>((resolve, reject) => {
-				const img = new Image();
-				img.crossOrigin = 'Anonymous'; // Attempt to avoid CORS issues if images are hosted elsewhere
+		const imageLoadPromises = $binderCards.map((binderSlot, index) => {
+			if (!binderSlot || !binderSlot.url) return Promise.resolve();
+			return new Promise<void>((resolve) => {
+				const img = new Image(); img.crossOrigin = 'Anonymous';
 				img.onload = () => {
-					const col = index % $columns;
-					const row = Math.floor(index / $columns);
-					const x = padding + col * (cardWidth + padding);
-					const y = padding + row * (cardHeight + padding);
-					ctx.drawImage(img, x, y, cardWidth, cardHeight);
-					resolve();
+					const col = index % $columns, row = Math.floor(index / $columns);
+					const x = padding + col * (cardWidth + padding), y = padding + row * (cardHeight + padding);
+					ctx.drawImage(img, x, y, cardWidth, cardHeight); resolve();
 				};
 				img.onerror = (error) => {
-					console.error(`Error loading image ${card.url}:`, error);
-					// Draw a placeholder for failed images (optional)
-					const col = index % $columns;
-					const row = Math.floor(index / $columns);
-					const x = padding + col * (cardWidth + padding);
-					const y = padding + row * (cardHeight + padding);
-					ctx.fillStyle = '#4b5563'; // bg-gray-600
-					ctx.fillRect(x, y, cardWidth, cardHeight);
-					ctx.fillStyle = '#d1d5db'; // text-gray-300
-					ctx.textAlign = 'center';
-					ctx.fillText('Error', x + cardWidth / 2, y + cardHeight / 2);
-					resolve(); // Resolve even on error to not break Promise.all
+					console.error(`Error loading image ${binderSlot.url}:`, error);
+					const col = index % $columns, row = Math.floor(index / $columns);
+					const x = padding + col * (cardWidth + padding), y = padding + row * (cardHeight + padding);
+					ctx.fillStyle = '#4b5563'; ctx.fillRect(x, y, cardWidth, cardHeight);
+					ctx.fillStyle = '#d1d5db'; ctx.textAlign = 'center';
+					ctx.fillText('Error', x + cardWidth / 2, y + cardHeight / 2); resolve();
 				};
-				img.src = card.url;
+				img.src = binderSlot.url;
 			});
 		});
 
 		try {
 			await Promise.all(imageLoadPromises);
-
-			// Trigger download
 			const dataUrl = canvas.toDataURL('image/png');
 			const link = document.createElement('a');
-			link.href = dataUrl;
-			link.download = 'pokestore-binder.png';
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
-
-		} catch (error) {
-			console.error('Error generating binder image:', error);
-			alert('An error occurred while generating the image.');
-		}
+			link.href = dataUrl; link.download = 'pokestore-binder.png';
+			document.body.appendChild(link); link.click(); document.body.removeChild(link);
+		} catch (error) { console.error('Error generating binder image:', error); alert('An error occurred while generating the image.'); }
 	}
 </script>
 
@@ -388,10 +285,8 @@
 				<span>Add set</span>
 			</Button>
 
-			<Button onClick={toggleUrlModal} class="text-sm flex items-center gap-1 px-3 py-2">
-				<LinkIcon size={16} />
-				<span>Add from URL</span>
-			</Button>
+			<!-- Will later add this feature -->
+			<Button onClick={toggleUrlModal} disabled={true} class="text-sm flex items-center gap-1 px-3 py-2"><LinkIcon size={16} /> <span>Add from URL</span></Button>
 
 			<Button onClick={generateBinderImage} class="text-sm flex items-center gap-1 px-3 py-2">
 				<DownloadIcon size={16} />
@@ -404,13 +299,13 @@
 	<div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
 		<div class="lg:col-span-9">
 			<div class="bg-gray-800 rounded-lg h-[calc(100vh-250px)] min-h-[450px] flex items-stretch">
-				<BinderGrid {binderCards} {storedCards} {rows} {columns} />
+				<BinderGrid {binderCards} {rows} {columns} />
 			</div>
 		</div>
 
 		<div class="lg:col-span-3">
 			<div class="h-[calc(100vh-250px)] min-h-[450px]">
-				<BinderStorage cards={storedCards} />
+				<BinderStorage cards={storedCards} allCards={data.allCards} {sets} />
 			</div>
 		</div>
 	</div>
@@ -419,20 +314,23 @@
 <!-- Set Selection Modal -->
 <Modal bind:open={$showSetModal} onClose={toggleSetModal} title="Add complete set">
 	<p class="text-gray-300 mb-4 text-sm">
-		Choose a set to add all its cards to storage.
+		Choose a set to add all its cards (cardCodes) to storage.
 	</p>
 
 	<div class="mb-4">
-		<label for="setSelect" class="block text-gray-300 mb-2">Choose a set:</label>
+		<label for="set-select" class="block text-gray-300 mb-2">Choose a set:</label>
 		<Select
 			id="set-select"
 			bind:value={$selectedSet}
 			label="Choose a set:"
 			placeholder="-- Select a set --"
-			options={data.sets.sort((a, b) => a.name.localeCompare(b.name)).map(set => ({
-				value: set.name,
-				label: `${set.name} (${set.printedTotal} cards)`
-			}))}
+			options={data.sets
+				.sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime()) // Sort by date timestamp
+				.map(set => ({
+					value: set.name,
+					label: `${set.name} (${new Date(set.releaseDate).toLocaleDateString()}) - ${set.printedTotal} cards`
+				}))
+			}
 		/>
 	</div>
 
@@ -453,53 +351,26 @@
 	</svelte:fragment>
 </Modal>
 
-<!-- URL Card Modal -->
+<!-- Commented out URL Card Modal -->
+<!-- 
 <Modal bind:open={$showUrlModal} onClose={toggleUrlModal} title="Add card from URL">
 	<p class="text-gray-300 mb-4 text-sm">
-		Paste the URL of a Pokémon card image to add it to your storage.
+		Paste image URLs to find their corresponding cardCodes and add them to storage. URLs must match exactly those in the database.
 	</p>
-
 	<div class="mb-4">
-		<label for="cardUrl" class="block text-gray-300 mb-2">Card image URL:</label>
-		<TextInput
-			id="cardUrl"
-			label="Card image URL"
-			bind:value={$cardUrl}
-			type="url"
-			placeholder="https://example.com/card-image.jpg"
-		/>
+		<label for="cardUrl" class="block text-gray-300 mb-2">Single card image URL:</label>
+		<TextInput id="cardUrl" label="Single card image URL" bind:value={$cardUrl} type="url" placeholder="https://images.pokemontcg.io/..." />
 	</div>
-
 	<div class="mb-4">
-		<label for="multipleCardUrls" class="block text-gray-300 mb-2">Or multiple URLs (one per line ending with ; or .):</label>
-		<TextArea
-			id="multipleCardUrls"
-			bind:value={$multipleCardUrls}
-			placeholder="https://example.com/card1.jpg;
-https://example.com/card2.jpg;
-https://example.com/card3.jpg."
-			rows={4}
-			label="Or multiple URLs (one per line ending with ; or .):"
-			class="max-h-[20rem] overflow-y-auto"
-		/>
+		<label for="multipleCardUrls" class="block text-gray-300 mb-2">Or multiple URLs (one per line):</label>
+		<TextArea id="multipleCardUrls" bind:value={$multipleCardUrls} placeholder="https://images.pokemontcg.io/card1.png\nhttps://images.pokemontcg.io/card2.png" rows={4} label="Or multiple URLs (one per line)" class="max-h-[20rem] overflow-y-auto" />
 	</div>
-
 	<svelte:fragment slot="footer">
-		<Button
-			onClick={toggleUrlModal}
-			class="text-sm px-4 py-2 border border-gray-600"
-		>
-			Cancel
-		</Button>
-		<Button
-			onClick={addCardFromUrl}
-			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
-			disabled={!$cardUrl && !$multipleCardUrls}
-		>
-			Add card
-		</Button>
+		<Button onClick={toggleUrlModal} class="text-sm px-4 py-2 border border-gray-600">Cancel</Button>
+		<Button onClick={addCardFromUrl} class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50" disabled={!$cardUrl && !$multipleCardUrls}> Add card(s) </Button>
 	</svelte:fragment>
 </Modal>
+-->
 
 <!-- Empty Slots Confirmation Modal -->
 <Modal bind:open={$showEmptySlotsModal} title="Incomplete Binder" onClose={() => $showEmptySlotsModal = false}>
