@@ -271,7 +271,7 @@
 					id="rows"
 					bind:value={$rows}
 					min={2}
-					max={6}
+					max={8}
 					label="Rows:"
 				/>
 			</div>
@@ -281,7 +281,7 @@
 					id="columns"
 					bind:value={$columns}
 					min={2}
-					max={6}
+					max={8}
 					label="Columns:"
 				/>
 			</div>
