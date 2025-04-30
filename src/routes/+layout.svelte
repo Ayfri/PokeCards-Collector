@@ -129,7 +129,7 @@
 
 <div class="flex flex-col min-h-screen">
 	<LoadingBar />
-	<Header {user} {profile} />
+	<Header />
 	<slot/>
 	<div class="background fixed top-[15%] -z-50 flex place-content-center h-[100lvh] w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
 		{@html pokeballSvg}
