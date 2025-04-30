@@ -14,6 +14,7 @@
 	import Avatar from './Avatar.svelte';
 	import type { UserProfile } from '$lib/types';
 	import type { User as AuthUser } from '@supabase/supabase-js';
+	import { setNavigationLoading } from '$lib/stores/loading';
 
 	export let user: AuthUser | null = null;
 	export let profile: UserProfile | null = null;
@@ -28,6 +29,11 @@
 
 	function closeMenu() {
 		isMenuOpen = false;
+	}
+
+	function handleNavigation() {
+		closeMenu();
+		setNavigationLoading(true);
 	}
 
 	function openAuthModal() {
@@ -118,7 +124,7 @@
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
-						on:click={closeMenu}
+						on:click={handleNavigation}
 					>
 						<User class="mr-3" size={16} />
 						My profile
@@ -128,7 +134,7 @@
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
-						on:click={closeMenu}
+						on:click={handleNavigation}
 					>
 						<Library class="mr-3" size={16} />
 						My collection
@@ -138,7 +144,7 @@
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
-						on:click={closeMenu}
+						on:click={handleNavigation}
 					>
 						<Heart class="mr-3" size={16} />
 						My wishlist
@@ -147,7 +153,7 @@
 						href="/settings"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
-						on:click={closeMenu}
+						on:click={handleNavigation}
 					>
 						<Settings class="mr-3" size={16} />
 						Settings
