@@ -284,11 +284,11 @@
 		/>
 		{#if searchQuery.length > 0}
 			<button
-				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white z-10"
+				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white z-10 flex items-center justify-center h-6 w-6"
 				on:click={handleClearSearch}
 				aria-label="Clear search"
 			>
-				<X />
+				<X size={18} />
 			</button>
 		{:else if !inputFocused && platformModifierKey && !mobileMode}
 			<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 text-xs text-gray-500 pointer-events-none">
@@ -386,5 +386,10 @@
 	
 	button:active:not(:disabled) {
 		transform: scale(0.95);
+	}
+	
+	/* Prevent clear button from scaling when clicked */
+	.search-container button:active:not(:disabled) {
+		transform: translateY(-50%);
 	}
 </style>
