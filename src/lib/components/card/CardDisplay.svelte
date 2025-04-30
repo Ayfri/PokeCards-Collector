@@ -3,7 +3,7 @@
 	import EvolutionChain from '@components/card/EvolutionChain.svelte';
 	import RelatedCards from '@components/card/RelatedCards.svelte';
 	import {NO_IMAGES} from '$lib/images';
-	import {fade} from 'svelte/transition';
+	import {fade, fly} from 'svelte/transition';
 	import type {FullCard, Pokemon, Set, PriceData} from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
 	import InteractiveCard from '@components/card/InteractiveCard.svelte';
@@ -86,28 +86,35 @@
 		currentCard = pokemonCards?.[0];
 
 		// Initialize history state based on the *initial* card/pokemon from props
-		const initialCard = pokemonCards?.[0]; // Use the prop directly for initial state
-		const initialSet = initialCard ? findSetByCardCode(initialCard.cardCode, sets) : undefined;
-		const initialPokemon = initialCard?.pokemonNumber ? pokemons.find(p => p.id === initialCard.pokemonNumber) : undefined;
-
-		if (initialPokemon && initialCard?.pokemonNumber && initialSet) {
-			const filenameParts = initialCard.image?.split('/').at(-1)?.split('_') || [];
-			const cardNumberRaw = filenameParts[0] || '';
-			const cardNumberMatch = cardNumberRaw.match(/[a-z]*(\d+)[a-z]*/i);
-			const cardNumber = cardNumberMatch ? cardNumberMatch[1] : undefined;
-
-			if (initialSet.ptcgoCode && cardNumber) {
-				const initialState = {
-					pokemonId: initialPokemon.id,
-					setCode: initialSet.ptcgoCode,
-					cardNumber: cardNumber
-				};
-				replaceState(window.location.href, initialState);
-			}
-		}
+		// Moved the replaceState call into the setTimeout below to ensure router is ready
 
 		setTimeout(() => {
 			isInitialRenderComplete = true;
+
+			// Initialize history state here, after the current tick
+			const initialCard = pokemonCards?.[0]; // Use the prop directly for initial state
+			const initialSet = initialCard ? findSetByCardCode(initialCard.cardCode, sets) : undefined;
+			const initialPokemon = initialCard?.pokemonNumber ? pokemons.find(p => p.id === initialCard.pokemonNumber) : undefined;
+
+			if (initialPokemon && initialCard?.pokemonNumber && initialSet) {
+				const filenameParts = initialCard.image?.split('/').at(-1)?.split('_') || [];
+				const cardNumberRaw = filenameParts[0] || '';
+				const cardNumberMatch = cardNumberRaw.match(/[a-z]*(\d+)[a-z]*/i);
+				const cardNumber = cardNumberMatch ? cardNumberMatch[1] : undefined;
+
+				if (initialSet.ptcgoCode && cardNumber) {
+					const initialState = {
+						pokemonId: initialPokemon.id,
+						setCode: initialSet.ptcgoCode,
+						cardNumber: cardNumber
+					};
+					try {
+						replaceState(window.location.href, initialState);
+					} catch (error) {
+						console.error('Error calling replaceState in setTimeout:', error);
+					}
+				}
+			}
 		}, 0);
 
 		setTimeout(() => {
@@ -132,12 +139,14 @@
 <div class="flex flex-col gap-1 lg:gap-4 items-center content-center">
 	<!-- Evolution Chain Component (Only for Pokemon) -->
 	{#if currentPokemon && isInitialRenderComplete && currentCard}
-		<EvolutionChain card={currentCard} {pokemons} {allCards} pokemonCards={currentPokemonCards} {prices} />
+		<div in:fly={{ y: -30, duration: 400, delay: 100 }}>
+			<EvolutionChain card={currentCard} {pokemons} {allCards} pokemonCards={currentPokemonCards} {prices} />
+		</div>
 	{/if}
 
 	<!-- Pokédex number indicator (Only for Pokemon) -->
 	{#if currentPokemon && currentCard?.pokemonNumber}
-		<div class="pokedex-number-display relative text-center">
+		<div class="pokedex-number-display relative text-center" in:fade={{ duration: 300, delay: 200 }}>
 			<div class="pokedex-number text-gold-400 bg-black/60 font-bold px-3 py-1 rounded-md inline-block z-10">
 				#{currentCard.pokemonNumber}
 			</div>
@@ -148,7 +157,7 @@
 	<div class="card-display-area w-full px-4 md:px-12 max-w-8xl mx-auto perspective-container flex flex-col items-center">
 
 		<!-- Center Card -->
-		<div class="center-card-wrapper relative flex-shrink-0 order-1 lg:order-2 perspective-container">
+		<div class="center-card-wrapper relative flex-shrink-0 order-1 lg:order-2 perspective-container" in:fly={{ y: 50, duration: 500, delay: 300 }}>
 			<!-- Conditional Aura for Pokemon Types -->
 			{#if currentPokemon && !NO_IMAGES}
 				<div class="card-aura {currentType}" id="card-aura"></div>
@@ -169,6 +178,7 @@
 				<a
 					href={`/card/${previousPokemonCard.cardCode}/`}
 					class="prev-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
+					in:fly={{ x: -50, duration: 400, delay: 400 }}
 				>
 					{#if !NO_IMAGES}
 					<img
@@ -196,6 +206,7 @@
 				<a
 					href={`/card/${nextPokemonCard.cardCode}/`}
 					class="next-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
+					in:fly={{ x: 50, duration: 400, delay: 400 }}
 				>
 					{#if !NO_IMAGES}
 					<img
@@ -225,6 +236,7 @@
 			<a
 				href={`/card/${previousPokemonCard.cardCode}/`}
 				class="prev-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-1"
+				in:fly={{ x: -50, duration: 400, delay: 400 }}
 			>
 				{#if !NO_IMAGES}
 				<img
@@ -252,6 +264,7 @@
 			<a
 				href={`/card/${nextPokemonCard.cardCode}/`}
 				class="next-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-3"
+				in:fly={{ x: 50, duration: 400, delay: 400 }}
 			>
 				{#if !NO_IMAGES}
 				<img
@@ -277,14 +290,18 @@
 
 	<!-- Card Information Component -->
 	{#if currentCard && currentSet}
-		<CardInfo card={currentCard} set={currentSet} {cardPrices} pokemon={currentPokemon} />
+		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 500 }}>
+			<CardInfo card={currentCard} set={currentSet} {cardPrices} pokemon={currentPokemon} />
+		</div>
 	{/if}
 
-	<div class="separator w-full max-w-[800px] my-12 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
+	<div class="separator w-full max-w-[800px] my-12 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" in:fade={{ duration: 600, delay: 600 }}></div>
 
 	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
 	{#if currentPokemonCards.length > 1 && shouldRenderAllCards}
-		<RelatedCards cards={currentPokemonCards} {pokemons} {sets} {prices} pokemon={currentPokemon} onCardSelect={handleCardSelect} />
+		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 700 }}>
+			<RelatedCards cards={currentPokemonCards} {pokemons} {sets} {prices} pokemon={currentPokemon} onCardSelect={handleCardSelect} />
+		</div>
 	{/if}
 </div>
 

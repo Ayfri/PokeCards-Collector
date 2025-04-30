@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import CardDisplay from "@components/card/CardDisplay.svelte";
 	import type { Card, Pokemon, Set, PriceData } from "$lib/types";
+	import { fade } from 'svelte/transition';	
 	
 	export let data: PageData;
 
@@ -18,7 +19,9 @@
 		{#if !pokemonCards || pokemonCards.length === 0}
 			<p class="text-center text-lg">Chargement en cours...</p>
 		{:else}
-			<CardDisplay allCards={allCards} pokemonCards={pokemonCards} {pokemons} {sets} {prices} />
+			<div in:fade={{ duration: 300 }}>
+				<CardDisplay allCards={allCards} pokemonCards={pokemonCards} {pokemons} {sets} {prices} />
+			</div>
 		{/if}
 	</div>
 </main> 
