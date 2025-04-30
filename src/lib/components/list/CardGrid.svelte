@@ -402,7 +402,7 @@
 	</div>
 {/if}
 
-<div class="min-h-[calc(100svh-100px)] md:min-h-[calc(100svh)] flex flex-col">
+<div class="min-h-[calc(100svh-100px)] flex flex-col">
 	<!-- Header Row -->
 	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-4 lg:px-10 gap-1 md:gap-0 mb-0">
 		<!-- Left Side (Title conditional based on prop, Counts always present) -->
