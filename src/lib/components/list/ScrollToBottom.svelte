@@ -1,5 +1,5 @@
 <button
-	class="fixed right-3 lg:right-6 bottom-6 xs:bottom-10 lg:bottom-8 size-12 z-50 opacity-50 border-white border-solid border-2 rounded-full bg-black fill-white p-2 cursor-pointer transition-all ease-in-out duration-300 hover:scale-110 hover:opacity-100"
+	class="fixed right-3 lg:right-6 bottom-6 xs:bottom-10 lg:bottom-8 size-12 z-30 opacity-50 border-white border-solid border-2 rounded-full bg-black fill-white p-2 cursor-pointer transition-all ease-in-out duration-300 hover:scale-110 hover:opacity-100"
 	id="scroll-btn"
 	on:click
 >
