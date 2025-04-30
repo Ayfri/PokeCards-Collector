@@ -276,7 +276,7 @@
 		<input
 			bind:this={inputElement}
 			bind:value={searchQuery}
-			class="bg-black border text-white px-4 py-2 rounded-full w-full outline-0 pl-10 pr-10 {mobileMode ? '' : 'pr-24'} transition-all duration-300 ease-in-out {inputFocused ? 'ring-2 ring-gold-400 shadow-lg shadow-gold-400/20 border-transparent' : 'border border-gray-700 hover:border-gray-500'}"
+			class="bg-black border text-white px-4 py-2 rounded-full w-full outline-none pl-10 pr-10 {mobileMode ? '' : 'pr-24'} transition-all duration-300 ease-in-out {inputFocused ? 'ring-2 ring-gold-400 shadow-lg shadow-gold-400/20 border-transparent' : 'border border-gray-700 hover:border-gray-500'}"
 			on:focus={handleInputFocus}
 			on:blur={() => inputFocused = false}
 			placeholder="Search cards..."
