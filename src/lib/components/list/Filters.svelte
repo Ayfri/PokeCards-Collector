@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { filterArtist, filterNumero, filterRarity, filterSet, filterSupertype, filterType, mostExpensiveOnly, sortBy, sortOrder } from '$helpers/filters';
+	import { filterArtist, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, mostExpensiveOnly, sortBy, sortOrder } from '$helpers/filters';
 	import type { Set } from '$lib/types';
 	import { afterUpdate, onMount } from 'svelte';
 	import { filterStates } from '$stores/filterStates';
@@ -22,6 +22,7 @@
 	// Inputs text variables
 	let debounceTimeout: number;
 	let searchNumero = '';
+	let searchName = '';
 	let supertypeValue = 'all';
 	let pokemonTypeValue = 'all';
 	let sortDirectionValue: 'asc' | 'desc' = 'asc';
@@ -50,6 +51,10 @@
 
 	const debouncedSetFilterNumero = debounce((value: string) => {
 		$filterNumero = value;
+	}, 300);
+
+	const debouncedSetFilterName = debounce((value: string) => {
+		$filterName = value;
 	}, 300);
 
 	// Handle changes to the supertype filter with URL updates
@@ -462,6 +467,17 @@
 						</select>
 					</div>
 				</div>
+			</div>
+
+			<!-- Name Search (Mobile Only) -->
+			<div class="flex flex-wrap gap-4 sm:flex-row flex-col md:hidden">
+				<TextInput
+					id="name"
+					label="Name"
+					bind:value={searchName}
+					placeholder="Search by name..."
+					debounceFunction={debouncedSetFilterName}
+				/>
 			</div>
 
 			<div class="flex flex-wrap gap-4 sm:flex-row flex-col">

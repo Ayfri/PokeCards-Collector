@@ -401,9 +401,7 @@
 
 <div class="min-h-[calc(100vh)] flex flex-col">
 	<!-- Header Row -->
-	<div
-		class="flex flex-col md:flex-row justify-between items-center pb-3 px-10 mb-0"
-	>
+	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-10 mb-0">
 		<!-- Left Side (Title conditional based on prop, Counts always present) -->
 		<div class="flex items-center gap-3 md:ml-14">
 			{#if pageTitle}
@@ -425,12 +423,12 @@
 				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
 			</span>
 			<!-- Grid Size Slider -->
-			<div class="mr-3 ml-1">
+			<div class="mr-3 ml-1 hidden md:block">
 				<SizeSlider />
 			</div>
 
-			<!-- Name Search (Should be always visible) -->
-			<div class="w-48">
+			<!-- Name Search -->
+			<div class="w-48 hidden md:block">
 				<TextInput
 					id="name"
 					label="Name"

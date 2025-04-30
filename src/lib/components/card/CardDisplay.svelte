@@ -185,7 +185,7 @@
 
 <div class="flex flex-col gap-1 lg:gap-8 content-center">
 	<!-- Evolution Chain Component (Only for Pokemon) -->
-	{#if currentPokemon && isInitialRenderComplete}
+	{#if currentPokemon && isInitialRenderComplete && currentCard}
 		<EvolutionChain card={currentCard} {pokemons} {allCards} pokemonCards={currentPokemonCards} {prices} />
 	{/if}
 
