@@ -5,11 +5,12 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// Get layout data which contains default SEO values
 	const layoutData = await parent();
 
-	// Get all cards and artists
-	const allCards = await getCards();
-	const artists = await getArtists();
-	const sets = await getSets();
-	const prices = await getPrices();
+	const [allCards, artists, sets, prices] = await Promise.all([
+		getCards(),
+		getArtists(),
+		getSets(),
+		getPrices()
+	]);
 
 	// Define page-specific SEO data
 	const pageSeoData: Partial<typeof layoutData> = {
