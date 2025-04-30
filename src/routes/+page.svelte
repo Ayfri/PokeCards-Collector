@@ -181,9 +181,7 @@
 						class="group px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-[400ms] flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900"
 					>
 						Explore Cards
-						{#if !NO_IMAGES}
-							<ArrowRight size={18} class="group-hover:translate-x-1 transition-all duration-[400ms]" />
-						{/if}
+						<ArrowRight size={18} class="group-hover:translate-x-1 transition-all duration-[400ms]" />
 					</a>
 				</div>
 			</div>
@@ -224,12 +222,10 @@
 				</a>
 				<a
 					href="/cards-list?set={encodeURIComponent(latestSet.name)}"
-					class="text-gold-400 hover:underline flex items-center gap-1"
+					class="text-gold-400 hover:underline flex items-center gap-1 group"
 				>
 					View all cards in this set
-					{#if !NO_IMAGES}
-						<ArrowRight size={16} />
-					{/if}
+					<ArrowRight size={16} class="group-hover:translate-x-1 transition-all duration-[400ms]" />
 				</a>
 			</div>
 
@@ -317,11 +313,9 @@
 					{/if}
 					Most Valuable Cards in {latestSet.name}
 				</h2>
-				<a href="/cards-list?set={encodeURIComponent(latestSet.name)}" class="text-gold-400 hover:underline flex items-center gap-1">
+				<a href="/cards-list?set={encodeURIComponent(latestSet.name)}" class="text-gold-400 hover:underline flex items-center gap-1 group">
 					View all cards
-					{#if !NO_IMAGES}
-						<ArrowRight size={16} />
-					{/if}
+					<ArrowRight size={16} class="group-hover:translate-x-1 transition-all duration-[400ms]" />
 				</a>
 			</div>
 
@@ -366,11 +360,9 @@
 					{/if}
 					Most Valuable Cards
 				</h2>
-				<a href="/cards-list?mostexpensive=true&sortby=sort-price" class="text-gold-400 hover:underline flex items-center gap-1">
+				<a href="/cards-list?mostexpensive=true&sortby=sort-price" class="text-gold-400 hover:underline flex items-center gap-1 group">
 					View all cards
-					{#if !NO_IMAGES}
-						<ArrowRight size={16} />
-					{/if}
+					<ArrowRight size={16} class="group-hover:translate-x-1 transition-all duration-[400ms]" />
 				</a>
 			</div>
 
