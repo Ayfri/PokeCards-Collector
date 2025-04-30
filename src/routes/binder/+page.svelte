@@ -13,9 +13,11 @@
 	import LayersIcon from 'lucide-svelte/icons/layers';
 	import LinkIcon from 'lucide-svelte/icons/link';
 	import DownloadIcon from 'lucide-svelte/icons/download';
+	import BookUserIcon from 'lucide-svelte/icons/book-user';
 	import type { PageData } from './$types';
 	import Select from '@components/filters/Select.svelte';
 	import NumberInput from '@components/filters/NumberInput.svelte';
+	import Checkbox from '$lib/components/filters/Checkbox.svelte';
 	import type { BinderCards, FullCard } from '$lib/types';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import TextArea from '@components/filters/TextArea.svelte';
@@ -38,6 +40,11 @@
 	const showEmptySlotsModal = writable(false);
 	const cardUrl = writable('');
 	const multipleCardUrls = writable('');
+	
+	// My Cards modal
+	const showMyCardsModal = writable(false);
+	const includeCollection = writable(true);
+	const includeWishlist = writable(true);
 
 	// Rendre storedCards disponible via setContext pour SearchBar
 	setContext('storedCards', storedCards);
@@ -149,6 +156,9 @@
 		$showUrlModal = !$showUrlModal;
 		if (!$showUrlModal) { $cardUrl = ''; $multipleCardUrls = ''; }
 	}
+	function toggleMyCardsModal() {
+		$showMyCardsModal = !$showMyCardsModal;
+	}
 
 	function addSetToStorage() {
 		if (!$selectedSet) return;
@@ -169,6 +179,37 @@
 		}
 
 		toggleSetModal();
+	}
+
+	function addMyCardsToStorage() {
+		if (!$includeCollection && !$includeWishlist) return;
+
+		const currentStoredCodes = new Set($storedCards);
+		const newCardCodesToAdd: string[] = [];
+
+		// Add cards from collection if selected
+		if ($includeCollection && data.serverCollectionCards) {
+			data.serverCollectionCards.forEach((card: FullCard) => {
+				if (!currentStoredCodes.has(card.cardCode) && !newCardCodesToAdd.includes(card.cardCode)) {
+					newCardCodesToAdd.push(card.cardCode);
+				}
+			});
+		}
+
+		// Add cards from wishlist if selected
+		if ($includeWishlist && data.serverWishlistCards) {
+			data.serverWishlistCards.forEach((card: FullCard) => {
+				if (!currentStoredCodes.has(card.cardCode) && !newCardCodesToAdd.includes(card.cardCode)) {
+					newCardCodesToAdd.push(card.cardCode);
+				}
+			});
+		}
+
+		if (newCardCodesToAdd.length > 0) {
+			$storedCards = [...$storedCards, ...newCardCodesToAdd];
+		}
+
+		toggleMyCardsModal();
 	}
 
 	function addCardFromUrl() {
@@ -295,8 +336,12 @@
 				<LayersIcon size={16} />
 				<span>Add set</span>
 			</Button>
+			
+			<Button onClick={toggleMyCardsModal} class="text-sm flex items-center gap-1 px-3 py-2">
+				<BookUserIcon size={16} />
+				<span>My Cards</span>
+			</Button>
 
-			<!-- Will later add this feature -->
 			<Button onClick={toggleUrlModal} class="text-sm flex items-center gap-1 px-3 py-2"><LinkIcon size={16} /> <span>Add from URL</span></Button>
 
 			<Button onClick={generateBinderImage} class="text-sm flex items-center gap-1 px-3 py-2">
@@ -362,7 +407,64 @@
 	</svelte:fragment>
 </Modal>
 
-<!-- Commented out URL Card Modal -->
+<!-- My Cards Modal -->
+<Modal bind:open={$showMyCardsModal} onClose={toggleMyCardsModal} title="Add my cards">
+	<p class="text-gray-300 mb-4 text-sm">
+		Choose which cards to add to your binder.
+	</p>
+
+	<div class="mb-4 flex flex-col gap-4">
+		<Checkbox 
+			id="include-collection" 
+			label="Include my collection" 
+			bind:checked={$includeCollection}
+			disabled={!data.serverCollectionCards}
+		/>
+		{#if data.serverCollectionCards}
+			<p class="text-gray-400 text-xs ml-6">
+				{data.serverCollectionCards.length} cards in your collection
+			</p>
+		{:else}
+			<p class="text-gray-400 text-xs ml-6">
+				You need to be logged in to access your collection
+			</p>
+		{/if}
+		
+		<Checkbox 
+			id="include-wishlist" 
+			label="Include my wishlist" 
+			bind:checked={$includeWishlist}
+			disabled={!data.serverWishlistCards}
+		/>
+		{#if data.serverWishlistCards}
+			<p class="text-gray-400 text-xs ml-6">
+				{data.serverWishlistCards.length} cards in your wishlist
+			</p>
+		{:else}
+			<p class="text-gray-400 text-xs ml-6">
+				You need to be logged in to access your wishlist
+			</p>
+		{/if}
+	</div>
+
+	<svelte:fragment slot="footer">
+		<Button
+			onClick={toggleMyCardsModal}
+			class="text-sm px-4 py-2 border border-gray-600"
+		>
+			Cancel
+		</Button>
+		<Button
+			onClick={addMyCardsToStorage}
+			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
+			disabled={(!$includeCollection || !data.serverCollectionCards) && (!$includeWishlist || !data.serverWishlistCards)}
+		>
+			Add to binder
+		</Button>
+	</svelte:fragment>
+</Modal>
+
+<!-- URL Card Modal -->
 <Modal bind:open={$showUrlModal} onClose={toggleUrlModal} title="Add card from URL">
 	<p class="text-gray-300 mb-4 text-sm">
 		Paste image URLs to add them to storage. URLs must start with 'http'.
