@@ -321,19 +321,6 @@
 							{/if}
 						</div>
 					</div>
-					
-					<!-- Collection Summary -->
-					<div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-						<h3 class="text-lg font-semibold mb-4 text-gold-400">Collection Info</h3>
-						<div class="space-y-4">
-							<p class="text-gray-500 dark:text-gray-400">
-								Below you can see your set completion rates.
-							</p>
-							<p class="text-gray-500 dark:text-gray-400">
-								Only sets with at least one card are shown.
-							</p>
-						</div>
-					</div>
 				</div>
 
 				<!-- Set Completion Section -->
