@@ -134,35 +134,3 @@
 		</div>
 	</div>
 </div>
-
-<style>
-	.price-item {
-		display: flex;
-		justify-content: space-between;
-		padding: 0.25rem 0.5rem;
-		background-color: rgba(255, 255, 255, 0.1);
-		border-radius: 0.5rem;
-		font-size: 0.9rem;
-	}
-
-	.detailed-prices {
-		max-height: 80vh;
-		overflow-y: auto;
-		scrollbar-width: thin;
-		scrollbar-color: var(--gold-400) transparent;
-		font-size: 0.95rem;
-	}
-
-	.detailed-prices::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.detailed-prices::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	.detailed-prices::-webkit-scrollbar-thumb {
-		background-color: var(--gold-400);
-		border-radius: 20px;
-	}
-</style>
