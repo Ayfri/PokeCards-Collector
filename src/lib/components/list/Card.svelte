@@ -12,6 +12,7 @@
 	import Heart from 'lucide-svelte/icons/heart';
 	import { findSetByCardCode } from '$lib/helpers/set-utils';
 	import { Plus, Minus } from 'lucide-svelte';
+	import { fly } from 'svelte/transition';
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];

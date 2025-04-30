@@ -52,6 +52,7 @@
 	let searchName = "";
 	let debounceTimeout: number;
 	let showLoader = true;
+	let mounted = false;
 
 	// Référence vers le composant VirtualGrid
 	let virtualGridComponent: VirtualGrid;
@@ -86,6 +87,8 @@
 
 		// Start observing the document with the configured parameters
 		observer.observe(document.body, { childList: true, subtree: true });
+
+		mounted = true;
 	});
 
 	function debounce(fn: Function, delay: number) {
@@ -402,25 +405,29 @@
 	</div>
 {/if}
 
+{#if mounted}
 <div class="min-h-[calc(100svh-100px)] flex flex-col">
 	<!-- Header Row -->
-	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-4 lg:px-10 gap-1 md:gap-0 mb-0">
+	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-4 lg:px-10 gap-1 md:gap-0 mb-0" in:fade={{ delay: 150, duration: 300 }}>
 		<!-- Left Side (Title conditional based on prop, Counts always present) -->
 		<div class="flex items-center gap-3 md:ml-14">
 			{#if pageTitle}
-				<PageTitle title={pageTitle} />
+				<div in:fly={{ y: -10, delay: 200, duration: 300 }}>
+					<PageTitle title={pageTitle} />
+				</div>
 			{/if}
 			<!-- Desktop Counts (always rendered in this position) -->
 			<span
 				class:ml-4={!!pageTitle}
 				class="text-gold-400 text-sm hidden md:block"
+				in:fade={{ delay: 250, duration: 300 }}
 			>
 				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
 			</span>
 		</div>
 
 		<!-- Right Side (Controls) -->
-		<div class="flex items-end gap-2">
+		<div class="flex items-end gap-2" in:fly={{ y: -10, delay: 300, duration: 300 }}>
 			<!-- Mobile Count -->
 			<span class="text-gold-400 text-xs md:hidden 2xs:mr-4">
 				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
@@ -452,6 +459,7 @@
 				{#if activeFiltersCount > 0}
 					<span
 						class="absolute -bottom-1 -right-1 bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full pointer-events-none z-20"
+						in:fade={{ delay: 400, duration: 200 }}
 					>
 						{activeFiltersCount}
 					</span>
@@ -469,7 +477,7 @@
 		</div>
 	</div>
 
-	<div class="w-full">
+	<div class="w-full" in:fade={{ delay: 150, duration: 300 }}>
 		<ScrollProgress />
 	</div>
 
@@ -502,6 +510,7 @@
 		</div>
 	</VirtualGrid>
 </div>
+{/if}
 
 <style>
 	:global(body) {
