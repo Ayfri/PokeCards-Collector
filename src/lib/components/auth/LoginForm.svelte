@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-
-	const dispatch = createEventDispatcher();
+	export let onSuccess: (() => void) | undefined = undefined;
 
 	let email = '';
 	let password = '';
@@ -48,7 +46,7 @@
 			loading = false;
 
 			// Notify the parent component (AuthModal) of success
-			dispatch('success');
+			onSuccess?.();
 
 			// Let the browser handle the redirect based on cookie changes, or force reload if needed.
 			// A simple reload ensures the layout server load runs again with the new session.

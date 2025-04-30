@@ -94,7 +94,7 @@
 </script>
 
 <div class="relative">
-	<AuthModal isOpen={isAuthModalOpen} on:close={closeAuthModal} />
+	<AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
 
 	<button
 		type="button"
