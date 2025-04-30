@@ -59,6 +59,9 @@
 	// Fixed height for the info container in Card.svelte
 	const infoContainerHeight = 70;
 
+	// Use the store value directly; mobile logic is now in getCardDimensions
+	$: cardDimensions = getCardDimensions($cardSize, clientWidth);
+
 	onMount(() => {
 		// Initialize searchName from URL parameter or from store
 		const nameParam = page.url.searchParams.get('name');
@@ -476,12 +479,11 @@
 
 	<VirtualGrid
 		bind:this={virtualGridComponent}
-		gapX={getCardDimensions($cardSize, clientWidth).gapX}
-		gapY={getCardDimensions($cardSize, clientWidth).gapY}
-		itemHeight={getCardDimensions($cardSize, clientWidth).height + infoContainerHeight}
-		itemWidth={getCardDimensions($cardSize, clientWidth).width}
-		forcedItemsPerRow={getCardDimensions($cardSize, clientWidth)
-			.cardsPerRow}
+		gapX={cardDimensions.gapX}
+		gapY={cardDimensions.gapY}
+		itemHeight={cardDimensions.height + infoContainerHeight}
+		itemWidth={cardDimensions.width}
+		forcedItemsPerRow={cardDimensions.cardsPerRow}
 		items={filteredCards}
 		let:item
 		marginTop={clientWidth ? 20 : 50}
@@ -491,8 +493,8 @@
 			{pokemons}
 			{sets}
 			prices={prices[item.cardCode]}
-			customWidth={getCardDimensions($cardSize, clientWidth).width}
-			customHeight={getCardDimensions($cardSize, clientWidth).height}
+			customWidth={cardDimensions.width}
+			customHeight={cardDimensions.height}
 		/>
 
 		<div slot="empty">

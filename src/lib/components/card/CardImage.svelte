@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { processCardImage } from '$lib/helpers/card-images';
+	import { NO_IMAGES } from '~/lib/images';
 
 	/**
 	 * Alt text for the image
@@ -79,7 +80,7 @@
 {:else}
 	<img
 		{alt}
-		class="transition-opacity duration-300 ease-in-out {classNames} {loaded ? '' : 'opacity-0'}"
+		class="transition-opacity duration-300 ease-in-out {classNames} {loaded ? '' : 'opacity-0'} {NO_IMAGES ? 'border border-gold-400/50' : ''}"
 		decoding="async"
 		draggable="false"
 		{height}

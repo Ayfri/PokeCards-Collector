@@ -193,9 +193,12 @@
 			/>
 		</div>
 		<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-sm rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
-			<h2 class="text-center font-bold text-lg text-pretty leading-none">
+			<h2 class="text-center font-bold text-md lg:text-lg text-pretty leading-none flex flex-wrap gap-x-2 items-center justify-center">
 				{cardName}
-				<span class="uppercase text-sm opacity-85 ml-2">{#if set.ptcgoCode}{set.ptcgoCode}{/if} #{cardNumber}/{set?.printedTotal}</span>
+				{#if set.ptcgoCode}
+					<span class="uppercase text-sm opacity-85">{set.ptcgoCode}</span>
+				{/if}
+				<span class="text-sm opacity-85"> #{cardNumber}/{set?.printedTotal}</span>
 			</h2>
 			<div class="flex items-center justify-center">
 				{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
@@ -203,7 +206,7 @@
 						href={card.cardMarketUrl}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="text-center hover:text-gold-300 transition-colors duration-200"
+						class="text-center text-sm lg:text-base hover:text-gold-300 transition-colors duration-200"
 						on:click|stopPropagation
 						aria-label="View on Cardmarket"
 					>
@@ -217,7 +220,7 @@
 						</div>
 					</a>
 				{:else}
-					<h3 class="text-center">{prices?.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</h3>
+					<h3 class="text-center text-sm lg:text-base">{prices?.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</h3>
 				{/if}
 			</div>
 		</div>

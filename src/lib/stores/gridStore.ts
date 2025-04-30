@@ -47,29 +47,39 @@ export function getCardDimensions(size: number, clientWidth: number) {
 	// Standard width/height ratio for Pokemon cards
 	const baseRatio = 2.5 / 3.5;
 
-	// Get the fixed width for the selected size, default to M (180px)
-	const widthPerCard = sizes[size]?.width || 180;
-
-	// Calculate the corresponding fixed height based on the aspect ratio
-	const heightPerCard = Math.floor(widthPerCard / baseRatio);
-
 	// Define fixed gaps (can be adjusted if needed)
 	const gapX = 15; // Fixed horizontal gap
 	const gapY = 20; // Fixed vertical gap
 
-	// Calculate how many cards can fit in the available clientWidth
-	// Account for the width of the cards and the gaps between them
-	const availableWidth = clientWidth * 0.98; // Use 98% of width to account for potential padding/margins
-	const cardsPerRow = Math.max(
-		1,
-		Math.floor(availableWidth / (widthPerCard + gapX))
-	);
+	// Calculate available width (consider some padding/margin)
+	const availableWidth = clientWidth * 0.96; 
+
+	let widthPerCard: number;
+	let heightPerCard: number;
+	let cardsPerRow: number;
+
+	if (clientWidth < 768) {
+		// Mobile: Force 2 cards per row
+		cardsPerRow = 2;
+		// Calculate width needed for 2 cards + 1 gap
+		widthPerCard = Math.max(100, Math.floor((availableWidth - gapX) / cardsPerRow)); // Ensure a minimum width
+		heightPerCard = Math.floor(widthPerCard / baseRatio);
+	} else {
+		// Desktop: Use selected size
+		widthPerCard = sizes[size]?.width || sizes[defaultSize].width; // Use defaultSize if size is invalid
+		heightPerCard = Math.floor(widthPerCard / baseRatio);
+		// Calculate how many cards can fit based on selected size
+		cardsPerRow = Math.max(
+			1,
+			Math.floor(availableWidth / (widthPerCard + gapX))
+		);
+	}
 
 	return {
-		width: widthPerCard,     // Fixed width
-		height: heightPerCard,   // Fixed height
-		gapX: gapX,              // Fixed gapX
-		gapY: gapY,              // Fixed gapY
-		cardsPerRow: cardsPerRow // Calculated cards per row
+		width: widthPerCard,
+		height: heightPerCard,
+		gapX: gapX,
+		gapY: gapY,
+		cardsPerRow: cardsPerRow
 	};
 } 
