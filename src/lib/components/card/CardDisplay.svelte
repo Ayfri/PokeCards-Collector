@@ -183,7 +183,7 @@
 
 <svelte:window on:mousemove={handleMouseMove}/>
 
-<div class="flex flex-col gap-1 lg:gap-8 content-center">
+<div class="flex flex-col gap-1 lg:gap-4 items-center content-center">
 	<!-- Evolution Chain Component (Only for Pokemon) -->
 	{#if currentPokemon && isInitialRenderComplete && currentCard}
 		<EvolutionChain card={currentCard} {pokemons} {allCards} pokemonCards={currentPokemonCards} {prices} />
@@ -191,7 +191,7 @@
 
 	<!-- Pokédex number indicator (Only for Pokemon) -->
 	{#if currentPokemon && currentCard?.pokemonNumber}
-		<div class="pokedex-number-display text-center mb-2">
+		<div class="pokedex-number-display text-center">
 			<div class="pokedex-number text-gold-400 bg-black/60 font-bold px-3 py-1 rounded-md inline-block z-10">
 				#{currentCard.pokemonNumber}
 			</div>
@@ -350,6 +350,8 @@
 	{#if currentCard && currentSet}
 		<CardInfo card={currentCard} set={currentSet} {cardPrices} pokemon={currentPokemon} />
 	{/if}
+
+	<div class="separator w-full max-w-[800px] my-12 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
 
 	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
 	{#if currentPokemonCards.length > 1 && shouldRenderAllCards}

@@ -95,7 +95,7 @@
 </script>
 
 {#if uniqueChain.length > 1}
-	<div class="evolution-chain mb-4 flex items-center justify-center gap-4 max-w-full overflow-x-auto px-4 py-2">
+	<div class="evolution-chain flex items-center justify-center gap-4 max-w-full overflow-x-auto px-4 py-2">
 		{#each uniqueChain as pokemon, i}
 			{@const representativeCard = getRepresentativeCardForPokemon(pokemon.id, allCards, prices)}
 			<div class="evolution-item flex flex-col items-center">

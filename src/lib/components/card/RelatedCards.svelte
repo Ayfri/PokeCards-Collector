@@ -86,7 +86,7 @@
 		: (sortedCards[0]?.name || 'Related'); // Fallback to first card name or generic term
 </script>
 
-<div class="bg-gray-800/40 border-gold-400 border-2 rounded-2xl p-6 mt-8 w-full">
+<div class="bg-gray-800/40 border-gold-400 border-2 rounded-2xl p-6 w-full">
 	<div class="flex items-center justify-between mb-4">
 		<h2 class="text-xl font-bold text-gold-400">
 			All {titleName} Cards

@@ -13,8 +13,8 @@
 	$: prices = data.prices as Record<string, PriceData>;
 </script>
 
-<main class="max-w-[100vw] p-2 text-lg text-white">
-	<div class="mt-4 lg:mt-10 mx-auto flex flex-col gap-8 w-[90%] -z-10">
+<main class="max-w-[100vw] p-4 mb-4 text-lg text-white">
+	<div class="mt-4 mx-auto flex flex-col gap-8 w-[90%] -z-10">
 		{#if !pokemonCards || pokemonCards.length === 0}
 			<p class="text-center text-lg">Chargement en cours...</p>
 		{:else}

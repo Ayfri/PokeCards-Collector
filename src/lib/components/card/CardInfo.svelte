@@ -21,10 +21,10 @@
 	}
 </script>
 
-<div class="pokemon-info-container mb-8 flex flex-col items-center gap-4 max-lg:gap-0">
+<div class="pokemon-info-container flex flex-col items-center gap-4 mt-6 lg:mt-12 max-lg:gap-0">
 	<PageTitle title={displayName}/>
 
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mt-4 lg:mt-0 max-w-[1000px]">
+	<div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 w-full mt-4 lg:mt-0 max-w-[1000px]">
 		<!-- Left Column: Card Details -->
 		<div class="flex flex-col">
 			<div class="bg-gray-800 border-2 border-gold-400 rounded-xl p-4 h-full flex flex-col">
@@ -133,19 +133,9 @@
 			{/if}
 		</div>
 	</div>
-
-	<div class="separator w-full max-w-[800px] my-6 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
 </div>
 
 <style>
-	.separator {
-		opacity: 0.5;
-	}
-
-	.pokemon-info-container {
-		margin-top: 2rem;
-	}
-
 	.price-item {
 		display: flex;
 		justify-content: space-between;
@@ -174,14 +164,5 @@
 	.detailed-prices::-webkit-scrollbar-thumb {
 		background-color: var(--gold-400);
 		border-radius: 20px;
-	}
-
-	@media (max-width: 768px) {
-		.pokemon-info-container {
-			margin-top: 1rem; /* Reduced margin for smaller screens */
-		}
-		.grid {
-			gap: 1rem; /* Reduced gap */
-		}
 	}
 </style>
