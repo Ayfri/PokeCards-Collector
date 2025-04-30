@@ -1,9 +1,12 @@
 <script lang="ts">
-	import { loadingStore } from '$lib/stores/loading';
+	import { loadingStore, navigationLoadingStore } from '$lib/stores/loading';
 	import { fade } from 'svelte/transition';
+	
+	// Show loading bar if either regular loading or navigation loading is active
+	$: isLoading = $loadingStore || $navigationLoadingStore;
 </script>
 
-{#if $loadingStore}
+{#if isLoading}
 	<div 
 		class="fixed top-0 left-0 w-full h-1 z-50" 
 		in:fade={{ duration: 100 }} 

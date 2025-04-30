@@ -9,10 +9,47 @@
 	import pokeballSvg from '~/assets/pokeball.svg?raw';
 	import {BASE_URL} from '~/constants';
 	import Seo from '$lib/components/seo/Seo.svelte';
+	import { setNavigationLoading } from '$lib/stores/loading';
+	import { onMount } from 'svelte';
 
 	$: ({title, description, image} = page.data);
 
+	// Capture clicks on links before navigation starts
+	onMount(() => {
+		const handleLinkClick = (e: MouseEvent) => {
+			const target = e.target as HTMLElement;
+			const link = target.closest('a');
+			
+			// Check if it's an internal link
+			if (link && 
+				link.href && 
+				link.origin === window.location.origin && 
+				!link.hasAttribute('target') && 
+				!link.hasAttribute('download') && 
+				!e.ctrlKey && 
+				!e.metaKey && 
+				!e.shiftKey) {
+				setNavigationLoading(true);
+			}
+		};
+
+		document.addEventListener('click', handleLinkClick);
+		
+		return () => {
+			document.removeEventListener('click', handleLinkClick);
+		};
+	});
+
 	onNavigate((navigation) => {
+		// Loading already started on link click
+		// Just make sure it's set to true
+		setNavigationLoading(true);
+		
+		// Set up to turn loading off after navigation completes
+		navigation.complete.then(() => {
+			setTimeout(() => setNavigationLoading(false), 100); // Small delay to ensure smoother transitions
+		});
+
 		if (!document.startViewTransition) return;
 
 		return new Promise((resolve) => {
