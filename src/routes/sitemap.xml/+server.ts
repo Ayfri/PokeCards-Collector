@@ -4,7 +4,7 @@ import { BASE_URL } from '~/constants';
 export async function GET() {
 	const mainPage = `${BASE_URL}/`;
 
-	const simplePages = ['/artists', '/sets']
+	const simplePages = ['/artists', '/sets', '/cards-list', '/binder']
 	const cards = await getCards();
 
 	return new Response(
