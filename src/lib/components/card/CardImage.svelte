@@ -51,17 +51,17 @@
 	let loaded = false;
 	let error = false;
 
-	// Process the image URL using our centralized function
-	const standardImageUrl = processCardImage(imageUrl, highRes);
-	const lowResImageUrl = processCardImage(imageUrl, false);
+	// Process the image URL using our centralized function - make reactive to imageUrl changes
+	$: standardImageUrl = processCardImage(imageUrl, highRes);
+	$: lowResImageUrl = processCardImage(imageUrl, false);
 	
 	// Check if this is an external URL (not from Pokemon TCG API)
 	// If so, route it through the proxy to prevent CORS issues
-	const isExternalUrl = !standardImageUrl.includes('pokemontcg.io');
+	$: isExternalUrl = !standardImageUrl.includes('pokemontcg.io');
 	
 	// For external URLs, we'll use the proxy endpoint
-	const proxyStandardUrl = isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(standardImageUrl)}` : standardImageUrl;
-	const proxyLowResUrl = isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(lowResImageUrl)}` : lowResImageUrl;
+	$: proxyStandardUrl = isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(standardImageUrl)}` : standardImageUrl;
+	$: proxyLowResUrl = isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(lowResImageUrl)}` : lowResImageUrl;
 
 	// Prepare srcset based on actual dimensions
 	$: srcsetValue = width ? 
@@ -79,6 +79,13 @@
 
 	function onLoad() {
 		loaded = true;
+		error = false; // Reset error state when image loads successfully
+	}
+	
+	// Reset the loaded state when imageUrl changes
+	$: if (imageUrl) {
+		loaded = false;
+		error = false;
 	}
 </script>
 {#if error}
