@@ -32,6 +32,13 @@ export function processCardImage(imageUrl: string, highRes: boolean = true): str
 		return "https://placehold.co/300x450/transparent/transparent";
 	}
 
+	// If this is an external URL (not from the Pokemon TCG API), 
+	// return it directly but route through the proxy endpoint
+	if (!imageUrl.includes('pokemontcg.io')) {
+		// Return the original URL - it will be proxied at the component level
+		return imageUrl;
+	}
+
 	// If no CDN URL is set, handle high-res if needed
 	if (!CDN_URL) {
 		return highRes ? getHighResCardImage(imageUrl) : getLowResCardImage(imageUrl);

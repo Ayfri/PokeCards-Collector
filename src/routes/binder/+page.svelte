@@ -243,11 +243,21 @@
 		}
 
 		if ($multipleCardUrls) {
-			const lines = $multipleCardUrls.split('\\n');
-			for (const line of lines) {
-				const url = line.trim().replace(/[;.]$/, '').trim(); // Clean up potential trailing chars
-				if (url) {
-					validateAndAdd(url);
+			// First split by newlines
+			const lines = $multipleCardUrls.split(/\n/);
+			for (let line of lines) {
+				line = line.trim();
+				if (!line) continue;
+				
+				// Then split each line by semicolons in case multiple URLs are on one line
+				const urlsInLine = line.split(';');
+				for (let url of urlsInLine) {
+					url = url.trim();
+					// Remove trailing period if present
+					url = url.replace(/\.$/, '');
+					if (url && url.startsWith('http')) {
+						validateAndAdd(url);
+					}
 				}
 			}
 		}
@@ -478,7 +488,7 @@
 <!-- URL Card Modal -->
 <Modal bind:open={$showUrlModal} onClose={toggleUrlModal} title="Add card from URL">
 	<p class="text-gray-300 mb-4 text-sm">
-		Paste image URLs to add them to storage. URLs must start with 'http'.
+		Paste image URLs to add them to storage. URLs must start with 'http'. You can paste multiple URLs separated by line breaks or semicolons.
 	</p>
 	<div class="mb-4">
 		<label for="cardUrl" class="block text-gray-300 mb-2">Single card image URL:</label>
@@ -491,9 +501,12 @@
 			class="max-h-[20rem] overflow-y-auto"
 			id="multipleCardUrls"
 			label="Or multiple URLs (one per line)"
-			placeholder="https://images.pokemontcg.io/card1.png;
-https://images.pokemontcg.io/card2.png;
-https://images.pokemontcg.io/card3.png;"
+			placeholder="https://images.pokemontcg.io/card1.png
+https://images.pokemontcg.io/card2.png
+https://images.pokemontcg.io/card3.png
+
+You can also separate URLs with semicolons:
+https://images.pokemontcg.io/card4.png; https://images.pokemontcg.io/card5.png"
 			rows={4}
 		/>
 	</div>

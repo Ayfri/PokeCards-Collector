@@ -63,7 +63,7 @@
 				<li>Search for specific cards using the search bar at the top of the page and click the + icon to add them</li>
 				<li>Add complete sets with the "Add set" button when building themed pages</li>
 				<li>Use the "Add from URL" button to add cards from image URLs you find online</li>
-				<li>For bulk imports, paste multiple URLs in the textarea, with each URL on a new line ending with a semicolon (;) or period (.)</li>
+				<li>For bulk imports, paste multiple URLs in the textarea - either one URL per line or multiple URLs separated by semicolons</li>
 				<li>The grid will automatically maintain the aspect ratio of card sleeves</li>
 				<li>Remove cards from storage by clicking the X icon that appears on hover</li>
 			</ul>
