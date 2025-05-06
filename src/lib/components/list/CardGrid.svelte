@@ -36,6 +36,7 @@
 	import Loader from "$lib/components/Loader.svelte";
 	import { cardSize, getCardDimensions } from "$lib/stores/gridStore";
 	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
+	import FilterIcon from "lucide-svelte/icons/filter";
 
 	export let cards: FullCard[];
 	export let sets: Set[];
@@ -53,6 +54,7 @@
 	let debounceTimeout: number;
 	let showLoader = true;
 	let mounted = false;
+	let filterSetFromURL = false;
 
 	// Référence vers le composant VirtualGrid
 	let virtualGridComponent: VirtualGrid;
@@ -70,6 +72,21 @@
 			searchName = decodeURIComponent(nameParam);
 		} else {
 			searchName = $filterName;
+		}
+
+		// Initialize set filter from URL parameter
+		const setParam = page.url.searchParams.get('set');
+		if (setParam) {
+			const decodedSetName = decodeURIComponent(setParam);
+			// Find the set in our list of sets
+			const matchingSet = sets.find(set => set.name.toLowerCase() === decodedSetName.toLowerCase());
+			if (matchingSet) {
+				$filterSet = matchingSet.name; // Use exact case from data
+				filterSetFromURL = true;
+			} else {
+				$filterSet = decodedSetName; // Use the decoded name as fallback
+				filterSetFromURL = true;
+			}
 		}
 
 		// Set up a MutationObserver to watch for card-link elements
@@ -112,7 +129,7 @@
 		}
 		
 		// Keep existing parameters
-		const preserveParams = ['set', 'artist', 'type'];
+		const preserveParams = ['set', 'artist', 'type', 'user'];
 		preserveParams.forEach(param => {
 			const paramValue = page.url.searchParams.get(param);
 			if (paramValue) {
@@ -153,9 +170,20 @@
 		resetSort();
 		searchName = ""; // Reset the local searchName bound to the TextInput
 
-		// Also clear URL parameters to match the UI state
-		const currentPath = page.url.pathname;
-		goto(currentPath, { replaceState: true }).then(() => {
+		// Create URL that preserves the user parameter if present
+		const url = new URL(page.url);
+		const userParam = url.searchParams.get('user');
+		
+		// Clear all search parameters
+		url.search = '';
+		
+		// But preserve the user parameter if it exists
+		if (userParam) {
+			url.searchParams.set('user', userParam);
+		}
+
+		// Navigate to the cleaned URL
+		goto(url.toString(), { replaceState: true }).then(() => {
 			// Force recalculation of layout after filters have been reset
 			if (virtualGridComponent) {
 				setTimeout(() => {
@@ -410,12 +438,13 @@
 	<!-- Header Row -->
 	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-4 lg:px-10 gap-1 md:gap-0 mb-0" in:fade={{ delay: 150, duration: 300 }}>
 		<!-- Left Side (Title conditional based on prop, Counts always present) -->
-		<div class="flex items-center gap-3 md:ml-14">
+		<div class="flex flex-col md:ml-14">
 			{#if pageTitle}
 				<div in:fly={{ y: -10, delay: 200, duration: 300 }}>
 					<PageTitle title={pageTitle} />
 				</div>
 			{/if}
+			
 			<!-- Desktop Counts (always rendered in this position) -->
 			<span
 				class:ml-4={!!pageTitle}

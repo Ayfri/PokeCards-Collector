@@ -9,7 +9,7 @@
 	import type { Set, UserProfile } from '$lib/types';
 	import Avatar from '$lib/components/auth/Avatar.svelte';
 	import { NO_IMAGES } from '$lib/images';
-	import { Home, UserCog, BookOpen, ListTodo } from 'lucide-svelte';
+	import { Home, UserCog, BookOpen, ListTodo, ChevronRight } from 'lucide-svelte';
 	import { fly, fade } from 'svelte/transition';
 
 	export let data: PageData;
@@ -350,29 +350,43 @@
 						<!-- Set Completion Progress -->
 						{#if collectionStats.set_completion && Object.keys(collectionStats.set_completion).length > 0}
 							<div>
-								<h3 class="text-lg font-semibold mb-4 text-white">Set Completion Progress <span class="text-sm font-normal text-gray-400">({Object.keys(collectionStats.set_completion).length} sets)</span></h3>
+								<div class="flex justify-between items-center mb-4">
+									<h3 class="text-lg font-semibold text-white">Set Completion Progress <span class="text-sm font-normal text-gray-400">({Object.keys(collectionStats.set_completion).length} sets)</span></h3>
+									<span class="text-sm text-gray-400 italic">Click on a set to view its cards</span>
+								</div>
 								<div class="max-h-[600px] overflow-y-auto pr-2">
 									<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 										{#each getSortedSets() as [setName, setData], i}
 											{@const set = getSetByName(setName)}
-											<div class="bg-gray-800/60 rounded-lg p-4 border border-transparent hover:border-gold-400 transition-all duration-300" in:fly={{ y: 20, duration: 300, delay: 50 + (i * 30) }}>
-												<div class="flex justify-between items-center mb-2">
-													<div class="flex items-center gap-2">
-														{#if !NO_IMAGES && set?.logo}
-															<img src={set.logo} alt={setName} class="h-6 w-auto" />
-														{/if}
-														<h4 class="font-medium text-white">{setName}</h4>
+											<a 
+												href={isOwnProfile 
+													? `/collection?set=${encodeURIComponent(setName)}` 
+													: `/collection?user=${encodeURIComponent(targetProfile.username)}&set=${encodeURIComponent(setName)}`}
+												class="block relative group"
+												title={`View ${isOwnProfile ? 'your' : targetProfile.username + "'s"} cards from ${setName}`}
+											>
+												<div class="bg-gray-800/60 rounded-lg p-4 border border-transparent hover:border-gold-400 hover:bg-gray-700/40 transition-all duration-300 cursor-pointer" in:fly={{ y: 20, duration: 300, delay: 50 + (i * 30) }}>
+													<div class="flex justify-between items-center mb-2">
+														<div class="flex items-center gap-2">
+															{#if !NO_IMAGES && set?.logo}
+																<img src={set.logo} alt={setName} class="h-6 w-auto" />
+															{/if}
+															<h4 class="font-medium text-white group-hover:text-gold-400 transition-colors duration-200">{setName}</h4>
+														</div>
+														<div class="flex items-center gap-2">
+															<span class="text-sm text-gold-400">{setData.percentage.toFixed(1)}%</span>
+															<ChevronRight size={16} class="text-gray-500 group-hover:text-gold-400 transition-colors duration-200" />
+														</div>
 													</div>
-													<span class="text-sm text-gold-400">{setData.percentage.toFixed(1)}%</span>
+													<div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+														<div class="bg-gold-400 h-2.5 rounded-full" style="width: {setData.percentage}%"></div>
+													</div>
+													<div class="flex justify-between text-xs text-gray-400">
+														<span>{setData.count} / {setData.total} cards</span>
+														<span>Value: {formatCurrency(setData.collectedValue)}</span>
+													</div>
 												</div>
-												<div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
-													<div class="bg-gold-400 h-2.5 rounded-full" style="width: {setData.percentage}%"></div>
-												</div>
-												<div class="flex justify-between text-xs text-gray-400">
-													<span>{setData.count} / {setData.total} cards</span>
-													<span>Value: {formatCurrency(setData.collectedValue)}</span>
-												</div>
-											</div>
+											</a>
 										{/each}
 									</div>
 								</div>
