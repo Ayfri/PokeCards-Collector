@@ -75,7 +75,7 @@
 	});
 </script>
 
-<header class="relative w-full p-2 pb-6 lg:pb-12 z-30">
+<header class="fixed top-0 left-0 w-full p-2 pb-6 lg:pb-12 z-50 bg-gradient-to-b from-gray-900 to-transparent">
 	<div class="relative py-1.5 xs:py-2.5 lg:py-3 px-4 xs:px-6 lg:px-8 flex items-center justify-between gap-4 rounded-full bg-gray-800">
 		<!-- Hamburger Menu and Optional Mobile Logo -->
 		<div class="flex items-center gap-2">
