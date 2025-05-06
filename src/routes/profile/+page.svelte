@@ -319,8 +319,10 @@
 							<span class="text-sm text-gray-400">Total Cards</span>
 						</div>
 						<div class="text-center">
-							<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{getUniqueCards()}</span>
-							<span class="text-xs text-gray-500">/ {allCards.length || 0}</span>
+							<div class="flex items-center justify-center gap-1 mb-2">
+								<span class="text-3xl md:text-4xl font-bold text-gold-400">{getUniqueCards()}</span>
+								<span class="text-sm text-gray-500">/ {allCards.length || 0}</span>
+							</div>
 							<span class="text-sm text-gray-400">Unique Cards</span>
 						</div>
 						<div class="text-center">
