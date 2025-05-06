@@ -78,13 +78,13 @@
 		const setParam = page.url.searchParams.get('set');
 		if (setParam) {
 			const decodedSetName = decodeURIComponent(setParam);
-			// Find the set in our list of sets
+			// Find the set in our list of sets - use case-insensitive comparison for matching
 			const matchingSet = sets.find(set => set.name.toLowerCase() === decodedSetName.toLowerCase());
 			if (matchingSet) {
-				$filterSet = matchingSet.name; // Use exact case from data
+				$filterSet = matchingSet.name.toLowerCase(); // Use the correct case from set options format
 				filterSetFromURL = true;
 			} else {
-				$filterSet = decodedSetName; // Use the decoded name as fallback
+				$filterSet = decodedSetName.toLowerCase(); // Ensure lowercase to match the option format
 				filterSetFromURL = true;
 			}
 		}

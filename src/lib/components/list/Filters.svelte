@@ -27,6 +27,9 @@
 	let pokemonTypeValue = 'all';
 	let sortDirectionValue: 'asc' | 'desc' = 'asc';
 	let sortValueValue: string = 'sort-pokedex';
+	let rarityValue = 'all';
+	let artistValue = 'all';
+	let setValue = 'all';
 
 	// Initialize search values from stores when component is loaded
 	onMount(() => {
@@ -35,6 +38,22 @@
 		pokemonTypeValue = $filterType;
 		sortDirectionValue = $sortOrder;
 		sortValueValue = $sortBy;
+		rarityValue = $filterRarity;
+		artistValue = $filterArtist;
+		setValue = $filterSet;
+		
+		// Check URL parameters to properly set initial values for set filter
+		const setParam = page.url.searchParams.get('set');
+		if (setParam) {
+			const decodedSetParam = decodeURIComponent(setParam);
+			// Find the matching set with case-insensitive comparison
+			const matchingSet = sets.find(set => set.name.toLowerCase() === decodedSetParam.toLowerCase());
+			if (matchingSet) {
+				setValue = matchingSet.name.toLowerCase();
+			} else {
+				setValue = decodedSetParam.toLowerCase();
+			}
+		}
 	});
 
 	afterUpdate(onUpdate);
@@ -259,17 +278,6 @@
 		{ value: 'all', label: 'All types' },
 		...types.map(type => ({ value: type.toLowerCase(), label: type }))
 	];
-	
-	// Handle rarity change with URL update
-	let rarityValue = 'all';
-	let artistValue = 'all';
-	let setValue = 'all';
-	
-	onMount(() => {
-		rarityValue = $filterRarity;
-		artistValue = $filterArtist;
-		setValue = $filterSet;
-	});
 	
 	function handleRarityChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
