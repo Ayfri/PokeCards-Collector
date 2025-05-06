@@ -438,17 +438,16 @@
 	<!-- Header Row -->
 	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-4 lg:px-10 gap-1 md:gap-0 mb-0" in:fade={{ delay: 150, duration: 300 }}>
 		<!-- Left Side (Title conditional based on prop, Counts always present) -->
-		<div class="flex flex-col md:ml-14">
+		<div class="flex flex-row items-center md:ml-14">
 			{#if pageTitle}
 				<div in:fly={{ y: -10, delay: 200, duration: 300 }}>
 					<PageTitle title={pageTitle} />
 				</div>
 			{/if}
 			
-			<!-- Desktop Counts (always rendered in this position) -->
+			<!-- Counts (now rendered on the same line as title in both desktop and mobile) -->
 			<span
-				class:ml-4={!!pageTitle}
-				class="text-gold-400 text-sm hidden md:block"
+				class="text-gold-400 text-xs md:text-sm ml-2 md:ml-3"
 				in:fade={{ delay: 250, duration: 300 }}
 			>
 				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
@@ -457,10 +456,6 @@
 
 		<!-- Right Side (Controls) -->
 		<div class="flex items-end gap-2" in:fly={{ y: -10, delay: 300, duration: 300 }}>
-			<!-- Mobile Count -->
-			<span class="text-gold-400 text-xs md:hidden 2xs:mr-4">
-				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
-			</span>
 			<!-- Grid Size Slider -->
 			<div class="mr-3 ml-1 hidden md:block">
 				<SizeSlider />
