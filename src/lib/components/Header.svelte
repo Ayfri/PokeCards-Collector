@@ -7,6 +7,7 @@
 	import SearchModal from '@components/SearchModal.svelte';
 	import pokestore from '~/assets/pokestore.png';
 	import { onMount } from 'svelte';
+	import { afterNavigate } from '$app/navigation';
 	// Import icons
 	import type { Icon } from 'lucide-svelte';
 	import CardStackIcon from 'lucide-svelte/icons/layers';
@@ -48,8 +49,10 @@
 	$: allCards = page.data.allCards as FullCard[] || [];
 	$: sets = page.data.sets as Set[] || [];
 
-	// Close mobile menu on navigation
-	$: page.url, isMobileMenuOpen = false;
+	// Use afterNavigate instead of reactive statement
+	afterNavigate(() => {
+		isMobileMenuOpen = false;
+	});
 	
 	function handleClickOutside(event: MouseEvent) {
 		if (isMobileMenuOpen && mobileMenuNav && mobileMenuButton) {
