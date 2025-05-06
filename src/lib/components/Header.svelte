@@ -6,6 +6,7 @@
 	import SearchBar from '@components/SearchBar.svelte';
 	import SearchModal from '@components/SearchModal.svelte';
 	import pokestore from '~/assets/pokestore.png';
+	import { onMount } from 'svelte';
 	// Import icons
 	import type { Icon } from 'lucide-svelte';
 	import CardStackIcon from 'lucide-svelte/icons/layers';
@@ -37,6 +38,8 @@
 
 	// State for mobile menu
 	let isMobileMenuOpen = false;
+	let mobileMenuButton: HTMLButtonElement;
+	let mobileMenuNav: HTMLDivElement;
 
 	// Use data from page state directly
 	$: user = page.data.user;
@@ -47,6 +50,26 @@
 
 	// Close mobile menu on navigation
 	$: page.url, isMobileMenuOpen = false;
+	
+	function handleClickOutside(event: MouseEvent) {
+		if (isMobileMenuOpen && mobileMenuNav && mobileMenuButton) {
+			// Check if click was outside the mobile menu and not on the menu button
+			const targetEl = event.target as Node;
+			if (!mobileMenuNav.contains(targetEl) && !mobileMenuButton.contains(targetEl)) {
+				isMobileMenuOpen = false;
+			}
+		}
+	}
+	
+	onMount(() => {
+		// Add event listener to handle clicks outside the menu
+		window.addEventListener('click', handleClickOutside);
+		
+		return () => {
+			// Clean up the event listener when component is destroyed
+			window.removeEventListener('click', handleClickOutside);
+		};
+	});
 </script>
 
 <header class="relative w-full p-2 pb-6 lg:pb-12 z-30">
@@ -57,7 +80,8 @@
 			<button
 				aria-label="Toggle menu"
 				class="lg:hidden text-gray-400 hover:text-gold-400 transition-colors duration-200 p-1 -ml-1"
-				on:click={() => isMobileMenuOpen = !isMobileMenuOpen}
+				on:click|stopPropagation={() => isMobileMenuOpen = !isMobileMenuOpen}
+				bind:this={mobileMenuButton}
 			>
 				{#if isMobileMenuOpen}
 					<XIcon size={24} />
@@ -124,6 +148,8 @@
 			role="dialog"
 			aria-modal="true"
 			transition:slide={{ duration: 150, axis: 'y' }}
+			bind:this={mobileMenuNav}
+			on:click|stopPropagation={() => {}}
 		>
 			<nav class="flex flex-col gap-3">
 				{#each navLinks as link}
