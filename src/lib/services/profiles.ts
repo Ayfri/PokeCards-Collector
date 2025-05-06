@@ -133,3 +133,30 @@ export async function isUsernameTaken(username: string) {
 		return { exists: false, error };
 	}
 }
+
+// Search for users with fuzzy matching (case-insensitive)
+export async function searchUsers(query: string, limit: number = 10) {
+	try {
+		if (!query || query.trim() === '') {
+			return { data: [], error: null };
+		}
+
+		const normalizedQuery = query.toLowerCase().trim();
+		
+		const { data, error } = await supabase
+			.from('profiles')
+			.select('username, avatar_url, is_public, auth_id')
+			.ilike('username', `%${normalizedQuery}%`)
+			.limit(limit);
+		
+		if (error) {
+			console.error('Supabase error searching users:', error);
+			return { data: null, error };
+		}
+
+		return { data, error: null };
+	} catch (error) {
+		console.error('Exception searching users:', error);
+		return { data: null, error: String(error) };
+	}
+}

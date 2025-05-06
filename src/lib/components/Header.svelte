@@ -13,6 +13,7 @@
 	import ArtistIcon from 'lucide-svelte/icons/paintbrush';
 	import ShuffleIcon from 'lucide-svelte/icons/shuffle';
 	import BinderIcon from 'lucide-svelte/icons/book-open';
+	import SearchUsersIcon from 'lucide-svelte/icons/users';
 	import MenuIcon from 'lucide-svelte/icons/menu'; // Hamburger icon
 	import XIcon from 'lucide-svelte/icons/x'; // Close icon
 	import { slide } from 'svelte/transition';
@@ -31,6 +32,7 @@
 		{ href: '/artists', name: 'Artists', icon: ArtistIcon },
 		{ href: '/binder', name: 'Binder', icon: BinderIcon },
 		{ href: '/random', name: 'Random Card', icon: ShuffleIcon },
+		{ href: '/search-user', name: 'Users', icon: SearchUsersIcon },
 	];
 
 	// State for mobile menu
