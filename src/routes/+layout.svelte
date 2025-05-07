@@ -6,7 +6,6 @@
 	import {NO_IMAGES} from '$lib/images';
 	import Header from '@components/Header.svelte';
 	import LoadingBar from '$lib/components/ui/LoadingBar.svelte';
-	import pokeballSvg from '~/assets/pokeball.svg?raw';
 	import {BASE_URL} from '~/constants';
 	import Seo from '$lib/components/seo/Seo.svelte';
 	import { setNavigationLoading } from '$lib/stores/loading';
@@ -14,6 +13,7 @@
 	import { wishlistStore } from '$lib/stores/wishlist';
 	import { collectionStore } from '$lib/stores/collection';
 	import type { UserWishlist, UserCollection } from '$lib/types';
+	import pokestore from '~/assets/pokecards-collector.png';
 
 	// Access all data from the page state
 	$: ({title, description, image, user, profile, wishlistItems, collectionItems} = page.data);
@@ -136,7 +136,7 @@
 		<slot/>
 	</main>
 	<div class="background fixed top-[15%] -z-50 flex place-content-center h-[100lvh] w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
-		{@html pokeballSvg}
+		<img src={pokestore} alt="Background" class="absolute w-1/2" />
 	</div>
 </div>
 
@@ -148,6 +148,6 @@
 	}
 
 	.background {
-		filter: invert(9%) sepia(2%) saturate(12%) hue-rotate(332deg) brightness(54%) contrast(88%);
+		filter: grayscale(100%) opacity(0.05) contrast(3) brightness(0.5);
 	}
 </style>
