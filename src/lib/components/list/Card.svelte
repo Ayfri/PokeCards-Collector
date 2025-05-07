@@ -58,6 +58,10 @@
 	const MAX_CARD_QUANTITY = 99;
 	$: isCollectionLimitReached = collectionCount >= MAX_CARD_QUANTITY;
 
+	// Déterminer si nous sommes sur la page japonaise
+	$: isJapaneseCard = page.url.pathname.includes('/japan');
+	$: cardLink = isJapaneseCard ? `/jp-card/${cardCode}/` : `/card/${cardCode}/`;
+
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
@@ -129,7 +133,7 @@
 	aria-label={`Go to the card page of ${cardName}`}
 	class="card-link text-white"
 	draggable="false"
-	href={`/card/${cardCode}/`}
+	href={cardLink}
 	rel="dofollow"
 >
 	<div class="card-pokecards-collector group relative flex flex-col items-center w-fit cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.025] hover:z-10" style="z-index: 1;">

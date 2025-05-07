@@ -4,12 +4,34 @@
 	import { NO_IMAGES } from '$lib/images';
 	import type { FullCard, Pokemon, PriceData } from '~/lib/types';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
+	import { onMount } from 'svelte';
+	import { afterNavigate, goto } from '$app/navigation';
 
 	export let allCards: FullCard[];
 	export let pokemons: Pokemon[];
 	export let pokemonCards: FullCard[];
 	export let prices: Record<string, PriceData>;
 	export let card: FullCard;
+	
+	// Determine if we're in the Japanese cards context by checking the URL
+	let isJapaneseContext = false;
+	
+	$: baseCardUrl = isJapaneseContext ? '/jp-card/' : '/card/';
+	
+	// Function to handle navigation to another Pokémon card
+	function navigateToPokemon(cardCode: string) {
+		goto(`${baseCardUrl}${cardCode}/`);
+	}
+	
+	onMount(() => {
+		// Check if we're in Japanese context based on URL
+		isJapaneseContext = window.location.pathname.includes('/jp-card/');
+	});
+	
+	afterNavigate(() => {
+		// Update Japanese context check after navigation
+		isJapaneseContext = window.location.pathname.includes('/jp-card/');
+	});
 
 	function buildEvolutionChain(card: FullCard) {
 		// Get current Pokemon from card
@@ -99,8 +121,8 @@
 		{#each uniqueChain as pokemon, i}
 			{@const representativeCard = getRepresentativeCardForPokemon(pokemon.id, allCards, prices)}
 			<div class="evolution-item flex flex-col items-center">
-				<a
-					href={representativeCard ? `/card/${representativeCard.cardCode}/` : `/card/${pokemon.id}/`}
+				<button
+					on:click={() => representativeCard ? navigateToPokemon(representativeCard.cardCode) : navigateToPokemon(pokemon.id.toString())}
 					class="evolution-image-wrapper relative"
 					class:current={pokemon.id === currentPokemon?.id}
 				>
@@ -126,7 +148,7 @@
 					{#if pokemon.id === currentPokemon?.id}
 						<div class="current-marker absolute inset-0 border-2 border-gold-400 rounded-full"></div>
 					{/if}
-				</a>
+				</button>
 				<span class="evolution-name text-xs text-center mt-1 max-w-16 overflow-hidden text-ellipsis">
 					{pascalCase(pokemon.name)}
 				</span>

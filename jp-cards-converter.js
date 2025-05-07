@@ -1,10 +1,26 @@
 import { readFileSync, writeFileSync } from 'fs';
 
-// Read the Japanese card data
-const jpCardsData = JSON.parse(readFileSync('./src/assets/jp_cards_data.json', 'utf8'));
+// Read the Japanese card data with proper UTF-8 handling
+let jpCardsData;
+try {
+  const jpCardsRawData = readFileSync('./src/assets/jp_cards_data.json', 'utf8');
+  jpCardsData = JSON.parse(jpCardsRawData);
+  console.log(`Successfully loaded ${jpCardsData.length} Japanese cards`);
+} catch (error) {
+  console.error('Error loading jp_cards_data.json:', error);
+  process.exit(1);
+}
 
 // Read the Pokemon data to get Pokemon numbers
-const pokemonsData = JSON.parse(readFileSync('./src/assets/pokemons-full.json', 'utf8'));
+let pokemonsData;
+try {
+  const pokemonsRawData = readFileSync('./src/assets/pokemons-full.json', 'utf8');
+  pokemonsData = JSON.parse(pokemonsRawData);
+  console.log(`Successfully loaded ${pokemonsData.length} Pokémon data entries`);
+} catch (error) {
+  console.error('Error loading pokemons-full.json:', error);
+  process.exit(1);
+}
 
 // Create maps for efficient lookups
 const pokemonNameToNumber = {};
@@ -33,17 +49,17 @@ function findPokemonInCardName(cardName) {
     return lowerCardName;
   }
   
-  // Handle "'s X" pattern first
+  // Handle "'s X" pattern first (e.g., "Rocket's Zapdos")
   if (lowerCardName.includes("'s ")) {
-    const afterPossessive = lowerCardName.split("'s ")[1].trim();
+    const afterPossessive = lowerCardName.split("'s ")[1]?.trim();
     
     // Check if the part after "'s" is a valid Pokémon name
-    if (pokemonNamesSet.has(afterPossessive)) {
+    if (afterPossessive && pokemonNamesSet.has(afterPossessive)) {
       return afterPossessive;
     }
   }
   
-  // Remove common prefixes for "Dark X", "Light X", etc.
+  // Remove common prefixes/suffixes
   const commonPrefixes = ['dark ', 'light ', 'shiny ', 'shadow ', 'rocket\'s ', 'team rocket\'s '];
   for (const prefix of commonPrefixes) {
     if (lowerCardName.startsWith(prefix)) {
@@ -51,6 +67,15 @@ function findPokemonInCardName(cardName) {
       if (pokemonNamesSet.has(withoutPrefix)) {
         return withoutPrefix;
       }
+    }
+  }
+  
+  // Handle suffixes like "-EX", "-GX", etc.
+  const suffixRegex = /-[a-z]+$/i;
+  if (suffixRegex.test(lowerCardName)) {
+    const withoutSuffix = lowerCardName.replace(suffixRegex, '').trim();
+    if (pokemonNamesSet.has(withoutSuffix)) {
+      return withoutSuffix;
     }
   }
   
@@ -75,23 +100,38 @@ function createCardCode(card, pokemonNumber) {
     return `unknown_card_${card.card_number?.replace('/', '_') || 'unknown'}`;
   }
   
-  // Extract set code
-  const setCode = card.set_code?.toLowerCase() || '';
+  // Extract set code and ensure it's not empty
+  const setCode = card.set_code?.toLowerCase()?.trim() || 'unknown_set';
   
-  // Extract card number
-  const cardNumber = card.card_number?.split('/')[0] || '';
+  // Extract card number and ensure it's not empty
+  const cardNumber = card.card_number?.split('/')[0]?.trim() || 'unknown_number';
   
-  // Ensure we don't have empty segments by using fallbacks
-  const formattedSetCode = setCode || 'unknown_set';
-  const formattedCardNumber = cardNumber || 'unknown_number';
+  return `pokemon_${pokemonNumber}_${setCode}_${cardNumber}`;
+}
+
+// Function to properly encode/decode text with special characters
+function fixEncoding(text) {
+  if (!text) return '';
   
-  return `pokemon_${pokemonNumber}_${formattedSetCode}_${formattedCardNumber}`;
+  return text
+    .replace(/PokÃ©mon/g, 'Pokémon')
+    .replace(/Ã©/g, 'é')
+    .replace(/Ã¨/g, 'è')
+    .replace(/Ã /g, 'à')
+    .replace(/Ã¢/g, 'â')
+    .replace(/Ãª/g, 'ê')
+    .replace(/Ã®/g, 'î')
+    .replace(/Ã´/g, 'ô')
+    .replace(/Ã»/g, 'û');
 }
 
 // Transform Japanese card data to the desired format
 const transformedCards = jpCardsData.map(card => {
+  // Fix encoding issues in card name and other text fields
+  const fixedName = fixEncoding(card.name);
+  
   // Extract the Pokemon name
-  const pokemonName = findPokemonInCardName(card.name);
+  const pokemonName = findPokemonInCardName(fixedName);
   
   // Look up the Pokemon number
   const pokemonNumber = pokemonName ? pokemonNameToNumber[pokemonName] : null;
@@ -108,30 +148,44 @@ const transformedCards = jpCardsData.map(card => {
   } else if (card.card_type === 'Energy') {
     supertype = 'Energy';
   } else {
-    supertype = card.card_type || '';
+    supertype = fixEncoding(card.card_type) || '';
   }
   
   // Map to the desired output format
   return {
-    artist: card.illustrator || '', 
+    artist: fixEncoding(card.illustrator) || '', 
     cardCode: cardCode,
     cardMarketUpdatedAt: '2025/04/24', // Use placeholder date
     cardMarketUrl: card.url || '',
     image: card.image_url || '',
     meanColor: 'FFFFFF', // Default value
-    name: card.name || '',
+    name: fixedName || '',
     pokemonNumber: pokemonNumber || null,
-    rarity: card.rarity || '',
-    setName: card.set_name || '',
+    rarity: fixEncoding(card.rarity) || '',
+    setName: fixEncoding(card.set_name) || '',
     supertype: supertype,
-    types: card.pokemon_type || '',
+    types: fixEncoding(card.pokemon_type) || '',
   };
 });
 
-// Write the transformed data to a new file using a directly encoded JSON string
-const jsonOutput = JSON.stringify(transformedCards, null, 2)
-  .replace(/PokÃ©mon/g, 'Pokémon'); // Fix encoding issues in the output
+try {
+  // Write the transformed data to a new file
+  const jsonOutput = JSON.stringify(transformedCards, null, 2);
+  writeFileSync('./src/assets/jp-cards-full.json', jsonOutput);
+  console.log(`Converted ${transformedCards.length} Japanese cards to new format.`);
   
-writeFileSync('./src/assets/jp-cards-full.json', jsonOutput);
-
-console.log(`Converted ${transformedCards.length} Japanese cards to new format.`); 
+  // Log some stats to verify the conversion
+  const pokemonCards = transformedCards.filter(card => card.supertype === 'Pokémon');
+  const trainerCards = transformedCards.filter(card => card.supertype === 'Trainer');
+  const energyCards = transformedCards.filter(card => card.supertype === 'Energy');
+  const unknownCards = transformedCards.filter(card => !card.pokemonNumber && card.supertype === 'Pokémon');
+  
+  console.log(`Stats:
+  - Pokémon cards: ${pokemonCards.length}
+  - Trainer cards: ${trainerCards.length}
+  - Energy cards: ${energyCards.length}
+  - Pokémon cards with unknown number: ${unknownCards.length}
+  `);
+} catch (error) {
+  console.error('Error writing jp-cards-full.json:', error);
+} 

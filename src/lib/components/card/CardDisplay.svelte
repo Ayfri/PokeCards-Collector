@@ -8,7 +8,7 @@
 	import { pascalCase } from '$helpers/strings';
 	import InteractiveCard from '@components/card/InteractiveCard.svelte';
 	import { onMount } from 'svelte';
-	import { afterNavigate, pushState, replaceState } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { findSetByCardCode } from '$helpers/set-utils';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 
@@ -18,13 +18,25 @@
 	export let prices: Record<string, PriceData>;
 	export let sets: Set[];
 	export let pokemonCards: FullCard[]; // Expects the primary card to be the first element for the *initial* pokemon
+	export let isJapaneseContext: boolean = false; // Explicitly set this for Japanese cards
 
 	// --- Internal State ---
 	// Initialize directly from the prop. This should update if pokemonCards prop changes.
 	let currentCard: FullCard | undefined = undefined; // Start undefined, set in onMount/afterNavigate
 	// Indicator for when initial loading is complete
 	let isInitialRenderComplete = false;
+	// Wait a bit before rendering all cards to avoid layout shifts
 	let shouldRenderAllCards = false;
+
+	// Interface for the custom event
+	interface JapaneseContextEvent extends CustomEvent {
+		detail: {
+			isJapanese: boolean;
+		};
+	}
+
+	// Set the base URL for card linking based on context
+	$: baseCardUrl = isJapaneseContext ? '/jp-card/' : '/card/';
 
 	// --- Reactive Computations ---
 	// Reactive state derived from the currentCard
@@ -72,68 +84,79 @@
 
 	// Update the displayed card and URL when a related card is selected
 	function handleCardSelect(selectedCard: FullCard) {
-		currentCard = selectedCard; // Update the reactive state
-		pushState(`/card/${selectedCard.cardCode}/`, {});
-		window.scroll({
-			top: 150,
-			behavior: 'smooth'
-		});
+		// Use goto instead of pushState to trigger a full navigation
+		goto(`${baseCardUrl}${selectedCard.cardCode}/`);
+	}
+
+	// Handler for clicking on previous/next Pokémon
+	function handlePokemonNavigation(cardCode: string) {
+		goto(`${baseCardUrl}${cardCode}/`);
 	}
 
 	// --- Lifecycle ---
 	onMount(() => {
-		// Set initial card on first mount
-		currentCard = pokemonCards?.[0];
-
-		// Initialize history state based on the *initial* card/pokemon from props
-		// Moved the replaceState call into the setTimeout below to ensure router is ready
-
-		setTimeout(() => {
-			isInitialRenderComplete = true;
-
-			// Initialize history state here, after the current tick
-			const initialCard = pokemonCards?.[0]; // Use the prop directly for initial state
-			const initialSet = initialCard ? findSetByCardCode(initialCard.cardCode, sets) : undefined;
-			const initialPokemon = initialCard?.pokemonNumber ? pokemons.find(p => p.id === initialCard.pokemonNumber) : undefined;
-
-			if (initialPokemon && initialCard?.pokemonNumber && initialSet) {
-				const filenameParts = initialCard.image?.split('/').at(-1)?.split('_') || [];
-				const cardNumberRaw = filenameParts[0] || '';
-				const cardNumberMatch = cardNumberRaw.match(/[a-z]*(\d+)[a-z]*/i);
-				const cardNumber = cardNumberMatch ? cardNumberMatch[1] : undefined;
-
-				if (initialSet.ptcgoCode && cardNumber) {
-					const initialState = {
-						pokemonId: initialPokemon.id,
-						setCode: initialSet.ptcgoCode,
-						cardNumber: cardNumber
-					};
-					try {
-						replaceState(window.location.href, initialState);
-					} catch (error) {
-						console.error('Error calling replaceState in setTimeout:', error);
-					}
-				}
-			}
-		}, 0);
-
+		// Since we expect pokemonCards[0] to be the initial card, set it as current
+		currentCard = pokemonCards[0];
+		isInitialRenderComplete = true;
+		
+		// Wait a short amount of time before rendering all cards to avoid rendering issues
 		setTimeout(() => {
 			shouldRenderAllCards = true;
-		}, 100);
+		}, 800);
 
+		// Listen for Japanese context updates
+		window.addEventListener('jp-context-update', ((e: Event) => {
+			const customEvent = e as JapaneseContextEvent;
+			isJapaneseContext = customEvent.detail?.isJapanese || false;
+		}) as EventListener);
 	});
-
-	afterNavigate((navigation) => {
-		// When navigating between card pages (component reused),
-		// check if the primary pokemon context changed.
-		const newPrimaryCard = pokemonCards?.[0];
-		if (newPrimaryCard && currentCard && newPrimaryCard.pokemonNumber !== currentCard.pokemonNumber) {
-			console.log('afterNavigate: Pokemon context changed, resetting currentCard');
-			currentCard = newPrimaryCard;
-			// Optionally scroll to top if needed after navigation
-			window.scroll({ top: 0, behavior: 'smooth' });
+	
+	// After navigation, ensure the current card is set based on the URL
+	afterNavigate(({ from }) => {
+		// Keep route parameter sync'd with currentCard
+		const urlParts = window.location.pathname.split('/');
+		const cardCodeFromUrl = urlParts[urlParts.length - 2]; // Extract cardCode from URL pattern /card/:cardCode/
+		
+		// Find matching card
+		const matchingCard = pokemonCards.find(card => card.cardCode === cardCodeFromUrl);
+		
+		// Only reset if we find a matching card and it's not already the current
+		if (matchingCard && matchingCard !== currentCard) {
+			currentCard = matchingCard;
+		} else if (!currentCard) {
+			// Fallback if no match and no current card
+			currentCard = pokemonCards[0];
+		}
+		
+		isInitialRenderComplete = true;
+		
+		// Ensure we wait for main card to render before showing related cards
+		if (!shouldRenderAllCards) {
+			setTimeout(() => {
+				shouldRenderAllCards = true;
+			}, 800);
 		}
 	});
+
+	// --- Reactive Computations ---
+	// Ensure unique cards in currentPokemonCards based on cardCode
+	$: {
+		if (currentPokemonId) {
+			const uniqueCardCodes = new Set<string>();
+			currentPokemonCards = allCards
+				.filter(c => c.pokemonNumber === currentPokemonId)
+				.filter(c => {
+					// Only keep the card if we haven't seen its code before
+					if (!uniqueCardCodes.has(c.cardCode)) {
+						uniqueCardCodes.add(c.cardCode);
+						return true;
+					}
+					return false;
+				});
+		} else {
+			currentPokemonCards = [];
+		}
+	}
 </script>
 
 <div class="flex flex-col gap-1 lg:gap-4 items-center content-center">
@@ -175,8 +198,8 @@
 		<div class="mobile-nav-wrapper w-full flex justify-between items-center mt-4 lg:hidden order-2">
 			<!-- Previous Pokemon (Mobile) -->
 			{#if previousPokemon && previousPokemonCard}
-				<a
-					href={`/card/${previousPokemonCard.cardCode}/`}
+				<button
+					on:click={() => handlePokemonNavigation(previousPokemonCard.cardCode)}
 					class="prev-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
 					in:fly={{ x: -50, duration: 400, delay: 400 }}
 				>
@@ -196,15 +219,15 @@
 					{/if}
 					<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(previousPokemon.name)}</span>
 					<span class="nav-pokemon-id text-xs text-gray-400">#{previousPokemon.id}</span>
-				</a>
+				</button>
 			{:else}
 				<div class="w-16"></div>
 			{/if}
 
 			<!-- Next Pokemon (Mobile) -->
 			{#if nextPokemon && nextPokemonCard}
-				<a
-					href={`/card/${nextPokemonCard.cardCode}/`}
+				<button
+					on:click={() => handlePokemonNavigation(nextPokemonCard.cardCode)}
 					class="next-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
 					in:fly={{ x: 50, duration: 400, delay: 400 }}
 				>
@@ -224,7 +247,7 @@
 					{/if}
 					<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(nextPokemon.name)}</span>
 					<span class="nav-pokemon-id text-xs text-gray-400">#{nextPokemon.id}</span>
-				</a>
+				</button>
 			{:else}
 				<div class="w-16"></div>
 			{/if}
@@ -233,8 +256,8 @@
 		<!-- Desktop Navigation -->
 		<!-- Previous Pokemon (Desktop) -->
 		{#if previousPokemon && previousPokemonCard}
-			<a
-				href={`/card/${previousPokemonCard.cardCode}/`}
+			<button
+				on:click={() => handlePokemonNavigation(previousPokemonCard.cardCode)}
 				class="prev-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-1"
 				in:fly={{ x: -50, duration: 400, delay: 400 }}
 			>
@@ -254,15 +277,15 @@
 				{/if}
 				<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(previousPokemon.name)}</span>
 				<span class="nav-pokemon-id text-xs text-gray-400">#{previousPokemon.id}</span>
-			</a>
+			</button>
 		{:else}
 			<div class="hidden lg:block w-48 order-1"></div>
 		{/if}
 
 		<!-- Next Pokemon (Desktop) -->
 		{#if nextPokemon && nextPokemonCard}
-			<a
-				href={`/card/${nextPokemonCard.cardCode}/`}
+			<button
+				on:click={() => handlePokemonNavigation(nextPokemonCard.cardCode)}
 				class="next-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-3"
 				in:fly={{ x: 50, duration: 400, delay: 400 }}
 			>
@@ -282,7 +305,7 @@
 				{/if}
 				<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(nextPokemon.name)}</span>
 				<span class="nav-pokemon-id text-xs text-gray-400">#{nextPokemon.id}</span>
-			</a>
+			</button>
 		{:else}
 			<div class="hidden lg:block w-48 order-3"></div>
 		{/if}

@@ -52,16 +52,24 @@
 	let error = false;
 
 	// Process the image URL using our centralized function - make reactive to imageUrl changes
-	$: standardImageUrl = processCardImage(imageUrl, highRes);
-	$: lowResImageUrl = processCardImage(imageUrl, false);
+	$: standardImageUrl = imageUrl ? processCardImage(imageUrl, highRes) : '';
+	$: lowResImageUrl = imageUrl ? processCardImage(imageUrl, false) : '';
+	
+	// Default fallback image for missing images
+	const DEFAULT_FALLBACK_IMAGE = '/default-card-image.png';
 	
 	// Check if this is an external URL (not from Pokemon TCG API)
 	// If so, route it through the proxy to prevent CORS issues
-	$: isExternalUrl = !standardImageUrl.includes('pokemontcg.io');
+	$: isExternalUrl = standardImageUrl && !standardImageUrl.includes('pokemontcg.io');
 	
 	// For external URLs, we'll use the proxy endpoint
-	$: proxyStandardUrl = isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(standardImageUrl)}` : standardImageUrl;
-	$: proxyLowResUrl = isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(lowResImageUrl)}` : lowResImageUrl;
+	$: proxyStandardUrl = !standardImageUrl ? DEFAULT_FALLBACK_IMAGE : 
+	                      isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(standardImageUrl)}` : 
+	                      standardImageUrl;
+	                      
+	$: proxyLowResUrl = !lowResImageUrl ? DEFAULT_FALLBACK_IMAGE : 
+	                   isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(lowResImageUrl)}` : 
+	                   lowResImageUrl;
 
 	// Prepare srcset based on actual dimensions
 	$: srcsetValue = width ? 
@@ -75,6 +83,7 @@
 	// Handle error case
 	function handleError() {
 		error = true;
+		console.warn(`Image failed to load: ${imageUrl || 'undefined'}`);
 	}
 
 	function onLoad() {

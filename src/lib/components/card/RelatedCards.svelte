@@ -110,7 +110,7 @@
 
 	{#if sortedCards.length > 0}
 		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-4">
-			{#each sortedCards as card (card.image || card.cardCode)} <!-- Add cardCode as fallback key -->
+			{#each sortedCards as card (card.cardCode)}
 				{@const cardPokemon = getPokemon(card.pokemonNumber)}
 				{@const cardSet = findSetByCardCode(card.cardCode, sets)}
 				<button
