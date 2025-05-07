@@ -753,7 +753,7 @@
 							</ul>
 							<a
 								href="/binder"
-								class="inline-block px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 mt-2 flex items-center gap-2"
+								class="px-6 py-3 w-fit bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 mt-2 flex items-center gap-2"
 							>
 								Try Binder Builder
 								{#if !NO_IMAGES}<GridIcon size={18} />{/if}
