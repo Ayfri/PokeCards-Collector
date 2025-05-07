@@ -276,11 +276,22 @@
 					: bArtist.localeCompare(aArtist);
 			}
 
-			// Order by supertype first (Pokémon, Trainer, Energy)
-			if ($filterSupertype === "all") {
-				// Priority ordering: 1-Pokémon, 2-Trainer, 3-Energy
+			// Si le tri est par Pokédex (default sort)
+			
+			// Pour le tri par Pokédex, on vérifie d'abord si l'une des cartes n'est pas Pokémon
+			// ou n'a pas de pokemonNumber - ces cartes sont toujours à la fin
+			const aPokemonCard = a.supertype === "Pokémon" && a.pokemonNumber != null;
+			const bPokemonCard = b.supertype === "Pokémon" && b.pokemonNumber != null;
+			
+			// Si l'une est une carte Pokémon et l'autre non, la carte non-Pokémon va à la fin
+			if (aPokemonCard && !bPokemonCard) return -1; // a avant b
+			if (!aPokemonCard && bPokemonCard) return 1;  // b avant a
+			
+			// Si les deux ne sont pas des cartes Pokémon, passer au tri secondaire
+			if (!aPokemonCard && !bPokemonCard) {
+				// Trier par supertype d'abord
 				const supertypeOrder: Record<string, number> = {
-					Pokémon: 1,
+					Pokémon: 1, // Au cas où une carte aurait un supertype Pokémon mais pas de numéro
 					Trainer: 2,
 					Energy: 3,
 				};
@@ -290,8 +301,44 @@
 				if (aOrder !== bOrder) {
 					return aOrder - bOrder;
 				}
+				
+				// Si même supertype, trier par nom
+				return a.name.localeCompare(b.name);
 			}
-
+			
+			// À partir d'ici, on sait que les deux sont des cartes Pokémon avec des numéros valides
+			// On continue avec le tri normal
+			
+			// When pokemonNumber is used, make sure we handle invalid/incomplete cardCodes
+			const aNum = a.pokemonNumber;
+			const bNum = b.pokemonNumber;
+			
+			// If the Pokemon numbers don't match the result from parsing cardCode
+			// prefer the direct pokemonNumber property over the parsed one
+			if (aNum !== undefined && bNum !== undefined) {
+				if (aNum === bNum) {
+					// If same Pokémon, subsort by set
+					const aSet = findSetByCardCode(a.cardCode, sets)?.name?.toLowerCase() || '';
+					const bSet = findSetByCardCode(b.cardCode, sets)?.name?.toLowerCase() || '';
+					
+					if (aSet !== bSet) {
+						return $sortOrder === "asc" 
+							? aSet.localeCompare(bSet)
+							: bSet.localeCompare(aSet);
+					}
+					
+					// If same set, sort by card number
+					const aCardNum = parseCardCode(a.cardCode).cardNumber || '';
+					const bCardNum = parseCardCode(b.cardCode).cardNumber || '';
+					return $sortOrder === "asc"
+						? aCardNum.localeCompare(bCardNum)
+						: bCardNum.localeCompare(aCardNum);
+				}
+				
+				return $sortOrder === "asc" ? aNum - bNum : bNum - aNum;
+			}
+			
+			// Fallback to parsing from cardCode (ne devrait normalement jamais arriver ici avec la logique ci-dessus)
 			const aNumDefault = parseCardCode(a.cardCode).pokemonNumber;
 			const bNumDefault = parseCardCode(b.cardCode).pokemonNumber;
 			if (aNumDefault === null && bNumDefault !== null) return 1;
