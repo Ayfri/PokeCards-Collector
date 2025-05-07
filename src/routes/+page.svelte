@@ -1,15 +1,14 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
 	import type { FullCard } from "$lib/types";
-	import CardImage from "$lib/components/card/CardImage.svelte";
+	import CardImage from "@components/card/CardImage.svelte";
+	import CountUp from "@components/ui/CountUp.svelte";
 	import { page } from "$app/state";
 	import { onMount } from "svelte";
 	import { NO_IMAGES } from "$lib/images";
 	import { fly, fade } from "svelte/transition";
 	import { getArtists } from "$helpers/data";
 	import { ChevronLeft, ChevronRight } from "lucide-svelte";
-
-	import CountUp from "$lib/components/ui/CountUp.svelte";
 	// Import icons
 	import GiftIcon from "lucide-svelte/icons/gift";
 	import Tag from "lucide-svelte/icons/tag";
@@ -115,7 +114,7 @@
 			out:fade={{ duration: 200 }}
 		>
 			<div class="flex-1">
-				<h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight text-balance">
+				<h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance text-gold-400">
 					Welcome to PokéCards-Collector
 				</h1>
 				<p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto text-pretty">
