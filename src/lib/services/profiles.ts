@@ -142,13 +142,13 @@ export async function searchUsers(query: string, limit: number = 10) {
 		}
 
 		const normalizedQuery = query.toLowerCase().trim();
-		
+
 		const { data, error } = await supabase
 			.from('profiles')
-			.select('username, avatar_url, is_public, auth_id')
+			.select('username, avatar_url, is_public, auth_id, profile_color')
 			.ilike('username', `%${normalizedQuery}%`)
 			.limit(limit);
-		
+
 		if (error) {
 			console.error('Supabase error searching users:', error);
 			return { data: null, error };

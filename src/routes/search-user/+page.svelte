@@ -5,6 +5,7 @@
 	import UserIcon from 'lucide-svelte/icons/user';
 	import UserXIcon from 'lucide-svelte/icons/user-x';
 	import { page } from '$app/state';
+    import Avatar from '@components/auth/Avatar.svelte';
 
 	let searchQuery = '';
 	let searchResults: Array<{
@@ -12,6 +13,7 @@
 		username: string;
 		avatar_url: string | null;
 		is_public: boolean;
+		profile_color: string | null;
 	}> = [];
 	let isLoading = false;
 	let debounceTimer: ReturnType<typeof setTimeout>;
@@ -80,7 +82,7 @@
 	onMount(() => {
 		const urlParams = new URLSearchParams(window.location.search);
 		const queryParam = urlParams.get('q');
-		
+
 		if (queryParam) {
 			searchQuery = queryParam;
 			searchUsers();
@@ -115,7 +117,7 @@
 		<div class="text-center my-12 py-8 bg-gray-800 rounded-lg border border-red-600">
 			<div class="text-red-400 mb-2">⚠️ Error</div>
 			<p class="text-white mb-4">{errorMessage}</p>
-			<button 
+			<button
 				class="px-4 py-2 bg-gold-500 text-black rounded-md hover:bg-gold-400 transition-colors"
 				on:click={searchUsers}
 			>
@@ -135,17 +137,7 @@
 					>
 						<div class="p-4 flex items-center gap-3">
 							<div class="flex-shrink-0">
-								{#if user.avatar_url}
-									<img 
-										src={user.avatar_url} 
-										alt={user.username}
-										class="w-12 h-12 rounded-full object-cover"
-									/>
-								{:else}
-									<div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center">
-										<UserIcon size={24} class="text-gray-400" />
-									</div>
-								{/if}
+								<Avatar username={user.username} size="size-12 text-xl" profileColor={user.profile_color} />
 							</div>
 							<div class="flex-1 min-w-0">
 								<h3 class="text-lg font-medium text-white truncate">{user.username}</h3>
@@ -169,4 +161,4 @@
 			</div>
 		{/if}
 	{/if}
-</div> 
+</div>
