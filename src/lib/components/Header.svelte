@@ -18,6 +18,7 @@
 	import SearchUsersIcon from 'lucide-svelte/icons/users';
 	import MenuIcon from 'lucide-svelte/icons/menu'; // Hamburger icon
 	import XIcon from 'lucide-svelte/icons/x'; // Close icon
+	import GlobeIcon from 'lucide-svelte/icons/globe'; // Globe icon for Japan section
 	import { slide } from 'svelte/transition';
 
 	// Re-add NavLink interface and constant
@@ -30,6 +31,7 @@
 	const navLinks: NavLink[] = [
 		{ href: '/', name: 'PokéStore', icon: null }, // HomeIcon wasn't used here
 		{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
+		{ href: '/japan', name: 'Japan', icon: GlobeIcon },
 		{ href: '/sets', name: 'Sets', icon: LibraryIcon },
 		{ href: '/artists', name: 'Artists', icon: ArtistIcon },
 		{ href: '/binder', name: 'Binder', icon: BinderIcon },

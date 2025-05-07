@@ -38,12 +38,43 @@ export function generateUniqueCardCode(
 }
 
 export function parseCardCode(cardCode: string): { supertype?: string, setCode?: string, pokemonNumber?: number, cardNumber?: string } {
-	const parts = cardCode.split('_');
-	return {
-		cardNumber: parts[3],
-		pokemonNumber: parseInt(parts[1]),
-		setCode: parts[2],
-		supertype: parts[0],
+	if (!cardCode || typeof cardCode !== 'string') {
+		return {
+			cardNumber: undefined,
+			pokemonNumber: undefined,
+			setCode: undefined,
+			supertype: undefined,
+		};
+	}
+
+	try {
+		const parts = cardCode.split('_');
+		
+		// Handle case where we don't have enough parts
+		if (parts.length < 4) {
+			return {
+				cardNumber: parts[3] || undefined,
+				pokemonNumber: parts[1] ? parseInt(parts[1]) : undefined,
+				setCode: parts[2] || undefined,
+				supertype: parts[0] || undefined,
+			};
+		}
+		
+		// Normal case
+		return {
+			cardNumber: parts[3],
+			pokemonNumber: isNaN(parseInt(parts[1])) ? undefined : parseInt(parts[1]),
+			setCode: parts[2],
+			supertype: parts[0],
+		};
+	} catch (error) {
+		console.error('Error parsing card code:', error, cardCode);
+		return {
+			cardNumber: undefined,
+			pokemonNumber: undefined,
+			setCode: undefined,
+			supertype: undefined,
+		};
 	}
 }
 

@@ -23,9 +23,10 @@
 
 	const {
 		image,
-		rarity,
-		types,
-		cardCode,  // `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`
+		rarity = 'Unknown',
+		types = '',
+		cardCode,
+		name = '',
 	} = card;
 
 	// Calculer les dimensions réelles à utiliser
@@ -34,11 +35,11 @@
 	$: mobileWidth = customWidth ? Math.floor(customWidth * 0.82) : 245;
 	$: mobileHeight = customHeight ? Math.floor(customHeight * 0.82) : 342;
 
-	const { pokemonNumber, cardNumber } = parseCardCode(cardCode);
-	const pokemon = pokemons.find(p => p.id === pokemonNumber)!!;
-	const set = findSetByCardCode(cardCode, sets)!!;
+	const { pokemonNumber, cardNumber = '0' } = parseCardCode(cardCode);
+	const pokemon = pokemonNumber ? pokemons.find(p => p.id === pokemonNumber) : null;
+	const set = findSetByCardCode(cardCode, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null };
 	if (!prices) {
-		console.log(card);
+		console.log('No price data for card:', card);
 	}
 
 	// Access user and profile from page state
@@ -119,9 +120,9 @@
 		}
 	}
 
-	const cardName = card.pokemonNumber ?
-		pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1) :
-		card.name.charAt(0).toUpperCase() + card.name.slice(1);
+	const cardName = pokemon ? 
+		pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1) : 
+		(card.name ? card.name.charAt(0).toUpperCase() + card.name.slice(1) : 'Unknown');
 </script>
 
 <a
@@ -205,10 +206,10 @@
 		<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-sm rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
 			<h2 class="text-center font-bold text-md lg:text-lg text-pretty leading-none flex flex-wrap gap-x-2 items-center justify-center">
 				{cardName}
-				{#if set.ptcgoCode}
+				{#if set?.ptcgoCode}
 					<span class="uppercase text-sm opacity-85">{set.ptcgoCode}</span>
 				{/if}
-				<span class="text-sm opacity-85"> #{cardNumber}/{set?.printedTotal}</span>
+				<span class="text-sm opacity-85"> #{cardNumber}/{set?.printedTotal || '?'}</span>
 			</h2>
 			<div class="flex items-center justify-center">
 				{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}

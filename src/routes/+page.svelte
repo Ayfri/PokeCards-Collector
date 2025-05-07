@@ -25,6 +25,7 @@
 	import LogInIcon from "lucide-svelte/icons/log-in";
 	import UserPlusIcon from "lucide-svelte/icons/user-plus";
 	import GridIcon from "lucide-svelte/icons/layout-grid";
+	import GlobeIcon from "lucide-svelte/icons/globe";
 
 	export let data: PageData;
 
@@ -123,7 +124,7 @@
 					personal collection.
 				</p>
 
-				<div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
+				<div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-10">
 					<a
 						href="/cards-list"
 						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-visible"
@@ -153,6 +154,36 @@
 							/>
 						</div>
 						<p class="text-sm text-gray-400">Cards</p>
+					</a>
+					<a
+						href="/japan"
+						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-visible"
+					>
+						{#if !NO_IMAGES}
+							<div class="flex justify-center mb-2">
+								<GlobeIcon size={24} class="text-gold-400" />
+							</div>
+						{/if}
+						<div
+							class="flex items-center justify-between w-full px-2"
+						>
+							<ChevronRight
+								size={16}
+								class="text-gold-400"
+								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+							/>
+							<span
+								class="text-xl md:text-2xl font-bold text-gold-400"
+							>
+								<CountUp end={23308} duration={4} />
+							</span>
+							<ChevronLeft
+								size={16}
+								class="text-gold-400"
+								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+							/>
+						</div>
+						<p class="text-sm text-gray-400">JP Cards</p>
 					</a>
 					<a
 						href="/cards-list?type=pokemon"
