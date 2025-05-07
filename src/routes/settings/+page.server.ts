@@ -2,11 +2,9 @@ import type { PageServerLoad } from './$types';
 
 export const load = (async () => {
 	return {
-		title: 'Settings - PokeStore',
-		description: 'Manage your account settings and preferences',
-		image: {
-			url: '/images/settings-banner.jpg',
-			alt: 'Settings Banner'
+		meta: {
+			title: 'Settings - PokéCards-Collector',
+			description: 'Manage your profile and application settings.'
 		}
 	};
 }) satisfies PageServerLoad;

@@ -132,7 +132,7 @@
 	href={`/card/${cardCode}/`}
 	rel="dofollow"
 >
-	<div class="card-pokestore group relative flex flex-col items-center w-fit cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.025] hover:z-10" style="z-index: 1;">
+	<div class="card-pokecards-collector group relative flex flex-col items-center w-fit cursor-pointer transition-transform duration-500 ease-out hover:scale-[1.025] hover:z-10" style="z-index: 1;">
 		<div class:list={rarity.toLowerCase()}></div>
 		{#if !NO_IMAGES}
 			<div
@@ -152,12 +152,12 @@
 							disabled={isUpdatingCollection}
 							title="Remove one copy from collection"
 						>
-							<Minus 
-								size={Math.min(18, Math.floor(width/16))} 
+							<Minus
+								size={Math.min(18, Math.floor(width/16))}
 								class="text-white"
-							/> 
+							/>
 						</button>
-						<span 
+						<span
 							class="text-sm font-semibold text-green-400 px-1 min-w-[1.5ch] text-center select-none"
 							title={`You have ${collectionCount} cop${collectionCount > 1 ? 'ies' : 'y'}`}
 						>
@@ -171,10 +171,10 @@
 						disabled={isUpdatingCollection || isCollectionLimitReached}
 						title={isCollectionLimitReached ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 					>
-						<Plus 
+						<Plus
 							size={Math.min(18, Math.floor(width/16))}
 							class={collectionCount > 0 ? 'text-green-400' : 'text-white'}
-						/> 
+						/>
 					</button>
 
 					<div class="w-px h-5 bg-white/30 mx-1"></div>
@@ -186,10 +186,10 @@
 						disabled={isUpdatingWishlist}
 						title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
 					>
-						<Heart 
+						<Heart
 							size={Math.min(18, Math.floor(width/16))}
 							class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'}
-						/> 
+						/>
 					</button>
 				</div>
 			{/if}

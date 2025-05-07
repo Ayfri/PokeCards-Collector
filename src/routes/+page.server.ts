@@ -52,7 +52,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 			return priceB - priceA;
 		})
 		.slice(0, 5); // Get top 5 most expensive cards
-	
+
 	const mostExpensiveCards = [...allCards]
 		.sort((a, b) => {
 			const priceA = prices[a.cardCode]?.simple || prices[a.cardCode]?.trend || 0;
@@ -63,8 +63,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	// Define page-specific SEO data
 	const pageSeoData = {
-		title: 'PokéStore - Votre référence Pokémon TCG',
-		description: 'Explorez l\'univers des cartes Pokémon. Découvrez le dernier set, consultez les prix des cartes les plus rares et gérez votre collection.'
+		title: 'PokéCards-Collector - Your Pokémon TCG Collection Manager',
+		description: 'Explore the Pokémon TCG universe. Discover the latest set, check out the prices of the rarest cards, and manage your collection.'
 	};
 
 	return {

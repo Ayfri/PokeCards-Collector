@@ -41,7 +41,7 @@
 	const showClearStorageModal = writable(false);
 	const cardUrl = writable('');
 	const multipleCardUrls = writable('');
-	
+
 	// My Cards modal
 	const showMyCardsModal = writable(false);
 	const includeCollection = writable(true);
@@ -248,7 +248,7 @@
 			for (let line of lines) {
 				line = line.trim();
 				if (!line) continue;
-				
+
 				// Then split each line by semicolons in case multiple URLs are on one line
 				const urlsInLine = line.split(';');
 				for (let url of urlsInLine) {
@@ -310,8 +310,11 @@
 			await Promise.all(imageLoadPromises);
 			const dataUrl = canvas.toDataURL('image/png');
 			const link = document.createElement('a');
-			link.href = dataUrl; link.download = 'pokestore-binder.png';
-			document.body.appendChild(link); link.click(); document.body.removeChild(link);
+			link.href = dataUrl;
+			link.download = 'pokecards-collector-binder.png';
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
 		} catch (error) { console.error('Error generating binder image:', error); alert('An error occurred while generating the image.'); }
 	}
 </script>
@@ -357,7 +360,7 @@
 				<LayersIcon size={16} />
 				<span>Add set</span>
 			</Button>
-			
+
 			<Button onClick={toggleMyCardsModal} class="text-sm flex items-center gap-1 px-3 py-2">
 				<BookUserIcon size={16} />
 				<span>My Cards</span>
@@ -435,9 +438,9 @@
 	</p>
 
 	<div class="mb-4 flex flex-col gap-4">
-		<Checkbox 
-			id="include-collection" 
-			label="Include my collection" 
+		<Checkbox
+			id="include-collection"
+			label="Include my collection"
 			bind:checked={$includeCollection}
 			disabled={!data.serverCollectionCards}
 		/>
@@ -450,10 +453,10 @@
 				You need to be logged in to access your collection
 			</p>
 		{/if}
-		
-		<Checkbox 
-			id="include-wishlist" 
-			label="Include my wishlist" 
+
+		<Checkbox
+			id="include-wishlist"
+			label="Include my wishlist"
 			bind:checked={$includeWishlist}
 			disabled={!data.serverWishlistCards}
 		/>

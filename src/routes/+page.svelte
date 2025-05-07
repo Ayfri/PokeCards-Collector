@@ -1,15 +1,14 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
 	import type { FullCard } from "$lib/types";
-	import CardImage from "$lib/components/card/CardImage.svelte";
+	import CardImage from "@components/card/CardImage.svelte";
+	import CountUp from "@components/ui/CountUp.svelte";
 	import { page } from "$app/state";
 	import { onMount } from "svelte";
 	import { NO_IMAGES } from "$lib/images";
 	import { fly, fade } from "svelte/transition";
 	import { getArtists } from "$helpers/data";
 	import { ChevronLeft, ChevronRight } from "lucide-svelte";
-
-	import CountUp from "$lib/components/ui/CountUp.svelte";
 	// Import icons
 	import GiftIcon from "lucide-svelte/icons/gift";
 	import Tag from "lucide-svelte/icons/tag";
@@ -115,10 +114,10 @@
 			out:fade={{ duration: 200 }}
 		>
 			<div class="flex-1">
-				<h1 class="text-3xl md:text-4xl font-bold text-gold-400 mb-8">
-					Welcome to PokéStore
+				<h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance text-gold-400">
+					Welcome to PokéCards-Collector
 				</h1>
-				<p class="text-gray-300 text-lg mb-10">
+				<p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto text-pretty">
 					Your ultimate resource for Pokémon TCG cards. Explore our
 					complete collection, track price trends, and manage your
 					personal collection.
@@ -630,7 +629,7 @@
 			<h2
 				class="text-2xl md:text-3xl font-bold text-center text-gold-400 mb-12"
 			>
-				Discover PokéStore Features
+				Discover PokéCards-Collector Features
 			</h2>
 			<div
 				class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center feature-cards"
@@ -861,7 +860,7 @@
 				</div>
 			{:else}
 				<h2 class="text-2xl md:text-3xl font-bold text-gold-400 mb-8">
-					Join PokéStore Today!
+					Join PokéCards-Collector Today!
 				</h2>
 				<p class="text-gray-300 text-lg mb-10">
 					Sign up or log in to start managing your Pokémon card

@@ -5,7 +5,7 @@
 	import UserMenu from '@components/auth/UserMenu.svelte';
 	import SearchBar from '@components/SearchBar.svelte';
 	import SearchModal from '@components/SearchModal.svelte';
-	import pokestore from '~/assets/pokestore.png';
+	import pokecardsCollector from '~/assets/pokecards-collector.png';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	// Import icons
@@ -24,12 +24,12 @@
 	// Re-add NavLink interface and constant
 	interface NavLink {
 		href: string;
-		name: string;
+		name: string; // PCC
 		icon: typeof Icon | null;
 	}
 
 	const navLinks: NavLink[] = [
-		{ href: '/', name: 'PokéStore', icon: null }, // HomeIcon wasn't used here
+		{ href: '/', name: 'PCC', icon: null },
 		{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
 		{ href: '/japan', name: 'Japan', icon: GlobeIcon },
 		{ href: '/sets', name: 'Sets', icon: LibraryIcon },
@@ -55,7 +55,7 @@
 	afterNavigate(() => {
 		isMobileMenuOpen = false;
 	});
-	
+
 	function handleClickOutside(event: MouseEvent) {
 		if (isMobileMenuOpen && mobileMenuNav && mobileMenuButton) {
 			// Check if click was outside the mobile menu and not on the menu button
@@ -65,11 +65,11 @@
 			}
 		}
 	}
-	
+
 	onMount(() => {
 		// Add event listener to handle clicks outside the menu
 		window.addEventListener('click', handleClickOutside);
-		
+
 		return () => {
 			// Clean up the event listener when component is destroyed
 			window.removeEventListener('click', handleClickOutside);
@@ -98,18 +98,27 @@
 
 		<!-- Desktop Navigation Links (Hidden on Mobile) -->
 		<nav class="hidden lg:flex items-center gap-4">
-			<!-- Home link added back for desktop -->
 			{#each navLinks as link}
-				<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href}>
-					{#if !NO_IMAGES && link.icon}
-						<svelte:component this={link.icon} size={16} />
-					{/if}
-					{#if link.name === 'PokéStore'}
+				{#if link.href === '/'}
+					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2" href={link.href}>
+						{#if !NO_IMAGES}
+							<img
+								alt="PokéCards-Collector Logo"
+								loading="eager"
+								class="object-contain aspect-square h-10 w-10"
+								src={pokecardsCollector}
+							/>
+						{/if}
 						<span class="font-bold text-lg">{link.name}</span>
-					{:else}
+					</a>
+				{:else}
+					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href}>
+						{#if !NO_IMAGES && link.icon}
+							<svelte:component this={link.icon} size={16} />
+						{/if}
 						{link.name}
-					{/if}
-				</a>
+					</a>
+				{/if}
 			{/each}
 		</nav>
 
@@ -131,21 +140,6 @@
 		</div>
 	</div>
 
-	<!-- Centered Logo (Desktop) - Placed outside the main flex container -->
-	<a
-		class="logo-link absolute left-1/2 top-[2/3] -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full"
-		href="/"
-	>
-		{#if !NO_IMAGES}
-			<img
-				alt="PokéStore Logo"
-				loading="eager"
-				class="object-contain aspect-square size-10 xs:size-12 lg:size-16"
-				src={pokestore}
-			/>
-		{/if}
-	</a>
-
 	<!-- Mobile Navigation Drawer -->
 	{#if isMobileMenuOpen}
 		<div
@@ -158,16 +152,26 @@
 		>
 			<nav class="flex flex-col gap-3">
 				{#each navLinks as link}
-					<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
-						{#if !NO_IMAGES && link.icon}
-							<svelte:component this={link.icon} size={20} />
-						{/if}
-						{#if link.name === 'PokéStore'}
+					{#if link.href === '/'}
+						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
+							{#if !NO_IMAGES}
+								<img
+									alt="PokéCards-Collector Logo"
+									loading="eager"
+									class="object-contain aspect-square h-7 w-7"
+									src={pokecardsCollector}
+								/>
+							{/if}
 							<span class="font-bold text-lg">{link.name}</span>
-						{:else}
+						</a>
+					{:else}
+						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
+							{#if !NO_IMAGES && link.icon}
+								<svelte:component this={link.icon} size={20} />
+							{/if}
 							{link.name}
-						{/if}
-					</a>
+						</a>
+					{/if}
 				{/each}
 			</nav>
 		</div>
@@ -175,15 +179,10 @@
 </header>
 
 <style lang="postcss">
-	/* Added the logo-link style back */
-	.logo-link {
-		background-image: linear-gradient(transparent 50%, theme(colors.gray.800) 50%);
-	}
-
 	.nav-link {
 		position: relative;
 	}
-	
+
 	.nav-link:hover::after {
 		content: '';
 		position: absolute;
@@ -196,7 +195,7 @@
 		transform: scaleX(1);
 		transition: transform 0.3s ease;
 	}
-	
+
 	.nav-link::after {
 		content: '';
 		position: absolute;

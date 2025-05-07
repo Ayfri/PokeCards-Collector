@@ -9,7 +9,7 @@ import { browser } from '$app/environment'; // Use SvelteKit's browser check
  * @param initialValue The initial value to use if nothing is found in localStorage or on the server.
  */
 export function persistentWritable<T>(key: string, initialValue: T): Writable<T> {
-	const keyName = `pokestore-${key}`;
+	const keyName = `pokecards-collector-${key}`;
 	let value = initialValue; // Start with the default
 
 	// --- Step 1: If on client, try to load from localStorage ---
