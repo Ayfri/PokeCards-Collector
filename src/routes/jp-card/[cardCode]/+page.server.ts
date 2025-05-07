@@ -1,22 +1,7 @@
-import { getPokemons, getPrices, getSets } from '$helpers/data';
+import { getPokemons, getPrices, getSets, getJapaneseCards } from '$helpers/data';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-
-// Custom helper to load Japanese cards
-async function getJapaneseCards(): Promise<FullCard[]> {
-  try {
-    // For Cloudflare compatibility, we'll use fetch instead of fs
-    const response = await fetch('/assets/jp-cards-full.json');
-    if (!response.ok) {
-      throw new Error(`Failed to fetch Japanese cards: ${response.status}`);
-    }
-    return await response.json();
-  } catch (e) {
-    console.error('Error loading Japanese cards:', e);
-    return [];
-  }
-}
 
 export const load: PageServerLoad = async ({ params, parent }) => {
   const { cardCode } = params;

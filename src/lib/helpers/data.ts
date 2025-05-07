@@ -5,6 +5,7 @@ import holoCards from '~/assets/holo-cards.json';
 import pokemonSets from '~/assets/sets-full.json';
 import pokemonTypes from '~/assets/types.json';
 import prices from '~/assets/prices.json';
+import jpCards from '~/assets/jp-cards-full.json';
 
 export async function getPokemons(): Promise<Pokemon[]> {
 	return pokemons;
@@ -12,6 +13,10 @@ export async function getPokemons(): Promise<Pokemon[]> {
 
 export async function getCards(): Promise<FullCard[]> {
 	return pokemonCards as FullCard[];
+}
+
+export async function getJapaneseCards(): Promise<FullCard[]> {
+	return jpCards as FullCard[];
 }
 
 export async function getPrices(): Promise<Record<string, PriceData>> {

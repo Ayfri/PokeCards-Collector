@@ -1,22 +1,6 @@
-import { getPokemons, getPrices, getRarities, getSets, getTypes, getArtists } from '$helpers/data';
+import { getPokemons, getPrices, getRarities, getSets, getTypes, getArtists, getJapaneseCards } from '$helpers/data';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
-
-// Custom helper to load Japanese cards
-async function getJapaneseCards(): Promise<FullCard[]> {
-  try {
-    // For Cloudflare compatibility, we'll use fetch instead of fs
-    // This assumes your assets are available as public files
-    const response = await fetch('/assets/jp-cards-full.json');
-    if (!response.ok) {
-      throw new Error(`Failed to fetch Japanese cards: ${response.status}`);
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error loading Japanese cards:', error);
-    return [];
-  }
-}
 
 export const load: PageServerLoad = async ({ parent }) => {
   // Get layout data which contains default SEO values
