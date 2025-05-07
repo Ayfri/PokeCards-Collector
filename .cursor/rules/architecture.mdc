@@ -1,15 +1,15 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
 # Project Architecture
 
-This document outlines the high-level architecture of the PokéStore application.
+This document outlines the high-level architecture of the PokéCards-Collector application.
 
 ## Overview
 
-PokéStore is a web application built using the SvelteKit framework for the frontend and Supabase as the backend-as-a-service (BaaS). It leverages TypeScript for type safety and Tailwind CSS for styling.
+PokéCards-Collector is a web application built using the SvelteKit framework for the frontend and Supabase as the backend-as-a-service (BaaS). It leverages TypeScript for type safety and Tailwind CSS for styling.
 
 ## Key Components
 
@@ -57,4 +57,4 @@ Additionally, SvelteKit provides some default aliases:
 - **$env/dynamic/private**: Exposes private environment variables at runtime.
 - **$env/dynamic/public**: Exposes public environment variables at runtime.
 - **$env/static/private**: Exposes private environment variables at build time.
-- **$env/static/public**: Exposes public environment variables at build time. 
+- **$env/static/public**: Exposes public environment variables at build time.

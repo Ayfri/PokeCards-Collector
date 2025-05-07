@@ -1,11 +1,11 @@
 ---
 description: Documentation on dealing with routes/routing and how to create a new route.
-globs: 
+globs:
 alwaysApply: false
 ---
 # Routing
 
-PokéStore uses SvelteKit's file-system based router.
+PokéCards-Collector uses SvelteKit's file-system based router.
 
 ## Structure
 
@@ -42,4 +42,46 @@ src/routes/
 ## Data Loading
 
 *   Prefer using `+page.server.ts` or `+layout.server.ts` for data loading that requires sensitive keys or direct database access.
-*   Data returned from `load` functions is automatically passed as props to the corresponding `+page.svelte` or `+layout.svelte` component. 
+*   Data returned from `load` functions is automatically passed as props to the corresponding `+page.svelte` or `+layout.svelte` component.
+
+## Creating a New Route
+
+1.  **Identify the URL Path:** Determine the URL path for your new page or endpoint (e.g., `/my-new-page`, `/api/my-data`).
+2.  **Create Directory:** Inside `src/routes/`, create a directory structure that matches the desired path.
+    *   For `/my-new-page`, create `src/routes/my-new-page/`.
+    *   For `/api/my-data`, create `src/routes/api/my-data/`.
+3.  **Add SvelteKit Files:**
+    *   **Page (`+page.svelte`):** For a UI page, create a `+page.svelte` file inside the directory. This is where your Svelte component markup, script, and styles will go.
+    *   **Server Load Function (`+page.server.ts`):** If the page needs to fetch data on the server before rendering, create a `+page.server.ts` file. Export a `load` function from here. This function runs on the server and its return value is passed as props to `+page.svelte`.
+    *   **API Endpoint (`+server.ts`):** For an API endpoint, create a `+server.ts` file. Export functions corresponding to HTTP methods (e.g., `GET`, `POST`, `PUT`, `DELETE`). These functions receive a `RequestEvent` object and should return a `Response`.
+    *   **Layout (`+layout.svelte`, `+layout.server.ts`):** If you need a specific layout for a section of your site, you can create `+layout.svelte` and optionally `+layout.server.ts` files. Layouts wrap nested routes.
+
+## Route Parameters
+
+To create routes with dynamic parameters (e.g., `/cards/[cardId]`), use square brackets in the directory name:
+`src/routes/cards/[cardId]/+page.svelte`
+
+Inside the `load` function (in `+page.server.ts` or `+page.ts`) or API handlers, you can access these parameters via the `params` object from the `RequestEvent`.
+
+## API Routes
+
+API routes are defined in `src/routes/api/`. They are useful for creating backend endpoints that your frontend can interact with, or for external services to consume.
+
+## Navigation
+
+Use standard HTML `<a>` tags for navigation between pages. SvelteKit will automatically intercept clicks on these links and handle navigation client-side where possible.
+
+For programmatic navigation, use the `goto` function from `$app/navigation`.
+
+```svelte
+<script lang="ts">
+  import { goto } from '$app/navigation';
+
+  function navigateToProfile() {
+    goto('/profile');
+  }
+</script>
+
+<a href="/about">About Us</a>
+<button on:click={navigateToProfile}>Go to Profile</button>
+```

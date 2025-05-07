@@ -52,8 +52,8 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		wishlistItems,
 		collectionItems,
 		// Default SEO values (can be overridden by page loads)
-		title: "PokéStore",
-		description: "Browse all Pokémon Trading Card Game artists, view their cards and explore their artwork.",
+		title: "PokéCards-Collector",
+		description: "Explore the Pokémon TCG universe. Discover the latest set, check out the prices of the rarest cards, and manage your collection.",
 		image: "/images/og-image.png",
 	};
 };

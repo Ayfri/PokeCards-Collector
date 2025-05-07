@@ -5,7 +5,7 @@
 	import UserMenu from '@components/auth/UserMenu.svelte';
 	import SearchBar from '@components/SearchBar.svelte';
 	import SearchModal from '@components/SearchModal.svelte';
-	import pokestore from '~/assets/pokestore.png';
+	import pokecardsCollector from '~/assets/pokecards-collector.png';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	// Import icons
@@ -29,7 +29,7 @@
 	}
 
 	const navLinks: NavLink[] = [
-		{ href: '/', name: 'PokéStore', icon: null }, // HomeIcon wasn't used here
+		{ href: '/', name: 'PokéCards-Collector', icon: null }, // HomeIcon wasn't used here
 		{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
 		{ href: '/japan', name: 'Japan', icon: GlobeIcon },
 		{ href: '/sets', name: 'Sets', icon: LibraryIcon },
@@ -55,7 +55,7 @@
 	afterNavigate(() => {
 		isMobileMenuOpen = false;
 	});
-	
+
 	function handleClickOutside(event: MouseEvent) {
 		if (isMobileMenuOpen && mobileMenuNav && mobileMenuButton) {
 			// Check if click was outside the mobile menu and not on the menu button
@@ -65,11 +65,11 @@
 			}
 		}
 	}
-	
+
 	onMount(() => {
 		// Add event listener to handle clicks outside the menu
 		window.addEventListener('click', handleClickOutside);
-		
+
 		return () => {
 			// Clean up the event listener when component is destroyed
 			window.removeEventListener('click', handleClickOutside);
@@ -104,7 +104,7 @@
 					{#if !NO_IMAGES && link.icon}
 						<svelte:component this={link.icon} size={16} />
 					{/if}
-					{#if link.name === 'PokéStore'}
+					{#if link.name === 'PokéCards-Collector'}
 						<span class="font-bold text-lg">{link.name}</span>
 					{:else}
 						{link.name}
@@ -138,10 +138,10 @@
 	>
 		{#if !NO_IMAGES}
 			<img
-				alt="PokéStore Logo"
+				alt="PokéCards-Collector Logo"
 				loading="eager"
 				class="object-contain aspect-square size-10 xs:size-12 lg:size-16"
-				src={pokestore}
+				src={pokecardsCollector}
 			/>
 		{/if}
 	</a>
@@ -162,7 +162,7 @@
 						{#if !NO_IMAGES && link.icon}
 							<svelte:component this={link.icon} size={20} />
 						{/if}
-						{#if link.name === 'PokéStore'}
+						{#if link.name === 'PokéCards-Collector'}
 							<span class="font-bold text-lg">{link.name}</span>
 						{:else}
 							{link.name}
@@ -183,7 +183,7 @@
 	.nav-link {
 		position: relative;
 	}
-	
+
 	.nav-link:hover::after {
 		content: '';
 		position: absolute;
@@ -196,7 +196,7 @@
 		transform: scaleX(1);
 		transition: transform 0.3s ease;
 	}
-	
+
 	.nav-link::after {
 		content: '';
 		position: absolute;

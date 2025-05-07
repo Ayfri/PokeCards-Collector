@@ -11,9 +11,10 @@ export const GET: RequestHandler = async ({ url }) => {
 	try {
 		const response = await fetch(imageUrl, {
 			headers: {
-				// Optional: Add headers if the target site requires them (e.g., User-Agent)
-				// 'User-Agent': 'PokéStore-Image-Proxy/1.0' 
-			}
+				// Pass through common headers, modify as needed
+				// 'User-Agent': 'PokéCards-Collector-Image-Proxy/1.0'
+			},
+			redirect: 'follow' // Follow redirects from the target server
 		});
 
 		if (!response.ok) {
@@ -44,4 +45,4 @@ export const GET: RequestHandler = async ({ url }) => {
 			throw error(500, `Could not proxy image: ${e.message || 'Unknown error'}`);
 		}
 	}
-}; 
+};

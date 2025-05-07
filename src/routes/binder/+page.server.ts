@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// If user is logged in, fetch their collection and wishlist
 	if (locals.profile) {
 		const username = locals.profile.username;
-		
+
 		// Fetch collection
 		const { data: collectionItems, error: collectionError } = await getUserCollection(username);
 		if (collectionError) {
@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			const collectionCardCodes = new Set(collectionItems.map(item => item.card_code));
 			serverCollectionCards = allCards.filter(card => collectionCardCodes.has(card.cardCode));
 		}
-		
+
 		// Fetch wishlist
 		const { data: wishlistItems, error: wishlistError } = await getUserWishlist(username);
 		if (wishlistError) {
@@ -38,7 +38,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 
 	return {
-		title: 'Binder Builder - PokéStore',
+		title: 'Binder Builder - PokéCards-Collector',
 		description: 'Create and manage your digital Pokémon card binder. Organize your collection with a customizable grid.',
 		image: '/favicon.png',
 		allCards,
@@ -47,4 +47,4 @@ export const load: PageServerLoad = async ({ locals }) => {
 		serverCollectionCards,
 		serverWishlistCards
 	};
-}; 
+};

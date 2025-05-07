@@ -38,8 +38,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	// Define page-specific SEO data (or use layout defaults if not specified)
 	const pageSeoData = {
-		title: 'All Pokémon Cards - PokéStore',
-		description: 'Browse all Pokémon TCG cards from every set. Filter by type, rarity, and more.'
+		title: 'All Pokémon Cards - PokéCards-Collector',
+		description: 'Browse all available Pokémon TCG cards.'
 	};
 
 	return {
@@ -60,4 +60,4 @@ export const load: PageServerLoad = async ({ parent }) => {
 		},
 		...pageSeoData, // Override with page-specific SEO data
 	};
-} 
+}

@@ -1,11 +1,11 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
 # Code Standards
 
-This document outlines the coding standards and conventions to follow when contributing to the PokéStore project.
+This document outlines the coding standards and conventions to follow when contributing to the PokéCards-Collector project.
 
 ## General
 
@@ -42,4 +42,4 @@ This document outlines the coding standards and conventions to follow when contr
 
 ## Environment
 
-*   The primary development environment assumes Windows with PowerShell 7, although the code should be cross-platform compatible. 
+*   The primary development environment assumes Windows with PowerShell 7, although the code should be cross-platform compatible.

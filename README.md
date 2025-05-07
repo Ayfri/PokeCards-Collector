@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="./static/pokestore.png" alt="PokéStore Logo" width="150"/>
+  <img src="./src/assets/pokecards-collector.png" alt="PokéCards-Collector Logo" width="150"/>
 
-  # PokéStore
+  # PokéCards-Collector
 
   [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
   [![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?style=flat&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
@@ -16,13 +16,13 @@
 
 ## 📋 Overview
 
-PokéStore is a comprehensive web application built with SvelteKit and Supabase that allows you to browse and manage your Pokémon Trading Card Game (TCG) collection with ease.
+PokéCards-Collector is a comprehensive web application built with SvelteKit and Supabase that allows you to browse and manage your Pokémon Trading Card Game (TCG) collection with ease.
 
 ### 📸 Website
 
-Check out the live website [here](https://pokestore.ayfri.com).
+Check out the live website [here](https://pokecards-collector.ayfri.com).
 
-![Demo Screenshot](./pokestore.png)
+![Demo Screenshot](./pokecards-collector.png)
 
 ## ✨ Features
 
@@ -114,8 +114,8 @@ Check out the live website [here](https://pokestore.ayfri.com).
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/Ayfri/PokeStore.git
-    cd PokeStore
+    git clone https://github.com/Ayfri/PokeCards-Collector.git
+    cd PokeCards-Collector
     ```
 
 2.  **Install dependencies:**
@@ -331,9 +331,9 @@ This project is licensed under the GNU GPLv3 License - see the [LICENSE](LICENSE
 <div align="center">
   <br>
   <p>
-    <a href="https://github.com/Ayfri/pokestore/issues">Report Bug</a>
+    <a href="https://github.com/Ayfri/pokecards-collector/issues">Report Bug</a>
     ·
-    <a href="https://github.com/Ayfri/pokestore/issues">Request Feature</a>
+    <a href="https://github.com/Ayfri/pokecards-collector/issues">Request Feature</a>
   </p>
   <p>
     Made with ❤️ by <a href="https://github.com/Ayfri">Ayfri</a>,

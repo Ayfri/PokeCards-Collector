@@ -43,22 +43,24 @@
 		const handleLinkClick = (e: MouseEvent) => {
 			const target = e.target as HTMLElement;
 			const link = target.closest('a');
-			
+
 			// Check if it's an internal link
-			if (link && 
-				link.href && 
-				link.origin === window.location.origin && 
-				!link.hasAttribute('target') && 
-				!link.hasAttribute('download') && 
-				!e.ctrlKey && 
-				!e.metaKey && 
-				!e.shiftKey) {
+			if (
+				link &&
+				link.href &&
+				link.origin === window.location.origin &&
+				!link.hasAttribute('target') &&
+				!link.hasAttribute('download') &&
+				!e.ctrlKey &&
+				!e.metaKey &&
+				!e.shiftKey
+			) {
 				setNavigationLoading(true);
 			}
 		};
 
 		document.addEventListener('click', handleLinkClick);
-		
+
 		return () => {
 			document.removeEventListener('click', handleLinkClick);
 		};
@@ -68,7 +70,7 @@
 		// Loading already started on link click
 		// Just make sure it's set to true
 		setNavigationLoading(true);
-		
+
 		// Set up to turn loading off after navigation completes
 		navigation.complete.then(() => {
 			setTimeout(() => setNavigationLoading(false), 100); // Small delay to ensure smoother transitions
@@ -92,7 +94,7 @@
 	<meta content="dark light" name="color-scheme"/>
 	<meta content="en" name="language"/>
 	<meta content="Ayfri;Anta;Bahsiik" name="author"/>
-	<meta content="Pokemon, Pokémon, TCG, Card Game, Trading Card Game, Pokemon Cards, Card List, PokéStore" name="keywords"/>
+	<meta content="Pokemon, Pokémon, TCG, Card Game, Trading Card Game, Pokemon Cards, Card List, PokéStore, PokéCards-Collector" name="keywords"/>
 
 	<meta content="width=device-width" name="viewport"/>
 
