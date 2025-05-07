@@ -24,12 +24,12 @@
 	// Re-add NavLink interface and constant
 	interface NavLink {
 		href: string;
-		name: string;
+		name: string; // PCC
 		icon: typeof Icon | null;
 	}
 
 	const navLinks: NavLink[] = [
-		{ href: '/', name: 'PokéCards-Collector', icon: null }, // HomeIcon wasn't used here
+		{ href: '/', name: 'PCC', icon: null },
 		{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
 		{ href: '/japan', name: 'Japan', icon: GlobeIcon },
 		{ href: '/sets', name: 'Sets', icon: LibraryIcon },
@@ -98,18 +98,27 @@
 
 		<!-- Desktop Navigation Links (Hidden on Mobile) -->
 		<nav class="hidden lg:flex items-center gap-4">
-			<!-- Home link added back for desktop -->
 			{#each navLinks as link}
-				<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href}>
-					{#if !NO_IMAGES && link.icon}
-						<svelte:component this={link.icon} size={16} />
-					{/if}
-					{#if link.name === 'PokéCards-Collector'}
+				{#if link.href === '/'}
+					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2" href={link.href}>
+						{#if !NO_IMAGES}
+							<img
+								alt="PokéCards-Collector Logo"
+								loading="eager"
+								class="object-contain aspect-square h-10 w-10"
+								src={pokecardsCollector}
+							/>
+						{/if}
 						<span class="font-bold text-lg">{link.name}</span>
-					{:else}
+					</a>
+				{:else}
+					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href}>
+						{#if !NO_IMAGES && link.icon}
+							<svelte:component this={link.icon} size={16} />
+						{/if}
 						{link.name}
-					{/if}
-				</a>
+					</a>
+				{/if}
 			{/each}
 		</nav>
 
@@ -131,21 +140,6 @@
 		</div>
 	</div>
 
-	<!-- Centered Logo (Desktop) - Placed outside the main flex container -->
-	<a
-		class="logo-link absolute left-1/2 top-[2/3] -translate-x-1/2 -translate-y-1/2 p-2 lg:p-2.5 rounded-full"
-		href="/"
-	>
-		{#if !NO_IMAGES}
-			<img
-				alt="PokéCards-Collector Logo"
-				loading="eager"
-				class="object-contain aspect-square size-10 xs:size-12 lg:size-16"
-				src={pokecardsCollector}
-			/>
-		{/if}
-	</a>
-
 	<!-- Mobile Navigation Drawer -->
 	{#if isMobileMenuOpen}
 		<div
@@ -158,16 +152,26 @@
 		>
 			<nav class="flex flex-col gap-3">
 				{#each navLinks as link}
-					<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
-						{#if !NO_IMAGES && link.icon}
-							<svelte:component this={link.icon} size={20} />
-						{/if}
-						{#if link.name === 'PokéCards-Collector'}
+					{#if link.href === '/'}
+						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
+							{#if !NO_IMAGES}
+								<img
+									alt="PokéCards-Collector Logo"
+									loading="eager"
+									class="object-contain aspect-square h-7 w-7"
+									src={pokecardsCollector}
+								/>
+							{/if}
 							<span class="font-bold text-lg">{link.name}</span>
-						{:else}
+						</a>
+					{:else}
+						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
+							{#if !NO_IMAGES && link.icon}
+								<svelte:component this={link.icon} size={20} />
+							{/if}
 							{link.name}
-						{/if}
-					</a>
+						</a>
+					{/if}
 				{/each}
 			</nav>
 		</div>
@@ -175,11 +179,6 @@
 </header>
 
 <style lang="postcss">
-	/* Added the logo-link style back */
-	.logo-link {
-		background-image: linear-gradient(transparent 50%, theme(colors.gray.800) 50%);
-	}
-
 	.nav-link {
 		position: relative;
 	}
