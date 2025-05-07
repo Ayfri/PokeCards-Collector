@@ -4,15 +4,12 @@
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 	import { page } from '$app/state';
-	import PageTitle from '$lib/components/PageTitle.svelte';
-	import type { PageData } from './$types';
-	import type { Set, UserProfile } from '$lib/types';
-	import Avatar from '$lib/components/auth/Avatar.svelte';
+	import PageTitle from '@components/PageTitle.svelte';
+	import type { Set } from '$lib/types';
+	import Avatar from '@components/auth/Avatar.svelte';
 	import { NO_IMAGES } from '$lib/images';
 	import { Home, UserCog, BookOpen, ListTodo, ChevronRight } from 'lucide-svelte';
 	import { fly, fade } from 'svelte/transition';
-
-	export let data: PageData;
 
 	// State variables
 	let isLoading = false;
@@ -82,7 +79,7 @@
 	// Sort sets by completion percentage (descending)
 	function getSortedSets(): [string, { count: number; total: number; percentage: number; collectedValue: number; totalValue: number }][] {
 		if (!collectionStats?.set_completion) return [];
-		
+
 		return (Object.entries(collectionStats.set_completion) as [string, { count: number; total: number; percentage: number; collectedValue: number; totalValue: number }][])
 			.sort((a, b) => b[1].percentage - a[1].percentage);
 	}
@@ -91,19 +88,19 @@
 	function getTotalCards(): number {
 		return collectionStats?.total_instances || 0;
 	}
-	
+
 	function getUniqueCards(): number {
 		return collectionStats?.unique_cards || 0;
 	}
-	
+
 	function getWishlistCount(): number {
 		return collectionStats?.wishlist_count || 0;
 	}
-	
+
 	function getUniqueSets(): number {
 		return collectionStats?.set_completion ? Object.keys(collectionStats.set_completion).length : 0;
 	}
-	
+
 	function getCompletionPercentage(): number {
 		if (!collectionStats?.set_completion) return 0;
 		const setCompletionData = collectionStats.set_completion as Record<string, { percentage: number }>;
@@ -121,7 +118,7 @@
 		}
 		ready = true;
 	});
-	
+
 	// Animation for stats numbers
 	const bounceAnimation = {
 		duration: 1000,
@@ -218,7 +215,7 @@
 					<!-- Profile Information -->
 					<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6" in:fly={{ y: 20, duration: 300, delay: 50 }}>
 						<div class="flex items-center gap-4 mb-6">
-							<Avatar username={targetProfile.username} size="size-16 text-3xl" />
+							<Avatar username={targetProfile.username} size="size-16 text-3xl" profileColor={targetProfile.profile_color} />
 							<div>
 								<h2 class="text-xl font-semibold text-gold-400">{targetProfile.username}</h2>
 								{#if isOwnProfile && user?.email}
@@ -265,8 +262,8 @@
 
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<a
-								href={isOwnProfile 
-									? `/collection` 
+								href={isOwnProfile
+									? `/collection`
 									: `/collection?user=${encodeURIComponent(targetProfile.username)}`}
 								class="block p-6 bg-gray-800/60 rounded-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
 							>
@@ -280,8 +277,8 @@
 							</a>
 
 							<a
-								href={isOwnProfile 
-									? `/wishlist` 
+								href={isOwnProfile
+									? `/wishlist`
 									: `/wishlist?user=${encodeURIComponent(targetProfile.username)}`}
 								class="block p-6 bg-gray-800/60 rounded-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
 							>
@@ -293,7 +290,7 @@
 								</div>
 								<p class="text-sm text-gray-400 mt-2">Cards to be acquired</p>
 							</a>
-							
+
 							{#if isOwnProfile}
 								<a
 									href="/settings"
@@ -358,9 +355,9 @@
 									<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 										{#each getSortedSets() as [setName, setData], i}
 											{@const set = getSetByName(setName)}
-											<a 
-												href={isOwnProfile 
-													? `/collection?set=${encodeURIComponent(setName)}` 
+											<a
+												href={isOwnProfile
+													? `/collection?set=${encodeURIComponent(setName)}`
 													: `/collection?user=${encodeURIComponent(targetProfile.username)}&set=${encodeURIComponent(setName)}`}
 												class="block relative group"
 												title={`View ${isOwnProfile ? 'your' : targetProfile.username + "'s"} cards from ${setName}`}
@@ -415,12 +412,12 @@
 		0% { transform: rotate(0deg); }
 		100% { transform: rotate(360deg); }
 	}
-	
+
 	.loader-spin {
 		animation: spin 2s linear infinite;
 		display: inline-flex;
 	}
-	
+
 	:global(html) {
 		--gold-400: #fbc54a;
 	}
@@ -440,7 +437,7 @@
 	.animated-hover-button:not(:disabled):hover::before {
 		height: 100%;
 	}
-	
+
 	.animated-hover-button:disabled::before {
 		display: none;
 	}
