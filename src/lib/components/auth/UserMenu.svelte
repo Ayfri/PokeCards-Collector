@@ -104,7 +104,7 @@
 	>
 		{#if userProp && profileProp}
 			<span class="sr-only">Open user menu</span>
-			<Avatar username={profileProp.username} />
+			<Avatar username={profileProp.username} profileColor={profileProp.profile_color} />
 		{:else}
 			<span class="sr-only">Sign in</span>
 			<User size={24} />

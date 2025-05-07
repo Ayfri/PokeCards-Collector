@@ -66,12 +66,13 @@ export interface PokemonStats {
 }
 
 export interface UserProfile {
-	username: string;
 	auth_id: string;
 	avatar_url?: string;
-	is_public: boolean;
 	created_at: string;
+	is_public: boolean;
+	profile_color?: string;
 	updated_at: string;
+	username: string;
 }
 
 export interface UserCollection {

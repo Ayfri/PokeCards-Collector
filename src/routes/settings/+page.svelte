@@ -1,28 +1,42 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/state'; // Use $app/state
+	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import PageTitle from '$lib/components/PageTitle.svelte';
 	import Avatar from '$lib/components/auth/Avatar.svelte';
 	import { fly, fade } from 'svelte/transition';
-	import { browser } from '$app/environment'; // Import browser
-
-	// Removed authStore import
+	import { browser } from '$app/environment';
+	import { enhance } from '$app/forms';
 
 	let ready = false;
+	// Default gold color from Avatar.svelte, in case profile.profile_color is not set
+	const defaultProfileHexColor = '#fbc54a';
+	let profileColorInput: string = defaultProfileHexColor;
 
-	// Get user/profile reactively from page state
 	$: user = page.data.user;
 	$: profile = page.data.profile;
 
+	// Simpler reactive update for profileColorInput:
+	// It directly reflects profile.profile_color or defaults.
+	$: profileColorInput = (profile && profile.profile_color && typeof profile.profile_color === 'string' && profile.profile_color.startsWith('#'))
+							? profile.profile_color
+							: defaultProfileHexColor;
+
 	onMount(() => {
-		// Check directly if user data is available from the server load
-		if (browser && !user) {
-			// If no user data loaded from the server, redirect
+		// Initialize from page.data on mount, which might have been set by server load.
+		if (page.data.profile) {
+			profileColorInput = (page.data.profile.profile_color && typeof page.data.profile.profile_color === 'string' && page.data.profile.profile_color.startsWith('#'))
+								? page.data.profile.profile_color
+								: defaultProfileHexColor;
+		} else {
+			// If no profile on mount, ensure default is set (though already done at declaration)
+			profileColorInput = defaultProfileHexColor;
+		}
+
+		if (browser && !page.data.user) {
 			goto('/');
 		}
 		ready = true;
-		// No need for unsubscribe
 	});
 </script>
 
@@ -53,13 +67,13 @@
 				<!-- Settings Navigation -->
 				<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6">
 					<div class="flex items-center gap-4 mb-6">
-						<!-- Use reactive profile variable -->
-						<Avatar username={profile.username} size="size-12 text-xl" />
+						<!-- Use reactive profile variable and pass profile_color -->
+						<Avatar username={profile?.username || 'U'} size="size-12 text-xl" profileColor={profile?.profile_color} />
 						<div>
 							<!-- Use reactive profile variable -->
-							<h2 class="text-xl font-semibold text-gold-400">{profile.username}</h2>
+							<h2 class="text-xl font-semibold text-gold-400">{profile?.username}</h2>
 							<!-- Use reactive user variable -->
-							<p class="text-sm text-gray-400">{user.email}</p>
+							<p class="text-sm text-gray-400">{user?.email}</p>
 						</div>
 					</div>
 
@@ -80,7 +94,19 @@
 					<div id="account" class="mb-8">
 						<h2 class="text-xl font-semibold mb-4 text-gold-400">Account Settings</h2>
 
-						<div class="space-y-4">
+						<form
+							method="POST"
+							action="?/updateProfile"
+							use:enhance={() => {
+								return async ({ result }) => {
+									// After the form submission, if it's successful, reload the page.
+									if (result.type === 'success' && result.data?.success) {
+										window.location.reload();
+									}
+								};
+							}}
+							class="space-y-4"
+						>
 							<div>
 								<label class="block text-sm font-medium text-gray-300 mb-1" for="email">
 									Email
@@ -88,7 +114,7 @@
 								<input
 									id="email"
 									type="email"
-									value={user.email}
+									value={user?.email || ''}
 									disabled
 									class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800/60 text-gray-400"
 								/>
@@ -102,13 +128,46 @@
 								<input
 									id="username"
 									type="text"
-									value={profile.username}
+									value={profile?.username || ''}
 									disabled
 									class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800/60 text-gray-400"
 								/>
 								<p class="mt-1 text-xs text-gray-500">Username cannot be changed.</p>
 							</div>
-						</div>
+
+							<div>
+								<label class="block text-sm font-medium text-gray-300 mb-1" for="profileColor">
+									Profile Color (Hex)
+								</label>
+								<div class="flex items-center gap-2">
+									<input
+										id="profileColorInput"
+										name="profile_color"
+										type="color"
+										bind:value={profileColorInput}
+										class="p-1 h-10 w-14 block bg-gray-800/60 border border-gray-700 cursor-pointer rounded-lg disabled:opacity-50 disabled:pointer-events-none focus:border-gold-400 focus:ring-gold-400"
+										title="Choose your color"
+									/>
+									<input
+										id="profileColorText"
+										aria-label="Profile color hex value"
+										type="text"
+										bind:value={profileColorInput}
+										placeholder="#RRGGBB"
+										pattern={"^#[0-9A-Fa-f]{6}$"}
+										class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800/60 text-gray-300 focus:border-gold-400 focus:ring-gold-400"
+									/>
+								</div>
+								<p class="mt-1 text-xs text-gray-500">Choose your profile color or enter a hex value (e.g., #FF0000).</p>
+							</div>
+
+							<button
+								type="submit"
+								class="animated-hover-button relative overflow-hidden inline-flex items-center justify-center py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent transition-all duration-300 hover:text-black mt-2"
+							>
+								<span class="relative z-10">Save Profile Settings</span>
+							</button>
+						</form>
 					</div>
 
 					<div id="privacy" class="mb-8">
