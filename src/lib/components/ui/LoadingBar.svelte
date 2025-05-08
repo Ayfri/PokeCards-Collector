@@ -8,7 +8,7 @@
 
 {#if isLoading}
 	<div 
-		class="fixed top-0 left-0 w-full h-1 z-50" 
+		class="fixed top-0 left-0 w-full h-2 z-[9999]" 
 		in:fade={{ duration: 100 }} 
 		out:fade={{ duration: 200 }}
 	>
