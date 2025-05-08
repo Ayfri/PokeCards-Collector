@@ -169,8 +169,8 @@ const transformedCards = jpCardsData.map(card => {
 });
 
 try {
-  // Write the transformed data to a new file
-  const jsonOutput = JSON.stringify(transformedCards, null, 2);
+  // Write the transformed data to a new file in compact format (no indentation or whitespace)
+  const jsonOutput = JSON.stringify(transformedCards);
   writeFileSync('./src/assets/jp-cards-full.json', jsonOutput);
   console.log(`Converted ${transformedCards.length} Japanese cards to new format.`);
   
