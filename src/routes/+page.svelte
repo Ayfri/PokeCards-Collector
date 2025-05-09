@@ -126,7 +126,7 @@
 				<div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-10">
 					<a
 						href="/cards-list"
-						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-visible"
+						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-hidden"
 					>
 						{#if !NO_IMAGES}
 							<div class="flex justify-center mb-2">
@@ -134,11 +134,11 @@
 							</div>
 						{/if}
 						<div
-							class="flex items-center justify-between w-full px-2"
+							class="flex items-center justify-center w-full"
 						>
 							<ChevronRight
-								size={16}
-								class="text-gold-400"
+								size={12}
+								class="text-gold-400 flex-shrink-0 mr-1"
 								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 							<span
@@ -147,8 +147,8 @@
 								<CountUp end={stats.totalCards} duration={4} />
 							</span>
 							<ChevronLeft
-								size={16}
-								class="text-gold-400"
+								size={12}
+								class="text-gold-400 flex-shrink-0 ml-1"
 								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 						</div>
@@ -156,7 +156,7 @@
 					</a>
 					<a
 						href="/japan"
-						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-visible"
+						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-hidden"
 					>
 						{#if !NO_IMAGES}
 							<div class="flex justify-center mb-2">
@@ -164,11 +164,11 @@
 							</div>
 						{/if}
 						<div
-							class="flex items-center justify-between w-full px-2"
+							class="flex items-center justify-center w-full"
 						>
 							<ChevronRight
-								size={16}
-								class="text-gold-400"
+								size={12}
+								class="text-gold-400 flex-shrink-0 mr-1"
 								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 							<span
@@ -177,8 +177,8 @@
 								<CountUp end={23308} duration={4} />
 							</span>
 							<ChevronLeft
-								size={16}
-								class="text-gold-400"
+								size={12}
+								class="text-gold-400 flex-shrink-0 ml-1"
 								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 						</div>
@@ -194,11 +194,11 @@
 							</div>
 						{/if}
 						<div
-							class="flex items-center justify-between w-full px-2"
+							class="flex items-center justify-center w-full"
 						>
 							<ChevronRight
-								size={16}
-								class="text-gold-400"
+								size={12}
+								class="text-gold-400 flex-shrink-0 mr-1"
 								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 							<span
@@ -210,8 +210,8 @@
 								/>
 							</span>
 							<ChevronLeft
-								size={16}
-								class="text-gold-400"
+								size={12}
+								class="text-gold-400 flex-shrink-0 ml-1"
 								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 						</div>
@@ -227,11 +227,11 @@
 							</div>
 						{/if}
 						<div
-							class="flex items-center justify-between w-full px-2"
+							class="flex items-center justify-center w-full"
 						>
 							<ChevronRight
-								size={16}
-								class="text-gold-400"
+								size={12}
+								class="text-gold-400 flex-shrink-0 mr-1"
 								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 							<span
@@ -240,8 +240,8 @@
 								<CountUp end={sets.length} duration={2} />
 							</span>
 							<ChevronLeft
-								size={16}
-								class="text-gold-400"
+								size={12}
+								class="text-gold-400 flex-shrink-0 ml-1"
 								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 						</div>
@@ -260,11 +260,11 @@
 							</div>
 						{/if}
 						<div
-							class="flex items-center justify-between w-full px-2"
+							class="flex items-center justify-center w-full"
 						>
 							<ChevronRight
-								size={16}
-								class="text-gold-400"
+								size={12}
+								class="text-gold-400 flex-shrink-0 mr-1"
 								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 							<span
@@ -273,8 +273,8 @@
 								<CountUp end={artistsCount} duration={2.5} />
 							</span>
 							<ChevronLeft
-								size={16}
-								class="text-gold-400"
+								size={12}
+								class="text-gold-400 flex-shrink-0 ml-1"
 								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 						</div>
