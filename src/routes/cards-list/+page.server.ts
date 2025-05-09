@@ -2,7 +2,7 @@ import { getCards, getRarities, getSets, getTypes, getArtists, getPokemons, getP
 import type { FullCard } from '$lib/types'; // Import FullCard type
 import type { PageServerLoad } from './$types'; // Added import for type
 
-export const load: PageServerLoad = async ({ parent }) => {
+export const load: PageServerLoad = async ({ parent, url }) => {
 	// Get layout data which contains default SEO values
 	const layoutData = await parent();
 
@@ -36,11 +36,20 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// Trier les sets par ordre alphabétique
 	sets.sort((a, b) => a.name.localeCompare(b.name));
 
-	// Define page-specific SEO data (or use layout defaults if not specified)
-	const pageSeoData = {
-		title: 'All Pokémon Cards - PokéCards-Collector',
-		description: 'Browse all available Pokémon TCG cards.'
-	};
+	// Detect set filter in URL
+	const setParam = url.searchParams.get('set');
+	let ogImage = null;
+	let ogTitle = 'All Pokémon Cards - PokéCards-Collector';
+	let ogDescription = 'Browse all available Pokémon TCG cards.';
+
+	if (setParam) {
+		const set = sets.find(s => s.name.toLowerCase() === setParam.toLowerCase());
+		if (set) {
+			ogImage = { url: set.logo, alt: set.name };
+			ogTitle = `${set.name} - PokéCards-Collector`;
+			ogDescription = `Browse all cards from the set ${set.name}.`;
+		}
+	}
 
 	return {
 		...layoutData, // Start with layout data (including its SEO defaults)
@@ -58,6 +67,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 			trainerCards: trainerCards.length,
 			energyCards: energyCards.length,
 		},
-		...pageSeoData, // Override with page-specific SEO data
+		title: ogTitle,
+		description: ogDescription,
+		image: ogImage ?? layoutData.image,
 	};
 }
