@@ -84,7 +84,9 @@
 
 	// Update the displayed card and URL when a related card is selected
 	function handleCardSelect(selectedCard: FullCard) {
-		// Use goto instead of pushState to trigger a full navigation
+		// Update current card immediately for better UX
+		currentCard = selectedCard;
+		// Use goto to update the URL
 		goto(`${baseCardUrl}${selectedCard.cardCode}/`);
 	}
 
@@ -117,10 +119,10 @@
 		const urlParts = window.location.pathname.split('/');
 		const cardCodeFromUrl = urlParts[urlParts.length - 2]; // Extract cardCode from URL pattern /card/:cardCode/
 		
-		// Find matching card
-		const matchingCard = pokemonCards.find(card => card.cardCode === cardCodeFromUrl);
+		// Find matching card in all available cards
+		const matchingCard = allCards.find(card => card.cardCode === cardCodeFromUrl);
 		
-		// Only reset if we find a matching card and it's not already the current
+		// Only update if we find a matching card and it's different from current
 		if (matchingCard && matchingCard !== currentCard) {
 			currentCard = matchingCard;
 		} else if (!currentCard) {
