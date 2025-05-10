@@ -110,11 +110,8 @@ export const load: PageServerLoad = async ({ url, locals: { supabase, user, prof
 		}
 	}
 
-	// At the end, build Open Graph image (avatar if available, else fallback)
-	let ogImage = null;
-	if (targetProfile && targetProfile.avatar_url) {
-		ogImage = { url: targetProfile.avatar_url, alt: `${usernameToLoad}'s avatar` };
-	}
+	// At the end, always use favicon.png as Open Graph image
+	const ogImage = { url: '/favicon.png', alt: 'PokéCards-Collector logo' };
 
 	return {
 		allCards,
