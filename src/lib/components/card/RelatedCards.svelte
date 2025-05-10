@@ -7,6 +7,12 @@
 	import SortControl from '@components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '$lib/images';
 	import { findSetByCardCode } from '$helpers/set-utils';
+	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
+	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
+	import { collectionStore } from '$lib/stores/collection';
+	import { Heart, Minus, Plus } from 'lucide-svelte';
+	import { page } from '$app/state';
+	import { wishlistStore } from '$lib/stores/wishlist';
 
 	// --- Props ---
 	export let cards: FullCard[];
@@ -19,6 +25,23 @@
 	// --- Persistent Sorting State ---
 	const relatedSortBy = persistentWritable('related-cards-sort-by', 'sort-set');
 	const relatedSortOrder = persistentWritable<'asc' | 'desc'>('related-cards-sort-order', 'asc');
+
+	// --- Force reactivity for stores ---
+	$: _collection = $collectionStore;
+	$: _wishlist = $wishlistStore;
+
+	// --- User/Profile State ---
+	$: user = page.data.user;
+	$: profile = page.data.profile;
+
+	// --- Collection/Wishlist State ---
+	function getCollectionCount(cardCode: string) {
+		return $collectionStore.get(cardCode) || 0;
+	}
+	function isInWishlist(cardCode: string) {
+		return $wishlistStore.has(cardCode);
+	}
+	const MAX_CARD_QUANTITY = 99;
 
 	// --- Helper Functions ---
 	function getPokemon(pokemonNumber: number | undefined): Pokemon | undefined {
@@ -84,6 +107,34 @@
 	$: titleName = pokemon
 		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
 		: (sortedCards[0]?.name || 'Related'); // Fallback to first card name or generic term
+
+	// --- Actions ---
+	async function toggleWishlist(cardCode: string, event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		if (!user || !profile) return;
+		if (isInWishlist(cardCode)) {
+			await removeCardFromWishlist(profile.username, cardCode);
+		} else {
+			await addCardToWishlist(profile.username, cardCode);
+		}
+	}
+	async function handleAddCard(cardCode: string, event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		if (!user || !profile) return;
+		const count = getCollectionCount(cardCode);
+		if (count >= MAX_CARD_QUANTITY) return;
+		await addCardToCollection(profile.username, cardCode);
+	}
+	async function handleRemoveCard(cardCode: string, event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		if (!user || !profile) return;
+		const count = getCollectionCount(cardCode);
+		if (count === 0) return;
+		await removeCardFromCollection(profile.username, cardCode);
+	}
 </script>
 
 <div class="bg-gray-800/40 border-gold-400 border-2 rounded-2xl p-6 w-full">
@@ -121,27 +172,67 @@
 				>
 					<div class="relative rounded-lg overflow-hidden shadow-lg w-full" style="aspect-ratio: 63/88;">
 						{#if !NO_IMAGES}
-						<CardImage
-							imageUrl={card.image}
-							alt={cardPokemon ? cardPokemon.name : card.name}
-							class="card-image"
-							lazy={true}
-							highRes={false}
-						/>
+							<CardImage
+								imageUrl={card.image}
+								alt={cardPokemon ? cardPokemon.name : card.name}
+								class="card-image"
+								lazy={true}
+								highRes={false}
+							/>
 						{:else}
-						<div class="w-full h-full"></div>
+							<div class="w-full h-full"></div>
 						{/if}
 						{#if cardSet}
 							<div class="absolute bottom-1 right-1 bg-black/70 rounded-full p-0.5 border border-gold-400">
 								{#if !NO_IMAGES}
-								<img
-									src={cardSet.logo}
-									alt={cardSet.name}
-									class="w-[30px] h-[30px] md:w-[24px] md:h-[24px] object-contain"
-									title={cardSet.name}
-									loading="lazy"
-								/>
+									<img
+										src={cardSet.logo}
+										alt={cardSet.name}
+										class="w-[30px] h-[30px] md:w-[24px] md:h-[24px] object-contain"
+										title={cardSet.name}
+										loading="lazy"
+									/>
 								{/if}
+							</div>
+						{/if}
+						{#if user && profile}
+							<!-- Collection/Wishlist Actions -->
+							<div class="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/50 p-1">
+								{#if getCollectionCount(card.cardCode) > 0}
+									<button
+										aria-label="Remove one copy from collection"
+										class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+										on:click={(e) => handleRemoveCard(card.cardCode, e)}
+										disabled={getCollectionCount(card.cardCode) === 0}
+										title="Remove one copy from collection"
+									>
+										<Minus size={16} class="text-white" />
+									</button>
+									<span
+										class="text-sm font-semibold text-green-400 px-1 min-w-[1.5ch] text-center select-none"
+										title={`You have ${getCollectionCount(card.cardCode)} cop${getCollectionCount(card.cardCode) > 1 ? 'ies' : 'y'}`}
+									>
+										{getCollectionCount(card.cardCode)}
+									</span>
+								{/if}
+								<button
+									aria-label="Add one copy to collection"
+									class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+									on:click={(e) => handleAddCard(card.cardCode, e)}
+									disabled={getCollectionCount(card.cardCode) >= MAX_CARD_QUANTITY}
+									title={getCollectionCount(card.cardCode) >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
+								>
+									<Plus size={16} class={getCollectionCount(card.cardCode) > 0 ? 'text-green-400' : 'text-white'} />
+								</button>
+								<div class="w-px h-5 bg-white/30 mx-1"></div>
+								<button
+									aria-label={isInWishlist(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
+									class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+									on:click={(e) => toggleWishlist(card.cardCode, e)}
+									title={isInWishlist(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
+								>
+									<Heart size={16} class={isInWishlist(card.cardCode) ? 'text-red-500 fill-red-500' : 'text-white'} />
+								</button>
 							</div>
 						{/if}
 					</div>
