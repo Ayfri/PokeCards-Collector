@@ -2,7 +2,7 @@
 	import '~/app.css';
 	import "~/fonts/stylesheet.css";
 	import {onNavigate} from '$app/navigation';
-	import {page} from '$app/state';
+	import {page} from '$app/stores';
 	import {NO_IMAGES} from '$lib/images';
 	import Header from '@components/Header.svelte';
 	import LoadingBar from '$lib/components/ui/LoadingBar.svelte';
@@ -15,22 +15,19 @@
 	import type { UserWishlist, UserCollection } from '$lib/types';
 	import pokestore from '~/assets/pokecards-collector.png';
 
-	// Access all data from the page state
-	$: ({title, description, image, user, profile, wishlistItems, collectionItems} = page.data);
-
 	// Reactive statement to update stores when server data changes
 	$: {
 		// Update wishlist store
 		const wishlistSet = new Set<string>();
-		if (wishlistItems && Array.isArray(wishlistItems)) {
-			(wishlistItems as UserWishlist[]).forEach(item => wishlistSet.add(item.card_code));
+		if ($page.data.wishlistItems && Array.isArray($page.data.wishlistItems)) {
+			($page.data.wishlistItems as UserWishlist[]).forEach(item => wishlistSet.add(item.card_code));
 		}
 		wishlistStore.set(wishlistSet);
 
 		// Update collection store
 		const collectionMap = new Map<string, number>();
-		if (collectionItems && Array.isArray(collectionItems)) {
-			(collectionItems as UserCollection[]).forEach(item => {
+		if ($page.data.collectionItems && Array.isArray($page.data.collectionItems)) {
+			($page.data.collectionItems as UserCollection[]).forEach(item => {
 				const currentCount = collectionMap.get(item.card_code) || 0;
 				collectionMap.set(item.card_code, currentCount + 1);
 			});
@@ -127,7 +124,7 @@
 	<!-- End Cloudflare Web Analytics -->
 	<!-- <ViewTransitions fallback="animate"/> -->
 </svelte:head>
-<Seo {title} {description} {image} type={page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
+<Seo title={$page.data.title} description={$page.data.description} image={$page.data.image} type={$page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
 
 <div class="flex flex-col min-h-screen">
 	<LoadingBar />

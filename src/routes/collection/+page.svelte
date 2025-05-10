@@ -47,10 +47,8 @@
 </script>
 
 <svelte:head>
-	<!-- Use server-provided title/description -->
-	<title>{pageTitleDisplay}</title>
+	<!-- Use server-provided description only, title is managed by Seo -->
 	<meta name="description" content={description} />
-	<!-- Removed client-side reload script -->
 </svelte:head>
 
 <div class="flex flex-col flex-grow">

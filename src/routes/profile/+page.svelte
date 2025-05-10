@@ -129,8 +129,7 @@
 </script>
 
 <svelte:head>
-	<!-- Use server-provided title and description -->
-	<title>{pageTitle}</title>
+	<!-- Use server-provided description only, title is managed by Seo -->
 	<meta name="description" content={description} />
 </svelte:head>
 
