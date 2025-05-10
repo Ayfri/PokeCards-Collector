@@ -8,6 +8,12 @@ export const load: PageServerLoad = async ({ url, locals: { supabase, user, prof
 	const requestedUsername = url.searchParams.get('user');
 	const loggedInUsername = profile?.username ?? null; // Get logged-in user's username
 
+	// If not ?user=... and logged in, redirect to ?user=username
+	if (!requestedUsername && loggedInUsername) {
+		const correctUrl = `/profile?user=${encodeURIComponent(loggedInUsername)}`;
+		throw redirect(307, correctUrl);
+	}
+
 	// Load base data needed for stats
 	let allCards = await getCards();
 	let sets = await getSets();
@@ -104,6 +110,12 @@ export const load: PageServerLoad = async ({ url, locals: { supabase, user, prof
 		}
 	}
 
+	// At the end, build Open Graph image (avatar if available, else fallback)
+	let ogImage = null;
+	if (targetProfile && targetProfile.avatar_url) {
+		ogImage = { url: targetProfile.avatar_url, alt: `${usernameToLoad}'s avatar` };
+	}
+
 	return {
 		allCards,
 		sets,
@@ -114,6 +126,7 @@ export const load: PageServerLoad = async ({ url, locals: { supabase, user, prof
 		isOwnProfile,
 		loggedInUsername, // Pass the logged-in user's name
 		title,
-		description
+		description,
+		image: ogImage,
 	};
 }; 

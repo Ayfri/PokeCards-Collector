@@ -9,6 +9,12 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 	const requestedUsername = url.searchParams.get('user');
 	const loggedInUserProfile = locals.profile;
 
+	// If not ?user=... and logged in, redirect to ?user=username
+	if (!requestedUsername && loggedInUserProfile?.username) {
+		const correctUrl = `/collection?user=${encodeURIComponent(loggedInUserProfile.username)}`;
+		throw redirect(307, correctUrl);
+	}
+
 	// --- Always load base data --- 
 	const [allCards, pokemons, sets, rarities, types, prices, artists] = await Promise.all([
 		getCards(),
@@ -96,6 +102,12 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		}
 	}
 
+	// At the end, build Open Graph image (avatar if available, else fallback)
+	let ogImage = null;
+	if (targetProfile && targetProfile.avatar_url) {
+		ogImage = { url: targetProfile.avatar_url, alt: `${targetUsername}'s avatar` };
+	}
+
 	return {
 		// Base data
 		allCards, pokemons, sets, rarities, types, prices, artists,
@@ -106,5 +118,6 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		targetUsername, // The username whose collection is being viewed (could be logged-in user)
 		title,
 		description,
+		image: ogImage,
 	};
 }; 
