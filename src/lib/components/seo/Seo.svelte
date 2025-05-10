@@ -12,7 +12,10 @@
 	export let canonicalUrl: string | null = null;
 	export let type: 'WebSite' | 'WebPage' | 'Article' | 'Product' = 'WebPage'; // Default type
 
-	$: effectiveTitle = title === SITE_NAME ? SITE_NAME : `${title} - ${SITE_NAME}`;
+	$: effectiveTitle =
+		title.trim().toLowerCase().endsWith(SITE_NAME.toLowerCase())
+			? title.trim()
+			: `${title.trim()} - ${SITE_NAME}`;
 	$: effectiveCanonicalUrl = canonicalUrl ?? `${BASE_URL}${page.url.pathname}${page.url.search}`;
 
 	const jsonLd = {
