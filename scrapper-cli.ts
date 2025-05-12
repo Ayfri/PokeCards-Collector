@@ -9,7 +9,7 @@ import { fetchPokemons } from './src/scrappers/pokemon_scraper.ts';
 import { fetchPokemonTypes } from './src/scrappers/types_scraper.ts';
 import { fetchSets } from './src/scrappers/set_fetcher.ts';
 import { getCardMasks } from './src/scrappers/foil_scraper.ts';
-import { fetchTCGCollectorCards } from './src/scrappers/tcg_data_scraper.ts';
+import { fetchTCGCollectorCards } from './src/scrappers/jap_cards_scraper.ts';
 
 interface ScraperOption {
     name: string;
