@@ -263,7 +263,7 @@
 							<a
 								href={isOwnProfile
 									? `/collection`
-									: `/collection?user=${encodeURIComponent(targetProfile.username)}`}
+									: `/collection/${encodeURIComponent(targetProfile.username)}`}
 								class="block p-6 bg-gray-800/60 rounded-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
 							>
 								<div class="flex items-center gap-3">
@@ -357,7 +357,7 @@
 											<a
 												href={isOwnProfile
 													? `/collection?set=${encodeURIComponent(setName)}`
-													: `/collection?user=${encodeURIComponent(targetProfile.username)}&set=${encodeURIComponent(setName)}`}
+													: `/collection/${encodeURIComponent(targetProfile.username)}&set=${encodeURIComponent(setName)}`}
 												class="block relative group"
 												title={`View ${isOwnProfile ? 'your' : targetProfile.username + "'s"} cards from ${setName}`}
 											>

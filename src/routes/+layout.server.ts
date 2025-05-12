@@ -5,6 +5,8 @@ import { getUserCollection } from '$lib/services/collections';
 import type { UserWishlist } from '$lib/types';
 import type { UserCollection } from '$lib/types';
 
+export const ssr = false;
+
 export const load: LayoutServerLoad = async ({ locals }) => {
 	// Fetch global data needed for all pages (cards, sets, prices)
 	const [allCards, sets, prices] = await Promise.all([

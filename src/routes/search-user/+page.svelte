@@ -75,7 +75,7 @@
 
 	// Navigate to user profile
 	function viewProfile(username: string) {
-		goto(`/profile?user=${encodeURIComponent(username)}`);
+		goto(`/profile/${encodeURIComponent(username)}`);
 	}
 
 	// Initialize from URL parameters

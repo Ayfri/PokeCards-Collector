@@ -128,7 +128,7 @@
 				</div>
 				<div class="py-1">
 					<a
-						href={`/profile?user=${encodeURIComponent(profileProp.username)}`}
+						href={`/profile/${encodeURIComponent(profileProp.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
@@ -138,7 +138,7 @@
 						My profile
 					</a>
 					<a
-						href={`/collection?user=${encodeURIComponent(profileProp.username)}`}
+						href={`/collection/${encodeURIComponent(profileProp.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
@@ -148,7 +148,7 @@
 						My collection
 					</a>
 					<a
-						href={`/wishlist?user=${encodeURIComponent(profileProp.username)}`}
+						href={`/wishlist/${encodeURIComponent(profileProp.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
