@@ -2,10 +2,12 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
 	plugins: [sveltekit()],
 	build: {
 		minify: true,
+		chunkSizeWarningLimit: 1000,
+		sourcemap: mode !== 'production',
 	},
 	css: {
 		devSourcemap: true,
@@ -36,4 +38,4 @@ export default defineConfig({
 	ssr: {
 		noExternal: ['@popperjs/core']
 	}
-});
+}));
