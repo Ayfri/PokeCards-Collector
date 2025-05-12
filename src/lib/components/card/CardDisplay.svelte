@@ -359,7 +359,7 @@
 
 	/* Fixed background filter that covers the entire page */
 	.filter {
-		background-image: url(../../../particles.png);
+		background-image: url(/particles.png);
 		background-size: cover;
 		content: "";
 		filter: var(--filter);
