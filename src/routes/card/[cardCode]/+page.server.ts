@@ -1,7 +1,8 @@
 import { error } from '@sveltejs/kit';
-import { getCards, getPokemons, getPrices, getSets } from '$helpers/data';
-import type { FullCard, Pokemon, Set } from '$lib/types';
+import { getPokemons } from '$helpers/data';
+import type { FullCard, Pokemon } from '$lib/types';
 import type { PageServerLoad } from './$types';
+
 
 // --- Cache ---
 const MAX_CACHE_SIZE = 50;
@@ -22,6 +23,7 @@ function setCachedData(key: string, data: any): void {
 }
 
 export const load: PageServerLoad = async ({ params, parent }) => {
+	console.log(`[${new Date().toISOString()}] card/[cardCode]/+page.server.ts`);
 	const { cardCode } = params;
 	const layoutData = await parent(); // Get layout data (default SEO etc.)
 
@@ -35,12 +37,10 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	}
 
 	// Load all necessary data
-	const [allPokemons, allSets, allCards, allPrices] = await Promise.all([
-		getPokemons(),
-		getSets(),
-		getCards(),
-		getPrices(),
-	]);
+	const allPokemons = await getPokemons();
+	const allCards = layoutData.allCards;
+	const allPrices = layoutData.prices;
+	const allSets = layoutData.sets;
 
 	// Find the specific card by cardCode
 	const targetCard = allCards.find(c => c.cardCode === cardCode);
