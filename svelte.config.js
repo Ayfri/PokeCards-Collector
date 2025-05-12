@@ -8,7 +8,15 @@ const config = {
 		immutable: true,
 	},
 	kit: {
-		adapter: adapter(),
+		adapter: adapter({
+			// Configure the adapter to exclude images from route handling
+			routes: {
+				exclude: [
+					// Exclude static images - significantly reduces the number of routes
+					'**/images/cards/**'
+				]
+			}
+		}),
 		alias: {
 			'@components': 'src/lib/components/*',
 			'$helpers': 'src/lib/helpers/*',
