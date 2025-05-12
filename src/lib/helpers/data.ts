@@ -1,22 +1,23 @@
 import type { Card, FullCard, Pokemon, PriceData, Set } from "$lib/types";
-import pokemonCards from '~/assets/cards-full.json';
 import pokemons from '~/assets/pokemons-full.json';
 import holoCards from '~/assets/holo-cards.json';
 import pokemonSets from '~/assets/sets-full.json';
 import pokemonTypes from '~/assets/types.json';
 import prices from '~/assets/prices.json';
-import jpCards from '~/assets/jp-cards-full.json';
+import {PUBLIC_R2_BUCKET_URL} from '$env/static/public';
 
 export async function getPokemons(): Promise<Pokemon[]> {
 	return pokemons;
 }
 
 export async function getCards(): Promise<FullCard[]> {
-	return pokemonCards as FullCard[];
+	const cards = await fetch(`${PUBLIC_R2_BUCKET_URL}/cards-full.json`);
+	return cards.json();
 }
 
 export async function getJapaneseCards(): Promise<FullCard[]> {
-	return jpCards as FullCard[];
+	const jpCards = await fetch(`${PUBLIC_R2_BUCKET_URL}/jp-cards-full.json`);
+	return jpCards.json();
 }
 
 export async function getPrices(): Promise<Record<string, PriceData>> {
