@@ -7,10 +7,10 @@ export default defineConfig(({ mode }) => ({
 	build: {
 		minify: true,
 		chunkSizeWarningLimit: 1000,
-		sourcemap: mode !== 'production',
+		sourcemap: false,
 	},
 	css: {
-		devSourcemap: true,
+		devSourcemap: mode === 'development',
 	},
 	resolve: {
 		alias: {
