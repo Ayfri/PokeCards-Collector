@@ -9,6 +9,7 @@ import { fetchPokemons } from './src/scrappers/pokemon_scraper.ts';
 import { fetchPokemonTypes } from './src/scrappers/types_scraper.ts';
 import { fetchSets } from './src/scrappers/set_fetcher.ts';
 import { getCardMasks } from './src/scrappers/foil_scraper.ts';
+import { fetchTCGCollectorCards } from './src/scrappers/tcg_data_scraper.ts';
 
 interface ScraperOption {
     name: string;
@@ -21,6 +22,11 @@ const baseScrapers: ScraperOption[] = [
         name: 'cards',
         description: 'Fetch all Pokémon cards and prices from TCG API',
         action: fetchAndSaveAllCards
+    },
+    {
+        name: 'japanese-cards',
+        description: 'Scrape Japanese card data from tcgcollector.com',
+        action: fetchTCGCollectorCards
     },
     {
         name: 'download-images',
@@ -54,7 +60,8 @@ const baseScrapers: ScraperOption[] = [
     },
 ];
 
-baseScrapers.sort((a, b) => a.name.localeCompare(b.name));
+// Sort the scrapers by name (uncomment to sort)
+// baseScrapers.sort((a, b) => a.name.localeCompare(b.name));
 
 const scrapers: ScraperOption[] = [
     {
