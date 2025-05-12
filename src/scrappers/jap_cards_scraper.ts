@@ -9,7 +9,7 @@ const BASE_URL = `${CARD_BASE_URL}/cards/jp`;
 const HEADERS = {
 	'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 };
-const WORKERS = 8; // Number of workers for parallelization
+const WORKERS = 12; // Number of workers for parallelization
 const DEBUG_MODE = false; // Set to true to scrape only one page
 
 // Load Pokémon data
@@ -323,7 +323,7 @@ export async function fetchTCGCollectorCards() {
 		const avgPageTime = elapsed / page;
 		const estRemaining = avgPageTime * remainingPages;
 		console.log(`Elapsed: ${formatTime(elapsed)} | Est. remaining: ${formatTime(estRemaining)}`);
-		await fs.writeFile(path.join('src/assets', 'jp-cards-full.json'), JSON.stringify(allFinalCards, null, 2), 'utf-8');
+		await fs.writeFile(path.join('src/assets', 'jp-cards-full.json'), JSON.stringify(allFinalCards, null, 0), 'utf-8');
 		if (DEBUG_MODE) {
 			console.log('DEBUG_MODE active : stop after first page.');
 			break;
