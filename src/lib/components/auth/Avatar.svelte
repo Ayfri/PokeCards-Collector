@@ -26,7 +26,7 @@
 
 		if (profileColor && /^#[0-9A-Fa-f]{6}$/.test(profileColor)) {
 			startColor = profileColor;
-			endColor = darkenHexColor(profileColor, 30); // Darken by 30%
+			endColor = darkenHexColor(profileColor, 45); // Accentue le dégradé (plus foncé)
 		}
 		return `background-image: linear-gradient(to bottom right, ${startColor}, ${endColor});`;
 	})();
