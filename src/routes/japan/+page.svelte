@@ -104,12 +104,6 @@
 </script>
 
 <main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
-	<div class="p-4 flex justify-end">
-		<a href="/cards-list" class="text-gold-400 hover:text-gold-300 transition-colors flex items-center gap-2">
-			<CardStackIcon size={16} />
-			View International Cards
-		</a>
-	</div>
 	<CardGrid cards={allCards} {sets} {rarities} {types} {artists} {pokemons} {prices} pageTitle="Japanese Cards" />
 </main>
 
