@@ -179,7 +179,7 @@
 				onSuccess?.();
 
 				// Navigate to home - SSR should pick up the new session from cookies
-				await goto('/', { invalidateAll: true }); // invalidateAll helps ensure layout re-runs
+				window.location.href = '/'; // Force full reload for session
 
 			} catch (fetchError) {
 				clearTimeout(registerTimeout);
