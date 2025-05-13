@@ -1,3 +1,3 @@
 User-agent: *
 Allow: /
-Sitemap: https://pokecards-collector.ayfri.com/sitemap.xml
+Sitemap: https://pokecards-collector.pages.dev/sitemap.xml

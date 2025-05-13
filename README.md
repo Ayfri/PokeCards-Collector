@@ -20,7 +20,7 @@ PokéCards-Collector is a comprehensive web application built with SvelteKit and
 
 ### 📸 Website
 
-Check out the live website [here](https://pokecards-collector.ayfri.com).
+Check out the live website [here](https://pokecards-collector.pages.dev).
 
 ![Demo Screenshot](./pokecards-collector.png)
 
