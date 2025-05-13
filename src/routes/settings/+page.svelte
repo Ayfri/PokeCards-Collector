@@ -9,6 +9,8 @@
 	import { enhance } from '$app/forms';
 	// @ts-expect-error: No types for svelte-color-picker
 	import {HsvPicker} from 'svelte-color-picker';
+	import Button from '@components/filters/Button.svelte';
+	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
 
 	let ready = false;
 	// Default gold color from Avatar.svelte, in case profile.profile_color is not set
@@ -201,6 +203,14 @@
 										pattern={"^#[0-9A-Fa-f]{6}$"}
 										class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800/60 text-gray-300 focus:border-gold-400 focus:ring-gold-400"
 									/>
+									<!-- Bouton reset -->
+									<Button
+										onClick={() => profileColorInput = defaultProfileHexColor}
+										class="ml-2"
+										disabled={profileColorInput === defaultProfileHexColor}
+									>
+										<RotateCcwIcon size={16} />
+									</Button>
 								</div>
 								<p class="mt-1 text-xs text-gray-500">Choose your profile color or enter a hex value (e.g., #FF0000).</p>
 							</div>
