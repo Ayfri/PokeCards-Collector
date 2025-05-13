@@ -26,6 +26,13 @@ export const POST: RequestHandler = async ({ request }) => {
 			}, { status: 400 });
 		}
 
+		if (username.length > 20) {
+			return json({
+				success: false,
+				error: 'Username cannot exceed 20 characters'
+			}, { status: 400 });
+		}
+
 		const normalizedUsername = username.toLowerCase();
 
 		// 2. Initialiser le client Supabase admin
