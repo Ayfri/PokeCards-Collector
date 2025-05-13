@@ -19,7 +19,8 @@
 		"fast-average-color-node": "^3.1.0",
 		"lucide-svelte": "^0.485.0",
 		"sharp": "^0.33.5",
-		"svelte": "^4.2.19"
+		"svelte": "^4.2.19",
+		"svelte-color-picker": "^1.0.7"
 	},
 	"devDependencies": {
 		"@inquirer/prompts": "^7.4.0",

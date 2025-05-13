@@ -7,11 +7,15 @@
 	import { fly, fade } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import { enhance } from '$app/forms';
+	// @ts-expect-error: No types for svelte-color-picker
+	import {HsvPicker} from 'svelte-color-picker';
 
 	let ready = false;
 	// Default gold color from Avatar.svelte, in case profile.profile_color is not set
 	const defaultProfileHexColor = '#fbc54a';
 	let profileColorInput: string = defaultProfileHexColor;
+	let showColorPicker = false;
+	let colorPickerRef: HTMLDivElement | null = null;
 
 	$: user = page.data.user;
 	$: profile = page.data.profile;
@@ -38,6 +42,36 @@
 		}
 		ready = true;
 	});
+
+	function rgbToHex(r: number, g: number, b: number): string {
+		const toHex = (v: number) => v.toString(16).padStart(2, '0');
+		return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+	}
+
+	function colorCallback(e: any) {
+		const { r, g, b } = e.detail;
+		const hex = rgbToHex(r, g, b);
+		profileColorInput = hex;
+	}
+
+	function openColorPicker() {
+		showColorPicker = true;
+	}
+	function closeColorPicker() {
+		showColorPicker = false;
+	}
+
+	function handleClickOutside(event: MouseEvent) {
+		if (colorPickerRef && !colorPickerRef.contains(event.target as Node)) {
+			closeColorPicker();
+		}
+	}
+
+	$: if (showColorPicker) {
+		window.addEventListener('mousedown', handleClickOutside);
+	} else {
+		window.removeEventListener('mousedown', handleClickOutside);
+	}
 </script>
 
 <main class="container mx-auto px-4 pb-8 text-white overflow-x-hidden">
@@ -139,15 +173,25 @@
 								<label class="block text-sm font-medium text-gray-300 mb-1" for="profileColor">
 									Profile Color (Hex)
 								</label>
-								<div class="flex items-center gap-2">
-									<input
-										id="profileColorInput"
-										name="profile_color"
-										type="color"
-										bind:value={profileColorInput}
-										class="p-1 h-10 w-14 block bg-gray-800/60 border border-gray-700 cursor-pointer rounded-lg disabled:opacity-50 disabled:pointer-events-none focus:border-gold-400 focus:ring-gold-400"
-										title="Choose your color"
-									/>
+								<div class="flex items-center gap-3">
+									<!-- Swatch bouton -->
+									<button type="button"
+										class="w-10 h-10 rounded-full border flex-shrink-0 focus:outline-none"
+										style={`background: ${profileColorInput}`}
+										on:click={openColorPicker}
+										title="Change color"
+									></button>
+									<!-- Popover color picker -->
+									{#if showColorPicker}
+										<div bind:this={colorPickerRef} class="absolute z-50 mt-2 bg-gray-900 p-4 rounded-lg shadow-lg border border-gold-400">
+											<div class="flex justify-end mb-2">
+												<button type="button" class="text-gray-400 hover:text-gold-400 text-xl font-bold" on:click={closeColorPicker}>&times;</button>
+											</div>
+											<HsvPicker on:colorChange={colorCallback} startColor={profileColorInput} />
+										</div>
+									{/if}
+									<!-- Champ caché pour le submit -->
+									<input type="hidden" name="profile_color" bind:value={profileColorInput} />
 									<input
 										id="profileColorText"
 										aria-label="Profile color hex value"
