@@ -35,6 +35,14 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const normalizedUsername = username.toLowerCase();
 
+		// Password strength validation
+		if (typeof password !== 'string' || password.length < 8 || !/[0-9]/.test(password) || !/[^a-zA-Z0-9]/.test(password)) {
+			return json({
+				success: false,
+				error: 'Password must be at least 8 characters long and include at least one number and one special character'
+			}, { status: 400 });
+		}
+
 		// 2. Initialiser le client Supabase admin
 		const supabaseUrl = PUBLIC_SUPABASE_URL;
 		const supabaseServiceKey = PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
