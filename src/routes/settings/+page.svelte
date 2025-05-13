@@ -102,7 +102,7 @@
 				<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6">
 					<div class="flex items-center gap-4 mb-6">
 						<!-- Use reactive profile variable and pass profile_color -->
-						<Avatar username={profile?.username || 'U'} size="size-12 text-xl" profileColor={profile?.profile_color} />
+						<Avatar username={profile?.username || 'U'} size="size-12 text-xl" profileColor={profileColorInput} />
 						<div>
 							<!-- Use reactive profile variable -->
 							<h2 class="text-xl font-semibold text-gold-400">{profile?.username}</h2>
