@@ -52,6 +52,10 @@
 				!e.metaKey &&
 				!e.shiftKey
 			) {
+				// Prevent loading bar for hash-only navigation (same path, any hash)
+				if (link.pathname === window.location.pathname && link.hash) {
+					return;
+				}
 				setNavigationLoading(true);
 			}
 		};
