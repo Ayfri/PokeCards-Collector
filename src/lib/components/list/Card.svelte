@@ -13,6 +13,8 @@
 	import { findSetByCardCode } from '$lib/helpers/set-utils';
 	import { Plus, Minus } from 'lucide-svelte';
 	import { fly } from 'svelte/transition';
+	import Button from '@components/filters/Button.svelte';
+	import CardStackIcon from 'lucide-svelte/icons/layers';
 
 	export let card: FullCard;
 	export let pokemons: Pokemon[];
@@ -206,6 +208,23 @@
 				width={width}
 				height={height}
 			/>
+
+			{#if set && set.name && set.name !== 'Unknown Set'}
+				<a href={`/cards-list?set=${encodeURIComponent(set.name)}`} class="absolute bottom-2 left-2 z-10" on:click|stopPropagation aria-label={`View all cards from set ${set.name}`} tabindex="-1">
+					<button
+						class="p-1 bg-black/50 border border-white/70 rounded-full hover:bg-white/20 transition-colors w-8 h-8 flex items-center justify-center"
+						tabindex="-1"
+						type="button"
+						on:click|stopPropagation
+					>
+						{#if 'logo' in set && set.logo}
+							<img src={set.logo} alt={set.name} class="w-6 h-6 object-contain" />
+						{:else}
+							<CardStackIcon size={20} />
+						{/if}
+					</button>
+				</a>
+			{/if}
 		</div>
 		<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-sm rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
 			<h2 class="text-center font-bold text-md lg:text-lg text-pretty leading-none flex flex-wrap gap-x-2 items-center justify-center">
@@ -215,7 +234,7 @@
 				{/if}
 				<span class="text-sm opacity-85"> #{cardNumber}/{set?.printedTotal || '?'}</span>
 			</h2>
-			<div class="flex items-center justify-center">
+			<div class="flex items-center justify-center gap-2 mt-1">
 				{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
 					<a
 						href={card.cardMarketUrl}
