@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import { filterSet, filterArtist, filterSupertype, filterName, filterType, sortBy, sortOrder, mostExpensiveOnly, filterRarity, resetFilters } from '$lib/helpers/filters';
 	import { page } from '$app/state';
-	import CardStackIcon from 'lucide-svelte/icons/layers';
+	import { get } from 'svelte/store';
 
 	export let data: PageData;
 
@@ -33,18 +33,18 @@
 		if (setParam || artistParam || typeParam || nameParam || pokemonTypeParam || sortByParam || sortOrderParam || mostExpensiveParam || rarityParam) {
 			// Puis appliquer les filtres spécifiques depuis l'URL
 			if (setParam) {
-				const decodedSetParam = decodeURIComponent(setParam);
-				const setExists = sets.some(set => set.name === decodedSetParam);
-				if (setExists) {
-					filterSet.set(decodedSetParam.toLowerCase());
+				const decodedSetParam = decodeURIComponent(setParam).toLowerCase();
+				const foundSet = sets.find(set => set.name.toLowerCase() === decodedSetParam);
+				if (foundSet) {
+					filterSet.set(foundSet.name.toLowerCase());
 				}
 			}
 
 			if (artistParam) {
-				const decodedArtistParam = decodeURIComponent(artistParam);
-				const artistExists = artists.some(artist => artist.toLowerCase() === decodedArtistParam.toLowerCase());
-				if (artistExists) {
-					filterArtist.set(decodedArtistParam.toLowerCase());
+				const decodedArtistParam = decodeURIComponent(artistParam).toLowerCase();
+				const foundArtist = artists.find(artist => artist.toLowerCase() === decodedArtistParam);
+				if (foundArtist) {
+					filterArtist.set(foundArtist.toLowerCase());
 				}
 			}
 
@@ -99,10 +99,13 @@
 			}
 		}
 	});
+
+	$: selectedSetName = $filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null;
+	$: selectedArtistName = $filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null;
 </script>
 
 <main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
-	<CardGrid cards={allCards} {sets} {rarities} {types} {artists} {pokemons} {prices} pageTitle="Japanese Cards" />
+	<CardGrid cards={allCards} {sets} {rarities} {types} {artists} {pokemons} {prices} pageTitle="Japanese Cards" selectedSetName={selectedSetName} selectedArtistName={selectedArtistName} />
 </main>
 
 <style>

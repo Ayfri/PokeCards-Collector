@@ -47,6 +47,8 @@
 	export let artists: string[] = [];
 	export let pageTitle: string | null = "Card List";
 	export let disableLoader: boolean = false;
+	export let selectedSetName: string | null = null;
+	export let selectedArtistName: string | null = null;
 
 	let clientWidth: number = 0;
 	let showFilters = false;
@@ -499,6 +501,16 @@
 			>
 				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
 			</span>
+			{#if selectedSetName || selectedArtistName}
+				<div class="flex flex-wrap gap-2 items-center ml-3">
+					{#if selectedSetName}
+						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-white font-normal text-xs">Set: {selectedSetName}</span>
+					{/if}
+					{#if selectedArtistName}
+						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-white font-normal text-xs">Artist: {selectedArtistName}</span>
+					{/if}
+				</div>
+			{/if}
 		</div>
 
 		<!-- Right Side (Controls) -->
