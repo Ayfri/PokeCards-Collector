@@ -8,7 +8,7 @@ export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 
 	const { data: profileData, error } = await supabase
 		.from('profiles')
-		.select(`auth_id, username, avatar_url, profile_color, is_public, created_at, updated_at`)
+		.select(`auth_id, username, profile_color, is_public, created_at, updated_at`)
 		.eq('auth_id', user.id)
 		.single();
 

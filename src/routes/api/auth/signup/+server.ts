@@ -205,7 +205,6 @@ export const POST: RequestHandler = async ({ request }) => {
 				username: normalizedUsername,
 				auth_id: authData.user.id,
 				is_public: true,
-				avatar_url: null,
 				created_at: new Date().toISOString(),
 				updated_at: new Date().toISOString()
 			};

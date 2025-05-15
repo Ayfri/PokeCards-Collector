@@ -67,7 +67,6 @@ export interface PokemonStats {
 
 export interface UserProfile {
 	auth_id: string;
-	avatar_url?: string;
 	created_at: string;
 	is_public: boolean;
 	profile_color?: string;

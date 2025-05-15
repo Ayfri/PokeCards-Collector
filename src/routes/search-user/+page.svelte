@@ -11,7 +11,6 @@
 	let searchResults: Array<{
 		auth_id: string;
 		username: string;
-		avatar_url: string | null;
 		is_public: boolean;
 		profile_color: string | null;
 	}> = [];

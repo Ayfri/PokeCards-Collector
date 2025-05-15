@@ -145,7 +145,7 @@ export async function searchUsers(query: string, limit: number = 10) {
 
 		const { data, error } = await supabase
 			.from('profiles')
-			.select('username, avatar_url, is_public, auth_id, profile_color')
+			.select('username, is_public, auth_id, profile_color')
 			.ilike('username', `%${normalizedQuery}%`)
 			.limit(limit);
 
