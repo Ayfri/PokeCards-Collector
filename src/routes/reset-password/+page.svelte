@@ -11,6 +11,19 @@ let errorMessage = '';
 let successMessage = '';
 let token = '';
 let type = '';
+let passwordStrength = 0;
+let passwordCriteria = {
+	length: false,
+	digit: false,
+	special: false
+};
+
+$: {
+	passwordCriteria.length = password.length >= 8;
+	passwordCriteria.digit = /[0-9]/.test(password);
+	passwordCriteria.special = /[^a-zA-Z0-9]/.test(password);
+	passwordStrength = [passwordCriteria.length, passwordCriteria.digit, passwordCriteria.special].filter(Boolean).length;
+}
 
 // Get token from URL or hash
 onMount(() => {
@@ -42,8 +55,8 @@ async function handleReset() {
 		errorMessage = 'Passwords do not match.';
 		return;
 	}
-	if (password.length < 8) {
-		errorMessage = 'Password must be at least 8 characters.';
+	if (!passwordCriteria.length || !passwordCriteria.digit || !passwordCriteria.special) {
+		errorMessage = 'Password must be at least 8 characters long and include at least one number and one special character.';
 		return;
 	}
 	loading = true;
@@ -78,6 +91,17 @@ async function handleReset() {
 				required
 				minlength="8"
 			/>
+			<!-- Password strength bar -->
+			<div class="mt-2 h-2 w-full bg-gray-200 dark:bg-gray-700 rounded">
+				<div class="h-2 rounded transition-all duration-300 {passwordStrength === 1 ? 'bg-red-500' : passwordStrength === 2 ? 'bg-yellow-400' : passwordStrength === 3 ? 'bg-green-500' : 'bg-gray-200'}"
+					style="width: {passwordStrength * 33.33}%">
+				</div>
+			</div>
+			<ul class="mt-1 text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+				<li class={passwordCriteria.length ? 'text-green-600 dark:text-green-400' : ''}>• At least 8 characters</li>
+				<li class={passwordCriteria.digit ? 'text-green-600 dark:text-green-400' : ''}>• At least one number</li>
+				<li class={passwordCriteria.special ? 'text-green-600 dark:text-green-400' : ''}>• At least one special character</li>
+			</ul>
 		</div>
 		<div>
 			<label for="confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm new password</label>
