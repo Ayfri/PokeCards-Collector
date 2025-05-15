@@ -1,4 +1,3 @@
-import axios from 'axios';
 import * as cheerio from 'cheerio';
 import fs from 'fs/promises';
 import path from 'path';
@@ -153,8 +152,9 @@ function sleep(ms: number) {
 
 async function getMaxPages(params: Record<string, string | number>): Promise<number> {
 	const url = `${BASE_URL}?${new URLSearchParams(params as any).toString()}`;
-	const res = await axios.get(url, { headers: HEADERS });
-	const $ = cheerio.load(res.data);
+	const res = await fetch(url, { headers: HEADERS });
+	const html = await res.text();
+	const $ = cheerio.load(html);
 	const paginationContainer = $('ul#card-search-result-pagination');
 	if (paginationContainer.length) {
 		const lastPageItem = paginationContainer.find('li.pagination-item-last a');
@@ -186,16 +186,18 @@ async function getCardUrls(params: Record<string, string | number>, pageNum: num
 	const pageParams = { ...params };
 	if (pageNum > 1) pageParams['page'] = pageNum;
 	const url = `${BASE_URL}?${new URLSearchParams(pageParams as any).toString()}`;
-	const res = await axios.get(url, { headers: HEADERS });
-	const $ = cheerio.load(res.data);
+	const res = await fetch(url, { headers: HEADERS });
+	const html = await res.text();
+	const $ = cheerio.load(html);
 	const cardLinks = $('a.card-image-grid-item-link');
 	return cardLinks.map((_: unknown, el: any) => CARD_BASE_URL + ($(el).attr('href') ?? '')).get();
 }
 
 async function scrapeCardData(url: string): Promise<Card | null> {
 	try {
-		const res = await axios.get(url, { headers: HEADERS });
-		const $ = cheerio.load(res.data);
+		const res = await fetch(url, { headers: HEADERS });
+		const html = await res.text();
+		const $ = cheerio.load(html);
 		const card: Card = {
 			url,
 			image_url: '',
