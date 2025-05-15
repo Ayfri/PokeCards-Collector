@@ -1,4 +1,4 @@
-import * as cheerio from 'cheerio';
+import { parse, HTMLElement } from 'node-html-parser';
 import fs from 'fs/promises';
 import path from 'path';
 import { readFileSync } from 'fs';
@@ -154,24 +154,24 @@ async function getMaxPages(params: Record<string, string | number>): Promise<num
 	const url = `${BASE_URL}?${new URLSearchParams(params as any).toString()}`;
 	const res = await fetch(url, { headers: HEADERS });
 	const html = await res.text();
-	const $ = cheerio.load(html);
-	const paginationContainer = $('ul#card-search-result-pagination');
-	if (paginationContainer.length) {
-		const lastPageItem = paginationContainer.find('li.pagination-item-last a');
-		if (lastPageItem.length && /^\d+$/.test(lastPageItem.text().trim())) {
-			return parseInt(lastPageItem.text().trim(), 10);
+	const root = parse(html);
+	const paginationContainer = root.querySelector('ul#card-search-result-pagination');
+	if (paginationContainer) {
+		const lastPageItem = paginationContainer.querySelector('li.pagination-item-last a');
+		if (lastPageItem && /^\d+$/.test(lastPageItem.text.trim())) {
+			return parseInt(lastPageItem.text.trim(), 10);
 		}
 		let maxPage = 1;
-		paginationContainer.find('li.pagination-item').each((_, el: any) => {
-			const text = $(el).text().trim();
+		paginationContainer.querySelectorAll('li.pagination-item').forEach((el: HTMLElement) => {
+			const text = el.text.trim();
 			const num = parseInt(text, 10);
 			if (!isNaN(num)) maxPage = Math.max(maxPage, num);
 		});
 		if (maxPage > 1) return maxPage;
 	}
-	const itemCountDiv = $('div.results-count');
-	if (itemCountDiv.length) {
-		const countText = itemCountDiv.text().trim();
+	const itemCountDiv = root.querySelector('div.results-count');
+	if (itemCountDiv) {
+		const countText = itemCountDiv.text.trim();
 		const match = countText.match(/of\s+(\d+)\s+items?/i);
 		if (match) {
 			const totalItems = parseInt(match[1], 10);
@@ -188,16 +188,16 @@ async function getCardUrls(params: Record<string, string | number>, pageNum: num
 	const url = `${BASE_URL}?${new URLSearchParams(pageParams as any).toString()}`;
 	const res = await fetch(url, { headers: HEADERS });
 	const html = await res.text();
-	const $ = cheerio.load(html);
-	const cardLinks = $('a.card-image-grid-item-link');
-	return cardLinks.map((_: unknown, el: any) => CARD_BASE_URL + ($(el).attr('href') ?? '')).get();
+	const root = parse(html);
+	const cardLinks = root.querySelectorAll('a.card-image-grid-item-link');
+	return cardLinks.map((el: HTMLElement) => CARD_BASE_URL + (el.getAttribute('href') ?? ''));
 }
 
 async function scrapeCardData(url: string): Promise<Card | null> {
 	try {
 		const res = await fetch(url, { headers: HEADERS });
 		const html = await res.text();
-		const $ = cheerio.load(html);
+		const root = parse(html);
 		const card: Card = {
 			url,
 			image_url: '',
@@ -211,62 +211,71 @@ async function scrapeCardData(url: string): Promise<Card | null> {
 			illustrator: '',
 			price: ''
 		};
-		const imageContainer = $('#card-image-container');
-		if (imageContainer.length && imageContainer.find('img').length) {
-			card.image_url = imageContainer.find('img').attr('src') ?? '';
+		const imageContainer = root.querySelector('#card-image-container');
+		if (imageContainer && imageContainer.querySelector('img')) {
+			card.image_url = imageContainer.querySelector('img')?.getAttribute('src') ?? '';
 		}
-		const titleElement = $('#card-info-title');
-		if (titleElement.length && titleElement.find('a').length) {
-			card.name = titleElement.find('a').text().trim();
+		const titleElement = root.querySelector('#card-info-title');
+		if (titleElement && titleElement.querySelector('a')) {
+			card.name = titleElement.querySelector('a')?.text.trim() ?? '';
 		}
-		const cardTypeContainer = $('.card-type-container');
-		if (cardTypeContainer.length) {
-			card.card_type = cardTypeContainer.text().trim();
+		const cardTypeContainer = root.querySelector('.card-type-container');
+		if (cardTypeContainer) {
+			card.card_type = cardTypeContainer.text.trim();
 		}
-		const energyTypeSymbol = $('.energy-type-symbol');
-		if (energyTypeSymbol.length && energyTypeSymbol.attr('title')) {
-			card.pokemon_type = energyTypeSymbol.attr('title') ?? '';
+		const energyTypeSymbol = root.querySelector('.energy-type-symbol');
+		if (energyTypeSymbol && energyTypeSymbol.getAttribute('title')) {
+			card.pokemon_type = energyTypeSymbol.getAttribute('title') ?? '';
 		}
-		const setNameElement = $('#card-info-footer-item-text-part-expansion-name');
-		if (setNameElement.length) {
-			card.set_name = setNameElement.text().trim();
+		const setNameElement = root.querySelector('#card-info-footer-item-text-part-expansion-name');
+		if (setNameElement) {
+			card.set_name = setNameElement.text.trim();
 		}
-		const setCodeElement = $('#card-info-footer-item-text-part-expansion-code');
-		if (setCodeElement.length) {
-			card.set_code = setCodeElement.text().trim();
+		const setCodeElement = root.querySelector('#card-info-footer-item-text-part-expansion-code');
+		if (setCodeElement) {
+			card.set_code = setCodeElement.text.trim();
 		}
-		const footerItems = $('.card-info-footer-item-text-part');
-		footerItems.each((_: unknown, el: any) => {
-			const text = $(el).text().trim();
+		const footerItems = root.querySelectorAll('.card-info-footer-item-text-part');
+		footerItems.forEach((el: HTMLElement) => {
+			const text = el.text.trim();
 			if (/\d+\/\d+/.test(text)) {
 				card.card_number = text;
 			}
 		});
-		const rarityLink = $("a.card-info-footer-item-text-part[href*='rarities=']");
-		if (rarityLink.length) {
-			card.rarity = rarityLink.text().trim();
+		const rarityLink = root.querySelector("a.card-info-footer-item-text-part[href*='rarities=']");
+		if (rarityLink) {
+			card.rarity = rarityLink.text.trim();
 		} else {
-			footerItems.each((_: unknown, el: any) => {
-				const text = $(el).text();
+			footerItems.forEach((el: HTMLElement) => {
+				const text = el.text;
 				if (text.includes('Rarity:')) {
 					card.rarity = text.replace('Rarity:', '').trim();
 				}
 			});
 		}
-		const illustratorTitleDiv = $("div.card-info-footer-item-title:contains('Illustrators')");
-		if (illustratorTitleDiv.length && illustratorTitleDiv.parent().find("a[href*='illustrator=']").length) {
-			card.illustrator = illustratorTitleDiv.parent().find("a[href*='illustrator=']").text().trim();
+
+		const illustratorTitleDiv = Array.from(root.querySelectorAll("div.card-info-footer-item-title"))
+			.find(div => div.text.includes('Illustrators'));
+
+		if (illustratorTitleDiv) {
+			const illustratorLink = illustratorTitleDiv.parentNode.querySelector("a[href*='illustrator=']");
+			if (illustratorLink) {
+				card.illustrator = illustratorLink.text.trim();
+			}
 		} else {
-			footerItems.each((_: unknown, el: any) => {
-				const item = $(el);
-				if (item.text().includes('Illus') && item.find('a').length) {
-					card.illustrator = item.find('a').text().trim();
+			footerItems.forEach((el: HTMLElement) => {
+				const itemText = el.text;
+				if (itemText.includes('Illus')) {
+					const link = el.querySelector('a');
+					if (link) {
+						card.illustrator = link.text.trim();
+					}
 				}
 			});
 		}
-		const priceButton = $("button.card-price-details-modal-show-button");
-		if (priceButton.length) {
-			const priceText = priceButton.text().trim();
+		const priceButton = root.querySelector("button.card-price-details-modal-show-button");
+		if (priceButton) {
+			const priceText = priceButton.text.trim();
 			const priceMatch = priceText.match(/(\$\d+\.\d+|\$\d+)/);
 			if (priceMatch) {
 				card.price = priceMatch[1];
