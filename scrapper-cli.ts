@@ -11,6 +11,7 @@ import { fetchSets } from './src/scrappers/set_fetcher';
 import { getCardMasks } from './src/scrappers/foil_scraper';
 import { fetchTCGCollectorCards } from './src/scrappers/jap_cards_scraper';
 import { createInterface } from 'node:readline/promises'
+import { fetchJapaneseSets } from './src/scrappers/jap_sets_scraper';
 
 interface ScraperOption {
     name: string;
@@ -30,9 +31,24 @@ const baseScrapers: ScraperOption[] = [
         action: fetchTCGCollectorCards
     },
     {
+        name: 'sets',
+        description: 'Fetch all card sets from TCG API',
+        action: fetchSets
+    },
+    {
+        name: 'japanese-sets',
+        description: 'Fetch all card sets from jp-cards-full.json',
+        action: fetchJapaneseSets
+    },
+    {
         name: 'download-images',
         description: 'Download low-res card images based on cards.json',
         action: downloadAllImages
+    },
+    {
+        name: 'pokemons',
+        description: 'Fetch all Pokémon data from PokéAPI',
+        action: fetchPokemons
     },
     {
         name: 'foil',
@@ -43,16 +59,6 @@ const baseScrapers: ScraperOption[] = [
         name: 'holo',
         description: 'Extract holographic cards from cards dataset',
         action: fetchHoloCards
-    },
-    {
-        name: 'pokemons',
-        description: 'Fetch all Pokémon data from PokéAPI',
-        action: fetchPokemons
-    },
-    {
-        name: 'sets',
-        description: 'Fetch all card sets from TCG API',
-        action: fetchSets
     },
     {
         name: 'types',
@@ -85,7 +91,7 @@ const uploadFilesTask = {
 }
 
 baseScrapers.push(uploadFilesTask)
-baseScrapers.sort((a, b) => a.name.localeCompare(b.name))
+// baseScrapers.sort((a, b) => a.name.localeCompare(b.name))
 
 const scrapers: ScraperOption[] = [
     {
