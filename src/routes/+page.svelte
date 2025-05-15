@@ -25,6 +25,7 @@
 	import UserPlusIcon from "lucide-svelte/icons/user-plus";
 	import GridIcon from "lucide-svelte/icons/layout-grid";
 	import GlobeIcon from "lucide-svelte/icons/globe";
+	import AuthModal from '@components/auth/AuthModal.svelte';
 
 	export let data: PageData;
 
@@ -103,6 +104,10 @@
 	onMount(() => {
 		ready = true;
 	});
+
+	let isAuthModalOpen = false;
+	function openAuthModal() { isAuthModalOpen = true; }
+	function closeAuthModal() { isAuthModalOpen = false; }
 </script>
 
 <main class="container mx-auto px-4 py-8 text-white overflow-x-hidden">
@@ -661,12 +666,13 @@
 							My Collection
 						</a>
 					{:else}
-						<a
-							href="/login"
-							class="text-gold-400 hover:underline mt-4 inline-block"
+						<button
+							on:click={openAuthModal}
+							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-none"
+							type="button"
 						>
 							Log in to manage your collection
-						</a>
+						</button>
 					{/if}
 				</div>
 				<!-- Wishlist Feature Card -->
@@ -691,12 +697,13 @@
 							My Wishlist
 						</a>
 					{:else}
-						<a
-							href="/login"
-							class="text-gold-400 hover:underline mt-4 inline-block"
+						<button
+							on:click={openAuthModal}
+							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-none"
+							type="button"
 						>
 							Log in to build your wishlist
-						</a>
+						</button>
 					{/if}
 				</div>
 				<!-- Explore Feature Card (unchanged) -->
@@ -891,26 +898,30 @@
 					collection and wishlist.
 				</p>
 				<div class="flex flex-wrap justify-center gap-4">
-					<a
-						href="/login"
-						class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900"
+					<button
+						on:click={openAuthModal}
+						class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 focus:outline-none"
+						type="button"
 					>
 						Log In
 						{#if !NO_IMAGES}<LogInIcon size={18} />{/if}
-					</a>
-					<a
-						href="/signup"
-						class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+					</button>
+					<button
+						on:click={openAuthModal}
+						class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2 focus:outline-none"
+						type="button"
 					>
 						Sign Up
 						{#if !NO_IMAGES}
 							<UserPlusIcon size={18} />
 						{/if}
-					</a>
+					</button>
 				</div>
 			{/if}
 		</section>
 	{/if}
+
+	<AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
 </main>
 
 <style>
