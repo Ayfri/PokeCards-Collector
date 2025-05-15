@@ -99,7 +99,13 @@
 	<button
 		type="button"
 		class="flex items-center justify-center size-9 text-gray-400 hover:text-white rounded-full focus:outline-none"
-		on:click={toggleMenu}
+		on:click={() => {
+			if (userProp && profileProp) {
+				toggleMenu();
+			} else {
+				openAuthModal();
+			}
+		}}
 		aria-expanded={isMenuOpen}
 	>
 		{#if userProp && profileProp}
@@ -174,18 +180,6 @@
 					>
 						<LogOut class="mr-3" size={16} />
 						Sign out
-					</button>
-				</div>
-			{:else}
-				<div class="py-1">
-					<button
-						type="button"
-						class="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-						role="menuitem"
-						on:click={openAuthModal}
-					>
-						<User class="mr-3" size={16} />
-						Sign in / Register
 					</button>
 				</div>
 			{/if}
