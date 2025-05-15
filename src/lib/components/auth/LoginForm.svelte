@@ -1,10 +1,16 @@
 <script lang="ts">
+	import { supabase } from '../../supabase';
+
 	export let onSuccess: (() => void) | undefined = undefined;
 
 	let email = '';
 	let password = '';
 	let loading = false;
 	let errorMessage = '';
+	let showReset = false;
+	let resetEmail = '';
+	let resetLoading = false;
+	let resetMessage = '';
 
 	async function handleSubmit() {
 		if (!email || !password) {
@@ -63,6 +69,28 @@
 			}
 		}
 	}
+
+	async function handlePasswordReset() {
+		resetMessage = '';
+		if (!resetEmail) {
+			resetMessage = 'Please enter your email.';
+			return;
+		}
+		resetLoading = true;
+		try {
+			const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+				redirectTo: 'https://pokecards-collector.pages.dev/reset-password',
+			});
+			if (error) {
+				resetMessage = error.message || 'Failed to send reset email.';
+			} else {
+				resetMessage = 'Password reset email sent! Check your inbox.';
+			}
+		} catch (e) {
+			resetMessage = 'An error occurred. Please try again.';
+		}
+		resetLoading = false;
+	}
 </script>
 
 <form on:submit|preventDefault={handleSubmit} class="space-y-4">
@@ -98,7 +126,36 @@
 			placeholder="••••••••"
 			required
 		/>
+		<div class="mt-2 text-right">
+			<button type="button" class="text-xs text-red-600 hover:underline focus:outline-none" on:click={() => { showReset = !showReset; resetMessage = ''; }}>
+				{showReset ? 'Cancel' : 'Forgot password?'}
+			</button>
+		</div>
 	</div>
+	
+	{#if showReset}
+		<div class="mt-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+			<label for="reset-email" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Enter your email to reset password</label>
+			<input
+				type="email"
+				id="reset-email"
+				bind:value={resetEmail}
+				class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white mb-2"
+				placeholder="your@email.com"
+				disabled={resetLoading}
+			/>
+			<button type="button"
+				class="w-full py-2 px-4 bg-gold-400 text-black rounded-lg transition-all duration-[400ms] flex items-center justify-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+				on:click={handlePasswordReset}
+				disabled={resetLoading}
+			>
+				{resetLoading ? 'Sending...' : 'Send reset email'}
+			</button>
+			{#if resetMessage}
+				<div class="mt-2 text-xs text-center {resetMessage.includes('sent') ? 'text-gold-500' : 'text-red-600'}">{resetMessage}</div>
+			{/if}
+		</div>
+	{/if}
 	
 	<button
 		type="submit"
