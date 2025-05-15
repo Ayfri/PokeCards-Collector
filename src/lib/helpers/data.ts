@@ -11,12 +11,12 @@ export async function getPokemons(): Promise<Pokemon[]> {
 }
 
 export async function getCards(): Promise<FullCard[]> {
-	const cards = await fetch(`${PUBLIC_R2_BUCKET_URL}/cards-full.json`);
+	const cards = await fetch(`${PUBLIC_R2_BUCKET_URL}/cards-full.json.gz`);
 	return cards.json();
 }
 
 export async function getJapaneseCards(): Promise<FullCard[]> {
-	const jpCards = await fetch(`${PUBLIC_R2_BUCKET_URL}/jp-cards-full.json`);
+	const jpCards = await fetch(`${PUBLIC_R2_BUCKET_URL}/jp-cards-full.json.gz`);
 	return jpCards.json();
 }
 

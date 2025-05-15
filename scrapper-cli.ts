@@ -2,14 +2,15 @@
 
 import { select } from '@inquirer/prompts';
 import chalk from 'chalk';
-import { downloadAllImages } from './src/scrappers/download_images.ts';
-import { fetchAndSaveAllCards } from './src/scrappers/card_fetcher.ts';
-import { fetchHoloCards } from './src/scrappers/holo_scraper.ts';
-import { fetchPokemons } from './src/scrappers/pokemon_scraper.ts';
-import { fetchPokemonTypes } from './src/scrappers/types_scraper.ts';
-import { fetchSets } from './src/scrappers/set_fetcher.ts';
-import { getCardMasks } from './src/scrappers/foil_scraper.ts';
-import { fetchTCGCollectorCards } from './src/scrappers/jap_cards_scraper.ts';
+import { downloadAllImages } from './src/scrappers/download_images';
+import { fetchAndSaveAllCards } from './src/scrappers/card_fetcher';
+import { fetchHoloCards } from './src/scrappers/holo_scraper';
+import { fetchPokemons } from './src/scrappers/pokemon_scraper';
+import { fetchPokemonTypes } from './src/scrappers/types_scraper';
+import { fetchSets } from './src/scrappers/set_fetcher';
+import { getCardMasks } from './src/scrappers/foil_scraper';
+import { fetchTCGCollectorCards } from './src/scrappers/jap_cards_scraper';
+import { createInterface } from 'node:readline/promises'
 
 interface ScraperOption {
     name: string;
@@ -60,8 +61,31 @@ const baseScrapers: ScraperOption[] = [
     },
 ];
 
-// Sort the scrapers by name (uncomment to sort)
-// baseScrapers.sort((a, b) => a.name.localeCompare(b.name));
+const uploadFilesTask = {
+	name: 'upload-files',
+	description: 'Upload all default files to R2 bucket (Cloudflare)',
+	action: async () => {
+		try {
+			const { uploadFile, filesToUpload } = await import('./src/scrappers/upload.js')
+			const path = await import('node:path')
+			for (const filePath of filesToUpload) {
+				const objectName = path.basename(filePath)
+				try {
+					await uploadFile(filePath, objectName)
+					console.log(`Uploaded: ${filePath}`)
+				} catch (error) {
+					console.error(`Failed to upload: ${filePath}`, error)
+				}
+			}
+			console.log('All uploads complete!')
+		} catch (error) {
+			console.error('Upload failed:', error)
+		}
+	}
+}
+
+baseScrapers.push(uploadFilesTask)
+baseScrapers.sort((a, b) => a.name.localeCompare(b.name))
 
 const scrapers: ScraperOption[] = [
     {
