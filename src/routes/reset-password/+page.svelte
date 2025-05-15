@@ -10,12 +10,22 @@ let loading = false;
 let errorMessage = '';
 let successMessage = '';
 let token = '';
+let type = '';
 
-// Get token from URL
+// Get token from URL or hash
 onMount(() => {
 	const url = new URL(window.location.href);
 	token = url.searchParams.get('token') || '';
-	const type = url.searchParams.get('type');
+	type = url.searchParams.get('type') || '';
+
+	// If not found in query params, check hash
+	if (!token || !type) {
+		const hash = window.location.hash.substring(1); // remove '#'
+		const params = new URLSearchParams(hash);
+		token = token || params.get('access_token') || params.get('token') || '';
+		type = type || params.get('type') || '';
+	}
+
 	if (!token || type !== 'recovery') {
 		errorMessage = 'Invalid or missing recovery token.';
 	}
