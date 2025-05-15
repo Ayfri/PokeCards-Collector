@@ -95,7 +95,7 @@
 	<meta content="dark light" name="color-scheme"/>
 	<meta content="en" name="language"/>
 	<meta content="Ayfri;Anta;Bahsiik" name="author"/>
-	<meta content="Pokemon, Pokémon, TCG, Card Game, Trading Card Game, Pokemon Cards, Card List, PokéStore, PokéCards-Collector" name="keywords"/>
+	<meta content="Pokemon, Pokémon, TCG, Card Game, Trading Card Game, Pokemon Cards, Card List, PokéCards-Collector" name="keywords"/>
 
 	<meta content="width=device-width" name="viewport"/>
 
