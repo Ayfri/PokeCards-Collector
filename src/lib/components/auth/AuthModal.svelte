@@ -2,6 +2,7 @@
 	import LoginForm from './LoginForm.svelte';
 	import RegisterForm from './RegisterForm.svelte';
 	import X from 'lucide-svelte/icons/x';
+	import { fade, fly } from 'svelte/transition';
 
 	export let isOpen = false;
 	export let onClose: (() => void) | undefined = undefined;
@@ -19,8 +20,10 @@
 </script>
 
 {#if isOpen}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-		<div class="relative bg-white dark:bg-gray-800 rounded-lg w-full max-w-md mx-4 overflow-hidden">
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+		transition:fade={{ duration: 200 }}>
+		<div class="relative bg-white dark:bg-gray-800 rounded-lg w-full max-w-md mx-4 overflow-hidden"
+			transition:fly={{ y: 40, opacity: 0, duration: 250 }}>
 			<div class="flex justify-between items-center p-4 border-b dark:border-gray-700">
 				<h2 class="text-xl font-semibold text-gray-900 dark:text-white">
 					{activeTab === 'login' ? 'Sign in' : 'Create an account'}
@@ -33,7 +36,6 @@
 					<X size={24} />
 				</button>
 			</div>
-			
 			<div class="p-4">
 				<div class="flex border-b dark:border-gray-700 mb-4">
 					<button 
@@ -53,7 +55,6 @@
 						Register
 					</button>
 				</div>
-				
 				{#if activeTab === 'login'}
 					<LoginForm onSuccess={handleAuthSuccess} />
 				{:else}
