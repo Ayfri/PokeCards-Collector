@@ -29,11 +29,9 @@
 		const mostExpensiveParam = page.url.searchParams.get('mostexpensive');
 		const rarityParam = page.url.searchParams.get('rarity');
 
-		// If we have any filter parameters, reset all filters first
+		// If we have any filter parameters, appliquer directement les filtres sans resetFilters
 		if (setParam || artistParam || typeParam || nameParam || pokemonTypeParam || sortByParam || sortOrderParam || mostExpensiveParam || rarityParam) {
-			resetFilters(); // Reset filters on page load
-
-			// Then apply the specific filter from the URL
+			// Puis appliquer les filtres spécifiques depuis l'URL
 			if (setParam) {
 				const decodedSetParam = decodeURIComponent(setParam);
 				const setExists = sets.some(set => set.name === decodedSetParam);
@@ -81,7 +79,7 @@
 			if (sortOrderParam) {
 				const decodedSortOrderParam = decodeURIComponent(sortOrderParam);
 				if (["asc", "desc"].includes(decodedSortOrderParam)) {
-					sortOrder.set(decodedSortOrderParam);
+					sortOrder.set(decodedSortOrderParam as 'asc' | 'desc');
 				}
 			}
 

@@ -33,7 +33,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
   
   // Page-specific SEO data
   const pageSeoData = {
-    title: `${card.name} - Japanese Card - PokéStore`,
+    title: `${card.name} - Japanese Card - Pokécards-collector`,
     description: `View details for the Japanese Pokémon card ${card.name} from the ${card.setName} set.`,
     image: card.image
   };

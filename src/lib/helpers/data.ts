@@ -4,6 +4,7 @@ import holoCards from '~/assets/holo-cards.json';
 import pokemonSets from '~/assets/sets-full.json';
 import pokemonTypes from '~/assets/types.json';
 import prices from '~/assets/prices.json';
+import jpSets from '~/assets/jp-sets-full.json';
 import {PUBLIC_R2_BUCKET_URL} from '$env/static/public';
 
 export async function getPokemons(): Promise<Pokemon[]> {
@@ -48,4 +49,16 @@ export async function getArtists(): Promise<string[]> {
 
 export async function getHoloFoilsCards(): Promise<Card[]> {
 	return holoCards as Card[];
+}
+
+export async function getJapaneseSets(): Promise<Set[]> {
+	return jpSets.map(set => ({
+		name: set.name,
+		logo: '',
+		printedTotal: set.printedTotal,
+		ptcgoCode: set.ptcgoCode || '',
+		releaseDate: set.releaseDate ? new Date(set.releaseDate) : new Date('2000-01-01'),
+		series: set.series ? set.series : '',
+		aliases: Array.isArray(set.aliases) ? set.aliases : [],
+	}));
 }
