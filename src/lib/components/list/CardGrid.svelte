@@ -491,6 +491,11 @@
 			{#if pageTitle}
 				<div in:fly={{ y: -10, delay: 200, duration: 300 }}>
 					<PageTitle title={pageTitle} />
+					{#if pageTitle === 'Japanese Cards'}
+						<div class="bg-yellow-200 text-yellow-900 border-l-4 border-yellow-500 p-2 rounded shadow max-w-xl mx-auto mt-2 text-center text-xs">
+							⚠️ Some features may be missing because Japanese data is not yet complete.
+						</div>
+					{/if}
 				</div>
 			{/if}
 			
