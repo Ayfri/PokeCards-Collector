@@ -634,6 +634,7 @@
 			<div
 				class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center feature-cards"
 			>
+				<!-- Collection Feature Card -->
 				<div
 					class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1"
 				>
@@ -652,12 +653,23 @@
 						Keep track of every card you own, organized by set and
 						rarity.
 					</p>
-					<a
-						href="/collection"
-						class="text-gold-400 hover:underline mt-4 inline-block"
-						>My Collection</a
-					>
+					{#if session}
+						<a
+							href="/collection"
+							class="text-gold-400 hover:underline mt-4 inline-block"
+						>
+							My Collection
+						</a>
+					{:else}
+						<a
+							href="/login"
+							class="text-gold-400 hover:underline mt-4 inline-block"
+						>
+							Log in to manage your collection
+						</a>
+					{/if}
 				</div>
+				<!-- Wishlist Feature Card -->
 				<div
 					class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1"
 				>
@@ -671,12 +683,23 @@
 						Curate a list of cards you desire to complete your
 						collection goals.
 					</p>
-					<a
-						href="/wishlist"
-						class="text-gold-400 hover:underline mt-4 inline-block"
-						>My Wishlist</a
-					>
+					{#if session}
+						<a
+							href="/wishlist"
+							class="text-gold-400 hover:underline mt-4 inline-block"
+						>
+							My Wishlist
+						</a>
+					{:else}
+						<a
+							href="/login"
+							class="text-gold-400 hover:underline mt-4 inline-block"
+						>
+							Log in to build your wishlist
+						</a>
+					{/if}
 				</div>
+				<!-- Explore Feature Card (unchanged) -->
 				<div
 					class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1"
 				>
@@ -693,8 +716,9 @@
 					<a
 						href="/cards-list"
 						class="text-gold-400 hover:underline mt-4 inline-block"
-						>Find Cards</a
 					>
+						Find Cards
+					</a>
 				</div>
 			</div>
 		</section>
