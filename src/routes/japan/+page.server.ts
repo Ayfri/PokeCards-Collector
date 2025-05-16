@@ -1,10 +1,10 @@
-import { getPokemons, getPrices, getRarities, getJapaneseSets, getTypes, getArtists, getJapaneseCards } from '$helpers/data';
+import { getPokemons, getRarities, getJapaneseSets, getTypes, getArtists, getJapaneseCards } from '$helpers/data';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent, url }) => {
   // Get layout data which contains default SEO values
-  const layoutData = await parent();
+  const {prices, ...layoutData} = await parent();
 
   // Load all Japanese cards
   const allCards: FullCard[] = await getJapaneseCards();
@@ -31,7 +31,6 @@ export const load: PageServerLoad = async ({ parent, url }) => {
   const rarities = await getRarities();
   const types = await getTypes();
   const artists = await getArtists();
-  const prices = await getPrices();
 
   // Sort sets alphabetically
   sets.sort((a, b) => a.name.localeCompare(b.name));
@@ -71,4 +70,4 @@ export const load: PageServerLoad = async ({ parent, url }) => {
     description: ogDescription,
     image: ogImage ?? layoutData.image,
   };
-} 
+}

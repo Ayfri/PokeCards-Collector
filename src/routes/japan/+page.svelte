@@ -1,10 +1,9 @@
 <script lang="ts">
-	import CardGrid from '$lib/components/list/CardGrid.svelte';
+	import CardGrid from '@components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
-	import { filterSet, filterArtist, filterSupertype, filterName, filterType, sortBy, sortOrder, mostExpensiveOnly, filterRarity, resetFilters } from '$lib/helpers/filters';
+	import { filterSet, filterArtist, filterSupertype, filterName, filterType, sortBy, sortOrder, mostExpensiveOnly, filterRarity } from '$helpers/filters';
 	import { page } from '$app/state';
-	import { get } from 'svelte/store';
 
 	export let data: PageData;
 
