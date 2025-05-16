@@ -7,14 +7,15 @@
 
 	export let data: PageData;
 
-	// Use allCards from layout data passed down via PageData
-	$: allCards = data.allCards;
+	// Data that is available immediately
 	$: sets = data.sets;
 	$: rarities = data.rarities;
 	$: types = data.types;
 	$: artists = data.artists;
 	$: pokemons = data.pokemons;
 	$: prices = data.prices;
+
+	// Note: `allCards` and `stats` will come from the awaited promise.
 
 	onMount(() => {
 		// Check if we have any filter parameters in the URL
@@ -103,9 +104,16 @@
 	$: selectedArtistName = $filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null;
 </script>
 
-<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
-	<CardGrid cards={allCards} {sets} {rarities} {types} {artists} {pokemons} {prices} pageTitle="Japanese Cards" selectedSetName={selectedSetName} selectedArtistName={selectedArtistName} />
-</main>
+{#await data.streamed.cardData}
+	<p class="text-center text-xl mt-12">Loading cards...</p> <!-- Or a more sophisticated loading indicator -->
+{:then cardDataResolved}
+	{@const allCards = cardDataResolved.allCards}
+	<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
+		<CardGrid cards={allCards} {sets} {rarities} {types} {artists} {pokemons} {prices} pageTitle="Japanese Cards" selectedSetName={selectedSetName} selectedArtistName={selectedArtistName} />
+	</main>
+{:catch error}
+	<p style="color: red">Error loading cards: {error.message}</p>
+{/await}
 
 <style>
 	:global(body) {

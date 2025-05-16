@@ -3,39 +3,19 @@ import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent, url }) => {
-  // Get layout data which contains default SEO values
-  const {prices, ...layoutData} = await parent();
+  const { prices, ...layoutData } = await parent(); // layoutData includes SEO, user, profile etc.
 
-  // Load all Japanese cards
-  const allCards: FullCard[] = await getJapaneseCards();
+  // Data that can be loaded quickly and is needed for SEO or initial page structure
+  const sets = await getJapaneseSets(); // Assuming this is relatively small metadata
+  sets.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Apply unique by image filter
-  const seenImages = new Set();
-  const filteredCards = allCards.filter(card => {
-    if (!card.setName) return false;
-    if (seenImages.has(card.image)) return false;
-    seenImages.add(card.image);
-    return true;
-  });
-
-  // Count different card types based on the loaded cards
-  const pokemonCards = filteredCards.filter(card => card.supertype === 'Pokémon');
-  const trainerCards = filteredCards.filter(card => card.supertype === 'Trainer');
-  const energyCards = filteredCards.filter(card => card.supertype === 'Energy');
-
-  // Count unique Pokemon based on the loaded cards
-  const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
-
-  const pokemons = await getPokemons();
-  const sets = await getJapaneseSets();
   const rarities = await getRarities();
   const types = await getTypes();
   const artists = await getArtists();
+  const pokemons = await getPokemons();
 
-  // Sort sets alphabetically
-  sets.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Detect set filter in URL
+  // SEO data determination
   const setParam = url.searchParams.get('set');
   let ogImage = null;
   let ogTitle = 'Japanese Pokémon Cards - Pokécards-collector';
@@ -50,24 +30,50 @@ export const load: PageServerLoad = async ({ parent, url }) => {
     }
   }
 
+  // Promise for the large dataset (cards and their derived stats)
+  const cardDataPromise = (async () => {
+    const allCards: FullCard[] = await getJapaneseCards();
+
+    const seenImages = new Set();
+    const filteredCards = allCards.filter(card => {
+      if (!card.setName) return false;
+      if (seenImages.has(card.image)) return false;
+      seenImages.add(card.image);
+      return true;
+    });
+
+    const pokemonCards = filteredCards.filter(card => card.supertype === 'Pokémon');
+    const trainerCards = filteredCards.filter(card => card.supertype === 'Trainer');
+    const energyCards = filteredCards.filter(card => card.supertype === 'Energy');
+    const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
+
+    return {
+      allCards: filteredCards,
+      stats: {
+        totalCards: filteredCards.length,
+        uniquePokemon,
+        pokemonCards: pokemonCards.length,
+        trainerCards: trainerCards.length,
+        energyCards: energyCards.length,
+      },
+    };
+  })(); // Immediately-invoked async function to create the promise
+
   return {
-    ...layoutData, // Start with layout data (including its SEO defaults)
-    allCards: filteredCards, // Return the loaded and filtered cards
+    ...layoutData, // from parent, includes its own SEO, user, profile
+    streamed: {
+        cardData: cardDataPromise // This will be streamed
+    },
+    // Non-streamed data for filters, SEO etc.
     sets,
     rarities,
     types,
     artists,
     pokemons,
-    prices,
-    stats: {
-      totalCards: filteredCards.length,
-      uniquePokemon,
-      pokemonCards: pokemonCards.length,
-      trainerCards: trainerCards.length,
-      energyCards: energyCards.length,
-    },
+    prices, // from parent
+    // Page-specific SEO (can override layoutData's SEO)
     title: ogTitle,
     description: ogDescription,
-    image: ogImage ?? layoutData.image,
+    image: ogImage ?? layoutData.image, // Use page-specific image or fallback to layout's
   };
-}
+};
