@@ -128,3 +128,24 @@ export interface BinderCards {
 	position: number;
 	cardCode: string | undefined;
 }
+
+// Represents the structure of a user object returned by the searchUsers service function
+export interface SearchedUser {
+	auth_id: string;
+	is_public: boolean;
+	profile_color?: string; // Consistent with UserProfile
+	username: string;
+}
+
+// Represents the result of the isUsernameTaken service function
+export interface UsernameCheckResult {
+	exists: boolean;
+	error: Error | Record<string, any> | string | null; // Adjusted for more specific error types
+}
+
+// Generic type for responses from service functions (e.g., Supabase calls)
+export interface ServiceResponse<T> {
+	data: T | null;
+	// Accommodate Supabase PostgrestError (which is an object with message, details, hint, code) or other error types
+	error: Error | { message: string; details?: string; hint?: string; code?: string; } | string | null;
+}

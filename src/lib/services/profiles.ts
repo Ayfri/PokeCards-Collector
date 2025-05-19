@@ -1,5 +1,5 @@
 import { supabase } from '../supabase';
-import type { UserProfile } from '../types';
+import type { UserProfile, ServiceResponse } from '../types';
 
 // Créer un nouveau profil (à utiliser par l'API d'inscription)
 export async function createProfile(username: string, authId: string) {
@@ -47,7 +47,7 @@ export async function getProfileByUsername(username: string) {
 			.ilike('username', username) // Use ilike for case-insensitive match
 			.single();
 
-		return { data, error };
+		return { data, error } as ServiceResponse<UserProfile>;
 	} catch (error) {
 		console.error('Error getting profile by username:', error);
 		return { data: null, error };
