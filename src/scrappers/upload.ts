@@ -33,12 +33,13 @@ export async function uploadFile(filePath: string, objectName: string) {
 		const uploadParams = {
 			Body: compressedContent,
 			Bucket: bucketName,
+			CacheControl: 'public, max-age=7200', // 2 hours
 			ContentEncoding: 'gzip',
 			ContentType: "application/json",
 			Key: compressedObjectName,
 		};
 
-		console.log(`Uploading ${compressedObjectName} to R2 bucket ${bucketName}...`);
+		console.log(`Uploading ${compressedObjectName} to R2 bucket ${bucketName} with Cache-Control...`);
 		await s3.putObject(uploadParams);
 		console.log(`Successfully uploaded ${compressedObjectName} to R2`);
 	} catch (error) {
