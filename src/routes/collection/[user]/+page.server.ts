@@ -1,14 +1,15 @@
 import { error, redirect } from '@sveltejs/kit';
 import { getPokemons, getRarities, getTypes, getArtists } from '$helpers/data';
 import { getProfileByUsername } from '$lib/services/profiles';
+import { getUserCollection } from '$lib/services/collections';
 import type { PageServerLoad } from './$types';
-import type { FullCard, UserProfile } from '$lib/types';
+import type { FullCard, UserProfile, UserCollection } from '$lib/types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { allCards, sets, prices, profile: loggedInUserProfile, collectionItems: layoutCollectionItems, ...layoutData } = await parent();
 	const requestedUsername = params.user;
 
-	// --- Load remaining base data --- 
+	// --- Load remaining base data ---
 	const [pokemons, rarities, types, artists] = await Promise.all([
 		getPokemons(),
 		getRarities(),
@@ -45,12 +46,30 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		isPublic = targetProfile.is_public;
 
 		if (isPublic || (loggedInUserProfile && loggedInUserProfile.username === targetProfile.username)) {
-			// Use collectionItems from layout data
-			if (layoutCollectionItems) {
-				const collectionCardCodes = new Set(layoutCollectionItems.map(item => item.card_code));
+			let itemsToProcess: Array<{ card_code: string }> | undefined | null = layoutCollectionItems as Array<{ card_code: string }> | undefined | null;
+
+			// If viewing another user's public profile, fetch their collection items
+			if (isPublic && loggedInUserProfile?.username !== targetProfile.username && targetProfile) {
+				const { data: targetUserCollectionItems, error: collectionError } = await getUserCollection(targetProfile.username);
+				if (collectionError) {
+					console.error(`Error fetching collection for ${targetProfile.username}:`, collectionError);
+					itemsToProcess = [];
+				} else {
+					itemsToProcess = targetUserCollectionItems;
+				}
+			} else if (loggedInUserProfile && loggedInUserProfile.username === targetProfile?.username) {
+				// Viewing own collection, use layout data
+				itemsToProcess = layoutCollectionItems as Array<{ card_code: string }> | undefined | null;
+			} else if (!isPublic && !(loggedInUserProfile && loggedInUserProfile.username === targetProfile?.username)) {
+				// Private profile and not the owner
+				itemsToProcess = [];
+			}
+
+			if (itemsToProcess) {
+				const collectionCardCodes = new Set(itemsToProcess.map(item => item.card_code));
 				collectionCards = allCards.filter(card => collectionCardCodes.has(card.cardCode));
 			} else {
-				collectionCards = []; // Or handle as error if items were expected
+				collectionCards = []; // Default to empty if no items found or error
 			}
 			title = `${targetProfile.username}'s Collection`;
 			description = `Pokémon TCG collection for user ${targetProfile.username}.`;
@@ -70,7 +89,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	return {
 		...layoutData,
 		allCards, pokemons, sets, rarities, types, prices, artists,
-		targetProfile, 
+		targetProfile,
 		isPublic,
 		serverCollectionCards: collectionCards,
 		targetUsername,
@@ -78,4 +97,4 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		description,
 		image: ogImage,
 	};
-}; 
+};

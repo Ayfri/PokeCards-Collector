@@ -1,8 +1,9 @@
 import { error, redirect } from '@sveltejs/kit';
 import { getPokemons, getRarities, getTypes, getArtists } from '$helpers/data';
 import { getProfileByUsername } from '$lib/services/profiles';
+import { getUserWishlist } from '$lib/services/wishlists';
 import type { PageServerLoad } from './$types';
-import type { FullCard, UserProfile } from '$lib/types';
+import type { FullCard, UserProfile, UserWishlist } from '$lib/types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { allCards, sets, prices, profile: loggedInUserProfile, wishlistItems: layoutWishlistItems, ...layoutData } = await parent();
@@ -14,7 +15,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		throw redirect(307, correctUrl);
 	}
 
-	// --- Load remaining base data --- 
+	// --- Load remaining base data ---
 	const [pokemons, rarities, types, artists] = await Promise.all([
 		getPokemons(),
 		getRarities(),
@@ -51,12 +52,30 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		isPublic = targetProfile.is_public;
 
 		if (isPublic || (loggedInUserProfile && loggedInUserProfile.username === targetProfile.username)) {
-			// Use wishlistItems from layout data
-			if (layoutWishlistItems) {
-				const wishlistCardCodes = new Set(layoutWishlistItems.map(item => item.card_code));
+			let itemsToProcess: Array<{ card_code: string }> | undefined | null = layoutWishlistItems as Array<{ card_code: string }> | undefined | null;
+
+			// If viewing another user's public profile, fetch their wishlist items
+			if (isPublic && loggedInUserProfile?.username !== targetProfile.username && targetProfile) {
+				const { data: targetUserWishlistItems, error: wishlistError } = await getUserWishlist(targetProfile.username);
+				if (wishlistError) {
+					console.error(`Error fetching wishlist for ${targetProfile.username}:`, wishlistError);
+					itemsToProcess = [];
+				} else {
+					itemsToProcess = targetUserWishlistItems;
+				}
+			} else if (loggedInUserProfile && loggedInUserProfile.username === targetProfile?.username) {
+				// Viewing own wishlist, use layout data
+				itemsToProcess = layoutWishlistItems as Array<{ card_code: string }> | undefined | null;
+			} else if (!isPublic && !(loggedInUserProfile && loggedInUserProfile.username === targetProfile?.username)) {
+				// Private profile and not the owner
+				itemsToProcess = [];
+			}
+
+			if (itemsToProcess) {
+				const wishlistCardCodes = new Set(itemsToProcess.map(item => item.card_code));
 				wishlistCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
 			} else {
-				wishlistCards = []; // Or handle as error
+				wishlistCards = [];
 			}
 			title = `${targetProfile.username}'s Wishlist`;
 			description = `Pokémon TCG wishlist for user ${targetProfile.username}.`;
@@ -84,4 +103,4 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		description,
 		image: ogImage,
 	};
-}; 
+};
