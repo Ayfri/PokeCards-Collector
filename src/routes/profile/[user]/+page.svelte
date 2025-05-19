@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { toggleProfileVisibility } from '$lib/services/profiles';
-	import { page } from '$app/state';
 	import PageTitle from '@components/PageTitle.svelte';
 	import type { Set } from '$lib/types';
 	import Avatar from '@components/auth/Avatar.svelte';
 	import { NO_IMAGES } from '$lib/images';
 	import { Home, UserCog, BookOpen, ListTodo, ChevronRight } from 'lucide-svelte';
 	import { fly } from 'svelte/transition';
+	import type { PageData } from './$types';
+
+	export let data: PageData;
 
 	// Component state
 	let isLoading = false;
@@ -16,9 +18,9 @@
 	let ready = false;
 
 	// Reactive data from page store
-	$: ({ allCards, sets = [], prices, targetProfile, isPublic, collectionStats, isOwnProfile, loggedInUsername, title: pageTitle, description } = page.data);
-	$: user = page.data.user;
-	$: profile = page.data.profile;
+	$: ({ allCards, sets, targetProfile, isPublic, collectionStats, isOwnProfile, loggedInUsername, title: pageTitle, description } = data);
+	$: user = data.user;
+	$: profile = data.profile;
 
 	// Profile visibility state, initialized from server data
 	let currentVisibility = isPublic;
