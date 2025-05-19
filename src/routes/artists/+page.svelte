@@ -5,9 +5,10 @@
 	import PageTitle from '@components/PageTitle.svelte';
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
-	import type { Card } from '$lib/types';
+	import type { Card, Set } from '$lib/types';
 	import { debounce } from '$helpers/debounce';
-	import { findSetByCardCode } from '$helpers/set-utils';
+	import { buildSetLookupMap } from '$helpers/set-utils';
+	import { parseCardCode } from '$helpers/card-utils';
 	import { fade, fly } from 'svelte/transition';
 
 	export let data: PageData;
@@ -23,81 +24,191 @@
 	// Sorting state
 	let sortDirection: 'asc' | 'desc' = 'asc'; // Default to A-Z
 	let sortValue: 'firstReleaseDate' | 'lastReleaseDate' | 'name' | 'totalCards' = 'name'; // Default sort by name
-    
+
     // Search state
     let searchTerm = '';
 
     const debouncedSetSearchTerm = debounce((value: string) => {
         searchTerm = value;
     }, 300);
+	// --- Data Processing Functions ---
 
-	// Group cards by artist
-	$: artistsWithCards = data.artists.map(artist => {
-		// Find all cards by this artist
-		const cards = data.allCards.filter(card => card.artist === artist);
+	// Groups cards by artist.
+	// Assumes FullCard, PokemonSet, PriceData types are imported from '$lib/types'.
+	function groupCardsByArtist(allCards: PageData['allCards']): Map<string, NonNullable<PageData['allCards']>[number][]> {
+		const map = new Map<string, NonNullable<PageData['allCards']>[number][]>();
+		if (allCards) {
+			for (const card of allCards) {
+				if (card.artist) {
+					if (!map.has(card.artist)) {
+						map.set(card.artist, []);
+					}
+					map.get(card.artist)!.push(card);
+				}
+			}
+		}
+		return map;
+	}
 
-		// Sort cards by price (most expensive first)
-		const sortedByPrice = [...cards].sort((a, b) => {
-			// Treat null or undefined prices as 0
-			const priceA = data.prices[a.cardCode]?.simple ?? 0;
-			const priceB = data.prices[b.cardCode]?.simple ?? 0;
+	// Calculates release dates for all cards.
+	function calculateCardReleaseDates(
+		allCards: PageData['allCards'],
+		sets: PageData['sets']
+	): Map<string, Date> {
+		const dates = new Map<string, Date>();
+		if (!allCards || !sets) {
+			return dates;
+		}
+
+		const setLookup = buildSetLookupMap(sets); // Build this once
+
+		for (const card of allCards) {
+			if (!card || !card.cardCode) {
+				// Ensure card.cardCode exists before setting a default date for it
+				if (card && card.cardCode) {
+					dates.set(card.cardCode, new Date('0000-01-01'));
+				}
+				continue;
+			}
+
+			const parsed = parseCardCode(card.cardCode);
+			if (!parsed || !parsed.setCode) {
+				dates.set(card.cardCode, new Date('0000-01-01')); // Default for unparsable/no setCode
+				continue;
+			}
+
+			const targetSetCodeLower = parsed.setCode.toLowerCase();
+			const foundSet = setLookup.get(targetSetCodeLower);
+
+			dates.set(card.cardCode, foundSet ? new Date(foundSet.releaseDate) : new Date('0000-01-01'));
+		}
+		return dates;
+	}
+
+	// Processes details for a single artist.
+	function processArtistDetails(
+		artistName: string,
+		artistCardsList: NonNullable<PageData['allCards']>[number][], // Represents FullCard[]
+		cardReleaseDatesMap: Map<string, Date>,
+		prices: PageData['prices']
+	): ArtistWithCards {
+		const sortedByPrice = [...artistCardsList].sort((a, b) => {
+			const priceA = prices?.[a.cardCode]?.simple ?? 0;
+			const priceB = prices?.[b.cardCode]?.simple ?? 0;
 			return priceB - priceA;
 		});
 
-		// Take the top 3 most expensive cards for display
-		const showcaseCards = sortedByPrice.slice(0, 3);
+		// ArtistWithCards.showcaseCards is Card[], FullCard[] is assignable to Card[]
+		const showcaseCards: Card[] = sortedByPrice.slice(0, 3);
+		const totalCards = artistCardsList.length;
 
-		// Count total cards
-		const totalCards = cards.length;
+		let firstReleaseDate = new Date('9999-01-01');
+		let lastReleaseDate = new Date('0000-01-01'); // This can result in an Invalid Date
 
-		const firstReleaseDate = cards.reduce((earliest, card) => {
-			const set = findSetByCardCode(card.cardCode, data.sets);
-			const cardReleaseDate = set ? new Date(set.releaseDate) : new Date('0000-01-01');
-			return cardReleaseDate < earliest ? cardReleaseDate : earliest;
-		}, new Date('9999-01-01'));
-
-		const lastReleaseDate = cards.reduce((latest, card) => {
-			const set = findSetByCardCode(card.cardCode, data.sets);
-			const cardReleaseDate = set ? new Date(set.releaseDate) : new Date('0000-01-01');
-			return cardReleaseDate > latest ? cardReleaseDate : latest;
-		}, new Date('0000-01-01'));
+		if (artistCardsList.length > 0) {
+			for (const card of artistCardsList) {
+				const cardDate = cardReleaseDatesMap.get(card.cardCode);
+				if (cardDate) { // Ensure cardDate was found
+					// For firstReleaseDate:
+					if (cardDate < firstReleaseDate) {
+						firstReleaseDate = cardDate;
+					}
+					// For lastReleaseDate:
+					if (cardDate > lastReleaseDate || isNaN(lastReleaseDate.getTime())) {
+						if (!isNaN(cardDate.getTime())) { // Only update if cardDate itself is valid
+							lastReleaseDate = cardDate;
+						}
+					}
+				}
+			}
+		}
 
 		return {
-			name: artist,
+			name: artistName,
 			showcaseCards,
 			totalCards,
 			firstReleaseDate,
 			lastReleaseDate
-		} as ArtistWithCards;
-	});
+		};
+	}
 
-	$: sortedArtists = [...artistsWithCards].sort((a, b) => {
-		if (sortValue === 'name') {
-			return sortDirection === 'desc'
-				? b.name.localeCompare(a.name)
-				: a.name.localeCompare(b.name);
-		} else if (sortValue === 'totalCards') {
-			return sortDirection === 'desc'
-				? b.totalCards - a.totalCards
-				: a.totalCards - b.totalCards;
-		} else if (sortValue === 'firstReleaseDate') {
-			return sortDirection === 'desc'
-				? b.firstReleaseDate.getTime() - a.firstReleaseDate.getTime()
-				: a.firstReleaseDate.getTime() - b.firstReleaseDate.getTime();
-		} else if (sortValue === 'lastReleaseDate') {
-			return sortDirection === 'desc'
-				? b.lastReleaseDate.getTime() - a.lastReleaseDate.getTime()
-				: a.lastReleaseDate.getTime() - b.lastReleaseDate.getTime();
+	// Creates a list of artists with their processed card details.
+	function createArtistsWithCardsList(
+		artistNames: PageData['artists'], // This is string[] based on +page.server.ts
+		cardsByArtist: Map<string, NonNullable<PageData['allCards']>[number][]>,
+		cardReleaseDatesMap: Map<string, Date>,
+		prices: PageData['prices']
+	): ArtistWithCards[] {
+		// data.artists from +page.server.ts is string[], so artistNames should always be defined.
+		// However, (data.artists || []) was used before, suggesting caution.
+		// If artistNames can truly be undefined from PageData, this check is useful.
+		if (!artistNames) {
+			return [];
 		}
-		return 0;
-	});
-    
-    // Filter artists based on search term
-    $: filteredArtists = searchTerm 
-        ? sortedArtists.filter(artist => 
-            artist.name.toLowerCase().includes(searchTerm.toLowerCase())
-          ) 
-        : sortedArtists;
+		return artistNames.map(name => {
+			const currentArtistCards = cardsByArtist.get(name) || [];
+			return processArtistDetails(name, currentArtistCards, cardReleaseDatesMap, prices);
+		});
+	}
+
+	// Sorts the list of artists.
+	function sortArtistList(
+		artists: ArtistWithCards[],
+		value: typeof sortValue, // 'name' | 'totalCards' | 'firstReleaseDate' | 'lastReleaseDate'
+		direction: typeof sortDirection // 'asc' | 'desc'
+	): ArtistWithCards[] {
+		return [...artists].sort((a, b) => {
+			let comparison = 0;
+			switch (value) {
+				case 'name':
+					comparison = a.name.localeCompare(b.name);
+					break;
+				case 'totalCards':
+					comparison = a.totalCards - b.totalCards;
+					break;
+				case 'firstReleaseDate':
+				case 'lastReleaseDate': {
+					const timeA = a[value].getTime();
+					const timeB = b[value].getTime();
+					const aIsNaN = isNaN(timeA);
+					const bIsNaN = isNaN(timeB);
+
+					if (aIsNaN && bIsNaN) comparison = 0;
+					else if (aIsNaN) comparison = 1; // NaNs go "last"
+					else if (bIsNaN) comparison = -1; // NaNs go "last"
+					else comparison = timeA - timeB;
+					break;
+				}
+				// No default needed as `value` is a constrained type
+			}
+			return direction === 'desc' ? comparison * -1 : comparison;
+		});
+	}
+
+	// Filters the list of artists by search term.
+	function filterArtistList(artists: ArtistWithCards[], term: string): ArtistWithCards[] {
+		if (!term.trim()) { // Return all artists if search term is empty or whitespace
+			return artists;
+		}
+		const lowerCaseTerm = term.toLowerCase();
+		return artists.filter(artist =>
+			artist.name.toLowerCase().includes(lowerCaseTerm)
+		);
+	}
+
+	// --- Reactive Data Derivations ---
+	$: cardsByArtistMap = groupCardsByArtist(data.allCards);
+	$: cardReleaseDates = calculateCardReleaseDates(data.allCards, data.sets);
+
+	$: artistsWithCards = createArtistsWithCardsList(
+		data.artists,
+		cardsByArtistMap,
+		cardReleaseDates,
+		data.prices
+	);
+
+	$: sortedArtists = sortArtistList(artistsWithCards, sortValue, sortDirection);
+	$: filteredArtists = filterArtistList(sortedArtists, searchTerm);
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -128,7 +239,7 @@
 			/>
 		</div>
 	</div>
-	
+
 	<hr class="w-full border-t-[3px] border-gold-400 my-4" transition:fade={{ duration: 400, delay: 300 }} />
 
 	<p class="text-gray-400 mb-6" transition:fade={{ duration: 400, delay: 300 }}>
