@@ -3,21 +3,38 @@ import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent, url }) => {
-  const { prices, ...layoutData } = await parent(); // layoutData includes SEO, user, profile etc.
+  const parentData = await parent(); // Get the full parent data structure
 
-  // Data that can be loaded quickly and is needed for SEO or initial page structure
-  const [setsData, rarities, types, artists, pokemons] = await Promise.all([
-    getJapaneseSets(), // Assuming this is relatively small metadata
+  // Await the prices from the parent's streamed object
+  const pricesResolved = await parentData.streamed.prices || {};
+
+  // Extract other necessary layout data (e.g., user, profile, default SEO from parent)
+  // Avoid spreading `streamed` or properties already handled (like prices or parent's allCards/sets if not used here)
+  const layoutDataFromParent = {
+    user: parentData.user,
+    profile: parentData.profile,
+    title: parentData.title, // Parent's default title
+    description: parentData.description, // Parent's default description
+    image: parentData.image, // Parent's default image
+    wishlistItems: parentData.wishlistItems,
+    collectionItems: parentData.collectionItems
+    // parentData.sets are global sets, this page uses getJapaneseSets()
+    // parentData.streamed.allCards are global cards, this page uses getJapaneseCards()
+  };
+
+  // Data specific to this page (Japanese sets, rarities, types, etc.)
+  const [japaneseSetsData, rarities, types, artists, pokemons] = await Promise.all([
+    getJapaneseSets(),
     getRarities(),
     getTypes(),
     getArtists(),
     getPokemons()
   ]);
 
-  const sets = setsData;
+  const sets = japaneseSetsData; // Rename for clarity, these are Japanese sets
   sets.sort((a, b) => a.name.localeCompare(b.name));
 
-  // SEO data determination
+  // SEO data determination for this page
   const setParam = url.searchParams.get('set');
   let ogImage = null;
   let ogTitle = 'Japanese Pokémon Cards - Pokécards-collector';
@@ -32,7 +49,7 @@ export const load: PageServerLoad = async ({ parent, url }) => {
     }
   }
 
-  // Promise for the large dataset (cards and their derived stats)
+  // Promise for the large dataset (Japanese cards and their derived stats)
   const cardDataPromise = (async () => {
     const allCards: FullCard[] = await getJapaneseCards();
 
@@ -59,23 +76,23 @@ export const load: PageServerLoad = async ({ parent, url }) => {
         energyCards: energyCards.length,
       },
     };
-  })(); // Immediately-invoked async function to create the promise
+  })();
 
   return {
-    ...layoutData, // from parent, includes its own SEO, user, profile
+    ...layoutDataFromParent, // User, profile, SEO defaults from parent
     streamed: {
-        cardData: cardDataPromise // This will be streamed
+        cardData: cardDataPromise // Streamed Japanese card data and stats
     },
-    // Non-streamed data for filters, SEO etc.
-    sets,
+    // Non-streamed data specific to this page or resolved from parent
+    sets, // Japanese sets
     rarities,
     types,
     artists,
     pokemons,
-    prices, // from parent
-    // Page-specific SEO (can override layoutData's SEO)
+    prices: pricesResolved, // Prices from parent, now resolved
+    // Page-specific SEO (overrides parent's defaults if set)
     title: ogTitle,
     description: ogDescription,
-    image: ogImage ?? layoutData.image, // Use page-specific image or fallback to layout's
+    image: ogImage ?? layoutDataFromParent.image, // Use page-specific image or fallback to parent's default
   };
 };

@@ -3,61 +3,64 @@ import type { PageServerLoad } from './$types';
 import type { SetWithPrice } from '$lib/types';
 
 export const load: PageServerLoad = async ({ parent }) => {
-	const { allCards: cards, sets, prices, ...layoutData } = await parent();
+	const parentData = await parent();
 
-	// Optimized approach:
-	// 1. Iterate through all cards once, parsing their cardCode to get a set identifier.
-	//    Sum prices into a map where keys are these set identifiers. This assumes that
-	//    the part of the cardCode before the last dash (e.g., 'swsh11' from 'swsh11-1')
-	//    corresponds to the 'id' property of a Set object.
-	// 2. Iterate through all sets. For each set, use its 'id' to look up the total price
-	//    from the map created in step 1.
+	// Await the streamed promises from parent
+	const cards = await parentData.streamed.allCards || [];
+	const prices = await parentData.streamed.prices || {};
+	const setsFromParent = parentData.sets || []; // 'sets' is already resolved in parentData
+
+	// Extract other necessary layout data (e.g., user, profile, default SEO)
+	const layoutData = {
+		user: parentData.user,
+		profile: parentData.profile,
+		title: parentData.title, // Parent's default title
+		description: parentData.description, // Parent's default description
+		image: parentData.image, // Parent's default image
+		wishlistItems: parentData.wishlistItems,
+		collectionItems: parentData.collectionItems
+	};
 
 	const setPriceTotals = new Map<string, number>();
 
 	// Populate the price totals map by iterating through cards
-	for (const card of cards) {
-		// Extract set identifier from card.cardCode. Example: 'swsh11-1' -> 'swsh11'.
+	for (const card of cards) { // Now 'cards' is the resolved array
 		const lastDashIndex = card.cardCode.lastIndexOf('-');
 
-		// If card.cardCode does not contain a dash, or if the dash is the first character,
-		// we cannot reliably extract a set identifier in this manner.
 		if (lastDashIndex <= 0) {
-			// console.warn(`Card code ${card.cardCode} does not follow 'setid-number' pattern.`);
 			continue;
 		}
 		const setIdFromCardCode = card.cardCode.substring(0, lastDashIndex);
 
-		const priceData = prices[card.cardCode];
-		const price = priceData?.simple ?? 0;
+		const priceData = prices[card.cardCode]; // Now 'prices' is the resolved object
+		const currentPrice = priceData?.simple ?? 0;
 
-		// Sum prices for this set identifier
-		if (price > 0) { // Only sum if there's a price, to keep the map smaller if many cards have 0 price
-			setPriceTotals.set(setIdFromCardCode, (setPriceTotals.get(setIdFromCardCode) || 0) + price);
+		if (currentPrice > 0) {
+			setPriceTotals.set(setIdFromCardCode, (setPriceTotals.get(setIdFromCardCode) || 0) + currentPrice);
 		}
 	}
 
 	// Map sets to SetWithPrice, using the calculated totals
-	const setsWithPrices = sets.map(set => {
-		// Look up the total price using the set's 'id'.
-		// This assumes 'set.id' (e.g., 'swsh11') matches the 'setIdFromCardCode' (e.g., 'swsh11')
-		// extracted from card.cardCode in the loop above.
-		const totalPrice = setPriceTotals.get(set.name) || 0;
-		
+	const setsWithPrices = setsFromParent.map(set => {
+		const totalPrice = setPriceTotals.get(set.name) || 0; // Assuming set.name matches setIdFromCardCode logic (e.g. use set.id if that is the key)
+		// If set.id should be used instead of set.name for lookup, this needs to be: setPriceTotals.get(set.id)
+
 		return {
 			...set,
 			totalPrice,
 		} as SetWithPrice;
 	});
 
-	const pageSeoData: Partial<typeof layoutData> = {
-		title: 'Sets',
-		description: 'Browse all Pokémon Trading Card Game sets in chronological order, view set information including release dates and card counts.'
+	const pageSeoData = {
+		title: 'Sets - Pokémon TCG | PokéCards-Collector', // More specific title
+		description: 'Browse all Pokémon Trading Card Game sets. View set information, release dates, card counts, and estimated total set values.'
 	};
 
 	return {
 		...layoutData,
-		setsWithPrices,
+		setsWithPrices, // This is the main data for this page
+		// prices, // No longer need to pass prices directly if all processing is done server-side
+		// cards, // No longer need to pass all cards if all processing is done server-side
 		...pageSeoData
 	};
 };

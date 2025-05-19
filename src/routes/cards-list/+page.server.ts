@@ -3,7 +3,7 @@ import type { FullCard } from '$lib/types'; // Import FullCard type
 import type { PageServerLoad } from './$types'; // Added import for type
 
 export const load: PageServerLoad = async ({ parent, url }) => {
-	const parentDataPromise = parent(); // Don't await the full parent yet
+	const parentDataPromise = parent(); // This is a promise to the layout's data
 
 	// Fetch these potentially smaller lists directly if they are fast
 	// If these are also slow, they should be part of the streamed object too.
@@ -14,11 +14,22 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 		getArtists()
 	]);
 
-	// Await parent data to get sets and layoutData for immediate use (SEO, basic structure)
-	// allCards and prices will be handled via the promise
-	const { allCards: layoutAllCards, sets: layoutSets, prices: layoutPrices, ...layoutData } = await parentDataPromise;
+	// Await the parent data structure once.
+	const parentLayoutData = await parentDataPromise;
 
-	const sets = [...layoutSets]; // Create a mutable copy for sorting
+	// Extract non-streamed data needed for immediate page setup.
+	// Explicitly pick known, resolved fields from parentLayoutData.
+	const otherLayoutData = {
+		user: parentLayoutData.user,
+		profile: parentLayoutData.profile,
+		title: parentLayoutData.title, // SEO default from layout
+		description: parentLayoutData.description, // SEO default from layout
+		image: parentLayoutData.image, // SEO default from layout
+		wishlistItems: parentLayoutData.wishlistItems,
+		collectionItems: parentLayoutData.collectionItems
+		// Note: parentLayoutData.sets is already resolved by the modified layout
+	};
+	const sets = [...(parentLayoutData.sets || [])];
 	sets.sort((a, b) => a.name.localeCompare(b.name));
 
 	// Detect set filter in URL for SEO
@@ -37,16 +48,20 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 	}
 
 	return {
-		...layoutData, // Start with layout data (including its SEO defaults)
-		sets,          // Sets are resolved and sent for immediate use
-		pokemons,      // Assuming these are resolved and fast enough
+		...otherLayoutData,
+		sets,
+		pokemons,
 		rarities,
 		types,
 		artists,
-		// Streamed data
 		streamed: {
 			allCards: (async () => {
-				let allCardsResult: FullCard[] = layoutAllCards; // Use the already fetched layoutAllCards
+				// parentLayoutData is already resolved here.
+				// Access the promise from parentLayoutData.streamed and await it.
+				const cardsFromParent = await parentLayoutData.streamed.allCards;
+				if (!cardsFromParent) return [];
+
+				let allCardsResult: FullCard[] = cardsFromParent;
 				const seenImages = new Set();
 				allCardsResult = allCardsResult.filter(card => {
 					if (!card.setName) return false;
@@ -56,11 +71,18 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 				});
 				return allCardsResult;
 			})(),
-			prices: (async () => layoutPrices)(), // Stream prices from layout
+			prices: (async () => {
+				const pricesFromParent = await parentLayoutData.streamed.prices;
+				return pricesFromParent || {};
+			})(),
 			stats: (async () => {
-				// Use layoutAllCards as it's resolved when this promise is created
-				let cardsForStats: FullCard[] = layoutAllCards;
-				const seenImages = new Set(); // Ensure consistent filtering
+				const cardsFromParentForStats = await parentLayoutData.streamed.allCards;
+				if (!cardsFromParentForStats) {
+					return { totalCards: 0, uniquePokemon: 0, pokemonCards: 0, trainerCards: 0, energyCards: 0 };
+				}
+
+				let cardsForStats: FullCard[] = cardsFromParentForStats;
+				const seenImages = new Set();
 				cardsForStats = cardsForStats.filter(card => {
 					if (!card.setName) return false;
 					if (seenImages.has(card.image)) return false;
@@ -81,9 +103,8 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 				};
 			})()
 		},
-		// SEO related data, should be available immediately
 		title: ogTitle,
 		description: ogDescription,
-		image: ogImage ?? layoutData.image, // Use specific ogImage or fallback to layout's
+		image: ogImage ?? otherLayoutData.image,
 	};
 }

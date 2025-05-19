@@ -93,13 +93,18 @@
 		prices: PageData['prices']
 	): ArtistWithCards {
 		const sortedByPrice = [...artistCardsList].sort((a, b) => {
-			const priceA = prices?.[a.cardCode]?.simple ?? 0;
-			const priceB = prices?.[b.cardCode]?.simple ?? 0;
+			// Use trend price as a fallback if simple price is not available or zero
+			const priceA = prices?.[a.cardCode]?.simple || prices?.[a.cardCode]?.trend || 0;
+			const priceB = prices?.[b.cardCode]?.simple || prices?.[b.cardCode]?.trend || 0;
 			return priceB - priceA;
 		});
 
 		// ArtistWithCards.showcaseCards is Card[], FullCard[] is assignable to Card[]
-		const showcaseCards: Card[] = sortedByPrice.slice(0, 3);
+		// Ensure that the selected showcase cards not only exist but also have an image URL.
+		const showcaseCards: Card[] = sortedByPrice
+			.slice(0, 3)
+			.filter(card => card && card.image); // Filter out cards without an image
+
 		const totalCards = artistCardsList.length;
 
 		let firstReleaseDate = new Date('9999-01-01');

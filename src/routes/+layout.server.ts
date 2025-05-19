@@ -5,15 +5,9 @@ import { getUserCollection } from '$lib/services/collections';
 import type { UserWishlist } from '$lib/types';
 import type { UserCollection } from '$lib/types';
 
-export const ssr = false;
-
 export const load: LayoutServerLoad = async ({ locals }) => {
-	// Fetch global data needed for all pages (cards, sets, prices)
-	const [allCards, sets, prices] = await Promise.all([
-		getCards(),
-		getSets(),
-		getPrices(),
-	]);
+	// Fetch sets directly, assuming it's fast and needed.
+	const sets = await getSets();
 
 	// Initialize with specific types
 	let wishlistItems: UserWishlist[] = [];
@@ -44,10 +38,11 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	}
 
 	return {
-		allCards,
-		sets,
-		prices,
-		// Pass user and profile from locals (populated by hooks.server.ts)
+		streamed: {
+			allCards: getCards(), // Return promise
+			prices: getPrices(),   // Return promise
+		},
+		sets,                 // Resolved sets
 		user: locals.user,
 		profile: locals.profile,
 		// Pass fetched user-specific data (or empty arrays)
