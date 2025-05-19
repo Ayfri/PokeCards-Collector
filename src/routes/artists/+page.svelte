@@ -6,6 +6,7 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import type { Card } from '$lib/types';
+	import { debounce } from '$helpers/debounce';
 	import { findSetByCardCode } from '$helpers/set-utils';
 	import { fade, fly } from 'svelte/transition';
 
@@ -25,16 +26,6 @@
     
     // Search state
     let searchTerm = '';
-    let debounceTimeout: number;
-
-    function debounce(fn: Function, delay: number) {
-        return (...args: any[]) => {
-            clearTimeout(debounceTimeout);
-            debounceTimeout = window.setTimeout(() => {
-                fn(...args);
-            }, delay);
-        };
-    }
 
     const debouncedSetSearchTerm = debounce((value: string) => {
         searchTerm = value;

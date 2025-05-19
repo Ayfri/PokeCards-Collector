@@ -7,6 +7,7 @@
 	import TextInput from '@components/filters/TextInput.svelte';
 	import { persistentWritable } from '$stores/persistentStore';
 	import type { SetWithPrice } from '$lib/types';
+	import { debounce } from '$helpers/debounce';
 
 	export let data: PageData;
 
@@ -15,19 +16,9 @@
 	let sortedSets: SetWithPrice[] = []; // Initialize as empty, will be updated reactively
 
 	let searchTerm = '';
-	let debounceTimeout: number;
 
 	// Reactive declaration for typedSets using data.sets
 	$: typedSets = data.setsWithPrices;
-
-	function debounce(fn: Function, delay: number) {
-		return (...args: any[]) => {
-			clearTimeout(debounceTimeout);
-			debounceTimeout = window.setTimeout(() => {
-				fn(...args);
-			}, delay);
-		};
-	}
 
 	const debouncedSetSearchTerm = debounce((value: string) => {
 		searchTerm = value;

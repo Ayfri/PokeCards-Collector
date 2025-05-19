@@ -12,6 +12,7 @@
 	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
+	import { debounce } from '$helpers/debounce';
 
 	// --- Props ---
 	export let prices: Record<string, PriceData>;
@@ -76,17 +77,6 @@
 	function extractCardNumberFromCode(cardCode: string): string {
 		// Assuming format: supertype_pokemonId_setCode_cardNumber
 		return cardCode?.split('_')[3] || '';
-	}
-
-	// Debounce function
-	function debounce<T extends (...args: any[]) => any>(func: T, wait: number): (...args: Parameters<T>) => void {
-		let timeout: number | undefined;
-		return (...args: Parameters<T>) => {
-			clearTimeout(timeout);
-			if (browser) {
-				timeout = window.setTimeout(() => func(...args), wait);
-			}
-		};
 	}
 
 	const performSearch = () => {

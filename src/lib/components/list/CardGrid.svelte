@@ -37,6 +37,8 @@
 	import { cardSize, getCardDimensions } from "$lib/stores/gridStore";
 	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
 	import FilterIcon from "lucide-svelte/icons/filter";
+	import Icon from "@components/Icon.svelte";
+	import { debounce } from '$helpers/debounce';
 
 	export let cards: FullCard[];
 	export let sets: Set[];
@@ -109,15 +111,6 @@
 
 		mounted = true;
 	});
-
-	function debounce(fn: Function, delay: number) {
-		return (...args: any[]) => {
-			clearTimeout(debounceTimeout);
-			debounceTimeout = window.setTimeout(() => {
-				fn(...args);
-			}, delay);
-		};
-	}
 
 	const debouncedSetFilterName = debounce((value: string) => {
 		$filterName = value;

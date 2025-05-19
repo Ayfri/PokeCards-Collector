@@ -12,6 +12,7 @@
 	import { goto } from '$app/navigation';
 	import ArrowUp from 'lucide-svelte/icons/arrow-up';
 	import ArrowDown from 'lucide-svelte/icons/arrow-down';
+	import { debounce } from '$helpers/debounce';
 
 	export let artists: string[] = [];
 	export let rarities: string[];
@@ -58,22 +59,16 @@
 
 	afterUpdate(onUpdate);
 
-	// Debounce functions
-	function debounce(fn: Function, delay: number) {
-		return (...args: any[]) => {
-			clearTimeout(debounceTimeout);
-			debounceTimeout = window.setTimeout(() => {
-				fn(...args);
-			}, delay);
-		};
-	}
-
 	const debouncedSetFilterNumero = debounce((value: string) => {
 		$filterNumero = value;
 	}, 300);
 
 	const debouncedSetFilterName = debounce((value: string) => {
 		$filterName = value;
+	}, 300);
+
+	const debouncedSetMostExpensiveOnly = debounce((value: boolean) => {
+		$mostExpensiveOnly = value;
 	}, 300);
 
 	// Handle changes to the supertype filter with URL updates
