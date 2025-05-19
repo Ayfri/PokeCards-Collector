@@ -36,8 +36,6 @@
 	import Loader from "$lib/components/Loader.svelte";
 	import { cardSize, getCardDimensions } from "$lib/stores/gridStore";
 	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
-	import FilterIcon from "lucide-svelte/icons/filter";
-	import Icon from "@components/Icon.svelte";
 	import { debounce } from '$helpers/debounce';
 
 	export let cards: FullCard[];
