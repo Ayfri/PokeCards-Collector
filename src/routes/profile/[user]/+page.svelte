@@ -1,30 +1,37 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { toggleProfileVisibility } from '$lib/services/profiles';
-	import { goto } from '$app/navigation';
-	import { browser } from '$app/environment';
 	import { page } from '$app/state';
 	import PageTitle from '@components/PageTitle.svelte';
 	import type { Set } from '$lib/types';
 	import Avatar from '@components/auth/Avatar.svelte';
 	import { NO_IMAGES } from '$lib/images';
 	import { Home, UserCog, BookOpen, ListTodo, ChevronRight } from 'lucide-svelte';
-	import { fly, fade } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 
-	// State variables
+	// Component state
 	let isLoading = false;
 	let errorMessage = '';
 	let successMessage = '';
 	let ready = false;
 
-	// Reactive data from page state - use page.data directly
+	// Reactive data from page store
 	$: ({ allCards, sets = [], prices, targetProfile, isPublic, collectionStats, isOwnProfile, loggedInUsername, title: pageTitle, description } = page.data);
 	$: user = page.data.user;
 	$: profile = page.data.profile;
 
-	// Local reactive state for visibility, initialized from server data
+	// Profile visibility state, initialized from server data
 	let currentVisibility = isPublic;
 	$: currentVisibility = isPublic;
+
+	// Calculate total completion percentage reactively
+	$: totalCompletionPercentage = (() => {
+		if (!collectionStats?.set_completion) return 0;
+		const setCompletionData = collectionStats.set_completion as Record<string, { percentage: number }>;
+		const totalPercentage = Object.values(setCompletionData).reduce((sum: number, set: { percentage: number }) => sum + set.percentage, 0);
+		const setCount = Object.keys(setCompletionData).length;
+		return setCount > 0 ? totalPercentage / setCount : 0;
+	})();
 
 	// Toggle profile visibility
 	async function handleToggleVisibility() {
@@ -45,12 +52,12 @@
 
 			if (updatedProfile) {
 				currentVisibility = updatedProfile.is_public;
-				successMessage = `Profile visibility changed to ${newVisibility ? 'public' : 'private'}`;
+				successMessage = `Profile visibility changed to ${newVisibility ? 'public' : 'private'}.`;
 			} else {
-				errorMessage = 'No data returned from server after toggle';
+				errorMessage = 'No data returned from server after toggle.';
 			}
 		} catch (error) {
-			errorMessage = `An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`;
+			errorMessage = `An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}.`;
 		} finally {
 			isLoading = false;
 
@@ -76,7 +83,7 @@
 		return sets.find(set => set.name === setName);
 	}
 
-	// Sort sets by completion percentage (descending)
+	// Get sets sorted by completion percentage (descending)
 	function getSortedSets(): [string, { count: number; total: number; percentage: number; collectedValue: number; totalValue: number }][] {
 		if (!collectionStats?.set_completion) return [];
 
@@ -84,54 +91,11 @@
 			.sort((a, b) => b[1].percentage - a[1].percentage);
 	}
 
-	// Utilités pour les statistiques
-	function getTotalCards(): number {
-		return collectionStats?.total_instances || 0;
-	}
-
-	function getUniqueCards(): number {
-		return collectionStats?.unique_cards || 0;
-	}
-
-	function getWishlistCount(): number {
-		return collectionStats?.wishlist_count || 0;
-	}
-
-	function getUniqueSets(): number {
-		return collectionStats?.set_completion ? Object.keys(collectionStats.set_completion).length : 0;
-	}
-
-	function getCompletionPercentage(): number {
-		if (!collectionStats?.set_completion) return 0;
-		const setCompletionData = collectionStats.set_completion as Record<string, { percentage: number }>;
-		const totalPercentage = Object.values(setCompletionData).reduce((sum: number, set: { percentage: number }) => sum + set.percentage, 0);
-		const setCount = Object.keys(setCompletionData).length;
-		return setCount > 0 ? totalPercentage / setCount : 0;
-	}
-
-	// Simplified onMount
+	// Initialize component readiness
 	onMount(() => {
-		const urlParams = new URLSearchParams(window.location.search);
-		const urlUsername = urlParams.get('user');
-		if (!urlUsername && !loggedInUsername && browser) {
-			goto('/');
-		}
 		ready = true;
 	});
-
-	// Animation for stats numbers
-	const bounceAnimation = {
-		duration: 1000,
-		iterationCount: 'infinite',
-		direction: 'alternate',
-		easing: 'cubic-bezier(0.5, 0, 0.5, 1)'
-	};
 </script>
-
-<svelte:head>
-	<!-- Use server-provided description only, title is managed by Seo -->
-	<meta name="description" content={description} />
-</svelte:head>
 
 <main class="container mx-auto px-4 pb-8 text-white overflow-x-hidden">
 	<div class="w-full mx-auto pb-4 lg:pb-5">
@@ -315,22 +279,22 @@
 
 						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8 mb-8">
 							<div class="text-center">
-								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{getTotalCards()}</span>
+								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.total_instances || 0}</span>
 								<span class="text-sm text-gray-400">Total Cards</span>
 							</div>
 							<div class="text-center">
 								<div class="flex items-center justify-center gap-1 mb-2">
-									<span class="text-3xl md:text-4xl font-bold text-gold-400">{getUniqueCards()}</span>
+									<span class="text-3xl md:text-4xl font-bold text-gold-400">{collectionStats?.unique_cards || 0}</span>
 									<span class="text-sm text-gray-500">/ {allCards.length || 0}</span>
 								</div>
 								<span class="text-sm text-gray-400">Unique Cards</span>
 							</div>
 							<div class="text-center">
-								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{getWishlistCount()}</span>
+								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.wishlist_count || 0}</span>
 								<span class="text-sm text-gray-400">Wishlist Cards</span>
 							</div>
 							<div class="text-center">
-								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{getUniqueSets()}</span>
+								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.set_completion ? Object.keys(collectionStats.set_completion).length : 0}</span>
 								<span class="text-sm text-gray-400">Different Sets</span>
 							</div>
 							<div class="text-center">
@@ -338,7 +302,7 @@
 								<span class="text-sm text-gray-400">Collection Value</span>
 							</div>
 							<div class="text-center">
-								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{getCompletionPercentage().toFixed(1)}%</span>
+								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{totalCompletionPercentage.toFixed(1)}%</span>
 								<span class="text-sm text-gray-400">Total Completion</span>
 							</div>
 						</div>
@@ -357,7 +321,7 @@
 											<a
 												href={isOwnProfile
 													? `/collection?set=${encodeURIComponent(setName)}`
-													: `/collection/${encodeURIComponent(targetProfile.username)}&set=${encodeURIComponent(setName)}`}
+													: `/collection/${encodeURIComponent(targetProfile.username)}?set=${encodeURIComponent(setName)}`}
 												class="block relative group"
 												title={`View ${isOwnProfile ? 'your' : targetProfile.username + "'s"} cards from ${setName}`}
 											>
@@ -398,11 +362,7 @@
 					<a href="/" class="text-gold-400 hover:underline mt-2 inline-block">Return Home</a>
 				</div>
 			{/if}
-		{:else}
-			<!-- Pas de placeholder de chargement, la barre de progression en haut suffit -->
 		{/if}
-	{:else}
-		<!-- Pas de placeholder de chargement, la barre de progression en haut suffit -->
 	{/if}
 </main>
 
