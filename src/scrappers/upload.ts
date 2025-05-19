@@ -33,7 +33,7 @@ export async function uploadFile(filePath: string, objectName: string) {
 		const uploadParams = {
 			Body: compressedContent,
 			Bucket: bucketName,
-			CacheControl: 'public, max-age=7200', // 2 hours
+			CacheControl: 'public, max-age=86400', // 24 hours
 			ContentEncoding: 'gzip',
 			ContentType: "application/json",
 			Key: compressedObjectName,
