@@ -143,20 +143,22 @@ export async function searchUsers(query: string, limit: number = 10) {
 
 		const normalizedQuery = query.toLowerCase().trim();
 
-		const { data, error } = await supabase
-			.from('profiles')
-			.select('username, is_public, auth_id, profile_color')
-			.ilike('username', `%${normalizedQuery}%`)
-			.limit(limit);
+		// Call the PostgreSQL function search_public_users_with_stats
+		const { data, error } = await supabase.rpc('search_public_users_with_stats', {
+			p_query: normalizedQuery, // Parameter name from SQL function
+			p_limit: limit          // Parameter name from SQL function
+		});
 
 		if (error) {
-			console.error('Supabase error searching users:', error);
+			console.error('Supabase RPC error searching users with stats:', error);
 			return { data: null, error };
 		}
 
+		// The RPC function returns data in the shape defined by its RETURNS TABLE clause
 		return { data, error: null };
+
 	} catch (error) {
-		console.error('Exception searching users:', error);
+		console.error('Exception in searchUsers function:', error);
 		return { data: null, error: String(error) };
 	}
 }

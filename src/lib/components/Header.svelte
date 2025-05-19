@@ -36,7 +36,7 @@
 		{ href: '/artists', name: 'Artists', icon: ArtistIcon },
 		{ href: '/binder', name: 'Binder', icon: BinderIcon },
 		{ href: '/random', name: 'Random Card', icon: ShuffleIcon },
-		{ href: '/search-user', name: 'Users', icon: SearchUsersIcon },
+		{ href: '/users', name: 'Users', icon: SearchUsersIcon },
 	];
 
 	// State for mobile menu
