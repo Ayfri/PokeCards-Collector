@@ -10,13 +10,13 @@
 	export let data: PageData;
 
 	// Use allCards from layout data passed down via PageData
-	$: allCards = data.allCards;
+	// $: allCards = data.allCards; // No longer needed here, will come from data.streamed.allCards
 	$: sets = data.sets;
 	$: rarities = data.rarities;
 	$: types = data.types;
 	$: artists = data.artists;
 	$: pokemons = data.pokemons;
-	$: prices = data.prices;
+	// $: prices = data.prices; // No longer needed here, will come from data.streamed.prices
 
 	onMount(() => {
 		// Check if we have any filter parameters in the URL
@@ -120,7 +120,41 @@
 </script>
 
 <main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
-	<CardGrid cards={allCards} {sets} {rarities} {types} {artists} {pokemons} {prices} pageTitle="Cards List" selectedSetName={selectedSetName} selectedArtistName={selectedArtistName} />
+	{#await data.streamed.allCards}
+		<!-- todo: remove these messages when we have a proper loading state -->
+		<!-- Pending for allCards (outer) -->
+		<div class="flex justify-center items-center h-64">
+			<p class="text-xl">Loading cards...</p>
+		</div>
+	{:then allCardsResolved}
+		<!-- allCards resolved, now handle prices -->
+		{#await data.streamed.prices}
+			<!-- Pending for prices (while allCards is resolved) -->
+			<div class="flex justify-center items-center h-64">
+				<p class="text-xl">Loading prices...</p>
+			</div>
+		{:then pricesResolved}
+			<!-- Both allCards and prices are resolved -->
+			<CardGrid 
+				cards={allCardsResolved} 
+				sets={data.sets}
+				rarities={data.rarities}
+				types={data.types}
+				artists={data.artists}
+				pokemons={data.pokemons}
+				prices={pricesResolved}
+				pageTitle="Cards List" 
+				selectedSetName={selectedSetName} 
+				selectedArtistName={selectedArtistName} 
+			/>
+		{:catch priceError}
+			<p class="text-red-500 p-4">Error loading card prices: {priceError.message}</p>
+		{/await} <!-- Closes inner await for prices -->
+	{:catch cardError}
+		<!-- Error for allCards (outer) -->
+		<p class="text-red-500 p-4">Error loading cards: {cardError.message}</p>
+	{/await} <!-- Closes outer await for allCards -->
+
 </main>
 
 <style>

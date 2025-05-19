@@ -3,29 +3,10 @@ import type { FullCard } from '$lib/types'; // Import FullCard type
 import type { PageServerLoad } from './$types'; // Added import for type
 
 export const load: PageServerLoad = async ({ parent, url }) => {
-	// Get layout data which contains default SEO values
-	const { allCards: layoutAllCards, sets: layoutSets, prices: layoutPrices, ...layoutData } = await parent();
+	const parentDataPromise = parent(); // Don't await the full parent yet
 
-	// Use allCards from layout
-	let allCards: FullCard[] = layoutAllCards;
-
-	// Apply unique by image filter (moved from layout)
-	const seenImages = new Set();
-	allCards = allCards.filter(card => {
-		if (!card.setName) return false;
-		if (seenImages.has(card.image)) return false;
-		seenImages.add(card.image);
-		return true;
-	});
-
-	// Count different card types based on the loaded cards
-	const pokemonCards = allCards.filter(card => card.supertype === 'Pokémon');
-	const trainerCards = allCards.filter(card => card.supertype === 'Trainer');
-	const energyCards = allCards.filter(card => card.supertype === 'Energy');
-
-	// Count unique Pokemon based on the loaded cards
-	const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
-
+	// Fetch these potentially smaller lists directly if they are fast
+	// If these are also slow, they should be part of the streamed object too.
 	const [pokemons, rarities, types, artists] = await Promise.all([
 		getPokemons(),
 		getRarities(),
@@ -33,13 +14,14 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 		getArtists()
 	]);
 
-	const sets = layoutSets;
-	const prices = layoutPrices;
+	// Await parent data to get sets and layoutData for immediate use (SEO, basic structure)
+	// allCards and prices will be handled via the promise
+	const { allCards: layoutAllCards, sets: layoutSets, prices: layoutPrices, ...layoutData } = await parentDataPromise;
 
-	// Trier les sets par ordre alphabétique
+	const sets = [...layoutSets]; // Create a mutable copy for sorting
 	sets.sort((a, b) => a.name.localeCompare(b.name));
 
-	// Detect set filter in URL
+	// Detect set filter in URL for SEO
 	const setParam = url.searchParams.get('set');
 	let ogImage = null;
 	let ogTitle = 'All Pokémon Cards - PokéCards-Collector';
@@ -56,22 +38,52 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 
 	return {
 		...layoutData, // Start with layout data (including its SEO defaults)
-		allCards, // Return the loaded and filtered cards
-		sets,
+		sets,          // Sets are resolved and sent for immediate use
+		pokemons,      // Assuming these are resolved and fast enough
 		rarities,
 		types,
 		artists,
-		pokemons,
-		prices,
-		stats: {
-			totalCards: allCards.length,
-			uniquePokemon,
-			pokemonCards: pokemonCards.length,
-			trainerCards: trainerCards.length,
-			energyCards: energyCards.length,
+		// Streamed data
+		streamed: {
+			allCards: (async () => {
+				let allCardsResult: FullCard[] = layoutAllCards; // Use the already fetched layoutAllCards
+				const seenImages = new Set();
+				allCardsResult = allCardsResult.filter(card => {
+					if (!card.setName) return false;
+					if (seenImages.has(card.image)) return false;
+					seenImages.add(card.image);
+					return true;
+				});
+				return allCardsResult;
+			})(),
+			prices: (async () => layoutPrices)(), // Stream prices from layout
+			stats: (async () => {
+				// Use layoutAllCards as it's resolved when this promise is created
+				let cardsForStats: FullCard[] = layoutAllCards;
+				const seenImages = new Set(); // Ensure consistent filtering
+				cardsForStats = cardsForStats.filter(card => {
+					if (!card.setName) return false;
+					if (seenImages.has(card.image)) return false;
+					seenImages.add(card.image);
+					return true;
+				});
+
+				const pokemonCards = cardsForStats.filter(card => card.supertype === 'Pokémon');
+				const trainerCards = cardsForStats.filter(card => card.supertype === 'Trainer');
+				const energyCards = cardsForStats.filter(card => card.supertype === 'Energy');
+				const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
+				return {
+					totalCards: cardsForStats.length,
+					uniquePokemon,
+					pokemonCards: pokemonCards.length,
+					trainerCards: trainerCards.length,
+					energyCards: energyCards.length,
+				};
+			})()
 		},
+		// SEO related data, should be available immediately
 		title: ogTitle,
 		description: ogDescription,
-		image: ogImage ?? layoutData.image,
+		image: ogImage ?? layoutData.image, // Use specific ogImage or fallback to layout's
 	};
 }
