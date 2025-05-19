@@ -56,6 +56,6 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		// Default SEO values (can be overridden by page loads)
 		title: "PokéCards-Collector",
 		description: "Explore the Pokémon TCG universe. Discover the latest set, check out the prices of the rarest cards, and manage your collection.",
-		image: "/images/og-image.png",
+		image: { url: "/images/og-image.png", alt: "PokéCards-Collector" },
 	};
 };
