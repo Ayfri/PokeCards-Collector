@@ -23,7 +23,6 @@ function setCachedData(key: string, data: any): void {
 }
 
 export const load: PageServerLoad = async ({ params, parent }) => {
-	console.log(`[${new Date().toISOString()}] card/[cardCode]/+page.server.ts`);
 	const { cardCode } = params;
 	const layoutData = await parent(); // Get layout data (default SEO etc.)
 
