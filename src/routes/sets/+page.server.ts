@@ -1,15 +1,9 @@
-import { getCards, getPrices, getSets } from '$helpers/data';
 import { findSetByCardCode } from '$helpers/set-utils';
 import type { PageServerLoad } from './$types';
 import type { SetWithPrice } from '$lib/types';
-export const load: PageServerLoad = async ({ parent }) => {
-	const layoutData = await parent();
 
-	const [rawSets, rawCards, rawPrices] = await Promise.all([getSets(), getCards(), getPrices()]);
-	
-	const sets = rawSets;
-	const cards = rawCards;
-	const prices = rawPrices;
+export const load: PageServerLoad = async ({ parent }) => {
+	const { allCards: cards, sets, prices, ...layoutData } = await parent();
 
 	const setsWithPrices = sets.map(set => {
 		const setCards = cards.filter(card => findSetByCardCode(card.cardCode, [set]));

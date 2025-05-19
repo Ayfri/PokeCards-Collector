@@ -1,15 +1,12 @@
-import { getCards, getArtists, getSets, getPrices } from '$helpers/data';
+import { getArtists } from '$helpers/data';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	// Get layout data which contains default SEO values
-	const layoutData = await parent();
+	const { allCards, sets, prices, ...layoutData } = await parent();
 
-	const [allCards, artists, sets, prices] = await Promise.all([
-		getCards(),
-		getArtists(),
-		getSets(),
-		getPrices()
+	const [artists] = await Promise.all([
+		getArtists()
 	]);
 
 	// Define page-specific SEO data

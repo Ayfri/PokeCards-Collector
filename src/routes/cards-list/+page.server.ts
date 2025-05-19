@@ -1,13 +1,13 @@
-import { getCards, getRarities, getSets, getTypes, getArtists, getPokemons, getPrices } from '$helpers/data';
+import { getRarities, getTypes, getArtists, getPokemons } from '$helpers/data';
 import type { FullCard } from '$lib/types'; // Import FullCard type
 import type { PageServerLoad } from './$types'; // Added import for type
 
 export const load: PageServerLoad = async ({ parent, url }) => {
 	// Get layout data which contains default SEO values
-	const layoutData = await parent();
+	const { allCards: layoutAllCards, sets: layoutSets, prices: layoutPrices, ...layoutData } = await parent();
 
-	// Load all cards here instead of layout
-	let allCards: FullCard[] = await getCards();
+	// Use allCards from layout
+	let allCards: FullCard[] = layoutAllCards;
 
 	// Apply unique by image filter (moved from layout)
 	const seenImages = new Set();
@@ -26,12 +26,15 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 	// Count unique Pokemon based on the loaded cards
 	const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
 
-	const pokemons = await getPokemons();
-	const sets = await getSets();
-	const rarities = await getRarities();
-	const types = await getTypes();
-	const artists = await getArtists();
-	const prices = await getPrices();
+	const [pokemons, rarities, types, artists] = await Promise.all([
+		getPokemons(),
+		getRarities(),
+		getTypes(),
+		getArtists()
+	]);
+
+	const sets = layoutSets;
+	const prices = layoutPrices;
 
 	// Trier les sets par ordre alphabétique
 	sets.sort((a, b) => a.name.localeCompare(b.name));

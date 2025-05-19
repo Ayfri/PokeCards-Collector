@@ -6,14 +6,16 @@ export const load: PageServerLoad = async ({ parent, url }) => {
   const { prices, ...layoutData } = await parent(); // layoutData includes SEO, user, profile etc.
 
   // Data that can be loaded quickly and is needed for SEO or initial page structure
-  const sets = await getJapaneseSets(); // Assuming this is relatively small metadata
+  const [setsData, rarities, types, artists, pokemons] = await Promise.all([
+    getJapaneseSets(), // Assuming this is relatively small metadata
+    getRarities(),
+    getTypes(),
+    getArtists(),
+    getPokemons()
+  ]);
+
+  const sets = setsData;
   sets.sort((a, b) => a.name.localeCompare(b.name));
-
-  const rarities = await getRarities();
-  const types = await getTypes();
-  const artists = await getArtists();
-  const pokemons = await getPokemons();
-
 
   // SEO data determination
   const setParam = url.searchParams.get('set');

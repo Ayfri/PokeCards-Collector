@@ -1,13 +1,12 @@
 import { error, redirect } from '@sveltejs/kit';
-import { getCards, getPokemons, getSets, getRarities, getTypes, getPrices, getArtists } from '$helpers/data';
-import { getUserWishlist } from '$lib/services/wishlists';
+import { getPokemons, getRarities, getTypes, getArtists } from '$helpers/data';
 import { getProfileByUsername } from '$lib/services/profiles';
 import type { PageServerLoad } from './$types';
 import type { FullCard, UserProfile } from '$lib/types';
 
-export const load: PageServerLoad = async ({ locals, params }) => {
+export const load: PageServerLoad = async ({ params, parent }) => {
+	const { allCards, sets, prices, profile: loggedInUserProfile, wishlistItems: layoutWishlistItems, ...layoutData } = await parent();
 	const requestedUsername = params.user;
-	const loggedInUserProfile = locals.profile;
 
 	// If not ?user=... and logged in, redirect to ?user=username
 	if (!requestedUsername && loggedInUserProfile?.username) {
@@ -15,18 +14,15 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		throw redirect(307, correctUrl);
 	}
 
-	// --- Always load base data --- 
-	const [allCards, pokemons, sets, rarities, types, prices, artists] = await Promise.all([
-		getCards(),
+	// --- Load remaining base data --- 
+	const [pokemons, rarities, types, artists] = await Promise.all([
 		getPokemons(),
-		getSets(),
 		getRarities(),
 		getTypes(),
-		getPrices(),
 		getArtists()
 	]).catch(e => {
-		console.error("Error loading global card data:", e);
-		throw error(500, 'Failed to load necessary card data');
+		console.error("Error loading page-specific card data:", e);
+		throw error(500, 'Failed to load necessary card data for page');
 	});
 	// --- End base data loading ---
 
@@ -38,7 +34,6 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	let description = 'User wishlist';
 	let profileError: any = null;
 
-	// --- Viewing a specific user's wishlist --- 
 	targetUsername = requestedUsername;
 	({ data: targetProfile, error: profileError } = await getProfileByUsername(targetUsername));
 
@@ -48,47 +43,39 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		title = 'User Not Found';
 		description = `Wishlist for user ${targetUsername} could not be found or user does not exist.`;
 	} else {
-		// --- Profile Found - Check Casing and Redirect if needed --- 
 		if (targetProfile.username !== targetUsername) {
 			const correctUrl = `/wishlist/${encodeURIComponent(targetProfile.username)}`;
 			throw redirect(307, correctUrl);
 		}
-		// --- End Casing Check --- 
 		targetUsername = targetProfile.username;
 		isPublic = targetProfile.is_public;
 
 		if (isPublic || (loggedInUserProfile && loggedInUserProfile.username === targetProfile.username)) {
-			// Fetch wishlist if public OR if the logged-in user is viewing their own profile
-			const { data: wishlistItems, error: wishlistError } = await getUserWishlist(targetProfile.username);
-			if (wishlistError) {
-				console.error(`Error fetching wishlist for ${targetProfile.username}:`, wishlistError);
-			} else {
-				const wishlistCardCodes = new Set(wishlistItems?.map(item => item.card_code) || []);
+			// Use wishlistItems from layout data
+			if (layoutWishlistItems) {
+				const wishlistCardCodes = new Set(layoutWishlistItems.map(item => item.card_code));
 				wishlistCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
+			} else {
+				wishlistCards = []; // Or handle as error
 			}
 			title = `${targetProfile.username}'s Wishlist`;
 			description = `Pokémon TCG wishlist for user ${targetProfile.username}.`;
 		} else {
-			// Profile is private and not owned by viewer
 			title = 'Private Wishlist';
 			description = `This user's wishlist is private.`;
 		}
 	}
-	// --- End viewing specific user's wishlist ---
 
-	// If connected with own profile, change title and description
 	if (loggedInUserProfile && loggedInUserProfile.username === targetUsername) {
 		title = 'My Wishlist';
 		description = 'Your Pokémon TCG card wishlist.';
 	}
 
-	// At the end, always use favicon.png as Open Graph image
 	const ogImage = { url: '/favicon.png', alt: 'PokéCards-Collector logo' };
 
 	return {
-		// Base data
+		...layoutData,
 		allCards, pokemons, sets, rarities, types, prices, artists,
-		// User/Wishlist specific data
 		targetProfile,
 		isPublic,
 		serverWishlistCards: wishlistCards,

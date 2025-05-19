@@ -4,10 +4,10 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	// Get layout data which contains default SEO values
-	const layoutData = await parent();
+	const { allCards: layoutAllCards, sets: layoutSets, prices: layoutPrices, ...layoutData } = await parent();
 
-	// Load all cards here instead of layout
-	let allCards: FullCard[] = await getCards();
+	// Use allCards from layout
+	let allCards: FullCard[] = layoutAllCards;
 
 	// Apply unique by image filter (moved from layout)
 	const seenImages = new Set();
@@ -26,9 +26,12 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// Count unique Pokemon based on the loaded cards
 	const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
 
-	const pokemons = await getPokemons();
-	const sets = await getSets();
-	const prices = await getPrices();
+	const [pokemons] = await Promise.all([
+		getPokemons()
+	]);
+	
+	const sets = layoutSets;
+	const prices = layoutPrices;
 
 	// Get latest set based on release date
 	const latestSet = [...sets].sort((a, b) => {
