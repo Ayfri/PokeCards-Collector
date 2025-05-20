@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { filterSet, filterArtist, filterSupertype, filterName, filterType, sortBy, sortOrder, mostExpensiveOnly, filterRarity, resetFilters } from '$lib/helpers/filters';
 	import { page } from '$app/state';
+	import Loader from "$lib/components/Loader.svelte";
 	import GlobeIcon from 'lucide-svelte/icons/globe';
 	import { get } from 'svelte/store';
 
@@ -124,14 +125,14 @@
 		<!-- todo: remove these messages when we have a proper loading state -->
 		<!-- Pending for allCards (outer) -->
 		<div class="flex justify-center items-center h-64">
-			<p class="text-xl">Loading cards...</p>
+			<Loader message="Loading cards..." />
 		</div>
 	{:then allCardsResolved}
 		<!-- allCards resolved, now handle prices -->
 		{#await data.streamed.prices}
 			<!-- Pending for prices (while allCards is resolved) -->
 			<div class="flex justify-center items-center h-64">
-				<p class="text-xl">Loading prices...</p>
+				<Loader message="Loading prices..." />
 			</div>
 		{:then pricesResolved}
 			<!-- Both allCards and prices are resolved -->
