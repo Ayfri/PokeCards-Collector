@@ -131,7 +131,7 @@
 					placeholder="Search public users by username..."
 					bind:value={searchQuery}
 					debounceFunction={handleSearchInput}
-					class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white shadow-sm placeholder-gray-500 !h-auto"
+					class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none text-white shadow-sm placeholder-gray-500 !h-auto"
 					aria-label="Search users by username"
 				/>
 			</div>
