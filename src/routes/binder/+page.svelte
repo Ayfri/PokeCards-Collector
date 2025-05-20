@@ -275,14 +275,20 @@
 
 	async function generateBinderImageProcess() {
 		const cardWidth = 150, cardHeight = 210, padding = 10;
-		const canvasWidth = $columns * (cardWidth + padding) + padding;
-		const canvasHeight = $rows * (cardHeight + padding) + padding;
+		const canvasGridWidth = $columns * (cardWidth + padding) + padding;
+		const canvasGridHeight = $rows * (cardHeight + padding) + padding;
+
+		const headerHeight = 50; // Height for the area above the grid
+		const canvasTotalWidth = canvasGridWidth;
+		const canvasTotalHeight = canvasGridHeight + headerHeight;
+
 		const canvas = document.createElement('canvas');
-		canvas.width = canvasWidth; canvas.height = canvasHeight;
+		canvas.width = canvasTotalWidth; canvas.height = canvasTotalHeight;
 		const ctx = canvas.getContext('2d');
 		if (!ctx) { console.error('Could not get canvas context'); alert('Could not generate image: Canvas context unavailable.'); return; }
 
-		ctx.fillStyle = '#1f2937'; ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+		ctx.fillStyle = '#1f2937'; // Background for the entire canvas
+		ctx.fillRect(0, 0, canvasTotalWidth, canvasTotalHeight);
 
 		const imageLoadPromises = $binderCards.map((binderSlot, index) => {
 			if (!binderSlot || !binderSlot.url) return Promise.resolve();
@@ -290,31 +296,97 @@
 				const img = new Image(); img.crossOrigin = 'Anonymous';
 				img.onload = () => {
 					const col = index % $columns, row = Math.floor(index / $columns);
-					const x = padding + col * (cardWidth + padding), y = padding + row * (cardHeight + padding);
+					// Shift card grid down by headerHeight
+					const x = padding + col * (cardWidth + padding);
+					const y = headerHeight + padding + row * (cardHeight + padding);
 					ctx.drawImage(img, x, y, cardWidth, cardHeight); resolve();
 				};
 				img.onerror = (error) => {
 					console.error(`Error loading image ${binderSlot.url}:`, error);
 					const col = index % $columns, row = Math.floor(index / $columns);
-					const x = padding + col * (cardWidth + padding), y = padding + row * (cardHeight + padding);
+					// Shift card grid down by headerHeight
+					const x = padding + col * (cardWidth + padding);
+					const y = headerHeight + padding + row * (cardHeight + padding);
 					ctx.fillStyle = '#4b5563'; ctx.fillRect(x, y, cardWidth, cardHeight);
 					ctx.fillStyle = '#d1d5db'; ctx.textAlign = 'center';
 					ctx.fillText('Error', x + cardWidth / 2, y + cardHeight / 2); resolve();
 				};
-				// Use the proxy endpoint to avoid CORS issues
 				img.src = `/api/image-proxy?url=${encodeURIComponent(binderSlot.url)}`;
 			});
 		});
 
 		try {
 			await Promise.all(imageLoadPromises);
-			const dataUrl = canvas.toDataURL('image/png');
-			const link = document.createElement('a');
-			link.href = dataUrl;
-			link.download = 'pokecards-collector-binder.png';
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
+
+			const logo = new Image();
+			logo.crossOrigin = 'Anonymous';
+			logo.onload = () => {
+				const marginFromEdge = 10;
+				const contentMaxHeight = 30; 
+
+				let logoRenderHeight = contentMaxHeight;
+				let logoRenderWidth = (logo.width / logo.height) * logoRenderHeight;
+
+				const maxLogoRenderWidth = 40;
+				if (logoRenderWidth > maxLogoRenderWidth) {
+					logoRenderWidth = maxLogoRenderWidth;
+					logoRenderHeight = (logo.height / logo.width) * logoRenderWidth;
+				}
+
+				const username = data.profile?.username;
+				const textString = username ? `${username}'s binder` : 'PCC';
+				ctx.font = 'bold 14px "Clash Display"';
+				ctx.textAlign = 'left';
+				ctx.textBaseline = 'middle';
+				const textMetrics = ctx.measureText(textString);
+
+				const boxInternalPadding = 6;
+				const contentGap = 8;
+				
+				const boxContentWidth = logoRenderWidth + contentGap + textMetrics.width;
+				const textApproxHeight = 14;
+				const boxContentHeight = Math.max(logoRenderHeight, textApproxHeight);
+
+				const boxTotalWidth = boxContentWidth + 2 * boxInternalPadding;
+				const boxTotalHeight = boxContentHeight + 2 * boxInternalPadding;
+
+				// Position the entire background box (top-left of canvas, within header area)
+				const boxActualX = marginFromEdge;
+				const boxActualY = marginFromEdge; // Positioned within the top headerHeight area
+
+				ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+				ctx.fillRect(boxActualX, boxActualY, boxTotalWidth, boxTotalHeight);
+
+				const logoActualX_inBox = boxActualX + boxInternalPadding;
+				const logoActualY_inBox = boxActualY + boxInternalPadding + (boxContentHeight - logoRenderHeight) / 2;
+				ctx.drawImage(logo, logoActualX_inBox, logoActualY_inBox, logoRenderWidth, logoRenderHeight);
+
+				const textActualX_inBox = logoActualX_inBox + logoRenderWidth + contentGap;
+				const textActualY_inBox = boxActualY + boxInternalPadding + boxContentHeight / 2;
+				ctx.fillStyle = 'white';
+				ctx.fillText(textString, textActualX_inBox, textActualY_inBox);
+
+				const dataUrl = canvas.toDataURL('image/png');
+				const link = document.createElement('a');
+				link.href = dataUrl;
+				link.download = 'pokecards-collector-binder.png';
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+			};
+			logo.onerror = () => {
+				console.error('Failed to load logo image.');
+				// Proceed without logo if it fails to load
+				const dataUrl = canvas.toDataURL('image/png');
+				const link = document.createElement('a');
+				link.href = dataUrl;
+				link.download = 'pokecards-collector-binder.png';
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+			};
+			logo.src = '/favicon.png'; // User changed this path
+
 		} catch (error) { console.error('Error generating binder image:', error); alert('An error occurred while generating the image.'); }
 	}
 </script>
