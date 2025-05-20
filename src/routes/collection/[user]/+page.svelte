@@ -61,7 +61,7 @@
 </svelte:head>
 
 {#if ready} <!-- Wrap content in ready check for transitions -->
-<div class="flex flex-col flex-grow container mx-auto px-4 py-8 min-h-[calc(100svh-200px)]">
+<div class="flex flex-col flex-grow py-8 min-h-[calc(100svh-200px)]">
 	{#if profileNotFound || profileIsPrivate}
 		<main 
 			class="flex-grow flex flex-col items-center justify-center text-center p-6 space-y-5"
