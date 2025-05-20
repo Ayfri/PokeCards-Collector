@@ -1,40 +1,31 @@
 <script lang="ts">
-	import { page } from '$app/stores'; // SvelteKit v1 used $app/stores, modern SvelteKit uses $app/state
+	import { page } from '$app/state';
 	import PageTitle from '@components/PageTitle.svelte';
 	import { Home, AlertTriangle } from 'lucide-svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { onMount } from 'svelte';
-
-	// According to user instructions, $app/stores might be deprecated for $app/state.
-	// However, for error objects, $page.error from $app/stores is the standard way.
-	// If $app/state is preferred, this might need adjustment based on how error info is exposed there.
 
 	let ready = false;
 	onMount(() => {
 		ready = true;
 	});
 
-	$: errorStatus = $page.status;
-	$: errorMessage = $page.error?.message;
+	$: errorStatus = page.status;
+	$: errorMessage = page.error?.message;
 
 	let displayTitle = '';
 	let displayMessage = '';
 
-	$: {
+    $: {
 		if (errorStatus === 404) {
 			displayTitle = '404 - Page Not Found';
-			displayMessage = errorMessage || "Oops! The page you're looking for doesn't seem to exist.";
+			displayMessage = "Looks like this page used Teleport, and it failed!";
 		} else {
 			displayTitle = `Error ${errorStatus}`;
 			displayMessage = errorMessage || 'Something went wrong on our end. Please try again later.';
 		}
 	}
 </script>
-
-<svelte:head>
-	<title>{displayTitle} - PokéCards Collector</title>
-	<meta name="description" content={displayMessage} />
-</svelte:head>
 
 {#if ready}
 	<main
@@ -87,12 +78,4 @@
 	.animated-hover-button:hover::before {
 		left: 100%;
 	}
-
-	.animated-hover-button span {
-		position: relative;
-		z-index: 1;
-	}
-
-	/* Add min-height to ensure footer (if any) is pushed down */
-	/* The main tag already has a min-height style */
 </style>
