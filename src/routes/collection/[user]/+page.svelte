@@ -2,9 +2,18 @@
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import { page } from '$app/state'; // Keep page store if needed for URL params, etc.
-	import { Home } from 'lucide-svelte'; // Keep icon import
+	import { Home, UserX, ShieldAlert, Search } from 'lucide-svelte'; // Keep icon import
+	import PageTitle from '@components/PageTitle.svelte'; // Import PageTitle
+	import { fade, fly } from 'svelte/transition'; // Import transitions
+	import { onMount } from 'svelte'; // Import onMount for ready state
 
 	export let data: PageData;
+
+	// --- Ready state for transitions ---
+	let ready = false;
+	onMount(() => {
+		ready = true;
+	});
 
 	// --- Use Server Data Directly --- 
 	$: pokemons = data.pokemons || [];
@@ -51,22 +60,50 @@
 	<meta name="description" content={description} />
 </svelte:head>
 
-<div class="flex flex-col flex-grow">
+{#if ready} <!-- Wrap content in ready check for transitions -->
+<div class="flex flex-col flex-grow container mx-auto px-4 py-8 min-h-[calc(100svh-200px)]">
 	{#if profileNotFound || profileIsPrivate}
-		<div class="text-center p-8 flex flex-col items-center justify-center flex-grow">
-			<p class="font-bold mb-4 {profileNotFound ? 'text-4xl' : 'text-3xl'} text-gold-400">
-				{statusMessage}
+		<main 
+			class="flex-grow flex flex-col items-center justify-center text-center p-6 space-y-5"
+			in:fade={{ duration: 300, delay: 100 }}
+		>
+			<div in:fly={{ y: 20, duration: 400, delay: 200 }} class="mb-4">
+				{#if profileNotFound}
+					<UserX size={64} class="mx-auto text-gold-400" />
+				{:else if profileIsPrivate}
+					<ShieldAlert size={64} class="mx-auto text-gold-400" />
+				{/if}
+			</div>
+
+			<div in:fly={{ y: 20, duration: 400, delay: 300 }}>
+				<PageTitle title={profileNotFound ? 'User Not Found' : 'Collection is Private'} />
+			</div>
+
+			<p class="max-w-md text-lg text-gray-300" in:fly={{ y: 20, duration: 400, delay: 400 }}>
+				{#if profileNotFound}
+					The user <strong class="text-gold-300">"{targetUsername}"</strong> could not be found. They may have changed their username or the account no longer exists.
+				{:else if profileIsPrivate}
+					The collection for <strong class="text-gold-300">"{targetUsername}"</strong> is set to private. You cannot view their cards at this time.
+				{/if}
 			</p>
-			<a
-				href="/"
-				class="home-button animated-hover-button relative overflow-hidden bg-transparent border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
-			>
-				<span class="relative z-10 flex items-center gap-2">
-					<Home size={16} />
+			
+			<div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4" in:fly={{ y: 20, duration: 400, delay: 500 }}>
+				<a
+					href="/"
+					class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+				>
+					<Home size={18} />
 					Return to Home
-				</span>
-			</a>
-		</div>
+				</a>
+				<a
+					href="/users"
+					class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+				>
+					<Search size={18} />
+					Search Users
+				</a>
+			</div>
+		</main>
 	{:else}
 		<!-- Always display CardGrid, pass server data -->
 		<CardGrid 
@@ -92,3 +129,4 @@
 		{/if}
 	{/if}
 </div>
+{/if} <!-- End of ready check -->
