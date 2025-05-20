@@ -5,7 +5,16 @@ import type { PageServerLoad } from './$types';
 import type { UserProfile, CollectionStats, ServiceResponse } from '$lib/types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
-	const { profile: loggedInUserProfile, allCards, sets, prices, ...layoutData } = await parent();
+	const parentData = await parent(); // Await parent data first
+
+	// Destructure non-streamed properties and the streamed object
+	const { profile: loggedInUserProfile, sets: parentSets, ...layoutData } = parentData;
+
+	// Await streamed properties
+	const allCards = await parentData.streamed.allCards || [];
+	const prices = await parentData.streamed.prices || {};
+	const sets = parentSets || []; // Use parentSets, assuming it's already resolved
+
 	const requestedUsername = params.user;
 	const loggedInUsername = loggedInUserProfile?.username ?? null;
 
@@ -65,7 +74,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 
 	if ((isPublic || isOwnProfile) && targetProfile.username) {
 		// Ensure allCards, sets, prices are correctly passed to getCollectionStats
-		const { data: stats, error: statsError } = await getCollectionStats(targetProfile.username, allCards ?? [], sets ?? [], prices ?? {});
+		const { data: stats, error: statsError } = await getCollectionStats(targetProfile.username, allCards, sets, prices);
 		if (statsError) {
 			console.error(`Error fetching collection stats for ${targetProfile.username}:`, statsError);
 		} else {
