@@ -4,6 +4,7 @@
 	import HashIcon from 'lucide-svelte/icons/hash';
 	import { timeAgo } from '$helpers/dates';
 	import { goto } from '$app/navigation';
+    import { ChevronRight } from 'lucide-svelte';
 
 	export let user: {
 		auth_id: string;
@@ -30,10 +31,10 @@
 >
 	<div class="p-4 flex flex-col items-center text-center space-y-1.5">
 		<Avatar username={user.username} size="size-16 text-2xl" profileColor={user.profile_color} />
-		<h4 class="text-lg font-semibold text-gold-400 group-hover:text-gold-300 transition-colors duration-200 truncate w-full pt-1">{user.username}</h4>
+		<h4 class="text-lg font-semibold text-white group-hover:text-gold-400 transition-colors duration-200 truncate w-full pt-1">{user.username}</h4>
 		<div class="text-sm text-gray-300 space-y-0.5">
 			<p class="flex items-center justify-center gap-1.5 {highlightClass}">
-				<HashIcon size={14} />
+				<ChevronRight size={14} />
 				{countTextPrefix}{user.unique_card_count} {countTextSuffix}{user.unique_card_count !== 1 ? 's' : ''}
 			</p>
 			<p class="flex items-center justify-center gap-1.5 text-gray-400 text-xs">
