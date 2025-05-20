@@ -232,11 +232,16 @@
 									: `/collection/${encodeURIComponent(targetProfile.username)}`}
 								class="block p-6 bg-gray-800/60 rounded-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
 							>
-								<div class="flex items-center gap-3">
-									<BookOpen size={20} class="text-gold-400" />
-									<h3 class="text-lg font-medium text-white">
-										{isOwnProfile ? 'My Collection' : `${targetProfile.username}'s Collection`}
-									</h3>
+								<div class="flex items-center justify-between gap-3">
+									<div class="flex items-center gap-3">
+										<BookOpen size={20} class="text-gold-400" />
+										<h3 class="text-lg font-medium text-white">
+											{isOwnProfile ? 'My Collection' : `${targetProfile.username}'s Collection`}
+										</h3>
+									</div>
+									{#if collectionStats?.total_value !== undefined}
+										<span class="text-xs text-gold-200">{formatCurrency(collectionStats.total_value)}</span>
+									{/if}
 								</div>
 								<p class="text-sm text-gray-400 mt-2">Browse all collected cards</p>
 							</a>
@@ -247,11 +252,16 @@
 									: `/wishlist?user=${encodeURIComponent(targetProfile.username)}`}
 								class="block p-6 bg-gray-800/60 rounded-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
 							>
-								<div class="flex items-center gap-3">
-									<ListTodo size={20} class="text-gold-400" />
-									<h3 class="text-lg font-medium text-white">
-										{isOwnProfile ? 'My Wishlist' : `${targetProfile.username}'s Wishlist`}
-									</h3>
+								<div class="flex items-center justify-between gap-3">
+									<div class="flex items-center gap-3">
+										<ListTodo size={20} class="text-gold-400" />
+										<h3 class="text-lg font-medium text-white">
+											{isOwnProfile ? 'My Wishlist' : `${targetProfile.username}'s Wishlist`}
+										</h3>
+									</div>
+									{#if collectionStats?.wishlist_total_value !== undefined}
+										<span class="text-xs text-gold-200">{formatCurrency(collectionStats.wishlist_total_value)}</span>
+									{/if}
 								</div>
 								<p class="text-sm text-gray-400 mt-2">Cards to be acquired</p>
 							</a>

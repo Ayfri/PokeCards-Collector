@@ -141,11 +141,22 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 			return { data: null, error };
 		}
 		
-		const { data: wishlist, error: wishlistError } = await getUserWishlist(username);
+		const { data: wishlistItems, error: wishlistError } = await getUserWishlist(username);
 		
 		// Default wishlist count to 0 if there's an error
-		const wishlistCount = wishlistError || !wishlist ? 0 : wishlist.length;
+		const wishlistCount = wishlistError || !wishlistItems ? 0 : wishlistItems.length;
 		
+		// Calculate wishlist total value
+		let wishlistTotalValue = 0;
+		if (wishlistItems && !wishlistError) {
+			wishlistItems.forEach(item => {
+				const cardPrice = prices[item.card_code];
+				if (cardPrice && cardPrice.simple) {
+					wishlistTotalValue += cardPrice.simple;
+				}
+			});
+		}
+
 		// Create a set of cardCodes for quick lookup
 		const collectionCardCodes = new Set(collection.map(item => item.card_code));
 		
@@ -226,7 +237,8 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 				total_value: Math.round(totalValue * 100) / 100,
 				cards_by_rarity: cardsByRarity,
 				set_completion: setStats,
-				wishlist_count: wishlistCount
+				wishlist_count: wishlistCount,
+				wishlist_total_value: Math.round(wishlistTotalValue * 100) / 100 // Added wishlist total value
 			},
 			error: null
 		};

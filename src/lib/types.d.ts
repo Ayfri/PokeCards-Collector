@@ -106,6 +106,7 @@ export interface CollectionStats {
 	total_value: number;
 	unique_cards: number;
 	wishlist_count: number;
+	wishlist_total_value: number;
 }
 
 export interface Image {
