@@ -227,9 +227,7 @@
 
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 							<a
-								href={isOwnProfile
-									? `/collection`
-									: `/collection/${encodeURIComponent(targetProfile.username)}`}
+								href={`/collection/${encodeURIComponent(targetProfile.username)}`}
 								class="block p-6 bg-gray-800/60 rounded-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
 							>
 								<div class="flex items-center justify-between gap-3">
@@ -247,9 +245,7 @@
 							</a>
 
 							<a
-								href={isOwnProfile
-									? `/wishlist`
-									: `/wishlist?user=${encodeURIComponent(targetProfile.username)}`}
+								href={`/wishlist/${encodeURIComponent(targetProfile.username)}`}
 								class="block p-6 bg-gray-800/60 rounded-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
 							>
 								<div class="flex items-center justify-between gap-3">
