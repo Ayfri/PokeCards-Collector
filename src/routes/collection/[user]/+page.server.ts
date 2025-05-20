@@ -6,7 +6,16 @@ import type { PageServerLoad } from './$types';
 import type { FullCard, UserProfile, UserCollection } from '$lib/types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
-	const { allCards, sets, prices, profile: loggedInUserProfile, collectionItems: layoutCollectionItems, ...layoutData } = await parent();
+	const parentData = await parent(); // Await parent data first
+
+	// Destructure non-streamed properties and the streamed object
+	const { profile: loggedInUserProfile, sets: parentSets, collectionItems: layoutCollectionItems, ...layoutData } = parentData;
+
+	// Await streamed properties
+	const allCards = await parentData.streamed.allCards || [];
+	const prices = await parentData.streamed.prices || {};
+	const sets = parentSets || []; // Use parentSets, assuming it's already resolved
+
 	const requestedUsername = params.user;
 
 	// --- Load remaining base data ---
@@ -88,7 +97,13 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 
 	return {
 		...layoutData,
-		allCards, pokemons, sets, rarities, types, prices, artists,
+		allCards,
+		pokemons,
+		sets,
+		rarities,
+		types,
+		prices,
+		artists,
 		targetProfile,
 		isPublic,
 		serverCollectionCards: collectionCards,
