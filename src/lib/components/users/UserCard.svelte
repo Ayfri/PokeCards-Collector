@@ -24,13 +24,13 @@
 </script>
 
 <a
-	class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl {hoverBorderClass} {hoverShadowClass} cursor-pointer"
+	class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl {hoverBorderClass} {hoverShadowClass} cursor-pointer focus:outline-none focus:ring-0"
 	aria-label={`View profile of ${user.username}`}
 	href={`/profile/${encodeURIComponent(user.username)}`}
 >
 	<div class="p-4 flex flex-col items-center text-center space-y-1.5">
 		<Avatar username={user.username} size="size-16 text-2xl" profileColor={user.profile_color} />
-		<h4 class="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors duration-200 truncate w-full pt-1">{user.username}</h4>
+		<h4 class="text-lg font-semibold text-gold-400 group-hover:text-gold-300 transition-colors duration-200 truncate w-full pt-1">{user.username}</h4>
 		<div class="text-sm text-gray-300 space-y-0.5">
 			<p class="flex items-center justify-center gap-1.5 {highlightClass}">
 				<HashIcon size={14} />
