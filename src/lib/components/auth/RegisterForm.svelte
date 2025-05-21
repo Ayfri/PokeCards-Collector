@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { page } from '$app/stores';
 	import BouncyLoader from '../BouncyLoader.svelte';
 
 	export let onSuccess: (() => void) | undefined = undefined;
@@ -181,8 +182,14 @@
 				// Dispatch success event
 				onSuccess?.();
 
-				// Navigate to home - SSR should pick up the new session from cookies
-				window.location.href = '/'; // Force full reload for session
+				// Navigate to current page or home after invalidating
+				await invalidateAll();
+				const currentPath = $page.url.pathname;
+				if (currentPath.includes('/login') || currentPath.includes('/auth') || currentPath.includes('/register') || currentPath.includes('/reset-password')) {
+					goto('/');
+				} else {
+					goto(currentPath + $page.url.search);
+				}
 
 			} catch (fetchError) {
 				clearTimeout(registerTimeout);
