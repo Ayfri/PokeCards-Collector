@@ -5,12 +5,17 @@
 		"checkJs": true,
 		"esModuleInterop": true,
 		"forceConsistentCasingInFileNames": true,
+		"moduleResolution": "bundler",
 		"noImplicitAny": true,
 		"noFallthroughCasesInSwitch": true,
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"sourceMap": true,
 		"strict": true,
-		"verbatimModuleSyntax": true
+		"verbatimModuleSyntax": true,
+		"types": [
+			"@sveltejs/kit",
+			"@cloudflare/workers-types"
+		]
 	}
 }
