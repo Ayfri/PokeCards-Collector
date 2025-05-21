@@ -71,7 +71,7 @@ const uploadFilesTask = {
 	description: 'Upload all default files to R2 bucket (Cloudflare)',
 	action: async () => {
 		try {
-			const { uploadFile, filesToUpload } = await import('./src/scrappers/upload.js')
+			const { uploadFile, filesToUpload } = await import('./src/scrapers/upload.js')
 			const path = await import('node:path')
 			for (const filePath of filesToUpload) {
 				const objectName = path.basename(filePath)
