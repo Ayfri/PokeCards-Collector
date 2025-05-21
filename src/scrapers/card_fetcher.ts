@@ -144,6 +144,108 @@ export async function fetchAndSaveAllCards() {
 }
 
 /**
+ * Fetches all cards from the API, handling pagination and parallel processing.
+ * Returns the results as an object containing all cards and prices.
+ */
+export async function fetchAllCardsData(): Promise<{ allCards: ProcessedCard[], allPrices: Record<string, PriceData> }> {
+	const allCards: ProcessedCard[] = [];
+	const allPrices: Record<string, PriceData> = {};
+	console.log('Retrieving all cards and prices for data return...');
+
+	let startPage = 1;
+	let hasMoreCards = true;
+	let totalCardsRetrieved = 0;
+	let totalCardsAvailable = 0;
+
+	const startTime = Date.now();
+	const pageProcessingTimes: number[] = [];
+	const PAGES_BATCH_SIZE = 10; // Consider making this configurable or smaller for serverless
+
+	// TODO: Adapt Pokemon and SetMappings loading for serverless environment if these files are large or not bundled.
+	// For now, assuming these might be fetched from R2 or passed as arguments if small.
+	// If these are not available, parts of card processing (e.g., set merging, some Pokémon ID lookups) might be affected.
+	let pokemons: Pokemon[] = [];
+	try {
+		// This will likely fail in a strict serverless environment without fs access.
+		// pokemons = await fs.readFile(POKEMONS, 'utf-8').then(data => JSON.parse(data));
+		console.warn('Pokemon data loading from fs might not work in serverless. Ensure data is available via another method if needed.');
+	} catch (e) {
+		console.log('Pokemons data not found or empty, card processing might be affected.');
+	}
+
+	let setMappings: SetMappings = {};
+	try {
+		// This will also likely fail in a strict serverless environment.
+		// setMappings = await loadSetMappings(); // loadSetMappings also uses fs.readFile
+		console.warn('Set mappings loading from fs might not work in serverless. Ensure data is available via another method if needed.');
+	} catch(e) {
+		console.log('Set mappings not loaded, card processing might be affected.');
+	}
+
+	while (hasMoreCards) {
+		try {
+			const pageBatchPromises = [];
+			for (let i = 0; i < PAGES_BATCH_SIZE; i++) {
+				const currentPage = startPage + i;
+				pageBatchPromises.push(processPage(currentPage, setMappings, pokemons));
+			}
+
+			const results = await Promise.allSettled(pageBatchPromises);
+			const successfulResults = results.filter(r => r.status === 'fulfilled') as PromiseFulfilledResult<{
+				cards: ProcessedCard[];
+				prices: Record<string, PriceData>;
+				pageTime: number;
+				isLastPage: boolean;
+				totalCount?: number;
+			}>[];
+
+			if (successfulResults.length === 0 && results.some(r => r.status === 'rejected')) {
+				console.log('All pages in batch failed, stopping.');
+				hasMoreCards = false;
+				continue;
+			}
+
+			let shouldStop = false;
+			for (const result of successfulResults) {
+				const { cards, prices, pageTime, isLastPage, totalCount } = result.value;
+				if (cards.length > 0) {
+					allCards.push(...cards);
+					Object.assign(allPrices, prices);
+					totalCardsRetrieved += cards.length;
+					pageProcessingTimes.push(pageTime);
+
+					if (totalCardsAvailable === 0 && totalCount) {
+						totalCardsAvailable = totalCount;
+						console.log(`Total cards available in API: ${totalCardsAvailable}`);
+					}
+				}
+				if (isLastPage) {
+					shouldStop = true;
+				}
+			}
+
+			logProgress(startTime, pageProcessingTimes, totalCardsRetrieved, totalCardsAvailable);
+
+			startPage += PAGES_BATCH_SIZE;
+			if (shouldStop) {
+				hasMoreCards = false;
+				console.log('All pages have been retrieved.');
+			}
+
+			await new Promise(resolve => setTimeout(resolve, 100)); // Rate limiting
+		} catch (error) {
+			console.error(`Error processing pages ${startPage}-${startPage + PAGES_BATCH_SIZE - 1}:`, error);
+			await new Promise(resolve => setTimeout(resolve, 2000)); // Longer delay on error
+		}
+	}
+
+	logFinalSummary(startTime, allCards, totalCardsAvailable);
+
+	console.log(`Finished fetching ${allCards.length} cards and prices for ${Object.keys(allPrices).length} cards.`);
+	return { allCards, allPrices };
+}
+
+/**
  * Helper function to process a single page of cards.
  * Returns processed cards and their associated prices.
  */
@@ -289,12 +391,12 @@ function mapFetchedCardToProcessed(card: FetchedCard, setMappings: SetMappings, 
 		} else {
 			console.log(`Found Pokémon '${foundPokemon?.name}' number ${nationalPokedexNumber} for '${card.name}'`);
 		}
-		
+
 		// If pokemon name is "Buried Fossil" swap supertype to "Trainer"
 		if (card.name.toLowerCase().includes('buried fossil')) {
 			card.supertype = 'Trainer';
 		}
-		
+
 		// If nationalPokedexNumber is undefined and supertype is Pokémon, set to 99999
 		if (nationalPokedexNumber === undefined && card.supertype === 'Pokémon') {
 			nationalPokedexNumber = 99999;
@@ -396,4 +498,4 @@ export async function fetchCardsByType(supertype: 'Energy' | 'Trainer'): Promise
 		await new Promise(resolve => setTimeout(resolve, 2500));
 		return fetchCardsByType(supertype);
 	}
-} 
+}

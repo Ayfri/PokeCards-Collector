@@ -37,17 +37,27 @@ export const filesToUpload = [
 	'src/assets/prices.json',
 ]
 
-export async function uploadFile(filePath: string, objectName: string, context?: { env: Record<string, string> }) {
+export async function uploadFile(filePathOrContent: string, objectName: string, context?: { env: Record<string, string>; contentType?: string }) {
 	try {
 		const s3 = getS3Client(context);
 		const { bucketName } = getR2Env(context);
-		// For Cloudflare Functions, fs operations are not directly available for project files.
-		// The files need to be "generated" in memory or fetched if already in R2/KV.
-		// This example assumes the scraper functions return the content or can write to a temp location accessible by the Function.
-		// For now, we'll assume the scraper functions invoked before this will make the files available
-		// in a way that can be read by fs.readFileSync. This needs to be true for Pages Functions.
-		// If running in a Worker, fs.readFileSync will not work like this.
-		const fileContent = fs.readFileSync(filePath);
+
+		let fileContent: Buffer;
+		// Check if filePathOrContent is a path (heuristic: check for slashes or typical file extensions)
+		// This is a simplification; a more robust check might be needed depending on expected inputs.
+		if (filePathOrContent.includes('/') || filePathOrContent.includes('\\') || filePathOrContent.endsWith('.json') || filePathOrContent.endsWith('.txt')) {
+			console.log(`Treating input as file path: ${filePathOrContent}`);
+			// This part will likely fail in a pure serverless environment if filePathOrContent is a path not in /tmp
+			try {
+				fileContent = fs.readFileSync(filePathOrContent);
+			} catch (readError) {
+				console.error(`Failed to read file at path: ${filePathOrContent}. If this is content, ensure it does not resemble a file path.`);
+				throw readError;
+			}
+		} else {
+			console.log(`Treating input as direct content for object: ${objectName}`);
+			fileContent = Buffer.from(filePathOrContent, 'utf-8');
+		}
 
 		const compressedContent = zlib.gzipSync(fileContent);
 
@@ -57,11 +67,11 @@ export async function uploadFile(filePath: string, objectName: string, context?:
 			Bucket: bucketName,
 			CacheControl: 'public, max-age=86400', // 24 hours
 			ContentEncoding: 'gzip',
-			ContentType: "application/json",
+			ContentType: context?.contentType || "application/octet-stream", // Default if not specified
 			Key: compressedObjectName,
 		};
 
-		console.log(`Uploading ${compressedObjectName} to R2 bucket ${bucketName} with Cache-Control...`);
+		console.log(`Uploading ${compressedObjectName} to R2 bucket ${bucketName} with Cache-Control and ContentType: ${uploadParams.ContentType}...`);
 		await s3.putObject(uploadParams);
 		console.log(`Successfully uploaded ${compressedObjectName} to R2`);
 	} catch (error) {

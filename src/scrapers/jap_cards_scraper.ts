@@ -347,4 +347,66 @@ export async function fetchTCGCollectorCards() {
 		console.log('Failed URLs:');
 		failedUrls.forEach(url => console.log(url));
 	}
-} 
+}
+
+export async function fetchJapCardsData(): Promise<FinalCard[]> {
+	const params = {
+		releaseDateOrder: 'newToOld',
+		displayAs: 'images',
+		cardsPerPage: 120 // Consider making this configurable or smaller
+	};
+	// TODO: Adapt Pokemon data loading for serverless environment if pokemons-full.json is large or not bundled.
+	// The global pokemonNameToNumber, pokemonNamesSet, pokemonNamesList are loaded using readFileSync at the top of the file.
+	// This will fail in a strict serverless environment. This data needs to be available via another method (e.g., passed in, fetched from R2).
+	console.warn('Jap_cards_scraper relies on globally loaded Pokemon data from fs. This will fail in serverless if not adapted.');
+
+	const maxPages = await getMaxPages(params);
+	console.log(`Found ${maxPages} pages for Japanese cards.`);
+	const allFinalCards: FinalCard[] = [];
+	const failedUrls: string[] = [];
+	const startTime = Date.now();
+
+	for (let page = 1; page <= maxPages; page++) {
+		const pageStart = Date.now();
+		console.log(`\nScraping Japanese cards page ${page}/${maxPages}`);
+		const urls = await getCardUrls(params, page);
+		for (let i = 0; i < urls.length; i += WORKERS) {
+			const chunk = urls.slice(i, i + WORKERS);
+			const results = await Promise.all(chunk.map(url => scrapeCardData(url)));
+			results.forEach((card, idx) => {
+				const url = chunk[idx];
+				if (card) {
+					const finalCard = toFinalCard(card); // This uses the global Pokemon data
+					allFinalCards.push(finalCard);
+					// console.log(`[OK] ${finalCard.name ? finalCard.name : url}`); // Optional: reduce logging for serverless
+				} else {
+					failedUrls.push(url);
+					console.log(`[FAIL] Jap card ${url}`);
+				}
+			});
+			await sleep(500); // Rate limiting
+		}
+		const elapsed = (Date.now() - startTime) / 1000;
+		const pageElapsed = (Date.now() - pageStart) / 1000;
+		console.log(`Page ${page} done in ${formatTime(pageElapsed)}. Total JP cards: ${allFinalCards.length}, Failed: ${failedUrls.length}`);
+		const remainingPages = maxPages - page;
+		const avgPageTime = elapsed / page;
+		const estRemaining = avgPageTime * remainingPages;
+		console.log(`Elapsed: ${formatTime(elapsed)} | Est. remaining: ${formatTime(estRemaining)}`);
+
+		// Remove fs.writeFile for serverless context
+		// await fs.writeFile(path.join('src/assets', 'jp-cards-full.json'), JSON.stringify(allFinalCards, null, 0), 'utf-8');
+
+		if (DEBUG_MODE && page >= 1) { // Allow at least one page in debug for testing
+			console.log('DEBUG_MODE active: stopping after one page for Japanese cards.');
+			break;
+		}
+	}
+	const totalElapsed = (Date.now() - startTime) / 1000;
+	console.log(`\nJapanese card scraping finished. Total cards: ${allFinalCards.length}, Failed: ${failedUrls.length}`);
+	console.log(`Total time: ${formatTime(totalElapsed)}`);
+	if (failedUrls.length) {
+		console.warn('Some Japanese card URLs failed to scrape:', failedUrls);
+	}
+	return allFinalCards;
+}

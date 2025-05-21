@@ -1,6 +1,5 @@
-import { fetchHoloCards } from '../scrapers/holo_scraper';
-import { fetchPokemonTypes } from '../scrapers/types_scraper';
-import { HOLO_CARDS, TYPES } from '../scrapers/files';
+import { fetchAllCardsData } from '../scrapers/card_fetcher';
+import { fetchJapCardsData } from '../scrapers/jap_cards_scraper';
 import { uploadFile } from '../scrapers/upload';
 
 interface Env {
@@ -27,7 +26,7 @@ interface PagesFunctionContext<E extends Env = Env, P extends string = any, D ex
 }
 
 export async function onRequest(context: PagesFunctionContext): Promise<Response> {
-	console.log('Starting regeneration of assets...');
+	console.log('Starting regeneration of assets: cards, prices, and Japanese cards...');
 
 	try {
 		// It's important that scraper functions can run in a serverless environment.
@@ -35,19 +34,24 @@ export async function onRequest(context: PagesFunctionContext): Promise<Response
 		// Also, ensure they don't depend on process.env directly but can accept env vars or have them set in the Pages Function environment.
 
 		// Run scrapers
-		console.log('Fetching holo cards...');
-		await fetchHoloCards(); // This will write to HOLO_CARDS path in ephemeral storage
-		console.log('Fetching Pokemon types...');
-		await fetchPokemonTypes(); // This will write to TYPES path in ephemeral storage
+		console.log('Fetching English cards and prices...');
+		const { allCards, allPrices } = await fetchAllCardsData();
 
-		// Upload generated files
-		console.log(`Uploading ${HOLO_CARDS}...`);
-		await uploadFile(HOLO_CARDS, 'holo-cards.json', { env: context.env });
-		console.log(`Uploading ${TYPES}...`);
-		await uploadFile(TYPES, 'types.json', { env: context.env });
+		console.log('Fetching Japanese cards...');
+		const japCards = await fetchJapCardsData();
 
-		console.log('Successfully regenerated and uploaded assets.');
-		return new Response(JSON.stringify({ success: true, message: 'Assets regenerated and uploaded.' }), {
+		// Upload generated data
+		console.log('Uploading English cards data (cards.json)...');
+		await uploadFile(JSON.stringify(allCards), 'cards.json', { env: context.env, contentType: 'application/json' });
+
+		console.log('Uploading prices data (prices.json)...');
+		await uploadFile(JSON.stringify(allPrices), 'prices.json', { env: context.env, contentType: 'application/json' });
+
+		console.log('Uploading Japanese cards data (jp-cards.json)...');
+		await uploadFile(JSON.stringify(japCards), 'jp-cards.json', { env: context.env, contentType: 'application/json' });
+
+		console.log('Successfully regenerated and uploaded all card assets.');
+		return new Response(JSON.stringify({ success: true, message: 'All card assets regenerated and uploaded.' }), {
 			headers: { 'Content-Type': 'application/json' },
 		});
 	} catch (error: any) {
