@@ -6,28 +6,29 @@
 	import Heart from 'lucide-svelte/icons/heart';
 	import Library from 'lucide-svelte/icons/library';
 	import Settings from 'lucide-svelte/icons/settings';
-	import { page } from '$app/state';
+	import { page } from '$app/stores';
 	import AuthModal from './AuthModal.svelte';
 	import { browser } from '$app/environment';
 	import Avatar from './Avatar.svelte';
 	import { setNavigationLoading } from '$lib/stores/loading';
 	import type { UserProfile } from '$lib/types';
 	import type { User as AuthUser } from '@supabase/supabase-js';
+	import { goto, invalidateAll } from '$app/navigation';
 
 	let isMenuOpen = false;
 	let isAuthModalOpen = false;
 	let menuElement: HTMLElement;
 
-	$: user = page.data.user as AuthUser | null;
-	$: profile = page.data.profile as UserProfile | null;
+	$: user = $page.data.user as AuthUser | null;
+	$: profile = $page.data.profile as UserProfile | null;
 
-	export let userProp: AuthUser | null = user;
-	export let profileProp: UserProfile | null = profile;
+	export let userProp: AuthUser | null = $page.data.user as AuthUser | null;
+	export let profileProp: UserProfile | null = $page.data.profile as UserProfile | null;
 
-	$: (
-		userProp = user,
-		profileProp = profile
-	);
+	$: {
+		userProp = $page.data.user as AuthUser | null;
+		profileProp = $page.data.profile as UserProfile | null;
+	}
 
 	function toggleMenu() {
 		isMenuOpen = !isMenuOpen;
@@ -62,6 +63,7 @@
 
 	async function handleSignOut() {
 		closeMenu();
+		setNavigationLoading(true);
 		try {
 			const response = await fetch('/api/auth/logout', {
 				method: 'POST',
@@ -69,14 +71,22 @@
 
 			if (!response.ok) {
 				console.error('Logout failed:', response.statusText);
+				setNavigationLoading(false);
 				return;
 			}
 
-			window.location.href = '/';
+			await invalidateAll();
+			const currentPath = $page.url.pathname;
+			const currentSearch = $page.url.search;
+			goto(currentPath + currentSearch);
 
 		} catch (error) {
 			console.error('An error occurred during sign out:', error);
-			window.location.href = '/';
+			setNavigationLoading(false);
+			await invalidateAll();
+			const currentPath = $page.url.pathname;
+			const currentSearch = $page.url.search;
+			goto(currentPath + currentSearch);
 		}
 	}
 

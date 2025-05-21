@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { supabase } from '../../supabase';
 	import BouncyLoader from '../BouncyLoader.svelte';
+	import { page } from '$app/stores';
+	import { goto, invalidateAll } from '$app/navigation';
 
 	export let onSuccess: (() => void) | undefined = undefined;
 
@@ -56,9 +58,16 @@
 			// Notify the parent component (AuthModal) of success
 			onSuccess?.();
 
-			// Let the browser handle the redirect based on cookie changes, or force reload if needed.
-			// A simple reload ensures the layout server load runs again with the new session.
-			window.location.href = '/'; // Or window.location.reload();
+			// Invalidate all load functions to ensure session changes are picked up
+			await invalidateAll();
+
+			// Redirect to current page or home
+			const currentPath = $page.url.pathname;
+			if (currentPath.includes('/login') || currentPath.includes('/auth') || currentPath.includes('/reset-password')) {
+				goto('/');
+			} else {
+				goto(currentPath + $page.url.search);
+			}
 
 		} catch (error: any) {
 			clearTimeout(loginTimeout);
