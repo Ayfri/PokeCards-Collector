@@ -36,15 +36,12 @@
 
 	// --- Collection/Wishlist State ---
 	function getCollectionCount(cardCode: string) {
-		const count = $collectionStore.get(cardCode) || 0;
-		console.log(`[RelatedCards] getCollectionCount for ${cardCode}: ${count}`, $collectionStore);
-		return count;
+		return $collectionStore.get(cardCode) || 0;
 	}
 	function isInWishlist(cardCode: string) {
-		const inList = $wishlistStore.has(cardCode);
-		console.log(`[RelatedCards] isInWishlist for ${cardCode}: ${inList}`, $wishlistStore);
-		return inList;
+		return $wishlistStore.has(cardCode);
 	}
+
 	const MAX_CARD_QUANTITY = 99;
 
 	// --- Helper Functions ---
