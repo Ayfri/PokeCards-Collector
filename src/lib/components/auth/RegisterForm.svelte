@@ -17,6 +17,8 @@
 		digit: false,
 		special: false
 	};
+	let showPassword = false;
+	let showConfirmPassword = false;
 
 	onMount(() => {
 		// Composant monté
@@ -197,6 +199,14 @@
 		}
 	}
 
+	const togglePasswordVisibility = () => {
+		showPassword = !showPassword;
+	};
+
+	const toggleConfirmPasswordVisibility = () => {
+		showConfirmPassword = !showConfirmPassword;
+	};
+
 	$: {
 		passwordCriteria.length = password.length >= 8;
 		passwordCriteria.digit = /[0-9]/.test(password);
@@ -245,14 +255,36 @@
 		<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 			Password
 		</label>
-		<input
-			type="password"
-			id="password"
-			bind:value={password}
-			class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-			placeholder="••••••••"
-			required
-		/>
+		<div class="relative">
+			{#if showPassword}
+				<input
+					bind:value={password}
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					id="password"
+					name="password"
+					placeholder="Choose a strong password"
+					required
+					type="text"
+				/>
+			{:else}
+				<input
+					bind:value={password}
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					id="password"
+					name="password"
+					placeholder="Choose a strong password"
+					required
+					type="password"
+				/>
+			{/if}
+			<button
+				class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300"
+				on:click={togglePasswordVisibility}
+				type="button"
+			>
+				{showPassword ? 'Hide' : 'Show'}
+			</button>
+		</div>
 		<!-- Password strength bar -->
 		<div class="mt-2 h-2 w-full bg-gray-200 dark:bg-gray-700 rounded">
 			<div class="h-2 rounded transition-all duration-300 {passwordStrength === 1 ? 'bg-red-500' : passwordStrength === 2 ? 'bg-yellow-400' : passwordStrength === 3 ? 'bg-green-500' : 'bg-gray-200'}"
@@ -270,14 +302,36 @@
 		<label for="confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 			Confirm Password
 		</label>
-		<input
-			type="password"
-			id="confirm-password"
-			bind:value={confirmPassword}
-			class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-			placeholder="••••••••"
-			required
-		/>
+		<div class="relative">
+			{#if showConfirmPassword}
+				<input
+					bind:value={confirmPassword}
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					id="confirm-password"
+					name="confirm-password"
+					placeholder="••••••••"
+					required
+					type="text"
+				/>
+			{:else}
+				<input
+					bind:value={confirmPassword}
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					id="confirm-password"
+					name="confirm-password"
+					placeholder="••••••••"
+					required
+					type="password"
+				/>
+			{/if}
+			<button
+				class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300"
+				on:click={toggleConfirmPasswordVisibility}
+				type="button"
+			>
+				{showConfirmPassword ? 'Hide' : 'Show'}
+			</button>
+		</div>
 	</div>
 	
 	<button

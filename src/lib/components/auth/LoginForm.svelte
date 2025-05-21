@@ -11,6 +11,7 @@
 	let resetEmail = '';
 	let resetLoading = false;
 	let resetMessage = '';
+	let showPassword = false;
 
 	async function handleSubmit() {
 		if (!email || !password) {
@@ -91,6 +92,10 @@
 		}
 		resetLoading = false;
 	}
+
+	const togglePasswordVisibility = () => {
+		showPassword = !showPassword;
+	};
 </script>
 
 <form on:submit|preventDefault={handleSubmit} class="space-y-4">
@@ -118,14 +123,36 @@
 		<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 			Password
 		</label>
-		<input
-			type="password"
-			id="password"
-			bind:value={password}
-			class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-			placeholder="••••••••"
-			required
-		/>
+		<div class="relative">
+			{#if showPassword}
+				<input
+					bind:value={password}
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					id="password"
+					name="password"
+					placeholder="Enter your password"
+					required
+					type="text"
+				/>
+			{:else}
+				<input
+					bind:value={password}
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					id="password"
+					name="password"
+					placeholder="Enter your password"
+					required
+					type="password"
+				/>
+			{/if}
+			<button
+				class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300"
+				on:click={togglePasswordVisibility}
+				type="button"
+			>
+				{showPassword ? 'Hide' : 'Show'}
+			</button>
+		</div>
 		<div class="mt-2 text-right">
 			<button type="button" class="text-xs text-red-600 hover:underline focus:outline-none" on:click={() => { showReset = !showReset; resetMessage = ''; }}>
 				{showReset ? 'Cancel' : 'Forgot password?'}
