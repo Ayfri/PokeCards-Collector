@@ -28,13 +28,6 @@
 	// Wait a bit before rendering all cards to avoid layout shifts
 	let shouldRenderAllCards = false;
 
-	// Interface for the custom event
-	interface JapaneseContextEvent extends CustomEvent {
-		detail: {
-			isJapanese: boolean;
-		};
-	}
-
 	// Set the base URL for card linking based on context
 	$: baseCardUrl = isJapaneseContext ? '/jp-card/' : '/card/';
 
@@ -105,12 +98,6 @@
 		setTimeout(() => {
 			shouldRenderAllCards = true;
 		}, 800);
-
-		// Listen for Japanese context updates
-		window.addEventListener('jp-context-update', ((e: Event) => {
-			const customEvent = e as JapaneseContextEvent;
-			isJapaneseContext = customEvent.detail?.isJapanese || false;
-		}) as EventListener);
 	});
 	
 	// After navigation, ensure the current card is set based on the URL

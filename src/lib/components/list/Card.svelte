@@ -40,9 +40,6 @@
 	const { pokemonNumber, cardNumber = '0' } = parseCardCode(cardCode);
 	const pokemon = pokemonNumber ? pokemons.find(p => p.id === pokemonNumber) : null;
 	const set = findSetByCardCode(cardCode, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null };
-	if (!prices) {
-		console.log('No price data for card:', card);
-	}
 
 	// Access user and profile from page state
 	$: user = page.data.user;
