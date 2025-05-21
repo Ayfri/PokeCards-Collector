@@ -6,9 +6,14 @@
 
 	export let isOpen = false;
 	export let onClose: (() => void) | undefined = undefined;
+	export let initialMode: 'login' | 'register' = 'login';
 	
-	let activeTab: 'login' | 'register' = 'login';
+	let activeTab: 'login' | 'register' = initialMode;
 	let modalContent: HTMLDivElement;
+
+	$: if (isOpen) {
+		activeTab = initialMode;
+	}
 
 	function closeModal() {
 		isOpen = false;

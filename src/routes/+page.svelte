@@ -106,7 +106,11 @@
 	});
 
 	let isAuthModalOpen = false;
-	function openAuthModal() { isAuthModalOpen = true; }
+	let authMode: 'login' | 'register' = 'login';
+	function openAuthModal(mode: 'login' | 'register') {
+		authMode = mode;
+		isAuthModalOpen = true;
+	}
 	function closeAuthModal() { isAuthModalOpen = false; }
 </script>
 
@@ -667,7 +671,7 @@
 						</a>
 					{:else}
 						<button
-							on:click={openAuthModal}
+							on:click={() => openAuthModal('login')}
 							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-none"
 							type="button"
 						>
@@ -698,7 +702,7 @@
 						</a>
 					{:else}
 						<button
-							on:click={openAuthModal}
+							on:click={() => openAuthModal('register')}
 							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-none"
 							type="button"
 						>
@@ -899,7 +903,7 @@
 				</p>
 				<div class="flex flex-wrap justify-center gap-4">
 					<button
-						on:click={openAuthModal}
+						on:click={() => openAuthModal('login')}
 						class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 focus:outline-none"
 						type="button"
 					>
@@ -907,7 +911,7 @@
 						{#if !NO_IMAGES}<LogInIcon size={18} />{/if}
 					</button>
 					<button
-						on:click={openAuthModal}
+						on:click={() => openAuthModal('register')}
 						class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2 focus:outline-none"
 						type="button"
 					>
@@ -921,7 +925,7 @@
 		</section>
 	{/if}
 
-	<AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
+	<AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} initialMode={authMode} />
 </main>
 
 <style>
