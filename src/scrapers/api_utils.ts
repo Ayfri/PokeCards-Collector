@@ -1,11 +1,12 @@
-let apiKey = '';
-if (process.env.POKEMON_TCG_API_KEY) {
-	apiKey = process.env.POKEMON_TCG_API_KEY;
-} else {
-	throw new Error('Pokémon TCG API key is missing from .env file, key: POKEMON_TCG_API_KEY');
+export const API_BASE_URL = 'https://api.pokemontcg.io/v2';
+let apiKey = process.env.POKEMON_TCG_API_KEY;
+if (import.meta.env.POKEMON_TCG_API_KEY) {
+	apiKey = import.meta.env.POKEMON_TCG_API_KEY;
 }
 
-export const API_BASE_URL = 'https://api.pokemontcg.io/v2';
+export function setAPIKey(key: string) {
+	apiKey = key;
+}
 
 /**
  * Generic retry function with exponential backoff
@@ -40,6 +41,10 @@ export async function fetchFromApi<T>(endpoint: string, params: Record<string, s
 		const queryParams = new URLSearchParams(params).toString();
 		const url = `${API_BASE_URL}/${endpoint}${queryParams ? `?${queryParams}` : ''}`;
 
+		if (!apiKey) {
+			throw new Error('Pokémon TCG API key is missing from .env file, key: POKEMON_TCG_API_KEY');
+		}
+
 		const response = await fetch(url, {
 			headers: {
 				'X-Api-Key': apiKey,
@@ -56,4 +61,4 @@ export async function fetchFromApi<T>(endpoint: string, params: Record<string, s
 
 		return await response.json() as T;
 	}, 5, 1000);
-} 
+}
