@@ -4,7 +4,40 @@ import holoCards from '~/assets/holo-cards.json';
 import pokemonSets from '~/assets/sets-full.json';
 import pokemonTypes from '~/assets/types.json';
 import originalJpSets from '~/assets/jp-sets-full.json';
-import {PUBLIC_R2_BUCKET_URL} from '$env/static/public';
+import * as $env_static_public from '$env/static/public';
+
+// Attempt to get the URL from SvelteKit's static environment variables.
+// This variable is meant to be injected at build time.
+// If PUBLIC_R2_BUCKET_URL is not defined in your .env file (e.g., as PUBLIC_R2_BUCKET_URL=https://...)
+// and therefore not included by SvelteKit in the $env/static/public module,
+// then svelteKitStaticEnvUrl will be undefined.
+// The original error "is not exported by virtual:env/static/public" suggests that the build fails
+// because SvelteKit cannot even find this variable to include in the module.
+const svelteKitStaticEnvUrl = ($env_static_public as any).PUBLIC_R2_BUCKET_URL;
+
+// Fallback to process.env.PUBLIC_R2_BUCKET_URL
+// Note: process.env is a Node.js concept. Its availability and content
+// in SvelteKit contexts (especially for code that might run in the browser) can be unreliable.
+// SvelteKit's own $env modules are the standard way to handle environment variables.
+// Using @ts-ignore as 'process' might not be defined in all execution contexts of this library file.
+// @ts-ignore
+const nodeProcessEnvUrl = typeof process !== 'undefined' && process.env ? process.env.PUBLIC_R2_BUCKET_URL : undefined;
+
+const PUBLIC_R2_BUCKET_URL = svelteKitStaticEnvUrl || nodeProcessEnvUrl;
+
+if (!PUBLIC_R2_BUCKET_URL) {
+	console.error(
+		'Pokestore Critical Error: PUBLIC_R2_BUCKET_URL is not defined. ' +
+		'This variable is essential for fetching core application data. ' +
+		'Please ensure it is correctly set in your .env file (e.g., PUBLIC_R2_BUCKET_URL="https://your-bucket-url.com") ' +
+		'and that this .env file is present at the root of your project during the build process. ' +
+		'Attempted to read from $env/static/public (build-time) and process.env (runtime fallback). ' +
+		'Application functionality related to fetching cards, prices, etc., will be severely impacted or non-functional.'
+	);
+	// Depending on the application's needs, you might want to throw an error here
+	// to halt execution if this critical configuration is missing, for example:
+	// throw new Error('Misconfiguration: PUBLIC_R2_BUCKET_URL is undefined. App cannot start.');
+}
 
 // Define a type for the raw structure of items in jp-sets-full.json
 type RawJpSet = {
