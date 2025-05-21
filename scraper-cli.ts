@@ -2,16 +2,15 @@
 
 import { select } from '@inquirer/prompts';
 import chalk from 'chalk';
-import { downloadAllImages } from './src/scrappers/download_images';
-import { fetchAndSaveAllCards } from './src/scrappers/card_fetcher';
-import { fetchHoloCards } from './src/scrappers/holo_scraper';
-import { fetchPokemons } from './src/scrappers/pokemon_scraper';
-import { fetchPokemonTypes } from './src/scrappers/types_scraper';
-import { fetchSets } from './src/scrappers/set_fetcher';
-import { getCardMasks } from './src/scrappers/foil_scraper';
-import { fetchTCGCollectorCards } from './src/scrappers/jap_cards_scraper';
-import { createInterface } from 'node:readline/promises'
-import { fetchJapaneseSets } from './src/scrappers/jap_sets_scraper';
+import { downloadAllImages } from './src/scrapers/download_images.js';
+import { fetchAndSaveAllCards } from './src/scrapers/card_fetcher.js';
+import { fetchHoloCards } from './src/scrapers/holo_scraper.js';
+import { fetchPokemons } from './src/scrapers/pokemon_scraper.js';
+import { fetchPokemonTypes } from './src/scrapers/types_scraper.js';
+import { fetchSets } from './src/scrapers/set_fetcher.js';
+import { getCardMasks } from './src/scrapers/foil_scraper.js';
+import { fetchTCGCollectorCards } from './src/scrapers/jap_cards_scraper.js';
+import { fetchJapaneseSets } from './src/scrapers/jap_sets_scraper.js';
 
 interface ScraperOption {
     name: string;
@@ -125,10 +124,10 @@ const scrapers: ScraperOption[] = [
                 baseScrapers.find(s => s.name === 'sets'),
                 baseScrapers.find(s => s.name === 'cards'),
                 baseScrapers.find(s => s.name === 'merge-sets'),
-                ...baseScrapers.filter(s => 
-                    s.name !== 'sets' && 
-                    s.name !== 'cards' && 
-                    s.name !== 'merge-sets' && 
+                ...baseScrapers.filter(s =>
+                    s.name !== 'sets' &&
+                    s.name !== 'cards' &&
+                    s.name !== 'merge-sets' &&
                     s.name !== 'download-images'
                 )
             ].filter(Boolean);

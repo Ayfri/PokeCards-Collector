@@ -17,7 +17,7 @@ PokéCards-Collector is a web application built using the SvelteKit framework fo
 *   **Backend:** Supabase provides database storage (PostgreSQL), user authentication, and real-time capabilities (though not explicitly seen in initial files, it's a common Supabase feature).
 *   **Database:** A PostgreSQL database managed by Supabase stores user data, collection details, wishlists, and potentially cached/scraped Pokémon TCG data. The initial schema is defined in `supabase-schema.sql`.
 *   **Styling:** Tailwind CSS is used for utility-first styling, configured in `tailwind.config.mjs` and applied globally via `src/app.css`.
-*   **Data Scraping:** A separate CLI tool (`scrapper-cli.ts` using `tsx`) is provided to fetch data from the Pokémon TCG API and PokéAPI, process it, and potentially store it locally (`src/assets/`) or in the Supabase database.
+*   **Data Scraping:** A separate CLI tool (`scraper-cli.ts` using `tsx`) is provided to fetch data from the Pokémon TCG API and PokéAPI, process it, and potentially store it locally (`src/assets/`) or in the Supabase database.
 
 ## Data Flow
 
@@ -39,7 +39,7 @@ alias: {
   '@components': 'src/lib/components/*',
   '$helpers': 'src/lib/helpers/*',
   '$stores': 'src/lib/stores/*',
-  '$scrappers': 'src/scrappers/*',
+  '$scrapers': 'src/scrapers/*',
   '~': 'src/*',
 },
 ```
@@ -47,7 +47,7 @@ alias: {
 - **@components:** Access shared components located in `src/lib/components/`.
 - **$helpers:** Import utility functions from `src/lib/helpers/`.
 - **$stores:** Easily import Svelte stores from `src/lib/stores/`.
-- **$scrappers:** Reference data scraping scripts located in `src/scrappers/`.
+- **$scrapers:** Reference data scraping scripts located in `src/scrapers/`.
 - **~:** A global alias to reference any file within `src/`.
 
 Additionally, SvelteKit provides some default aliases:

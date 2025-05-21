@@ -1,6 +1,6 @@
 import * as fs from "node:fs";
-import {POKEMONS_COUNT} from '../constants.ts';
-import {POKEMONS} from './files.ts';
+import {POKEMONS_COUNT} from '../constants.js';
+import {POKEMONS} from './files.js';
 
 interface SearchResults {
 	results: {

@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
-import type {Card} from '../types.ts';
-import {CARDS, TYPES} from './files.ts';
+import type {Card} from '../types.js';
+import {CARDS, TYPES} from './files.js';
 
 
 export async function fetchPokemonTypes() {

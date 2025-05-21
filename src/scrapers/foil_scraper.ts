@@ -4,8 +4,8 @@
 // get etch : https://cdn.malie.io/file/malie-io/tcgl/cards/png/en/sm9/sm9_en_001_std.etch.png
 
 import * as fs from 'node:fs/promises';
-import type {Card} from '../types.ts';
-import {HOLO_CARDS} from './files.ts';
+import type {Card} from '../types.js';
+import {HOLO_CARDS} from './files.js';
 
 export async function getCardMasks() {
 	const holoCards = JSON.parse(await fs.readFile(HOLO_CARDS, 'utf-8')).flat() as Card[];

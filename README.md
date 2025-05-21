@@ -288,7 +288,7 @@ After running the `download-images` scraper, you will have local copies of the c
 │   │   ├── stores/     # Svelte stores
 │   │   └── supabase.ts # Supabase client initialization
 │   ├── routes/         # Application pages and API endpoints
-│   ├── scrappers/      # Data scraping scripts
+│   ├── scrapers/      # Data scraping scripts
 │   ├── styles/         # Global styles
 │   ├── app.css         # Main CSS file (often imports Tailwind)
 │   ├── app.d.ts        # Ambient TypeScript declarations for SvelteKit
@@ -305,7 +305,7 @@ After running the `download-images` scraper, you will have local copies of the c
 ├── supabase-schema-update.sql # Database schema updates (if any)
 ├── tailwind.config.mjs # Tailwind CSS configuration
 ├── tsconfig.json       # TypeScript configuration
-├── scrapper-cli.ts     # Entry point for the data scraper CLI
+├── scraper-cli.ts     # Entry point for the data scraper CLI
 └── vite.config.ts      # Vite configuration
 ```
 </details>

@@ -1,6 +1,6 @@
 ---
-description: 
-globs: 
+description:
+globs:
 alwaysApply: true
 ---
 # Directory Structure
@@ -19,7 +19,7 @@ src/
 ├── routes/         # Application pages and API endpoints based on SvelteKit's file-based routing.
 │                   # Each subdirectory represents a route segment.
 │                   # Files such as +page.svelte, +layout.svelte, +page.server.ts define page structure and data loading.
-├── scrappers/      # Scripts related to the data scraping CLI tool.
+├── scrapers/       # Scripts related to the data scraping CLI tool.
 ├── styles/         # Global CSS styles or Tailwind base/component layers (if needed beyond app.css).
 ├── fonts/          # Font files.
 ├── app.css         # Main global CSS file, primarily for Tailwind directives and base styles.
@@ -45,7 +45,7 @@ alias: {
   '@components': 'src/lib/components/*',
   '$helpers': 'src/lib/helpers/*',
   '$stores': 'src/lib/stores/*',
-  '$scrappers': 'src/scrappers/*',
+  '$scrapers': 'src/scrapers/*',
   '~': 'src/*',
 },
 ```
@@ -53,7 +53,7 @@ alias: {
 - **@components:** Access shared components located in `src/lib/components/`.
 - **$helpers:** Import utility functions from `src/lib/helpers/`.
 - **$stores:** Easily import Svelte stores from `src/lib/stores/`.
-- **$scrappers:** Reference data scraping scripts located in `src/scrappers/`.
+- **$scrapers:** Reference data scraping scripts located in `src/scrapers/`.
 - **~:** A global alias to reference any file within `src/`.
 
 Additionally, SvelteKit provides some default aliases:
@@ -64,4 +64,3 @@ Additionally, SvelteKit provides some default aliases:
 - **$env/dynamic/public**: Exposes public environment variables at runtime.
 - **$env/static/private**: Exposes private environment variables at build time.
 - **$env/static/public**: Exposes public environment variables at build time.
-

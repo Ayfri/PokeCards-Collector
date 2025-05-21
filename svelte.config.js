@@ -13,7 +13,7 @@ const config = {
 			'@components': 'src/lib/components/*',
 			'$helpers': 'src/lib/helpers/*',
 			'$stores': 'src/lib/stores/*',
-			'$scrappers': 'src/scrappers/*',
+			'$scrapers': 'src/scrapers/*',
 			'~': 'src/*',
 		},
 	},

@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
-import type {Card} from '../types.ts';
-import {CARDS, HOLO_CARDS} from './files.ts'; // Using fs/promises for async operations
+import type {Card} from '../types.js';
+import {CARDS, HOLO_CARDS} from './files.js'; // Using fs/promises for async operations
 
 
 export async function fetchHoloCards() {
