@@ -17,6 +17,27 @@ export async function GET(event: RequestEvent): Promise<Response> {
 		);
 	}
 
+	const expectedToken = env.PCC_TOKEN;
+	const providedToken = event.request.headers.get('PCC_TOKEN');
+
+	if (!expectedToken) {
+		console.error('PCC_TOKEN is not set in the server environment.');
+		return json(
+			{ success: false, message: 'Server security configuration error.' },
+			{ status: 500 }
+		);
+	}
+
+	if (!providedToken || providedToken !== expectedToken) {
+		console.warn('Unauthorized attempt to regenerate assets. Invalid or missing PCC_TOKEN.');
+		return json(
+			{ success: false, message: 'Unauthorized. Invalid or missing PCC_TOKEN.' },
+			{ status: 401 }
+		);
+	}
+
+	console.log('PCC_TOKEN validated successfully.');
+
 	setAPIKey(env.POKEMON_TCG_API_KEY);
 
 	// Ensure R2_BUCKET_NAME is treated as a string key for env
