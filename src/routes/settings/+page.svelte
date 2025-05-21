@@ -11,6 +11,8 @@
 	import {HsvPicker} from 'svelte-color-picker';
 	import Button from '@components/filters/Button.svelte';
 	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
+	import { supabase } from '$lib/supabase';
+	import LockIcon from 'lucide-svelte/icons/lock';
 
 	let ready = false;
 	// Default gold color from Avatar.svelte, in case profile.profile_color is not set
@@ -18,6 +20,9 @@
 	let profileColorInput: string = defaultProfileHexColor;
 	let showColorPicker = false;
 	let colorPickerRef: HTMLDivElement | null = null;
+	let resetPasswordLoading = false;
+	let resetPasswordMessage = '';
+	let resetPasswordError = '';
 
 	$: user = page.data.user;
 	$: profile = page.data.profile;
@@ -76,6 +81,29 @@
 			window.removeEventListener('mousedown', handleClickOutside);
 		}
 	}
+
+	async function handlePasswordReset() {
+		if (!user?.email) {
+			resetPasswordError = 'User email not found. Cannot send reset link.';
+			return;
+		}
+		resetPasswordLoading = true;
+		resetPasswordMessage = '';
+		resetPasswordError = '';
+
+		const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+			redirectTo: `${window.location.origin}/reset-password`
+		});
+
+		resetPasswordLoading = false;
+		if (error) {
+			resetPasswordError = error.message || 'Failed to send password reset email.';
+			resetPasswordMessage = '';
+		} else {
+			resetPasswordMessage = 'Password reset email sent! Check your inbox.';
+			resetPasswordError = '';
+		}
+	}
 </script>
 
 <main class="container mx-auto px-4 pb-8 text-white overflow-x-hidden">
@@ -122,6 +150,9 @@
 							</a>
 							<a href="#privacy" class="py-2 px-3 rounded-md hover:bg-gray-800/80 text-gray-300 border border-transparent hover:border-gold-400 transition-all duration-300">
 								Privacy
+							</a>
+							<a href="#password" class="py-2 px-3 rounded-md hover:bg-gray-800/80 text-gray-300 border border-transparent hover:border-gold-400 transition-all duration-300">
+								Password
 							</a>
 						</nav>
 					</div>
@@ -241,6 +272,27 @@
 								<span class="relative z-10">Go to Profile Settings</span>
 							</a>
 						</div>
+					</div>
+
+					<div id="password">
+						<h2 class="text-xl font-semibold mb-4 text-gold-400">Password Management</h2>
+						<p class="text-sm text-gray-300 mb-4">
+							If you want to change your password, click the button below. We will send you an email with a link to reset your password.
+						</p>
+						<Button
+							onClick={handlePasswordReset}
+							disabled={resetPasswordLoading}
+							class="animated-hover-button relative overflow-hidden inline-flex items-center justify-center py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent transition-all duration-300 hover:text-black"
+						>
+							<LockIcon size={16} class="mr-2" />
+							{resetPasswordLoading ? 'Sending...' : 'Send Password Reset Email'}
+						</Button>
+						{#if resetPasswordMessage}
+							<p class="mt-2 text-sm text-green-400">{resetPasswordMessage}</p>
+						{/if}
+						{#if resetPasswordError}
+							<p class="mt-2 text-sm text-red-400">{resetPasswordError}</p>
+						{/if}
 					</div>
 				</div>
 			</div>
