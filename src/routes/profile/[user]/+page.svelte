@@ -94,9 +94,24 @@
 	}
 
 	// Initialize component readiness
-	onMount(() => {
-		ready = true;
-	});
+	// onMount(() => {
+	// 	ready = true;
+	// });
+
+	$: {
+		if (data) {
+			const canDisplayUserNotFound = !data.targetProfile && data.pageTitle === 'User Not Found';
+			// targetProfile being present implies data.targetProfile is not null/undefined
+			const canDisplayPrivateProfile = data.targetProfile && !data.isPublic && !data.isOwnProfile;
+			const canDisplayNotLoggedIn = !data.loggedInUsername && !data.targetProfile;
+			const canDisplayProfile = !!data.targetProfile; // Main condition for displaying a profile
+			const canDisplayCouldNotLoad = !data.targetProfile && data.isOwnProfile === false && data.loggedInUsername; // Check isOwnProfile specifically for this branch if needed based on template
+
+			if (canDisplayUserNotFound || canDisplayPrivateProfile || canDisplayNotLoggedIn || canDisplayProfile || canDisplayCouldNotLoad) {
+				ready = true;
+			}
+		}
+	}
 </script>
 
 <main class="container mx-auto px-4 pb-8 text-white overflow-x-hidden">
@@ -255,121 +270,172 @@
 											{isOwnProfile ? 'My Wishlist' : `${targetProfile.username}'s Wishlist`}
 										</h3>
 									</div>
-									{#if collectionStats?.wishlist_total_value !== undefined}
-										<span class="text-xs text-gold-200">{formatCurrency(collectionStats.wishlist_total_value)}</span>
+									{#if collectionStats?.wishlist_count !== undefined}
+										<span class="text-xs text-gold-200">{collectionStats.wishlist_count} cards</span>
 									{/if}
 								</div>
-								<p class="text-sm text-gray-400 mt-2">Cards to be acquired</p>
+								<p class="text-sm text-gray-400 mt-2">View cards on the wishlist</p>
 							</a>
+						</div>
+					</div>
+				</div>
 
-							{#if isOwnProfile}
-								<a
-									href="/settings"
-									class="block p-6 bg-gray-800/60 rounded-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
-								>
-									<div class="flex items-center gap-3">
-										<UserCog size={20} class="text-gold-400" />
-										<h3 class="text-lg font-medium text-white">Account Settings</h3>
+				<!-- Collection Stats Section -->
+				{#if collectionStats && (isPublic || isOwnProfile)}
+					<div in:fly|global={{ y: 50, duration: 400, delay: 450 }}>
+						<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 mb-10" in:fly={{ y: 20, duration: 300, delay: 50 }}>
+							<h2 class="text-xl font-semibold mb-6 text-gold-400">Collection Statistics</h2>
+
+							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8 mb-8">
+								<div class="text-center">
+									<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.total_instances || 0}</span>
+									<span class="text-sm text-gray-400">Total Cards</span>
+								</div>
+								<div class="text-center">
+									<div class="flex items-center justify-center gap-1 mb-2">
+										<span class="text-3xl md:text-4xl font-bold text-gold-400">{collectionStats?.unique_cards || 0}</span>
+										<span class="text-sm text-gray-500">/ {allCards.length || 0}</span>
 									</div>
-									<p class="text-sm text-gray-400 mt-2">Manage your account preferences</p>
-								</a>
+									<span class="text-sm text-gray-400">Unique Cards</span>
+								</div>
+								<div class="text-center">
+									<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.wishlist_count || 0}</span>
+									<span class="text-sm text-gray-400">Wishlist Cards</span>
+								</div>
+								<div class="text-center">
+									<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.set_completion ? Object.keys(collectionStats.set_completion).length : 0}</span>
+									<span class="text-sm text-gray-400">Different Sets</span>
+								</div>
+								<div class="text-center">
+									<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{formatCurrency(collectionStats.total_value || 0)}</span>
+									<span class="text-sm text-gray-400">Collection Value</span>
+								</div>
+								<div class="text-center">
+									<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{totalCompletionPercentage.toFixed(1)}%</span>
+									<span class="text-sm text-gray-400">Total Completion</span>
+								</div>
+							</div>
+
+							<!-- Set Completion Progress -->
+							{#if collectionStats.set_completion && Object.keys(collectionStats.set_completion).length > 0}
+								<div>
+									<div class="flex justify-between items-center mb-4">
+										<h3 class="text-lg font-semibold text-white">Set Completion Progress <span class="text-sm font-normal text-gray-400">({Object.keys(collectionStats.set_completion).length} sets)</span></h3>
+										<span class="text-sm text-gray-400 italic">Click on a set to view its cards</span>
+									</div>
+									<div class="max-h-[600px] overflow-y-auto pr-2">
+										<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+											{#each getSortedSets() as [setName, setData], i}
+												{@const set = getSetByName(setName)}
+												<a
+													href={isOwnProfile
+														? `/collection?set=${encodeURIComponent(setName)}`
+														: `/collection/${encodeURIComponent(targetProfile.username)}?set=${encodeURIComponent(setName)}`}
+													class="block relative group"
+													title={`View ${isOwnProfile ? 'your' : targetProfile.username + "'s"} cards from ${setName}`}
+												>
+													<div class="bg-gray-800/60 rounded-lg p-4 border border-transparent hover:border-gold-400 hover:bg-gray-700/40 transition-all duration-300 cursor-pointer" in:fly={{ y: 20, duration: 300, delay: 50 + (i * 30) }}>
+														<div class="flex justify-between items-center mb-2">
+															<div class="flex items-center gap-2">
+																{#if !NO_IMAGES && set?.logo}
+																	<img src={set.logo} alt={setName} class="h-6 w-auto" />
+																{/if}
+																<h4 class="font-medium text-white group-hover:text-gold-400 transition-colors duration-200">{setName}</h4>
+															</div>
+															<div class="flex items-center gap-2">
+																<span class="text-sm text-gold-400">{setData.percentage.toFixed(1)}%</span>
+																<ChevronRight size={16} class="text-gray-500 group-hover:text-gold-400 transition-colors duration-200" />
+															</div>
+														</div>
+														<div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
+															<div class="bg-gold-400 h-2.5 rounded-full" style="width: {setData.percentage}%"></div>
+														</div>
+														<div class="flex justify-between text-xs text-gray-400">
+															<span>{setData.count} / {setData.total} cards</span>
+															<span>Value: {formatCurrency(setData.collectedValue)}</span>
+														</div>
+													</div>
+												</a>
+											{/each}
+										</div>
+									</div>
+								</div>
+							{:else}
+								<p class="text-gray-400">No set completion data available.</p>
 							{/if}
 						</div>
 					</div>
-				</div>
+				{:else if !targetProfile && !isOwnProfile && loggedInUsername}
+					<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 text-center" in:fly|global={{ y: 50, duration: 400, delay: 300 }}>
+						<p class="text-gray-400">Could not load the requested profile.</p>
+						<a href="/" class="text-gold-400 hover:underline mt-2 inline-block">Return Home</a>
+					</div>
+				{/if}
 			</div>
-
-			<!-- Collection Stats Section -->
-			{#if collectionStats && (isPublic || isOwnProfile)}
-				<div in:fly|global={{ y: 50, duration: 400, delay: 450 }}>
-					<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 mb-10" in:fly={{ y: 20, duration: 300, delay: 50 }}>
-						<h2 class="text-xl font-semibold mb-6 text-gold-400">Collection Statistics</h2>
-
-						<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8 mb-8">
-							<div class="text-center">
-								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.total_instances || 0}</span>
-								<span class="text-sm text-gray-400">Total Cards</span>
-							</div>
-							<div class="text-center">
-								<div class="flex items-center justify-center gap-1 mb-2">
-									<span class="text-3xl md:text-4xl font-bold text-gold-400">{collectionStats?.unique_cards || 0}</span>
-									<span class="text-sm text-gray-500">/ {allCards.length || 0}</span>
-								</div>
-								<span class="text-sm text-gray-400">Unique Cards</span>
-							</div>
-							<div class="text-center">
-								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.wishlist_count || 0}</span>
-								<span class="text-sm text-gray-400">Wishlist Cards</span>
-							</div>
-							<div class="text-center">
-								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.set_completion ? Object.keys(collectionStats.set_completion).length : 0}</span>
-								<span class="text-sm text-gray-400">Different Sets</span>
-							</div>
-							<div class="text-center">
-								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{formatCurrency(collectionStats.total_value || 0)}</span>
-								<span class="text-sm text-gray-400">Collection Value</span>
-							</div>
-							<div class="text-center">
-								<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{totalCompletionPercentage.toFixed(1)}%</span>
-								<span class="text-sm text-gray-400">Total Completion</span>
+		{:else}
+			<!-- Skeleton Loader -->
+			<div class="animate-pulse">
+				<!-- Profile Info Skeleton -->
+				<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
+					<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6">
+						<div class="flex items-center gap-4 mb-6">
+							<div class="bg-gray-700 rounded-full size-16"></div>
+							<div>
+								<div class="h-6 bg-gray-700 rounded w-3/4 mb-2"></div>
+								<div class="h-4 bg-gray-700 rounded w-1/2"></div>
 							</div>
 						</div>
-
-						<!-- Set Completion Progress -->
-						{#if collectionStats.set_completion && Object.keys(collectionStats.set_completion).length > 0}
-							<div>
-								<div class="flex justify-between items-center mb-4">
-									<h3 class="text-lg font-semibold text-white">Set Completion Progress <span class="text-sm font-normal text-gray-400">({Object.keys(collectionStats.set_completion).length} sets)</span></h3>
-									<span class="text-sm text-gray-400 italic">Click on a set to view its cards</span>
+						<div class="border-t border-gray-700 pt-4">
+							<div class="h-4 bg-gray-700 rounded w-1/3 mb-2"></div>
+							<div class="h-8 bg-gray-700 rounded w-1/2"></div>
+						</div>
+					</div>
+					<!-- Statistics Skeleton -->
+					<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 lg:col-span-2">
+						<div class="h-6 bg-gray-700 rounded w-1/4 mb-4"></div>
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+							{#each Array(4) as _}
+								<div>
+									<div class="h-4 bg-gray-700 rounded w-1/2 mb-1"></div>
+									<div class="h-5 bg-gray-700 rounded w-3/4"></div>
 								</div>
-								<div class="max-h-[600px] overflow-y-auto pr-2">
-									<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-										{#each getSortedSets() as [setName, setData], i}
-											{@const set = getSetByName(setName)}
-											<a
-												href={isOwnProfile
-													? `/collection?set=${encodeURIComponent(setName)}`
-													: `/collection/${encodeURIComponent(targetProfile.username)}?set=${encodeURIComponent(setName)}`}
-												class="block relative group"
-												title={`View ${isOwnProfile ? 'your' : targetProfile.username + "'s"} cards from ${setName}`}
-											>
-												<div class="bg-gray-800/60 rounded-lg p-4 border border-transparent hover:border-gold-400 hover:bg-gray-700/40 transition-all duration-300 cursor-pointer" in:fly={{ y: 20, duration: 300, delay: 50 + (i * 30) }}>
-													<div class="flex justify-between items-center mb-2">
-														<div class="flex items-center gap-2">
-															{#if !NO_IMAGES && set?.logo}
-																<img src={set.logo} alt={setName} class="h-6 w-auto" />
-															{/if}
-															<h4 class="font-medium text-white group-hover:text-gold-400 transition-colors duration-200">{setName}</h4>
-														</div>
-														<div class="flex items-center gap-2">
-															<span class="text-sm text-gold-400">{setData.percentage.toFixed(1)}%</span>
-															<ChevronRight size={16} class="text-gray-500 group-hover:text-gold-400 transition-colors duration-200" />
-														</div>
-													</div>
-													<div class="w-full bg-gray-700 rounded-full h-2.5 mb-4">
-														<div class="bg-gold-400 h-2.5 rounded-full" style="width: {setData.percentage}%"></div>
-													</div>
-													<div class="flex justify-between text-xs text-gray-400">
-														<span>{setData.count} / {setData.total} cards</span>
-														<span>Value: {formatCurrency(setData.collectedValue)}</span>
-													</div>
-												</div>
-											</a>
-										{/each}
-									</div>
-								</div>
-							</div>
-						{:else}
-							<p class="text-gray-400">No set completion data available.</p>
-						{/if}
+							{/each}
+						</div>
 					</div>
 				</div>
-			{:else if !targetProfile && !isOwnProfile && loggedInUsername}
-				<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 text-center" in:fly|global={{ y: 50, duration: 400, delay: 300 }}>
-					<p class="text-gray-400">Could not load the requested profile.</p>
-					<a href="/" class="text-gold-400 hover:underline mt-2 inline-block">Return Home</a>
+
+				<!-- Set Completion Skeleton -->
+				<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 mb-10">
+					<div class="h-6 bg-gray-700 rounded w-1/3 mb-6"></div>
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{#each Array(3) as _}
+							<div class="p-4 rounded-lg bg-gray-700/30 border border-gold-600/20">
+								<div class="flex items-center mb-3">
+									<div class="bg-gray-600 w-10 h-10 mr-3 rounded"></div>
+									<div>
+										<div class="h-5 bg-gray-600 rounded w-3/4 mb-1"></div>
+										<div class="h-3 bg-gray-600 rounded w-1/2"></div>
+									</div>
+								</div>
+								<div class="mb-1">
+									<div class="flex justify-between text-xs mb-0.5">
+										<div class="h-3 bg-gray-600 rounded w-1/4"></div>
+										<div class="h-3 bg-gray-600 rounded w-1/4"></div>
+									</div>
+									<div class="w-full bg-gray-600 rounded-full h-2.5">
+										<div class="bg-gray-500 h-2.5 rounded-full" style="width: 60%"></div>
+									</div>
+								</div>
+								<div class="text-xs mt-2 space-y-1">
+									<div class="h-3 bg-gray-600 rounded w-full"></div>
+									<div class="h-3 bg-gray-600 rounded w-5/6"></div>
+									<div class="h-3 bg-gray-600 rounded w-4/6"></div>
+								</div>
+							</div>
+						{/each}
+					</div>
 				</div>
-			{/if}
+			</div>
 		{/if}
 	{/if}
 </main>
