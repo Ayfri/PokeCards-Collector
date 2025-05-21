@@ -12,6 +12,7 @@
 	import PageTitle from '@components/PageTitle.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import UserCard from '@components/users/UserCard.svelte';
+	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
 
 	export let data: PageData;
 
@@ -139,8 +140,9 @@
 	</section>
 
 	{#if isLoadingSearch}
-		<div class="flex justify-center pt-6">
-			<div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-400"></div>
+		<div class="flex justify-center items-center pt-6">
+			<BouncyLoader size={30} gradientColorStart="#FFFFFF" gradientColorEnd="#FFFFFF" />
+			<span class="ml-3 text-white">Searching users...</span>
 		</div>
 	{:else if searchErrorMessage}
 		<div class="text-center py-6 bg-gray-800/70 backdrop-blur-sm rounded-lg border border-red-600 max-w-md mx-auto shadow-xl">

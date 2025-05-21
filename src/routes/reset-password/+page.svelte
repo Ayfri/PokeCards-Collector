@@ -3,6 +3,7 @@ import { onMount } from 'svelte';
 import { supabase } from '../../lib/supabase';
 import { page } from '$app/stores';
 import { goto } from '$app/navigation';
+import BouncyLoader from '$lib/components/BouncyLoader.svelte';
 
 let password = '';
 let confirmPassword = '';
@@ -121,7 +122,8 @@ async function handleReset() {
 			class="w-full py-2 px-4 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
 		>
 			{#if loading}
-				<span>Updating...</span>
+				<BouncyLoader size={20} gradientColorStart="#FFFFFF" gradientColorEnd="#FFFFFF" />
+				<span class="ml-2">Updating...</span>
 			{:else}
 				Update password
 			{/if}

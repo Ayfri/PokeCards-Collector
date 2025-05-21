@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { filterSet, filterArtist, filterSupertype, filterName, filterType, sortBy, sortOrder, mostExpensiveOnly, filterRarity } from '$helpers/filters';
 	import { page } from '$app/state';
+	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
 
 	export let data: PageData;
 
@@ -105,7 +106,10 @@
 </script>
 
 {#await data.streamed.cardData}
-	<p class="text-center text-xl mt-12">Loading cards...</p> <!-- Or a more sophisticated loading indicator -->
+	<div class="flex flex-col items-center justify-center text-center text-xl mt-12">
+		<BouncyLoader size={40} />
+		<p class="mt-3 text-white">Loading cards...</p>
+	</div>
 {:then cardDataResolved}
 	{@const allCards = cardDataResolved.allCards}
 	<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
