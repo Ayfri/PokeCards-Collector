@@ -69,10 +69,12 @@
 		}
 	}
 
-	$: if (showColorPicker) {
-		window.addEventListener('mousedown', handleClickOutside);
-	} else {
-		window.removeEventListener('mousedown', handleClickOutside);
+	$: if (browser) {
+		if (showColorPicker) {
+			window.addEventListener('mousedown', handleClickOutside);
+		} else {
+			window.removeEventListener('mousedown', handleClickOutside);
+		}
 	}
 </script>
 
