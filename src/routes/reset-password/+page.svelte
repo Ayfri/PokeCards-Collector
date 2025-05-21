@@ -39,10 +39,6 @@ onMount(() => {
 		token = token || params.get('access_token') || params.get('token') || '';
 		type = type || params.get('type') || '';
 	}
-
-	if (!token || type !== 'recovery') {
-		errorMessage = 'Invalid or missing recovery token.';
-	}
 });
 
 async function handleReset() {
