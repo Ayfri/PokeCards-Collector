@@ -75,7 +75,7 @@
   {#await data.streamed.collectionData}
     <div class="flex flex-col flex-grow py-8 min-h-[calc(100svh-200px)] items-center justify-center text-center">
         <BouncyLoader size={40} />
-        <p class="text-white text-xl mt-3">Loading cards...</p>
+        <p class="text-white text-xl mt-3">Loading collection...</p>
     </div>
   {:then resolvedCollectionData}
     {@const displayCards = resolvedCollectionData.serverCollectionCards || []}

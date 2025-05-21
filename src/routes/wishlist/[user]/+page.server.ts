@@ -3,119 +3,151 @@ import { getPokemons, getRarities, getTypes, getArtists } from '$helpers/data';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserWishlist } from '$lib/services/wishlists';
 import type { PageServerLoad } from './$types';
-import type { FullCard, UserProfile, UserWishlist } from '$lib/types';
+import type { FullCard, UserProfile, Set as TSet, PriceData } from '$lib/types';
 
-export const load: PageServerLoad = async ({ params, parent }) => {
-	const parentData = await parent(); // Await parent data first
-
-	// Destructure non-streamed properties and the streamed object
-	const { profile: loggedInUserProfile, sets: parentSets, wishlistItems: layoutWishlistItems, ...layoutData } = parentData;
-
-	// Await streamed properties
-	const allCards = await parentData.streamed.allCards || [];
-	const prices = await parentData.streamed.prices || {};
-	const sets = parentSets || []; // Use parentSets, assuming it's already resolved
-
-	const requestedUsername = params.user;
-
-	// If not ?user=... and logged in, redirect to ?user=username
-	if (!requestedUsername && loggedInUserProfile?.username) {
-		const correctUrl = `/wishlist/${encodeURIComponent(loggedInUserProfile.username)}`;
-		throw redirect(307, correctUrl);
-	}
-
-	// --- Load remaining base data ---
+async function getStreamedWishlistData(
+	allCards: FullCard[],
+	// prices: Record<string, PriceData>, // Prices not directly used for wishlist cards filtering, but kept for consistency if CardGrid expects it
+	sets: TSet[],
+	wishlistItemsSource: Array<{ card_code: string }> | undefined | null,
+	targetProfileForWishlist: UserProfile | null,
+	isPublicForWishlist: boolean,
+	loggedInUsernameForWishlist: string | null
+) {
 	const [pokemons, rarities, types, artists] = await Promise.all([
 		getPokemons(),
 		getRarities(),
 		getTypes(),
 		getArtists()
 	]).catch(e => {
-		console.error("Error loading page-specific card data:", e);
-		throw error(500, 'Failed to load necessary card data for page');
+		console.error("Error loading page-specific card data for wishlist:", e);
+		throw new Error('Failed to load necessary card data for wishlist');
 	});
-	// --- End base data loading ---
+
+	let wishlistCards: FullCard[] = [];
+	let itemsToProcess = wishlistItemsSource;
+
+	if (targetProfileForWishlist && isPublicForWishlist && loggedInUsernameForWishlist !== targetProfileForWishlist.username) {
+		const { data: targetUserWishlistItems, error: wishlistError } = await getUserWishlist(targetProfileForWishlist.username);
+		if (wishlistError) {
+			console.error(`Error fetching wishlist for ${targetProfileForWishlist.username}:`, wishlistError);
+			itemsToProcess = [];
+		} else {
+			itemsToProcess = targetUserWishlistItems;
+		}
+	}
+
+	if (itemsToProcess) {
+		const wishlistCardCodes = new Set(itemsToProcess.map(item => item.card_code));
+		wishlistCards = allCards.filter((card: FullCard) => wishlistCardCodes.has(card.cardCode));
+	} else {
+		wishlistCards = [];
+	}
+
+	return {
+		pokemons,
+		sets,
+		rarities,
+		types,
+		// prices, // Not returning prices from here as it's top-level now
+		artists,
+		serverWishlistCards: wishlistCards,
+	};
+}
+
+export const load: PageServerLoad = async ({ params, parent }) => {
+	const parentData = await parent();
+	const { profile: loggedInUserProfile, wishlistItems: layoutWishlistItems, sets: parentSets, ...layoutData } = parentData;
+
+	const allCardsResolved = await parentData.streamed.allCards || [];
+	const pricesResolved = await parentData.streamed.prices || {}; // Keep resolving prices for CardGrid
+	const setsResolved = parentSets || [];
+
+	const requestedUsername = params.user;
+
+	// Redirect logic for /wishlist to /wishlist/[user] if logged in
+	if (!requestedUsername && loggedInUserProfile?.username) {
+		const correctUrl = `/wishlist/${encodeURIComponent(loggedInUserProfile.username)}`;
+		throw redirect(307, correctUrl);
+	}
+	// If no requestedUsername and not logged in, it will proceed to show a generic state (handled by targetProfile being null)
 
 	let targetProfile: UserProfile | null = null;
-	let targetUsername: string | null = null;
+	let targetUsername: string | null = requestedUsername; // Can be null if /wishlist is accessed directly without user param and not logged in
 	let isPublic = false;
-	let wishlistCards: FullCard[] | null = null;
 	let title = 'Wishlist';
 	let description = 'User wishlist';
 	let profileError: any = null;
 
-	targetUsername = requestedUsername;
-	({ data: targetProfile, error: profileError } = await getProfileByUsername(targetUsername));
+	if (targetUsername) { // Only try to fetch profile if a username is present
+		({ data: targetProfile, error: profileError } = await getProfileByUsername(targetUsername));
 
-	if (profileError || !targetProfile) {
-		console.error(`Error fetching profile or profile not found for ${targetUsername}:`, profileError);
-		targetProfile = null;
-		title = 'User Not Found';
-		description = `Wishlist for user ${targetUsername} could not be found or user does not exist.`;
-	} else {
-		if (targetProfile.username !== targetUsername) {
-			const correctUrl = `/wishlist/${encodeURIComponent(targetProfile.username)}`;
-			throw redirect(307, correctUrl);
-		}
-		targetUsername = targetProfile.username;
-		isPublic = targetProfile.is_public;
-
-		if (isPublic || (loggedInUserProfile && loggedInUserProfile.username === targetProfile.username)) {
-			let itemsToProcess: Array<{ card_code: string }> | undefined | null = layoutWishlistItems as Array<{ card_code: string }> | undefined | null;
-
-			// If viewing another user's public profile, fetch their wishlist items
-			if (isPublic && loggedInUserProfile?.username !== targetProfile.username && targetProfile) {
-				const { data: targetUserWishlistItems, error: wishlistError } = await getUserWishlist(targetProfile.username);
-				if (wishlistError) {
-					console.error(`Error fetching wishlist for ${targetProfile.username}:`, wishlistError);
-					itemsToProcess = [];
-				} else {
-					itemsToProcess = targetUserWishlistItems;
-				}
-			} else if (loggedInUserProfile && loggedInUserProfile.username === targetProfile?.username) {
-				// Viewing own wishlist, use layout data
-				itemsToProcess = layoutWishlistItems as Array<{ card_code: string }> | undefined | null;
-			} else if (!isPublic && !(loggedInUserProfile && loggedInUserProfile.username === targetProfile?.username)) {
-				// Private profile and not the owner
-				itemsToProcess = [];
-			}
-
-			if (itemsToProcess) {
-				const wishlistCardCodes = new Set(itemsToProcess.map(item => item.card_code));
-				wishlistCards = allCards.filter(card => wishlistCardCodes.has(card.cardCode));
-			} else {
-				wishlistCards = [];
-			}
-			title = `${targetProfile.username}'s Wishlist`;
-			description = `Pokémon TCG wishlist for user ${targetProfile.username}.`;
+		if (profileError || !targetProfile) {
+			console.error(`Error fetching profile or profile not found for ${targetUsername}:`, profileError);
+			targetProfile = null;
+			title = 'User Not Found';
+			description = `Wishlist for user ${targetUsername} could not be found or user does not exist.`;
 		} else {
-			title = 'Private Wishlist';
-			description = `This user's wishlist is private.`;
+			if (targetProfile.username !== targetUsername) {
+				const correctUrl = `/wishlist/${encodeURIComponent(targetProfile.username)}`;
+				throw redirect(307, correctUrl);
+			}
+			targetUsername = targetProfile.username; // Use canonical username
+			isPublic = targetProfile.is_public;
+
+			if (isPublic || (loggedInUserProfile && loggedInUserProfile.username === targetProfile.username)) {
+				title = `${targetProfile.username}'s Wishlist`;
+				description = `Pokémon TCG wishlist for user ${targetProfile.username}.`;
+			} else {
+				title = 'Private Wishlist';
+				description = `This user's wishlist is private.`;
+			}
 		}
+	} else if (!loggedInUserProfile) {
+		// No target user in URL, and not logged in: generic state
+		title = 'View Wishlist';
+		description = 'Log in to view or manage your wishlist, or search for a user.';
+		// targetProfile remains null
 	}
 
-	if (loggedInUserProfile && loggedInUserProfile.username === targetUsername) {
+
+	if (loggedInUserProfile && targetProfile && loggedInUserProfile.username === targetProfile.username) {
 		title = 'My Wishlist';
 		description = 'Your Pokémon TCG card wishlist.';
 	}
 
 	const ogImage = { url: '/favicon.png', alt: 'PokéCards-Collector logo' };
 
+	let wishlistSourceItems = null;
+	if (targetProfile && loggedInUserProfile && loggedInUserProfile.username === targetProfile.username) {
+		wishlistSourceItems = layoutWishlistItems as Array<{ card_code: string }> | undefined | null;
+	} else if (targetProfile && isPublic) {
+		wishlistSourceItems = null; // To be fetched by getStreamedWishlistData
+	} else {
+		wishlistSourceItems = [];
+	}
+
 	return {
 		...layoutData,
-		allCards,
-		pokemons,
-		sets,
-		rarities,
-		types,
-		prices,
-		artists,
 		targetProfile,
 		isPublic,
-		serverWishlistCards: wishlistCards,
 		targetUsername,
 		title,
 		description,
 		image: ogImage,
+		allCards: allCardsResolved,
+		prices: pricesResolved,
+		sets: setsResolved,
+		streamed: {
+			wishlistData: getStreamedWishlistData(
+				allCardsResolved,
+				// pricesResolved, // Not needed by getStreamedWishlistData itself
+				setsResolved,
+				wishlistSourceItems,
+				targetProfile,
+				isPublic,
+				loggedInUserProfile?.username || null
+			)
+		}
 	};
 };
