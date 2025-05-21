@@ -36,10 +36,14 @@
 
 	// --- Collection/Wishlist State ---
 	function getCollectionCount(cardCode: string) {
-		return $collectionStore.get(cardCode) || 0;
+		const count = $collectionStore.get(cardCode) || 0;
+		console.log(`[RelatedCards] getCollectionCount for ${cardCode}: ${count}`, $collectionStore);
+		return count;
 	}
 	function isInWishlist(cardCode: string) {
-		return $wishlistStore.has(cardCode);
+		const inList = $wishlistStore.has(cardCode);
+		console.log(`[RelatedCards] isInWishlist for ${cardCode}: ${inList}`, $wishlistStore);
+		return inList;
 	}
 	const MAX_CARD_QUANTITY = 99;
 
@@ -118,6 +122,7 @@
 		} else {
 			await addCardToWishlist(profile.username, cardCode);
 		}
+		sortedCards = [...sortedCards]; // Force re-render
 	}
 	async function handleAddCard(cardCode: string, event: MouseEvent) {
 		event.preventDefault();
@@ -126,6 +131,7 @@
 		const count = getCollectionCount(cardCode);
 		if (count >= MAX_CARD_QUANTITY) return;
 		await addCardToCollection(profile.username, cardCode);
+		sortedCards = [...sortedCards]; // Force re-render
 	}
 	async function handleRemoveCard(cardCode: string, event: MouseEvent) {
 		event.preventDefault();
@@ -134,6 +140,7 @@
 		const count = getCollectionCount(cardCode);
 		if (count === 0) return;
 		await removeCardFromCollection(profile.username, cardCode);
+		sortedCards = [...sortedCards]; // Force re-render
 	}
 </script>
 
