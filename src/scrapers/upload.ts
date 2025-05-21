@@ -1,5 +1,5 @@
 import * as fs from 'node:fs';
-import { getR2Env, getS3Client, uploadBufferToR2 } from '~/lib/r2'; // Use SvelteKit alias
+import { getR2Env, getS3Client, uploadBufferToR2 } from '../lib/r2'; // Use relative path
 
 export const filesToUpload = [
 	'src/assets/cards-full.json',
