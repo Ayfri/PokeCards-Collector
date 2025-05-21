@@ -12,16 +12,19 @@
 	$: sets = data.sets as Set[];
 	$: pokemon = data.pokemon as Pokemon;
 	$: prices = data.prices as Record<string, PriceData>;
+	$: targetCard = data.targetCard as Card;
 </script>
 
 <main class="max-w-[100vw] p-4 mb-4 text-lg text-white">
 	<div class="mt-4 mx-auto flex flex-col gap-8 w-[90%] -z-10">
-		{#if !pokemonCards || pokemonCards.length === 0}
+		{#if !pokemonCards || pokemonCards.length === 0 || !targetCard}
 			<p class="text-center text-lg">Chargement en cours...</p>
 		{:else}
-			<div in:fade={{ duration: 300 }}>
-				<CardDisplay allCards={allCards} pokemonCards={pokemonCards} {pokemons} {sets} {prices} />
-			</div>
+			{#key targetCard.cardCode}
+				<div in:fade={{ duration: 300 }}>
+					<CardDisplay allCards={allCards} pokemonCards={pokemonCards} {pokemons} {sets} {prices} />
+				</div>
+			{/key}
 		{/if}
 	</div>
 </main> 
