@@ -122,7 +122,7 @@
 				<h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance text-gold-400">
 					Welcome to PokéCards-Collector
 				</h1>
-				<p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl mx-auto text-pretty">
+				<p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl text-pretty">
 					Your ultimate resource for Pokémon TCG cards. Explore our
 					complete collection, track price trends, and manage your
 					personal collection.
