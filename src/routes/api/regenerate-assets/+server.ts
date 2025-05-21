@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { fetchAllCardsData } from '$scrapers/card_fetcher';
 import { fetchJapCardsData } from '$scrapers/jap_cards_scraper';
-import { uploadFile } from '$scrapers/upload';
+import { getR2Env, getS3Client, uploadBufferToR2 } from '~/lib/r2';
 import type { RequestEvent } from './$types';
 import { env } from '$env/dynamic/private';
 import { setAPIKey } from '$scrapers/api_utils';
@@ -9,7 +9,9 @@ import { setAPIKey } from '$scrapers/api_utils';
 export async function GET(event: RequestEvent): Promise<Response> {
 	console.log('SvelteKit API endpoint /api/regenerate-assets called');
 
-	if (!env) {
+	const platformEnv = env as Record<string, any>;
+
+	if (!platformEnv) {
 		console.error('Platform environment context not available.');
 		return json(
 			{ success: false, message: 'Server environment configuration error.' },
@@ -40,39 +42,46 @@ export async function GET(event: RequestEvent): Promise<Response> {
 
 	setAPIKey(env.POKEMON_TCG_API_KEY);
 
-	// Ensure R2_BUCKET_NAME is treated as a string key for env
-	const R2_BUCKET_NAME = env.R2_BUCKET_NAME as string;
-	const R2_ACCESS_KEY_ID = env.R2_ACCESS_KEY_ID as string;
-	const R2_SECRET_ACCESS_KEY = env.R2_SECRET_ACCESS_KEY as string;
-	const R2_ENDPOINT = env.R2_ENDPOINT as string;
-
-	if (!R2_BUCKET_NAME || !R2_ACCESS_KEY_ID || !R2_SECRET_ACCESS_KEY || !R2_ENDPOINT) {
-		console.error('Missing R2 configuration environment variables.');
-		return json(
-			{ success: false, message: 'Missing R2 configuration in environment.' },
-			{ status: 500 }
-		);
-	}
-
+	// R2 environment variables are now fetched by getR2Env
 	try {
+		const r2Env = getR2Env(platformEnv);
+		const s3Client = getS3Client(r2Env);
+
 		console.log('Fetching English cards and prices...');
 		const { allCards, allPrices } = await fetchAllCardsData();
 
 		console.log('Fetching Japanese cards...');
 		const japCards = await fetchJapCardsData();
 
-		// The 'env' object for uploadFile needs to be the raw env from platform context
-		const uploadContextEnv = env as Record<string, any>;
-
-
+		const allCardsBuffer = Buffer.from(JSON.stringify(allCards), 'utf-8');
 		console.log('Uploading English cards data (cards.json)...');
-		await uploadFile(JSON.stringify(allCards), 'cards.json', { env: uploadContextEnv, contentType: 'application/json' });
+		await uploadBufferToR2({
+			s3Client,
+			bucketName: r2Env.bucketName,
+			objectName: 'cards.json',
+			contentBuffer: allCardsBuffer,
+			contentType: 'application/json'
+		});
 
+		const allPricesBuffer = Buffer.from(JSON.stringify(allPrices), 'utf-8');
 		console.log('Uploading prices data (prices.json)...');
-		await uploadFile(JSON.stringify(allPrices), 'prices.json', { env: uploadContextEnv, contentType: 'application/json' });
+		await uploadBufferToR2({
+			s3Client,
+			bucketName: r2Env.bucketName,
+			objectName: 'prices.json',
+			contentBuffer: allPricesBuffer,
+			contentType: 'application/json'
+		});
 
+		const japCardsBuffer = Buffer.from(JSON.stringify(japCards), 'utf-8');
 		console.log('Uploading Japanese cards data (jp-cards.json)...');
-		await uploadFile(JSON.stringify(japCards), 'jp-cards.json', { env: uploadContextEnv, contentType: 'application/json' });
+		await uploadBufferToR2({
+			s3Client,
+			bucketName: r2Env.bucketName,
+			objectName: 'jp-cards.json',
+			contentBuffer: japCardsBuffer,
+			contentType: 'application/json'
+		});
 
 		console.log('Successfully regenerated and uploaded all card assets.');
 		return json(

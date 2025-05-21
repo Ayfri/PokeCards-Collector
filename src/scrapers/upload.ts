@@ -1,81 +1,59 @@
-import { S3 } from "@aws-sdk/client-s3";
-import * as fs from "node:fs";
-import * as zlib from 'node:zlib';
-
-// Maintain process.env for CLI usage, but prioritize context.env if available
-export const getR2Env = (context?: { env: Record<string, string> }) => {
-	const envSource = context?.env ?? process.env;
-	const bucketName = envSource.R2_BUCKET_NAME!;
-	const accessKeyId = envSource.R2_ACCESS_KEY_ID!;
-	const secretAccessKey = envSource.R2_SECRET_ACCESS_KEY!;
-	const endpoint = envSource.R2_ENDPOINT!;
-
-	if (!bucketName || !accessKeyId || !secretAccessKey || !endpoint) {
-		throw new Error('Missing R2 environment variables');
-	}
-
-	return { accessKeyId, bucketName, endpoint, secretAccessKey };
-};
-
-// Creates a S3 client to interact with R2
-export const getS3Client = (context?: { env: Record<string, string> }) => {
-	const { accessKeyId, secretAccessKey, endpoint } = getR2Env(context);
-	return new S3({
-		credentials: {
-			accessKeyId,
-			secretAccessKey,
-		},
-		endpoint,
-		forcePathStyle: true,
-		region: 'auto',
-	});
-};
+import * as fs from 'node:fs';
+import { getR2Env, getS3Client, uploadBufferToR2 } from '~/lib/r2'; // Use SvelteKit alias
 
 export const filesToUpload = [
 	'src/assets/cards-full.json',
 	'src/assets/jp-cards-full.json',
 	'src/assets/prices.json',
-]
+];
 
-export async function uploadFile(filePathOrContent: string, objectName: string, context?: { env: Record<string, string>; contentType?: string }) {
+/**
+ * Uploads a file or string content to R2. This function is intended for CLI usage
+ * where Node.js APIs like 'fs' are available.
+ * If filePathOrContent is a string that is not a file path, it's treated as direct content.
+ */
+export async function uploadFileForCli(filePathOrContent: string, objectName: string, context?: { env: Record<string, any>; contentType?: string }) {
 	try {
-		const s3 = getS3Client(context);
-		const { bucketName } = getR2Env(context);
+		const envSource = context?.env ?? process.env;
+		const r2Env = getR2Env(envSource);
+		const s3Client = getS3Client(r2Env);
 
-		let fileContent: Buffer;
-		// Check if filePathOrContent is a path (heuristic: check for slashes or typical file extensions)
-		// This is a simplification; a more robust check might be needed depending on expected inputs.
-		if (filePathOrContent.includes('/') || filePathOrContent.includes('\\') || filePathOrContent.endsWith('.json') || filePathOrContent.endsWith('.txt')) {
+		let contentBuffer: Buffer;
+
+		// Check if filePathOrContent is a path or direct content
+		// This simple check assumes if fs.existsSync is true, it's a file path.
+		// Otherwise, it's direct content.
+		try {
+			fs.accessSync(filePathOrContent, fs.constants.F_OK); // Check if path exists and is accessible
 			console.log(`Treating input as file path: ${filePathOrContent}`);
-			// This part will likely fail in a pure serverless environment if filePathOrContent is a path not in /tmp
-			try {
-				fileContent = fs.readFileSync(filePathOrContent);
-			} catch (readError) {
-				console.error(`Failed to read file at path: ${filePathOrContent}. If this is content, ensure it does not resemble a file path.`);
-				throw readError;
-			}
-		} else {
+			contentBuffer = fs.readFileSync(filePathOrContent);
+		} catch (e) {
+			// If accessSync throws, it's not a valid path or not accessible, treat as content
 			console.log(`Treating input as direct content for object: ${objectName}`);
-			fileContent = Buffer.from(filePathOrContent, 'utf-8');
+			contentBuffer = Buffer.from(filePathOrContent, 'utf-8');
 		}
 
-		const compressedContent = zlib.gzipSync(fileContent);
+		await uploadBufferToR2({
+			s3Client,
+			bucketName: r2Env.bucketName,
+			objectName,
+			contentBuffer,
+			contentType: context?.contentType,
+		});
 
-		const compressedObjectName = `${objectName}.gz`;
-		const uploadParams = {
-			Body: compressedContent,
-			Bucket: bucketName,
-			CacheControl: 'public, max-age=86400', // 24 hours
-			ContentEncoding: 'gzip',
-			ContentType: context?.contentType || "application/octet-stream", // Default if not specified
-			Key: compressedObjectName,
-		};
-
-		console.log(`Uploading ${compressedObjectName} to R2 bucket ${bucketName} with Cache-Control and ContentType: ${uploadParams.ContentType}...`);
-		await s3.putObject(uploadParams);
-		console.log(`Successfully uploaded ${compressedObjectName} to R2`);
 	} catch (error) {
-		console.error(`Error uploading ${objectName}:`, error);
+		console.error(`Error in uploadFileForCli for ${objectName}:`, error);
 		throw error;
 	}
 }
+
+// Renaming the old uploadFile to avoid conflict if it's directly imported elsewhere unexpectedly.
+// The primary export for CLI should be uploadFileForCli.
+// If the API endpoint was the only user of the old `uploadFile` which passed content directly,
+// then this distinction becomes cleaner.
+export const deprecated_uploadFile_with_fs_and_zlib = async (filePathOrContent: string, objectName: string, context?: { env: Record<string, string>; contentType?: string }) => {
+    // Original implementation that used fs and zlib can be kept here if needed for other specific CLI tasks
+    // or removed if uploadFileForCli covers all CLI needs.
+    // For now, let's assume it might be removed or refactored if no longer directly used by CLI in this exact form.
+    throw new Error('deprecated_uploadFile_with_fs_and_zlib is not meant for direct use anymore. Use uploadFileForCli for CLI operations.');
+};

@@ -71,23 +71,23 @@ const uploadFilesTask = {
 	description: 'Upload all default files to R2 bucket (Cloudflare)',
 	action: async () => {
 		try {
-			const { uploadFile, filesToUpload } = await import('./src/scrapers/upload.js')
-			const path = await import('node:path')
+			const { uploadFileForCli, filesToUpload } = await import('./src/scrapers/upload.js');
+			const path = await import('node:path');
 			for (const filePath of filesToUpload) {
-				const objectName = path.basename(filePath)
+				const objectName = path.basename(filePath);
 				try {
-					await uploadFile(filePath, objectName)
-					console.log(`Uploaded: ${filePath}`)
+					await uploadFileForCli(filePath, objectName, { env: process.env as Record<string, any>, contentType: 'application/json' });
+					console.log(`Uploaded: ${filePath}`);
 				} catch (error) {
-					console.error(`Failed to upload: ${filePath}`, error)
+					console.error(`Failed to upload: ${filePath}`, error);
 				}
 			}
-			console.log('All uploads complete!')
+			console.log('All uploads complete!');
 		} catch (error) {
-			console.error('Upload failed:', error)
+			console.error('Upload failed:', error);
 		}
 	}
-}
+};
 
 baseScrapers.push(uploadFilesTask)
 // baseScrapers.sort((a, b) => a.name.localeCompare(b.name))
