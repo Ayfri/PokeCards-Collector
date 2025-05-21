@@ -3,7 +3,6 @@ import pokemons from '~/assets/pokemons-full.json';
 import holoCards from '~/assets/holo-cards.json';
 import pokemonSets from '~/assets/sets-full.json';
 import pokemonTypes from '~/assets/types.json';
-import prices from '~/assets/prices.json';
 import originalJpSets from '~/assets/jp-sets-full.json';
 import {PUBLIC_R2_BUCKET_URL} from '$env/static/public';
 
@@ -36,7 +35,8 @@ export async function getJapaneseCards(): Promise<FullCard[]> {
 }
 
 export async function getPrices(): Promise<Record<string, PriceData>> {
-	return prices;
+	const prices = await fetch(`${PUBLIC_R2_BUCKET_URL}/prices.json.gz`);
+	return prices.json();
 }
 
 export async function getSets(): Promise<Set[]> {

@@ -21,6 +21,7 @@ const s3 = new S3({
 export const filesToUpload = [
 	'src/assets/cards-full.json',
 	'src/assets/jp-cards-full.json',
+	'src/assets/prices.json',
 ]
 
 export async function uploadFile(filePath: string, objectName: string) {
