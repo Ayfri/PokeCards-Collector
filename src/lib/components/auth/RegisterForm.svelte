@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import BouncyLoader from '../BouncyLoader.svelte';
 
 	export let onSuccess: (() => void) | undefined = undefined;
 	export let onSwitch: ((tab: 'login' | 'register') => void) | undefined = undefined;
@@ -340,12 +341,8 @@
 		class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
 	>
 		{#if loading}
-			<div class="loader-spin mr-2" style="width: 16px; height: 16px;">
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-				</svg>
-			</div>
-			Registering...
+			<BouncyLoader size={20} gradientColorStart="#FFFFFF" gradientColorEnd="#FFFFFF" />
+			<span class="ml-2">Registering...</span>
 		{:else}
 			Register
 		{/if}
@@ -353,13 +350,7 @@
 </form>
 
 <style>
-	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
-	}
-	
-	.loader-spin {
-		animation: spin 2s linear infinite;
-		display: inline-flex;
-	}
+	/* @keyframes spin Removed as it's no longer used */
+
+	/* .loader-spin Removed as it's no longer used */
 </style> 
