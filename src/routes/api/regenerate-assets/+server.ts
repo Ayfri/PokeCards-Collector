@@ -10,6 +10,7 @@ export async function GET(event: RequestEvent): Promise<Response> {
 	console.log('SvelteKit API endpoint /api/regenerate-assets called');
 
 	const platformEnv = env as Record<string, any>;
+	const fileToUpdate = event.url.searchParams.get('file');
 
 	if (!platformEnv) {
 		console.error('Platform environment context not available.');
@@ -47,45 +48,63 @@ export async function GET(event: RequestEvent): Promise<Response> {
 		const r2Env = getR2Env(platformEnv);
 		const s3Client = getS3Client(r2Env);
 
-		console.log('Fetching English cards and prices...');
-		const { allCards, allPrices } = await fetchAllCardsData();
+		const shouldUpdateCards = !fileToUpdate || fileToUpdate === 'cards';
+		const shouldUpdatePrices = !fileToUpdate || fileToUpdate === 'prices';
+		const shouldUpdateJapCards = !fileToUpdate || fileToUpdate === 'jp-cards';
 
-		console.log('Fetching Japanese cards...');
-		const japCards = await fetchJapCardsData();
+		if (fileToUpdate && !shouldUpdateCards && !shouldUpdatePrices && !shouldUpdateJapCards) {
+			return json(
+				{ success: false, message: "Invalid 'file' query parameter. Allowed values are 'cards', 'prices', 'jp-cards', or empty." },
+				{ status: 400 }
+			);
+		}
 
-		const allCardsBuffer = Buffer.from(JSON.stringify(allCards), 'utf-8');
-		console.log('Uploading English cards data (cards.json)...');
-		await uploadBufferToR2({
-			s3Client,
-			bucketName: r2Env.bucketName,
-			objectName: 'cards.json',
-			contentBuffer: allCardsBuffer,
-			contentType: 'application/json'
-		});
+		if (shouldUpdateCards || shouldUpdatePrices) {
+			console.log('Fetching English cards and prices...');
+			const { allCards, allPrices } = await fetchAllCardsData();
 
-		const allPricesBuffer = Buffer.from(JSON.stringify(allPrices), 'utf-8');
-		console.log('Uploading prices data (prices.json)...');
-		await uploadBufferToR2({
-			s3Client,
-			bucketName: r2Env.bucketName,
-			objectName: 'prices.json',
-			contentBuffer: allPricesBuffer,
-			contentType: 'application/json'
-		});
+			if (shouldUpdateCards) {
+				const allCardsBuffer = Buffer.from(JSON.stringify(allCards), 'utf-8');
+				console.log('Uploading English cards data (cards.json)...');
+				await uploadBufferToR2({
+					s3Client,
+					bucketName: r2Env.bucketName,
+					objectName: 'cards.json',
+					contentBuffer: allCardsBuffer,
+					contentType: 'application/json'
+				});
+			}
 
-		const japCardsBuffer = Buffer.from(JSON.stringify(japCards), 'utf-8');
-		console.log('Uploading Japanese cards data (jp-cards.json)...');
-		await uploadBufferToR2({
-			s3Client,
-			bucketName: r2Env.bucketName,
-			objectName: 'jp-cards.json',
-			contentBuffer: japCardsBuffer,
-			contentType: 'application/json'
-		});
+			if (shouldUpdatePrices) {
+				const allPricesBuffer = Buffer.from(JSON.stringify(allPrices), 'utf-8');
+				console.log('Uploading prices data (prices.json)...');
+				await uploadBufferToR2({
+					s3Client,
+					bucketName: r2Env.bucketName,
+					objectName: 'prices.json',
+					contentBuffer: allPricesBuffer,
+					contentType: 'application/json'
+				});
+			}
+		}
 
-		console.log('Successfully regenerated and uploaded all card assets.');
+		if (shouldUpdateJapCards) {
+			console.log('Fetching Japanese cards...');
+			const japCards = await fetchJapCardsData();
+			const japCardsBuffer = Buffer.from(JSON.stringify(japCards), 'utf-8');
+			console.log('Uploading Japanese cards data (jp-cards.json)...');
+			await uploadBufferToR2({
+				s3Client,
+				bucketName: r2Env.bucketName,
+				objectName: 'jp-cards.json',
+				contentBuffer: japCardsBuffer,
+				contentType: 'application/json'
+			});
+		}
+
+		console.log('Successfully regenerated and uploaded selected card assets.');
 		return json(
-			{ success: true, message: 'All card assets regenerated and uploaded.' }
+			{ success: true, message: 'Selected card assets regenerated and uploaded.' }
 		);
 	} catch (error: any) {
 		console.error('Failed to regenerate assets in SvelteKit endpoint:', error);
