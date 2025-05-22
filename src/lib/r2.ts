@@ -1,4 +1,5 @@
-import { S3, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3, PutObjectCommand, type PutObjectCommandInput } from '@aws-sdk/client-s3';
+import { gzipSync } from 'node:zlib';
 
 export interface R2Env {
 	accessKeyId: string;
@@ -39,6 +40,7 @@ interface UploadBufferToR2Params {
 	contentBuffer: Buffer;
 	contentType?: string;
 	cacheControl?: string;
+	contentEncoding?: string;
 }
 
 export async function uploadBufferToR2({
@@ -47,23 +49,32 @@ export async function uploadBufferToR2({
 	objectName,
 	contentBuffer,
 	contentType = 'application/octet-stream',
-	cacheControl = 'public, max-age=86400' // 24 hours
+	cacheControl = 'public, max-age=86400', // 24 hours
+	contentEncoding
 }: UploadBufferToR2Params): Promise<void> {
+	let finalObjectName = objectName.endsWith('.gz') ? objectName : `${objectName}.gz`;
 	try {
-		const uploadParams = {
-			Body: contentBuffer,
+		const gzippedBuffer = gzipSync(contentBuffer);
+
+		const uploadParams: PutObjectCommandInput = {
+			Body: gzippedBuffer,
 			Bucket: bucketName,
 			CacheControl: cacheControl,
-			// ContentEncoding: 'gzip', // Removed: Sending uncompressed buffer
 			ContentType: contentType,
-			Key: objectName,
+			Key: finalObjectName,
 		};
 
-		console.log(`Uploading ${objectName} to R2 bucket ${bucketName} (size: ${contentBuffer.length} bytes) with ContentType: ${contentType}...`);
+		if (contentEncoding) {
+			uploadParams.ContentEncoding = contentEncoding;
+		} else if (finalObjectName.endsWith('.gz')) {
+			uploadParams.ContentEncoding = 'gzip';
+		}
+
+		console.log(`Uploading ${finalObjectName} to R2 bucket ${bucketName} (size: ${gzippedBuffer.length} bytes) with ContentType: ${contentType}${uploadParams.ContentEncoding ? ', ContentEncoding: ' + uploadParams.ContentEncoding : ''}...`);
 		await s3Client.send(new PutObjectCommand(uploadParams));
-		console.log(`Successfully uploaded ${objectName} to R2`);
+		console.log(`Successfully uploaded ${finalObjectName} to R2`);
 	} catch (error) {
-		console.error(`Error uploading ${objectName} to R2:`, error);
+		console.error(`Error uploading ${finalObjectName} to R2:`, error);
 		throw error;
 	}
 }
