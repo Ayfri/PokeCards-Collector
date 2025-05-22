@@ -25,26 +25,26 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	// Populate the price totals map by iterating through cards
 	for (const card of cards) { // Now 'cards' is the resolved array
-		const lastDashIndex = card.cardCode.lastIndexOf('-');
 
-		if (lastDashIndex <= 0) {
-			continue;
+		const foundSet = findSetByCardCode(card.cardCode, setsFromParent); // Use the helper
+
+		if (!foundSet || !foundSet.ptcgoCode) {
+			continue; // Skip if set or its ptcgoCode isn't found
 		}
-		const setIdFromCardCode = card.cardCode.substring(0, lastDashIndex);
+
+		const setIdentifierForTotals = foundSet.ptcgoCode; // This is the key we will use for totals
 
 		const priceData = prices[card.cardCode]; // Now 'prices' is the resolved object
 		const currentPrice = priceData?.simple ?? 0;
 
 		if (currentPrice > 0) {
-			setPriceTotals.set(setIdFromCardCode, (setPriceTotals.get(setIdFromCardCode) || 0) + currentPrice);
+			setPriceTotals.set(setIdentifierForTotals, (setPriceTotals.get(setIdentifierForTotals) || 0) + currentPrice);
 		}
 	}
 
 	// Map sets to SetWithPrice, using the calculated totals
 	const setsWithPrices = setsFromParent.map(set => {
-		const totalPrice = setPriceTotals.get(set.name) || 0; // Assuming set.name matches setIdFromCardCode logic (e.g. use set.id if that is the key)
-		// If set.id should be used instead of set.name for lookup, this needs to be: setPriceTotals.get(set.id)
-
+		const totalPrice = set.ptcgoCode ? setPriceTotals.get(set.ptcgoCode) || 0 : 0;
 		return {
 			...set,
 			totalPrice,
@@ -59,8 +59,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 	return {
 		...layoutData,
 		setsWithPrices, // This is the main data for this page
-		// prices, // No longer need to pass prices directly if all processing is done server-side
-		// cards, // No longer need to pass all cards if all processing is done server-side
+		allCards: cards, // Add allCards back
+		prices: prices,   // Add prices back
 		...pageSeoData
 	};
 };
