@@ -1,7 +1,7 @@
 import { parse, HTMLElement } from 'node-html-parser';
-import fs from 'fs/promises';
-import path from 'path';
-import { readFileSync } from 'fs';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import pokemonsData from '../assets/pokemons-full.json';
 
 const CARD_BASE_URL = 'https://www.tcgcollector.com';
 const BASE_URL = `${CARD_BASE_URL}/cards/jp`;
@@ -12,13 +12,10 @@ const WORKERS = 12; // Number of workers for parallelization
 const DEBUG_MODE = false; // Set to true to scrape only one page
 
 // Load Pokémon data
-let pokemonsData: any[] = [];
 let pokemonNameToNumber: Record<string, number> = {};
 let pokemonNamesSet: Set<string> = new Set();
 let pokemonNamesList: string[] = [];
 try {
-	const pokemonsRawData = readFileSync(path.join('src/assets', 'pokemons-full.json'), 'utf8');
-	pokemonsData = JSON.parse(pokemonsRawData);
 	pokemonNameToNumber = {};
 	pokemonNamesSet = new Set();
 	pokemonNamesList = [];
@@ -355,9 +352,6 @@ export async function fetchJapCardsData(): Promise<FinalCard[]> {
 		displayAs: 'images',
 		cardsPerPage: 120 // Consider making this configurable or smaller
 	};
-	// TODO: Adapt Pokemon data loading for serverless environment if pokemons-full.json is large or not bundled.
-	// The global pokemonNameToNumber, pokemonNamesSet, pokemonNamesList are loaded using readFileSync at the top of the file.
-	// This will fail in a strict serverless environment. This data needs to be available via another method (e.g., passed in, fetched from R2).
 	console.warn('Jap_cards_scraper relies on globally loaded Pokemon data from fs. This will fail in serverless if not adapted.');
 
 	const maxPages = await getMaxPages(params);
