@@ -232,7 +232,7 @@
 				<span class="text-sm opacity-85"> #{cardNumber}/{set?.printedTotal || '?'}</span>
 			</h2>
 			<div class="flex items-center justify-center gap-2 mt-1">
-				{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
+				{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== '' && (prices?.simple && prices.simple !== 100_000)}
 					<a
 						href={card.cardMarketUrl}
 						target="_blank"
