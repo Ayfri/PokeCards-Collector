@@ -31,8 +31,8 @@
 
 	const navLinks: NavLink[] = [
 		{ href: '/', name: 'PCC', icon: null },
-		{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
 		{ href: '/pokemons', name: 'Pokémons', icon: ListIcon },
+		{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
 		{ href: '/japan', name: 'Japan', icon: GlobeIcon },
 		{ href: '/sets', name: 'Sets', icon: LibraryIcon },
 		{ href: '/artists', name: 'Artists', icon: ArtistIcon },
