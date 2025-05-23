@@ -136,6 +136,7 @@
 <svelte:head>
 	<title>Guess the Price</title>
 	<meta name="description" content="Play a game to guess the price of Pokémon cards." />
+	<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </svelte:head>
 
 <div class="container mx-auto p-4 flex flex-col items-center">
