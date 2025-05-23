@@ -3,6 +3,7 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import type { Card } from '$lib/types'; // Assuming Card type is needed for local state
+	import Numpad from '$lib/components/Numpad.svelte'; // Import Numpad
 
 	export let data: PageData;
 
@@ -11,7 +12,7 @@
 	let displayedCardPrice: number | null = null;
 	let displayedReleaseDate: Date | null = null;
 
-	let guess: number | null = null;
+	let guessString: string = ''; // Changed from guess: number | null
 	let message: string = '';
 	let feedbackColor: string = '';
 	let showConfetti: boolean = false;
@@ -29,7 +30,7 @@
 		displayedReleaseDate = data.currentReleaseDate ? new Date(data.currentReleaseDate) : null;
 		// Initial game state reset
 		message = '';
-		guess = null;
+		guessString = ''; // Reset guessString
 		showConfetti = false;
 		guessSubmitted = false;
 	} else if (!data.currentCard && !displayedCard && data.error) {
@@ -46,17 +47,45 @@
 		}
 	}
 
+	function handleNumpadKeyPress(key: string) {
+		if (guessSubmitted) return; // Don't allow input after submission
+
+		if (key === 'Backspace') {
+			guessString = guessString.slice(0, -1);
+		} else if (key === 'C') {
+			guessString = '';
+		} else if (key === '.') {
+			if (!guessString.includes('.')) {
+				guessString += key;
+			}
+		} else { // Digit
+			// Limit to 2 decimal places
+			const parts = guessString.split('.');
+			if (parts.length === 2 && parts[1].length >= 2) {
+				return;
+			}
+			guessString += key;
+		}
+	}
+
 	function checkGuess() {
-		guessSubmitted = true; // Mark that a guess attempt has been made for the current card
-		isLoadingNextCard = true; // Start loading for the *next* card
-		dataSnapshotForLoadingCheck = data; // Take snapshot before invalidateAll
+		const guess = parseFloat(guessString);
+		if (isNaN(guess)) {
+			message = 'Please enter a valid price.';
+			feedbackColor = 'text-red-400';
+			return;
+		}
+
+		guessSubmitted = true;
+		isLoadingNextCard = true;
+		dataSnapshotForLoadingCheck = data;
 
 		const actualPrice = displayedCardPrice;
 
-		if (guess === null || actualPrice === null) {
-			message = 'Please enter a price to make a guess.';
+		if (actualPrice === null) { // Should not happen if displayedCard is present
+			message = 'Error: Card price is not available.';
 			feedbackColor = 'text-red-400';
-			isLoadingNextCard = false; // Error, so stop loading indicator
+			isLoadingNextCard = false;
 			return;
 		}
 
@@ -99,7 +128,7 @@
 		if (isLoadingNextCard) return; // Safety: button should be disabled, but don't act if clicked somehow
 
 		message = '';
-		guess = null;
+		guessString = ''; // Reset guessString
 		showConfetti = false;
 		guessSubmitted = false; // Ready for a new guess on the new card
 
@@ -152,8 +181,10 @@
 		</button>
 	{:else if displayedCard && displayedCardPrice !== null}
 		<div class="game-layout-grid w-full grid items-center gap-4 md:gap-8 px-4" style="grid-template-columns: 1fr auto 1fr;">
-			<!-- Left Spacer Column -->
-			<div class="hidden md:block"></div>
+			<!-- Left Column: Numpad -->
+			<div class="numpad-container flex justify-center items-center h-full">
+				<Numpad onKeyPress={handleNumpadKeyPress} />
+			</div>
 
 			<!-- Middle Column: Game Box -->
 			<div class="card-display-wrapper">
@@ -171,10 +202,11 @@
 					<form on:submit|preventDefault={checkGuess} class="w-full">
 						<label for="price-guess" class="block text-lg font-medium text-gray-300 mb-2">Your Guess ($):</label>
 						<input
-							type="number"
+							type="text" 
+							inputmode="decimal"
 							id="price-guess"
 							name="price-guess"
-							bind:value={guess}
+							bind:value={guessString}
 							min="0"
 							step="0.01"
 							class="shadow appearance-none border border-gold-500 rounded w-full py-3 px-4 text-gray-200 bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-gold-300 mb-4"
@@ -221,6 +253,14 @@
 </div>
 
 <style>
+	/* Numpad specific styling can go here or in Numpad.svelte if more complex */
+	/* Ensure the grid layout accommodates the numpad */
+	.game-layout-grid {
+		/* Adjust grid-template-columns if numpad causes overflow or alignment issues */
+		/* Example: grid-template-columns: minmax(auto, 220px) auto minmax(auto, 220px); */
+		/* The current 1fr auto 1fr might be fine if numpad fits well */
+	}
+
 	.play-again-button::before,
 	.play-again-button::after {
 		content: '';
