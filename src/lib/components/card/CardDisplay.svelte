@@ -8,9 +8,11 @@
 	import { pascalCase } from '$helpers/strings';
 	import InteractiveCard from '@components/card/InteractiveCard.svelte';
 	import { onMount } from 'svelte';
-	import { afterNavigate, goto } from '$app/navigation';
+	import { afterNavigate, goto, beforeNavigate } from '$app/navigation';
+	import { page } from '$app/state';
 	import { findSetByCardCode } from '$helpers/set-utils';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
+	import { setNavigationLoading } from '$lib/stores/loading';
 
 	// --- Props ---
 	export let allCards: FullCard[];
@@ -84,8 +86,12 @@
 	}
 
 	// Handler for clicking on previous/next Pokémon
-	function handlePokemonNavigation(cardCode: string) {
-		goto(`${baseCardUrl}${cardCode}/`);
+	function handlePokemonNavigation(cardCode: string | undefined) {
+		if (cardCode) {
+			setNavigationLoading(true);
+			const baseUrl = page.url.pathname.startsWith('/jp-card') ? '/jp-card/' : '/card/';
+			goto(`${baseUrl}${cardCode}`);
+		}
 	}
 
 	// --- Lifecycle ---

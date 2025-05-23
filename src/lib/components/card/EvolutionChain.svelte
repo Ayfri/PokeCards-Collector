@@ -6,6 +6,7 @@
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 	import { onMount } from 'svelte';
 	import { afterNavigate, goto } from '$app/navigation';
+	import { setNavigationLoading } from '$lib/stores/loading';
 
 	export let allCards: FullCard[];
 	export let pokemons: Pokemon[];
@@ -20,6 +21,7 @@
 	
 	// Function to handle navigation to another Pokémon card
 	function navigateToPokemon(cardCode: string) {
+		setNavigationLoading(true);
 		goto(`${baseCardUrl}${cardCode}/`);
 	}
 	
