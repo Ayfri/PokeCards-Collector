@@ -4,6 +4,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import type { Card } from '$lib/types'; // Assuming Card type is needed for local state
 	import Numpad from '$lib/components/Numpad.svelte'; // Import Numpad
+	import PageTitle from '$lib/components/PageTitle.svelte'; // Import PageTitle
 
 	export let data: PageData;
 
@@ -169,7 +170,13 @@
 </svelte:head>
 
 <div class="container mx-auto p-4 flex flex-col items-center">
-	<h1 class="text-4xl font-bold text-center text-gold-400 mb-8">Guess the Price!</h1>
+	<!-- New Page Title Structure -->
+	<div class="w-full mx-auto pb-4 lg:pb-5 mb-4 md:mb-8">
+		<div class="flex justify-center items-center">
+			<PageTitle title="Guess the Price!" />
+		</div>
+		<div class="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto my-2 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
+	</div>
 
 	{#if data.error && !displayedCard}
 		<p class="text-red-500 text-xl">{data.error}</p>
