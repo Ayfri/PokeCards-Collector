@@ -9,12 +9,38 @@
 	import { setNavigationLoading } from '$lib/stores/loading';
 	import ScrollToTop from '$lib/components/list/ScrollToTop.svelte';
 	import ScrollToBottom from '$lib/components/list/ScrollToBottom.svelte';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { fade } from 'svelte/transition';
+	import SortControl from '@components/filters/SortControl.svelte';
 
 	export let data: PageData;
 
-	const { pokemons, allCards, prices } = data;
+	const { pokemons: initialPokemons, allCards, prices } = data;
+
+	// Sorting state
+	let sortBy = 'pokedex'; // Default sort by Pokedex number
+	let sortOrder: 'asc' | 'desc' = 'asc'; // Default sort order ascending
+
+	let sortedPokemons: Pokemon[] = [];
+
+	// Reactive statement to sort pokemons
+	$: {
+		let tempPokemons = [...initialPokemons];
+		if (sortBy === 'pokedex') {
+			tempPokemons.sort((a, b) => {
+				return sortOrder === 'asc' ? a.id - b.id : b.id - a.id;
+			});
+		} else if (sortBy === 'name') {
+			tempPokemons.sort((a, b) => {
+				const nameA = a.name.toLowerCase();
+				const nameB = b.name.toLowerCase();
+				if (nameA < nameB) return sortOrder === 'asc' ? -1 : 1;
+				if (nameA > nameB) return sortOrder === 'asc' ? 1 : -1;
+				return 0;
+			});
+		}
+		sortedPokemons = tempPokemons;
+	}
 
 	let hasScrolled = false;
 	const scrollThreshold = 100; // Pixels to scroll before showing ScrollToTop
@@ -86,11 +112,25 @@
 </svelte:head>
 
 <div class="container mx-auto px-4 py-8 text-white">
-	<PageTitle title="All Pokémons" />
+	<div class="flex justify-between items-center mb-4">
+		<div class="flex-shrink-0">
+			<PageTitle title="All Pokémons" />
+		</div>
+		<div class="flex items-center gap-4">
+			<SortControl
+				bind:sortValue={sortBy}
+				bind:sortDirection={sortOrder}
+				options={[
+					{ value: 'pokedex', label: 'Pokédex #' },
+					{ value: 'name', label: 'Name' }
+				]}
+			/>
+		</div>
+	</div>
 	<div class="w-full max-w-[800px] mx-auto my-6 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
 
 	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8 min-h-[calc(100vh-200px)]">
-		{#each pokemons.sort((a, b) => a.id - b.id) as pokemon (pokemon.id)}
+		{#each sortedPokemons as pokemon (pokemon.id)}
 			<button
 				on:click={() => navigateToPokemonCard(pokemon)}
 				class="pokemon-card-item group bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-opacity-75 p-3 flex flex-col items-center text-center"
