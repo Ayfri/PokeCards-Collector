@@ -229,15 +229,14 @@
 							Submit Guess
 						</button>
 					</form>
-
-					{#if message}
-						<p class={`mt-4 text-lg font-semibold ${feedbackColor}`}>{message}</p>
-					{/if}
 				</div>
 			</div>
 
-			<!-- Right Column: Play Again Button -->
-			<div class="play-again-button-container flex justify-center items-center h-full">
+			<!-- Right Column: Play Again Button and Message -->
+			<div class="play-again-message-container flex flex-col justify-center items-center h-full gap-4">
+				{#if message}
+					<p class={`text-lg font-semibold text-center ${feedbackColor}`}>{message}</p>
+				{/if}
 				<button 
 					on:click={playAgain} 
 					class="play-again-button bg-gold-400 hover:bg-gold-500 text-black font-bold py-3 px-6 rounded focus:outline-none focus:shadow-outline transition-all duration-200 text-lg relative { (guessSubmitted && !isLoadingNextCard) ? 'ripple-active' : '' } { isLoadingNextCard ? 'opacity-50' : '' }"
