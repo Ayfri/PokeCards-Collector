@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { pascalCase } from '$helpers/strings.js';
-	import { processCardImage } from '$helpers/card-images';
+	import { getPokemonImageSrc, handlePokemonImageError } from '$lib/helpers/pokemon-utils';
 	import { NO_IMAGES } from '$lib/images';
 	import type { FullCard, Pokemon, PriceData } from '~/lib/types';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
@@ -86,32 +86,6 @@
 		return uniqueChain;
 	}
 
-	// Handle error for Pokemon evolution image
-	function handlePokemonImageError(event: Event, pokemonId: number) {
-		const img = event.currentTarget as HTMLImageElement;
-		const pokemonCard = pokemonCards.find(c => c.pokemonNumber === pokemonId);
-		if (pokemonCard) {
-			img.src = processCardImage(pokemonCard.image);
-		} else {
-			img.src = '/loading-spinner.svg';
-		}
-
-		// Add a class to prevent infinite loop if both sprite and card image fail
-		if (img.classList.contains('fallback-attempted')) {
-			img.src = '/loading-spinner.svg';
-			img.onerror = null; // Prevent further error handling
-		} else {
-			img.classList.add('fallback-attempted');
-		}
-	}
-
-	// Helper function to get the image source for a Pokémon
-	function getPokemonImageSrc(pokemonId: number): string {
-		// Always try the official artwork first
-		const officialArtworkUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemonId}.png`;
-		return officialArtworkUrl; // Will trigger onError if it fails
-	}
-
 	$: currentPokemon = pokemons.find(p => p.id === card.pokemonNumber);
 	$: uniqueChain = buildEvolutionChain(card);
 </script>
@@ -136,7 +110,7 @@
 						alt={pokemon.name}
 						class="evolution-image w-16 h-16 object-contain"
 						title={pascalCase(pokemon.name)}
-						on:error={(e) => handlePokemonImageError(e, pokemon.id)}
+						on:error={(e) => handlePokemonImageError(e, pokemon.id, pokemonCards)}
 						data-pokemon-id={pokemon.id}
 					/>
 					{:else}
