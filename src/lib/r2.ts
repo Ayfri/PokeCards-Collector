@@ -1,5 +1,5 @@
 import { S3, PutObjectCommand, type PutObjectCommandInput } from '@aws-sdk/client-s3';
-import { gzipSync } from 'node:zlib';
+import pako from 'pako';
 
 export interface R2Env {
 	accessKeyId: string;
@@ -54,7 +54,7 @@ export async function uploadBufferToR2({
 }: UploadBufferToR2Params): Promise<void> {
 	let finalObjectName = objectName.endsWith('.gz') ? objectName : `${objectName}.gz`;
 	try {
-		const gzippedBuffer = gzipSync(contentBuffer);
+		const gzippedBuffer = pako.gzip(contentBuffer);
 
 		const uploadParams: PutObjectCommandInput = {
 			Body: gzippedBuffer,

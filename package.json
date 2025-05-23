@@ -18,6 +18,7 @@
 		"fast-average-color-node": "^3.1.0",
 		"lucide-svelte": "^0.485.0",
 		"node-html-parser": "^7.0.1",
+		"pako": "^2.1.0",
 		"sharp": "^0.33.5",
 		"svelte": "^4.2.19",
 		"svelte-color-picker": "^1.0.7"
@@ -26,6 +27,7 @@
 		"@inquirer/prompts": "^7.4.0",
 		"@sveltejs/vite-plugin-svelte": "^3.1.2",
 		"@types/node": "^22.10.2",
+		"@types/pako": "^2.0.3",
 		"autoprefixer": "^10.4.21",
 		"chalk": "^5.4.1",
 		"postcss": "^8.5.3",
