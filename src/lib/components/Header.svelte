@@ -20,6 +20,7 @@
 	import XIcon from 'lucide-svelte/icons/x'; // Close icon
 	import GlobeIcon from 'lucide-svelte/icons/globe'; // Globe icon for Japan section
 	import ListIcon from 'lucide-svelte/icons/list'; // Icon for Pokémons page
+	import PuzzleIcon from 'lucide-svelte/icons/puzzle'; // Icon for Guess the Price game
 	import { slide } from 'svelte/transition';
 
 	// Re-add NavLink interface and constant
@@ -39,6 +40,7 @@
 		{ href: '/binder', name: 'Binder', icon: BinderIcon },
 		{ href: '/random', name: 'Random Card', icon: ShuffleIcon },
 		{ href: '/users', name: 'Users', icon: SearchUsersIcon },
+		{ href: '/guess-the-price', name: 'Guess The Price', icon: PuzzleIcon },
 	];
 
 	// State for mobile menu
