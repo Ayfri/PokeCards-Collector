@@ -7,10 +7,18 @@
 	import PageTitle from '@components/PageTitle.svelte';
 	import type { Pokemon, FullCard } from '$lib/types';
 	import { setNavigationLoading } from '$lib/stores/loading';
+	import ScrollToTop from '$lib/components/list/ScrollToTop.svelte';
+	import ScrollToBottom from '$lib/components/list/ScrollToBottom.svelte';
+	import { onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 
 	export let data: PageData;
 
 	const { pokemons, allCards, prices } = data;
+
+	let hasScrolled = false;
+	const scrollThreshold = 100; // Pixels to scroll before showing ScrollToTop
+	const scrollDuration = 500; // Milliseconds for smooth scroll
 
 	function navigateToPokemonCard(pokemon: Pokemon) {
 		setNavigationLoading(true);
@@ -22,6 +30,54 @@
 			setNavigationLoading(false);
 		}
 	}
+
+	function smoothScroll(targetPosition: number, duration: number) {
+		const startPosition = window.pageYOffset;
+		const distance = targetPosition - startPosition;
+		let startTime: number | null = null;
+
+		function scrollStep(timestamp: number) {
+			if (!startTime) startTime = timestamp;
+			const timeElapsed = timestamp - startTime;
+			const progress = Math.min(timeElapsed / duration, 1);
+			const easeInOutCubic = (p: number) => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+
+			window.scrollTo(0, startPosition + distance * easeInOutCubic(progress));
+
+			if (timeElapsed < duration) {
+				window.requestAnimationFrame(scrollStep);
+			} else {
+				window.scrollTo(0, targetPosition);
+			}
+		}
+		window.requestAnimationFrame(scrollStep);
+	}
+
+	function scrollToTopPage() {
+		smoothScroll(0, scrollDuration);
+		setTimeout(() => { hasScrolled = false; }, scrollDuration); // Hide button after scroll
+	}
+
+	function scrollToBottomPage() {
+		const targetPosition = document.body.scrollHeight - window.innerHeight;
+		smoothScroll(targetPosition, scrollDuration);
+	}
+
+	function handleScroll() {
+		if (window.pageYOffset > scrollThreshold) {
+			hasScrolled = true;
+		} else {
+			hasScrolled = false;
+		}
+	}
+
+	onMount(() => {
+		window.addEventListener('scroll', handleScroll, { passive: true });
+		return () => {
+			window.removeEventListener('scroll', handleScroll);
+		};
+	});
+
 </script>
 
 <svelte:head>
@@ -33,7 +89,7 @@
 	<PageTitle title="All Pokémons" />
 	<div class="w-full max-w-[800px] mx-auto my-6 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
 
-	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8">
+	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8 min-h-[calc(100vh-200px)]">
 		{#each pokemons.sort((a, b) => a.id - b.id) as pokemon (pokemon.id)}
 			<button
 				on:click={() => navigateToPokemonCard(pokemon)}
@@ -64,6 +120,13 @@
 		{/each}
 	</div>
 </div>
+
+{#if hasScrolled}
+	<div transition:fade={{ duration: 300 }}>
+		<ScrollToTop on:click={scrollToTopPage} />
+	</div>
+{/if}
+<ScrollToBottom on:click={scrollToBottomPage} />
 
 <style lang="postcss">
 	.pokemon-card-item {
