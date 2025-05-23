@@ -243,7 +243,7 @@
 					<div class="mt-0.5 w-full text-center flex flex-col">
 						<h3 class="text-center font-bold text-sm">{cardSet?.name || 'Unknown Set'}</h3>
 						<div class="flex items-center justify-center">
-							{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
+							{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== '' && prices[card.cardCode]?.simple && prices[card.cardCode]?.simple !== 100_000}
 								<a
 									href={card.cardMarketUrl}
 									target="_blank"
@@ -254,11 +254,7 @@
 								>
 									<div class="flex items-center justify-center whitespace-nowrap">
 										<span class="text-sm">
-											{#if prices[card.cardCode]?.simple}
-												{prices[card.cardCode]?.simple?.toFixed(2)} $
-											{:else}
-												Priceless
-											{/if}
+											{prices[card.cardCode]?.simple?.toFixed(2)} $
 										</span>
 										<span class="mx-1 text-sm">-</span>
 										<span class="text-gold-400 font-bold underline text-sm flex items-center">
@@ -269,11 +265,7 @@
 								</a>
 							{:else}
 								<div class="text-sm">
-									{#if prices[card.cardCode]?.simple}
-										{prices[card.cardCode]?.simple?.toFixed(2)} $
-									{:else}
-										Priceless
-									{/if}
+									{prices[card.cardCode]?.simple && prices[card.cardCode]?.simple !== 100_000 ? `${prices[card.cardCode]?.simple?.toFixed(2)} $` : 'Priceless'}
 								</div>
 							{/if}
 						</div>
