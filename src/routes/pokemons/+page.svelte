@@ -6,21 +6,20 @@
 	import { NO_IMAGES } from '$lib/images';
 	import PageTitle from '@components/PageTitle.svelte';
 	import type { Pokemon, FullCard } from '$lib/types';
+	import { setNavigationLoading } from '$lib/stores/loading';
 
 	export let data: PageData;
 
 	const { pokemons, allCards, prices } = data;
 
 	function navigateToPokemonCard(pokemon: Pokemon) {
+		setNavigationLoading(true);
 		const mostExpensiveCard = getMostExpensiveCardForPokemon(pokemon.id, allCards, prices);
 		if (mostExpensiveCard) {
 			goto(`/card/${mostExpensiveCard.cardCode}`);
 		} else {
-			// Fallback or error handling if no card is found for the pokemon
-			// For now, let's log an error and maybe navigate to a generic page or show a message
 			console.error(`No card found for ${pokemon.name}`);
-			// Optionally, navigate to a generic Pokémon page or a not-found page
-			// goto(`/pokemon/${pokemon.id}`); // Example, if such a route existed
+			setNavigationLoading(false);
 		}
 	}
 </script>
@@ -32,6 +31,7 @@
 
 <div class="container mx-auto px-4 py-8 text-white">
 	<PageTitle title="All Pokémons" />
+	<div class="w-full max-w-[800px] mx-auto my-6 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
 
 	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8">
 		{#each pokemons.sort((a, b) => a.id - b.id) as pokemon (pokemon.id)}
@@ -53,7 +53,7 @@
 							#{pokemon.id}
 						</div>
 					{/if}
-					<div class="absolute -top-1 -right-1 bg-gold-500 text-black text-xs font-bold rounded-full size-6 flex items-center justify-center shadow-md">
+					<div class="absolute -top-1.5 -right-1.5 bg-gray-700 text-gold-400 text-xs font-bold rounded-full size-7 flex items-center justify-center shadow-md border border-gold-400/50">
 						{pokemon.id}
 					</div>
 				</div>
