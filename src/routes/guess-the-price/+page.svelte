@@ -13,7 +13,7 @@
 	let displayedCardPrice: number | null = null;
 	let displayedReleaseDate: Date | null = null;
 
-	let guessString: string = ''; // Changed from guess: number | null
+	let guessString: string = '';
 	let message: string = '';
 	let feedbackColor: string = '';
 	let showConfetti: boolean = false;
@@ -55,22 +55,17 @@
 			guessString = guessString.slice(0, -1);
 		} else if (key === 'C') {
 			guessString = '';
-		} else if (key === '.') {
-			if (!guessString.includes('.')) {
-				guessString += key;
-			}
+		} else if (key === '.') { // This case will no longer be triggered by Numpad
+			// Keep for manual input if desired, or remove if numpad is the only input
+			// For now, let's prevent adding decimal points.
+			return; 
 		} else { // Digit
-			// Limit to 2 decimal places
-			const parts = guessString.split('.');
-			if (parts.length === 2 && parts[1].length >= 2) {
-				return;
-			}
 			guessString += key;
 		}
 	}
 
 	function checkGuess() {
-		const guess = parseFloat(guessString);
+		const guess = parseInt(guessString, 10); // Changed to parseInt
 		if (isNaN(guess)) {
 			message = 'Please enter a valid price.';
 			feedbackColor = 'text-red-400';
@@ -81,7 +76,7 @@
 		isLoadingNextCard = true;
 		dataSnapshotForLoadingCheck = data;
 
-		const actualPrice = displayedCardPrice;
+		const actualPrice = displayedCardPrice !== null ? Math.round(displayedCardPrice) : null; // Round actual price
 
 		if (actualPrice === null) { // Should not happen if displayedCard is present
 			message = 'Error: Card price is not available.';
@@ -94,12 +89,12 @@
 		const percentageDifference = actualPrice > 0 ? (difference / actualPrice) * 100 : Infinity;
 
 		if (guess === actualPrice) {
-			message = `Correct! The price was ${actualPrice.toFixed(2)}$! You're a Pokémon Master!`;
+			message = `Correct! The price was ${actualPrice}$! You're a Pokémon Master!`; // Removed .toFixed(2)
 			feedbackColor = 'text-green-400';
 			showConfetti = true;
 		} else {
 			showConfetti = false;
-			const priceRevealed = `The correct price was ${actualPrice.toFixed(2)}$.`;
+			const priceRevealed = `The correct price was ${actualPrice}$.`; // Removed .toFixed(2)
 			if (guess < actualPrice) {
 				feedbackColor = 'text-yellow-400';
 				if (percentageDifference > 75) {
@@ -210,14 +205,14 @@
 						<label for="price-guess" class="block text-lg font-medium text-gray-300 mb-2">Your Guess ($):</label>
 						<input
 							type="text" 
-							inputmode="decimal"
+							inputmode="numeric"
 							id="price-guess"
 							name="price-guess"
 							bind:value={guessString}
 							min="0"
-							step="0.01"
+							step="1"
 							class="shadow appearance-none border border-gold-500 rounded w-full py-3 px-4 text-gray-200 bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-gold-300 mb-4"
-							placeholder="e.g., 12.50"
+							placeholder="e.g., 12"
 							required
 							readonly={guessSubmitted}
 						/>

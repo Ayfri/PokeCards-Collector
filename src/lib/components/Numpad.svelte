@@ -5,8 +5,7 @@
 		['7', '8', '9'],
 		['4', '5', '6'],
 		['1', '2', '3'],
-		['C', '0', '.'],
-		['Backspace']
+		['C', '0', 'Backspace']
 	];
 
 	function getKeyText(key: string): string {
@@ -22,8 +21,7 @@
 				class="numpad-button flex items-center justify-center h-12 md:h-14 
 							bg-gray-600 text-white rounded hover:bg-gray-500 
 							focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-700 focus:ring-gold-400 
-							text-xl md:text-2xl font-medium 
-							{key === 'Backspace' ? 'col-span-3' : ''}"
+							text-xl md:text-2xl font-medium"
 				on:click={() => onKeyPress(key)}
 			>
 				{getKeyText(key)}
