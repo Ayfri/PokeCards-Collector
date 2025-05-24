@@ -182,27 +182,22 @@
 			Try Again
 		</button>
 	{:else if displayedCard && displayedCardPrice !== null}
-		<div class="game-layout-grid w-full grid items-center gap-4 md:gap-8 px-4" style="grid-template-columns: 1fr auto 1fr;">
-			<!-- Left Column: Numpad -->
-			<div class="numpad-container flex justify-center items-center h-full">
-				<Numpad onKeyPress={handleNumpadKeyPress} />
-			</div>
-
-			<!-- Middle Column: Game Box -->
-			<div class="card-display-wrapper">
-				<div class="card-display p-6 bg-gray-800 rounded-lg shadow-xl w-full max-w-sm text-center border-2 border-gold-500 relative">
-					<h2 class="text-2xl font-semibold text-gold-300 mb-2">{displayedCard.name}</h2>
-					<p class="text-sm text-gray-400 mb-1">Set: {displayedCard.setName}</p>
-					<p class="text-sm text-gray-400 mb-1">Rarity: {displayedCard.rarity}</p>
+		<div class="game-layout-grid w-full grid grid-cols-1 md:grid-cols-3 items-start md:items-center gap-4 md:gap-8 px-2 sm:px-4">
+			<!-- Middle Column (becomes 1st on mobile): Game Box -->
+			<div class="card-display-wrapper order-1 md:order-2 w-full flex justify-center">
+				<div class="card-display p-4 sm:p-6 bg-gray-800 rounded-lg shadow-xl w-full max-w-xs sm:max-w-sm text-center border-2 border-gold-500 relative">
+					<h2 class="text-xl sm:text-2xl font-semibold text-gold-300 mb-2">{displayedCard.name}</h2>
+					<p class="text-xs sm:text-sm text-gray-400 mb-1">Set: {displayedCard.setName}</p>
+					<p class="text-xs sm:text-sm text-gray-400 mb-1">Rarity: {displayedCard.rarity}</p>
 					{#if displayedReleaseDate}
-						<p class="text-sm text-gray-400 mb-4">Released: {new Date(displayedReleaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+						<p class="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">Released: {new Date(displayedReleaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 					{:else}
-						<p class="text-sm text-gray-400 mb-4">Released: N/A</p> 
+						<p class="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">Released: N/A</p> 
 					{/if}
-					<img src={displayedCard.image} alt={displayedCard.name} class="mx-auto mb-4 rounded-lg shadow-md w-64 h-auto object-contain" />
+					<img src={displayedCard.image} alt={displayedCard.name} class="mx-auto mb-3 sm:mb-4 rounded-lg shadow-md w-48 sm:w-64 h-auto object-contain" />
 
 					<form on:submit|preventDefault={checkGuess} class="w-full">
-						<label for="price-guess" class="block text-lg font-medium text-gray-300 mb-2">Your Guess ($):</label>
+						<label for="price-guess" class="block text-base sm:text-lg font-medium text-gray-300 mb-1 sm:mb-2">Your Guess ($):</label>
 						<input
 							type="text" 
 							inputmode="numeric"
@@ -211,14 +206,14 @@
 							bind:value={guessString}
 							min="0"
 							step="1"
-							class="shadow appearance-none border border-gold-500 rounded w-full py-3 px-4 text-gray-200 bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-gold-300 mb-4"
+							class="shadow appearance-none border border-gold-500 rounded w-full py-2 sm:py-3 px-3 sm:px-4 text-gray-200 bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-gold-300 mb-3 sm:mb-4 text-sm sm:text-base"
 							placeholder="e.g., 12"
 							required
 							readonly={guessSubmitted}
 						/>
 						<button 
 							type="submit" 
-							class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200 {guessSubmitted ? 'opacity-50 cursor-not-allowed' : ''}"
+							class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 sm:py-3 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200 text-sm sm:text-base {guessSubmitted ? 'opacity-50 cursor-not-allowed' : ''}"
 							disabled={guessSubmitted} 
 						>
 							Submit Guess
@@ -227,14 +222,19 @@
 				</div>
 			</div>
 
-			<!-- Right Column: Play Again Button and Message -->
-			<div class="play-again-message-container flex flex-col justify-center items-center h-full gap-4">
+			<!-- Left Column (becomes 2nd on mobile): Numpad -->
+			<div class="numpad-container order-2 md:order-1 flex justify-center items-center h-full w-full">
+				<Numpad onKeyPress={handleNumpadKeyPress} />
+			</div>
+
+			<!-- Right Column (becomes 3rd on mobile): Play Again Button and Message -->
+			<div class="play-again-message-container order-3 md:order-3 flex flex-col justify-center items-center h-full gap-3 sm:gap-4 w-full">
 				{#if message}
-					<p class={`text-lg font-semibold text-center ${feedbackColor}`}>{message}</p>
+					<p class={`text-base sm:text-lg font-semibold text-center ${feedbackColor}`}>{message}</p>
 				{/if}
 				<button 
 					on:click={playAgain} 
-					class="play-again-button bg-gold-400 hover:bg-gold-500 text-black font-bold py-3 px-6 rounded focus:outline-none focus:shadow-outline transition-all duration-200 text-lg relative { (guessSubmitted && !isLoadingNextCard) ? 'ripple-active' : '' } { isLoadingNextCard ? 'opacity-50' : '' }"
+					class="play-again-button bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 sm:py-3 px-4 sm:px-6 rounded focus:outline-none focus:shadow-outline transition-all duration-200 text-base sm:text-lg relative { (guessSubmitted && !isLoadingNextCard) ? 'ripple-active' : '' } { isLoadingNextCard ? 'opacity-50' : '' }"
 					disabled={isLoadingNextCard || !guessSubmitted}
 				>
 					<span class="relative z-10">{isLoadingNextCard ? 'Loading Next Card...' : 'Play Again (New Card)'}</span>
@@ -257,9 +257,24 @@
 	/* Numpad specific styling can go here or in Numpad.svelte if more complex */
 	/* Ensure the grid layout accommodates the numpad */
 	.game-layout-grid {
-		/* Adjust grid-template-columns if numpad causes overflow or alignment issues */
-		/* Example: grid-template-columns: minmax(auto, 220px) auto minmax(auto, 220px); */
-		/* The current 1fr auto 1fr might be fine if numpad fits well */
+		/* Desktop: grid-template-columns: 1fr auto 1fr; (implicit via md:grid-cols-3) */
+		/* Mobile: grid-template-columns: 1fr; (implicit via grid-cols-1) */
+	}
+
+	/* Adjust Numpad container for mobile if Numpad itself doesn't scale well */
+	@media (max-width: 767px) { /* Below md breakpoint */
+		.numpad-container {
+			/* Example: could make numpad full width or scale it down */
+			/* For now, rely on Numpad internal styling and centering */
+			margin-top: 1rem; /* Add some space above numpad on mobile */
+			margin-bottom: 1rem; /* Add some space below numpad on mobile */
+		}
+		.card-display-wrapper {
+			/* Ensure it doesn't get too small or too large on mobile */
+		}
+		.play-again-message-container {
+			margin-top: 1rem;
+		}
 	}
 
 	.play-again-button::before,
