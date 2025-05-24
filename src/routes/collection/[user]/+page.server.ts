@@ -55,6 +55,7 @@ async function getStreamedCollectionData(
 		types,
 		artists,
 		serverCollectionCards: collectionCards,
+		prices: prices,
 	};
 }
 
