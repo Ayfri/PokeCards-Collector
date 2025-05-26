@@ -12,7 +12,8 @@ async function getStreamedCollectionData(
 	collectionItemsSource: Array<{ card_code: string }> | undefined | null,
 	targetProfileForCollection: UserProfile | null,
 	isPublicForCollection: boolean,
-	loggedInUsernameForCollection: string | null
+	loggedInUsernameForCollection: string | null,
+	selectedSetName?: string | null
 ) {
 	// Base data for cards (pokemons, rarities, types, artists)
 	const [pokemons, rarities, types, artists] = await Promise.all([
@@ -43,6 +44,9 @@ async function getStreamedCollectionData(
 	if (itemsToProcess) {
 		const collectionCardCodes = new Set(itemsToProcess.map(item => item.card_code));
 		collectionCards = allCards.filter((card: FullCard) => collectionCardCodes.has(card.cardCode));
+		if (selectedSetName) {
+			collectionCards = collectionCards.filter((card: FullCard) => card.setName === selectedSetName);
+		}
 	} else {
 		// This case handles: not public & not owner, OR itemsToProcess was null/undefined initially (e.g. own profile, layoutCollectionItems was null)
 		collectionCards = [];
@@ -59,7 +63,7 @@ async function getStreamedCollectionData(
 	};
 }
 
-export const load: PageServerLoad = async ({ params, parent }) => {
+export const load: PageServerLoad = async ({ params, parent, url }) => {
 	const parentData = await parent();
 	const { profile: loggedInUserProfile, collectionItems: layoutCollectionItems, sets: parentSets, ...layoutData } = parentData;
 
@@ -68,6 +72,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	const pricesResolved = await parentData.streamed.prices || {};
 	// sets from parentData should already be resolved as per its definition in layout.server.ts
 	const setsResolved = parentSets || [];
+	const selectedSet = url.searchParams.get('set');
 
 	const requestedUsername = params.user;
 	let targetProfile: UserProfile | null = null;
@@ -141,7 +146,8 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 				collectionSourceItems,
 				targetProfile,
 				isPublic,
-				loggedInUserProfile?.username || null
+				loggedInUserProfile?.username || null,
+				selectedSet
 			)
 		}
 	};

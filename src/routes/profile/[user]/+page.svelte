@@ -18,7 +18,8 @@
 	let ready = false;
 
 	// Reactive data from page store
-	$: ({ allCards, sets, targetProfile, isPublic, collectionStats, isOwnProfile, loggedInUsername, title: pageTitle, description } = data);
+	$: ({ allCards, sets, targetProfile, isPublic, collectionStats, isOwnProfile, loggedInUsername, title, description } = data);
+	$: pageTitle = title;
 	$: user = data.user;
 	$: profile = data.profile;
 
@@ -328,9 +329,7 @@
 											{#each getSortedSets() as [setName, setData], i}
 												{@const set = getSetByName(setName)}
 												<a
-													href={isOwnProfile
-														? `/collection?set=${encodeURIComponent(setName)}`
-														: `/collection/${encodeURIComponent(targetProfile.username)}?set=${encodeURIComponent(setName)}`}
+													href={`/collection/${encodeURIComponent(targetProfile.username)}?set=${encodeURIComponent(setName)}`}
 													class="block relative group"
 													title={`View ${isOwnProfile ? 'your' : targetProfile.username + "'s"} cards from ${setName}`}
 												>
