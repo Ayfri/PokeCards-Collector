@@ -55,12 +55,27 @@
 			guessString = guessString.slice(0, -1);
 		} else if (key === 'C') {
 			guessString = '';
-		} else if (key === '.') { // This case will no longer be triggered by Numpad
-			// Keep for manual input if desired, or remove if numpad is the only input
-			// For now, let's prevent adding decimal points.
+		} else if (key === '.') { 
+			// This case should ideally not be reached if decimal point is removed from numpad
+			// and input filtering is in place. But as a safeguard:
 			return; 
-		} else { // Digit
+		} else { // Digit from Numpad
 			guessString += key;
+		}
+	}
+
+	// Function to handle manual input and filter non-digits
+	function handleGuessInput(event: Event) {
+		if (guessSubmitted) return;
+		const inputElement = event.target as HTMLInputElement;
+		// Replace any non-digit characters with an empty string
+		const filteredValue = inputElement.value.replace(/\D/g, '');
+		guessString = filteredValue;
+		// Svelte might not immediately update the input visually if the value was programmatically changed
+		// to a substring of its previous value (e.g. "1a2" becoming "12"). 
+		// Forcing an update if necessary, though bind:value should handle it.
+		if (inputElement.value !== filteredValue) {
+			inputElement.value = filteredValue;
 		}
 	}
 
@@ -204,6 +219,7 @@
 							id="price-guess"
 							name="price-guess"
 							bind:value={guessString}
+							on:input={handleGuessInput}
 							min="0"
 							step="1"
 							class="shadow appearance-none border border-gold-500 rounded w-full py-2 sm:py-3 px-3 sm:px-4 text-gray-200 bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-gold-300 mb-3 sm:mb-4 text-sm sm:text-base"
