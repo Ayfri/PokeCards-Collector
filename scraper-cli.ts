@@ -41,7 +41,7 @@ const baseScrapers: ScraperOption[] = [
     },
     {
         name: 'download-images',
-        description: 'Download low-res card images based on cards.json',
+        description: 'Download low-res card images based on cards-full.json',
         action: downloadAllImages
     },
     {

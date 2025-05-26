@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { fetchAllCardsData } from '$scrapers/card_fetcher';
 import { fetchJapCardsData } from '$scrapers/jap_cards_scraper';
-import { getR2Env, getS3Client, uploadBufferToR2 } from '~/lib/r2';
+import { getR2Env, getS3Client, uploadBufferToR2 } from '$lib/r2';
 import type { RequestEvent } from './$types';
 import { env } from '$env/dynamic/private';
 import { setAPIKey } from '$scrapers/api_utils';
@@ -65,11 +65,11 @@ export async function GET(event: RequestEvent): Promise<Response> {
 
 			if (shouldUpdateCards) {
 				const allCardsBuffer = Buffer.from(JSON.stringify(allCards), 'utf-8');
-				console.log('Uploading English cards data (cards.json)...');
+				console.log('Uploading English cards data (cards-full.json)...');
 				await uploadBufferToR2({
 					s3Client,
 					bucketName: r2Env.bucketName,
-					objectName: 'cards.json',
+					objectName: 'cards-full.json',
 					contentBuffer: allCardsBuffer,
 					contentType: 'application/json'
 				});
@@ -92,11 +92,11 @@ export async function GET(event: RequestEvent): Promise<Response> {
 			console.log('Fetching Japanese cards...');
 			const japCards = await fetchJapCardsData();
 			const japCardsBuffer = Buffer.from(JSON.stringify(japCards), 'utf-8');
-			console.log('Uploading Japanese cards data (jp-cards.json)...');
+			console.log('Uploading Japanese cards data (jp-cards-full.json)...');
 			await uploadBufferToR2({
 				s3Client,
 				bucketName: r2Env.bucketName,
-				objectName: 'jp-cards.json',
+				objectName: 'jp-cards-full.json',
 				contentBuffer: japCardsBuffer,
 				contentType: 'application/json'
 			});
