@@ -9,8 +9,13 @@ export const load: PageServerLoad = async () => {
 	const allCards: FullCard[] = allCardsData as FullCard[];
 	const prices: Record<string, PriceData> = pricesData as Record<string, PriceData>;
 
+	const pokemonsWithCardCounts = pokemons.map(pokemon => {
+		const cardCount = allCards.filter(card => (<any>card).pokemonNumber === pokemon.id).length;
+		return { ...pokemon, cardCount };
+	});
+
 	return {
-		pokemons,
+		pokemons: pokemonsWithCardCounts,
 		allCards,
 		prices
 	};

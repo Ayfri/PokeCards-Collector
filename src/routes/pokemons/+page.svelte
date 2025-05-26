@@ -9,9 +9,12 @@
 	import { setNavigationLoading } from '$lib/stores/loading';
 	import ScrollToTop from '$lib/components/list/ScrollToTop.svelte';
 	import ScrollToBottom from '$lib/components/list/ScrollToBottom.svelte';
-	import { onMount, tick } from 'svelte';
+	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import SortControl from '@components/filters/SortControl.svelte';
+	import TextInput from '@components/filters/TextInput.svelte';
+
+	type PokemonWithCardCount = Pokemon & { cardCount: number };
 
 	export let data: PageData;
 
@@ -21,11 +24,14 @@
 	let sortBy = 'pokedex'; // Default sort by Pokedex number
 	let sortOrder: 'asc' | 'desc' = 'asc'; // Default sort order ascending
 
-	let sortedPokemons: Pokemon[] = [];
+	let sortedPokemons: PokemonWithCardCount[] = [];
+	let searchTerm = '';
 
-	// Reactive statement to sort pokemons
+	// Reactive statement to filter and sort pokemons
 	$: {
-		let tempPokemons = [...initialPokemons];
+		let tempPokemons = [...initialPokemons]
+			.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
 		if (sortBy === 'pokedex') {
 			tempPokemons.sort((a, b) => {
 				return sortOrder === 'asc' ? a.id - b.id : b.id - a.id;
@@ -38,22 +44,33 @@
 				if (nameA > nameB) return sortOrder === 'asc' ? 1 : -1;
 				return 0;
 			});
+		} else if (sortBy === 'cardCount') {
+			tempPokemons.sort((a, b) => {
+				const countA = (a as PokemonWithCardCount).cardCount;
+				const countB = (b as PokemonWithCardCount).cardCount;
+				return sortOrder === 'asc' ? countA - countB : countB - countA;
+			});
 		}
-		sortedPokemons = tempPokemons;
+		sortedPokemons = tempPokemons as PokemonWithCardCount[];
 	}
 
 	let hasScrolled = false;
 	const scrollThreshold = 100; // Pixels to scroll before showing ScrollToTop
 	const scrollDuration = 500; // Milliseconds for smooth scroll
 
-	function navigateToPokemonCard(pokemon: Pokemon) {
+	function navigateToPokemonCard(pokemon: PokemonWithCardCount) {
 		setNavigationLoading(true);
 		const mostExpensiveCard = getMostExpensiveCardForPokemon(pokemon.id, allCards, prices);
 		if (mostExpensiveCard) {
 			goto(`/card/${mostExpensiveCard.cardCode}`);
 		} else {
-			console.error(`No card found for ${pokemon.name}`);
-			setNavigationLoading(false);
+			const anyCard = allCards.find(card => (<any>card).pokemonNumber === pokemon.id);
+			if (anyCard) {
+				goto(`/card/${anyCard.cardCode}`);
+			} else {
+				console.error(`No card found for ${pokemon.name}`);
+				setNavigationLoading(false);
+			}
 		}
 	}
 
@@ -116,20 +133,28 @@
 		<div class="flex-shrink-0">
 			<PageTitle title="All Pokémons" />
 		</div>
-		<div class="flex items-center gap-4">
+		<div class="flex items-end gap-4">
+			<TextInput
+				id="pokemon-search"
+				label="Search Pokémon"
+				labelClass="sr-only"
+				bind:value={searchTerm}
+				placeholder="Search Pokémon..."
+			/>
 			<SortControl
 				bind:sortValue={sortBy}
 				bind:sortDirection={sortOrder}
 				options={[
 					{ value: 'pokedex', label: 'Pokédex #' },
-					{ value: 'name', label: 'Name' }
+					{ value: 'name', label: 'Name' },
+					{ value: 'cardCount', label: 'Card Count' }
 				]}
 			/>
 		</div>
 	</div>
 	<div class="w-full max-w-[800px] mx-auto my-6 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
 
-	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8 min-h-[calc(100vh-200px)]">
+	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8 align-items-start align-content-start">
 		{#each sortedPokemons as pokemon (pokemon.id)}
 			<button
 				on:click={() => navigateToPokemonCard(pokemon)}
@@ -155,6 +180,9 @@
 				</div>
 				<span class="pokemon-name text-sm md:text-base font-semibold group-hover:text-gold-400 transition-colors duration-200">
 					{pascalCase(pokemon.name)}
+				</span>
+				<span class="text-xs text-gray-400 mt-1">
+					{pokemon.cardCount} card{pokemon.cardCount === 1 ? '' : 's'}
 				</span>
 			</button>
 		{/each}
