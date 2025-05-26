@@ -7,10 +7,10 @@
 </script>
 
 <Modal
-	open={showHelp} 
-	on:close={toggleHelp} 
-	transitionFn={fly} 
-	transitionParams={{ y: 20, duration: 200 }} 
+	open={showHelp}
+	onClose={toggleHelp}
+	transitionFn={fly}
+	transitionParams={{ y: 20, duration: 200 }}
 	title="Binder Builder - Help"
 	containerClass="max-w-xl lg:max-w-4xl"
 >
@@ -22,12 +22,12 @@
 		<section>
 			<h3 class="text-lg font-semibold mb-2">Overview</h3>
 			<p>
-				The Binder Builder is a tool that lets you create a digital representation of your 
+				The Binder Builder is a tool that lets you create a digital representation of your
 				physical card binder. You can customize the grid size, add cards individually or complete sets at once,
 				and arrange them just as you would in a real binder.
 			</p>
 		</section>
-		
+
 		<section>
 			<h3 class="text-lg font-semibold mb-2">Getting Started</h3>
 			<ol class="list-decimal list-inside space-y-2">
@@ -43,7 +43,7 @@
 				<li>Rearrange cards by dragging them between positions</li>
 			</ol>
 		</section>
-		
+
 		<section>
 			<h3 class="text-lg font-semibold mb-2">Features</h3>
 			<ul class="list-disc list-inside space-y-2">
@@ -55,7 +55,7 @@
 				<li><span class="font-medium">Local Storage:</span> Your binder configuration is saved in your browser</li>
 			</ul>
 		</section>
-		
+
 		<section>
 			<h3 class="text-lg font-semibold mb-2">Tips and Tricks</h3>
 			<ul class="list-disc list-inside space-y-2">
@@ -69,4 +69,4 @@
 			</ul>
 		</section>
 	</div>
-</Modal> 
+</Modal>
