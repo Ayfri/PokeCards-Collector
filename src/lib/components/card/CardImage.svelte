@@ -15,9 +15,10 @@
 	export let imageUrl: string;
 
 	/**
-	 * Whether to use high-resolution image
+	 * Whether to use low-resolution image. 
+	 * If true, _hires.png will be removed from the URL.
 	 */
-	export let highRes: boolean = true;
+	export let lowRes: boolean = false;
 
 	/**
 	 * Whether the image is for lazy loading
@@ -51,8 +52,11 @@
 	let loaded = false;
 	let error = false;
 
+	// Determine whether to use high resolution based on the lowRes prop
+	$: useHighRes = !lowRes;
+
 	// Process the image URL using our centralized function - make reactive to imageUrl changes
-	$: standardImageUrl = imageUrl ? processCardImage(imageUrl, highRes) : '';
+	$: standardImageUrl = imageUrl ? processCardImage(imageUrl, useHighRes) : '';
 	$: lowResImageUrl = imageUrl ? processCardImage(imageUrl, false) : '';
 	
 	// Default fallback image for missing images
@@ -73,8 +77,8 @@
 
 	// Prepare srcset based on actual dimensions
 	$: srcsetValue = width ? 
-		`${proxyLowResUrl} ${Math.floor(width*0.82)}w, ${proxyStandardUrl} ${width}w` :
-		`${proxyLowResUrl} 245w, ${proxyStandardUrl} 300w`;
+		`${proxyLowResUrl} ${Math.floor(width*0.82)}w, ${standardImageUrl} ${width}w` :
+		`${proxyLowResUrl} 245w, ${standardImageUrl} 300w`;
 
 	$: sizesValue = width ? 
 		`(max-width: ${Math.floor(width*0.82)}px) ${Math.floor(width*0.82)}px, ${width}w` :
@@ -112,7 +116,7 @@
 		on:error={handleError}
 		on:load={onLoad}
 		sizes={sizesValue}
-		src={proxyStandardUrl}
+		src={standardImageUrl}
 		srcset={srcsetValue}
 		style={style}
 		{width}

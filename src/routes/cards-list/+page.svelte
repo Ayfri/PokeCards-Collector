@@ -147,6 +147,7 @@
 				pageTitle="Cards List" 
 				selectedSetName={selectedSetName} 
 				selectedArtistName={selectedArtistName} 
+				lowRes={true}
 			/>
 		{:catch priceError}
 			<p class="text-red-500 p-4">Error loading card prices: {priceError.message}</p>

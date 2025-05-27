@@ -22,9 +22,10 @@
 	export let sets: Set[];
 	export let customWidth: number | null = null;
 	export let customHeight: number | null = null;
+	export let lowRes: boolean = false;
 
 	const {
-		image,
+		// image, // We will use card.image directly
 		rarity = 'Unknown',
 		types = '',
 		cardCode,
@@ -200,7 +201,8 @@
 				alt={cardName}
 				class="rounded-lg transition-opacity duration-300 absolute top-0 left-0"
 				style="width: {width}px; height: {height}px; max-width: 100%;"
-				imageUrl={image}
+				imageUrl={card.image}
+				{lowRes}
 				lazy={true}
 				width={width}
 				height={height}

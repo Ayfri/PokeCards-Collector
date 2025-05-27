@@ -49,6 +49,7 @@
 	export let disableLoader: boolean = false;
 	export let selectedSetName: string | null = null;
 	export let selectedArtistName: string | null = null;
+	export let lowRes: boolean = true;
 
 	let clientWidth: number = 0;
 	let showFilters = false;
@@ -582,6 +583,7 @@
 			prices={prices[item.cardCode]}
 			customWidth={cardDimensions.width}
 			customHeight={cardDimensions.height}
+			{lowRes}
 		/>
 
 		<div slot="empty">
