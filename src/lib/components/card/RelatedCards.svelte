@@ -21,6 +21,7 @@
 	export let sets: Set[];
 	export let pokemon: Pokemon | undefined = undefined; // Optional Pokemon context
 	export let onCardSelect: (card: FullCard) => void;
+	export let lowRes: boolean = false;
 
 	// --- Persistent Sorting State ---
 	const relatedSortBy = persistentWritable('related-cards-sort-by', 'sort-set');
@@ -181,7 +182,7 @@
 								alt={cardPokemon ? cardPokemon.name : card.name}
 								class="card-image"
 								lazy={true}
-								highRes={false}
+								lowRes={lowRes}
 							/>
 						{:else}
 							<div class="w-full h-full"></div>

@@ -21,6 +21,7 @@
 	export let sets: Set[];
 	export let pokemonCards: FullCard[]; // Expects the primary card to be the first element for the *initial* pokemon
 	export let isJapaneseContext: boolean = false; // Explicitly set this for Japanese cards
+	export let lowRes: boolean = false; // <<< Add this line
 
 	// --- Internal State ---
 	// Initialize directly from the prop. This should update if pokemonCards prop changes.
@@ -318,7 +319,7 @@
 	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
 	{#if currentPokemonCards.length > 1 && shouldRenderAllCards}
 		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 700 }}>
-			<RelatedCards cards={currentPokemonCards} {pokemons} {sets} {prices} pokemon={currentPokemon} onCardSelect={handleCardSelect} />
+			<RelatedCards cards={currentPokemonCards} {pokemons} {sets} {prices} pokemon={currentPokemon} onCardSelect={handleCardSelect} {lowRes} />
 		</div>
 	{/if}
 </div>

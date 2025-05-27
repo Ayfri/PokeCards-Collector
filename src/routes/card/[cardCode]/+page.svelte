@@ -22,7 +22,7 @@
 		{:else}
 			{#key targetCard.cardCode}
 				<div in:fade={{ duration: 300 }}>
-					<CardDisplay allCards={allCards} pokemonCards={pokemonCards} {pokemons} {sets} {prices} />
+					<CardDisplay allCards={allCards} pokemonCards={pokemonCards} {pokemons} {sets} {prices} lowRes={true} />
 				</div>
 			{/key}
 		{/if}
