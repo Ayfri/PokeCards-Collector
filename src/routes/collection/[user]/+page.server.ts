@@ -4,6 +4,7 @@ import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserCollection } from '$lib/services/collections';
 import type { PageServerLoad } from './$types';
 import type { FullCard, UserProfile, Set as TSet, PriceData } from '$lib/types';
+import { parseCardCode } from '$helpers/card-utils';
 
 async function getStreamedCollectionData(
 	allCards: FullCard[],
@@ -22,7 +23,6 @@ async function getStreamedCollectionData(
 		getTypes(),
 		getArtists()
 	]).catch(e => {
-		console.error("Error loading page-specific card data:", e);
 		throw new Error('Failed to load necessary card data for page');
 	});
 
@@ -34,7 +34,6 @@ async function getStreamedCollectionData(
 	if (targetProfileForCollection && isPublicForCollection && loggedInUsernameForCollection !== targetProfileForCollection.username) {
 		const { data: targetUserCollectionItems, error: collectionError } = await getUserCollection(targetProfileForCollection.username);
 		if (collectionError) {
-			console.error(`Error fetching collection for ${targetProfileForCollection.username}:`, collectionError);
 			itemsToProcess = []; // Default to empty on error
 		} else {
 			itemsToProcess = targetUserCollectionItems;
@@ -44,8 +43,50 @@ async function getStreamedCollectionData(
 	if (itemsToProcess) {
 		const collectionCardCodes = new Set(itemsToProcess.map(item => item.card_code));
 		collectionCards = allCards.filter((card: FullCard) => collectionCardCodes.has(card.cardCode));
+
 		if (selectedSetName) {
-			collectionCards = collectionCards.filter((card: FullCard) => card.setName === selectedSetName);
+			const selectedSetObject = sets.find(s => s.name === selectedSetName);
+
+			if (selectedSetObject) {
+				const setPrimaryPtcgoCode = selectedSetObject.ptcgoCode?.toLowerCase();
+				const setAliasesLower = selectedSetObject.aliases?.map(a => a.toLowerCase()) || [];
+
+				collectionCards = collectionCards.filter((card: FullCard) => {
+					if (!card.cardCode) return false; // Should not happen with FullCard
+					const parsedCard = parseCardCode(card.cardCode);
+					
+					if (!parsedCard || !parsedCard.setCode) {
+						// If cardCode can't be parsed or has no setCode, it can't match by code.
+						// Optionally, could fall back to card.setName === selectedSetObject.name here if desired,
+						// but matching by parsed set code is more robust for sets with aliases.
+						// For now, if parsing fails, we consider it a non-match for code-based filtering.
+						return card.setName.toLowerCase() === selectedSetObject.name.toLowerCase(); // Fallback to exact name match
+					}
+
+					const cardSetCodeLower = parsedCard.setCode.toLowerCase();
+
+					// Check if card's parsed set code matches the primary ptcgoCode of the selected set
+					if (setPrimaryPtcgoCode && cardSetCodeLower === setPrimaryPtcgoCode) {
+						return true;
+					}
+
+					// Check if card's parsed set code is in the selected set's aliases
+					if (setAliasesLower.includes(cardSetCodeLower)) {
+						return true;
+					}
+					
+					// Fallback: if card's actual setName matches the selected set's name directly
+					// This handles cases where card.cardCode might not have a parsable set code matching aliases/ptcgoCode
+					// but card.setName is still the primary name of the set.
+					if (card.setName.toLowerCase() === selectedSetObject.name.toLowerCase()) {
+						return true;
+					}
+
+					return false;
+				});
+			} else {
+				collectionCards = collectionCards.filter((card: FullCard) => card.setName.toLowerCase() === selectedSetName.toLowerCase());
+			}
 		}
 	} else {
 		// This case handles: not public & not owner, OR itemsToProcess was null/undefined initially (e.g. own profile, layoutCollectionItems was null)
@@ -85,7 +126,6 @@ export const load: PageServerLoad = async ({ params, parent, url }) => {
 	({ data: targetProfile, error: profileError } = await getProfileByUsername(targetUsername));
 
 	if (profileError || !targetProfile) {
-		console.error(`Error fetching profile or profile not found for ${targetUsername}:`, profileError);
 		targetProfile = null;
 		title = 'User Not Found';
 		description = `Collection for user ${targetUsername} could not be found or user does not exist.`;
