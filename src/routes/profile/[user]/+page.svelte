@@ -271,7 +271,9 @@
 											{isOwnProfile ? 'My Wishlist' : `${targetProfile.username}'s Wishlist`}
 										</h3>
 									</div>
-									{#if collectionStats?.wishlist_count !== undefined}
+									{#if collectionStats?.wishlist_total_value !== undefined}
+										<span class="text-xs text-gold-200">{formatCurrency(collectionStats.wishlist_total_value)}</span>
+									{:else if collectionStats?.wishlist_count !== undefined}
 										<span class="text-xs text-gold-200">{collectionStats.wishlist_count} cards</span>
 									{/if}
 								</div>
