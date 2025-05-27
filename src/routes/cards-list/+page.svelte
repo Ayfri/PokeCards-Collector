@@ -7,6 +7,7 @@
 	import Loader from "$lib/components/Loader.svelte";
 	import GlobeIcon from 'lucide-svelte/icons/globe';
 	import { get } from 'svelte/store';
+	import { cardSize } from '$lib/stores/gridStore';
 
 	export let data: PageData;
 
@@ -18,6 +19,9 @@
 	$: artists = data.artists;
 	$: pokemons = data.pokemons;
 	// $: prices = data.prices; // No longer needed here, will come from data.streamed.prices
+
+	// Determine lowRes based on cardSize
+	$: lowRes = !($cardSize === 2 || $cardSize === 3); // true if not L or XL
 
 	onMount(() => {
 		// Check if we have any filter parameters in the URL
@@ -147,7 +151,7 @@
 				pageTitle="Cards List" 
 				selectedSetName={selectedSetName} 
 				selectedArtistName={selectedArtistName} 
-				lowRes={true}
+				{lowRes}
 			/>
 		{:catch priceError}
 			<p class="text-red-500 p-4">Error loading card prices: {priceError.message}</p>
