@@ -6,6 +6,8 @@
 	import PageTitle from '@components/PageTitle.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
+	import { onMount } from 'svelte';
+	import { resetFilters } from '$lib/helpers/filters';
 
 	export let data: PageData;
 
@@ -18,6 +20,12 @@
 	$: isOwnWishlist = !targetUsername || (loggedInUsername === targetUsername);
 	$: profileNotFound = !targetProfile && !!targetUsername && !data.streamed?.wishlistData;
 	$: profileIsPrivate = !!targetProfile && !isPublic && !isOwnWishlist && !data.streamed?.wishlistData;
+
+	onMount(() => {
+		if (typeof window !== 'undefined') {
+			resetFilters();
+		}
+	});
 
 	// pageTitleDisplay will be reactive to targetProfile and isOwnWishlist, considering data.title as fallback
 	$: pageTitleDisplay = (() => {

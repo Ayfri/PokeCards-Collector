@@ -6,7 +6,8 @@
 	import PageTitle from '@components/PageTitle.svelte'; // Import PageTitle
 	import { fade, fly } from 'svelte/transition'; // Import transitions
 	import BouncyLoader from '$lib/components/BouncyLoader.svelte'; // Import BouncyLoader
-	// Removed onMount and ready logic
+	import { onMount } from 'svelte';
+	import { resetFilters } from '$lib/helpers/filters';
 
 	export let data: PageData;
 
@@ -20,6 +21,12 @@
 	$: isOwnCollection = !targetUsername || (loggedInUsername === targetUsername);
 	$: profileNotFound = !targetProfile && !!targetUsername; // If targetUsername exists but targetProfile doesn't
 	$: profileIsPrivate = !!targetProfile && !isPublic && !isOwnCollection; // If profile exists, not public, and not own
+
+	onMount(() => {
+		if (typeof window !== 'undefined') {
+			resetFilters();
+		}
+	});
 
 	// Status message logic can be adapted once collectionData is resolved
 	// It might need to be inside the :then block or react to resolvedCollectionData.serverCollectionCards
