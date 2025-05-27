@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
 import { SETS } from './files';
-import { fetchFromApi } from './api_utils';
+import { fetchFromAPI } from './api_utils';
 import type { FetchedSet } from './tcg_api_types';
 
 interface ResponseSets {
@@ -42,7 +42,7 @@ export function getSetCodeFromImage(imageUrl: string): string | undefined {
 
 
 async function fetchAndFilterSets() {
-	const response = await fetchFromApi<ResponseSets>('sets', {
+	const response = await fetchFromAPI<ResponseSets>('sets', {
 		select: 'name,images,printedTotal,ptcgoCode,releaseDate,series',
 	});
 	let allSets = response.data; // Use let as we'll filter it
