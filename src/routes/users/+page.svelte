@@ -115,7 +115,7 @@
 	</div>
 
 	<!-- Search Users Section (Sticky) -->
-	<section aria-labelledby="search-users-title" class="sticky top-0 z-50 py-4 backdrop-blur-md -mx-4 px-4 shadow-lg rounded-b-xl mb-6">
+	<section aria-labelledby="search-users-title" class="sticky top-0 z-50 py-4 -mx-4 px-4 shadow-lg rounded-b-xl mb-6">
 		<h2 id="search-users-title" class="text-xl md:text-2xl font-semibold text-white flex items-center gap-2 mb-3 sr-only">
 			<SearchIcon class="text-blue-400" size={28} />
 			Find a Specific User
