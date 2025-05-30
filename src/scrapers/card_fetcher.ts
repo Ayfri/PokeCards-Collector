@@ -2,7 +2,7 @@ import * as fs from 'node:fs/promises';
 import { POKEMONS_COUNT } from '~/constants';
 import { CARDS, POKEMONS, PRICES, SETS } from './files';
 import { generateUniqueCardCode } from '$lib/helpers/card-utils';
-import { fetchFromAPI } from './api_utils';
+import { fetchFromApi } from './api_utils';
 import type { Pokemon, PriceData } from '$lib/types';
 import type { FetchedCard, FetchedCardsResponse, ProcessedCard, SetMappings } from './tcg_api_types';
 
@@ -22,7 +22,7 @@ export async function fetchPokemon(name: string, index: number): Promise<Fetched
 			pageSize: '250',
 		};
 
-		const response = await fetchFromAPI<FetchedCardsResponse>('cards', params);
+		const response = await fetchFromApi<FetchedCardsResponse>('cards', params);
 
 		if (!response.data.length) {
 			const searchName = name.replaceAll('-', ' ');
@@ -35,7 +35,7 @@ export async function fetchPokemon(name: string, index: number): Promise<Fetched
 				pageSize: '250',
 			};
 
-			return (await fetchFromAPI<FetchedCardsResponse>('cards', params)).data;
+			return (await fetchFromApi<FetchedCardsResponse>('cards', params)).data;
 		}
 
 		return response.data;
@@ -259,7 +259,7 @@ async function processPage(page: number, setMappings: SetMappings, pokemons: Pok
 		page: page.toString()
 	};
 
-	const response = await fetchFromAPI<FetchedCardsResponse>('cards', params);
+	const response = await fetchFromApi<FetchedCardsResponse>('cards', params);
 	const fetchedCardsRaw = response.data ?? [];
 
 	if (fetchedCardsRaw.length === 0) {
@@ -479,7 +479,7 @@ export async function fetchCardsByType(supertype: 'Energy' | 'Trainer'): Promise
 				page: page.toString()
 			};
 
-			const response = await fetchFromAPI<FetchedCardsResponse>('cards', params);
+			const response = await fetchFromApi<FetchedCardsResponse>('cards', params);
 
 			if (response.data && response.data.length > 0) {
 				allCards = [...allCards, ...response.data];
