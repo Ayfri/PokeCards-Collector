@@ -33,6 +33,7 @@
 	const navLinks: NavLink[] = [
 		{ href: '/', name: 'PCC', icon: null },
 		{ href: '/pokemons', name: 'Pokémons', icon: ListIcon },
+		// { href: '/card.dle', name: 'Card.dle', icon: PuzzleIcon },  // disabled for now, not working perfectly
 		{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
 		{ href: '/japan', name: 'Japan', icon: GlobeIcon },
 		{ href: '/sets', name: 'Sets', icon: LibraryIcon },

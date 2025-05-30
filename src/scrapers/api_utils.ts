@@ -1,16 +1,9 @@
 export const API_BASE_URL = 'https://api.pokemontcg.io/v2';
-const apiKey = process.env.POKEMON_TCG_API_KEY;
+let apiKey = process.env.POKEMON_TCG_API_KEY;
 
-// Optional: Add a check to ensure the API key is loaded, or throw an error/log a warning.
-if (!apiKey) {
-	console.warn('Warning: POKEMON_TCG_API_KEY is not set in environment variables.');
-	// You might want to throw an error here if the API key is absolutely essential
-	// throw new Error('Missing POKEMON_TCG_API_KEY in environment variables.');
+export function setAPIKey(key: string) {
+	apiKey = key;
 }
-
-export const headers = {
-	'X-Api-Key': apiKey || '', // Use the loaded API key, or an empty string if not found
-};
 
 /**
  * Generic retry function with exponential backoff
@@ -40,7 +33,7 @@ export async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5, baseDel
 /**
  * Fetches data from the Pokemon TCG API with retry mechanism
  */
-export async function fetchFromAPI<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
+export async function fetchFromApi<T>(endpoint: string, params: Record<string, string> = {}): Promise<T> {
 	return withRetry(async () => {
 		const queryParams = new URLSearchParams(params).toString();
 		const url = `${API_BASE_URL}/${endpoint}${queryParams ? `?${queryParams}` : ''}`;

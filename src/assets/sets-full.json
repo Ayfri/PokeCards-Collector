@@ -244,6 +244,14 @@
 		"series": "EX"
 	},
 	{
+		"name": "Destined Rivals",
+		"logo": "https://images.pokemontcg.io/sv10/logo.png",
+		"printedTotal": 182,
+		"ptcgoCode": "DRI",
+		"releaseDate": "2025/05/30",
+		"series": "Scarlet & Violet"
+	},
+	{
 		"name": "Detective Pikachu",
 		"logo": "https://images.pokemontcg.io/det1/logo.png",
 		"printedTotal": 18,
