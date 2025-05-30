@@ -1,8 +1,5 @@
 export const API_BASE_URL = 'https://api.pokemontcg.io/v2';
 let apiKey = process.env.POKEMON_TCG_API_KEY;
-if (import.meta.env.POKEMON_TCG_API_KEY) {
-	apiKey = import.meta.env.POKEMON_TCG_API_KEY;
-}
 
 export function setAPIKey(key: string) {
 	apiKey = key;
