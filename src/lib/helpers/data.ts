@@ -58,17 +58,20 @@ export async function getPokemons(): Promise<Pokemon[]> {
 }
 
 export async function getCards(): Promise<FullCard[]> {
-	const cards = await fetch(`${PUBLIC_R2_BUCKET_URL}/cards-full.json.gz?t=${Date.now()}`);
+	const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+	const cards = await fetch(`${PUBLIC_R2_BUCKET_URL}/cards-full.json.gz?d=${today}`);
 	return cards.json();
 }
 
 export async function getJapaneseCards(): Promise<FullCard[]> {
-	const jpCards = await fetch(`${PUBLIC_R2_BUCKET_URL}/jp-cards-full.json.gz?t=${Date.now()}`);
+	const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+	const jpCards = await fetch(`${PUBLIC_R2_BUCKET_URL}/jp-cards-full.json.gz?d=${today}`);
 	return jpCards.json();
 }
 
 export async function getPrices(): Promise<Record<string, PriceData>> {
-	const prices = await fetch(`${PUBLIC_R2_BUCKET_URL}/prices.json.gz?t=${Date.now()}`);
+	const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+	const prices = await fetch(`${PUBLIC_R2_BUCKET_URL}/prices.json.gz?d=${today}`);
 	return prices.json();
 }
 
