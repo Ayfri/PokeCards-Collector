@@ -58,17 +58,17 @@ export async function getPokemons(): Promise<Pokemon[]> {
 }
 
 export async function getCards(): Promise<FullCard[]> {
-	const cards = await fetch(`${PUBLIC_R2_BUCKET_URL}/cards-full.json.gz`);
+	const cards = await fetch(`${PUBLIC_R2_BUCKET_URL}/cards-full.json.gz?t=${Date.now()}`);
 	return cards.json();
 }
 
 export async function getJapaneseCards(): Promise<FullCard[]> {
-	const jpCards = await fetch(`${PUBLIC_R2_BUCKET_URL}/jp-cards-full.json.gz`);
+	const jpCards = await fetch(`${PUBLIC_R2_BUCKET_URL}/jp-cards-full.json.gz?t=${Date.now()}`);
 	return jpCards.json();
 }
 
 export async function getPrices(): Promise<Record<string, PriceData>> {
-	const prices = await fetch(`${PUBLIC_R2_BUCKET_URL}/prices.json.gz`);
+	const prices = await fetch(`${PUBLIC_R2_BUCKET_URL}/prices.json.gz?t=${Date.now()}`);
 	return prices.json();
 }
 
