@@ -40,7 +40,7 @@ interface CardData {
 	cardMarketUrl?: string;
 	image?: string;
 	name: string;
-	pokemonId?: number;
+	pokemonNumber?: number;
 	rarity?: string;
 	setName?: string;
 	supertype?: string;
@@ -278,7 +278,7 @@ export async function uploadCards() {
 		card_market_url: card.cardMarketUrl || null,
 		image: card.image || null,
 		name: card.name,
-		pokemon_id: card.pokemonId || null,
+		pokemon_id: card.pokemonNumber || null,
 		rarity: card.rarity || null,
 		set_name: (card.setName && validSetNames.has(card.setName)) ? card.setName : null,
 		supertype: card.supertype || null,
@@ -314,11 +314,8 @@ export async function uploadCards() {
 		}
 	}
 	
-	// Clear existing data
-	const { error: deleteError } = await supabase.from('cards').delete().neq('card_code', '');
-	if (deleteError) {
-		throw new Error(`Error clearing cards: ${deleteError.message}`);
-	}
+	// Note: We don't clear existing data due to foreign key constraints from prices table
+	// Instead we'll use upsert to update existing records
 	
 	// Count invalid sets for reporting
 	const invalidSets = cardsData.filter(card => card.setName && !validSetNames.has(card.setName));
@@ -380,7 +377,7 @@ export async function uploadJapaneseCards() {
 		card_market_url: card.cardMarketUrl || null,
 		image: card.image || null,
 		name: card.name,
-		pokemon_id: card.pokemonId || null,
+		pokemon_id: card.pokemonNumber || null,
 		rarity: card.rarity || null,
 		set_name: (card.setName && validSetNames.has(card.setName)) ? card.setName : null,
 		supertype: card.supertype || null,
@@ -416,11 +413,8 @@ export async function uploadJapaneseCards() {
 		}
 	}
 	
-	// Clear existing data
-	const { error: deleteError } = await supabase.from('jp_cards').delete().neq('card_code', '');
-	if (deleteError) {
-		throw new Error(`Error clearing jp_cards: ${deleteError.message}`);
-	}
+	// Note: We don't clear existing data due to foreign key constraints from prices table
+	// Instead we'll use upsert to update existing records
 	
 	// Count invalid sets for reporting
 	const invalidSets = jpCardsData.filter(card => card.setName && !validSetNames.has(card.setName));

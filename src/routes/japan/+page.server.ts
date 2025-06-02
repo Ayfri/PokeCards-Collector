@@ -1,4 +1,4 @@
-import { getPokemons, getRarities, getJapaneseSets, getTypes, getArtists, getJapaneseCards } from '$helpers/data';
+import { getPokemons, getRarities, getJapaneseSets, getTypes, getArtists, getJapaneseCards } from '$helpers/supabase-data';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 

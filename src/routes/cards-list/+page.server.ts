@@ -1,4 +1,4 @@
-import { getRarities, getTypes, getArtists, getPokemons } from '$helpers/data';
+import { getRarities, getTypes, getArtists, getPokemons, getCards } from '$helpers/supabase-data';
 import type { FullCard } from '$lib/types'; // Import FullCard type
 import type { PageServerLoad } from './$types'; // Added import for type
 
@@ -76,27 +76,16 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 				return pricesFromParent || {};
 			})(),
 			stats: (async () => {
-				const cardsFromParentForStats = await parentLayoutData.streamed.allCards;
-				if (!cardsFromParentForStats) {
-					return { totalCards: 0, uniquePokemon: 0, pokemonCards: 0, trainerCards: 0, energyCards: 0 };
-				}
-
-				let cardsForStats: FullCard[] = cardsFromParentForStats;
-				const seenImages = new Set();
-				cardsForStats = cardsForStats.filter(card => {
-					if (!card.setName) return false;
-					if (seenImages.has(card.image)) return false;
-					seenImages.add(card.image);
-					return true;
-				});
-
-				const pokemonCards = cardsForStats.filter(card => card.supertype === 'Pokémon');
-				const trainerCards = cardsForStats.filter(card => card.supertype === 'Trainer');
-				const energyCards = cardsForStats.filter(card => card.supertype === 'Energy');
-				const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
+				// Get real data counts from Supabase for accurate statistics
+				const allCardsFromDb = await getCards();
+				
+				const pokemonCards = allCardsFromDb.filter(card => card.supertype === 'Pokémon');
+				const trainerCards = allCardsFromDb.filter(card => card.supertype === 'Trainer');
+				const energyCards = allCardsFromDb.filter(card => card.supertype === 'Energy');
+				
 				return {
-					totalCards: cardsForStats.length,
-					uniquePokemon,
+					totalCards: allCardsFromDb.length, // Real count from database
+					uniquePokemon: pokemons.length, // Real count from pokemons table
 					pokemonCards: pokemonCards.length,
 					trainerCards: trainerCards.length,
 					energyCards: energyCards.length,

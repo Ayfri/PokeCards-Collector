@@ -1,4 +1,4 @@
-import { getPokemons, getJapaneseCards } from '$helpers/data';
+import { getPokemons, getJapaneseCards } from '$helpers/supabase-data';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';

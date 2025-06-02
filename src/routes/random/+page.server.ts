@@ -1,4 +1,4 @@
-import { getCards } from "$helpers/data";
+import { getCards } from "$helpers/supabase-data";
 import { redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "../$types";
 

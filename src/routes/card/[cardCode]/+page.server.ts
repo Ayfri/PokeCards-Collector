@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getPokemons } from '$helpers/data';
+import { getPokemons } from '$helpers/supabase-data';
 import type { FullCard, Pokemon } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
