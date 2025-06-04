@@ -70,7 +70,7 @@
 	let artistsCount = 0;
 	onMount(async () => {
 		try {
-			const artists = await getArtists();
+			const artists = [...new Set(allCards.map(card => card.artist))];
 			artistsCount = artists.length;
 		} catch (error) {
 			console.error("Failed to load artists count:", error);

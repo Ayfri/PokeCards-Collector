@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// Await the streamed promises from parent for allCards and prices
 	const allCardsResolved: FullCard[] = await parentData.streamed.allCards || []; // Ensure it's an array
 	const pricesResolved = await parentData.streamed.prices || {};      // Ensure it's an object
-	
+
 	// 'sets' is already resolved from parent
 	const sets = parentData.sets || [];
 
@@ -40,7 +40,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// Get real data counts from Supabase for statistics
 	const [pokemons, allCardsFromDb, japaneseCards] = await Promise.all([
 		getPokemons(),
-		getCards(), // Get all cards without filtering
+		allCardsResolved,
 		getJapaneseCards() // Get Japanese cards count
 	]);
 
