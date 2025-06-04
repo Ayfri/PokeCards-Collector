@@ -1,18 +1,32 @@
 import type { Card, FullCard, Pokemon, PriceData, Set } from "$lib/types";
 import { supabase } from '$lib/supabase';
 
-// Fonction utilitaire pour récupérer toutes les données avec pagination
+// Utility function to fetch all data with pagination
 async function getAllData<T>(
 	tableName: string,
 	selectQuery: string = '*',
 	orderBy?: { column: string; ascending: boolean }
 ): Promise<T[]> {
+	const batchSize = 5000;
 	let allData: T[] = [];
-	let from = 0;
-	const batchSize = 1000;
-	let hasMore = true;
 
-	while (hasMore) {
+	// First, get the total count to determine how many batches we need
+	const { count, error: countError } = await supabase
+		.from(tableName)
+		.select('*', { count: 'exact', head: true });
+
+	if (countError) {
+		console.error(`Error counting ${tableName}:`, countError);
+		throw new Error(`Failed to count ${tableName}: ${countError.message}`);
+	}
+
+	const totalCount = count || 0;
+	const numberOfBatches = Math.ceil(totalCount / batchSize);
+
+	// Create all batch promises simultaneously
+	const batchPromises = Array.from({ length: numberOfBatches }, (_, index) => {
+		const from = index * batchSize;
+
 		let query = supabase
 			.from(tableName)
 			.select(selectQuery)
@@ -22,8 +36,14 @@ async function getAllData<T>(
 			query = query.order(orderBy.column, { ascending: orderBy.ascending });
 		}
 
-		const { data, error } = await query;
+		return query;
+	});
 
+	// Execute all batches simultaneously
+	const results = await Promise.all(batchPromises);
+
+	// Process results and check for errors
+	for (const { data, error } of results) {
 		if (error) {
 			console.error(`Error fetching ${tableName}:`, error);
 			throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
@@ -31,10 +51,6 @@ async function getAllData<T>(
 
 		if (data && data.length > 0) {
 			allData.push(...(data as T[]));
-			from += batchSize;
-			hasMore = data.length === batchSize;
-		} else {
-			hasMore = false;
 		}
 	}
 
@@ -59,7 +75,7 @@ export async function getCards(): Promise<FullCard[]> {
 		supertype,
 		types
 	`, { column: 'name', ascending: true });
-	
+
 	// Transform database format to FullCard format
 	return data.map(card => ({
 		cardCode: card.card_code,
@@ -91,7 +107,7 @@ export async function getJapaneseCards(): Promise<FullCard[]> {
 		supertype,
 		types
 	`, { column: 'name', ascending: true });
-	
+
 	// Transform database format to FullCard format
 	return data.map(card => ({
 		cardCode: card.card_code,
@@ -111,7 +127,7 @@ export async function getJapaneseCards(): Promise<FullCard[]> {
 
 export async function getPrices(): Promise<Record<string, PriceData>> {
 	const data = await getAllData<any>('prices');
-	
+
 	// Convert array to object with card_code as key
 	const pricesObject: Record<string, PriceData> = {};
 	data.forEach(price => {
@@ -130,13 +146,13 @@ export async function getPrices(): Promise<Record<string, PriceData>> {
 			reverseAvg30: price.reverse_avg30
 		};
 	});
-	
+
 	return pricesObject;
 }
 
 export async function getSets(): Promise<Set[]> {
 	const data = await getAllData<any>('sets', '*', { column: 'name', ascending: true });
-	
+
 	return data.map(set => ({
 		name: set.name,
 		logo: set.logo || '',
@@ -149,7 +165,7 @@ export async function getSets(): Promise<Set[]> {
 
 export async function getJapaneseSets(): Promise<Set[]> {
 	const data = await getAllData<any>('jp_sets', '*', { column: 'name', ascending: true });
-	
+
 	return data.map(set => ({
 		name: set.name,
 		logo: set.logo || '',
@@ -171,21 +187,22 @@ export async function getRarities(): Promise<string[]> {
 	const { data, error } = await supabase
 		.from('cards')
 		.select('rarity')
-		.not('rarity', 'is', null);
-		
+		.not('rarity', 'is', null)
+		.limit(50_000);
+
 	if (error) {
 		console.error('Error fetching rarities:', error);
 		throw new Error(`Failed to fetch rarities: ${error.message}`);
 	}
-	
+
 	// Paginer si nécessaire
-	if (data && data.length === 1000) {
+	if (data && data.length === 50_000) {
 		// Si on a exactement 1000 résultats, il y en a probablement plus
 		const allData = await getAllData<{ rarity: string }>('cards', 'rarity');
 		const rarities = [...new Set(allData.map(card => card.rarity).filter(Boolean))];
 		return rarities.sort();
 	}
-	
+
 	const rarities = [...new Set((data || []).map(card => card.rarity))];
 	return rarities.sort();
 }
@@ -195,21 +212,22 @@ export async function getArtists(): Promise<string[]> {
 	const { data, error } = await supabase
 		.from('cards')
 		.select('artist')
-		.not('artist', 'is', null);
-		
+		.not('artist', 'is', null)
+		.limit(50_000);
+
 	if (error) {
 		console.error('Error fetching artists:', error);
 		throw new Error(`Failed to fetch artists: ${error.message}`);
 	}
-	
+
 	// Paginer si nécessaire
-	if (data && data.length === 1000) {
+	if (data && data.length === 50_000) {
 		// Si on a exactement 1000 résultats, il y en a probablement plus
 		const allData = await getAllData<{ artist: string }>('cards', 'artist');
 		const artists = [...new Set(allData.map(card => card.artist).filter(Boolean))];
 		return artists.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 	}
-	
+
 	const artists = [...new Set((data || []).map(card => card.artist))];
 	return artists.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
@@ -238,7 +256,7 @@ export async function getCardsWithFilters(filters: {
 			supertype,
 			types
 		`);
-		
+
 	// Appliquer les filtres
 	if (filters.setName) {
 		query = query.eq('set_name', filters.setName);
@@ -258,16 +276,16 @@ export async function getCardsWithFilters(filters: {
 	if (filters.pokemon) {
 		query = query.ilike('name', `%${filters.pokemon}%`);
 	}
-	
+
 	query = query.order('name', { ascending: true });
-	
+
 	const { data, error } = await query;
-	
+
 	if (error) {
 		console.error('Error fetching filtered cards:', error);
 		throw new Error(`Failed to fetch filtered cards: ${error.message}`);
 	}
-	
+
 	// Transform database format to FullCard format
 	return (data || []).map(card => ({
 		cardCode: card.card_code,
@@ -304,7 +322,7 @@ export async function getCardByCode(cardCode: string): Promise<FullCard | null> 
 		`)
 		.eq('card_code', cardCode)
 		.single();
-		
+
 	if (error) {
 		if (error.code === 'PGRST116') {
 			return null; // Carte non trouvée
@@ -312,9 +330,9 @@ export async function getCardByCode(cardCode: string): Promise<FullCard | null> 
 		console.error('Error fetching card by code:', error);
 		throw new Error(`Failed to fetch card: ${error.message}`);
 	}
-	
+
 	if (!data) return null;
-	
+
 	return {
 		cardCode: data.card_code,
 		artist: data.artist || '',
@@ -338,7 +356,7 @@ export async function getCardPrice(cardCode: string): Promise<PriceData | null> 
 		.select('*')
 		.eq('card_code', cardCode)
 		.single();
-		
+
 	if (error) {
 		if (error.code === 'PGRST116') {
 			return null; // Prix non trouvé
@@ -346,9 +364,9 @@ export async function getCardPrice(cardCode: string): Promise<PriceData | null> 
 		console.error('Error fetching card price:', error);
 		throw new Error(`Failed to fetch card price: ${error.message}`);
 	}
-	
+
 	if (!data) return null;
-	
+
 	return {
 		simple: data.simple,
 		low: data.low,
@@ -363,4 +381,4 @@ export async function getCardPrice(cardCode: string): Promise<PriceData | null> 
 		reverseAvg7: data.reverse_avg7,
 		reverseAvg30: data.reverse_avg30
 	};
-} 
+}
