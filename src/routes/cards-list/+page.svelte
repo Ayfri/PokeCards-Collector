@@ -5,8 +5,6 @@
 	import { filterSet, filterArtist, filterSupertype, filterName, filterType, sortBy, sortOrder, mostExpensiveOnly, filterRarity, resetFilters } from '$lib/helpers/filters';
 	import { page } from '$app/state';
 	import Loader from "$lib/components/Loader.svelte";
-	import GlobeIcon from 'lucide-svelte/icons/globe';
-	import { get } from 'svelte/store';
 	import { cardSize } from '$lib/stores/gridStore';
 
 	export let data: PageData;
@@ -17,8 +15,6 @@
 	$: rarities = data.rarities;
 	$: types = data.types;
 	$: artists = data.artists;
-	$: pokemons = data.pokemons;
-	// $: prices = data.prices; // No longer needed here, will come from data.streamed.prices
 
 	// Determine lowRes based on cardSize
 	$: lowRes = !($cardSize === 2 || $cardSize === 3); // true if not L or XL
@@ -55,7 +51,7 @@
 					filterArtist.set(foundArtist.toLowerCase());
 				}
 			}
-			
+
 			if (typeParam) {
 				// Convert the type parameter to match the expected supertype values
 				// Map "pokemon" to "Pokémon", "trainer" to "Trainer", etc.
@@ -64,7 +60,7 @@
 					'trainer': 'Trainer',
 					'energy': 'Energy'
 				};
-				
+
 				const supertypeValue = typeMap[typeParam.toLowerCase()];
 				if (supertypeValue) {
 					filterSupertype.set(supertypeValue.toLowerCase());
@@ -75,7 +71,7 @@
 				const decodedNameParam = decodeURIComponent(nameParam);
 				filterName.set(decodedNameParam);
 			}
-			
+
 			if (pokemonTypeParam) {
 				const decodedPokemonTypeParam = decodeURIComponent(pokemonTypeParam);
 				const typeExists = types.some(type => type.toLowerCase() === decodedPokemonTypeParam.toLowerCase());
@@ -83,32 +79,32 @@
 					filterType.set(decodedPokemonTypeParam.toLowerCase());
 				}
 			}
-			
+
 			// Apply sort settings from URL
 			if (sortByParam) {
 				// Validate that the sort param matches one of our expected values
 				const validSortValues = [
-					'sort-pokedex', 'sort-price', 'sort-name', 'sort-id', 
+					'sort-pokedex', 'sort-price', 'sort-name', 'sort-id',
 					'sort-rarity', 'sort-release-date', 'sort-artist'
 				];
-				
+
 				if (validSortValues.includes(sortByParam)) {
 					sortBy.set(sortByParam);
 				}
 			}
-			
+
 			if (sortOrderParam) {
 				// Validate sort order is either 'asc' or 'desc'
 				if (sortOrderParam === 'asc' || sortOrderParam === 'desc') {
 					sortOrder.set(sortOrderParam);
 				}
 			}
-			
+
 			// Apply most expensive filter from URL
 			if (mostExpensiveParam === 'true') {
 				mostExpensiveOnly.set(true);
 			}
-			
+
 			// Apply rarity filter from URL
 			if (rarityParam) {
 				const decodedRarityParam = decodeURIComponent(rarityParam);
@@ -140,17 +136,17 @@
 			</div>
 		{:then pricesResolved}
 			<!-- Both allCards and prices are resolved -->
-			<CardGrid 
-				cards={allCardsResolved} 
+			<CardGrid
+				cards={allCardsResolved}
 				sets={data.sets}
 				rarities={data.rarities}
 				types={data.types}
 				artists={data.artists}
 				pokemons={data.pokemons}
 				prices={pricesResolved}
-				pageTitle="Cards List" 
-				selectedSetName={selectedSetName} 
-				selectedArtistName={selectedArtistName} 
+				pageTitle="Cards List"
+				selectedSetName={selectedSetName}
+				selectedArtistName={selectedArtistName}
 				{lowRes}
 			/>
 		{:catch priceError}
@@ -169,4 +165,4 @@
 		flex-direction: column;
 		min-height: 100vh;
 	}
-</style> 
+</style>

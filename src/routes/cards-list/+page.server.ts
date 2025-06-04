@@ -3,7 +3,7 @@ import type { FullCard } from '$lib/types'; // Import FullCard type
 import type { PageServerLoad } from './$types'; // Added import for type
 
 export const load: PageServerLoad = async ({ parent, url }) => {
-	const parentDataPromise = parent(); // This is a promise to the layout's data
+	const parentLayoutData = await parent(); // This is a promise to the layout's data
 
 	// Fetch these potentially smaller lists directly if they are fast
 	// If these are also slow, they should be part of the streamed object too.
@@ -13,9 +13,6 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 		getTypes(),
 		getArtists()
 	]);
-
-	// Await the parent data structure once.
-	const parentLayoutData = await parentDataPromise;
 
 	// Extract non-streamed data needed for immediate page setup.
 	// Explicitly pick known, resolved fields from parentLayoutData.
@@ -77,12 +74,12 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 			})(),
 			stats: (async () => {
 				// Get real data counts from Supabase for accurate statistics
-				const allCardsFromDb = await getCards();
-				
+				const allCardsFromDb = await parentLayoutData.streamed.allCards;
+
 				const pokemonCards = allCardsFromDb.filter(card => card.supertype === 'Pokémon');
 				const trainerCards = allCardsFromDb.filter(card => card.supertype === 'Trainer');
 				const energyCards = allCardsFromDb.filter(card => card.supertype === 'Energy');
-				
+
 				return {
 					totalCards: allCardsFromDb.length, // Real count from database
 					uniquePokemon: pokemons.length, // Real count from pokemons table
