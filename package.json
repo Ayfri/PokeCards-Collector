@@ -14,7 +14,7 @@
 		"@supabase/supabase-js": "^2.49.4",
 		"@sveltejs/adapter-cloudflare": "^4.9.0",
 		"@sveltejs/kit": "^2.20.7",
-		"countup.js": "^2.8.2",
+		"countup.js": "^2.9.0",
 		"fast-average-color-node": "^3.1.0",
 		"lucide-svelte": "^0.485.0",
 		"node-html-parser": "^7.0.1",
