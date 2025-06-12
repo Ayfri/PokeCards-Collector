@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import { getPokemons, getRarities, getTypes, getArtists } from '$helpers/data';
+import { getPokemons, getRarities, getTypes, getArtists } from '$helpers/supabase-data';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserCollection } from '$lib/services/collections';
 import type { PageServerLoad } from './$types';

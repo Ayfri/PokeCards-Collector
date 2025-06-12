@@ -1,4 +1,4 @@
-import { getArtists } from '$helpers/data';
+import { getArtists } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {

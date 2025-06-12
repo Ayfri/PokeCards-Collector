@@ -73,7 +73,7 @@
 			<CardImage
 				alt={pokemon ? pascalCase(pokemon.name) : card?.name || 'Card image'}
 				imageUrl={card?.image}
-				highRes={true}
+				lowRes={false}
 				height={544}
 				width={384}
 				class="image rounded-xl"
@@ -94,4 +94,4 @@
 		transition: transform 0.05s linear, filter 0.3s ease;
 		transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
 	}
-</style> 
+</style>

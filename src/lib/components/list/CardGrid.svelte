@@ -66,10 +66,26 @@
 	const infoContainerHeight = 70;
 
 	// Use the store value directly; mobile logic is now in getCardDimensions
-	$: cardDimensions = getCardDimensions($cardSize, clientWidth);
+	let cardDimensions: ReturnType<typeof getCardDimensions>;
+	let lastCardSizeKey = '';
+	$: {
+		const dimensionsStart = performance.now();
+		const currentKey = `${$cardSize}-${clientWidth}`;
+		if (currentKey !== lastCardSizeKey) {
+			cardDimensions = getCardDimensions($cardSize, clientWidth);
+			lastCardSizeKey = currentKey;
+			console.log(`📐 CardGrid: Card dimensions calculated in ${performance.now() - dimensionsStart}ms:`, cardDimensions);
+		} else {
+			console.log(`📐 CardGrid: Card dimensions cached for key: ${currentKey}`);
+		}
+	}
 
 	onMount(() => {
+		const mountStart = performance.now();
+		console.log('🏗️ CardGrid: Starting mount');
+
 		// Initialize searchName from URL parameter or from store
+		const urlParamsStart = performance.now();
 		const nameParam = page.url.searchParams.get('name');
 		if (nameParam) {
 			searchName = decodeURIComponent(nameParam);
@@ -91,12 +107,18 @@
 				filterSetFromURL = true;
 			}
 		}
+		console.log(`⚡ CardGrid: URL params processed in ${performance.now() - urlParamsStart}ms`);
 
 		// Set up a MutationObserver to watch for card-link elements
+		const observerStart = performance.now();
 		const observer = new MutationObserver((mutations) => {
 			for (const mutation of mutations) {
 				if (mutation.type === "childList") {
-					if (document.querySelector(".card-link")) {
+					// Check for card-link or any card being rendered
+					const firstCard = document.querySelector(".card-link") || document.querySelector("[data-card-code]");
+					if (firstCard) {
+						const loaderHideTime = performance.now();
+						console.log(`🎯 CardGrid: First card rendered, hiding loader at ${loaderHideTime - mountStart}ms`);
 						showLoader = false;
 						observer.disconnect();
 						break;
@@ -108,7 +130,20 @@
 		// Start observing the document with the configured parameters
 		observer.observe(document.body, { childList: true, subtree: true });
 
+				// Fallback timeout to hide loader if MutationObserver doesn't catch it
+		const fallbackTimeout = setTimeout(() => {
+			if (showLoader) {
+				console.log(`⏰ CardGrid: Fallback timeout hiding loader at ${performance.now() - mountStart}ms`);
+				showLoader = false;
+				observer.disconnect();
+				clearTimeout(fallbackTimeout);
+			}
+		}, 2000);
+
+		console.log(`👀 CardGrid: MutationObserver setup in ${performance.now() - observerStart}ms`);
+
 		mounted = true;
+		console.log(`✅ CardGrid: Mount completed in ${performance.now() - mountStart}ms`);
 	});
 
 	const debouncedSetFilterName = debounce((value: string) => {
@@ -121,7 +156,7 @@
 		} else {
 			url.searchParams.delete('name');
 		}
-		
+
 		// Keep existing parameters
 		const preserveParams = ['set', 'artist', 'type', 'user'];
 		preserveParams.forEach(param => {
@@ -140,7 +175,7 @@
 			if (virtualGridComponent) {
 				setTimeout(() => {
 					virtualGridComponent.recalculateLayout();
-					
+
 					// Restore focus to the input if it was active
 					if (activeElementId === 'name') {
 						const inputElement = document.getElementById('name') as HTMLInputElement;
@@ -167,10 +202,10 @@
 		// Create URL that preserves the user parameter if present
 		const url = new URL(page.url);
 		const userParam = url.searchParams.get('user');
-		
+
 		// Clear all search parameters
 		url.search = '';
-		
+
 		// But preserve the user parameter if it exists
 		if (userParam) {
 			url.searchParams.set('user', userParam);
@@ -187,8 +222,12 @@
 		});
 	}
 
-	let displayedCards = cards;
+		// Step 1: Apply most expensive filter
+	let baseCards: FullCard[];
 	$: if ($mostExpensiveOnly) {
+		const expensiveStart = performance.now();
+		console.log('💰 CardGrid: Processing most expensive only filter');
+
 		// Group cards by appropriate ID based on supertype
 		const cardGroups = new Map<string, FullCard>();
 
@@ -222,130 +261,177 @@
 			}
 		});
 
-		displayedCards = Array.from(cardGroups.values());
+		baseCards = Array.from(cardGroups.values());
+		console.log(`💰 CardGrid: Most expensive filter completed in ${performance.now() - expensiveStart}ms, reduced from ${cards.length} to ${baseCards.length} cards`);
 	} else {
-		displayedCards = cards;
+		baseCards = cards;
+		console.log(`📊 CardGrid: Using all ${cards.length} cards (no expensive filter)`);
 	}
 
-	$: if ($sortOrder || $sortBy) {
-		displayedCards = displayedCards.sort((a, b) => {
-			const aCardCode = a.cardCode;
-			const bCardCode = b.cardCode;
+	// Step 2: Apply sorting - this reactive statement will trigger whenever $sortBy or $sortOrder changes
+	let displayedCards: FullCard[] = [];
+	$: {
+		const sortStart = performance.now();
+		console.log(`🔤 CardGrid: Starting sort by ${$sortBy} (${$sortOrder}) on ${baseCards?.length || 0} cards`);
+		displayedCards = sortCards(baseCards || [], $sortBy, $sortOrder, prices, pokemons, sets);
+		console.log(`🔤 CardGrid: Sort completed in ${performance.now() - sortStart}ms`);
+	}
 
-			if ($sortBy === "sort-price") {
-				const aPrice = prices[a.cardCode]?.simple ?? 0;
-				const bPrice = prices[b.cardCode]?.simple ?? 0;
-				return $sortOrder === "asc" ? aPrice - bPrice : bPrice - aPrice;
-			} else if ($sortBy === "sort-name") {
-				const aPokemon = pokemons.find(
-					(p) => p.id === a.pokemonNumber,
-				) ?? { name: a.name };
-				const bPokemon = pokemons.find(
-					(p) => p.id === b.pokemonNumber,
-				) ?? { name: b.name };
-				return $sortOrder === "asc"
-					? aPokemon.name.localeCompare(bPokemon.name)
-					: bPokemon.name.localeCompare(aPokemon.name);
-			} else if ($sortBy === "sort-id") {
-				return $sortOrder === "asc"
-					? aCardCode.localeCompare(bCardCode)
-					: bCardCode.localeCompare(aCardCode);
-			} else if ($sortBy === "sort-rarity") {
-				const aLevel = getRarityLevel(a.rarity);
-				const bLevel = getRarityLevel(b.rarity);
-				return $sortOrder === "asc" ? aLevel - bLevel : bLevel - aLevel;
-			} else if ($sortBy === "sort-release-date") {
-				const aSet = findSetByCardCode(a.cardCode, sets);
-				const bSet = findSetByCardCode(b.cardCode, sets);
-				const aReleaseDate = aSet?.releaseDate.getTime() ?? 0;
-				const bReleaseDate = bSet?.releaseDate.getTime() ?? 0;
-				return $sortOrder === "asc"
-					? aReleaseDate - bReleaseDate
-					: bReleaseDate - aReleaseDate;
-			} else if ($sortBy === "sort-artist") {
-				const aArtist = a.artist || "";
-				const bArtist = b.artist || "";
-				return $sortOrder === "asc"
-					? aArtist.localeCompare(bArtist)
-					: bArtist.localeCompare(aArtist);
+			// Global caches for expensive operations
+	let globalCardSetCache = new Map<string, Set | null>();
+	let lastSetsCacheKey = '';
+	let sortValuesCache = new Map<string, any>();
+	let lastSortValuesCacheKey = '';
+
+	/** Very expensive and slow function, already optimized but still slow */
+	function sortCards(cards: FullCard[], sortBy: string, sortOrder: string, prices: Record<string, PriceData>, pokemons: Pokemon[], sets: Set[]): FullCard[] {
+		const sortFunctionStart = performance.now();
+		console.log(`🔀 sortCards: Starting with ${cards.length} cards, sort: ${sortBy} ${sortOrder}`);
+
+		// Pre-build lookup maps for performance
+		const mapBuildStart = performance.now();
+		const pokemonMap = new Map(pokemons.map(p => [p.id, p]));
+		console.log(`🗺️ sortCards: Pokemon map built in ${performance.now() - mapBuildStart}ms`);
+
+		// Use global cache for set lookups - rebuild only if sets changed
+		const setLookupStart = performance.now();
+		const currentSetsCacheKey = sets.map(s => s.name).join(',');
+		if (currentSetsCacheKey !== lastSetsCacheKey) {
+			console.log('🔄 sortCards: Rebuilding global set cache');
+			globalCardSetCache.clear();
+			lastSetsCacheKey = currentSetsCacheKey;
+		}
+
+		// Pre-compute set lookups only for missing cards
+		let newLookups = 0;
+		for (const card of cards) {
+			if (!globalCardSetCache.has(card.cardCode)) {
+				const set = findSetByCardCode(card.cardCode, sets) ?? null;
+				globalCardSetCache.set(card.cardCode, set);
+				newLookups++;
+			}
+		}
+		console.log(`🗺️ sortCards: Set lookups completed in ${performance.now() - setLookupStart}ms (${newLookups} new, ${cards.length - newLookups} cached)`);
+
+				// Pre-compute sort values for each card to avoid repeated calculations
+		const precomputeStart = performance.now();
+		const currentSortValuesCacheKey = `${cards.length}-${Object.keys(prices).length}-${pokemons.length}`;
+
+		let sortValues: Map<string, any>;
+		if (currentSortValuesCacheKey !== lastSortValuesCacheKey) {
+			console.log('🔄 sortCards: Rebuilding sort values cache');
+			sortValues = new Map();
+
+			for (const card of cards) {
+				const pokemon = pokemonMap.get(card.pokemonNumber ?? 0) ?? { name: card.name };
+				const cardSet = globalCardSetCache.get(card.cardCode) ?? null;
+				const parsedCard = parseCardCode(card.cardCode);
+				const cardNumber = parsedCard.cardNumber || '';
+				const cardNumberInt = parseInt(cardNumber);
+
+				sortValues.set(card.cardCode, {
+					price: prices[card.cardCode]?.simple ?? 0,
+					name: pokemon.name,
+					rarityLevel: getRarityLevel(card.rarity),
+					releaseDate: cardSet?.releaseDate?.getTime() ?? 0,
+					artist: card.artist || "",
+					pokemonNumber: card.pokemonNumber ?? 0,
+					supertype: card.supertype,
+					cardNumber,
+					cardNumberInt: isNaN(cardNumberInt) ? 0 : cardNumberInt,
+					isPokemon: card.supertype === "Pokémon" && card.pokemonNumber != null
+				});
+			}
+
+			sortValuesCache = sortValues;
+			lastSortValuesCacheKey = currentSortValuesCacheKey;
+			console.log(`⚡ sortCards: Sort values precomputed in ${performance.now() - precomputeStart}ms`);
+		} else {
+			sortValues = sortValuesCache;
+			console.log(`⚡ sortCards: Sort values cached (${sortValues.size} entries)`);
+		}
+
+		const multiplier = sortOrder === "asc" ? 1 : -1;
+
+		const actualSortStart = performance.now();
+		// CRITICAL: Create a new array to ensure Svelte detects the change
+		// Array.sort() modifies in place and returns the same reference!
+		const result = [...cards].sort((a, b) => {
+			const aValues = sortValues.get(a.cardCode)!;
+			const bValues = sortValues.get(b.cardCode)!;
+
+			if (sortBy === "sort-price") {
+				return (aValues.price - bValues.price) * multiplier;
+			} else if (sortBy === "sort-name") {
+				return aValues.name.localeCompare(bValues.name) * multiplier;
+			} else if (sortBy === "sort-id") {
+				return a.cardCode.localeCompare(b.cardCode) * multiplier;
+			} else if (sortBy === "sort-rarity") {
+				return (aValues.rarityLevel - bValues.rarityLevel) * multiplier;
+			} else if (sortBy === "sort-release-date") {
+				return (aValues.releaseDate - bValues.releaseDate) * multiplier;
+			} else if (sortBy === "sort-artist") {
+				return aValues.artist.localeCompare(bValues.artist) * multiplier;
 			}
 
 			// Default sort is by Pokédex number
-			
-			// First check if either card is not a Pokémon or has no pokemonNumber
-			// These cards should be sorted after Pokémon cards
-			const aPokemonCard = a.supertype === "Pokémon" && a.pokemonNumber != null;
-			const bPokemonCard = b.supertype === "Pokémon" && b.pokemonNumber != null;
-			
-			// If one is a Pokémon card and the other isn't, the non-Pokémon card goes last
-			if (aPokemonCard && !bPokemonCard) return -1; // a before b
-			if (!aPokemonCard && bPokemonCard) return 1;  // b before a
-			
-			// If neither are Pokémon cards, sort by supertype then name
-			if (!aPokemonCard && !bPokemonCard) {
-				// Sort by supertype first
-				const supertypeOrder: Record<string, number> = {
-					Pokémon: 1, // For cards with supertype Pokémon but no number
-					Trainer: 2,
-					Energy: 3,
-				};
-				const aOrder = supertypeOrder[a.supertype] || 99;
-				const bOrder = supertypeOrder[b.supertype] || 99;
+			if (aValues.isPokemon && !bValues.isPokemon) return -1;
+			if (!aValues.isPokemon && bValues.isPokemon) return 1;
 
-				if (aOrder !== bOrder) {
-					return aOrder - bOrder;
-				}
-				
-				// If same supertype, sort by name
+			if (!aValues.isPokemon && !bValues.isPokemon) {
+				const supertypeOrder: Record<string, number> = { Pokémon: 1, Trainer: 2, Energy: 3 };
+				const aOrder = supertypeOrder[aValues.supertype] || 99;
+				const bOrder = supertypeOrder[bValues.supertype] || 99;
+				if (aOrder !== bOrder) return aOrder - bOrder;
 				return a.name.localeCompare(b.name);
 			}
-			
-			// Both are Pokémon cards with valid numbers
-			const aNum = a.pokemonNumber!;
-			const bNum = b.pokemonNumber!;
-			
-			// Different Pokémon - sort by Pokédex number
-			if (aNum !== bNum) {
-				return $sortOrder === "asc" ? aNum - bNum : bNum - aNum;
+
+			const aNum = aValues.pokemonNumber!;
+			const bNum = bValues.pokemonNumber!;
+
+			if (aNum !== bNum) return (aNum - bNum) * multiplier;
+
+			if (aValues.releaseDate !== bValues.releaseDate) {
+				return (aValues.releaseDate - bValues.releaseDate) * multiplier;
 			}
-			
-			// Same Pokémon - need to sort further
-			
-			// Next, sort by set release date (newer sets first by default)
-			const aSet = findSetByCardCode(a.cardCode, sets);
-			const bSet = findSetByCardCode(b.cardCode, sets);
-			const aReleaseDate = aSet?.releaseDate?.getTime() ?? 0;
-			const bReleaseDate = bSet?.releaseDate?.getTime() ?? 0;
-			
-			if (aReleaseDate !== bReleaseDate) {
-				// Default to newest first, but respect sort order
-				return $sortOrder === "asc" 
-					? aReleaseDate - bReleaseDate 
-					: bReleaseDate - aReleaseDate;
+
+			if (aValues.cardNumberInt && bValues.cardNumberInt) {
+				return (aValues.cardNumberInt - bValues.cardNumberInt) * multiplier;
 			}
-			
-			// Same Pokémon and same set release date - sort by card number
-			const aCardNum = parseCardCode(a.cardCode).cardNumber || '';
-			const bCardNum = parseCardCode(b.cardCode).cardNumber || '';
-			
-			// Try to parse as numbers if possible
-			const aCardNumInt = parseInt(aCardNum);
-			const bCardNumInt = parseInt(bCardNum);
-			
-			if (!isNaN(aCardNumInt) && !isNaN(bCardNumInt)) {
-				return $sortOrder === "asc"
-					? aCardNumInt - bCardNumInt
-					: bCardNumInt - aCardNumInt;
-			}
-			
-			// Fall back to string comparison if not numeric
-			return $sortOrder === "asc"
-				? aCardNum.localeCompare(bCardNum)
-				: bCardNum.localeCompare(aCardNum);
+
+			return aValues.cardNumber.localeCompare(bValues.cardNumber) * multiplier;
 		});
+
+		console.log(`🔀 sortCards: Actual sort completed in ${performance.now() - actualSortStart}ms`);
+		console.log(`🔀 sortCards: Total function time: ${performance.now() - sortFunctionStart}ms`);
+
+		return result;
 	}
 
 	let filteredCards = displayedCards;
+
+	// Pre-compute lookup maps for filtering performance
+	let pokemonFilterMap: Map<number, Pokemon>;
+	let cardSetFilterMap: Map<string, Set | null>;
+	let fallbackSetCache: Map<string, Set>;
+
+	$: {
+		const cacheStart = performance.now();
+		console.log('🔄 CardGrid: Rebuilding filter caches');
+
+		// Rebuild maps when dependencies change
+		pokemonFilterMap = new Map(pokemons.map(p => [p.id, p]));
+		cardSetFilterMap = new Map();
+		fallbackSetCache = new Map();
+
+		console.log(`🔄 CardGrid: Filter caches rebuilt in ${performance.now() - cacheStart}ms`);
+		console.log(`📊 CardGrid: Pokemon map size: ${pokemonFilterMap.size}, Sets: ${sets.length}`);
+	}
+
+		// Check if any filters are actually active
+	$: hasActiveFilters = $filterName || $filterNumero || $filterRarity !== 'all' || $filterSet !== 'all' ||
+		$filterType !== 'all' || $filterSupertype !== 'all' || $filterArtist !== 'all';
+
 	$: if (
 		$filterName ||
 		$filterNumero ||
@@ -358,31 +444,80 @@
 		$sortOrder ||
 		$mostExpensiveOnly
 	) {
-		filteredCards = displayedCards.filter((card) => {
-			const cardSet = findSetByCardCode(card.cardCode, sets);
-			const fallbackSet: Set = {
-				name: card.setName,
-				logo: card.image?.replace(/\/[^\/]*$/, "/logo.png") ?? "", // Attempt to guess logo path for fallback
-				printedTotal: 0,
-				releaseDate: new Date(),
-			};
-			return isVisible(
-				card,
-				pokemons.find((p) => p.id === card.pokemonNumber),
-				cardSet ?? fallbackSet,
-				selectedSet ?? null,
-			);
+		const filterStart = performance.now();
+		console.log(`🔍 CardGrid: Starting filter on ${displayedCards.length} cards`);
+		console.log(`🔍 Active filters:`, {
+			name: $filterName || 'none',
+			numero: $filterNumero || 'none',
+			rarity: $filterRarity,
+			set: $filterSet,
+			type: $filterType,
+			supertype: $filterSupertype,
+			artist: $filterArtist,
+			sortBy: $sortBy,
+			sortOrder: $sortOrder,
+			mostExpensive: $mostExpensiveOnly
 		});
+
+		// Skip expensive filtering if no filters are active
+		if (!hasActiveFilters) {
+			console.log('⚡ CardGrid: No active filters, skipping filter process');
+			filteredCards = displayedCards;
+		} else {
+			let cacheHits = 0;
+			let cacheMisses = 0;
+
+			filteredCards = displayedCards.filter((card) => {
+				// Use global cache first, fallback to local cache
+				let cardSet = globalCardSetCache.get(card.cardCode);
+				if (cardSet === undefined) {
+					cardSet = cardSetFilterMap.get(card.cardCode);
+					if (cardSet === undefined) {
+						cardSet = findSetByCardCode(card.cardCode, sets) ?? null;
+						cardSetFilterMap.set(card.cardCode, cardSet);
+						globalCardSetCache.set(card.cardCode, cardSet);
+						cacheMisses++;
+					} else {
+						cacheHits++;
+					}
+				} else {
+					cacheHits++;
+				}
+
+				let fallbackSet = fallbackSetCache.get(card.cardCode);
+				if (!fallbackSet) {
+					fallbackSet = {
+						name: card.setName,
+						logo: card.image?.replace(/\/[^\/]*$/, "/logo.png") ?? "",
+						printedTotal: 0,
+						releaseDate: new Date(),
+					};
+					fallbackSetCache.set(card.cardCode, fallbackSet);
+				}
+
+				const pokemon = pokemonFilterMap.get(card.pokemonNumber ?? 0);
+
+				return isVisible(
+					card,
+					pokemon,
+					cardSet ?? fallbackSet,
+					selectedSet ?? null,
+				);
+			});
+
+			console.log(`💾 CardGrid: Cache performance - Hits: ${cacheHits}, Misses: ${cacheMisses}`);
+		}
 
 		// Order cards by supertype (Pokémon, Trainer, Energy) when all supertypes are selected
 		if ($filterSupertype === "all") {
+			const supertypeSortStart = performance.now();
+			const supertypeOrder: Record<string, number> = {
+				Pokémon: 1,
+				Trainer: 2,
+				Energy: 3,
+			};
+
 			filteredCards = filteredCards.sort((a, b) => {
-				// Priority ordering: 1-Pokémon, 2-Trainer, 3-Energy
-				const supertypeOrder: Record<string, number> = {
-					Pokémon: 1,
-					Trainer: 2,
-					Energy: 3,
-				};
 				const aOrder = supertypeOrder[a.supertype] || 99;
 				const bOrder = supertypeOrder[b.supertype] || 99;
 
@@ -393,7 +528,12 @@
 				// Keep existing sort order within same supertype
 				return 0;
 			});
+			console.log(`🏷️ CardGrid: Supertype sort completed in ${performance.now() - supertypeSortStart}ms`);
 		}
+
+		const filterEnd = performance.now();
+		console.log(`🔍 CardGrid: Filter completed in ${filterEnd - filterStart}ms`);
+		console.log(`📊 CardGrid: Filtered from ${displayedCards.length} to ${filteredCards.length} cards`);
 	}
 
 	// Count active filters
@@ -411,14 +551,21 @@
 
 	let visibleCardsCount = 0;
 	let uniquePokemonCount = 0;
-	$: {
-		if (filteredCards) {
+	let lastCountsKey = '';
+	$: if (filteredCards) {
+		const countStart = performance.now();
+		const currentCountsKey = `${filteredCards.length}-${filteredCards.map(c => c.cardCode).slice(0,5).join(',')}`;
+		if (currentCountsKey !== lastCountsKey) {
 			visibleCardsCount = filteredCards.length;
 			uniquePokemonCount = new Set(
 				filteredCards
 					.filter((card) => card.supertype === "Pokémon")
 					.map((card) => card.pokemonNumber),
 			).size;
+			lastCountsKey = currentCountsKey;
+			console.log(`🔢 CardGrid: Counts calculated in ${performance.now() - countStart}ms - Visible: ${visibleCardsCount}, Unique Pokémon: ${uniquePokemonCount}`);
+		} else {
+			console.log(`🔢 CardGrid: Counts cached for ${visibleCardsCount} cards`);
 		}
 	}
 
@@ -490,7 +637,7 @@
 					{/if}
 				</div>
 			{/if}
-			
+
 			<!-- Counts (on same line for desktop, below for mobile) -->
 			<span
 				class="text-gold-400 text-xs md:text-sm mt-1 md:mt-0 md:ml-3"

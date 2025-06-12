@@ -12,11 +12,6 @@ export default defineConfig(({ mode }) => ({
 	css: {
 		devSourcemap: mode === 'development',
 	},
-	resolve: {
-		alias: {
-			'countup.js': path.resolve('./node_modules/.pnpm/countup.js@2.8.2/node_modules/countup.js/dist/countUp.js')
-		}
-	},
 	// Add Node.js polyfills for Cloudflare compatibility
 	server: {
 		fs: {

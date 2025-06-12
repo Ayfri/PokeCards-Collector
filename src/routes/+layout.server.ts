@@ -1,4 +1,4 @@
-import { getCards, getSets, getPrices } from '$helpers/data';
+import { getCards, getSets, getPrices } from '$helpers/supabase-data';
 import type { LayoutServerLoad } from './$types';
 import { getUserWishlist } from '$lib/services/wishlists';
 import { getUserCollection } from '$lib/services/collections';

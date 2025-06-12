@@ -8,150 +8,119 @@
 	import { pascalCase } from '$helpers/strings';
 	import InteractiveCard from '@components/card/InteractiveCard.svelte';
 	import { onMount } from 'svelte';
-	import { afterNavigate, goto, beforeNavigate } from '$app/navigation';
-	import { page } from '$app/state';
+	import { afterNavigate, goto, replaceState } from '$app/navigation';
 	import { findSetByCardCode } from '$helpers/set-utils';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 	import { setNavigationLoading } from '$lib/stores/loading';
 
 	// --- Props ---
 	export let allCards: FullCard[];
-	export let pokemons: Pokemon[]; // Full list for lookups (prev/next, evolutions)
+	export let pokemons: Pokemon[];
 	export let prices: Record<string, PriceData>;
 	export let sets: Set[];
-	export let pokemonCards: FullCard[]; // Expects the primary card to be the first element for the *initial* pokemon
-	export let isJapaneseContext: boolean = false; // Explicitly set this for Japanese cards
-	export let lowRes: boolean = false; // <<< Add this line
+	export let pokemonCards: FullCard[];
+	export let isJapaneseContext: boolean = false;
+	export let lowRes: boolean = false;
 
 	// --- Internal State ---
-	// Initialize directly from the prop. This should update if pokemonCards prop changes.
-	let currentCard: FullCard | undefined = undefined; // Start undefined, set in onMount/afterNavigate
-	// Indicator for when initial loading is complete
+	let currentCard: FullCard | undefined = undefined;
 	let isInitialRenderComplete = false;
-	// Wait a bit before rendering all cards to avoid layout shifts
 	let shouldRenderAllCards = false;
 
-	// Set the base URL for card linking based on context
-	$: baseCardUrl = isJapaneseContext ? '/jp-card/' : '/card/';
-
 	// --- Reactive Computations ---
-	// Reactive state derived from the currentCard
+	$: baseCardUrl = isJapaneseContext ? '/jp-card/' : '/card/';
 	$: cardPrices = currentCard ? prices[currentCard.cardCode] : undefined;
 	$: currentSet = currentCard ? findSetByCardCode(currentCard.cardCode, sets) : undefined;
 	$: currentType = currentCard?.types?.toLowerCase().split(',')[0] || 'unknown';
 	$: currentPokemonId = currentCard?.pokemonNumber;
 
-	// Reactive calculation for current, previous, and next Pokemon and their representative cards
 	$: currentPokemon = currentPokemonId ? pokemons.find(p => p.id === currentPokemonId) : undefined;
 	$: previousPokemon = currentPokemonId ? pokemons.find(p => p.id === currentPokemonId - 1) : undefined;
 	$: nextPokemon = currentPokemonId ? pokemons.find(p => p.id === currentPokemonId + 1) : undefined;
 	$: previousPokemonCard = previousPokemon ? getRepresentativeCardForPokemon(previousPokemon.id, allCards, prices) : undefined;
 	$: nextPokemonCard = nextPokemon ? getRepresentativeCardForPokemon(nextPokemon.id, allCards, prices) : undefined;
 
-	// Reactive calculation for all cards related to the current Pokemon
-	// Ensure sorting logic matches how pokemonCards was initially provided if needed.
-	$: currentPokemonCards = currentPokemonId
-		? allCards.filter(c => c.pokemonNumber === currentPokemonId)
-		: [];
+	$: currentPokemonCards = currentPokemonId ? allCards.filter(c => c.pokemonNumber === currentPokemonId) : [];
 
 	// --- Functions ---
 	function handlePokemonImageError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
 		const pokemonId = img.dataset.pokemonId;
-		const currentSrc = img.src;
-		const defaultSpriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
-		const loadingSpinner = '/loading-spinner.svg';
 
 		if (!pokemonId) {
-			img.src = loadingSpinner;
+			img.src = '/loading-spinner.svg';
 			img.onerror = null;
 			return;
 		}
 
-		if (currentSrc.includes('official-artwork')) {
-			// Official artwork failed, try default sprite
-			img.src = defaultSpriteUrl;
+		if (img.src.includes('official-artwork')) {
+			img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
 		} else {
-			// Default sprite also failed (or it was the first attempt and it failed), show spinner
-			img.src = loadingSpinner;
-			img.onerror = null; // Prevent infinite loop
+			img.src = '/loading-spinner.svg';
+			img.onerror = null;
 		}
 	}
 
-	// Update the displayed card and URL when a related card is selected
 	function handleCardSelect(selectedCard: FullCard) {
-		// Update current card immediately for better UX
+		// Simply update the current card without navigation
 		currentCard = selectedCard;
-		// Use goto to update the URL
-		goto(`${baseCardUrl}${selectedCard.cardCode}/`);
+
+		// Optionally update the URL in the browser without reload
+		if (typeof window !== 'undefined') {
+			const newUrl = `${baseCardUrl}${selectedCard.cardCode}/`;
+			replaceState(newUrl, { replaceUrl: true });
+			window.scrollTo({
+				top: 0,
+				behavior: 'smooth'
+			});
+		}
 	}
 
-	// Handler for clicking on previous/next Pokémon
 	function handlePokemonNavigation(cardCode: string | undefined) {
 		if (cardCode) {
 			setNavigationLoading(true);
-			const baseUrl = page.url.pathname.startsWith('/jp-card') ? '/jp-card/' : '/card/';
-			goto(`${baseUrl}${cardCode}`);
+			goto(`${baseCardUrl}${cardCode}`);
 		}
 	}
 
 	// --- Lifecycle ---
 	onMount(() => {
-		// Since we expect pokemonCards[0] to be the initial card, set it as current
 		currentCard = pokemonCards[0];
 		isInitialRenderComplete = true;
-		
-		// Wait a short amount of time before rendering all cards to avoid rendering issues
-		setTimeout(() => {
-			shouldRenderAllCards = true;
-		}, 800);
+		setTimeout(() => shouldRenderAllCards = true, 800);
 	});
-	
-	// After navigation, ensure the current card is set based on the URL
-	afterNavigate(({ from }) => {
-		// Keep route parameter sync'd with currentCard
+
+	afterNavigate(() => {
 		const urlParts = window.location.pathname.split('/');
-		const cardCodeFromUrl = urlParts[urlParts.length - 2]; // Extract cardCode from URL pattern /card/:cardCode/
-		
-		// Find matching card in all available cards
+		const cardCodeFromUrl = urlParts[urlParts.length - 2];
 		const matchingCard = allCards.find(card => card.cardCode === cardCodeFromUrl);
-		
-		// Only update if we find a matching card and it's different from current
+
 		if (matchingCard && matchingCard !== currentCard) {
 			currentCard = matchingCard;
 		} else if (!currentCard) {
-			// Fallback if no match and no current card
 			currentCard = pokemonCards[0];
 		}
-		
+
 		isInitialRenderComplete = true;
-		
-		// Ensure we wait for main card to render before showing related cards
 		if (!shouldRenderAllCards) {
-			setTimeout(() => {
-				shouldRenderAllCards = true;
-			}, 800);
+			setTimeout(() => shouldRenderAllCards = true, 800);
 		}
 	});
 
-	// --- Reactive Computations ---
-	// Ensure unique cards in currentPokemonCards based on cardCode
-	$: {
-		if (currentPokemonId) {
-			const uniqueCardCodes = new Set<string>();
-			currentPokemonCards = allCards
-				.filter(c => c.pokemonNumber === currentPokemonId)
-				.filter(c => {
-					// Only keep the card if we haven't seen its code before
-					if (!uniqueCardCodes.has(c.cardCode)) {
-						uniqueCardCodes.add(c.cardCode);
-						return true;
-					}
-					return false;
-				});
-		} else {
-			currentPokemonCards = [];
-		}
+	// Ensure unique cards in currentPokemonCards
+	$: if (currentPokemonId) {
+		const uniqueCardCodes = new Set<string>();
+		currentPokemonCards = allCards
+			.filter(c => c.pokemonNumber === currentPokemonId)
+			.filter(c => {
+				if (!uniqueCardCodes.has(c.cardCode)) {
+					uniqueCardCodes.add(c.cardCode);
+					return true;
+				}
+				return false;
+			});
+	} else {
+		currentPokemonCards = [];
 	}
 </script>
 
@@ -258,18 +227,18 @@
 				in:fly={{ x: -50, duration: 400, delay: 400 }}
 			>
 				{#if !NO_IMAGES}
-				<img
-					src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
-					alt={pascalCase(previousPokemon.name)}
-					class="w-24 h-24 object-contain nav-pokemon-image"
-					title={pascalCase(previousPokemon.name)}
-					on:error={handlePokemonImageError}
-					data-pokemon-id={previousPokemon.id}
-				/>
+					<img
+						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
+						alt={pascalCase(previousPokemon.name)}
+						class="w-24 h-24 object-contain nav-pokemon-image"
+						title={pascalCase(previousPokemon.name)}
+						on:error={handlePokemonImageError}
+						data-pokemon-id={previousPokemon.id}
+					/>
 				{:else}
-				<div class="w-24 h-24 flex items-center justify-center text-white bg-gray-800 rounded-full">
-					#{previousPokemon.id}
-				</div>
+					<div class="w-24 h-24 flex items-center justify-center text-white bg-gray-800 rounded-full">
+						#{previousPokemon.id}
+					</div>
 				{/if}
 				<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(previousPokemon.name)}</span>
 				<span class="nav-pokemon-id text-xs text-gray-400">#{previousPokemon.id}</span>
@@ -286,18 +255,18 @@
 				in:fly={{ x: 50, duration: 400, delay: 400 }}
 			>
 				{#if !NO_IMAGES}
-				<img
-					src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
-					alt={pascalCase(nextPokemon.name)}
-					class="w-24 h-24 object-contain nav-pokemon-image"
-					title={pascalCase(nextPokemon.name)}
-					on:error={handlePokemonImageError}
-					data-pokemon-id={nextPokemon.id}
-				/>
+					<img
+						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
+						alt={pascalCase(nextPokemon.name)}
+						class="w-24 h-24 object-contain nav-pokemon-image"
+						title={pascalCase(nextPokemon.name)}
+						on:error={handlePokemonImageError}
+						data-pokemon-id={nextPokemon.id}
+					/>
 				{:else}
-				<div class="w-24 h-24 flex items-center justify-center text-white bg-gray-800 rounded-full">
-					#{nextPokemon.id}
-				</div>
+					<div class="w-24 h-24 flex items-center justify-center text-white bg-gray-800 rounded-full">
+						#{nextPokemon.id}
+					</div>
 				{/if}
 				<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(nextPokemon.name)}</span>
 				<span class="nav-pokemon-id text-xs text-gray-400">#{nextPokemon.id}</span>

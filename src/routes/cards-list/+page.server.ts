@@ -1,9 +1,9 @@
-import { getRarities, getTypes, getArtists, getPokemons } from '$helpers/data';
+import { getRarities, getTypes, getArtists, getPokemons, getCards } from '$helpers/supabase-data';
 import type { FullCard } from '$lib/types'; // Import FullCard type
 import type { PageServerLoad } from './$types'; // Added import for type
 
 export const load: PageServerLoad = async ({ parent, url }) => {
-	const parentDataPromise = parent(); // This is a promise to the layout's data
+	const parentLayoutData = await parent(); // This is a promise to the layout's data
 
 	// Fetch these potentially smaller lists directly if they are fast
 	// If these are also slow, they should be part of the streamed object too.
@@ -13,9 +13,6 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 		getTypes(),
 		getArtists()
 	]);
-
-	// Await the parent data structure once.
-	const parentLayoutData = await parentDataPromise;
 
 	// Extract non-streamed data needed for immediate page setup.
 	// Explicitly pick known, resolved fields from parentLayoutData.
@@ -76,27 +73,16 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 				return pricesFromParent || {};
 			})(),
 			stats: (async () => {
-				const cardsFromParentForStats = await parentLayoutData.streamed.allCards;
-				if (!cardsFromParentForStats) {
-					return { totalCards: 0, uniquePokemon: 0, pokemonCards: 0, trainerCards: 0, energyCards: 0 };
-				}
+				// Get real data counts from Supabase for accurate statistics
+				const allCardsFromDb = await parentLayoutData.streamed.allCards;
 
-				let cardsForStats: FullCard[] = cardsFromParentForStats;
-				const seenImages = new Set();
-				cardsForStats = cardsForStats.filter(card => {
-					if (!card.setName) return false;
-					if (seenImages.has(card.image)) return false;
-					seenImages.add(card.image);
-					return true;
-				});
+				const pokemonCards = allCardsFromDb.filter(card => card.supertype === 'Pokémon');
+				const trainerCards = allCardsFromDb.filter(card => card.supertype === 'Trainer');
+				const energyCards = allCardsFromDb.filter(card => card.supertype === 'Energy');
 
-				const pokemonCards = cardsForStats.filter(card => card.supertype === 'Pokémon');
-				const trainerCards = cardsForStats.filter(card => card.supertype === 'Trainer');
-				const energyCards = cardsForStats.filter(card => card.supertype === 'Energy');
-				const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
 				return {
-					totalCards: cardsForStats.length,
-					uniquePokemon,
+					totalCards: allCardsFromDb.length, // Real count from database
+					uniquePokemon: pokemons.length, // Real count from pokemons table
 					pokemonCards: pokemonCards.length,
 					trainerCards: trainerCards.length,
 					energyCards: energyCards.length,

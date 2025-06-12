@@ -7,7 +7,7 @@
 	import { onMount } from "svelte";
 	import { NO_IMAGES } from "$lib/images";
 	import { fly, fade } from "svelte/transition";
-	import { getArtists } from "$helpers/data";
+	import { getArtists } from "$helpers/supabase-data";
 	import { ChevronLeft, ChevronRight } from "lucide-svelte";
 	// Import icons
 	import GiftIcon from "lucide-svelte/icons/gift";
@@ -70,7 +70,7 @@
 	let artistsCount = 0;
 	onMount(async () => {
 		try {
-			const artists = await getArtists();
+			const artists = [...new Set(allCards.map(card => card.artist))];
 			artistsCount = artists.length;
 		} catch (error) {
 			console.error("Failed to load artists count:", error);
@@ -183,7 +183,7 @@
 							<span
 								class="text-xl md:text-2xl font-bold text-gold-400"
 							>
-								<CountUp end={23308} duration={4} />
+								<CountUp end={stats.totalJapaneseCards} duration={4} />
 							</span>
 							<ChevronLeft
 								size={12}

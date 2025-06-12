@@ -1,4 +1,4 @@
-import { getPokemons } from '$helpers/data';
+import { getPokemons, getCards, getJapaneseCards } from '$helpers/supabase-data';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// Await the streamed promises from parent for allCards and prices
 	const allCardsResolved: FullCard[] = await parentData.streamed.allCards || []; // Ensure it's an array
 	const pricesResolved = await parentData.streamed.prices || {};      // Ensure it's an object
-	
+
 	// 'sets' is already resolved from parent
 	const sets = parentData.sets || [];
 
@@ -37,16 +37,11 @@ export const load: PageServerLoad = async ({ parent }) => {
 		return true;
 	});
 
-	// Count different card types based on the loaded cards
-	const pokemonCards = processedAllCards.filter(card => card.supertype === 'Pokémon');
-	const trainerCards = processedAllCards.filter(card => card.supertype === 'Trainer');
-	const energyCards = processedAllCards.filter(card => card.supertype === 'Energy');
-
-	// Count unique Pokemon based on the loaded cards
-	const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
-
-	const [pokemons] = await Promise.all([
-		getPokemons() // This seems to be a separate fetch for pokemons list, not individual card data
+	// Get real data counts from Supabase for statistics
+	const [pokemons, allCardsFromDb, japaneseCards] = await Promise.all([
+		getPokemons(),
+		allCardsResolved,
+		getJapaneseCards() // Get Japanese cards count
 	]);
 
 	// Get latest set based on release date
@@ -95,11 +90,12 @@ export const load: PageServerLoad = async ({ parent }) => {
 		pokemons,
 		prices: pricesResolved, // Send the resolved prices
 		stats: {
-			totalCards: processedAllCards.length,
-			uniquePokemon,
-			pokemonCards: pokemonCards.length,
-			trainerCards: trainerCards.length,
-			energyCards: energyCards.length,
+			totalCards: allCardsFromDb.length, // Real count from database
+			totalJapaneseCards: japaneseCards.length, // Real count from database
+			uniquePokemon: pokemons.length, // Real count from pokemons table
+			pokemonCards: allCardsFromDb.filter(card => card.supertype === 'Pokémon').length,
+			trainerCards: allCardsFromDb.filter(card => card.supertype === 'Trainer').length,
+			energyCards: allCardsFromDb.filter(card => card.supertype === 'Energy').length,
 		},
 		...pageSeoData
 	};

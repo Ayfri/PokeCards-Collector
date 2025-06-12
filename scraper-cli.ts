@@ -89,7 +89,76 @@ const uploadFilesTask = {
 	}
 };
 
-baseScrapers.push(uploadFilesTask)
+// Supabase upload tasks
+const supabaseUploadTasks: ScraperOption[] = [
+	{
+		name: 'supabase-all',
+		description: 'Upload all JSON data to Supabase (types, pokemons, sets, cards, jp-cards, prices)',
+		action: async () => {
+			const { uploadAllData } = await import('./src/scrapers/supabase_uploader.js');
+			await uploadAllData();
+		}
+	},
+	{
+		name: 'supabase-types',
+		description: 'Upload Pokémon types to Supabase',
+		action: async () => {
+			const { uploadTypes } = await import('./src/scrapers/supabase_uploader.js');
+			await uploadTypes();
+		}
+	},
+	{
+		name: 'supabase-pokemons',
+		description: 'Upload Pokémon data to Supabase',
+		action: async () => {
+			const { uploadPokemons } = await import('./src/scrapers/supabase_uploader.js');
+			await uploadPokemons();
+		}
+	},
+	{
+		name: 'supabase-sets',
+		description: 'Upload card sets to Supabase',
+		action: async () => {
+			const { uploadSets } = await import('./src/scrapers/supabase_uploader.js');
+			await uploadSets();
+		}
+	},
+	{
+		name: 'supabase-jp-sets',
+		description: 'Upload Japanese card sets to Supabase',
+		action: async () => {
+			const { uploadJapaneseSets } = await import('./src/scrapers/supabase_uploader.js');
+			await uploadJapaneseSets();
+		}
+	},
+	{
+		name: 'supabase-cards',
+		description: 'Upload cards to Supabase',
+		action: async () => {
+			const { uploadCards } = await import('./src/scrapers/supabase_uploader.js');
+			await uploadCards();
+		}
+	},
+	{
+		name: 'supabase-jp-cards',
+		description: 'Upload Japanese cards to Supabase',
+		action: async () => {
+			const { uploadJapaneseCards } = await import('./src/scrapers/supabase_uploader.js');
+			await uploadJapaneseCards();
+		}
+	},
+	{
+		name: 'supabase-prices',
+		description: 'Upload prices to Supabase',
+		action: async () => {
+			const { uploadPrices } = await import('./src/scrapers/supabase_uploader.js');
+			await uploadPrices();
+		}
+	}
+];
+
+baseScrapers.push(uploadFilesTask);
+baseScrapers.push(...supabaseUploadTasks);
 // baseScrapers.sort((a, b) => a.name.localeCompare(b.name))
 
 const scrapers: ScraperOption[] = [
@@ -128,7 +197,8 @@ const scrapers: ScraperOption[] = [
                     s.name !== 'sets' &&
                     s.name !== 'cards' &&
                     s.name !== 'merge-sets' &&
-                    s.name !== 'download-images'
+                    s.name !== 'download-images' &&
+                    !s.name.startsWith('supabase')
                 )
             ].filter(Boolean);
 
@@ -140,6 +210,30 @@ const scrapers: ScraperOption[] = [
                     console.log(chalk.green(`✓ ${scraper.name} scraper completed successfully!`));
                 } catch (error) {
                     console.error(chalk.red(`✗ Error running ${scraper.name} scraper:`), error);
+                }
+            }
+        }
+    },
+    {
+        name: 'supabase',
+        description: 'Choose specific Supabase upload tasks',
+        action: async () => {
+            const supabaseChoice = await select({
+                message: 'Choose a Supabase upload task:',
+                choices: supabaseUploadTasks.map(scraper => ({
+                    name: `${chalk.blue(scraper.name)} - ${scraper.description}`,
+                    value: scraper.name,
+                })),
+            });
+
+            const selectedSupabaseScraper = supabaseUploadTasks.find(scraper => scraper.name === supabaseChoice);
+            if (selectedSupabaseScraper) {
+                console.log(chalk.yellow(`Running ${selectedSupabaseScraper.name}...`));
+                try {
+                    await selectedSupabaseScraper.action();
+                    console.log(chalk.green(`✓ ${selectedSupabaseScraper.name} completed successfully!`));
+                } catch (error) {
+                    console.error(chalk.red(`✗ Error running ${selectedSupabaseScraper.name}:`), error);
                 }
             }
         }

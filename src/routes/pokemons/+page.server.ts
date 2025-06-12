@@ -1,16 +1,16 @@
 import type { PageServerLoad } from './$types';
 import type { Pokemon, FullCard, PriceData } from '~/lib/types';
-import pokemonsData from '~/assets/pokemons-full.json';
-import allCardsData from '~/assets/cards-full.json';
-import pricesData from '~/assets/prices.json';
+import { getPokemons, getCards, getPrices } from '$helpers/supabase-data';
 
 export const load: PageServerLoad = async () => {
-	const pokemons: Pokemon[] = pokemonsData as Pokemon[];
-	const allCards: FullCard[] = allCardsData as FullCard[];
-	const prices: Record<string, PriceData> = pricesData as Record<string, PriceData>;
+	const [pokemons, allCards, prices] = await Promise.all([
+		getPokemons(),
+		getCards(),
+		getPrices()
+	]);
 
 	const pokemonsWithCardCounts = pokemons.map(pokemon => {
-		const cardCount = allCards.filter(card => (<any>card).pokemonNumber === pokemon.id).length;
+		const cardCount = allCards.filter(card => card.pokemonNumber === pokemon.id).length;
 		return { ...pokemon, cardCount };
 	});
 
