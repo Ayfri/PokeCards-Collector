@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import { filterSet, filterArtist, filterSupertype, filterName, filterType, sortBy, sortOrder, mostExpensiveOnly, filterRarity } from '$helpers/filters';
 	import { page } from '$app/state';
-	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
+	import BouncyLoader from '@components/BouncyLoader.svelte';
 
 	export let data: PageData;
 
@@ -15,8 +15,6 @@
 	$: artists = data.artists;
 	$: pokemons = data.pokemons;
 	$: prices = data.prices;
-
-	// Note: `allCards` and `stats` will come from the awaited promise.
 
 	onMount(() => {
 		// Check if we have any filter parameters in the URL
@@ -37,7 +35,7 @@
 				const decodedSetParam = decodeURIComponent(setParam).toLowerCase();
 				const foundSet = sets.find(set => set.name.toLowerCase() === decodedSetParam);
 				if (foundSet) {
-					filterSet.set(foundSet.name.toLowerCase());
+					$filterSet = foundSet.name.toLowerCase();
 				}
 			}
 
@@ -45,7 +43,7 @@
 				const decodedArtistParam = decodeURIComponent(artistParam).toLowerCase();
 				const foundArtist = artists.find(artist => artist.toLowerCase() === decodedArtistParam);
 				if (foundArtist) {
-					filterArtist.set(foundArtist.toLowerCase());
+					$filterArtist = foundArtist.toLowerCase();
 				}
 			}
 
@@ -53,41 +51,41 @@
 				const decodedTypeParam = decodeURIComponent(typeParam);
 				const typeExists = ["Pokémon", "Trainer", "Energy"].includes(decodedTypeParam);
 				if (typeExists) {
-					filterSupertype.set(decodedTypeParam);
+					$filterSupertype = decodedTypeParam;
 				}
 			}
 
 			if (nameParam) {
 				const decodedNameParam = decodeURIComponent(nameParam);
-				filterName.set(decodedNameParam);
+				$filterName = decodedNameParam;
 			}
 
 			if (pokemonTypeParam) {
 				const decodedPokemonTypeParam = decodeURIComponent(pokemonTypeParam);
 				const pokemonTypeExists = types.some(type => type.toLowerCase() === decodedPokemonTypeParam.toLowerCase());
 				if (pokemonTypeExists) {
-					filterType.set(decodedPokemonTypeParam.toLowerCase());
+					$filterType = decodedPokemonTypeParam.toLowerCase();
 				}
 			}
 
 			if (sortByParam) {
 				const decodedSortByParam = decodeURIComponent(sortByParam);
 				if (["sort-name", "sort-price", "sort-number", "sort-set"].includes(decodedSortByParam)) {
-					sortBy.set(decodedSortByParam);
+					$sortBy = decodedSortByParam;
 				}
 			}
 
 			if (sortOrderParam) {
 				const decodedSortOrderParam = decodeURIComponent(sortOrderParam);
 				if (["asc", "desc"].includes(decodedSortOrderParam)) {
-					sortOrder.set(decodedSortOrderParam as 'asc' | 'desc');
+					$sortOrder = decodedSortOrderParam as 'asc' | 'desc';
 				}
 			}
 
 			if (mostExpensiveParam) {
 				const decodedMostExpensiveParam = decodeURIComponent(mostExpensiveParam);
 				if (decodedMostExpensiveParam === "true") {
-					mostExpensiveOnly.set(true);
+					$mostExpensiveOnly = true;
 				}
 			}
 
@@ -95,7 +93,7 @@
 				const decodedRarityParam = decodeURIComponent(rarityParam);
 				const rarityExists = rarities.some(rarity => rarity.toLowerCase() === decodedRarityParam.toLowerCase());
 				if (rarityExists) {
-					filterRarity.set(decodedRarityParam.toLowerCase());
+					$filterRarity = decodedRarityParam.toLowerCase();
 				}
 			}
 		}
@@ -125,4 +123,4 @@
 		flex-direction: column;
 		min-height: 100vh;
 	}
-</style> 
+</style>
