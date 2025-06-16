@@ -119,7 +119,15 @@ export const load: PageServerLoad = async ({ parent }) => {
 	return {
 		...parentData,
 		cardOfTheDayForTesting: cardOfTheDay,
-		cardSuggestions: suggestions // Pass the sorted and filtered suggestions
+		cardSuggestions: suggestions, // Pass the sorted and filtered suggestions
+		allCards: moduleScopedAllCards,
+		prices: moduleScopedPrices,
+		title: 'Card.dle - PokéCards-Collector',
+		description: 'Guess the Pokémon card of the day!',
+		ogImage: {
+			url: cardOfTheDay?.image,
+			alt: cardOfTheDay?.name
+		}
 	};
 };
 
@@ -222,4 +230,4 @@ export const actions: Actions = {
 			cardOfTheDayForTesting: cardOfTheDay
 		};
 	}
-}; 
+};
