@@ -224,7 +224,7 @@
 			</div>
 
 			{#each historicGuesses.toReversed() as guess, i (guess.id)}
-				<div class="historic-guess-item mb-2">
+				<div class="historic-guess-item mb-2 scroll-mt-[20rem]">
 					<h3 class="font-bold text-lg my-2 text-center text-gold-400">Guess {i + 1} - {guess.name}</h3>
 					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
 						<!-- Card Image Cell -->
