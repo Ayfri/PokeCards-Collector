@@ -19,6 +19,7 @@ interface CardSuggestionItem extends FullCard {
 let moduleScopedAllCards: FullCard[] | null = null;
 let moduleScopedPrices: Record<string, PriceData> | null = null;
 let moduleScopedSetReleaseYearMap: Record<string, string> | null = null; // Map from setName to year string
+let moduleScopedCardIndex: Map<string, FullCard> | null = null; // Fast lookup index
 let cardOfTheDay: CardOfTheDayInfo | null = null; // This remains module-scoped
 
 // Updated to take a Date object or undefined
@@ -67,6 +68,14 @@ export const load: PageServerLoad = async ({ parent }) => {
 	moduleScopedAllCards = await parentData.streamed.allCards;
 	moduleScopedPrices = await parentData.streamed.prices;
 	const sets: Set[] = parentData.sets; // Load sets directly
+
+	// Create card index for fast lookup
+	if (moduleScopedAllCards) {
+		moduleScopedCardIndex = new Map();
+		for (const card of moduleScopedAllCards) {
+			moduleScopedCardIndex.set(card.cardCode, card);
+		}
+	}
 
 	if (!moduleScopedAllCards || !moduleScopedPrices || !sets) {
 		console.error('Card.dle: Critical data (allCards, prices, or sets) not loaded.');
@@ -133,9 +142,10 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 export const actions: Actions = {
 	guess: async ({ request }) => {
-		if (!moduleScopedAllCards || !moduleScopedPrices || !moduleScopedSetReleaseYearMap) {
+		if (!moduleScopedAllCards || !moduleScopedPrices || !moduleScopedSetReleaseYearMap || !moduleScopedCardIndex) {
 			return fail(500, { error: 'Server data not available. Please try refreshing.', cardOfTheDayForTesting: cardOfTheDay });
 		}
+
 		if (!cardOfTheDay) {
 			cardOfTheDay = await selectDailyCard(moduleScopedAllCards, moduleScopedPrices, moduleScopedSetReleaseYearMap);
 			if (!cardOfTheDay) {
@@ -150,7 +160,8 @@ export const actions: Actions = {
 			return fail(400, { error: 'No card selected for guessing.', cardOfTheDayForTesting: cardOfTheDay });
 		}
 
-		const guessedCard = moduleScopedAllCards.find(c => c.cardCode === guessedCardCode);
+		// Use index for O(1) lookup instead of O(n) search
+		const guessedCard = moduleScopedCardIndex.get(guessedCardCode);
 		const guessedCardPriceEntry = moduleScopedPrices[guessedCardCode];
 
 		if (!guessedCard || !guessedCardPriceEntry || typeof guessedCardPriceEntry.simple !== 'number') {
@@ -171,23 +182,22 @@ export const actions: Actions = {
 			year: releaseYearOfGuessedCard
 		};
 
+		// Pre-calculate boolean values for performance
 		const isCardOfTheDayTrainer = cardOfTheDay.supertype === 'Trainer';
 		const isGuessedCardTrainer = guessedCardInfo.supertype === 'Trainer';
+		const bothTrainers = isCardOfTheDayTrainer && isGuessedCardTrainer;
+		const anyTrainer = isCardOfTheDayTrainer || isGuessedCardTrainer;
 
-		let typesCorrectValue: boolean;
-		let typesDisplayValue: string;
+		// Calculate types comparison optimized
+		const typesCorrectValue = bothTrainers || (!anyTrainer && guessedCardInfo.types.toLowerCase() === cardOfTheDay.types.toLowerCase());
+		const typesDisplayValue = anyTrainer && !bothTrainers ? (isGuessedCardTrainer ? 'None' : guessedCardInfo.types) :
+								  bothTrainers ? 'None' : guessedCardInfo.types;
 
-		if (isCardOfTheDayTrainer && isGuessedCardTrainer) {
-			typesCorrectValue = true;
-			typesDisplayValue = 'None';
-		} else if (isCardOfTheDayTrainer || isGuessedCardTrainer) {
-			typesCorrectValue = false;
-			typesDisplayValue = isGuessedCardTrainer ? 'None' : guessedCardInfo.types;
-		} else {
-			typesCorrectValue = guessedCardInfo.types.toLowerCase() === cardOfTheDay.types.toLowerCase();
-			typesDisplayValue = guessedCardInfo.types;
-		}
+		// Calculate price comparison once
+		const priceDiff = guessedCardInfo.price - cardOfTheDay.price;
+		const priceComparison = priceDiff > 0 ? 'higher' : priceDiff < 0 ? 'lower' : 'correct';
 
+		// Build feedback object with pre-calculated values
 		const feedback = {
 			pokemonCorrect: guessedCardInfo.pokemonNumber !== undefined && cardOfTheDay.pokemonNumber !== undefined && guessedCardInfo.pokemonNumber === cardOfTheDay.pokemonNumber,
 			pokemonValue: guessedCardInfo.name,
@@ -201,17 +211,9 @@ export const actions: Actions = {
 			typesValue: typesDisplayValue,
 			supertypeCorrect: guessedCardInfo.supertype.toLowerCase() === cardOfTheDay.supertype.toLowerCase(),
 			supertypeValue: guessedCardInfo.supertype,
-			priceComparison: '',
+			priceComparison,
 			priceValue: guessedCardInfo.price,
 		};
-
-		if (guessedCardInfo.price > cardOfTheDay.price) {
-			feedback.priceComparison = 'higher';
-		} else if (guessedCardInfo.price < cardOfTheDay.price) {
-			feedback.priceComparison = 'lower';
-		} else {
-			feedback.priceComparison = 'correct';
-		}
 
 		const isCorrectGuess = feedback.pokemonCorrect &&
 							   feedback.artistCorrect &&
@@ -220,6 +222,7 @@ export const actions: Actions = {
 							   feedback.typesCorrect && // Already includes trainer logic
 							   feedback.supertypeCorrect && // Added supertype check
 							   feedback.priceComparison === 'correct';
+
 		return {
 			success: true,
 			guessedCardName: guessedCardInfo.name,

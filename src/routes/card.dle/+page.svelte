@@ -1,6 +1,5 @@
 <script lang="ts">
-	import type { ActionData, PageData } from './$types';
-	import { enhance } from '$app/forms';
+	import type { PageData } from './$types';
 	import Modal from '@components/ui/Modal.svelte';
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
@@ -8,7 +7,6 @@
 	import BouncyLoader from '@components/BouncyLoader.svelte';
 
 	export let data: PageData;
-	export let form: ActionData;
 
 	let searchInput = ''; // User's input for Pokémon name
 	let activeSuggestions: {
@@ -28,8 +26,6 @@
 		isCorrect: boolean;
 	}[] = [];
 
-	let guessFormElement: HTMLFormElement;
-	let guessedCardIdInput: HTMLInputElement;
 	let historicGuessesContainer: HTMLDivElement;
 	let showRulesModal = false; // Toggle for rules modal
 
@@ -39,39 +35,12 @@
 		name: string;
 		cardImage: string;
 		pokemonNumber?: number;
-	} | null = null;
+		} | null = null;
 
-	// When form data (ActionData) is returned from the server action
-	$: if (form?.success) {
-		const newGuess = {
-			id: new Date().getTime(),
-			name: form.guessedCardName, // Card name for the title
-			cardImage: form.guessedCardImage,
-			pokemonNumber: form.guessedPokemonNumber,
-			feedback: form.feedback,
-			isCorrect: form.isCorrectGuess
-		};
-		historicGuesses = [newGuess, ...historicGuesses];
-		if (form.isCorrectGuess) {
-			activeSuggestions = [];
-		}
-		// Clear loading state and reset submission flag
-		loadingGuess = null;
-		isSubmitting = false;
-		// Smooth scroll to the historic guesses section
-		// Use timeout to ensure the element is rendered before scrolling
-		setTimeout(() => {
-			historicGuessesContainer?.scrollIntoView({ behavior: 'smooth' });
-		}, 0);
-	} else if (form?.error) {
-		// Handle server-side validation errors if needed (e.g., display in a toast)
-		console.error("Form error:", form.error);
-		// Clear loading state and reset submission flag on error too
-		loadingGuess = null;
-		isSubmitting = false;
-	}
+	// Game state
+	let hasWon = false;
 
-		// This function is now called by debounce or search button
+	// This function is now called by debounce or search button
 	function displayMatchingCards(searchTerm?: string) {
 		const term = searchTerm || searchInput.trim();
 		if (term.length > 0) {
@@ -109,7 +78,7 @@
 
 	let isSubmitting = false; // Prevent double submissions
 
-	function selectSuggestion(card: any) {
+	async function selectSuggestion(card: any) {
 		if (isSubmitting) return; // Prevent double submission
 
 		isSubmitting = true;
@@ -127,20 +96,55 @@
 			historicGuessesContainer?.scrollIntoView({ behavior: 'smooth' });
 		}, 100);
 
-		if (guessedCardIdInput) {
-			guessedCardIdInput.value = card.cardCode;
-		}
-		if (guessFormElement) {
-			guessFormElement.requestSubmit();
-		}
+		try {
+			// Use new API instead of form submission
+			const formData = new FormData();
+			formData.append('guessedCardId', card.cardCode);
 
-		// Reset after a short delay to allow form submission to complete
-		setTimeout(() => {
-			if (loadingGuess) { // Only reset if we still have a loading state (no response yet)
-				isSubmitting = false;
+			const response = await fetch('/api/card-dle/guess', {
+				method: 'POST',
+				body: formData
+			});
+
+			const result = await response.json();
+
+			if (result.success) {
+				// Handle success - same logic as before
+				const newGuess = {
+					id: new Date().getTime(),
+					name: result.guessedCardName,
+					cardImage: result.guessedCardImage,
+					pokemonNumber: result.guessedPokemonNumber,
+					feedback: result.feedback,
+					isCorrect: result.isCorrectGuess
+				};
+
+				historicGuesses = [newGuess, ...historicGuesses];
+
+				if (result.isCorrectGuess) {
+					activeSuggestions = [];
+					hasWon = true;
+				}
+
+				// Clear loading state
 				loadingGuess = null;
+				isSubmitting = false;
+
+				// Smooth scroll to the historic guesses section
+				setTimeout(() => {
+					historicGuessesContainer?.scrollIntoView({ behavior: 'smooth' });
+				}, 0);
+			} else {
+				// Handle error
+				console.error("API error:", result.error);
+				loadingGuess = null;
+				isSubmitting = false;
 			}
-		}, 10000); // Extended timeout as fallback
+		} catch (error) {
+			console.error("Network error:", error);
+			loadingGuess = null;
+			isSubmitting = false;
+		}
 	}
 
 	// Updated to return background and text color classes with dark theme
@@ -329,7 +333,7 @@
 					placeholder="E.g., Pikachu, Charizard..."
 					autocomplete="off"
 					class="flex-grow text-lg bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-gold-400 h-12 py-3"
-					disabled={form?.isCorrectGuess}
+					disabled={hasWon}
 					debounceFunction={handleDebouncedSearch}
 					debounceDelay={500}
 					onKeydown={handleKeydown}
@@ -337,40 +341,20 @@
 				<Button
 					class="self-end h-12 px-6 font-bold text-lg"
 					onClick={() => { searchInput = ''; activeSuggestions = []; }}
-					disabled={form?.isCorrectGuess}
+					disabled={hasWon}
 				>
 					🗑️ Clear
 				</Button>
 			</div>
 
-			{#if form?.isCorrectGuess}
+			{#if hasWon}
 				<div class="mt-4 p-4 bg-green-900 border-2 border-green-600 rounded-lg text-center">
 					<p class="text-green-300 font-bold text-lg">🎉 Congratulations! You found today's card! 🎉</p>
 					<p class="text-green-400 text-sm mt-2">Come back tomorrow for a new challenge!</p>
 				</div>
 			{/if}
 		</div>
-
-		<!-- Hidden form for card selection -->
-		<form
-			method="POST"
-			action="?/guess"
-			id="guessForm"
-			class="hidden"
-			bind:this={guessFormElement}
-			use:enhance={() => {
-				return async ({ update }) => {
-					await update();
-				};
-			}}
-		>
-			<input type="hidden" name="guessedCardId" bind:this={guessedCardIdInput} />
-		</form>
 	</div>
-
-	{#if form?.error && !form.success} <!-- Show only if it's a submission error, not validation for fields -->
-		<p class="text-red-400 text-center mb-4 bg-red-900 border border-red-600 p-2 rounded">{form.error}</p>
-	{/if}
 
 	<!-- Display Card Suggestions Grid (always show after search or when there are results) -->
 	<div class="my-8">
@@ -391,7 +375,7 @@
 							}}
 							class="card-suggestion-button bg-gray-900 hover:bg-gray-700 p-3 rounded-xl shadow-md hover:shadow-xl focus:ring-2 focus:ring-gold-400 transition-all duration-200 flex flex-col items-center text-center border border-gray-600 hover:border-gold-400 group relative {isSubmitting && loadingGuess?.cardImage === suggestion.image ? 'opacity-75 scale-95' : ''}"
 							title={suggestion.name}
-							disabled={isSubmitting}
+							disabled={isSubmitting || hasWon}
 						>
 							{#if isSubmitting && loadingGuess?.cardImage === suggestion.image}
 								<div class="absolute inset-0 bg-black bg-opacity-50 rounded-xl flex items-center justify-center z-10">
