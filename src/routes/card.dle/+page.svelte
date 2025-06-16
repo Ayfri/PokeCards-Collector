@@ -8,18 +8,17 @@
 
 	export let data: PageData;
 
-	let searchInput = ''; // User's input for Pokémon name
+	let searchInput = '';
 	let activeSuggestions: {
 		name: string;
 		cardCode: string;
 		pokemonName: string;
 		image: string;
 		price: number;
-		year: string;
 	}[] = [];
 	let historicGuesses: {
 		id: number;
-		name: string; // This is the card name, used for the Guess X - Name title
+		name: string;
 		cardImage: string;
 		pokemonNumber?: number;
 		feedback: any;
@@ -27,20 +26,19 @@
 	}[] = [];
 
 	let historicGuessesContainer: HTMLDivElement;
-	let showRulesModal = false; // Toggle for rules modal
+	let showRulesModal = false;
 
-	// Loading state for card submission
+	// Loading state
 	let loadingGuess: {
 		id: number;
 		name: string;
 		cardImage: string;
 		pokemonNumber?: number;
-		} | null = null;
+	} | null = null;
 
 	// Game state
 	let hasWon = false;
 
-	// This function is now called by debounce or search button
 	function displayMatchingCards(searchTerm?: string) {
 		const term = searchTerm || searchInput.trim();
 		if (term.length > 0) {
@@ -50,24 +48,22 @@
 				card.name.toLowerCase().includes(searchTermLower)
 			);
 
-			// Remove duplicates by cardCode to avoid keyed each conflicts
+			// Remove duplicates by cardCode
 			const seenCardCodes = new Set();
 			activeSuggestions = filteredCards.filter(card => {
 				if (seenCardCodes.has(card.cardCode)) return false;
 				seenCardCodes.add(card.cardCode);
 				return true;
-			}).slice(0, 100); // Limit to 100 results for performance
+			}).slice(0, 100);
 		} else {
-			activeSuggestions = []; // Clear suggestions if search input is empty
+			activeSuggestions = [];
 		}
 	}
 
-	// Debounced search function
 	function handleDebouncedSearch(value: string) {
 		displayMatchingCards(value);
 	}
 
-	// Handle Enter key press
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter') {
 			event.preventDefault();
@@ -76,14 +72,13 @@
 		}
 	}
 
-	let isSubmitting = false; // Prevent double submissions
+	let isSubmitting = false;
 
 	async function selectSuggestion(card: any) {
-		if (isSubmitting) return; // Prevent double submission
+		if (isSubmitting) return;
 
 		isSubmitting = true;
 
-		// Create loading entry immediately
 		loadingGuess = {
 			id: new Date().getTime(),
 			name: card.name,
@@ -91,13 +86,9 @@
 			pokemonNumber: card.pokemonNumber
 		};
 
-		// Scroll to show the loading entry
-		setTimeout(() => {
-			historicGuessesContainer?.scrollIntoView({ behavior: 'smooth' });
-		}, 100);
+		// Don't scroll immediately - wait for the guess to be processed
 
 		try {
-			// Use new API instead of form submission
 			const formData = new FormData();
 			formData.append('guessedCardId', card.cardCode);
 
@@ -109,7 +100,6 @@
 			const result = await response.json();
 
 			if (result.success) {
-				// Handle success - same logic as before
 				const newGuess = {
 					id: new Date().getTime(),
 					name: result.guessedCardName,
@@ -126,16 +116,17 @@
 					hasWon = true;
 				}
 
-				// Clear loading state
 				loadingGuess = null;
 				isSubmitting = false;
 
-				// Smooth scroll to the historic guesses section
+				// Scroll to the latest guess (first in the list due to reverse order)
 				setTimeout(() => {
-					historicGuessesContainer?.scrollIntoView({ behavior: 'smooth' });
-				}, 0);
+					const latestGuess = document.querySelector('.historic-guess-item:last-child');
+					if (latestGuess) {
+						latestGuess.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					}
+				}, 100);
 			} else {
-				// Handle error
 				console.error("API error:", result.error);
 				loadingGuess = null;
 				isSubmitting = false;
@@ -147,10 +138,9 @@
 		}
 	}
 
-	// Updated to return background and text color classes with dark theme
 	function getFeedbackBgClass(correct: boolean | undefined, isPokemonCell: boolean = false): string {
-		if (correct === undefined && !isPokemonCell) return 'bg-gray-800 text-gray-300'; // Neutral for non-Pokémon cells if no feedback
-        if (correct === undefined && isPokemonCell) return 'bg-gray-800 text-gray-300'; // Default for Pokémon cell if no explicit correctness (e.g. Trainer)
+		if (correct === undefined && !isPokemonCell) return 'bg-gray-800 text-gray-300';
+		if (correct === undefined && isPokemonCell) return 'bg-gray-800 text-gray-300';
 
 		return correct ? 'bg-green-600 text-white' : 'bg-red-600 text-white';
 	}
@@ -161,12 +151,12 @@
 		if (comparison === 'lower') return '🔽';
 		return '';
 	}
-    function getPriceComparisonText(comparison: string | undefined): string {
+
+	function getPriceComparisonText(comparison: string | undefined): string {
 		if (comparison === 'higher') return '(Higher)';
 		if (comparison === 'lower') return '(Lower)';
 		return '';
 	}
-
 </script>
 
 <div class="container mx-auto p-4 text-white">
@@ -192,7 +182,6 @@
 					<strong class="text-gold-400">🎯</strong> Guess the daily Pokémon card by comparing attributes!
 				</p>
 
-				<!-- Simplified Color Guide -->
 				<div class="flex items-center justify-center gap-6 text-sm">
 					<div class="flex items-center gap-2">
 						<div class="w-3 h-3 bg-green-600 rounded"></div>
@@ -220,16 +209,15 @@
 		</div>
 	</div>
 
-	<!-- Display Historic Guesses (moved before search) -->
+	<!-- Historic Guesses Display -->
 	<div class="mt-8 w-full overflow-x-auto" bind:this={historicGuessesContainer}>
 		{#if historicGuesses.length > 0 || loadingGuess}
-			<!-- Global Header for the Grid -->
-			<div class="historic-guesses-header grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px font-semibold text-center mb-1 bg-gray-900 text-gold-400 p-1 rounded-t-md text-xs sticky top-0 z-10">
+			<!-- Global Header for Grid -->
+			<div class="historic-guesses-header grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-1 bg-gray-900 text-gold-400 p-1 rounded-t-md text-xs sticky top-0 z-10">
 				<div class="p-2">Card</div>
-				<div class="p-2">Pokémon Details</div>
+				<div class="p-2">Pokémon</div>
 				<div class="p-2">Artist</div>
 				<div class="p-2">Set</div>
-				<div class="p-2">Year</div>
 				<div class="p-2">Supertype</div>
 				<div class="p-2">Type(s)</div>
 				<div class="p-2">Price</div>
@@ -238,7 +226,7 @@
 			{#each historicGuesses.toReversed() as guess, i (guess.id)}
 				<div class="historic-guess-item mb-2">
 					<h3 class="font-bold text-lg my-2 text-center text-gold-400">Guess {i + 1} - {guess.name}</h3>
-					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
+					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
 						<!-- Card Image Cell -->
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
 							<CardImage
@@ -251,21 +239,20 @@
 						<!-- Pokémon Sprite & Name Cell -->
 						<div class={`p-1 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(
 							guess.feedback.supertypeValue === 'Pokémon' ? guess.feedback.pokemonCorrect : undefined,
-							guess.feedback.supertypeValue === 'Pokémon' // This is the isPokemonCell argument
+							guess.feedback.supertypeValue === 'Pokémon'
 						)}`}>
 							{#if guess.pokemonNumber && guess.feedback.supertypeValue === 'Pokémon'}
 								<img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${guess.pokemonNumber}.png`} alt="Sprite for {guess.feedback.pokemonValue}" class="h-10 w-10 sm:h-12 sm:w-12 object-contain"/>
-                            {:else if guess.feedback.supertypeValue === 'Trainer' || guess.feedback.supertypeValue === 'Energy'}
-                                <span class="text-sm p-2">{guess.feedback.supertypeValue}</span>
-                            {:else}
-                                <span class="text-sm p-2">N/A</span>
+							{:else if guess.feedback.supertypeValue === 'Trainer' || guess.feedback.supertypeValue === 'Energy'}
+								<span class="text-sm p-2">{guess.feedback.supertypeValue}</span>
+							{:else}
+								<span class="text-sm p-2">N/A</span>
 							{/if}
 							<span class="mt-1 text-center block leading-tight text-xxs sm:text-xs">{guess.feedback.pokemonValue}</span>
 						</div>
 						<!-- Attribute Cells -->
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.artistCorrect)}`}>{guess.feedback.artistValue}</div>
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.setCorrect)}`}>{guess.feedback.setValue}</div>
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.yearCorrect)}`}>{guess.feedback.yearValue}</div>
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.supertypeCorrect)}`}>{guess.feedback.supertypeValue}</div>
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.typesCorrect)}`}>{guess.feedback.typesValue}</div>
 						<div class={`p-2 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.priceComparison === 'correct')}`}>
@@ -289,7 +276,7 @@
 							<span class="ml-1 text-sm font-normal">Analyzing...</span>
 						</span>
 					</h3>
-					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
+					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
 						<!-- Card Image Cell -->
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
 							<CardImage
@@ -310,7 +297,7 @@
 							<span class="mt-1 text-center block leading-tight text-xxs sm:text-xs opacity-75">{loadingGuess.name}</span>
 						</div>
 						<!-- Loading cells for attributes -->
-						{#each Array(6) as _, i}
+						{#each Array(5) as _, i}
 							<div class="p-2 flex items-center justify-center text-center bg-gray-800 text-gray-400">
 								<div class="w-12 h-4 bg-gray-700 rounded animate-pulse"></div>
 							</div>
@@ -356,7 +343,7 @@
 		</div>
 	</div>
 
-	<!-- Display Card Suggestions Grid (always show after search or when there are results) -->
+	<!-- Card Suggestions Grid -->
 	<div class="my-8">
 		<div class="bg-gray-800 rounded-xl shadow-lg p-6 max-w-7xl mx-auto border border-gray-700 flex flex-col items-center">
 			{#if activeSuggestions.length > 0}
@@ -395,9 +382,6 @@
 							<div class="flex items-center justify-center gap-1 text-xxs text-gray-400">
 								<span class="bg-green-800 text-green-300 px-2 py-1 rounded-full font-semibold">
 									${suggestion.price.toFixed(2)}
-								</span>
-								<span class="bg-gold-400 text-black px-2 py-1 rounded-full font-semibold">
-									{suggestion.year}
 								</span>
 							</div>
 						</button>
@@ -444,12 +428,11 @@
 			</h3>
 			<div class="bg-gray-800 rounded-xl shadow-lg p-6 max-w-6xl mx-auto border border-gray-700">
 				<!-- Example Header -->
-				<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px font-semibold text-center mb-3 bg-gray-900 text-gold-400 p-2 rounded-t-md text-xs">
+				<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-3 bg-gray-900 text-gold-400 p-2 rounded-t-md text-xs">
 					<div class="p-2">Card</div>
-					<div class="p-2">Pokémon Details</div>
+					<div class="p-2">Pokémon</div>
 					<div class="p-2">Artist</div>
 					<div class="p-2">Set</div>
-					<div class="p-2">Year</div>
 					<div class="p-2">Supertype</div>
 					<div class="p-2">Type(s)</div>
 					<div class="p-2">Price</div>
@@ -458,7 +441,7 @@
 				<!-- Example Row -->
 				<div class="mb-2">
 					<h4 class="font-bold text-lg my-2 text-center text-gray-400">Guess 1 - Example Card Name</h4>
-					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
+					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
 						<!-- Example Card Image -->
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center">
 							<div class="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 rounded flex items-center justify-center">
@@ -473,7 +456,6 @@
 						<!-- Example attributes -->
 						<div class="p-2 flex items-center justify-center text-center bg-green-600 text-white">✅ Correct Artist</div>
 						<div class="p-2 flex items-center justify-center text-center bg-red-600 text-white">❌ Wrong Set</div>
-						<div class="p-2 flex items-center justify-center text-center bg-green-600 text-white">✅ 2023</div>
 						<div class="p-2 flex items-center justify-center text-center bg-green-600 text-white">✅ Pokémon</div>
 						<div class="p-2 flex items-center justify-center text-center bg-red-600 text-white">❌ Fire</div>
 						<div class="p-2 flex flex-col items-center justify-center text-center bg-red-600 text-white">
@@ -485,21 +467,11 @@
 
 				<div class="text-center mt-4 p-3 bg-gray-900 rounded-lg border border-gray-700">
 					<p class="text-sm text-gold-400">
-						<strong>💡 This example shows:</strong> The artist and year match the mystery card (green),
+						<strong>💡 This example shows:</strong> The artist matches the mystery card (green),
 						but the Pokémon, set, and type are wrong (red). The price arrow indicates the mystery card costs less than $15.99.
 					</p>
 				</div>
 			</div>
-		</div>
-	{/if}
-
-
-
-	<!-- Debug: Display card of the day (if available from server load) -->
-	{#if data.cardOfTheDayForTesting}
-		<div class="mt-8 p-4 bg-gray-800 border border-gray-700 rounded text-xs text-gray-400 max-w-xl mx-auto">
-			<h3 class="font-bold mb-1 text-gold-400">For Testing - Card of the Day:</h3>
-			<pre class="text-gray-300">{JSON.stringify(data.cardOfTheDayForTesting, null, 2)}</pre>
 		</div>
 	{/if}
 </div>
@@ -515,11 +487,10 @@
 		<!-- Card Attributes -->
 		<div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
 			<h3 class="font-bold text-gold-400 mb-3">🏷️ Attributes:</h3>
-			<div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+			<div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
 				<div><strong class="text-white">Pokémon:</strong> Character name</div>
 				<div><strong class="text-white">Artist:</strong> Card illustrator</div>
 				<div><strong class="text-white">Set:</strong> Collection name</div>
-				<div><strong class="text-white">Year:</strong> Release year</div>
 				<div><strong class="text-white">Supertype:</strong> Pokémon/Trainer/Energy</div>
 				<div><strong class="text-white">Type:</strong> Element (Fire, Water...)</div>
 				<div><strong class="text-white">Price:</strong> Market value (USD)</div>
@@ -554,7 +525,7 @@
 					<li>Use price arrows to narrow search</li>
 				</ul>
 				<ul class="space-y-1 list-disc list-inside">
-					<li>Same set/year → try other cards from collection</li>
+					<li>Same set → try other cards from collection</li>
 					<li>Different printings = different artists/prices</li>
 				</ul>
 			</div>
@@ -567,12 +538,12 @@
 		font-size: 0.65rem;
 		line-height: 0.85rem;
 	}
-    .grid {
-        align-items: stretch;
-    }
-    .grid > div {
-        min-height: 50px;
-    }
+	.grid {
+		align-items: stretch;
+	}
+	.grid > div {
+		min-height: 50px;
+	}
 
 	/* Custom animations and improvements */
 	.card-suggestion-button {
