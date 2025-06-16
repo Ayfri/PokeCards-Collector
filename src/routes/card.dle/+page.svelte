@@ -5,6 +5,7 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import Button from '@components/filters/Button.svelte';
+	import BouncyLoader from '@components/BouncyLoader.svelte';
 
 	export let data: PageData;
 	export let form: ActionData;
@@ -139,7 +140,7 @@
 				isSubmitting = false;
 				loadingGuess = null;
 			}
-		}, 5000); // Longer timeout as fallback
+		}, 10000); // Extended timeout as fallback
 	}
 
 	// Updated to return background and text color classes with dark theme
@@ -280,10 +281,7 @@
 					<h3 class="font-bold text-lg my-2 text-center text-gold-400">
 						Guess {historicGuesses.length + 1} - {loadingGuess.name}
 						<span class="inline-flex items-center ml-2">
-							<svg class="animate-spin h-4 w-4 text-gold-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-								<path class="opacity-75" fill="currentColor" d="m12 2 a10 10 0 0 1 0 20 a10 10 0 0 1 0-20"></path>
-							</svg>
+							<BouncyLoader size={16} speed={0.8} />
 							<span class="ml-1 text-sm font-normal">Analyzing...</span>
 						</span>
 					</h3>
@@ -397,10 +395,7 @@
 						>
 							{#if isSubmitting && loadingGuess?.cardImage === suggestion.image}
 								<div class="absolute inset-0 bg-black bg-opacity-50 rounded-xl flex items-center justify-center z-10">
-									<svg class="animate-spin h-6 w-6 text-gold-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-										<path class="opacity-75" fill="currentColor" d="m12 2 a10 10 0 0 1 0 20 a10 10 0 0 1 0-20"></path>
-									</svg>
+									<BouncyLoader size={24} speed={0.8} />
 								</div>
 							{/if}
 							<div class="relative overflow-hidden rounded-lg mb-3 group-hover:scale-105 transition-transform duration-200">
