@@ -16,38 +16,58 @@
 	import ShuffleIcon from 'lucide-svelte/icons/shuffle';
 	import BinderIcon from 'lucide-svelte/icons/book-open';
 	import SearchUsersIcon from 'lucide-svelte/icons/users';
-	import MenuIcon from 'lucide-svelte/icons/menu'; // Hamburger icon
-	import XIcon from 'lucide-svelte/icons/x'; // Close icon
-	import GlobeIcon from 'lucide-svelte/icons/globe'; // Globe icon for Japan section
-	import ListIcon from 'lucide-svelte/icons/list'; // Icon for Pokémons page
-	import PuzzleIcon from 'lucide-svelte/icons/puzzle'; // Icon for Guess the Price game
+	import MenuIcon from 'lucide-svelte/icons/menu';
+	import XIcon from 'lucide-svelte/icons/x';
+	import GlobeIcon from 'lucide-svelte/icons/globe';
+	import ListIcon from 'lucide-svelte/icons/list';
+	import PuzzleIcon from 'lucide-svelte/icons/puzzle';
+	import GamepadIcon from 'lucide-svelte/icons/gamepad-2';
+	import SearchIcon from 'lucide-svelte/icons/search';
+	import ChevronDownIcon from 'lucide-svelte/icons/chevron-down';
 	import { slide } from 'svelte/transition';
 
-	// Re-add NavLink interface and constant
+	// New interface for navigation groups with dropdowns
 	interface NavLink {
-		href: string;
-		name: string; // PCC
+		href?: string;
+		name: string;
 		icon: typeof Icon | null;
+		isDropdown?: boolean;
+		children?: NavLink[];
 	}
 
 	const navLinks: NavLink[] = [
 		{ href: '/', name: 'PCC', icon: null },
-		{ href: '/pokemons', name: 'Pokémons', icon: ListIcon },
-		// { href: '/card.dle', name: 'Card.dle', icon: PuzzleIcon },  // disabled for now, not working perfectly
-		{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
+		{
+			name: 'Browse',
+			icon: SearchIcon,
+			isDropdown: true,
+			children: [
+				{ href: '/pokemons', name: 'Pokémons', icon: ListIcon },
+				{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
+				{ href: '/sets', name: 'Sets', icon: LibraryIcon },
+				{ href: '/artists', name: 'Artists', icon: ArtistIcon },
 		{ href: '/japan', name: 'Japan', icon: GlobeIcon },
-		{ href: '/sets', name: 'Sets', icon: LibraryIcon },
-		{ href: '/artists', name: 'Artists', icon: ArtistIcon },
+			]
+		},
+		{
+			name: 'Games',
+			icon: GamepadIcon,
+			isDropdown: true,
+			children: [
+				{ href: '/card.dle', name: 'Card.dle', icon: PuzzleIcon },
+				{ href: '/guess-the-price', name: 'Guess The Price', icon: PuzzleIcon },
+				{ href: '/random', name: 'Random Card', icon: ShuffleIcon },
+			]
+		},
 		{ href: '/binder', name: 'Binder', icon: BinderIcon },
-		{ href: '/random', name: 'Random Card', icon: ShuffleIcon },
 		{ href: '/users', name: 'Users', icon: SearchUsersIcon },
-		{ href: '/guess-the-price', name: 'Guess The Price', icon: PuzzleIcon },
 	];
 
-	// State for mobile menu
+	// State for mobile menu and dropdowns
 	let isMobileMenuOpen = false;
 	let mobileMenuButton: HTMLButtonElement;
 	let mobileMenuNav: HTMLDivElement;
+	let openDropdown: string | null = null; // Track which dropdown is open
 
 	// Use data from page state directly
 	$: user = page.data.user;
@@ -59,6 +79,7 @@
 	// Use afterNavigate instead of reactive statement
 	afterNavigate(() => {
 		isMobileMenuOpen = false;
+		openDropdown = null; // Close dropdowns on navigation
 	});
 
 	function handleClickOutside(event: MouseEvent) {
@@ -69,6 +90,12 @@
 				isMobileMenuOpen = false;
 			}
 		}
+		// Close dropdowns when clicking outside
+		openDropdown = null;
+	}
+
+	function toggleDropdown(linkName: string) {
+		openDropdown = openDropdown === linkName ? null : linkName;
 	}
 
 	onMount(() => {
@@ -118,6 +145,39 @@
 						{/if}
 						<span class="font-bold text-lg">{link.name}</span>
 					</a>
+				{:else if link.isDropdown && link.children}
+					<!-- Dropdown Menu -->
+					<div class="relative">
+						<button
+							class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1"
+							on:click|stopPropagation={() => toggleDropdown(link.name)}
+						>
+							{#if !NO_IMAGES && link.icon}
+								<svelte:component this={link.icon} size={16} />
+							{/if}
+							{link.name}
+							<ChevronDownIcon size={14} class="transition-transform duration-200 {openDropdown === link.name ? 'rotate-180' : ''}" />
+						</button>
+
+						{#if openDropdown === link.name}
+							<div
+								class="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-2 min-w-48 z-10"
+								transition:slide={{ duration: 200, axis: 'y' }}
+							>
+								{#each link.children as child}
+									<a
+										href={child.href}
+										class="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-gold-400 hover:bg-gray-700 transition-colors duration-200"
+									>
+										{#if !NO_IMAGES && child.icon}
+											<svelte:component this={child.icon} size={16} />
+										{/if}
+										{child.name}
+									</a>
+								{/each}
+							</div>
+						{/if}
+					</div>
 				{:else}
 					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href}>
 						{#if !NO_IMAGES && link.icon}
@@ -197,6 +257,24 @@
 							{/if}
 							<span class="font-bold text-lg">{link.name}</span>
 						</a>
+					{:else if link.isDropdown && link.children}
+						<!-- Mobile Dropdown Section -->
+						<div class="border-t border-gray-700 pt-2 mt-1">
+							<div class="flex items-center gap-2 px-2 py-1 text-gray-400 text-sm font-semibold">
+								{#if !NO_IMAGES && link.icon}
+									<svelte:component this={link.icon} size={16} />
+								{/if}
+								{link.name}
+							</div>
+							{#each link.children as child}
+								<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 pl-6 rounded hover:bg-gray-600" href={child.href}>
+									{#if !NO_IMAGES && child.icon}
+										<svelte:component this={child.icon} size={18} />
+									{/if}
+									{child.name}
+								</a>
+							{/each}
+						</div>
 					{:else}
 						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
 							{#if !NO_IMAGES && link.icon}
