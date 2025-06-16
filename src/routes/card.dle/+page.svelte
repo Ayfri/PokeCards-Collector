@@ -46,6 +46,8 @@
 		if (form.isCorrectGuess) {
 			activeSuggestions = [];
 		}
+		// Reset submission flag
+		isSubmitting = false;
 		// Smooth scroll to the historic guesses section
 		// Use timeout to ensure the element is rendered before scrolling
 		setTimeout(() => {
@@ -54,6 +56,8 @@
 	} else if (form?.error) {
 		// Handle server-side validation errors if needed (e.g., display in a toast)
 		console.error("Form error:", form.error);
+		// Reset submission flag on error too
+		isSubmitting = false;
 	}
 
 	// This function is now called by the search button or Enter key
@@ -80,13 +84,24 @@
 		}
 	}
 
+	let isSubmitting = false; // Prevent double submissions
+
 	function selectSuggestion(card: any) {
+		if (isSubmitting) return; // Prevent double submission
+
+		isSubmitting = true;
+
 		if (guessedCardIdInput) {
 			guessedCardIdInput.value = card.cardCode;
 		}
 		if (guessFormElement) {
 			guessFormElement.requestSubmit();
 		}
+
+		// Reset after a short delay to allow form submission to complete
+		setTimeout(() => {
+			isSubmitting = false;
+		}, 1000);
 	}
 
 	// Updated to return background and text color classes with dark theme
@@ -254,9 +269,14 @@
 					{#each activeSuggestions as suggestion (suggestion.cardCode)}
 						<button
 							type="button"
-							on:click={() => selectSuggestion(suggestion)}
+							on:click={(e) => {
+								e.preventDefault();
+								e.stopPropagation();
+								selectSuggestion(suggestion);
+							}}
 							class="card-suggestion-button bg-gray-900 hover:bg-gray-700 p-3 rounded-xl shadow-md hover:shadow-xl focus:ring-2 focus:ring-gold-400 transition-all duration-200 flex flex-col items-center text-center border border-gray-600 hover:border-gold-400 group"
 							title={suggestion.name}
+							disabled={isSubmitting}
 						>
 							<div class="relative overflow-hidden rounded-lg mb-3 group-hover:scale-105 transition-transform duration-200">
 								<CardImage
