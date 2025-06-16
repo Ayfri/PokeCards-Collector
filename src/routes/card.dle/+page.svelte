@@ -182,31 +182,69 @@
 		</div>
 	</div>
 
-	<!-- Game Progress Section (moved above search) -->
-	{#if historicGuesses.length > 0}
-		<div class="mb-6 bg-gray-800 rounded-xl shadow-lg p-4 max-w-4xl mx-auto border border-gray-700">
-			<h3 class="text-xl font-bold text-center mb-3 text-gold-400">
-				🎮 Your Guesses ({historicGuesses.length})
-			</h3>
-			<div class="flex items-center justify-center gap-4 text-sm">
-				<div class="flex items-center gap-2">
-					<span class="w-3 h-3 bg-green-600 rounded-full"></span>
-					<span class="text-gray-300">Perfect match</span>
-				</div>
-				<div class="flex items-center gap-2">
-					<span class="w-3 h-3 bg-red-600 rounded-full"></span>
-					<span class="text-gray-300">Wrong</span>
-				</div>
-				<div class="flex items-center gap-2">
-					<span class="text-lg">🔼🔽</span>
-					<span class="text-gray-300">Price hints</span>
-				</div>
+	<!-- Display Historic Guesses (moved before search) -->
+	<div class="mt-8 w-full overflow-x-auto" bind:this={historicGuessesContainer}>
+		{#if historicGuesses.length > 0}
+			<!-- Global Header for the Grid -->
+			<div class="historic-guesses-header grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px font-semibold text-center mb-1 bg-gray-900 text-gold-400 p-1 rounded-t-md text-xs sticky top-0 z-10">
+				<div class="p-2">Card</div>
+				<div class="p-2">Pokémon Details</div>
+				<div class="p-2">Artist</div>
+				<div class="p-2">Set</div>
+				<div class="p-2">Year</div>
+				<div class="p-2">Supertype</div>
+				<div class="p-2">Type(s)</div>
+				<div class="p-2">Price</div>
 			</div>
-		</div>
-	{/if}
+
+			{#each historicGuesses as guess, i (guess.id)}
+				<div class="historic-guess-item mb-2">
+					<h3 class="font-bold text-lg my-2 text-center text-gold-400">Guess {historicGuesses.length - i} - {guess.name}</h3>
+					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
+						<!-- Card Image Cell -->
+						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
+							<CardImage
+								imageUrl={guess.cardImage}
+								alt="Card: {guess.name}"
+								class="max-w-full max-h-full object-contain rounded"
+								lazy={true}
+							/>
+						</div>
+						<!-- Pokémon Sprite & Name Cell -->
+						<div class={`p-1 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(
+							guess.feedback.supertypeValue === 'Pokémon' ? guess.feedback.pokemonCorrect : undefined,
+							guess.feedback.supertypeValue === 'Pokémon' // This is the isPokemonCell argument
+						)}`}>
+							{#if guess.pokemonNumber && guess.feedback.supertypeValue === 'Pokémon'}
+								<img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${guess.pokemonNumber}.png`} alt="Sprite for {guess.feedback.pokemonValue}" class="h-10 w-10 sm:h-12 sm:w-12 object-contain"/>
+                            {:else if guess.feedback.supertypeValue === 'Trainer' || guess.feedback.supertypeValue === 'Energy'}
+                                <span class="text-sm p-2">{guess.feedback.supertypeValue}</span>
+                            {:else}
+                                <span class="text-sm p-2">N/A</span>
+							{/if}
+							<span class="mt-1 text-center block leading-tight text-xxs sm:text-xs">{guess.feedback.pokemonValue}</span>
+						</div>
+						<!-- Attribute Cells -->
+						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.artistCorrect)}`}>{guess.feedback.artistValue}</div>
+						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.setCorrect)}`}>{guess.feedback.setValue}</div>
+						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.yearCorrect)}`}>{guess.feedback.yearValue}</div>
+						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.supertypeCorrect)}`}>{guess.feedback.supertypeValue}</div>
+						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.typesCorrect)}`}>{guess.feedback.typesValue}</div>
+						<div class={`p-2 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.priceComparison === 'correct')}`}>
+							<span>{getPriceComparisonIcon(guess.feedback.priceComparison)} ${guess.feedback.priceValue.toFixed(2)}</span>
+							<span class="text-xxs">{getPriceComparisonText(guess.feedback.priceComparison)}</span>
+						</div>
+					</div>
+					{#if guess.isCorrect}
+						<p class="text-green-400 font-bold text-lg mt-2 text-center">🎉 Correct! You guessed the card! 🎉</p>
+					{/if}
+				</div>
+			{/each}
+		{/if}
+	</div>
 
 	<!-- Game Form -->
-	<div class="bg-gray-800 rounded-xl shadow-lg p-6 mb-8 max-w-2xl mx-auto border border-gray-700">
+	<div class="bg-gray-800 rounded-xl shadow-lg p-6 mt-6 mb-8 max-w-2xl mx-auto border border-gray-700">
 		<form
 			method="POST"
 			action="?/guess"
@@ -388,66 +426,7 @@
 		</div>
 	{/if}
 
-	<!-- Display Historic Guesses -->
-	<div class="mt-8 w-full overflow-x-auto" bind:this={historicGuessesContainer}>
-		{#if historicGuesses.length > 0}
-            <!-- Global Header for the Grid -->
-            <div class="historic-guesses-header grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px font-semibold text-center mb-1 bg-gray-900 text-gold-400 p-1 rounded-t-md text-xs sticky top-0 z-10">
-                <div class="p-2">Card</div>
-                <div class="p-2">Pokémon Details</div>
-                <div class="p-2">Artist</div>
-                <div class="p-2">Set</div>
-                <div class="p-2">Year</div>
-                <div class="p-2">Supertype</div>
-                <div class="p-2">Type(s)</div>
-                <div class="p-2">Price</div>
-            </div>
 
-			{#each historicGuesses as guess, i (guess.id)}
-				<div class="historic-guess-item mb-2">
-					<h3 class="font-bold text-lg my-2 text-center text-gold-400">Guess {historicGuesses.length - i} - {guess.name}</h3>
-					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
-						<!-- Card Image Cell -->
-						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
-							<CardImage
-								imageUrl={guess.cardImage}
-								alt="Card: {guess.name}"
-								class="max-w-full max-h-full object-contain rounded"
-								lazy={true}
-							/>
-						</div>
-						<!-- Pokémon Sprite & Name Cell -->
-						<div class={`p-1 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(
-							guess.feedback.supertypeValue === 'Pokémon' ? guess.feedback.pokemonCorrect : undefined,
-							guess.feedback.supertypeValue === 'Pokémon' // This is the isPokemonCell argument
-						)}`}>
-							{#if guess.pokemonNumber && guess.feedback.supertypeValue === 'Pokémon'}
-								<img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${guess.pokemonNumber}.png`} alt="Sprite for {guess.feedback.pokemonValue}" class="h-10 w-10 sm:h-12 sm:w-12 object-contain"/>
-                            {:else if guess.feedback.supertypeValue === 'Trainer' || guess.feedback.supertypeValue === 'Energy'}
-                                <span class="text-sm p-2">{guess.feedback.supertypeValue}</span>
-                            {:else}
-                                <span class="text-sm p-2">N/A</span>
-							{/if}
-							<span class="mt-1 text-center block leading-tight text-xxs sm:text-xs">{guess.feedback.pokemonValue}</span>
-						</div>
-						<!-- Attribute Cells -->
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.artistCorrect)}`}>{guess.feedback.artistValue}</div>
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.setCorrect)}`}>{guess.feedback.setValue}</div>
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.yearCorrect)}`}>{guess.feedback.yearValue}</div>
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.supertypeCorrect)}`}>{guess.feedback.supertypeValue}</div>
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.typesCorrect)}`}>{guess.feedback.typesValue}</div>
-						<div class={`p-2 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.priceComparison === 'correct')}`}>
-							<span>{getPriceComparisonIcon(guess.feedback.priceComparison)} ${guess.feedback.priceValue.toFixed(2)}</span>
-							<span class="text-xxs">{getPriceComparisonText(guess.feedback.priceComparison)}</span>
-						</div>
-					</div>
-					{#if guess.isCorrect}
-						<p class="text-green-400 font-bold text-lg mt-2 text-center">🎉 Correct! You guessed the card! 🎉</p>
-					{/if}
-				</div>
-			{/each}
-        {/if}
-	</div>
 
 	<!-- Debug: Display card of the day (if available from server load) -->
 	{#if data.cardOfTheDayForTesting}
