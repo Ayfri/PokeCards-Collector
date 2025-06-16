@@ -1,13 +1,13 @@
 <script lang="ts">
-	import type { ActionData, PageData } from './$types'; // PageData for cardSuggestions
-	import { enhance } from '$app/forms'; // For progressive enhancement
-	import Modal from '@components/ui/Modal.svelte'; // Import Modal for rules
-	import CardImage from '@components/card/CardImage.svelte'; // Import CardImage component
-	import TextInput from '@components/filters/TextInput.svelte'; // Import TextInput component
-	import Button from '@components/filters/Button.svelte'; // Import Button component
+	import type { ActionData, PageData } from './$types';
+	import { enhance } from '$app/forms';
+	import Modal from '@components/ui/Modal.svelte';
+	import CardImage from '@components/card/CardImage.svelte';
+	import TextInput from '@components/filters/TextInput.svelte';
+	import Button from '@components/filters/Button.svelte';
 
-	export let data: PageData; // Loaded from +page.server.ts (contains cardSuggestions)
-	export let form: ActionData; // Result of form actions
+	export let data: PageData;
+	export let form: ActionData;
 
 	let searchInput = ''; // User's input for Pokémon name
 	let activeSuggestions: {
@@ -32,6 +32,14 @@
 	let historicGuessesContainer: HTMLDivElement;
 	let showRulesModal = false; // Toggle for rules modal
 
+	// Loading state for card submission
+	let loadingGuess: {
+		id: number;
+		name: string;
+		cardImage: string;
+		pokemonNumber?: number;
+	} | null = null;
+
 	// When form data (ActionData) is returned from the server action
 	$: if (form?.success) {
 		const newGuess = {
@@ -46,7 +54,8 @@
 		if (form.isCorrectGuess) {
 			activeSuggestions = [];
 		}
-		// Reset submission flag
+		// Clear loading state and reset submission flag
+		loadingGuess = null;
 		isSubmitting = false;
 		// Smooth scroll to the historic guesses section
 		// Use timeout to ensure the element is rendered before scrolling
@@ -56,23 +65,36 @@
 	} else if (form?.error) {
 		// Handle server-side validation errors if needed (e.g., display in a toast)
 		console.error("Form error:", form.error);
-		// Reset submission flag on error too
+		// Clear loading state and reset submission flag on error too
+		loadingGuess = null;
 		isSubmitting = false;
 	}
 
-	// This function is now called by the search button or Enter key
-	function displayMatchingCards() {
-		if (searchInput.trim().length > 0) {
-			const searchTerm = searchInput.trim().toLowerCase();
-			activeSuggestions = (data.cardSuggestions || []).filter(card =>
-				card.pokemonName.toLowerCase().includes(searchTerm) ||
-				card.name.toLowerCase().includes(searchTerm)
+		// This function is now called by debounce or search button
+	function displayMatchingCards(searchTerm?: string) {
+		const term = searchTerm || searchInput.trim();
+		if (term.length > 0) {
+			const searchTermLower = term.toLowerCase();
+			let filteredCards = (data.cardSuggestions || []).filter(card =>
+				card.pokemonName.toLowerCase().includes(searchTermLower) ||
+				card.name.toLowerCase().includes(searchTermLower)
 			);
-			// Clear the input after search
-			searchInput = '';
+
+			// Remove duplicates by cardCode to avoid keyed each conflicts
+			const seenCardCodes = new Set();
+			activeSuggestions = filteredCards.filter(card => {
+				if (seenCardCodes.has(card.cardCode)) return false;
+				seenCardCodes.add(card.cardCode);
+				return true;
+			}).slice(0, 100); // Limit to 100 results for performance
 		} else {
 			activeSuggestions = []; // Clear suggestions if search input is empty
 		}
+	}
+
+	// Debounced search function
+	function handleDebouncedSearch(value: string) {
+		displayMatchingCards(value);
 	}
 
 	// Handle Enter key press
@@ -91,6 +113,19 @@
 
 		isSubmitting = true;
 
+		// Create loading entry immediately
+		loadingGuess = {
+			id: new Date().getTime(),
+			name: card.name,
+			cardImage: card.image,
+			pokemonNumber: card.pokemonNumber
+		};
+
+		// Scroll to show the loading entry
+		setTimeout(() => {
+			historicGuessesContainer?.scrollIntoView({ behavior: 'smooth' });
+		}, 100);
+
 		if (guessedCardIdInput) {
 			guessedCardIdInput.value = card.cardCode;
 		}
@@ -100,8 +135,11 @@
 
 		// Reset after a short delay to allow form submission to complete
 		setTimeout(() => {
-			isSubmitting = false;
-		}, 1000);
+			if (loadingGuess) { // Only reset if we still have a loading state (no response yet)
+				isSubmitting = false;
+				loadingGuess = null;
+			}
+		}, 5000); // Longer timeout as fallback
 	}
 
 	// Updated to return background and text color classes with dark theme
@@ -125,11 +163,6 @@
 	}
 
 </script>
-
-<svelte:head>
-	<title>Card.dle - Guess the Pokémon Card</title>
-	<meta name="description" content="Play Card.dle and try to guess the daily Pokémon card!" />
-</svelte:head>
 
 <div class="container mx-auto p-4 text-white">
 	<!-- Hero Section -->
@@ -184,7 +217,7 @@
 
 	<!-- Display Historic Guesses (moved before search) -->
 	<div class="mt-8 w-full overflow-x-auto" bind:this={historicGuessesContainer}>
-		{#if historicGuesses.length > 0}
+		{#if historicGuesses.length > 0 || loadingGuess}
 			<!-- Global Header for the Grid -->
 			<div class="historic-guesses-header grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px font-semibold text-center mb-1 bg-gray-900 text-gold-400 p-1 rounded-t-md text-xs sticky top-0 z-10">
 				<div class="p-2">Card</div>
@@ -196,6 +229,49 @@
 				<div class="p-2">Type(s)</div>
 				<div class="p-2">Price</div>
 			</div>
+
+			<!-- Loading Guess (if any) -->
+			{#if loadingGuess}
+				<div class="historic-guess-item mb-2 animate-pulse">
+					<h3 class="font-bold text-lg my-2 text-center text-gold-400">
+						Guess {historicGuesses.length + 1} - {loadingGuess.name}
+						<span class="inline-flex items-center ml-2">
+							<svg class="animate-spin h-4 w-4 text-gold-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+								<path class="opacity-75" fill="currentColor" d="m12 2 a10 10 0 0 1 0 20 a10 10 0 0 1 0-20"></path>
+							</svg>
+							<span class="ml-1 text-sm font-normal">Analyzing...</span>
+						</span>
+					</h3>
+					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(6,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
+						<!-- Card Image Cell -->
+						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
+							<CardImage
+								imageUrl={loadingGuess.cardImage}
+								alt="Card: {loadingGuess.name}"
+								class="max-w-full max-h-full object-contain rounded opacity-75"
+								lazy={true}
+								lowRes={true}
+							/>
+						</div>
+						<!-- Pokémon Sprite & Name Cell -->
+						<div class="p-1 flex flex-col items-center justify-center text-center bg-gray-800 text-gray-300">
+							{#if loadingGuess.pokemonNumber}
+								<img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${loadingGuess.pokemonNumber}.png`} alt="Sprite" class="h-10 w-10 sm:h-12 sm:w-12 object-contain opacity-75"/>
+							{:else}
+								<div class="h-10 w-10 sm:h-12 sm:w-12 bg-gray-700 rounded animate-pulse"></div>
+							{/if}
+							<span class="mt-1 text-center block leading-tight text-xxs sm:text-xs opacity-75">{loadingGuess.name}</span>
+						</div>
+						<!-- Loading cells for attributes -->
+						{#each Array(6) as _, i}
+							<div class="p-2 flex items-center justify-center text-center bg-gray-800 text-gray-400">
+								<div class="w-12 h-4 bg-gray-700 rounded animate-pulse"></div>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 
 			{#each historicGuesses as guess, i (guess.id)}
 				<div class="historic-guess-item mb-2">
@@ -243,13 +319,46 @@
 		{/if}
 	</div>
 
-	<!-- Game Form -->
+	<!-- Search Section -->
 	<div class="bg-gray-800 rounded-xl shadow-lg p-6 mt-6 mb-8 max-w-2xl mx-auto border border-gray-700">
+		<div class="flex flex-col items-center">
+			<div class="flex gap-3 w-full max-w-md justify-center">
+				<TextInput
+					id="searchInput"
+					label="🔍 Start typing to search for Pokémon cards:"
+					labelClass="font-bold text-lg text-gold-400 mb-4 text-center"
+					bind:value={searchInput}
+					placeholder="E.g., Pikachu, Charizard..."
+					autocomplete="off"
+					class="flex-grow text-lg bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-gold-400 h-12 py-3"
+					disabled={form?.isCorrectGuess}
+					debounceFunction={handleDebouncedSearch}
+					debounceDelay={500}
+					onKeydown={handleKeydown}
+				/>
+				<Button
+					class="self-end h-12 px-6 font-bold text-lg"
+					onClick={() => { searchInput = ''; activeSuggestions = []; }}
+					disabled={form?.isCorrectGuess}
+				>
+					🗑️ Clear
+				</Button>
+			</div>
+
+			{#if form?.isCorrectGuess}
+				<div class="mt-4 p-4 bg-green-900 border-2 border-green-600 rounded-lg text-center">
+					<p class="text-green-300 font-bold text-lg">🎉 Congratulations! You found today's card! 🎉</p>
+					<p class="text-green-400 text-sm mt-2">Come back tomorrow for a new challenge!</p>
+				</div>
+			{/if}
+		</div>
+
+		<!-- Hidden form for card selection -->
 		<form
 			method="POST"
 			action="?/guess"
 			id="guessForm"
-			class="mb-4"
+			class="hidden"
 			bind:this={guessFormElement}
 			use:enhance={() => {
 				return async ({ update }) => {
@@ -257,37 +366,7 @@
 				};
 			}}
 		>
-			<div class="flex flex-col items-center">
-				<div class="flex gap-3 w-full max-w-md justify-center">
-					<TextInput
-						id="searchInput"
-						label="🔍 Start your guess - Enter Pokémon Name:"
-						labelClass="font-bold text-lg text-gold-400 mb-4 text-center"
-						bind:value={searchInput}
-						placeholder="E.g., Pikachu, Charizard..."
-						autocomplete="off"
-						class="flex-grow text-lg bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-gold-400 h-12 py-3"
-						disabled={form?.isCorrectGuess}
-						onInput={() => { activeSuggestions = [] }}
-						onKeydown={handleKeydown}
-					/>
-					<Button
-						class="self-end h-12 px-6 font-bold text-lg"
-						onClick={displayMatchingCards}
-						disabled={form?.isCorrectGuess}
-					>
-						🔍 Search
-					</Button>
-				</div>
-				<input type="hidden" name="guessedCardId" bind:this={guessedCardIdInput} />
-
-				{#if form?.isCorrectGuess}
-					<div class="mt-4 p-4 bg-green-900 border-2 border-green-600 rounded-lg text-center">
-						<p class="text-green-300 font-bold text-lg">🎉 Congratulations! You found today's card! 🎉</p>
-						<p class="text-green-400 text-sm mt-2">Come back tomorrow for a new challenge!</p>
-					</div>
-				{/if}
-			</div>
+			<input type="hidden" name="guessedCardId" bind:this={guessedCardIdInput} />
 		</form>
 	</div>
 
@@ -312,16 +391,25 @@
 								e.stopPropagation();
 								selectSuggestion(suggestion);
 							}}
-							class="card-suggestion-button bg-gray-900 hover:bg-gray-700 p-3 rounded-xl shadow-md hover:shadow-xl focus:ring-2 focus:ring-gold-400 transition-all duration-200 flex flex-col items-center text-center border border-gray-600 hover:border-gold-400 group"
+							class="card-suggestion-button bg-gray-900 hover:bg-gray-700 p-3 rounded-xl shadow-md hover:shadow-xl focus:ring-2 focus:ring-gold-400 transition-all duration-200 flex flex-col items-center text-center border border-gray-600 hover:border-gold-400 group relative {isSubmitting && loadingGuess?.cardImage === suggestion.image ? 'opacity-75 scale-95' : ''}"
 							title={suggestion.name}
 							disabled={isSubmitting}
 						>
+							{#if isSubmitting && loadingGuess?.cardImage === suggestion.image}
+								<div class="absolute inset-0 bg-black bg-opacity-50 rounded-xl flex items-center justify-center z-10">
+									<svg class="animate-spin h-6 w-6 text-gold-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+										<path class="opacity-75" fill="currentColor" d="m12 2 a10 10 0 0 1 0 20 a10 10 0 0 1 0-20"></path>
+									</svg>
+								</div>
+							{/if}
 							<div class="relative overflow-hidden rounded-lg mb-3 group-hover:scale-105 transition-transform duration-200">
 								<CardImage
 									imageUrl={suggestion.image}
 									alt={suggestion.name}
 									class="w-full h-auto object-contain aspect-[0.717]"
 									lazy={true}
+									lowRes={true}
 								/>
 							</div>
 							<p class="text-xs leading-tight font-bold text-white mb-1">{suggestion.name}</p>
