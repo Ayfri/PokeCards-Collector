@@ -46,7 +46,8 @@
 				{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
 				{ href: '/sets', name: 'Sets', icon: LibraryIcon },
 				{ href: '/artists', name: 'Artists', icon: ArtistIcon },
-		{ href: '/japan', name: 'Japan', icon: GlobeIcon },
+				{ href: '/japan', name: 'Japan', icon: GlobeIcon },
+				{ href: '/random', name: 'Random Card', icon: ShuffleIcon },
 			]
 		},
 		{
@@ -56,7 +57,6 @@
 			children: [
 				{ href: '/card.dle', name: 'Card.dle', icon: PuzzleIcon },
 				{ href: '/guess-the-price', name: 'Guess The Price', icon: PuzzleIcon },
-				{ href: '/random', name: 'Random Card', icon: ShuffleIcon },
 			]
 		},
 		{ href: '/binder', name: 'Binder', icon: BinderIcon },
