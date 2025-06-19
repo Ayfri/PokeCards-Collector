@@ -7,10 +7,9 @@
 	import { fly, fade } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import { enhance } from '$app/forms';
-	// @ts-expect-error: No types for svelte-color-picker
-	import {HsvPicker} from 'svelte-color-picker';
 	import Button from '@components/filters/Button.svelte';
 	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
+	import CopyIcon from 'lucide-svelte/icons/copy';
 	import { supabase } from '$lib/supabase';
 	import LockIcon from 'lucide-svelte/icons/lock';
 
@@ -33,7 +32,7 @@
 							? profile.profile_color
 							: defaultProfileHexColor;
 
-	onMount(() => {
+	onMount(async () => {
 		// Initialize from page.data on mount, which might have been set by server load.
 		if (page.data.profile) {
 			profileColorInput = (page.data.profile.profile_color && typeof page.data.profile.profile_color === 'string' && page.data.profile.profile_color.startsWith('#'))
@@ -47,18 +46,17 @@
 		if (browser && !page.data.user) {
 			goto('/');
 		}
+
+		// Import vanilla-colorful only on client-side to avoid SSR issues
+		if (browser) {
+			await import('vanilla-colorful/hex-color-picker.js');
+		}
+
 		ready = true;
 	});
 
-	function rgbToHex(r: number, g: number, b: number): string {
-		const toHex = (v: number) => v.toString(16).padStart(2, '0');
-		return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-	}
-
-	function colorCallback(e: any) {
-		const { r, g, b } = e.detail;
-		const hex = rgbToHex(r, g, b);
-		profileColorInput = hex;
+	function handleColorChange(event: CustomEvent) {
+		profileColorInput = event.detail.value;
 	}
 
 	function openColorPicker() {
@@ -102,6 +100,17 @@
 		} else {
 			resetPasswordMessage = 'Password reset email sent! Check your inbox.';
 			resetPasswordError = '';
+		}
+	}
+
+	async function copyHexValue() {
+		if (browser && navigator.clipboard) {
+			try {
+				await navigator.clipboard.writeText(profileColorInput);
+				// You could add a toast notification here
+			} catch (err) {
+				console.error('Failed to copy: ', err);
+			}
 		}
 	}
 </script>
@@ -222,7 +231,26 @@
 											<div class="flex justify-end mb-2">
 												<button type="button" class="text-gray-400 hover:text-gold-400 text-xl font-bold" on:click={closeColorPicker}>&times;</button>
 											</div>
-											<HsvPicker on:colorChange={colorCallback} startColor={profileColorInput} />
+											<hex-color-picker color={profileColorInput} on:color-changed={handleColorChange}></hex-color-picker>
+
+											<!-- Hex input and copy/paste in popup -->
+											<div class="mt-3 flex items-center gap-2">
+												<input
+													type="text"
+													bind:value={profileColorInput}
+													placeholder="#RRGGBB"
+													pattern={"^#[0-9A-Fa-f]{6}$"}
+													class="flex-1 px-2 py-1 text-sm border border-gray-600 rounded bg-gray-800 text-gray-300 focus:border-gold-400 focus:outline-none"
+												/>
+												<button
+													type="button"
+													on:click={copyHexValue}
+													title="Copy hex value"
+													class="p-1 text-gray-400 hover:text-gold-400 border border-gray-600 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
+												>
+													<CopyIcon size={14} />
+												</button>
+											</div>
 										</div>
 									{/if}
 									<!-- Champ caché pour le submit -->
@@ -297,8 +325,6 @@
 				</div>
 			</div>
 		{/if}
-	{:else}
-		<!-- Loading state (can be empty if relying on top loading bar) -->
 	{/if}
 </main>
 
@@ -306,11 +332,6 @@
 	@keyframes spin {
 		0% { transform: rotate(0deg); }
 		100% { transform: rotate(360deg); }
-	}
-
-	.loader-spin {
-		animation: spin 2s linear infinite;
-		display: inline-flex;
 	}
 
 	.animated-hover-button::before {
@@ -327,5 +348,28 @@
 
 	.animated-hover-button:hover::before {
 		height: 100%;
+	}
+
+	/* Styles for vanilla-colorful */
+	hex-color-picker {
+		--width: 200px;
+		--height: 200px;
+	}
+
+	hex-color-picker::part(saturation) {
+		border-radius: 8px 8px 0 0;
+	}
+
+	hex-color-picker::part(hue) {
+		margin-top: 10px;
+		border-radius: 8px;
+	}
+
+	hex-color-picker::part(saturation-pointer),
+	hex-color-picker::part(hue-pointer) {
+		width: 20px;
+		height: 20px;
+		border: 2px solid white;
+		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
 	}
 </style>
