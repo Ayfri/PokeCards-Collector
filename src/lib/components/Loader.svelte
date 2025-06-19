@@ -4,7 +4,6 @@
 
 	export let message: string = "Loading...";
 	export let size: number = 48;
-	// export let color: string = "gold"; // No longer used by BouncyLoader directly for solid color
 	export let gradientColorStart: string = '#fbc54a';
 	export let gradientColorEnd: string = '#ae8833';
 </script>
@@ -21,7 +20,3 @@
 		<p class="text-white text-xl">{message}</p>
 	</div>
 </div>
-
-<style>
-	/* Removed unused spin animation and loader-spin class */
-</style> 

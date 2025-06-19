@@ -6,13 +6,32 @@
 	export let placeholder: string = "";
 	export let autocomplete: string | undefined = undefined;
 	export let debounceFunction: (value: string) => void = () => {};
+	export let debounceDelay: number = 300; // Debounce delay in milliseconds
 	export let type: "email" | "password" | "text" | "url" = "text";
+	export let onInput: (event: Event) => void = () => {};
+	export let onKeydown: (event: KeyboardEvent) => void = () => {};
 	let className: string = "";
 	export {className as class};
 
+	let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
 	function handleInput(event: Event) {
 		const target = event.target as HTMLInputElement;
-		debounceFunction(target.value);
+		onInput(event);
+
+		// Clear existing timer
+		if (debounceTimer) {
+			clearTimeout(debounceTimer);
+		}
+
+		// Set new timer for debounced function
+		debounceTimer = setTimeout(() => {
+			debounceFunction(target.value);
+		}, debounceDelay);
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		onKeydown(event);
 	}
 </script>
 
@@ -27,6 +46,7 @@
 			type="email"
 			bind:value={value}
 			on:input={handleInput}
+			on:keydown={handleKeydown}
 			{...$$restProps}
 		/>
 	{:else if type === "password"}
@@ -37,6 +57,7 @@
 			{placeholder}
 			bind:value={value}
 			on:input={handleInput}
+			on:keydown={handleKeydown}
 			type="password"
 			{...$$restProps}
 		/>
@@ -48,6 +69,7 @@
 			{placeholder}
 			bind:value={value}
 			on:input={handleInput}
+			on:keydown={handleKeydown}
 			type="text"
 			{...$$restProps}
 		/>
@@ -59,6 +81,7 @@
 			{placeholder}
 			bind:value={value}
 			on:input={handleInput}
+			on:keydown={handleKeydown}
 			type="url"
 			{...$$restProps}
 		/>
