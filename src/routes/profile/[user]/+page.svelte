@@ -101,7 +101,7 @@
 
 	$: {
 		if (data) {
-			const canDisplayUserNotFound = !data.targetProfile && data.pageTitle === 'User Not Found';
+			const canDisplayUserNotFound = !data.targetProfile && data.title === 'User Not Found';
 			// targetProfile being present implies data.targetProfile is not null/undefined
 			const canDisplayPrivateProfile = data.targetProfile && !data.isPublic && !data.isOwnProfile;
 			const canDisplayNotLoggedIn = !data.loggedInUsername && !data.targetProfile;
