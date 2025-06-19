@@ -7,6 +7,13 @@ const config = {
 		dev: process.env.NODE_ENV === 'development',
 		immutable: true,
 	},
+	onwarn: (warning, handler) => {
+		// Ignorer les warnings d'accessibilité
+		if (warning.code.startsWith('a11y-')) {
+			return;
+		}
+		handler(warning);
+	},
 	kit: {
 		adapter: adapter(),
 		alias: {
