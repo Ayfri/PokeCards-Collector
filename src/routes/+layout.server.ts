@@ -7,7 +7,13 @@ import type { UserCollection } from '$lib/types';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
 	// Fetch sets directly, assuming it's fast and needed.
-	const sets = await getSets();
+	let sets = [];
+	try {
+		sets = await getSets();
+	} catch (error) {
+		console.error('Error fetching sets in layout:', error);
+		sets = []; // fallback to empty array
+	}
 
 	// Initialize with specific types
 	let wishlistItems: UserWishlist[] = [];
@@ -39,8 +45,8 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 
 	return {
 		streamed: {
-			allCards: getCards(), // Return promise
-			prices: getPrices(),   // Return promise
+			allCards: Promise.resolve([]), // Return empty promise instead of calling getCards()
+			prices: Promise.resolve({}),   // Return empty promise instead of calling getPrices()
 		},
 		sets,                 // Resolved sets
 		user: locals.user,

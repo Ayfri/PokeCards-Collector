@@ -14,6 +14,8 @@
 	import { collectionStore } from '$lib/stores/collection';
 	import type { UserWishlist, UserCollection } from '$lib/types';
 	import pokestore from '~/assets/pokecards-collector.png';
+	import { theme } from '$lib/stores/theme';
+	import { browser } from '$app/environment';
 
 	// Reactive statement to update stores when server data changes
 	$: {
@@ -86,6 +88,17 @@
 			});
 		});
 	});
+
+	// Apply theme class to html element
+	$: if (browser) {
+		if ($theme === 'dark') {
+			document.documentElement.classList.add('dark');
+			document.documentElement.classList.remove('light');
+		} else {
+			document.documentElement.classList.add('light');
+			document.documentElement.classList.remove('dark');
+		}
+	}
 </script>
 
 <svelte:head>
