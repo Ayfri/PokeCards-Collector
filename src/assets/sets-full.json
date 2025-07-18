@@ -83,6 +83,14 @@
 		"series": "Black & White"
 	},
 	{
+		"name": "Black Bolt",
+		"logo": "https://images.pokemontcg.io/zsv10pt5/logo.png",
+		"printedTotal": 86,
+		"ptcgoCode": "BLK",
+		"releaseDate": "2025/07/18",
+		"series": "Scarlet & Violet"
+	},
+	{
 		"name": "Boundaries Crossed",
 		"logo": "https://images.pokemontcg.io/bw7/logo.png",
 		"printedTotal": 149,
@@ -1004,7 +1012,7 @@
 	{
 		"name": "Scarlet & Violet Black Star Promos",
 		"logo": "https://images.pokemontcg.io/svp/logo.png",
-		"printedTotal": 102,
+		"printedTotal": 215,
 		"ptcgoCode": "PR-SV",
 		"releaseDate": "2023/01/01",
 		"series": "Scarlet & Violet"
@@ -1237,6 +1245,14 @@
 		"ptcgoCode": "VIV",
 		"releaseDate": "2020/11/13",
 		"series": "Sword & Shield"
+	},
+	{
+		"name": "White Flare",
+		"logo": "https://images.pokemontcg.io/rsv10pt5/logo.png",
+		"printedTotal": 86,
+		"ptcgoCode": "WHT",
+		"releaseDate": "2025/07/18",
+		"series": "Scarlet & Violet"
 	},
 	{
 		"name": "Wizards Black Star Promos",
