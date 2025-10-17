@@ -592,24 +592,24 @@
 	<!-- Overlay -->
 	<div
 		aria-hidden={!showFilters}
-		class="filter-overlay fixed inset-0 z-50 bg-black/70 transition-all duration-300"
+		class="filter-overlay fixed inset-0 z-50 bg-black/70 dark:bg-black/80 transition-all duration-300"
 		transition:fade={{ duration: 200 }}
 		on:click={() => (showFilters = false)}
 		on:keydown={handleKeydown}
 	></div>
 	<!-- Drawer -->
 	<div
-		class="fixed top-0 h-screen w-full md:w-[450px] bg-gray-800 z-60 shadow-lg flex flex-col {showFilters
+		class="fixed top-0 h-screen w-full md:w-[450px] bg-gray-800 dark:bg-gray-900 z-60 shadow-lg flex flex-col {showFilters
 			? 'right-0'
 			: '-right-[380px]'} transition-all duration-300 z-50"
 		transition:fly={{ x: 380, duration: 300 }}
 	>
 		<div
-			class="flex justify-between items-center p-4 border-b border-white/10"
+			class="flex justify-between items-center p-4 border-b border-white/10 dark:border-white/10"
 		>
-			<h2 class="m-0 text-xl text-[#FFB700] font-semibold">Filters</h2>
+			<h2 class="m-0 text-xl text-[#FFB700] dark:text-[#FFB700] font-semibold">Filters</h2>
 			<button
-				class="bg-transparent border-none text-white p-1 rounded hover:bg-white/10 transition-colors flex items-center justify-center"
+				class="bg-transparent border-none text-white dark:text-gray-100 p-1 rounded hover:bg-white/10 dark:hover:bg-white/10 transition-colors flex items-center justify-center"
 				on:click={() => (showFilters = false)}
 			>
 				<XIcon size={20} />
@@ -648,10 +648,10 @@
 			{#if selectedSetName || selectedArtistName}
 				<div class="flex flex-wrap gap-2 items-center ml-3">
 					{#if selectedSetName}
-						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-white font-normal text-xs">Set: {selectedSetName}</span>
+						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-white dark:text-gray-100 font-normal text-xs">Set: {selectedSetName}</span>
 					{/if}
 					{#if selectedArtistName}
-						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-white font-normal text-xs">Artist: {selectedArtistName}</span>
+						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-white dark:text-gray-100 font-normal text-xs">Artist: {selectedArtistName}</span>
 					{/if}
 				</div>
 			{/if}
@@ -734,7 +734,7 @@
 		/>
 
 		<div slot="empty">
-			<p class="text-white text-center mt-32 text-2xl">No cards found</p>
+			<p class="text-white dark:text-gray-100 text-center mt-32 text-2xl">No cards found</p>
 		</div>
 	</VirtualGrid>
 </div>

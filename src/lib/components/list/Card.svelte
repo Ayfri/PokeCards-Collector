@@ -131,7 +131,7 @@
 
 <a
 	aria-label={`Go to the card page of ${cardName}`}
-	class="card-link text-white"
+	class="card-link text-white dark:text-gray-100"
 	draggable="false"
 	href={cardLink}
 	rel="dofollow"
@@ -147,22 +147,22 @@
 		{/if}
 		<div class="relative" style="width: {width}px; height: {height}px; max-width: 100%;">
 			{#if user && profile}
-				<div class="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/50 p-1">
+				<div class="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/50 dark:bg-black/60 p-1">
 					{#if collectionCount > 0}
 						<button
 							aria-label="Remove one copy from collection"
-							class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+							class="p-1 hover:bg-white/20 dark:hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 							on:click={handleRemoveCard}
 							disabled={isUpdatingCollection}
 							title="Remove one copy from collection"
 						>
 							<Minus
 								size={Math.min(18, Math.floor(width/16))}
-								class="text-white"
+								class="text-white dark:text-gray-100"
 							/>
 						</button>
 						<span
-							class="text-sm font-semibold text-green-400 px-1 min-w-[1.5ch] text-center select-none"
+							class="text-sm font-semibold text-green-400 dark:text-green-400 px-1 min-w-[1.5ch] text-center select-none"
 							title={`You have ${collectionCount} cop${collectionCount > 1 ? 'ies' : 'y'}`}
 						>
 							{collectionCount}
@@ -170,29 +170,29 @@
 					{/if}
 					<button
 						aria-label="Add one copy to collection"
-						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+						class="p-1 hover:bg-white/20 dark:hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 						on:click={handleAddCard}
 						disabled={isUpdatingCollection || isCollectionLimitReached}
 						title={isCollectionLimitReached ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 					>
 						<Plus
 							size={Math.min(18, Math.floor(width/16))}
-							class={collectionCount > 0 ? 'text-green-400' : 'text-white'}
+							class={collectionCount > 0 ? 'text-green-400 dark:text-green-400' : 'text-white dark:text-gray-100'}
 						/>
 					</button>
 
-					<div class="w-px h-5 bg-white/30 mx-1"></div>
+					<div class="w-px h-5 bg-white/30 dark:bg-white/30 mx-1"></div>
 
 					<button
 						aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+						class="p-1 hover:bg-white/20 dark:hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 						on:click={toggleWishlist}
 						disabled={isUpdatingWishlist}
 						title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
 					>
 						<Heart
 							size={Math.min(18, Math.floor(width/16))}
-							class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'}
+							class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white dark:text-gray-100'}
 						/>
 					</button>
 				</div>
@@ -211,7 +211,7 @@
 			{#if set && set.name && set.name !== 'Unknown Set'}
 				<a href={`/cards-list?set=${encodeURIComponent(set.name)}`} class="absolute bottom-2 left-2 z-10" on:click|stopPropagation aria-label={`View all cards from set ${set.name}`} tabindex="-1">
 					<button
-						class="p-1 bg-black/50 border border-white/70 rounded-full hover:bg-white/20 transition-colors w-8 h-8 flex items-center justify-center"
+						class="p-1 bg-black/50 dark:bg-black/60 border border-white/70 dark:border-white/70 rounded-full hover:bg-white/20 dark:hover:bg-white/20 transition-colors w-8 h-8 flex items-center justify-center"
 						tabindex="-1"
 						type="button"
 						on:click|stopPropagation
@@ -225,7 +225,7 @@
 				</a>
 			{/if}
 		</div>
-		<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-sm rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
+		<div class="card-info-container h-[70px] bg-black/30 dark:bg-black/40 backdrop-blur-sm rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
 			<h2 class="text-center font-bold text-md lg:text-lg text-pretty leading-none flex flex-wrap gap-x-2 items-center justify-center">
 				{cardName}
 				{#if set?.ptcgoCode}
