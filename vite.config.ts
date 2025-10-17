@@ -1,8 +1,7 @@
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
-import path from 'path';
+import {sveltekit} from '@sveltejs/kit/vite';
+import {defineConfig} from 'vite';
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({mode}) => ({
 	plugins: [sveltekit()],
 	build: {
 		minify: true,
@@ -15,22 +14,22 @@ export default defineConfig(({ mode }) => ({
 	// Add Node.js polyfills for Cloudflare compatibility
 	server: {
 		fs: {
-			allow: ['.']
-		}
+			allow: ['.'],
+		},
 	},
 	// Provide empty shims for Node.js built-in modules
 	define: {
-		'process.env': {}
+		'process.env': {},
 	},
 	// Provide empty implementations for Node.js modules that don't work in browsers
 	optimizeDeps: {
 		esbuildOptions: {
 			define: {
-				global: 'globalThis'
-			}
-		}
+				global: 'globalThis',
+			},
+		},
 	},
 	ssr: {
-		noExternal: ['@popperjs/core']
-	}
+		noExternal: ['@popperjs/core'],
+	},
 }));
