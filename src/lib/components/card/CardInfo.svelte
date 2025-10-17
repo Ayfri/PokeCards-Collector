@@ -77,20 +77,20 @@
 	{#if card && user && profile}
 		<div class="flex items-center justify-center gap-2 mb-3">
 			<!-- Collection Buttons -->
-			<div class="flex items-center gap-1 rounded-full bg-gray-700/60 p-1 border border-gray-600 shadow-md">
+			<div class="flex items-center gap-1 rounded-full bg-gray-700/60 dark:bg-gray-800/60 p-1 border border-gray-600 dark:border-gray-700 shadow-md">
 				{#if collectionCount > 0}
 					<button
 						aria-label="Remove one copy from collection"
-						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+						class="p-1 hover:bg-white/20 dark:hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 						on:click={handleRemoveCard}
 						disabled={collectionCount === 0}
 						title="Remove one copy from collection"
 						in:fly={{ y: -5, duration: 200, delay: 100 }}
 					>
-						<Minus size={16} class="text-white" />
+						<Minus size={16} class="text-white dark:text-gray-100" />
 					</button>
 					<span
-						class="text-md font-semibold text-green-400 px-1 min-w-[2ch] text-center select-none"
+						class="text-md font-semibold text-green-400 dark:text-green-400 px-1 min-w-[2ch] text-center select-none"
 						title={`You have ${collectionCount} cop${collectionCount > 1 ? 'ies' : 'y'}`}
 						in:fly={{ y: -5, duration: 200, delay: 150 }}
 					>
@@ -99,29 +99,29 @@
 				{/if}
 				<button
 					aria-label="Add one copy to collection"
-					class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="p-1 hover:bg-white/20 dark:hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 					on:click={handleAddCard}
 					disabled={collectionCount >= MAX_CARD_QUANTITY}
 					title={collectionCount >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 					in:fly={{ y: -5, duration: 200, delay: collectionCount > 0 ? 200: 100 }}
 				>
-					<Plus size={16} class={collectionCount > 0 ? "text-green-400" : "text-white"} />
+					<Plus size={16} class={collectionCount > 0 ? "text-green-400 dark:text-green-400" : "text-white dark:text-gray-100"} />
 				</button>
 			</div>
 
 			<!-- Separator -->
-			<div class="w-px h-6 bg-gray-600 mx-1"></div>
+			<div class="w-px h-6 bg-gray-600 dark:bg-gray-700 mx-1"></div>
 
 			<!-- Wishlist Button -->
-			<div class="flex items-center justify-center rounded-full bg-gray-700/60 p-1 border border-gray-600 shadow-md">
+			<div class="flex items-center justify-center rounded-full bg-gray-700/60 dark:bg-gray-800/60 p-1 border border-gray-600 dark:border-gray-700 shadow-md">
 				<button
 					aria-label={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-					class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="p-1 hover:bg-white/20 dark:hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 					on:click={toggleWishlist}
 					title={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
 					in:fly={{ y: -5, duration: 200, delay: 250 }}
 				>
-					<Heart size={16} class={cardIsWishlisted ? 'text-red-500 fill-red-500' : 'text-white'} />
+					<Heart size={16} class={cardIsWishlisted ? 'text-red-500 fill-red-500' : 'text-white dark:text-gray-100'} />
 				</button>
 			</div>
 		</div>
@@ -132,23 +132,23 @@
 	<div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 w-full mt-4 lg:mt-0 max-w-[1000px]">
 		<!-- Left Column: Card Details -->
 		<div class="flex flex-col">
-			<div class="bg-gray-800 border-2 border-gold-400 rounded-xl p-4 h-full flex flex-col">
-				<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Details</h3>
+			<div class="bg-gray-800 dark:bg-gray-900 border-2 border-gold-400 dark:border-gold-400 rounded-xl p-4 h-full flex flex-col">
+				<h3 class="text-xl text-gold-400 dark:text-gold-400 font-bold mb-3 text-center">Card Details</h3>
 
 				<div class="space-y-2 flex-grow">
 					<!-- Add types as the first item -->
 					{#if card?.types || card?.supertype}
-						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
-							<dt class="font-semibold text-gold-300">Type:</dt>
+						<div class="flex justify-between items-center p-2 bg-gray-900/60 dark:bg-gray-950/60 rounded-lg">
+							<dt class="font-semibold text-gold-300 dark:text-gold-300">Type:</dt>
 							<dd class="flex flex-wrap justify-end gap-1.5">
 								{#if card?.types}
 									{#each card.types.toLowerCase().split(',') as type}
-										<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${type} bg-[var(--type-color)] text-white`}>
+										<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${type} bg-[var(--type-color)] text-white dark:text-gray-100`}>
 											{type}
 										</span>
 									{/each}
 								{:else if card?.supertype}
-									<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${card.supertype.toLowerCase()} text-white`}>
+									<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${card.supertype.toLowerCase()} text-white dark:text-gray-100`}>
 										{card.supertype}
 									</span>
 								{/if}
@@ -157,16 +157,16 @@
 					{/if}
 
 					{#if card.artist !== 'Unknown'}
-						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
-							<dt class="font-semibold text-gold-300">Artist:</dt>
-							<dd class="text-white text-right">
+						<div class="flex justify-between items-center p-2 bg-gray-900/60 dark:bg-gray-950/60 rounded-lg">
+							<dt class="font-semibold text-gold-300 dark:text-gold-300">Artist:</dt>
+							<dd class="text-white dark:text-gray-100 text-right">
 								<a 
 									href="/cards-list?artist={encodeURIComponent(card.artist.toLowerCase())}" 
-									class="hover:text-gold-400 transition-colors underline group"
+									class="hover:text-gold-400 dark:hover:text-gold-400 transition-colors underline group"
 									title="View all cards by this artist"
 								>
 									{card.artist}
-									<span class="text-xs opacity-80 italic ml-1 text-gray-400 group-hover:text-gold-300 transition-colors">(view all)</span>
+									<span class="text-xs opacity-80 italic ml-1 text-gray-400 dark:text-gray-500 group-hover:text-gold-300 dark:group-hover:text-gold-300 transition-colors">(view all)</span>
 								</a>
 							</dd>
 						</div>

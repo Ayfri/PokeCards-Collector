@@ -142,7 +142,7 @@
 	}
 </script>
 
-<div class="bg-gray-800/40 border-gold-400 border-2 rounded-2xl p-6 w-full">
+<div class="bg-gray-800/40 dark:bg-gray-900/40 border-gold-400 border-2 rounded-2xl p-6 w-full">
 	<div class="flex items-center justify-between mb-4">
 		<h2 class="text-xl font-bold text-gold-400">
 			All {titleName} Cards
@@ -275,6 +275,6 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-center text-gray-400">No other related cards found.</p>
+		<p class="text-center text-gray-400 dark:text-gray-500">No other related cards found.</p>
 	{/if}
 </div>
