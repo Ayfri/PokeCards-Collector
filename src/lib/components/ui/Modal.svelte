@@ -34,13 +34,13 @@
 
 {#if open}
 	<div
-		class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center"
+		class="fixed inset-0 z-50 bg-black/70 dark:bg-black/80 flex items-center justify-center"
 		transition:fade={{ duration: 200 }}
 		on:click={onClose}
 		role="presentation"
 	>
 		<div
-			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto modal-content {containerClass} {fullscreen ? 'w-[95vw] h-[95vh] max-w-none max-h-none' : ''}"
+			class="bg-gray-800 dark:bg-gray-900 border border-gray-700 dark:border-gray-600 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto modal-content {containerClass} {fullscreen ? 'w-[95vw] h-[95vh] max-w-none max-h-none' : ''}"
 			transition:transitionFn={transitionParams}
 			on:click|stopPropagation
 			role="dialog"
@@ -51,11 +51,11 @@
 				<div class="flex justify-between items-center mb-4">
 					<slot name="header">
 						{#if title}
-							<h2 id="modal-title" class="text-xl text-gold-400 font-medium">{title}</h2>
+							<h2 id="modal-title" class="text-xl text-gold-400 dark:text-gold-400 font-medium">{title}</h2>
 						{/if}
 					</slot>
 					<button
-						class="text-gray-400 hover:text-white"
+						class="text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-100"
 						on:click={onClose}
 						aria-label="Close modal"
 					>
@@ -64,7 +64,7 @@
 				</div>
 			{/if}
 
-			<div class="modal-body">
+			<div class="modal-body text-white dark:text-gray-100">
 				<slot />
 			</div>
 

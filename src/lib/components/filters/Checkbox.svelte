@@ -17,13 +17,13 @@
 			{disabled}
 			class="appearance-none w-5 h-5 rounded border-2 bg-transparent transition-colors duration-200
 				{checked 
-					? 'border-amber-400 bg-amber-400/20' 
-					: 'border-white hover:border-amber-400'}
-				{disabled ? 'opacity-50 cursor-not-allowed border-gray-600 hover:border-gray-600' : 'cursor-pointer'}"
+					? 'border-amber-400 bg-amber-400/20 dark:border-amber-400 dark:bg-amber-400/20' 
+					: 'border-white hover:border-amber-400 dark:border-gray-600 dark:hover:border-amber-400'}
+				{disabled ? 'opacity-50 cursor-not-allowed border-gray-600 hover:border-gray-600 dark:border-gray-700 dark:hover:border-gray-700' : 'cursor-pointer'}"
 		/>
 		{#if checked}
 			<svg 
-				class="absolute top-0 left-0 w-5 h-5 text-amber-400 pointer-events-none {disabled ? 'text-gray-600' : ''}" 
+				class="absolute top-0 left-0 w-5 h-5 text-amber-400 dark:text-amber-400 pointer-events-none {disabled ? 'text-gray-600 dark:text-gray-700' : ''}" 
 				viewBox="0 0 20 20" 
 				fill="none" 
 				stroke="currentColor" 
@@ -37,8 +37,8 @@
 	</div>
 	<label 
 		for={id} 
-		class="text-sm cursor-pointer select-none {disabled ? 'text-gray-600 cursor-not-allowed' : 'text-white hover:text-amber-400'}"
+		class="text-sm cursor-pointer select-none {disabled ? 'text-gray-600 cursor-not-allowed dark:text-gray-700' : 'text-white hover:text-amber-400 dark:text-gray-100 dark:hover:text-amber-400'}"
 	>
 		{label}
 	</label>
-</div> 
+</div>

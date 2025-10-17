@@ -258,13 +258,13 @@
 
 <div class="relative {mobileMode ? 'flex flex-col w-full' : ''}">
 	<div class="search-container relative">
-		<div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+		<div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 pointer-events-none">
 			<Search size={18} />
 		</div>
 		<input
 			bind:this={inputElement}
 			bind:value={searchQuery}
-			class="bg-black border text-white px-4 py-2 rounded-full w-full outline-none pl-10 pr-10 {mobileMode ? '' : 'pr-24'} transition-all duration-300 ease-in-out {inputFocused ? 'ring-2 ring-gold-400 shadow-lg shadow-gold-400/20 border-transparent' : 'border border-gray-700 hover:border-gray-500'}"
+			class="bg-black dark:bg-gray-900 border text-white dark:text-gray-100 px-4 py-2 rounded-full w-full outline-none pl-10 pr-10 {mobileMode ? '' : 'pr-24'} transition-all duration-300 ease-in-out {inputFocused ? 'ring-2 ring-gold-400 shadow-lg shadow-gold-400/20 border-transparent' : 'border border-gray-700 dark:border-gray-600 hover:border-gray-500 dark:hover:border-gray-500'}"
 			on:focus={handleInputFocus}
 			on:blur={() => inputFocused = false}
 			placeholder="Search cards..."
@@ -272,24 +272,24 @@
 		/>
 		{#if searchQuery.length > 0}
 			<button
-				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white z-10 flex items-center justify-center h-6 w-6"
+				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-100 z-10 flex items-center justify-center h-6 w-6"
 				on:click={handleClearSearch}
 				aria-label="Clear search"
 			>
 				<X size={18} />
 			</button>
 		{:else if !inputFocused && platformModifierKey && !mobileMode}
-			<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 text-xs text-gray-500 pointer-events-none">
-				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded">{platformModifierKey === 'Cmd' ? '⌘' : 'Ctrl'}</kbd>
+			<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-600 pointer-events-none">
+				<kbd class="px-1.5 py-0.5 border border-gray-600 dark:border-gray-700 bg-gray-800 dark:bg-gray-800 rounded">{platformModifierKey === 'Cmd' ? '⌘' : 'Ctrl'}</kbd>
 				<span class="text-base">+</span>
-				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded">K</kbd>
+				<kbd class="px-1.5 py-0.5 border border-gray-600 dark:border-gray-700 bg-gray-800 dark:bg-gray-800 rounded">K</kbd>
 			</div>
 		{/if}
 	</div>
 
 	{#if showResults && searchResults.length > 0}
 		<div
-			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg overflow-y-auto max-h-96 z-[100] border border-gray-700"
+			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black dark:bg-gray-900 rounded-lg shadow-lg overflow-y-auto max-h-96 z-[100] border border-gray-700 dark:border-gray-600"
 			transition:fade={{ duration: 150 }}
 		>
 			{#each searchResults as card (card.cardCode)}
@@ -301,7 +301,7 @@
 
 				<a 
 					href={cardLink}
-					class="block hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700 last:border-b-0 relative"
+					class="block hover:bg-gray-800 dark:hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700 dark:border-gray-600 last:border-b-0 relative"
 					on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
 				>
 					<div class="flex items-center p-3 relative">
@@ -313,12 +313,12 @@
 						/>
 
 						<div class="flex-grow min-w-0 pr-2 flex flex-col">
-							<p class="font-semibold text-white truncate">{card.name}</p>
+							<p class="font-semibold text-white dark:text-gray-100 truncate">{card.name}</p>
 							
 							<div class="flex justify-between items-center mt-1">
 								<div class="flex-grow min-w-0 flex items-center">
-									<p class="text-sm text-gray-400 truncate max-w-[70%]">{set?.name || 'Unknown Set'}</p>
-									<div class="text-xs text-gray-500 text-right ml-1 flex-shrink-0">
+									<p class="text-sm text-gray-400 dark:text-gray-500 truncate max-w-[70%]">{set?.name || 'Unknown Set'}</p>
+									<div class="text-xs text-gray-500 dark:text-gray-600 text-right ml-1 flex-shrink-0">
 										#{cardNumber || '?'}{#if set?.printedTotal}/{set.printedTotal}{/if}
 									</div>
 								</div>
@@ -327,7 +327,7 @@
 									<!-- Button to add to binder storage when on binder page -->
 									<div class="flex-shrink-0 ml-2">
 										<button 
-											class="py-1 px-2 rounded flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white hover:bg-gray-700'} hover:shadow-lg transform hover:translate-y-[-1px]"
+											class="py-1 px-2 rounded flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white dark:hover:text-gray-100 hover:bg-gray-700 dark:hover:bg-gray-700'} hover:shadow-lg transform hover:translate-y-[-1px]"
 											on:click={(e) => {
 												e.preventDefault();
 												e.stopPropagation();

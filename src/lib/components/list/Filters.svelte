@@ -444,10 +444,10 @@
 		<div class="flex flex-col gap-2 md:gap-4">
 			<div class="flex flex-wrap gap-4">
 				<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
-					<label for="sort" class="text-xs text-gray-300">Sort by</label>
+					<label for="sort" class="text-xs text-gray-300 dark:text-gray-400">Sort by</label>
 					<div class="flex items-center gap-2">
 						<Button
-							class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 border-white text-white rounded text-sm h-8 w-10 min-w-10 transition-all duration-300 z-0"
+							class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 border-white dark:border-gray-600 text-white dark:text-gray-100 rounded text-sm h-8 w-10 min-w-10 transition-all duration-300 z-0"
 							onClick={toggleSortDirection}
 						>
 							<span class="relative z-10">
@@ -462,10 +462,10 @@
 							id="sort"
 							on:change={handleSortValueChange}
 							value={sortValueValue}
-							class="bg-transparent border-2 cursor-pointer rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 border-white"
+							class="bg-transparent border-2 cursor-pointer rounded text-white dark:text-gray-100 h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 border-white dark:border-gray-600"
 						>
 							{#each sortOptions as option}
-								<option class="bg-black text-white" value={option.value}>{option.label}</option>
+								<option class="bg-black dark:bg-gray-800 text-white dark:text-gray-100" value={option.value}>{option.label}</option>
 							{/each}
 						</select>
 					</div>
@@ -508,43 +508,43 @@
 	<Section title="Type Filters" bind:isOpen={$filterStates.typeFilters}>
 		<div class="flex flex-wrap gap-2 md:gap-4 sm:flex-row flex-col">
 			<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
-				<label for="supertype" class="text-xs text-gray-300">Card Type</label>
+				<label for="supertype" class="text-xs text-gray-300 dark:text-gray-400">Card Type</label>
 				<select
 					id="supertype"
 					on:change={handleSupertypeChange}
 					value={supertypeValue}
-					class="bg-transparent border-2 cursor-pointer rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {supertypeValue !== 'all' ? 'border-amber-400 text-amber-400' : 'border-white'}"
+					class="bg-transparent border-2 cursor-pointer rounded text-white dark:text-gray-100 h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 {supertypeValue !== 'all' ? 'border-amber-400 text-amber-400 dark:border-amber-400 dark:text-amber-400' : 'border-white dark:border-gray-600'}"
 				>
 					{#each supertypeOptions as option}
-						<option class="bg-black text-white" value={option.value}>{option.label}</option>
+						<option class="bg-black dark:bg-gray-800 text-white dark:text-gray-100" value={option.value}>{option.label}</option>
 					{/each}
 				</select>
 			</div>
 
 			<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
-				<label for="pokemontype" class="text-xs text-gray-300">Pokémon Type</label>
+				<label for="pokemontype" class="text-xs text-gray-300 dark:text-gray-400">Pokémon Type</label>
 				<select
 					id="pokemontype"
 					on:change={handlePokemonTypeChange}
 					value={pokemonTypeValue}
-					class="bg-transparent border-2 cursor-pointer rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {pokemonTypeValue !== 'all' ? 'border-amber-400 text-amber-400' : 'border-white'}"
+					class="bg-transparent border-2 cursor-pointer rounded text-white dark:text-gray-100 h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 {pokemonTypeValue !== 'all' ? 'border-amber-400 text-amber-400 dark:border-amber-400 dark:text-amber-400' : 'border-white dark:border-gray-600'}"
 				>
 					{#each typeOptions as option}
-						<option class="bg-black text-white" value={option.value}>{option.label}</option>
+						<option class="bg-black dark:bg-gray-800 text-white dark:text-gray-100" value={option.value}>{option.label}</option>
 					{/each}
 				</select>
 			</div>
 
 			<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
-				<label for="rarity" class="text-xs text-gray-300">Rarity</label>
+				<label for="rarity" class="text-xs text-gray-300 dark:text-gray-400">Rarity</label>
 				<select
 					id="rarity"
 					on:change={handleRarityChange}
 					value={rarityValue}
-					class="bg-transparent border-2 cursor-pointer rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {rarityValue !== 'all' ? 'border-amber-400 text-amber-400' : 'border-white'}"
+					class="bg-transparent border-2 cursor-pointer rounded text-white dark:text-gray-100 h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 {rarityValue !== 'all' ? 'border-amber-400 text-amber-400 dark:border-amber-400 dark:text-amber-400' : 'border-white dark:border-gray-600'}"
 				>
 					{#each rarityOptions as option}
-						<option class="bg-black text-white" value={option.value}>{option.label}</option>
+						<option class="bg-black dark:bg-gray-800 text-white dark:text-gray-100" value={option.value}>{option.label}</option>
 					{/each}
 				</select>
 			</div>
@@ -554,29 +554,29 @@
 	<Section title="Collection Filters" bind:isOpen={$filterStates.collectionFilters}>
 		<div class="flex flex-wrap gap-2 md:gap-4 sm:flex-row flex-col">
 			<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
-				<label for="set" class="text-xs text-gray-300">Set</label>
+				<label for="set" class="text-xs text-gray-300 dark:text-gray-400">Set</label>
 				<select
 					id="set"
 					on:change={handleSetChange}
 					value={setValue}
-					class="bg-transparent border-2 cursor-pointer rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {setValue !== 'all' ? 'border-amber-400 text-amber-400' : 'border-white'}"
+					class="bg-transparent border-2 cursor-pointer rounded text-white dark:text-gray-100 h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 {setValue !== 'all' ? 'border-amber-400 text-amber-400 dark:border-amber-400 dark:text-amber-400' : 'border-white dark:border-gray-600'}"
 				>
 					{#each setOptions as option}
-						<option class="bg-black text-white" value={option.value}>{option.label}</option>
+						<option class="bg-black dark:bg-gray-800 text-white dark:text-gray-100" value={option.value}>{option.label}</option>
 					{/each}
 				</select>
 			</div>
 
 			<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
-				<label for="artist" class="text-xs text-gray-300">Illustrator</label>
+				<label for="artist" class="text-xs text-gray-300 dark:text-gray-400">Illustrator</label>
 				<select
 					id="artist"
 					on:change={handleArtistChange}
 					value={artistValue}
-					class="bg-transparent border-2 cursor-pointer rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {artistValue !== 'all' ? 'border-amber-400 text-amber-400' : 'border-white'}"
+					class="bg-transparent border-2 cursor-pointer rounded text-white dark:text-gray-100 h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 dark:focus:border-amber-400 {artistValue !== 'all' ? 'border-amber-400 text-amber-400 dark:border-amber-400 dark:text-amber-400' : 'border-white dark:border-gray-600'}"
 				>
 					{#each artistOptions as option}
-						<option class="bg-black text-white" value={option.value}>{option.label}</option>
+						<option class="bg-black dark:bg-gray-800 text-white dark:text-gray-100" value={option.value}>{option.label}</option>
 					{/each}
 				</select>
 			</div>

@@ -8,11 +8,11 @@
 </script>
 
 <button
-	class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 rounded text-sm py-1 px-3 h-8 transition-all duration-300 z-0 hover:text-black
+	class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 rounded text-sm py-1 px-3 h-8 transition-all duration-300 z-0 hover:text-black dark:hover:text-black
 		   {isActive
-			? 'border-[#FFB700] text-[#FFB700]'
-			: 'border-white text-white hover:border-[#FFB700]'}
-		   {disabled ? 'opacity-50 cursor-not-allowed border-gray-600 text-gray-600 hover:text-gray-600 hover:border-gray-600' : ''}
+			? 'border-[#FFB700] text-[#FFB700] dark:border-[#FFB700] dark:text-[#FFB700]'
+			: 'border-white text-white hover:border-[#FFB700] dark:border-gray-600 dark:text-gray-100 dark:hover:border-[#FFB700]'}
+		   {disabled ? 'opacity-50 cursor-not-allowed border-gray-600 text-gray-600 hover:text-gray-600 hover:border-gray-600 dark:border-gray-700 dark:text-gray-700 dark:hover:text-gray-700 dark:hover:border-gray-700' : ''}
 		   {classNames}"
 	on:click={onClick}
 	disabled={disabled}

@@ -14,7 +14,7 @@
 	}
 </script>
 
-<div class="numpad grid grid-cols-3 gap-2 p-3 bg-gray-900 border-2 border-gold-400/50 rounded-lg shadow-xl w-48 md:w-56">
+<div class="numpad grid grid-cols-3 gap-2 p-3 bg-gray-900 dark:bg-gray-950 border-2 border-gold-400/50 dark:border-gold-400/50 rounded-lg shadow-xl w-48 md:w-56">
 	{#each numpadLayout as row}
 		{#each row as key}
 			<button 
@@ -23,7 +23,10 @@
 							hover:bg-gray-700 hover:border-gold-400 
 							focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-gold-400 
 							text-xl md:text-2xl font-semibold transition-all duration-150
-							{key === 'C' || key === 'Backspace' ? 'text-gold-400 hover:text-gold-300' : 'text-gold-300'}"
+							dark:bg-gray-900 dark:text-gold-300 dark:border-gray-600
+							dark:hover:bg-gray-800 dark:hover:border-gold-400
+							dark:focus:ring-offset-gray-950
+							{key === 'C' || key === 'Backspace' ? 'text-gold-400 hover:text-gold-300 dark:text-gold-400 dark:hover:text-gold-300' : 'text-gold-300 dark:text-gold-300'}"
 				on:click={() => onKeyPress(key)}
 			>
 				{getKeyText(key)}

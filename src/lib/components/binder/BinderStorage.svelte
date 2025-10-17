@@ -142,7 +142,7 @@
 		{#if showFilters}
 			<div class="mb-2 p-2 rounded text-sm" transition:slide={{ duration: 200 }}>
 				<div class="flex justify-between items-center mb-1">
-					<span class="text-gray-300">Sort by:</span>
+					<span class="text-gray-300 dark:text-gray-400">Sort by:</span>
 					<Button onClick={toggleSortOrder} class="px-2 py-1 text-xs h-auto"> {#if sortOrder === 'asc'}<ArrowUp size={12} />{:else}<ArrowDown size={12} />{/if} </Button>
 				</div>
 				<div class="grid grid-cols-2 gap-1">
@@ -156,9 +156,9 @@
 	<!-- Card List -->
 	<div class="overflow-y-auto flex-1 pr-1 -mr-1 min-h-0">
 		{#if $cards.length === 0}
-			<p class="text-gray-500 text-center py-4 text-sm">No cards in storage...</p>
+			<p class="text-gray-500 dark:text-gray-600 text-center py-4 text-sm">No cards in storage...</p>
 		{:else if filteredCardCodes.length === 0}
-			<p class="text-gray-500 text-center py-4 text-sm">No items match your search/filters.</p>
+			<p class="text-gray-500 dark:text-gray-600 text-center py-4 text-sm">No items match your search/filters.</p>
 		{:else}
 			<div class="grid grid-cols-2 gap-2">
 				{#each filteredCardCodes as item (item)}
@@ -168,35 +168,35 @@
 						{@const setIndex = parseCardCode(item).cardNumber}
 						{#if fullCard}
 							<div 
-								class="relative aspect-[2/3] border-2 border-gray-700 rounded group transition-all duration-200 hover:border-gold-400"
+								class="relative aspect-[2/3] border-2 border-gray-700 dark:border-gray-600 rounded group transition-all duration-200 hover:border-gold-400 dark:hover:border-gold-400"
 								draggable="true"
 								on:dragstart={(e) => onDragStart(e, item)}
 							>
 								<CardImage imageUrl={fullCard.image} alt={fullCard.name} class="w-full h-full object-contain p-1" lazy={true} highRes={false} />
-								<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-[0.6rem] leading-tight text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">
+								<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 dark:bg-black dark:bg-opacity-80 text-[0.6rem] leading-tight text-white dark:text-gray-100 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">
 									<div class="font-semibold truncate">{fullCard.name}</div>
 									<div class="truncate">#{setIndex}/{set?.printedTotal}</div>
-									<div class="truncate text-gray-300">{fullCard.rarity}</div>
+									<div class="truncate text-gray-300 dark:text-gray-400">{fullCard.rarity}</div>
 								</div>
 								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" on:click={() => removeItem(item)} > <X size={14} /> </button>
 							</div>
 						{:else}
-							<div class="relative aspect-[2/3] border-2 border-dashed border-red-700 rounded flex items-center justify-center text-center p-1">
-								<span class="text-red-400 text-xs">Data missing for {item}</span>
+							<div class="relative aspect-[2/3] border-2 border-dashed border-red-700 dark:border-red-800 rounded flex items-center justify-center text-center p-1">
+								<span class="text-red-400 dark:text-red-500 text-xs">Data missing for {item}</span>
 								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5" on:click={() => removeItem(item)} > <X size={14} /> </button>
 							</div>
 						{/if}
 					{:else} 
 						<!-- Handle URL item -->
 						<div 
-							class="relative aspect-[2/3] border-2 border-gray-700 rounded group transition-all duration-200 hover:border-gold-400"
+							class="relative aspect-[2/3] border-2 border-gray-700 dark:border-gray-600 rounded group transition-all duration-200 hover:border-gold-400 dark:hover:border-gold-400"
 							draggable="true"
 							on:dragstart={(e) => onDragStart(e, item)}
 						>
 							<CardImage imageUrl={item} alt="Imported from URL" class="w-full h-full object-contain p-1" lazy={true} highRes={false} />
-							<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-[0.6rem] leading-tight text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">
+							<div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 dark:bg-black dark:bg-opacity-80 text-[0.6rem] leading-tight text-white dark:text-gray-100 p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">
 								<div class="font-semibold truncate">Imported from URL</div>
-								<div class="truncate text-gray-300 break-all">{item}</div> 
+								<div class="truncate text-gray-300 dark:text-gray-400 break-all">{item}</div> 
 							</div>
 							<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" on:click={() => removeItem(item)} > <X size={14} /> </button>
 						</div>

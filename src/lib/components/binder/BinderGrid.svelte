@@ -129,7 +129,7 @@
 			{#each Array($rows * $columns) as _, index (index)} 
 				{@const card = index < $binderCards.length ? $binderCards[index] : null}
 				<div 
-					class="relative binder-cell justify-self-center w-full border border-gray-700 rounded-sm hover:border-gray-600 {card ? 'bg-gray-900' : 'bg-gray-800/50'}"
+					class="relative binder-cell justify-self-center w-full border border-gray-700 dark:border-gray-600 rounded-sm hover:border-gray-600 dark:hover:border-gray-500 {card ? 'bg-gray-900 dark:bg-gray-800' : 'bg-gray-800/50 dark:bg-gray-900/50'}"
 					style="aspect-ratio: 2.5 / 3.5;"
 					role="gridcell"
 					tabindex="0"
@@ -160,7 +160,7 @@
 							</button>
 						</div>
 					{:else}
-						<div class="absolute inset-0 flex items-center justify-center text-gray-600 text-xs text-center pointer-events-none">
+						<div class="absolute inset-0 flex items-center justify-center text-gray-600 dark:text-gray-700 text-xs text-center pointer-events-none">
 							Drop here
 						</div>
 					{/if}
