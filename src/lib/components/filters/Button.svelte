@@ -5,6 +5,8 @@
 		onClick: () => void;
 		disabled?: boolean;
 		class?: string;
+		/** Tooltip, and the accessible name when the button holds only an icon. */
+		title?: string;
 		children?: import('svelte').Snippet;
 	}
 
@@ -13,9 +15,10 @@
 		onClick,
 		disabled = false,
 		class: classNames = '',
+		title = '',
 		children
 	}: Props = $props();
-	
+
 </script>
 
 <button
@@ -27,6 +30,8 @@
 		   {classNames}"
 	onclick={onClick}
 	disabled={disabled}
+	title={title || undefined}
+	aria-label={title || undefined}
 >
 	<span class="relative z-10 flex items-center gap-2">{@render children?.()}</span>
 </button>

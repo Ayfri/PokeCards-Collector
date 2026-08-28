@@ -1,16 +1,15 @@
 <script lang="ts">
+	import ChevronUpIcon from '@lucide/svelte/icons/chevron-up';
+
 	let { onclick }: { onclick: () => void } = $props();
 </script>
 
 <button
-	class="fixed right-3 lg:right-6 bottom-20 xs:bottom-24 lg:bottom-24 size-12 z-30 opacity-50 border-white border-solid border-2 rounded-full bg-black fill-white p-2 cursor-pointer transition-all ease-in-out duration-300 hover:scale-110 hover:opacity-100"
+	class="fixed right-3 lg:right-6 bottom-20 xs:bottom-24 lg:bottom-24 size-12 z-30 opacity-50 border-white border-solid border-2 rounded-full bg-black text-white p-2 cursor-pointer transition-all ease-in-out duration-300 hover:scale-110 hover:opacity-100 flex items-center justify-center"
 	id="scroll-top-btn"
 	{onclick}
 	aria-label="Scroll to top"
+	title="Scroll to top"
 >
-	<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-		<path
-			d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"
-		/>
-	</svg>
+	<ChevronUpIcon size={24} />
 </button>

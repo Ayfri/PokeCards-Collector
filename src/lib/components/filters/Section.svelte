@@ -21,6 +21,7 @@
 		onclick={() => (isOpen = !isOpen)}
 		aria-expanded={isOpen}
 		aria-controls={panelId}
+		title={isOpen ? `Collapse ${title}` : `Expand ${title}`}
 	>
 		<h3 class="text-[0.9rem] font-semibold m-0 text-amber-400">{title}</h3>
 		<div class:rotate-180={isOpen} class="transition-transform duration-300">

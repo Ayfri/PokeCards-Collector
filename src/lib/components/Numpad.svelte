@@ -1,4 +1,7 @@
 <script lang="ts">
+	import DeleteIcon from '@lucide/svelte/icons/delete';
+	import EraserIcon from '@lucide/svelte/icons/eraser';
+
 	interface Props {
 		onKeyPress: (key: string) => void;
 	}
@@ -12,25 +15,34 @@
 		['C', '0', 'Backspace']
 	];
 
-	function getKeyText(key: string): string {
-		if (key === 'Backspace') return '⌫';
-		return key;
+	function getKeyLabel(key: string): string {
+		if (key === 'Backspace') return 'Delete the last digit';
+		if (key === 'C') return 'Clear the guess';
+		return `Type ${key}`;
 	}
 </script>
 
 <div class="numpad grid grid-cols-3 gap-2 p-3 bg-gray-900 border-2 border-gold-400/50 rounded-lg shadow-xl w-48 md:w-56">
 	{#each numpadLayout as row}
 		{#each row as key}
-			<button 
-				class="numpad-button flex items-center justify-center h-12 md:h-14 
-							bg-gray-800 text-gold-300 rounded-md border border-gray-700 
-							hover:bg-gray-700 hover:border-gold-400 
-							focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-gold-400 
+			<button
+				class="numpad-button flex items-center justify-center h-12 md:h-14
+							bg-gray-800 text-gold-300 rounded-md border border-gray-700
+							hover:bg-gray-700 hover:border-gold-400
+							focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-gold-400
 							text-xl md:text-2xl font-semibold transition-all duration-150
 							{key === 'C' || key === 'Backspace' ? 'text-gold-400 hover:text-gold-300' : 'text-gold-300'}"
 				onclick={() => onKeyPress(key)}
+				aria-label={getKeyLabel(key)}
+				title={getKeyLabel(key)}
 			>
-				{getKeyText(key)}
+				{#if key === 'Backspace'}
+					<DeleteIcon size={22} />
+				{:else if key === 'C'}
+					<EraserIcon size={20} />
+				{:else}
+					{key}
+				{/if}
 			</button>
 		{/each}
 	{/each}
@@ -41,4 +53,4 @@
 		transform: scale(0.95);
 		background-color: var(--color-gray-600); /* Darker active state */
 	}
-</style> 
+</style>

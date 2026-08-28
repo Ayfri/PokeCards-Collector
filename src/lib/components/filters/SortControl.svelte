@@ -23,6 +23,7 @@
 		<Button
 			class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 border-white text-white rounded-sm text-sm h-8 w-10 min-w-10 transition-all duration-300 z-0"
 			onClick={toggleSortDirection}
+			title={sortDirection === 'asc' ? 'Sorted ascending, click for descending' : 'Sorted descending, click for ascending'}
 		>
 			<span class="relative z-10">
 				{#if sortDirection === 'asc'}

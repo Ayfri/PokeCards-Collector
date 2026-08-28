@@ -33,8 +33,9 @@
 				class:text-black={$cardSize === index}
 				class:text-gray-400={$cardSize !== index}
 				class:hover:bg-gray-600={$cardSize !== index}
-				aria-label={`Set grid size to {name}`}
+				aria-label={`Set grid size to ${name}`}
 				aria-pressed={$cardSize === index}
+				title={`Set grid size to ${name}`}
 			>
 				<span class="text-xs font-medium">{name}</span>
 			</button>
@@ -42,7 +43,7 @@
 	</div>
 
 	<div class="flex items-center relative">
-		<div class="text-white/80 flex items-center">
+		<div class="text-white/80 flex items-center" title="Card size in the grid">
 			<Grid2x2Icon size={18} />
 		</div>
 		{#if $isUpdating}

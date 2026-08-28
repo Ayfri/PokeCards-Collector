@@ -76,6 +76,7 @@
 						class="text-gray-400 hover:text-white"
 						onclick={onClose}
 						aria-label="Close modal"
+						title="Close (Esc)"
 					>
 						<XIcon size={20} />
 					</button>
