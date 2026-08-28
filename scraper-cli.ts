@@ -1,278 +1,227 @@
 #!/usr/bin/env bun
 
 import { select } from '@inquirer/prompts';
+import { parseArgs } from 'node:util';
 import { styleText } from 'node:util';
-import { downloadAllImages } from './src/scrapers/download_images.js';
-import { fetchAndSaveAllCards } from './src/scrapers/card_fetcher.js';
-import { fetchHoloCards } from './src/scrapers/holo_scraper.js';
 import { fetchPokemons } from './src/scrapers/pokemon_scraper.js';
-import { fetchPokemonTypes } from './src/scrapers/types_scraper.js';
-import { fetchSets } from './src/scrapers/set_fetcher.js';
-import { getCardMasks } from './src/scrapers/foil_scraper.js';
-import { fetchTCGCollectorCards } from './src/scrapers/jap_cards_scraper.js';
-import { fetchJapaneseSets } from './src/scrapers/jap_sets_scraper.js';
+import { auditTcgdex } from './src/scrapers/tcgdex/audit.js';
+import type { Language } from './src/scrapers/tcgdex/mappers.js';
+import { verifyFiles } from './src/scrapers/tcgdex/verify.js';
+import { scrapeToFiles } from './src/scrapers/tcgdex/write.js';
 
-interface ScraperOption {
-    name: string;
-    description: string;
-    action: () => Promise<void>;
+interface Options {
+	dryRun: boolean;
+	json: boolean;
+	langs: Language[];
+	offline: boolean;
+	quiet: boolean;
+	target?: string;
 }
 
-const baseScrapers: ScraperOption[] = [
-    {
-        name: 'cards',
-        description: 'Fetch all Pokémon cards and prices from TCG API',
-        action: fetchAndSaveAllCards
-    },
-    {
-        name: 'japanese-cards',
-        description: 'Scrape Japanese card data from tcgcollector.com',
-        action: fetchTCGCollectorCards
-    },
-    {
-        name: 'sets',
-        description: 'Fetch all card sets from TCG API',
-        action: fetchSets
-    },
-    {
-        name: 'japanese-sets',
-        description: 'Fetch all card sets from jp-cards-full.json',
-        action: fetchJapaneseSets
-    },
-    {
-        name: 'download-images',
-        description: 'Download low-res card images based on cards-full.json',
-        action: downloadAllImages
-    },
-    {
-        name: 'pokemons',
-        description: 'Fetch all Pokémon data from PokéAPI',
-        action: fetchPokemons
-    },
-    {
-        name: 'foil',
-        description: 'Generate foil URLs for holo cards',
-        action: getCardMasks
-    },
-    {
-        name: 'holo',
-        description: 'Extract holographic cards from cards dataset',
-        action: fetchHoloCards
-    },
-    {
-        name: 'types',
-        description: 'Extract all Pokémon types from cards dataset',
-        action: fetchPokemonTypes
-    },
-];
+interface Command {
+	name: string;
+	description: string;
+	flags?: string;
+	run: (options: Options) => Promise<unknown>;
+}
 
-const uploadFilesTask = {
-	name: 'upload-files',
-	description: 'Upload all default files to R2 bucket (Cloudflare)',
-	action: async () => {
-		try {
-			const { uploadFileForCli, filesToUpload } = await import('./src/scrapers/upload.js');
-			const path = await import('node:path');
-			for (const filePath of filesToUpload) {
-				const objectName = path.basename(filePath);
-				try {
-					await uploadFileForCli(filePath, objectName, { env: process.env as Record<string, any>, contentType: 'application/json' });
-					console.log(`Uploaded: ${filePath}`);
-				} catch (error) {
-					console.error(`Failed to upload: ${filePath}`, error);
-				}
-			}
-			console.log('All uploads complete!');
-		} catch (error) {
-			console.error('Upload failed:', error);
-		}
-	}
+const dim = (text: string) => styleText('gray', text);
+const bold = (text: string) => styleText('bold', text);
+const accent = (text: string) => styleText('cyan', text);
+
+function heading(text: string): void {
+	console.log(`\n${styleText(['bgCyan', 'black', 'bold'], ` ${text} `)}`);
+}
+
+function row(label: string, value: string | number): void {
+	console.log(`  ${dim(`${label.padEnd(18)}`)} ${value}`);
+}
+
+const SUPABASE_TARGETS = ['all', 'types', 'pokemons', 'sets', 'jp-sets', 'cards', 'jp-cards', 'prices', 'jp-prices'] as const;
+type SupabaseTarget = (typeof SUPABASE_TARGETS)[number];
+
+const SUPABASE_UPLOADERS: Record<SupabaseTarget, string> = {
+	'all': 'uploadAllData',
+	'types': 'uploadTypes',
+	'pokemons': 'uploadPokemons',
+	'sets': 'uploadSets',
+	'jp-sets': 'uploadJapaneseSets',
+	'cards': 'uploadCards',
+	'jp-cards': 'uploadJapaneseCards',
+	'prices': 'uploadPrices',
+	'jp-prices': 'uploadJapanesePrices',
 };
 
-// Supabase upload tasks
-const supabaseUploadTasks: ScraperOption[] = [
+const commands: Command[] = [
 	{
-		name: 'supabase-all',
-		description: 'Upload all JSON data to Supabase (types, pokemons, sets, cards, jp-cards, prices)',
-		action: async () => {
-			const { uploadAllData } = await import('./src/scrapers/supabase_uploader.js');
-			await uploadAllData();
-		}
+		name: 'scrape',
+		description: 'Fetch cards, prices and sets from TCGdex into src/assets/',
+		flags: '--lang en,ja  --dry-run',
+		run: async ({ dryRun, langs }) => {
+			const results = await scrapeToFiles(langs, { write: !dryRun });
+			heading('scrape');
+			for (const [lang, result] of Object.entries(results)) {
+				row(`${lang} cards`, `${result.cards.length} ${dim(`(${Object.keys(result.prices).length} priced, ${result.sets.length} sets)`)}`);
+			}
+			if (dryRun) console.log(dim('  dry run: src/assets/ untouched'));
+			return Object.fromEntries(Object.entries(results).map(([lang, result]) => [lang, { cards: result.cards.length, prices: Object.keys(result.prices).length, sets: result.sets.length }]));
+		},
 	},
 	{
-		name: 'supabase-types',
-		description: 'Upload Pokémon types to Supabase',
-		action: async () => {
-			const { uploadTypes } = await import('./src/scrapers/supabase_uploader.js');
-			await uploadTypes();
-		}
+		name: 'audit',
+		description: 'Rebuild set-aliases.json / card-code-overrides.json and report what stops resolving',
+		flags: '--dry-run',
+		run: async ({ dryRun }) => {
+			heading('audit');
+			await auditTcgdex(!dryRun);
+		},
 	},
 	{
-		name: 'supabase-pokemons',
-		description: 'Upload Pokémon data to Supabase',
-		action: async () => {
-			const { uploadPokemons } = await import('./src/scrapers/supabase_uploader.js');
-			await uploadPokemons();
-		}
+		name: 'verify',
+		description: 'Check the scraped JSON for card_code collisions and unresolved owned cards',
+		flags: '--offline  --json',
+		run: async ({ offline }) => {
+			const report = await verifyFiles(!offline);
+			heading('verify');
+			for (const file of report.files) {
+				const collisions = file.collisions === 0 ? styleText('green', 'no collisions') : styleText('red', `${file.collisions} collisions`);
+				row(file.lang, `${file.cards} cards, ${file.sets} sets, ${file.priced} priced ${dim('|')} ${collisions}`);
+			}
+			if (!offline) {
+				const status = report.missing.length === 0 ? styleText('green', 'all resolve') : styleText('yellow', `${report.missing.length} unresolved`);
+				row('owned codes', `${report.owned} ${dim('|')} ${status}`);
+				for (const code of report.missing) console.log(`    ${styleText('yellow', '·')} ${code}`);
+			}
+			return report;
+		},
 	},
 	{
-		name: 'supabase-sets',
-		description: 'Upload card sets to Supabase',
-		action: async () => {
-			const { uploadSets } = await import('./src/scrapers/supabase_uploader.js');
-			await uploadSets();
-		}
+		name: 'pokemons',
+		description: 'Fetch Pokédex names and descriptions from PokéAPI',
+		run: async () => {
+			await fetchPokemons();
+		},
 	},
 	{
-		name: 'supabase-jp-sets',
-		description: 'Upload Japanese card sets to Supabase',
-		action: async () => {
-			const { uploadJapaneseSets } = await import('./src/scrapers/supabase_uploader.js');
-			await uploadJapaneseSets();
-		}
+		name: 'supabase',
+		description: `Upload scraped JSON to Supabase (${SUPABASE_TARGETS.join(', ')})`,
+		flags: '<target>',
+		run: async ({ target }) => {
+			const chosen = (target ?? 'all') as SupabaseTarget;
+			if (!SUPABASE_TARGETS.includes(chosen)) throw new Error(`Unknown supabase target "${chosen}". Expected one of: ${SUPABASE_TARGETS.join(', ')}`);
+			heading(`supabase ${chosen}`);
+			const uploader = await import('./src/scrapers/supabase_uploader.js') as Record<string, () => Promise<void>>;
+			await uploader[SUPABASE_UPLOADERS[chosen]]();
+		},
 	},
 	{
-		name: 'supabase-cards',
-		description: 'Upload cards to Supabase',
-		action: async () => {
-			const { uploadCards } = await import('./src/scrapers/supabase_uploader.js');
-			await uploadCards();
-		}
+		name: 'upload',
+		description: 'Upload the JSON assets to the R2 bucket',
+		run: async () => {
+			const { uploadFileForCli, filesToUpload } = await import('./src/scrapers/upload.js');
+			const path = await import('node:path');
+			heading('upload');
+			for (const filePath of filesToUpload) {
+				try {
+					await uploadFileForCli(filePath, path.basename(filePath), { env: process.env as Record<string, any>, contentType: 'application/json' });
+					row(path.basename(filePath), styleText('green', 'uploaded'));
+				} catch (error) {
+					row(path.basename(filePath), styleText('red', (error as Error).message));
+				}
+			}
+		},
 	},
 	{
-		name: 'supabase-jp-cards',
-		description: 'Upload Japanese cards to Supabase',
-		action: async () => {
-			const { uploadJapaneseCards } = await import('./src/scrapers/supabase_uploader.js');
-			await uploadJapaneseCards();
-		}
+		name: 'all',
+		description: 'scrape, then pokemons, then push everything to Supabase',
+		flags: '--lang en,ja  --dry-run',
+		run: async options => {
+			for (const name of ['scrape', 'pokemons', 'supabase']) {
+				const command = commands.find(entry => entry.name === name)!;
+				await runCommand(command, { ...options, target: 'all' });
+			}
+		},
 	},
-	{
-		name: 'supabase-prices',
-		description: 'Upload prices to Supabase',
-		action: async () => {
-			const { uploadPrices } = await import('./src/scrapers/supabase_uploader.js');
-			await uploadPrices();
-		}
+];
+
+function usage(): void {
+	console.log(`
+${bold('Pokémon data scraper')} ${dim('- TCGdex -> src/assets/ -> Supabase')}
+
+  ${dim('$')} bun run scrapers ${accent('<command>')} [options]
+  ${dim('$')} bun run scrapers               ${dim('# interactive menu')}
+
+${bold('Commands')}
+${commands.map(command => `  ${accent(command.name.padEnd(10))} ${command.description}${command.flags ? `\n  ${' '.repeat(10)} ${dim(command.flags)}` : ''}`).join('\n')}
+
+${bold('Options')}
+  ${accent('--lang <list>')}   languages to scrape, comma separated ${dim('(default: en,ja)')}
+  ${accent('--dry-run')}       run everything but write no file
+  ${accent('--offline')}       skip the Supabase round-trip in ${accent('verify')}
+  ${accent('--json')}          print the raw report instead of the pretty one
+  ${accent('--quiet, -q')}     only print the final summary
+  ${accent('--help, -h')}      this screen
+`);
+}
+
+async function runCommand(command: Command, options: Options): Promise<unknown> {
+	const started = performance.now();
+	const log = console.log;
+	if (options.quiet) console.log = () => {};
+	try {
+		const result = await command.run(options);
+		console.log = log;
+		if (options.json && result !== undefined) console.log(JSON.stringify(result, null, '\t'));
+		else console.log(dim(`  done in ${((performance.now() - started) / 1000).toFixed(1)}s`));
+		return result;
+	} catch (error) {
+		console.log = log;
+		console.error(`${styleText(['bgRed', 'white', 'bold'], ` ${command.name} failed `)} ${(error as Error).message}`);
+		process.exitCode = 1;
 	}
-];
+}
 
-baseScrapers.push(uploadFilesTask);
-baseScrapers.push(...supabaseUploadTasks);
-// baseScrapers.sort((a, b) => a.name.localeCompare(b.name))
+async function main(): Promise<void> {
+	const { values, positionals } = parseArgs({
+		allowPositionals: true,
+		options: {
+			'dry-run': { type: 'boolean', default: false },
+			'help': { type: 'boolean', short: 'h', default: false },
+			'json': { type: 'boolean', default: false },
+			'lang': { type: 'string', default: 'en,ja' },
+			'offline': { type: 'boolean', default: false },
+			'quiet': { type: 'boolean', short: 'q', default: false },
+		},
+	});
 
-const scrapers: ScraperOption[] = [
-    {
-        name: 'default',
-        description: 'Run cards, sets, and merge-sets scrapers in sequence',
-        action: async () => {
-            const defaultScrapers = [
-                baseScrapers.find(s => s.name === 'cards'),
-                baseScrapers.find(s => s.name === 'sets'),
-                baseScrapers.find(s => s.name === 'merge-sets')
-            ].filter(Boolean);
+	if (values.help) return usage();
 
-            for (const scraper of defaultScrapers) {
-                if (!scraper) continue;
-                console.log(styleText('yellow', `Running ${scraper.name} scraper...`));
-                try {
-                    await scraper.action();
-                    console.log(styleText('green', `✓ ${scraper.name} scraper completed successfully!`));
-                } catch (error) {
-                    console.error(styleText('red', `✗ Error running ${scraper.name} scraper:`), error);
-                }
-            }
-        }
-    },
-    {
-        name: 'all',
-        description: 'Run all scrapers sequentially (excluding image download)',
-        action: async () => {
-            // Define a specific order of scrapers to run
-            const scrapersInOrder = [
-                baseScrapers.find(s => s.name === 'sets'),
-                baseScrapers.find(s => s.name === 'cards'),
-                baseScrapers.find(s => s.name === 'merge-sets'),
-                ...baseScrapers.filter(s =>
-                    s.name !== 'sets' &&
-                    s.name !== 'cards' &&
-                    s.name !== 'merge-sets' &&
-                    s.name !== 'download-images' &&
-                    !s.name.startsWith('supabase')
-                )
-            ].filter(Boolean);
+	const options: Options = {
+		dryRun: values['dry-run'],
+		json: values.json,
+		langs: values.lang.split(',').map(lang => lang.trim()).filter(Boolean) as Language[],
+		offline: values.offline,
+		quiet: values.quiet,
+		target: positionals[1],
+	};
 
-            for (const scraper of scrapersInOrder) {
-                if (!scraper) continue;
-                console.log(styleText('yellow', `Running ${scraper.name} scraper...`));
-                try {
-                    await scraper.action();
-                    console.log(styleText('green', `✓ ${scraper.name} scraper completed successfully!`));
-                } catch (error) {
-                    console.error(styleText('red', `✗ Error running ${scraper.name} scraper:`), error);
-                }
-            }
-        }
-    },
-    {
-        name: 'supabase',
-        description: 'Choose specific Supabase upload tasks',
-        action: async () => {
-            const supabaseChoice = await select({
-                message: 'Choose a Supabase upload task:',
-                choices: supabaseUploadTasks.map(scraper => ({
-                    name: `${styleText('blue', scraper.name)} - ${scraper.description}`,
-                    value: scraper.name,
-                })),
-            });
+	const name = positionals[0] ?? await select({
+		message: 'Choose a command:',
+		choices: commands.map(command => ({ name: `${accent(command.name)} ${dim('-')} ${command.description}`, value: command.name })),
+	});
 
-            const selectedSupabaseScraper = supabaseUploadTasks.find(scraper => scraper.name === supabaseChoice);
-            if (selectedSupabaseScraper) {
-                console.log(styleText('yellow', `Running ${selectedSupabaseScraper.name}...`));
-                try {
-                    await selectedSupabaseScraper.action();
-                    console.log(styleText('green', `✓ ${selectedSupabaseScraper.name} completed successfully!`));
-                } catch (error) {
-                    console.error(styleText('red', `✗ Error running ${selectedSupabaseScraper.name}:`), error);
-                }
-            }
-        }
-    },
-    ...baseScrapers
-];
+	const command = commands.find(entry => entry.name === name);
+	if (!command) {
+		console.error(styleText('red', `Unknown command "${name}"`));
+		usage();
+		process.exitCode = 1;
+		return;
+	}
 
-async function main() {
-    console.log(styleText(['blue', 'bold'], '=== Pokémon Data Scraper CLI ==='));
-    console.log(styleText('gray', 'Select a scraper to run:'));
-
-    const choice = await select({
-        message: 'Choose a scraper to run:',
-        choices: scrapers.map(scraper => ({
-            name: `${styleText('green', scraper.name)} - ${scraper.description}`,
-            value: scraper.name,
-        })),
-    });
-
-    const selectedScraper = scrapers.find(scraper => scraper.name === choice);
-
-    if (selectedScraper) {
-        if (selectedScraper.name === 'all') {
-            await selectedScraper.action();
-        } else {
-            console.log(styleText('yellow', `Running ${selectedScraper.name} scraper...`));
-            try {
-                await selectedScraper.action();
-                console.log(styleText('green', `✓ ${selectedScraper.name} scraper completed successfully!`));
-            } catch (error) {
-                console.error(styleText('red', `✗ Error running ${selectedScraper.name} scraper:`), error);
-            }
-        }
-    } else {
-        console.error(styleText('red', 'Invalid selection'));
-    }
+	await runCommand(command, options);
 }
 
 main().catch(error => {
-    console.error(styleText('red', 'Fatal error:'), error);
-    process.exit(1);
+	console.error(styleText('red', 'Fatal error:'), error);
+	process.exit(1);
 });

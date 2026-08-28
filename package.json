@@ -16,7 +16,6 @@
 		"@sveltejs/adapter-cloudflare": "^7.2.9",
 		"@sveltejs/kit": "^2.70.3",
 		"countup.js": "^2.10.1",
-		"node-html-parser": "^9.0.2",
 		"pako": "^3.0.1",
 		"svelte": "^5.56.10",
 		"vanilla-colorful": "^0.7.2"
@@ -26,7 +25,6 @@
 		"@sveltejs/vite-plugin-svelte": "^7.3.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/node": "^26.4.0",
-		"sharp": "^0.35.4",
 		"svelte-check": "^4.7.6",
 		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.3",
