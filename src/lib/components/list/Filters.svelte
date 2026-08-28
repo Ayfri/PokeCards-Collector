@@ -85,167 +85,85 @@
 		$mostExpensiveOnly = value;
 	}, 300);
 
-	// Handle changes to the supertype filter with URL updates
+	/**
+	 * Writes one filter param to the URL and navigates without a reload, keeping the focused control focused.
+	 * A falsy `param` value (or `all`) drops the parameter instead of setting it.
+	 */
+	function applyFilterParam(param: string, value: string | null) {
+		const url = new URL(page.url);
+		if (value) {
+			url.searchParams.set(param, value);
+		} else {
+			url.searchParams.delete(param);
+		}
+
+		const focusedId = (document.activeElement as HTMLElement | null)?.id;
+
+		goto(url.toString(), { replaceState: true }).then(() => {
+			if (focusedId) document.querySelector<HTMLElement>(`#${focusedId}`)?.focus();
+			onUpdate();
+		});
+	}
+
+	// Maps the internal supertype value to the shorter URL parameter value.
+	const SUPERTYPE_URL_VALUES: Record<string, string> = {
+		'pokémon': 'pokemon',
+		trainer: 'trainer',
+		energy: 'energy'
+	};
+
 	function handleSupertypeChange(event: Event) {
-		const target = event.target as HTMLSelectElement;
-		const value = target.value;
-		
-		// Update the store value
+		const value = (event.target as HTMLSelectElement).value;
 		$filterSupertype = value;
 		supertypeValue = value;
-		
-		// Update URL with type parameter
-		const url = new URL(page.url);
-		
-		// Map the internal value to the URL parameter value
-		const typeMap: Record<string, string> = {
-			'pokémon': 'pokemon',
-			'trainer': 'trainer',
-			'energy': 'energy'
-		};
-		
-		if (value !== 'all') {
-			url.searchParams.set('type', typeMap[value] || value);
-		} else {
-			url.searchParams.delete('type');
-		}
-		
-		// Keep existing parameters
-		const preserveParams = ['set', 'artist', 'name', 'pokemontype', 'sortby', 'sortorder'];
-		preserveParams.forEach(param => {
-			const paramValue = page.url.searchParams.get(param);
-			if (paramValue) {
-				url.searchParams.set(param, paramValue);
-			}
-		});
-
-		// Save active element to restore focus
-		const activeElement = document.activeElement as HTMLElement;
-		const activeElementId = activeElement?.id;
-		
-		goto(url.toString(), { replaceState: true }).then(() => {
-			// Restore focus after navigation
-			if (activeElementId === 'supertype') {
-				const selectElement = document.getElementById('supertype') as HTMLSelectElement;
-				if (selectElement) {
-					selectElement.focus();
-				}
-			}
-			
-			// Trigger layout update if necessary
-			onUpdate();
-		});
+		applyFilterParam('type', value === 'all' ? null : SUPERTYPE_URL_VALUES[value] || value);
 	}
 
-	// Handle changes to the Pokémon Type filter with URL updates
 	function handlePokemonTypeChange(event: Event) {
-		const target = event.target as HTMLSelectElement;
-		const value = target.value;
-		
-		// Update the store value
+		const value = (event.target as HTMLSelectElement).value;
 		$filterType = value;
 		pokemonTypeValue = value;
-		
-		// Update URL with pokemontype parameter
-		const url = new URL(page.url);
-		
-		if (value !== 'all') {
-			url.searchParams.set('pokemontype', value);
-		} else {
-			url.searchParams.delete('pokemontype');
-		}
-		
-		// Keep existing parameters
-		const preserveParams = ['set', 'artist', 'name', 'type', 'sortby', 'sortorder'];
-		preserveParams.forEach(param => {
-			const paramValue = page.url.searchParams.get(param);
-			if (paramValue) {
-				url.searchParams.set(param, paramValue);
-			}
-		});
-
-		// Save active element to restore focus
-		const activeElement = document.activeElement as HTMLElement;
-		const activeElementId = activeElement?.id;
-		
-		goto(url.toString(), { replaceState: true }).then(() => {
-			// Restore focus after navigation
-			if (activeElementId === 'pokemontype') {
-				const selectElement = document.getElementById('pokemontype') as HTMLSelectElement;
-				if (selectElement) {
-					selectElement.focus();
-				}
-			}
-			
-			// Trigger layout update if necessary
-			onUpdate();
-		});
+		applyFilterParam('pokemontype', value === 'all' ? null : value);
 	}
 
-	// Handle sort value change
 	function handleSortValueChange(event: Event) {
-		const target = event.target as HTMLSelectElement;
-		const value = target.value;
-		
-		// Update the store value
+		const value = (event.target as HTMLSelectElement).value;
 		$sortBy = value;
 		sortValueValue = value;
-		
-		// Update URL with sortby parameter
-		const url = new URL(page.url);
-		url.searchParams.set('sortby', value);
-		
-		// Keep existing parameters
-		const preserveParams = ['set', 'artist', 'name', 'type', 'pokemontype', 'sortorder'];
-		preserveParams.forEach(param => {
-			const paramValue = page.url.searchParams.get(param);
-			if (paramValue) {
-				url.searchParams.set(param, paramValue);
-			}
-		});
-
-		// Save active element to restore focus
-		const activeElement = document.activeElement as HTMLElement;
-		const activeElementId = activeElement?.id;
-		
-		goto(url.toString(), { replaceState: true }).then(() => {
-			// Restore focus after navigation
-			if (activeElementId === 'sort') {
-				const selectElement = document.getElementById('sort') as HTMLSelectElement;
-				if (selectElement) {
-					selectElement.focus();
-				}
-			}
-			
-			// Trigger layout update if necessary
-			onUpdate();
-		});
+		applyFilterParam('sortby', value);
 	}
 
-	// Handle sort direction change
 	function toggleSortDirection() {
-		// Toggle the sort direction
 		const newDirection = sortDirectionValue === 'asc' ? 'desc' : 'asc';
 		$sortOrder = newDirection;
 		sortDirectionValue = newDirection;
-		
-		// Update URL with sortorder parameter
-		const url = new URL(page.url);
-		url.searchParams.set('sortorder', newDirection);
-		
-		// Keep existing parameters
-		const preserveParams = ['set', 'artist', 'name', 'type', 'pokemontype', 'sortby'];
-		preserveParams.forEach(param => {
-			const paramValue = page.url.searchParams.get(param);
-			if (paramValue) {
-				url.searchParams.set(param, paramValue);
-			}
-		});
-		
-		goto(url.toString(), { replaceState: true }).then(() => {
-			// Trigger layout update if necessary
-			onUpdate();
-		});
+		applyFilterParam('sortorder', newDirection);
+	}
+
+	function handleRarityChange(event: Event) {
+		const value = (event.target as HTMLSelectElement).value;
+		$filterRarity = value;
+		rarityValue = value;
+		applyFilterParam('rarity', value === 'all' ? null : value);
+	}
+
+	function handleArtistChange(event: Event) {
+		const value = (event.target as HTMLSelectElement).value;
+		$filterArtist = value;
+		artistValue = value;
+		applyFilterParam('artist', value === 'all' ? null : value);
+	}
+
+	function handleSetChange(event: Event) {
+		const value = (event.target as HTMLSelectElement).value;
+		$filterSet = value;
+		setValue = value;
+		applyFilterParam('set', value === 'all' ? null : value);
+	}
+
+	function toggleMostExpensiveOnly() {
+		$mostExpensiveOnly = !$mostExpensiveOnly;
+		applyFilterParam('mostexpensive', $mostExpensiveOnly ? 'true' : null);
 	}
 
 	// Options for sorting
@@ -268,189 +186,26 @@
 	];
 
 	// Prepare options for types, rarities, sets and illustrators
-	let artistOptions = $derived([
+	const artistOptions = $derived([
 		{ value: 'all', label: 'All illustrators' },
 		...artists.map(artist => ({ value: artist.toLowerCase(), label: artist }))
 	]);
 
-	let rarityOptions = $derived([
+	const rarityOptions = $derived([
 		{ value: 'all', label: 'All rarities' },
 		...rarities.map(rarity => ({ value: rarity.toLowerCase(), label: rarity }))
 	]);
 
-	let setOptions = $derived([
+	const setOptions = $derived([
 		{ value: 'all', label: 'All sets' },
 		...sets.map(set => ({ value: set.name.toLowerCase(), label: set.name }))
 	]);
 
-	let typeOptions = $derived([
+	const typeOptions = $derived([
 		{ value: 'all', label: 'All types' },
 		...types.map(type => ({ value: type.toLowerCase(), label: type }))
 	]);
 	
-	function handleRarityChange(event: Event) {
-		const target = event.target as HTMLSelectElement;
-		const value = target.value;
-		
-		// Update the store value
-		$filterRarity = value;
-		rarityValue = value;
-		
-		// Update URL with rarity parameter
-		const url = new URL(page.url);
-		
-		if (value !== 'all') {
-			url.searchParams.set('rarity', value);
-		} else {
-			url.searchParams.delete('rarity');
-		}
-		
-		// Keep existing parameters
-		const preserveParams = ['set', 'artist', 'name', 'type', 'pokemontype', 'sortby', 'sortorder', 'mostexpensive'];
-		preserveParams.forEach(param => {
-			const paramValue = page.url.searchParams.get(param);
-			if (paramValue) {
-				url.searchParams.set(param, paramValue);
-			}
-		});
-
-		// Save active element to restore focus
-		const activeElement = document.activeElement as HTMLElement;
-		const activeElementId = activeElement?.id;
-		
-		goto(url.toString(), { replaceState: true }).then(() => {
-			// Restore focus after navigation
-			if (activeElementId === 'rarity') {
-				const selectElement = document.getElementById('rarity') as HTMLSelectElement;
-				if (selectElement) {
-					selectElement.focus();
-				}
-			}
-			
-			// Trigger layout update if necessary
-			onUpdate();
-		});
-	}
-
-	// Handle artist change with URL update
-	function handleArtistChange(event: Event) {
-		const target = event.target as HTMLSelectElement;
-		const value = target.value;
-		
-		// Update the store value
-		$filterArtist = value;
-		artistValue = value;
-		
-		// Update URL with artist parameter
-		const url = new URL(page.url);
-		
-		if (value !== 'all') {
-			url.searchParams.set('artist', value);
-		} else {
-			url.searchParams.delete('artist');
-		}
-		
-		// Keep existing parameters
-		const preserveParams = ['set', 'name', 'type', 'pokemontype', 'sortby', 'sortorder', 'mostexpensive', 'rarity'];
-		preserveParams.forEach(param => {
-			const paramValue = page.url.searchParams.get(param);
-			if (paramValue) {
-				url.searchParams.set(param, paramValue);
-			}
-		});
-
-		// Save active element to restore focus
-		const activeElement = document.activeElement as HTMLElement;
-		const activeElementId = activeElement?.id;
-		
-		goto(url.toString(), { replaceState: true }).then(() => {
-			// Restore focus after navigation
-			if (activeElementId === 'artist') {
-				const selectElement = document.getElementById('artist') as HTMLSelectElement;
-				if (selectElement) {
-					selectElement.focus();
-				}
-			}
-			
-			// Trigger layout update if necessary
-			onUpdate();
-		});
-	}
-
-	// Handle set change with URL update
-	function handleSetChange(event: Event) {
-		const target = event.target as HTMLSelectElement;
-		const value = target.value;
-		
-		// Update the store value
-		$filterSet = value;
-		setValue = value;
-		
-		// Update URL with set parameter
-		const url = new URL(page.url);
-		
-		if (value !== 'all') {
-			url.searchParams.set('set', value);
-		} else {
-			url.searchParams.delete('set');
-		}
-		
-		// Keep existing parameters
-		const preserveParams = ['artist', 'name', 'type', 'pokemontype', 'sortby', 'sortorder', 'mostexpensive', 'rarity'];
-		preserveParams.forEach(param => {
-			const paramValue = page.url.searchParams.get(param);
-			if (paramValue) {
-				url.searchParams.set(param, paramValue);
-			}
-		});
-
-		// Save active element to restore focus
-		const activeElement = document.activeElement as HTMLElement;
-		const activeElementId = activeElement?.id;
-		
-		goto(url.toString(), { replaceState: true }).then(() => {
-			// Restore focus after navigation
-			if (activeElementId === 'set') {
-				const selectElement = document.getElementById('set') as HTMLSelectElement;
-				if (selectElement) {
-					selectElement.focus();
-				}
-			}
-			
-			// Trigger layout update if necessary
-			onUpdate();
-		});
-	}
-	
-	// Handle toggle for "Most Expensive Only" with URL update
-	function toggleMostExpensiveOnly() {
-		// Toggle the value
-		const newValue = !$mostExpensiveOnly;
-		$mostExpensiveOnly = newValue;
-		
-		// Update URL
-		const url = new URL(page.url);
-		
-		if (newValue) {
-			url.searchParams.set('mostexpensive', 'true');
-		} else {
-			url.searchParams.delete('mostexpensive');
-		}
-		
-		// Keep existing parameters
-		const preserveParams = ['set', 'artist', 'name', 'type', 'pokemontype', 'sortby', 'sortorder', 'rarity'];
-		preserveParams.forEach(param => {
-			const paramValue = page.url.searchParams.get(param);
-			if (paramValue) {
-				url.searchParams.set(param, paramValue);
-			}
-		});
-		
-		goto(url.toString(), { replaceState: true }).then(() => {
-			// Trigger layout update if necessary
-			onUpdate();
-		});
-	}
 </script>
 
 <div class="w-full">
