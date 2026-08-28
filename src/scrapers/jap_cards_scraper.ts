@@ -255,7 +255,7 @@ async function scrapeCardData(url: string): Promise<Card | null> {
 			.find(div => div.text.includes('Illustrators'));
 
 		if (illustratorTitleDiv) {
-			const illustratorLink = illustratorTitleDiv.parentNode.querySelector("a[href*='illustrator=']");
+			const illustratorLink = illustratorTitleDiv.parentNode?.querySelector("a[href*='illustrator=']");
 			if (illustratorLink) {
 				card.illustrator = illustratorLink.text.trim();
 			}

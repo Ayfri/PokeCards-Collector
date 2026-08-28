@@ -1,5 +1,5 @@
 import { S3, PutObjectCommand, type PutObjectCommandInput } from '@aws-sdk/client-s3';
-import pako from 'pako';
+import * as pako from 'pako';
 
 export interface R2Env {
 	accessKeyId: string;
