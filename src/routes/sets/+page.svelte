@@ -7,7 +7,6 @@
 	import TextInput from '@components/filters/TextInput.svelte';
 	import { persistentWritable } from '$stores/persistentStore';
 	import type { SetWithPrice } from '$lib/types';
-	import { debounce } from '$helpers/debounce';
 
 	interface Props {
 		data: PageData;
@@ -23,9 +22,9 @@
 	// Reactive declaration for typedSets using data.sets
 	const typedSets = $derived(data.setsWithPrices);
 
-	const debouncedSetSearchTerm = debounce((value: string) => {
+	function setSearchTerm(value: string) {
 		searchTerm = value;
-	}, 300);
+	}
 
 	// Reactive effect to update sortedSets when dependencies change
 	const sortedSets = $derived.by(() => {
@@ -117,7 +116,7 @@
 					label="Search"
 					bind:value={searchTerm}
 					placeholder="Search sets..."
-					debounceFunction={debouncedSetSearchTerm}
+					debounceFunction={setSearchTerm}
 				/>
 			</div>
 			<SortControl

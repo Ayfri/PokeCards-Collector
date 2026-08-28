@@ -6,7 +6,6 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import type { Card, Set } from '$lib/types';
-	import { debounce } from '$helpers/debounce';
 	import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 	import { fade, fly } from 'svelte/transition';
 
@@ -31,9 +30,9 @@
     // Search state
     let searchTerm = $state('');
 
-    const debouncedSetSearchTerm = debounce((value: string) => {
+    function setSearchTerm(value: string) {
         searchTerm = value;
-    }, 300);
+    }
 	// --- Data Processing Functions ---
 
 	// Groups cards by artist.
@@ -225,7 +224,7 @@
                     label="Search"
                     bind:value={searchTerm}
                     placeholder="Search artists..."
-                    debounceFunction={debouncedSetSearchTerm}
+                    debounceFunction={setSearchTerm}
                 />
             </div>
 			<SortControl

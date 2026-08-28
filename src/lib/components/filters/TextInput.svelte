@@ -25,7 +25,7 @@
 		placeholder = "",
 		autocomplete = undefined,
 		debounceFunction = () => {},
-		debounceDelay = 300,
+		debounceDelay = 120,
 		type = "text",
 		onInput = () => {},
 		onKeydown = () => {},

@@ -73,13 +73,13 @@
 		onUpdate();
 	});
 
-	const debouncedSetFilterNumero = debounce((value: string) => {
+	function setFilterNumero(value: string) {
 		$filterNumero = value;
-	}, 300);
+	}
 
-	const debouncedSetFilterName = debounce((value: string) => {
+	function setFilterName(value: string) {
 		$filterName = value;
-	}, 300);
+	}
 
 	const debouncedSetMostExpensiveOnly = debounce((value: boolean) => {
 		$mostExpensiveOnly = value;
@@ -248,7 +248,7 @@
 					label="Name"
 					bind:value={searchName}
 					placeholder="Search by name..."
-					debounceFunction={debouncedSetFilterName}
+					debounceFunction={setFilterName}
 				/>
 			</div>
 
@@ -258,7 +258,7 @@
 					label="ID"
 					bind:value={searchNumero}
 					placeholder="Enter card ID..."
-					debounceFunction={debouncedSetFilterNumero}
+					debounceFunction={setFilterNumero}
 				/>
 			</div>
 

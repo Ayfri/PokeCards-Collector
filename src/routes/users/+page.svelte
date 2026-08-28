@@ -28,7 +28,6 @@
 	let searchQuery = $state('');
 	let searchResults: SearchedUserWithStats[] = $state([]);
 	let isLoadingSearch = $state(false);
-	let debounceTimer: ReturnType<typeof setTimeout>;
 	let isInitialSearchState = $state(true);
 	let searchErrorMessage = $state('');
 
@@ -77,10 +76,7 @@
 	}
 
 	function handleSearchInput() {
-		clearTimeout(debounceTimer);
-		debounceTimer = setTimeout(() => {
-			performSearchUsers();
-		}, 300);
+		performSearchUsers();
 	}
 
 	function viewProfile(username: string) {
