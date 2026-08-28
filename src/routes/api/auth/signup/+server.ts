@@ -2,13 +2,26 @@ import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import type { RequestHandler } from './$types';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_SERVICE_ROLE_KEY } from '$env/static/public';
+import { readJson, type ApiError } from '$helpers/http';
+
+interface SignupBody {
+	email?: string;
+	password?: string;
+	username?: string;
+}
+
+/** User row returned by the Supabase admin users endpoint. */
+interface AdminUser {
+	email?: string;
+	id: string;
+}
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		// 1. Récupérer et valider les données
-		let userData;
+		let userData: SignupBody;
 		try {
-			userData = await request.json();
+			userData = await request.json() as SignupBody;
 		} catch (parseError) {
 			return json({
 				success: false,
@@ -98,7 +111,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		// 4. Créer l'utilisateur
-		let authData;
+		let authData: { user: AdminUser | null };
 		let authError;
 
 		try {
@@ -119,19 +132,11 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			if (!createUserResponse.ok) {
 				// En cas d'erreur, essayer de lire le corps pour plus de détails
-				let errorBody = { message: 'Unknown error' }; // Default error object
-				let errorMessage = 'Unknown error during user creation';
-				try {
-					errorBody = await createUserResponse.json();
-					// Check for Supabase specific error messages or codes if available in the body
-					if (errorBody.message && errorBody.message.toLowerCase().includes('email address already registered')) {
-						errorMessage = 'This email address is already registered.';
-					} else if (errorBody.message) {
-						errorMessage = errorBody.message;
-					}
-				} catch (e) {
-					// Failed to parse JSON body, use status text if available
-					errorMessage = createUserResponse.statusText || 'Unknown error during user creation';
+				const errorBody = await readJson<ApiError>(createUserResponse, {});
+				let errorMessage = errorBody.message || createUserResponse.statusText || 'Unknown error during user creation';
+				// Check for Supabase specific error messages or codes if available in the body
+				if (errorBody.message?.toLowerCase().includes('email address already registered')) {
+					errorMessage = 'This email address is already registered.';
 				}
 
 				// Check specifically for the 422 status which often indicates email exists
@@ -146,10 +151,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			}
 
 			// Lire les données de l'utilisateur créé
-			const userData = await createUserResponse.json();
-
 			authData = {
-				user: userData
+				user: await createUserResponse.json() as AdminUser
 			};
 			authError = null;
 		} catch (createError) {
@@ -222,12 +225,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 			if (!profileResponse.ok) {
 				// En cas d'erreur, essayer de lire le corps pour plus de détails
-				let errorBody;
-				try {
-					errorBody = await profileResponse.json();
-				} catch (e) {
-					errorBody = { message: 'Unknown error' };
-				}
+				const errorBody = await readJson<ApiError>(profileResponse, {});
 
 				// Si la création du profil échoue, essayer de supprimer l'utilisateur
 				try {

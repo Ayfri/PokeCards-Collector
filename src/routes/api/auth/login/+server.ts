@@ -2,7 +2,7 @@ import { json, error as svelteKitError, type RequestHandler } from '@sveltejs/ki
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
-		const { email, password } = await request.json();
+		const { email, password } = await request.json() as { email?: string; password?: string };
 
 		if (!email || !password) {
 			throw svelteKitError(400, 'Email and password are required');

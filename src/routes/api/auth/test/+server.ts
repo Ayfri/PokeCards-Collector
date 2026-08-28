@@ -3,6 +3,11 @@ import type { RequestHandler } from './$types';
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY, PUBLIC_SUPABASE_SERVICE_ROLE_KEY } from '$env/static/public';
 
+interface TestRequestBody {
+	action?: string;
+	username?: string;
+}
+
 // Endpoint de test simple pour vérifier que l'API fonctionne
 export const GET: RequestHandler = async () => {
 	try {
@@ -88,7 +93,7 @@ export const GET: RequestHandler = async () => {
 // Endpoint de test qui accepte des données
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const data = await request.json();
+		const data = await request.json() as TestRequestBody;
 
 		// Test spécial pour vérifier la connexion à Supabase
 		if (data.action === 'check_supabase') {
