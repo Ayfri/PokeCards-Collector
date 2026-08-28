@@ -22,14 +22,6 @@ export default defineConfig(({mode}) => ({
 	define: {
 		'process.env': {},
 	},
-	// Provide empty implementations for Node.js modules that don't work in browsers
-	optimizeDeps: {
-		esbuildOptions: {
-			define: {
-				global: 'globalThis',
-			},
-		},
-	},
 	ssr: {
 		noExternal: ['@popperjs/core'],
 	},

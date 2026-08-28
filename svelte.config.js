@@ -3,13 +3,9 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
-	compilerOptions: {
-		dev: process.env.NODE_ENV === 'development',
-		immutable: true,
-	},
 	onwarn: (warning, handler) => {
-		// Ignorer les warnings d'accessibilité
-		if (warning.code.startsWith('a11y-')) {
+		// Ignore a11y warnings
+		if (warning.code.startsWith('a11y_')) {
 			return;
 		}
 		handler(warning);
