@@ -3,10 +3,19 @@ compatibility_date = "2026-08-28"
 compatibility_flags = ["nodejs_compat"]
 main = ".svelte-kit/cloudflare/_worker.js"
 
+# Deploying overwrites the dashboard settings with this file, so what was set there lives here now.
+workers_dev = true
+preview_urls = true
+
 # Wrangler owns the DNS record for this hostname since the Pages project released it.
 [[routes]]
 pattern = "pokecards-collector.ayfri.com"
 custom_domain = true
+zone_name = "ayfri.com"
+
+# Runtime var, kept so a deploy stops wiping it; pinning the build image's Bun needs a *build* variable instead.
+[vars]
+BUN_VERSION = "1.4.0"
 
 [assets]
 directory = ".svelte-kit/cloudflare"
