@@ -5,7 +5,8 @@ import { error } from '@sveltejs/kit';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
-	const { sets, prices, ...layoutData } = await parent(); // Destructure sets and prices from parent
+	const { sets, streamed, ...layoutData } = await parent();
+	const prices = await streamed.prices; // Prices are streamed by the root layout
 
 	// Load all Japanese cards
 	const allJpCards = await getJapaneseCards(); // Renamed to avoid conflict if allCards was from parent
@@ -26,8 +27,6 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	if (card.pokemonNumber) {
 		pokemonCards = allJpCards.filter(c => c.pokemonNumber === card.pokemonNumber);
 	}
-	
-	// sets and prices are from layoutData now
 	
 	// Page-specific SEO data
 	const pageSeoData = {

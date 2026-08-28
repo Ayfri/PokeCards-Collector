@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { supabase } from '$lib/supabase';
 import { getCollectionStats } from '$lib/services/collections';
-import type { UserProfile, Card, Set, PriceData } from '$lib/types';
+import type { UserProfile } from '$lib/types';
 
 interface FeaturedUser extends UserProfile {
 	card_count: number;
@@ -9,7 +9,9 @@ interface FeaturedUser extends UserProfile {
 }
 
 export const load: PageServerLoad = async ({ parent }) => {
-	const { allCards, sets, prices } = await parent() as { allCards: Card[], sets: Set[], prices: Record<string, PriceData> };
+	const { sets, streamed } = await parent();
+	// Cards and prices are streamed by the root layout, the collection stats need them resolved.
+	const [allCards, prices] = await Promise.all([streamed.allCards, streamed.prices]);
 	let featuredUsers: FeaturedUser[] = [];
 	let featuredUsersError: string | null = null;
 
@@ -29,9 +31,9 @@ export const load: PageServerLoad = async ({ parent }) => {
 			const profilesWithStatsPromises = publicProfiles.map(async (profile) => {
 				const { data: stats, error: statsServiceError } = await getCollectionStats(
 					profile.username,
-					allCards || [],
-					sets || [],
-					prices || {}
+					allCards,
+					sets,
+					prices
 				);
 
 				let cardCount = 0;
