@@ -24,26 +24,46 @@ const CARD_COLUMNS = `
 	variants
 `;
 
+/**
+ * The columns a card list reads. `getCards` returns every card in the table, so the seven columns nothing
+ * renders (`hp`, `legal_standard`, `local_id`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`) are dead
+ * weight in a payload the browser has to parse before the grid can paint.
+ */
+const CARD_LIST_COLUMNS = `
+	card_code,
+	artist,
+	card_market_updated_at,
+	card_market_url,
+	image,
+	name,
+	pokemon_id,
+	rarity,
+	set_id,
+	set_name,
+	supertype,
+	types
+`;
+
 interface CardRow {
 	card_code: string;
 	artist: string | null;
-	card_market_updated_at: string | null;
+	card_market_updated_at?: string | null;
 	card_market_url: string | null;
-	hp: number | null;
+	hp?: number | null;
 	image: string | null;
-	legal_standard: boolean | null;
-	local_id: string | null;
+	legal_standard?: boolean | null;
+	local_id?: string | null;
 	name: string;
 	pokemon_id: number | null;
 	rarity: string | null;
-	regulation_mark: string | null;
+	regulation_mark?: string | null;
 	set_id: string | null;
 	set_name: string | null;
-	stage: string | null;
+	stage?: string | null;
 	supertype: string | null;
-	tcgdex_id: string | null;
+	tcgdex_id?: string | null;
 	types: string | null;
-	variants: FullCard['variants'];
+	variants?: FullCard['variants'];
 }
 
 interface PriceRow {
@@ -75,25 +95,32 @@ interface SetRow {
 }
 
 function toCard(card: CardRow): FullCard {
-	return {
+	const listCard: FullCard = {
 		artist: card.artist || '',
 		cardCode: card.card_code,
 		cardMarketUpdatedAt: card.card_market_updated_at || '',
 		cardMarketUrl: card.card_market_url || '',
-		hp: card.hp ?? undefined,
 		image: card.image || '',
-		legalStandard: card.legal_standard ?? false,
-		localId: card.local_id || '',
 		name: card.name,
 		pokemonNumber: card.pokemon_id ?? undefined,
 		rarity: card.rarity || '',
-		regulationMark: card.regulation_mark || '',
 		setId: card.set_id || '',
 		setName: card.set_name || '',
-		stage: card.stage || '',
 		supertype: card.supertype || '',
-		tcgdexId: card.tcgdex_id || '',
 		types: card.types || '',
+	};
+
+	// A list read selects `CARD_LIST_COLUMNS`, so the detail-only keys stay off the object instead of shipping 23546 empty values.
+	if (!('hp' in card)) return listCard;
+
+	return {
+		...listCard,
+		hp: card.hp ?? undefined,
+		legalStandard: card.legal_standard ?? false,
+		localId: card.local_id || '',
+		regulationMark: card.regulation_mark || '',
+		stage: card.stage || '',
+		tcgdexId: card.tcgdex_id || '',
 		variants: card.variants ?? null,
 	};
 }
@@ -195,12 +222,12 @@ export async function getPokemons(): Promise<Pokemon[]> {
 }
 
 export async function getCards(): Promise<FullCard[]> {
-	const data = await getAllData<CardRow>('cards', 'card_code', CARD_COLUMNS, { column: 'name', ascending: true });
+	const data = await getAllData<CardRow>('cards', 'card_code', CARD_LIST_COLUMNS, { column: 'name', ascending: true });
 	return data.map(toCard);
 }
 
 export async function getJapaneseCards(): Promise<FullCard[]> {
-	const data = await getAllData<CardRow>('jp_cards', 'card_code', CARD_COLUMNS, { column: 'name', ascending: true });
+	const data = await getAllData<CardRow>('jp_cards', 'card_code', CARD_LIST_COLUMNS, { column: 'name', ascending: true });
 	return data.map(toCard);
 }
 
