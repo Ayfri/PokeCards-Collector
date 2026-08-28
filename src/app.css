@@ -1,13 +1,40 @@
-@import './styles/colors.css';
+@import './styles/colors.css' layer(base);
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
-@layer components {
-	.scrollbar-hide {
-		scrollbar-width: none;
-	}
+@theme {
+  --font-*: initial;
+  --font-clash: Clash Display, sans-serif;
+
+  --color-gold-400: #fbc54a;
+
+  --color-gray-400: #aeaeae;
+  --color-gray-800: #232323;
+
+  --breakpoint-xs: 420px;
+  --breakpoint-2xs: 350px;
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility scrollbar-hide {
+  scrollbar-width: none;
 }
 
 html {
