@@ -1,85 +1,53 @@
 import type { PageServerLoad } from './$types';
 import type { Card, PriceData, Set } from '$lib/types';
 
-// Helper function to get a random card and its details
-function getCardDetails(card: Card, prices: Record<string, PriceData>, allSets: Set[]) {
-	if (!card) return null;
-	const cardPriceDetails = prices[card.cardCode];
-	const price = cardPriceDetails?.simple ?? cardPriceDetails?.trend ?? null;
-	const cardSet = allSets.find(s => s.name === card.setName);
-	const releaseDate = cardSet ? cardSet.releaseDate : null;
-	return {
-		card,
-		price,
-		releaseDate
-	};
+/** One playable card: the art to show, the price to guess and the set date shown as a hint. */
+export interface Round {
+	card: Card;
+	price: number;
+	releaseDate: Date | null;
+}
+
+/** Below this the guess is a coin flip between 0 and 2, so cheap bulk never gets drawn. */
+const MIN_PRICE = 3;
+
+/** Rounds handed over per load. Re-running this load re-reads every card and price, so one batch buys ~20 instant turns. */
+const BATCH_SIZE = 20;
+
+/** Cardmarket's `simple` value is the one the card page shows, so the game asks for that and falls back to the trend. */
+function gamePrice(price: PriceData | undefined): number | null {
+	return price?.simple ?? price?.trend ?? null;
 }
 
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
 	const allCards: Card[] = (await parentData.streamed.allCards) || [];
 	const prices: Record<string, PriceData> = (await parentData.streamed.prices) || {};
-	const allSets: Set[] = parentData.sets || [];
+	const sets: Set[] = parentData.sets || [];
 
-	const suitableCards = allCards.filter(card => {
-		const cardPriceInfo = prices[card.cardCode];
-		if (!cardPriceInfo) {
-			return false;
-		}
-		// Determine the price to be used for the game
-		const gamePrice = cardPriceInfo.simple ?? cardPriceInfo.trend;
+	// The whole game is guessing from the picture, so a card TCGdex has no art for is unplayable.
+	const playable: { card: Card; price: number }[] = [];
+	for (const card of allCards) {
+		if (!card.image) continue;
+		const price = gamePrice(prices[card.cardCode]);
+		if (price === null || price < MIN_PRICE) continue;
+		playable.push({ card, price });
+	}
 
-		// Card must have a price, and that price must be >= $3
-		return gamePrice !== undefined && gamePrice !== null && gamePrice >= 3;
+	if (!playable.length) {
+		return { rounds: [], error: `No card with artwork and a price of ${MIN_PRICE} EUR or more.` };
+	}
+
+	const releaseDates = new Map(sets.map(set => [set.name, set.releaseDate]));
+	const picked = new Set<number>();
+	while (picked.size < Math.min(BATCH_SIZE, playable.length)) {
+		picked.add(Math.floor(Math.random() * playable.length));
+	}
+
+	const rounds: Round[] = [...picked].map(index => {
+		const { card, price } = playable[index];
+		return { card, price, releaseDate: releaseDates.get(card.setName) ?? null };
 	});
 
-	if (suitableCards.length === 0) {
-		return {
-			...parentData,
-			allCards,
-			prices,
-			currentCard: null,
-			currentCardPrice: null,
-			currentReleaseDate: null,
-			nextCard: null,
-			nextCardPrice: null,
-			nextReleaseDate: null,
-			error: 'No cards found with a price of $3 or more.'
-		};
-	}
-
-	let currentCardData = null;
-	let nextCardData = null;
-
-	// Select first random card
-	const firstIndex = Math.floor(Math.random() * suitableCards.length);
-	const firstCard = suitableCards[firstIndex];
-	currentCardData = getCardDetails(firstCard, prices, allSets);
-
-	// Select a second, different random card if possible
-	if (suitableCards.length > 1) {
-		let secondIndex;
-		do {
-			secondIndex = Math.floor(Math.random() * suitableCards.length);
-		} while (secondIndex === firstIndex);
-		const secondCard = suitableCards[secondIndex];
-		nextCardData = getCardDetails(secondCard, prices, allSets);
-	} else {
-		// Not enough cards for a 'next' card, or it might be the same if only one exists
-		// To ensure nextCard is truly for a *different* upcoming card, set to null if only one suitable card.
-		nextCardData = null;
-	}
-
-	return {
-		...parentData,
-		allCards,
-		prices,
-		currentCard: currentCardData?.card || null,
-		currentCardPrice: currentCardData?.price || null,
-		currentReleaseDate: currentCardData?.releaseDate || null,
-		nextCard: nextCardData?.card || null,
-		nextCardPrice: nextCardData?.price || null,
-		nextReleaseDate: nextCardData?.releaseDate || null,
-		error: null
-	};
-}; 
+	return { rounds, error: null };
+};

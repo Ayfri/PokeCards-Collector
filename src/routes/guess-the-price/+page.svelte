@@ -1,361 +1,264 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { enhance } from '$app/forms';
+	import type { Round } from './+page.server';
 	import { invalidateAll } from '$app/navigation';
-	import type { Card } from '$lib/types'; // Assuming Card type is needed for local state
-	import Numpad from '$lib/components/Numpad.svelte'; // Import Numpad
-	import PageTitle from '$lib/components/PageTitle.svelte'; // Import PageTitle
+	import CardImage from '@components/card/CardImage.svelte';
+	import Numpad from '$lib/components/Numpad.svelte';
+	import PageTitle from '$lib/components/PageTitle.svelte';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import GemIcon from '@lucide/svelte/icons/gem';
 	import LibraryIcon from '@lucide/svelte/icons/library';
 	import RotateCwIcon from '@lucide/svelte/icons/rotate-cw';
+	import { backOut, cubicOut } from 'svelte/easing';
+	import { fly, scale } from 'svelte/transition';
 
 	interface Props {
 		data: PageData;
 	}
 
+	interface Verdict {
+		/** Tailwind text colour for the headline. */
+		color: string;
+		correct: boolean;
+		headline: string;
+		price: number;
+	}
+
 	let { data }: Props = $props();
 
-	// Local state for the currently displayed card details
-	let displayedCard: Card | null = $state(null);
-	let displayedCardPrice: number | null = $state(null);
-	let displayedReleaseDate: Date | null = $state(null);
+	/**
+	 * The load hands over a whole batch, so a turn costs nothing but a shift off the queue. Only the initial value is
+	 * read: a background refill must not swap the card out from under the player.
+	 */
+	// svelte-ignore state_referenced_locally
+	let queue = $state<Round[]>(data.rounds.slice(1));
+	// svelte-ignore state_referenced_locally
+	let round = $state<Round | null>(data.rounds[0] ?? null);
+	let guess = $state('');
+	let verdict = $state<Verdict | null>(null);
+	let refilling = $state(false);
 
-	let guessString: string = $state('');
-	let message: string = $state('');
-	let feedbackColor: string = $state('');
-	let showConfetti: boolean = $state(false);
-	let guessSubmitted: boolean = $state(false); // True after a guess is made, false after Play Again
-	let isLoadingNextCard: boolean = $state(false); // True while invalidateAll from checkGuess is running
+	const releaseDate = $derived(round?.releaseDate ? new Date(round.releaseDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unknown');
+	const answered = $derived(verdict !== null);
 
-	let dataSnapshotForLoadingCheck: PageData | null = null; // Reference of the last `data` seen, to detect the prop update
+	/** The two gold plates the ripple animates, invisible until the animation classes are added, the second half a cycle behind. */
+	const RIPPLE =
+		"before:content-[''] before:absolute before:left-1/2 before:top-1/2 before:size-full before:rounded-[inherit] before:bg-gold-400 before:opacity-0 " +
+		"after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:size-full after:rounded-[inherit] after:bg-gold-400 after:opacity-0 after:[animation-delay:1.1s]";
 
-	// Initialize displayed card data on initial load
-	// This runs once when the component mounts and `data` is first available.
-	// Subsequent updates to displayedCard are handled by playAgain.
-	$effect(() => {
-		if (data.currentCard && !displayedCard) { // Only set if displayedCard is not yet set
-			displayedCard = data.currentCard;
-			displayedCardPrice = data.currentCardPrice;
-			displayedReleaseDate = data.currentReleaseDate ? new Date(data.currentReleaseDate) : null;
-			// Initial game state reset
-			message = '';
-			guessString = ''; // Reset guessString
-			showConfetti = false;
-			guessSubmitted = false;
-		} else if (!data.currentCard && !displayedCard && data.error) {
-			// Handle initial error from server if no card is loaded
-			message = data.error;
-			feedbackColor = 'text-red-400';
-		}
-	});
-
-	// Reactive block to manage loading state after checkGuess initiates a fetch
-	$effect(() => {
-		if (isLoadingNextCard && data !== dataSnapshotForLoadingCheck) {
-			isLoadingNextCard = false;
-			dataSnapshotForLoadingCheck = data; // Update snapshot for the next cycle
-		}
-	});
-
-	function handleNumpadKeyPress(key: string) {
-		if (guessSubmitted) return; // Don't allow input after submission
-
-		if (key === 'Backspace') {
-			guessString = guessString.slice(0, -1);
-		} else if (key === 'C') {
-			guessString = '';
-		} else if (key === '.') { 
-			// This case should ideally not be reached if decimal point is removed from numpad
-			// and input filtering is in place. But as a safeguard:
-			return; 
-		} else { // Digit from Numpad
-			guessString += key;
-		}
+	function typeDigit(key: string) {
+		if (answered) return;
+		if (key === 'Backspace') guess = guess.slice(0, -1);
+		else if (key === 'C') guess = '';
+		else if (guess.length < 6) guess += key;
 	}
 
-	// Function to handle manual input and filter non-digits
-	function handleGuessInput(event: Event) {
-		if (guessSubmitted) return;
-		const inputElement = event.target as HTMLInputElement;
-		// Replace any non-digit characters with an empty string
-		const filteredValue = inputElement.value.replace(/\D/g, '');
-		guessString = filteredValue;
-		// Svelte might not immediately update the input visually if the value was programmatically changed
-		// to a substring of its previous value (e.g. "1a2" becoming "12"). 
-		// Forcing an update if necessary, though bind:value should handle it.
-		if (inputElement.value !== filteredValue) {
-			inputElement.value = filteredValue;
-		}
+	function handleInput(event: Event) {
+		const input = event.target as HTMLInputElement;
+		guess = input.value.replace(/\D/g, '').slice(0, 6);
+		input.value = guess;
 	}
 
-	function checkGuess(event: SubmitEvent) {
-		event.preventDefault();
+	const EXACT = ['Spot on!', 'Nailed it!', 'Perfect call!', 'Are you a dealer or what?', 'To the euro. Respect.'];
 
-		const guess = parseInt(guessString, 10); // Changed to parseInt
-		if (isNaN(guess)) {
-			message = 'Please enter a valid price.';
-			feedbackColor = 'text-red-400';
-			return;
+	/**
+	 * Miss tiers by percentage off the real price, first match wins, so a 2 EUR miss on a 5 EUR card stings as much as
+	 * a 40 EUR miss on a 100 EUR one. Each side gets its own lines so the hint always says which way to move.
+	 */
+	const TIERS: { color: string; high: string[]; low: string[]; maxOff: number }[] = [
+		{
+			color: 'text-lime-400',
+			high: ['So close, shave a little off.', 'Nearly! Trim it down a touch.', 'Painfully close, aim a bit lower.'],
+			low: ['So close, add a little more.', 'Nearly! Bump it up a touch.', 'Painfully close, aim a bit higher.'],
+			maxOff: 10
+		},
+		{
+			color: 'text-yellow-400',
+			high: ['A bit high.', 'Slightly overvalued.', 'It is worth less than you think.'],
+			low: ['A bit low.', 'Slightly undervalued.', 'It is worth more than you think.'],
+			maxOff: 30
+		},
+		{
+			color: 'text-orange-400',
+			high: ['Too high, this one is cheaper.', 'Easy there, big spender.', 'You just overpaid, badly.'],
+			low: ['Too low, this one is pricier.', 'You are lowballing this card.', 'That offer would get you laughed at.'],
+			maxOff: 75
+		},
+		{
+			color: 'text-red-400',
+			high: ['Way too high! Save your wallet.', 'Not even close, it is no Charizard.', 'That is full collector fever pricing.'],
+			low: ['Way too low! That is bulk bin energy.', 'Not even close, this is no common.', 'Cold. Very, very cold.'],
+			maxOff: Infinity
 		}
+	];
 
-		guessSubmitted = true;
-		isLoadingNextCard = true;
-		dataSnapshotForLoadingCheck = data;
-
-		const actualPrice = displayedCardPrice !== null ? Math.round(displayedCardPrice) : null; // Round actual price
-
-		if (actualPrice === null) { // Should not happen if displayedCard is present
-			message = 'Error: Card price is not available.';
-			feedbackColor = 'text-red-400';
-			isLoadingNextCard = false;
-			return;
-		}
-
-		const difference = Math.abs(guess - actualPrice);
-		const percentageDifference = actualPrice > 0 ? (difference / actualPrice) * 100 : Infinity;
-
-		if (guess === actualPrice) {
-			message = `Correct! The price was ${actualPrice}$! You're a Pokémon Master!`; // Removed .toFixed(2)
-			feedbackColor = 'text-green-400';
-			showConfetti = true;
-		} else {
-			showConfetti = false;
-			const priceRevealed = `The correct price was ${actualPrice}$.`; // Removed .toFixed(2)
-			if (guess < actualPrice) {
-				feedbackColor = 'text-yellow-400';
-				if (percentageDifference > 75) {
-					message = `Way too low! ${priceRevealed}`;
-				} else if (percentageDifference > 30) {
-					message = `A bit low. ${priceRevealed}`;
-				} else {
-					message = `So close! Just a little bit more. ${priceRevealed}`;
-				}
-			} else { // Guess > actualPrice
-				feedbackColor = 'text-orange-400';
-				if (percentageDifference > 75) {
-					message = `Way too high! ${priceRevealed}`;
-				} else if (percentageDifference > 30) {
-					message = `A bit too high. ${priceRevealed}`;
-				} else {
-					message = `So close! Just a little bit less. ${priceRevealed}`;
-				}
-			}
-		}
-		// After guess processing, pre-fetch next card data.
-		// isLoadingNextCard is already true.
-		invalidateAll(); 
+	function pick(lines: string[]): string {
+		return lines[Math.floor(Math.random() * lines.length)];
 	}
 
-	function playAgain() {
-		if (isLoadingNextCard) return; // Safety: button should be disabled, but don't act if clicked somehow
+	function judge(guessed: number, price: number): Verdict {
+		if (guessed === price) return { color: 'text-green-400', correct: true, headline: pick(EXACT), price };
 
-		message = '';
-		guessString = ''; // Reset guessString
-		showConfetti = false;
-		guessSubmitted = false; // Ready for a new guess on the new card
-
-		if (data.nextCard && data.nextCardPrice !== null) {
-			displayedCard = data.nextCard;
-			displayedCardPrice = data.nextCardPrice;
-			displayedReleaseDate = data.nextReleaseDate ? new Date(data.nextReleaseDate) : null;
-		} else if (data.currentCard) {
-			// Fallback: if nextCard isn't ready (e.g. error during its fetch, or end of list),
-			// but currentCard is available (perhaps it was re-fetched by invalidateAll if nextCard failed),
-			// then use currentCard. This also covers the first click of playAgain if no guess was made yet.
-			displayedCard = data.currentCard;
-			displayedCardPrice = data.currentCardPrice;
-			displayedReleaseDate = data.currentReleaseDate ? new Date(data.currentReleaseDate) : null;
-		} else if (data.error) {
-            message = data.error;
-            feedbackColor = 'text-red-400';
-            displayedCard = null; // Clear display if error
-        }
-		// Note: No invalidateAll() here. The next card data is expected to be ready from checkGuess's invalidateAll.
+		const off = price > 0 ? (Math.abs(guessed - price) / price) * 100 : Infinity;
+		const low = guessed < price;
+		const tier = TIERS.find(candidate => off <= candidate.maxOff) ?? TIERS[TIERS.length - 1];
+		return { color: tier.color, correct: false, headline: pick(low ? tier.low : tier.high), price };
 	}
-	
-	// Reactive statement to trigger confetti
-	$effect(() => {
-		if (showConfetti && typeof (window as any).confetti === 'function') {
-			(window as any).confetti({
-				particleCount: 150,
-				spread: 100,
-				origin: { y: 0.6 }
-			});
-		}
-	});
 
+	function submitGuess() {
+		if (!round || answered) return;
+
+		const guessed = parseInt(guess, 10);
+		if (isNaN(guessed)) return;
+
+		verdict = judge(guessed, Math.round(round.price));
+		if (verdict.correct) window.confetti?.({ origin: { y: 0.6 }, particleCount: 150, spread: 100 });
+	}
+
+	/** Re-running the load re-reads every card and price, so it happens in the background while the player is still busy. */
+	async function refill() {
+		if (refilling) return;
+		refilling = true;
+		await invalidateAll();
+		queue = [...queue, ...data.rounds];
+		refilling = false;
+	}
+
+	async function nextCard() {
+		if (!queue.length) await refill();
+
+		round = queue.shift() ?? null;
+		guess = '';
+		verdict = null;
+
+		if (queue.length < 5) refill();
+	}
+
+	/** Digits, Backspace, Escape and Enter drive a whole game, so the mouse and the keypad are both optional. */
+	function handleKey(event: KeyboardEvent) {
+		const target = event.target as HTMLElement | null;
+		if (target?.tagName === 'TEXTAREA' || (target?.tagName === 'INPUT' && target.id !== 'price-guess')) return;
+
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			if (answered) nextCard();
+			else submitGuess();
+		} else if (event.key === 'Escape') {
+			typeDigit('C');
+		} else if (event.key === 'Backspace' && target?.id !== 'price-guess') {
+			event.preventDefault();
+			typeDigit('Backspace');
+		} else if (/^\d$/.test(event.key) && target?.id !== 'price-guess') {
+			typeDigit(event.key);
+		}
+	}
 </script>
+
+<svelte:window onkeydown={handleKey} />
 
 <svelte:head>
 	<title>Guess the Price</title>
 	<meta name="description" content="Play a game to guess the price of Pokémon cards." />
-	<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
 </svelte:head>
 
-<div class="container mx-auto p-4 flex flex-col items-center">
-	<!-- New Page Title Structure -->
-	<div class="w-full mx-auto pb-4 lg:pb-5 mb-4 md:mb-8">
-		<div class="flex justify-center items-center">
-			<PageTitle title="Guess the Price!" />
-		</div>
-		<div class="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto my-2 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
-	</div>
+<!-- The board is sized to the space left under the header so the whole game fits without a scroll. -->
+<div class="mx-auto flex h-[calc(100dvh-7rem)] max-w-6xl flex-col items-center gap-3 overflow-hidden px-3 pb-3 lg:h-[calc(100dvh-9rem)] lg:gap-5">
+	<PageTitle title="Guess the Price!" />
+	<div class="h-px w-full max-w-md bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
 
-	{#if data.error && !displayedCard}
-		<p class="text-red-500 text-xl">{data.error}</p>
-		<button 
-			onclick={playAgain} 
-			class="mt-4 bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 px-4 rounded-sm focus:outline-hidden focus:shadow-outline transition-colors duration-200"
+	{#if !round}
+		<p class="text-xl text-gray-400">{data.error ?? 'No card to display.'}</p>
+		<button
+			class="rounded-sm bg-gold-400 px-4 py-2 font-bold text-black transition-colors hover:bg-gold-500 disabled:opacity-50"
+			disabled={refilling}
+			onclick={nextCard}
 		>
-			Try Again
+			{refilling ? 'Drawing...' : 'Retry'}
 		</button>
-	{:else if displayedCard && displayedCardPrice !== null}
-		<div class="game-layout-grid w-full grid grid-cols-1 md:grid-cols-3 items-start md:items-center gap-4 md:gap-8 px-2 sm:px-4">
-			<!-- Middle Column (becomes 1st on mobile): Game Box -->
-			<div class="card-display-wrapper order-1 md:order-2 w-full flex justify-center">
-				<div class="card-display p-4 sm:p-6 bg-gray-800 rounded-lg shadow-xl w-full max-w-xs sm:max-w-sm text-center border-2 border-gold-500 relative">
-					<h2 class="text-xl sm:text-2xl font-semibold text-gold-300 mb-2">{displayedCard.name}</h2>
-					<p class="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-gray-400 mb-1" title="Set this card was printed in"><LibraryIcon size={14} /> {displayedCard.setName}</p>
-					<p class="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-gray-400 mb-1" title="How scarce this print is"><GemIcon size={14} /> {displayedCard.rarity}</p>
-					{#if displayedReleaseDate}
-						<p class="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4" title="Release date of the set"><CalendarDaysIcon size={14} /> {new Date(displayedReleaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-					{:else}
-						<p class="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4" title="Release date of the set"><CalendarDaysIcon size={14} /> N/A</p> 
-					{/if}
-					<img src={displayedCard.image} alt={displayedCard.name} class="mx-auto mb-3 sm:mb-4 rounded-lg shadow-md w-48 sm:w-64 h-auto object-contain" />
-
-					<form onsubmit={checkGuess} class="w-full">
-						<label for="price-guess" class="block text-base sm:text-lg font-medium text-gray-300 mb-1 sm:mb-2">Your Guess ($):</label>
-						<input
-							type="text" 
-							inputmode="numeric"
-							id="price-guess"
-							name="price-guess"
-							bind:value={guessString}
-							oninput={handleGuessInput}
-							min="0"
-							step="1"
-							class="shadow-sm appearance-none border border-gold-500 rounded-sm w-full py-2 sm:py-3 px-3 sm:px-4 text-gray-200 bg-gray-700 leading-tight focus:outline-hidden focus:shadow-outline focus:border-gold-300 mb-3 sm:mb-4 text-sm sm:text-base"
-							placeholder="e.g., 12"
-							required
-							readonly={guessSubmitted}
-						/>
-						<button 
-							type="submit" 
-							class="flex w-full items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 sm:py-3 px-4 rounded-sm focus:outline-hidden focus:shadow-outline transition-colors duration-200 text-sm sm:text-base {guessSubmitted ? 'opacity-50 cursor-not-allowed' : ''}"
-							disabled={guessSubmitted}
-							title="Check how close your guess is"
-						>
-							<CircleEuroIcon size={16} />
-							Submit Guess
-						</button>
-					</form>
-				</div>
-			</div>
-
-			<!-- Left Column (becomes 2nd on mobile): Numpad -->
-			<div class="numpad-container order-2 md:order-1 flex justify-center items-center h-full w-full">
-				<Numpad onKeyPress={handleNumpadKeyPress} />
-			</div>
-
-			<!-- Right Column (becomes 3rd on mobile): Play Again Button and Message -->
-			<div class="play-again-message-container order-3 md:order-3 flex flex-col justify-center items-center h-full gap-3 sm:gap-4 w-full">
-				{#if message}
-					<p class={`text-base sm:text-lg font-semibold text-center ${feedbackColor}`}>{message}</p>
-				{/if}
-				<button 
-					onclick={playAgain} 
-					class="play-again-button bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-sm focus:outline-hidden focus:shadow-outline transition-all duration-200 text-base sm:text-lg relative { (guessSubmitted && !isLoadingNextCard) ? 'ripple-active' : '' } { isLoadingNextCard ? 'opacity-50' : '' }"
-					disabled={isLoadingNextCard || !guessSubmitted}
-					title="Draw another random card"
-				>
-					<span class="relative z-10 flex items-center justify-center gap-2">
-						<RotateCwIcon size={18} />
-						{isLoadingNextCard ? 'Loading Next Card...' : 'Play Again (New Card)'}
-					</span>
-				</button>
-			</div>
-		</div>
 	{:else}
-		<p class="text-xl text-gray-400">Loading card or no card to display...</p>
-		<button 
-			onclick={() => { isLoadingNextCard = true; dataSnapshotForLoadingCheck = data; invalidateAll(); }} 
-			class="mt-4 bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 px-4 rounded-sm focus:outline-hidden focus:shadow-outline transition-colors duration-200 {isLoadingNextCard ? 'opacity-50' : ''}"
-			disabled={isLoadingNextCard}
-		>
-			{isLoadingNextCard ? 'Loading...' : 'Refresh'}
-		</button>
+		<!-- Stacked on mobile the art row is the only one allowed to shrink, so the keypad never gets clipped. -->
+		<section class="grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_auto] gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:grid-rows-1 lg:gap-8">
+			<!-- Card side: the art takes every pixel the column has left over. -->
+			<div class="flex min-h-0 flex-col items-center justify-center gap-2 md:gap-3">
+				{#key round.card.cardCode}
+					<div class="flex min-h-0 flex-1 items-center" in:fly={{ duration: 350, easing: cubicOut, y: 24 }}>
+						<CardImage
+							alt={round.card.name}
+							class="max-h-full w-auto rounded-xl object-contain shadow-2xl shadow-black/60"
+							imageUrl={round.card.image}
+							priority
+							sizes="(max-width: 768px) 60vw, 320px"
+							types={round.card.types}
+						/>
+					</div>
+					<div class="flex shrink-0 flex-col items-center gap-1.5" in:fly={{ delay: 80, duration: 350, easing: cubicOut, y: 12 }}>
+						<h2 class="text-center text-xl font-semibold text-gold-300 sm:text-2xl">{round.card.name}</h2>
+						<div class="flex flex-wrap justify-center gap-1.5 text-xs text-gray-400">
+							<span class="flex items-center gap-1.5 rounded-full bg-gray-800/80 px-2.5 py-1" title="Set this card was printed in"><LibraryIcon size={13} /> {round.card.setName}</span>
+							<span class="flex items-center gap-1.5 rounded-full bg-gray-800/80 px-2.5 py-1" title="How scarce this print is"><GemIcon size={13} /> {round.card.rarity}</span>
+							<span class="flex items-center gap-1.5 rounded-full bg-gray-800/80 px-2.5 py-1" title="Release date of the set"><CalendarDaysIcon size={13} /> {releaseDate}</span>
+						</div>
+					</div>
+				{/key}
+			</div>
+
+			<!-- Control side: guess, keypad and verdict, all stacked in one column. -->
+			<div class="flex min-h-0 flex-col gap-2 rounded-2xl border border-gold-500/30 bg-gray-800/70 p-3 backdrop-blur-sm md:justify-center md:gap-3 md:p-4">
+				<form class="flex flex-col gap-2" onsubmit={event => { event.preventDefault(); submitGuess(); }}>
+					<label class="flex items-baseline justify-between text-sm font-medium text-gray-300" for="price-guess">
+						Your guess
+						<span class="text-xs text-gray-500">type digits, Enter to {answered ? 'draw' : 'submit'}</span>
+					</label>
+					<div class="flex items-center gap-2 rounded-lg border border-gold-500/60 bg-gray-900 px-3 py-2 transition-colors focus-within:border-gold-300">
+						<CircleEuroIcon class="shrink-0 text-gold-400" size={20} />
+						<input
+							class="w-full bg-transparent text-lg text-gray-100 tabular-nums outline-hidden placeholder:text-gray-500 read-only:text-gray-500"
+							id="price-guess"
+							inputmode="numeric"
+							oninput={handleInput}
+							placeholder="12"
+							readonly={answered}
+							required
+							type="text"
+							value={guess}
+						/>
+					</div>
+
+					<Numpad onKeyPress={typeDigit} />
+
+					{#if !answered}
+						<button
+							class="flex w-full items-center justify-center gap-2 rounded-lg bg-gold-400 py-2.5 font-bold text-black transition-all hover:bg-gold-500 active:scale-[0.98] disabled:opacity-40"
+							disabled={!guess}
+							title="Check how close your guess is (Enter)"
+							type="submit"
+						>
+							<CircleEuroIcon size={18} />
+							Submit guess
+						</button>
+					{/if}
+				</form>
+
+				{#if verdict}
+					<div class="flex flex-col items-center gap-2" in:fly={{ duration: 250, easing: cubicOut, y: 10 }}>
+						<p class="text-lg font-semibold {verdict.color}">{verdict.headline}</p>
+						<p class="text-3xl font-bold text-gold-300 tabular-nums" in:scale={{ duration: 450, easing: backOut, start: 0.6 }}>{verdict.price} €</p>
+						<button
+							class="relative w-full overflow-hidden rounded-lg bg-gold-400 py-2.5 font-bold text-black transition-all hover:bg-gold-500 active:scale-[0.98] {RIPPLE} before:animate-ripple-wave after:animate-ripple-wave"
+							onclick={nextCard}
+							title="Draw another random card (Enter)"
+							type="button"
+						>
+							<span class="relative z-10 flex items-center justify-center gap-2">
+								<RotateCwIcon size={18} />
+								Next card
+							</span>
+						</button>
+					</div>
+				{/if}
+			</div>
+		</section>
 	{/if}
 </div>
-
-<style>
-	/* Adjust Numpad container for mobile if Numpad itself doesn't scale well */
-	@media (max-width: 767px) { /* Below md breakpoint */
-		.numpad-container {
-			/* Example: could make numpad full width or scale it down */
-			/* For now, rely on Numpad internal styling and centering */
-			margin-top: 1rem; /* Add some space above numpad on mobile */
-			margin-bottom: 1rem; /* Add some space below numpad on mobile */
-		}
-		.play-again-message-container {
-			margin-top: 1rem;
-		}
-	}
-
-	.play-again-button::before,
-	.play-again-button::after {
-		content: '';
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: 100%; 
-		height: 100%;
-		display: block;
-		transform-origin: center;
-		border-radius: inherit; 
-		background-color: var(--color-gold-400); 
-		opacity: 0; /* Start hidden, animation will show it */
-		animation-name: ripple_wave_fade_in_out;
-    animation-duration: 1.5s;
-    animation-timing-function: ease-out;
-    animation-iteration-count: infinite;
-    animation-play-state: paused; /* Paused by default */
-		z-index: 0;
-	}
-
-	.play-again-button.ripple-active::before,
-	.play-again-button.ripple-active::after {
-    animation-play-state: running;
-	}
-
-	/* We still need to apply the delay for the second ripple when it's active */
-	.play-again-button.ripple-active::after {
-		animation-delay: 1.1s;
-	}
-
-	/* If not ripple-active, ensure after has no delay or it might jump with a delay when class is added */
-	.play-again-button::after {
-		animation-delay: 0s; /* Default, overridden by .ripple-active::after */
-	}
-
-	@keyframes ripple_wave_fade_in_out { 
-		0% {
-			transform: translate(-50%, -50%) scale(0);
-			opacity: 0; 
-		}
-		10% {
-			transform: translate(-50%, -50%) scale(1);
-			opacity: 0.3;
-		}
-		40% {
-			transform: translate(-50%, -50%) scale(1.2);
-			opacity: 0.5; 
-		}
-		100% {
-			transform: translate(-50%, -50%) scale(1.4);
-			opacity: 0; 
-		}
-	}
-</style>
