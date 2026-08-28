@@ -107,7 +107,7 @@ async function uploadCardsTo(table: string, path: string): Promise<void> {
 		legal_standard: card.legalStandard,
 		local_id: card.localId || null,
 		name: card.name,
-		pokemon_id: card.pokemonNumber && card.pokemonNumber !== UNKNOWN_POKEMON ? card.pokemonNumber : null,
+		pokemon_id: Number.isInteger(card.pokemonNumber) && card.pokemonNumber !== UNKNOWN_POKEMON ? card.pokemonNumber : null,
 		rarity: card.rarity || null,
 		regulation_mark: card.regulationMark || null,
 		set_id: card.setId || null,

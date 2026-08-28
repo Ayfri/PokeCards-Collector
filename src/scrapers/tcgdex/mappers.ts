@@ -73,12 +73,18 @@ export function legacySetCode(lang: Language, tcgdexSetId: string): string {
 	return reverseAliases[lang].get(tcgdexSetId) ?? tcgdexSetId;
 }
 
+/** TCGdex numbers a few delta species with a fractional dex id (Rayquaza delta is `384.1`), which is still that species. */
+function dexId(card: TcgdexCard): number | undefined {
+	const dex = card.dexId?.[0];
+	return dex === undefined ? undefined : Math.trunc(dex);
+}
+
 export function buildCardCode(lang: Language, card: TcgdexCard): string {
 	const override = (cardCodeOverrides[lang] as Record<string, string>)[card.id];
 	if (override) return override;
 
 	const isPokemon = card.category === 'Pokemon';
-	const pokemonNumber = card.dexId?.[0] ?? (isPokemon ? UNKNOWN_POKEMON : 0);
+	const pokemonNumber = dexId(card) ?? (isPokemon ? UNKNOWN_POKEMON : 0);
 	return generateUniqueCardCode(pokemonNumber, legacySetCode(lang, card.set?.id ?? ''), card.localId, card.category ?? 'Pokemon');
 }
 
@@ -100,7 +106,7 @@ export function mapCard(lang: Language, card: TcgdexCard): MappedCard {
 		legalStandard: card.legal?.standard ?? false,
 		localId: card.localId,
 		name: card.name,
-		pokemonNumber: card.dexId?.[0] ?? (isPokemon ? UNKNOWN_POKEMON : undefined),
+		pokemonNumber: dexId(card) ?? (isPokemon ? UNKNOWN_POKEMON : undefined),
 		rarity: card.rarity ?? 'Common',
 		regulationMark: card.regulationMark ?? '',
 		setId: card.set?.id ?? '',
