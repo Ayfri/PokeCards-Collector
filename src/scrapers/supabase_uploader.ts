@@ -1,7 +1,8 @@
 import * as fs from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 import { CARDS, JP_CARDS, JP_PRICES, JP_SETS, POKEMONS, PRICES, SETS, TYPES } from './files';
-import { UNKNOWN_POKEMON, type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
+import { cardRow, priceRow, setRow } from './rows';
+import { type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
 
 const supabaseUrl = process.env.PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? process.env.PUBLIC_SUPABASE_ANON_KEY!;
@@ -72,17 +73,7 @@ async function uploadSetsTo(table: string, path: string): Promise<void> {
 	console.log(`📤 Uploading ${table}...`);
 	const sets = read<MappedSet[]>(path);
 
-	await upsertAll(table, sets.map(set => ({
-		name: set.name,
-		logo: set.logo || null,
-		printed_total: set.printedTotal || null,
-		ptcgo_code: set.ptcgoCode || null,
-		release_date: set.releaseDate || null,
-		series: set.series || null,
-		set_id: set.setId,
-		symbol: set.symbol || null,
-		total_cards: set.totalCards || null,
-	})), 'set_id', 100);
+	await upsertAll(table, sets.map(setRow), 'set_id', 100);
 }
 
 export const uploadSets = () => uploadSetsTo('sets', SETS);
@@ -97,27 +88,7 @@ async function uploadCardsTo(table: string, path: string): Promise<void> {
 	console.log(`📤 Uploading ${table}...`);
 	const cards = read<MappedCard[]>(path);
 
-	const rows = cards.map(card => ({
-		card_code: card.cardCode,
-		artist: card.artist || null,
-		card_market_updated_at: card.cardMarketUpdatedAt || null,
-		card_market_url: card.cardMarketUrl || null,
-		hp: card.hp,
-		image: card.image || null,
-		legal_standard: card.legalStandard,
-		local_id: card.localId || null,
-		name: card.name,
-		pokemon_id: Number.isInteger(card.pokemonNumber) && card.pokemonNumber !== UNKNOWN_POKEMON ? card.pokemonNumber : null,
-		rarity: card.rarity || null,
-		regulation_mark: card.regulationMark || null,
-		set_id: card.setId || null,
-		set_name: card.setName || null,
-		stage: card.stage || null,
-		supertype: card.supertype || null,
-		tcgdex_id: card.tcgdexId,
-		types: card.types || null,
-		variants: card.variants,
-	}));
+	const rows = cards.map(cardRow);
 
 	await upsertAll(table, deduplicate(rows, 'card_code', table), 'card_code');
 
@@ -133,21 +104,7 @@ async function uploadPricesTo(table: string, path: string): Promise<void> {
 	console.log(`📤 Uploading ${table}...`);
 	const prices = read<Record<string, MappedPrice>>(path);
 
-	const rows = Object.entries(prices).map(([cardCode, price]) => ({
-		card_code: cardCode,
-		simple: price.simple ?? null,
-		low: price.low ?? null,
-		trend: price.trend ?? null,
-		avg1: price.avg1 ?? null,
-		avg7: price.avg7 ?? null,
-		avg30: price.avg30 ?? null,
-		reverse_simple: price.reverseSimple ?? null,
-		reverse_low: price.reverseLow ?? null,
-		reverse_trend: price.reverseTrend ?? null,
-		reverse_avg1: price.reverseAvg1 ?? null,
-		reverse_avg7: price.reverseAvg7 ?? null,
-		reverse_avg30: price.reverseAvg30 ?? null,
-	}));
+	const rows = Object.entries(prices).map(([cardCode, price]) => priceRow(cardCode, price));
 
 	await upsertAll(table, rows, 'card_code');
 }
