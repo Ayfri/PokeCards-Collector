@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import "~/styles/colors.css";
 	import {
 		filterName,
@@ -10,14 +8,12 @@
 		filterSupertype,
 		filterType,
 		filterArtist,
-		isVisible,
 		mostExpensiveOnly,
 		sortBy,
 		sortOrder,
 		resetFilters,
 		resetSort,
 	} from "$lib/helpers/filters";
-	import { getRarityLevel } from "$lib/helpers/rarity";
 	import CardComponent from "@components/list/Card.svelte";
 	import Filters from "@components/list/Filters.svelte";
 	import VirtualGrid from "@components/list/VirtualGrid.svelte";
@@ -34,7 +30,7 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import { findSetByCardCode } from "$helpers/set-utils";
-	import { parseCardCode } from "$helpers/card-utils";
+	import { filterCards, keepMostExpensivePerGroup, sortCards } from "$helpers/card-grid";
 	import Loader from "$lib/components/Loader.svelte";
 	import { cardSize, getCardDimensions } from "$lib/stores/gridStore";
 	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
@@ -83,10 +79,6 @@
 
 	// Fixed height for the info container in Card.svelte
 	const infoContainerHeight = 70;
-
-	// Use the store value directly; mobile logic is now in getCardDimensions
-	let cardDimensions = $state(getCardDimensions($cardSize, 0));
-	let lastCardSizeKey = $state('');
 
 	onMount(() => {
 		const mountStart = performance.now();
@@ -230,353 +222,38 @@
 		});
 	}
 
-		// Step 1: Apply most expensive filter
-	let baseCards = $state<FullCard[]>([]);
-
-	// Step 2: Apply sorting - this reactive statement will trigger whenever $sortBy or $sortOrder changes
-	let displayedCards: FullCard[] = $state([]);
-
-			// Global caches for expensive operations
-	let globalCardSetCache = new Map<string, Set | null>();
-	let lastSetsCacheKey = '';
-	let sortValuesCache = new Map<string, any>();
-	let lastSortValuesCacheKey = '';
-
-	/** Very expensive and slow function, already optimized but still slow */
-	function sortCards(cards: FullCard[], sortBy: string, sortOrder: string, prices: Record<string, PriceData>, pokemons: Pokemon[], sets: Set[]): FullCard[] {
-		const sortFunctionStart = performance.now();
-		console.log(`🔀 sortCards: Starting with ${cards.length} cards, sort: ${sortBy} ${sortOrder}`);
-
-		// Pre-build lookup maps for performance
-		const mapBuildStart = performance.now();
-		const pokemonMap = new Map(pokemons.map(p => [p.id, p]));
-		console.log(`🗺️ sortCards: Pokemon map built in ${performance.now() - mapBuildStart}ms`);
-
-		// Use global cache for set lookups - rebuild only if sets changed
-		const setLookupStart = performance.now();
-		const currentSetsCacheKey = sets.map(s => s.name).join(',');
-		if (currentSetsCacheKey !== lastSetsCacheKey) {
-			console.log('🔄 sortCards: Rebuilding global set cache');
-			globalCardSetCache.clear();
-			lastSetsCacheKey = currentSetsCacheKey;
-		}
-
-		// Pre-compute set lookups only for missing cards
-		let newLookups = 0;
-		for (const card of cards) {
-			if (!globalCardSetCache.has(card.cardCode)) {
-				const set = findSetByCardCode(card.cardCode, sets) ?? null;
-				globalCardSetCache.set(card.cardCode, set);
-				newLookups++;
-			}
-		}
-		console.log(`🗺️ sortCards: Set lookups completed in ${performance.now() - setLookupStart}ms (${newLookups} new, ${cards.length - newLookups} cached)`);
-
-				// Pre-compute sort values for each card to avoid repeated calculations
-		const precomputeStart = performance.now();
-		const currentSortValuesCacheKey = `${cards.length}-${Object.keys(prices).length}-${pokemons.length}`;
-
-		let sortValues: Map<string, any>;
-		if (currentSortValuesCacheKey !== lastSortValuesCacheKey) {
-			console.log('🔄 sortCards: Rebuilding sort values cache');
-			sortValues = new Map();
-
-			for (const card of cards) {
-				const pokemon = pokemonMap.get(card.pokemonNumber ?? 0) ?? { name: card.name };
-				const cardSet = globalCardSetCache.get(card.cardCode) ?? null;
-				const parsedCard = parseCardCode(card.cardCode);
-				const cardNumber = parsedCard.cardNumber || '';
-				const cardNumberInt = parseInt(cardNumber);
-
-				sortValues.set(card.cardCode, {
-					price: prices[card.cardCode]?.simple ?? 0,
-					name: pokemon.name,
-					rarityLevel: getRarityLevel(card.rarity),
-					releaseDate: cardSet?.releaseDate?.getTime() ?? 0,
-					artist: card.artist || "",
-					pokemonNumber: card.pokemonNumber ?? 0,
-					supertype: card.supertype,
-					cardNumber,
-					cardNumberInt: isNaN(cardNumberInt) ? 0 : cardNumberInt,
-					isPokemon: card.supertype === "Pokémon" && card.pokemonNumber != null
-				});
-			}
-
-			sortValuesCache = sortValues;
-			lastSortValuesCacheKey = currentSortValuesCacheKey;
-			console.log(`⚡ sortCards: Sort values precomputed in ${performance.now() - precomputeStart}ms`);
-		} else {
-			sortValues = sortValuesCache;
-			console.log(`⚡ sortCards: Sort values cached (${sortValues.size} entries)`);
-		}
-
-		const multiplier = sortOrder === "asc" ? 1 : -1;
-
-		const actualSortStart = performance.now();
-		// CRITICAL: Create a new array to ensure Svelte detects the change
-		// Array.sort() modifies in place and returns the same reference!
-		const result = [...cards].sort((a, b) => {
-			const aValues = sortValues.get(a.cardCode)!;
-			const bValues = sortValues.get(b.cardCode)!;
-
-			if (sortBy === "sort-price") {
-				return (aValues.price - bValues.price) * multiplier;
-			} else if (sortBy === "sort-name") {
-				return aValues.name.localeCompare(bValues.name) * multiplier;
-			} else if (sortBy === "sort-id") {
-				return a.cardCode.localeCompare(b.cardCode) * multiplier;
-			} else if (sortBy === "sort-rarity") {
-				return (aValues.rarityLevel - bValues.rarityLevel) * multiplier;
-			} else if (sortBy === "sort-release-date") {
-				return (aValues.releaseDate - bValues.releaseDate) * multiplier;
-			} else if (sortBy === "sort-artist") {
-				return aValues.artist.localeCompare(bValues.artist) * multiplier;
-			}
-
-			// Default sort is by Pokédex number
-			if (aValues.isPokemon && !bValues.isPokemon) return -1;
-			if (!aValues.isPokemon && bValues.isPokemon) return 1;
-
-			if (!aValues.isPokemon && !bValues.isPokemon) {
-				const supertypeOrder: Record<string, number> = { Pokémon: 1, Trainer: 2, Energy: 3 };
-				const aOrder = supertypeOrder[aValues.supertype] || 99;
-				const bOrder = supertypeOrder[bValues.supertype] || 99;
-				if (aOrder !== bOrder) return aOrder - bOrder;
-				return a.name.localeCompare(b.name);
-			}
-
-			const aNum = aValues.pokemonNumber!;
-			const bNum = bValues.pokemonNumber!;
-
-			if (aNum !== bNum) return (aNum - bNum) * multiplier;
-
-			if (aValues.releaseDate !== bValues.releaseDate) {
-				return (aValues.releaseDate - bValues.releaseDate) * multiplier;
-			}
-
-			if (aValues.cardNumberInt && bValues.cardNumberInt) {
-				return (aValues.cardNumberInt - bValues.cardNumberInt) * multiplier;
-			}
-
-			return aValues.cardNumber.localeCompare(bValues.cardNumber) * multiplier;
-		});
-
-		console.log(`🔀 sortCards: Actual sort completed in ${performance.now() - actualSortStart}ms`);
-		console.log(`🔀 sortCards: Total function time: ${performance.now() - sortFunctionStart}ms`);
-
-		return result;
-	}
-
-	let filteredCards = $state(displayedCards);
-
-	// Pre-compute lookup maps for filtering performance
-	let pokemonFilterMap = $state(new Map<number, Pokemon>());
-	let cardSetFilterMap = $state(new Map<string, Set | null>());
-	let fallbackSetCache = $state(new Map<string, Set>());
-
-
-
-
-
-	let visibleCardsCount = $state(0);
-	let uniquePokemonCount = $state(0);
-	let lastCountsKey = $state('');
-
-
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === "Escape" && showFilters) {
 			showFilters = false;
 		}
 	}
-	run(() => {
-		const dimensionsStart = performance.now();
-		const currentKey = `${$cardSize}-${clientWidth}`;
-		if (currentKey !== lastCardSizeKey) {
-			cardDimensions = getCardDimensions($cardSize, clientWidth);
-			lastCardSizeKey = currentKey;
-			console.log(`📐 CardGrid: Card dimensions calculated in ${performance.now() - dimensionsStart}ms:`, cardDimensions);
-		} else {
-			console.log(`📐 CardGrid: Card dimensions cached for key: ${currentKey}`);
-		}
-	});
-	run(() => {
-		if ($mostExpensiveOnly) {
-			const expensiveStart = performance.now();
-			console.log('💰 CardGrid: Processing most expensive only filter');
+	// Use the store value directly; mobile logic is now in getCardDimensions
+	const cardDimensions = $derived(getCardDimensions($cardSize, clientWidth));
 
-			// Group cards by appropriate ID based on supertype
-			const cardGroups = new Map<string, FullCard>();
+	// Step 1: keep only the priciest card of each group when the filter is on.
+	const baseCards = $derived($mostExpensiveOnly ? keepMostExpensivePerGroup(cards, prices) : cards);
 
-			cards.forEach((card) => {
-				let groupKey = "";
+	// Step 2: sort, then filter. Both are expensive, so they stay separate $derived so each only reruns on its own inputs.
+	const displayedCards = $derived(sortCards(baseCards, $sortBy, $sortOrder, prices, pokemons, sets));
 
-				// Use different keys based on supertype
-				if (card.supertype === "Pokémon" && card.pokemonNumber) {
-					// For Pokémon cards, group by Pokémon ID
-					groupKey = `pokemon_${card.pokemonNumber}`;
-				} else if (card.supertype === "Trainer") {
-					// For Trainer cards, group by name to keep different trainers separate
-					groupKey = `trainer_${card.name.toLowerCase()}`;
-				} else if (card.supertype === "Energy") {
-					// For Energy cards, group by name to keep different energies separate
-					groupKey = `energy_${card.name.toLowerCase()}`;
-				} else {
-					// Fallback for any other types
-					groupKey = `other_${card.name.toLowerCase()}`;
-				}
-
-				const existingCard = cardGroups.get(groupKey);
-
-				// Only keep the most expensive card in each group
-				if (
-					!existingCard ||
-					(prices[card.cardCode]?.simple ?? 0) >
-						(prices[existingCard.cardCode]?.simple ?? 0)
-				) {
-					cardGroups.set(groupKey, card);
-				}
-			});
-
-			baseCards = Array.from(cardGroups.values());
-			console.log(`💰 CardGrid: Most expensive filter completed in ${performance.now() - expensiveStart}ms, reduced from ${cards.length} to ${baseCards.length} cards`);
-		} else {
-			baseCards = cards;
-			console.log(`📊 CardGrid: Using all ${cards.length} cards (no expensive filter)`);
-		}
-	});
-	run(() => {
-		const sortStart = performance.now();
-		console.log(`🔤 CardGrid: Starting sort by ${$sortBy} (${$sortOrder}) on ${baseCards?.length || 0} cards`);
-		displayedCards = sortCards(baseCards || [], $sortBy, $sortOrder, prices, pokemons, sets);
-		console.log(`🔤 CardGrid: Sort completed in ${performance.now() - sortStart}ms`);
-	});
-	run(() => {
-		const cacheStart = performance.now();
-		console.log('🔄 CardGrid: Rebuilding filter caches');
-
-		// Rebuild maps when dependencies change
-		pokemonFilterMap = new Map(pokemons.map(p => [p.id, p]));
-		cardSetFilterMap = new Map();
-		fallbackSetCache = new Map();
-
-		console.log(`🔄 CardGrid: Filter caches rebuilt in ${performance.now() - cacheStart}ms`);
-		console.log(`📊 CardGrid: Pokemon map size: ${pokemonFilterMap.size}, Sets: ${sets.length}`);
-	});
-		// Check if any filters are actually active
-	let hasActiveFilters = $derived($filterName || $filterNumero || $filterRarity !== 'all' || $filterSet !== 'all' ||
+	// Check if any filters are actually active
+	const hasActiveFilters = $derived($filterName || $filterNumero || $filterRarity !== 'all' || $filterSet !== 'all' ||
 		$filterType !== 'all' || $filterSupertype !== 'all' || $filterArtist !== 'all');
 	// Find the selected set based on the filter and determine the correct total count to display
-	let selectedSet =
-		$derived($filterSet && $filterSet !== "all"
-			? findSetByCardCode($filterSet, sets)
-			: null);
-	run(() => {
-		if (
-			$filterName ||
-			$filterNumero ||
-			$filterRarity ||
-			$filterSet ||
-			$filterType ||
-			$filterSupertype ||
-			$filterArtist ||
-			$sortBy ||
-			$sortOrder ||
-			$mostExpensiveOnly
-		) {
-			const filterStart = performance.now();
-			console.log(`🔍 CardGrid: Starting filter on ${displayedCards.length} cards`);
-			console.log(`🔍 Active filters:`, {
-				name: $filterName || 'none',
-				numero: $filterNumero || 'none',
-				rarity: $filterRarity,
-				set: $filterSet,
-				type: $filterType,
-				supertype: $filterSupertype,
-				artist: $filterArtist,
-				sortBy: $sortBy,
-				sortOrder: $sortOrder,
-				mostExpensive: $mostExpensiveOnly
-			});
+	const selectedSet = $derived($filterSet && $filterSet !== "all" ? findSetByCardCode($filterSet, sets) : null);
 
-			// Skip expensive filtering if no filters are active
-			if (!hasActiveFilters) {
-				console.log('⚡ CardGrid: No active filters, skipping filter process');
-				filteredCards = displayedCards;
-			} else {
-				let cacheHits = 0;
-				let cacheMisses = 0;
+	const filteredCards = $derived(filterCards(displayedCards, pokemons, sets, selectedSet ?? null, {
+		applyFilters: Boolean(hasActiveFilters),
+		groupBySupertype: $filterSupertype === "all",
+	}));
 
-				filteredCards = displayedCards.filter((card) => {
-					// Use global cache first, fallback to local cache
-					let cardSet = globalCardSetCache.get(card.cardCode);
-					if (cardSet === undefined) {
-						cardSet = cardSetFilterMap.get(card.cardCode);
-						if (cardSet === undefined) {
-							cardSet = findSetByCardCode(card.cardCode, sets) ?? null;
-							cardSetFilterMap.set(card.cardCode, cardSet);
-							globalCardSetCache.set(card.cardCode, cardSet);
-							cacheMisses++;
-						} else {
-							cacheHits++;
-						}
-					} else {
-						cacheHits++;
-					}
+	const visibleCardsCount = $derived(filteredCards.length);
+	const uniquePokemonCount = $derived(new Set(
+		filteredCards.filter(card => card.supertype === "Pokémon").map(card => card.pokemonNumber),
+	).size);
 
-					let fallbackSet = fallbackSetCache.get(card.cardCode);
-					if (!fallbackSet) {
-						fallbackSet = {
-							name: card.setName,
-							logo: card.image?.replace(/\/[^\/]*$/, "/logo.png") ?? "",
-							printedTotal: 0,
-							releaseDate: new Date(),
-						};
-						fallbackSetCache.set(card.cardCode, fallbackSet);
-					}
-
-					const pokemon = pokemonFilterMap.get(card.pokemonNumber ?? 0);
-
-					return isVisible(
-						card,
-						pokemon,
-						cardSet ?? fallbackSet,
-						selectedSet ?? null,
-					);
-				});
-
-				console.log(`💾 CardGrid: Cache performance - Hits: ${cacheHits}, Misses: ${cacheMisses}`);
-			}
-
-			// Order cards by supertype (Pokémon, Trainer, Energy) when all supertypes are selected
-			if ($filterSupertype === "all") {
-				const supertypeSortStart = performance.now();
-				const supertypeOrder: Record<string, number> = {
-					Pokémon: 1,
-					Trainer: 2,
-					Energy: 3,
-				};
-
-				filteredCards = filteredCards.sort((a, b) => {
-					const aOrder = supertypeOrder[a.supertype] || 99;
-					const bOrder = supertypeOrder[b.supertype] || 99;
-
-					if (aOrder !== bOrder) {
-						return aOrder - bOrder;
-					}
-
-					// Keep existing sort order within same supertype
-					return 0;
-				});
-				console.log(`🏷️ CardGrid: Supertype sort completed in ${performance.now() - supertypeSortStart}ms`);
-			}
-
-			const filterEnd = performance.now();
-			console.log(`🔍 CardGrid: Filter completed in ${filterEnd - filterStart}ms`);
-			console.log(`📊 CardGrid: Filtered from ${displayedCards.length} to ${filteredCards.length} cards`);
-		}
-	});
 	// Count active filters
-	let activeFiltersCount = $derived([
+	const activeFiltersCount = $derived([
 		$filterName,
 		$filterNumero,
 		$filterRarity !== "all",
@@ -587,25 +264,7 @@
 		$mostExpensiveOnly,
 		$sortBy !== "sort-pokedex",
 	].filter(Boolean).length);
-	run(() => {
-		if (filteredCards) {
-			const countStart = performance.now();
-			const currentCountsKey = `${filteredCards.length}-${filteredCards.map(c => c.cardCode).slice(0,5).join(',')}`;
-			if (currentCountsKey !== lastCountsKey) {
-				visibleCardsCount = filteredCards.length;
-				uniquePokemonCount = new Set(
-					filteredCards
-						.filter((card) => card.supertype === "Pokémon")
-						.map((card) => card.pokemonNumber),
-				).size;
-				lastCountsKey = currentCountsKey;
-				console.log(`🔢 CardGrid: Counts calculated in ${performance.now() - countStart}ms - Visible: ${visibleCardsCount}, Unique Pokémon: ${uniquePokemonCount}`);
-			} else {
-				console.log(`🔢 CardGrid: Counts cached for ${visibleCardsCount} cards`);
-			}
-		}
-	});
-	let displayTotalCards = $derived(selectedSet
+	const displayTotalCards = $derived(selectedSet
 		? (selectedSet.printedTotal ?? 0)
 		: visibleCardsCount); // Use ?? 0 as fallback
 </script>
