@@ -1,4 +1,3 @@
-import {env} from '$env/dynamic/public';
 import {NO_IMAGES} from '$lib/images';
 import type {FullCard} from '$lib/types';
 
@@ -23,22 +22,10 @@ export function getCardImageForPokemon(pokemonId: number, cards: FullCard[]): st
 
 /**
  * Turns a TCGdex extensionless image base into a real URL.
- * `https://assets.tcgdex.net/en/swsh/swsh3/136` -> `.../136/high.webp`, which is ~4x lighter than the
- * PNG the old pipeline served. `PUBLIC_CARD_CDN_URL` swaps the host for an R2 mirror keyed the same way,
- * and `NO_IMAGES` returns a placeholder so dev runs cost no bandwidth.
+ * `https://assets.tcgdex.net/en/swsh/swsh3/136` -> `.../136/high.webp`, ~4x lighter than the PNG the old
+ * pipeline served and delivered over HTTP/3 by the TCGdex CDN, so no mirror sits in front of it.
  */
 export function processCardImage(imageUrl: string, quality: ImageQuality = 'high', extension: ImageExtension = 'webp'): string {
 	if (NO_IMAGES) return PLACEHOLDER;
-	if (!imageUrl) return '';
-
-	const CDN_URL = env.PUBLIC_CARD_CDN_URL;
-	if (!CDN_URL) return `${imageUrl}/${quality}.${extension}`;
-
-	// TCGdex bases end in `/{lang}/{serie}/{setId}/{localId}`; the mirror is keyed by set and card.
-	const parts = imageUrl.split('/');
-	const localId = parts.at(-1);
-	const setId = parts.at(-2);
-	if (!localId || !setId) return `${imageUrl}/${quality}.${extension}`;
-
-	return `${CDN_URL}/${setId}/${localId}/${quality}.${extension}`;
+	return imageUrl ? `${imageUrl}/${quality}.${extension}` : '';
 }

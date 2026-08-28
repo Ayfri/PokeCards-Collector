@@ -141,13 +141,8 @@ Check out the live website [here](https://pokecards-collector.pages.dev).
       VITE_SUPABASE_URL=YOUR_SUPABASE_PROJECT_URL
       VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_PUBLIC_KEY
 
-      # Pokemon TCG API Key
-      POKEMON_TCG_API_KEY=YOUR_POKEMON_TCG_API_KEY
-
-      # CDN URL for card images (optional) without trailing slash
-      # If not provided, original API URLs will be used
-      # Format: https://your-cdn.com/path
-      PUBLIC_CARD_CDN_URL=
+      # Render placeholders instead of card art, to develop without bandwidth
+      PUBLIC_NO_IMAGES=false
       ```
 
 6.  **Run the development server:**
@@ -178,70 +173,60 @@ This command will present a menu allowing you to choose which scraper to run. Av
   </tr>
   <tr>
     <td><code>all</code></td>
-    <td>Run all data scrapers sequentially (pokemons, sets, cards, holo, foil, types). Does <i>not</i> download images.</td>
+    <td>Run <code>scrape</code>, <code>pokemons</code>, then push everything to Supabase.</td>
     <td>None</td>
   </tr>
   <tr>
-    <td><code>cards</code></td>
-    <td>Fetch all Pokémon cards from the TCG API.</td>
+    <td><code>scrape</code></td>
+    <td>Fetch every card, price and set from TCGdex into <code>src/assets/</code>. <code>--lang en,ja</code> picks the languages.</td>
     <td>None</td>
   </tr>
   <tr>
-    <td><code>download-images</code></td>
-    <td>Download card images based on the fetched card data.</td>
-    <td>Requires <code>cards</code> to be run first</td>
+    <td><code>audit</code></td>
+    <td>Rebuild the set-alias and card-code mapping files, and report the codes that stop resolving.</td>
+    <td>Supabase credentials</td>
   </tr>
   <tr>
-    <td><code>foil</code></td>
-    <td>Generate foil mask URLs for holographic cards.</td>
-    <td>Requires <code>holo</code> data</td>
-  </tr>
-  <tr>
-    <td><code>holo</code></td>
-    <td>Extract holographic cards from the main card dataset.</td>
-    <td>Requires <code>cards</code> data</td>
+    <td><code>verify</code></td>
+    <td>Check the scraped JSON for <code>card_code</code> collisions and owned cards that no longer resolve. <code>--offline</code> skips Supabase.</td>
+    <td>Requires <code>scrape</code></td>
   </tr>
   <tr>
     <td><code>pokemons</code></td>
-    <td>Fetch base Pokémon data from PokéAPI.</td>
+    <td>Fetch Pokédex names and descriptions from PokéAPI.</td>
     <td>None</td>
   </tr>
   <tr>
-    <td><code>sets</code></td>
-    <td>Fetch all card set information from the TCG API.</td>
-    <td>None</td>
+    <td><code>supabase &lt;target&gt;</code></td>
+    <td>Upload one JSON file into its table (<code>all</code>, <code>cards</code>, <code>jp-cards</code>, <code>prices</code>, <code>jp-prices</code>, <code>sets</code>, <code>jp-sets</code>, <code>types</code>, <code>pokemons</code>).</td>
+    <td>Requires <code>scrape</code></td>
   </tr>
   <tr>
-    <td><code>types</code></td>
-    <td>Extract unique Pokémon types from the card dataset.</td>
-    <td>Requires <code>cards</code> data</td>
+    <td><code>upload</code></td>
+    <td>Mirror the JSON assets to the R2 bucket.</td>
+    <td>Requires <code>scrape</code>, R2 credentials</td>
   </tr>
 </table>
 
+Every command takes `--dry-run` (run without writing), `--json` (raw report), `-q` (summary only) and `--help`.
+
 **Recommended Scraper Order:**
 
-For initial setup or a full data refresh, it's recommended to run the scrapers in this order:
+A full refresh is `bun run scrapers all`, which runs the steps in dependency order:
 
-1. `pokemons`
-2. `types`
-3. `sets`
-4. `cards`
-5. `holo`
-6. `foil`
-7. `download-images` (Optional, run if you need local images)
+1. `scrape` - TCGdex into `src/assets/` (about 15 s for 36 000 cards)
+2. `pokemons` - PokéAPI Pokédex entries
+3. `supabase all` - sets, then cards, then prices
 
-You can run `all` to execute steps 1-6 automatically.
+Run `verify` between `scrape` and the upload to check the output.
 </details>
 
 <details>
-<summary><b>Using a Custom CDN for Images</b></summary>
+<summary><b>Card Images</b></summary>
 
-After running the `download-images` scraper, you will have local copies of the card images. If you host these images on your own CDN or file server:
+Card art is served straight from `assets.tcgdex.net`, which is CDN-fronted, CORS-open and speaks HTTP/3. A card's `image` field is an extensionless base such as `https://assets.tcgdex.net/en/swsh/swsh3/136`, and `processCardImage` appends `/{quality}.{extension}` - `high.webp` by default, about 89 KB against 344 KB for the same card as a PNG.
 
-1. Upload the contents of the `images` directory to your CDN
-2. Set the `PUBLIC_CARD_CDN_URL` environment variable in your `.env` file to the base URL of your hosted images
-   Example: `PUBLIC_CARD_CDN_URL=https://cdn.example.com/pokemon-cards`
-3. The application will automatically construct image URLs like `https://cdn.example.com/pokemon-cards/{setCode}/{cardId}.png`
+Set `PUBLIC_NO_IMAGES=true` to render placeholders instead and develop without bandwidth.
 </details>
 
 ## 📜 Available Scripts
@@ -265,7 +250,7 @@ After running the `download-images` scraper, you will have local copies of the c
   </tr>
   <tr>
     <td><code>bun run scrapers</code></td>
-    <td>Runs the interactive data scraping CLI</td>
+    <td>Runs the data scraping CLI - a command as argument, the interactive menu without</td>
   </tr>
 </table>
 
