@@ -6,6 +6,7 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import type { Card, Set } from '$lib/types';
+	import { artistsSortDirection, artistsSortValue, type ArtistsSortValue } from '$stores/artistsSort';
 	import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 	import { fade, fly } from 'svelte/transition';
 
@@ -21,11 +22,16 @@
 		name: string;
 		showcaseCards: Card[];
 		totalCards: number;
+		/** Cardmarket value of every card the artist drew, in EUR. */
+		totalValue: number;
+		/** `totalValue` spread over the artist's cards, in EUR. */
+		averageValue: number;
 	}
 
-	// Sorting state
-	let sortDirection: 'asc' | 'desc' = $state('asc'); // Default to A-Z
-	let sortValue: 'firstReleaseDate' | 'lastReleaseDate' | 'name' | 'totalCards' = $state('name'); // Default sort by name
+	/** Totals reach five figures, so cents are noise: they are dropped past 100 EUR. */
+	function formatEuros(value: number): string {
+		return `${value.toLocaleString('en-US', { maximumFractionDigits: value >= 100 ? 0 : 2 })} €`;
+	}
 
     // Search state
     let searchTerm = $state('');
@@ -33,6 +39,10 @@
     function setSearchTerm(value: string) {
         searchTerm = value;
     }
+
+	/** Cards drawn on the preview stack of an artist card. */
+	const SHOWCASE_SIZE = 3;
+
 	// --- Data Processing Functions ---
 
 	// Groups cards by artist.
@@ -87,18 +97,21 @@
 		cardReleaseDatesMap: Map<string, Date>,
 		prices: PageData['prices']
 	): ArtistWithCards {
-		const sortedByPrice = [...artistCardsList].sort((a, b) => {
+		// One pass instead of a full sort per artist: the total and the three priciest cards come out together.
+		let totalValue = 0;
+		const showcase: { card: Card, price: number }[] = [];
+		for (const card of artistCardsList) {
 			// Use trend price as a fallback if simple price is not available or zero
-			const priceA = prices?.[a.cardCode]?.simple || prices?.[a.cardCode]?.trend || 0;
-			const priceB = prices?.[b.cardCode]?.simple || prices?.[b.cardCode]?.trend || 0;
-			return priceB - priceA;
-		});
+			const price = prices?.[card.cardCode]?.simple || prices?.[card.cardCode]?.trend || 0;
+			totalValue += price;
+			if (!card.image) continue; // A card with no art cannot be shown in the preview stack.
+			const slot = showcase.findIndex(entry => price > entry.price);
+			if (slot !== -1) showcase.splice(slot, 0, { card, price });
+			else if (showcase.length < SHOWCASE_SIZE) showcase.push({ card, price });
+			if (showcase.length > SHOWCASE_SIZE) showcase.pop();
+		}
 
-		// ArtistWithCards.showcaseCards is Card[], FullCard[] is assignable to Card[]
-		// Ensure that the selected showcase cards not only exist but also have an image URL.
-		const showcaseCards: Card[] = sortedByPrice
-			.slice(0, 3)
-			.filter(card => card && card.image); // Filter out cards without an image
+		const showcaseCards: Card[] = showcase.map(entry => entry.card);
 
 		const totalCards = artistCardsList.length;
 
@@ -124,9 +137,11 @@
 		}
 
 		return {
+			averageValue: totalCards ? totalValue / totalCards : 0,
 			name: artistName,
 			showcaseCards,
 			totalCards,
+			totalValue,
 			firstReleaseDate,
 			lastReleaseDate
 		};
@@ -154,8 +169,8 @@
 	// Sorts the list of artists.
 	function sortArtistList(
 		artists: ArtistWithCards[],
-		value: typeof sortValue, // 'name' | 'totalCards' | 'firstReleaseDate' | 'lastReleaseDate'
-		direction: typeof sortDirection // 'asc' | 'desc'
+		value: ArtistsSortValue,
+		direction: 'asc' | 'desc'
 	): ArtistWithCards[] {
 		return [...artists].sort((a, b) => {
 			let comparison = 0;
@@ -165,6 +180,12 @@
 					break;
 				case 'totalCards':
 					comparison = a.totalCards - b.totalCards;
+					break;
+				case 'totalValue':
+					comparison = a.totalValue - b.totalValue;
+					break;
+				case 'averageValue':
+					comparison = a.averageValue - b.averageValue;
 					break;
 				case 'firstReleaseDate':
 				case 'lastReleaseDate': {
@@ -207,7 +228,7 @@
 		data.prices
 	));
 
-	const sortedArtists = $derived(sortArtistList(artistsWithCards, sortValue, sortDirection));
+	const sortedArtists = $derived(sortArtistList(artistsWithCards, $artistsSortValue, $artistsSortDirection));
 	const filteredArtists = $derived(filterArtistList(sortedArtists, searchTerm));
 </script>
 
@@ -228,11 +249,13 @@
                 />
             </div>
 			<SortControl
-				bind:sortDirection={sortDirection}
-				bind:sortValue={sortValue}
+				bind:sortDirection={$artistsSortDirection}
+				bind:sortValue={$artistsSortValue}
 				options={[
 					{ value: 'name', label: 'Name' },
 					{ value: 'totalCards', label: 'Total Cards' },
+					{ value: 'totalValue', label: 'Total Value' },
+					{ value: 'averageValue', label: 'Average Card Price' },
 					{ value: 'firstReleaseDate', label: 'First Release Date' },
 					{ value: 'lastReleaseDate', label: 'Last Release Date' }
 				]}
@@ -283,6 +306,10 @@
 							<div class="mt-2 text-sm text-gray-400 flex justify-between">
 								<span class="text-gold-400">{artist.totalCards} {artist.totalCards === 1 ? 'card' : 'cards'}</span>
 								<span>{artist.firstReleaseDate.getFullYear()} - {artist.lastReleaseDate.getFullYear()}</span>
+							</div>
+							<div class="mt-1 text-sm text-gray-400 flex justify-between" title="Cardmarket value of every card by this artist">
+								<span class="text-green-400 font-semibold">{formatEuros(artist.totalValue)}</span>
+								<span>{formatEuros(artist.averageValue)} avg</span>
 							</div>
 						</div>
 					</div>
