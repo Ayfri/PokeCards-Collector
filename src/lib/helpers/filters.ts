@@ -1,5 +1,5 @@
 import { get } from 'svelte/store';
-import type { FullCard, Pokemon, Set } from '$lib/types';
+import type { FullCard, Set } from '$lib/types';
 import { persistentWritable } from '$lib/stores/persistentStore';
 
 export const sortBy = persistentWritable('sort-by', 'sort-pokedex');
@@ -30,37 +30,41 @@ export function resetSort() {
 	sortOrder.set('asc');
 }
 
-export function isVisible(card: FullCard, cardPokemon: Pokemon | undefined, cardSet: Set, mainSelectedSet: Set | null) {
-	const numero = get(filterNumero).toLowerCase();
-	const name = get(filterName).toLowerCase();
-	const setFilterValue = get(filterSet).toLowerCase();
-	const type = get(filterType).toLowerCase();
-	const rarity = get(filterRarity).toLowerCase();
-	const supertype = get(filterSupertype).toLowerCase();
-	const artist = get(filterArtist).toLowerCase();
+export interface ActiveFilters {
+	artist: string;
+	name: string;
+	numero: string;
+	rarity: string;
+	set: string;
+	supertype: string;
+	type: string;
+}
 
-	const hasNumero = card.pokemonNumber ? card.pokemonNumber.toString().includes(numero) : true;
-	const hasName = card.name.toLowerCase().includes(name);
+/** Read once per filter pass: `isVisible` runs for all 23k cards, and `get()` subscribes and unsubscribes on every call. */
+export function readActiveFilters(): ActiveFilters {
+	return {
+		artist: get(filterArtist).toLowerCase(),
+		name: get(filterName).toLowerCase(),
+		numero: get(filterNumero).toLowerCase(),
+		rarity: get(filterRarity).toLowerCase(),
+		set: get(filterSet).toLowerCase(),
+		supertype: get(filterSupertype).toLowerCase(),
+		type: get(filterType).toLowerCase(),
+	};
+}
 
-	let hasSet = setFilterValue === 'all';
-	if (!hasSet && mainSelectedSet) {
-		hasSet = cardSet.name.toLowerCase() === mainSelectedSet.name.toLowerCase() || (!!cardSet.setId && cardSet.setId === mainSelectedSet.setId);
-	} else if (!hasSet && !mainSelectedSet && setFilterValue !== 'all') {
-		hasSet = cardSet.name.toLowerCase() === setFilterValue;
+export function isVisible(card: FullCard, cardSet: Set, mainSelectedSet: Set | null, filters: ActiveFilters) {
+	// Each test short-circuits on the inactive filter value, so an unused filter costs no string work per card.
+	if (filters.numero && !(card.pokemonNumber?.toString().includes(filters.numero) ?? true)) return false;
+	if (filters.name && !card.name.toLowerCase().includes(filters.name)) return false;
+	if (filters.type !== 'all' && !card.types.toLowerCase().includes(filters.type)) return false;
+	if (filters.rarity !== 'all' && card.rarity.toLowerCase() !== filters.rarity) return false;
+	if (filters.supertype !== 'all' && card.supertype.toLowerCase() !== filters.supertype) return false;
+	if (filters.artist !== 'all' && card.artist.toLowerCase() !== filters.artist) return false;
+
+	if (filters.set === 'all') return true;
+	if (mainSelectedSet) {
+		return cardSet.name.toLowerCase() === mainSelectedSet.name.toLowerCase() || (!!cardSet.setId && cardSet.setId === mainSelectedSet.setId);
 	}
-
-	const hasType = type === 'all' || card.types.toLowerCase().includes(type);
-	const hasRarity = rarity === 'all' || card.rarity.toLowerCase() === rarity;
-	const hasSupertype = supertype === 'all' || (card.supertype.toLowerCase() === supertype);
-	const hasArtist = artist === 'all' || (card.artist.toLowerCase() === artist);
-
-	return (
-		hasNumero &&
-		hasName &&
-		hasSet &&
-		hasType &&
-		hasRarity &&
-		hasSupertype &&
-		hasArtist
-	);
+	return cardSet.name.toLowerCase() === filters.set;
 }

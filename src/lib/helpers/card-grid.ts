@@ -1,22 +1,24 @@
 import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
 import { getRarityLevel } from '$helpers/rarity';
-import { findSetByCardCode } from '$helpers/set-utils';
+import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import { parseCardCode } from '$helpers/card-utils';
-import { isVisible } from '$helpers/filters';
+import { isVisible, readActiveFilters } from '$helpers/filters';
 
-/** Set lookups are the hot path of the grid: cache them across renders, invalidated on the set array's identity. */
+/** Set lookups are the hot path of the grid: a per-card `sets.find` rescans and renormalises all 218 sets. */
 const setLookupCache = new Map<string, Set | null>();
 let cachedSets: Set[] | null = null;
+let setLookup = new Map<string, Set>();
 
 export function getCardSet(cardCode: string, sets: Set[]): Set | null {
 	if (cachedSets !== sets) {
 		setLookupCache.clear();
+		setLookup = buildSetLookupMap(sets);
 		cachedSets = sets;
 	}
 
 	let cardSet = setLookupCache.get(cardCode);
 	if (cardSet === undefined) {
-		cardSet = findSetByCardCode(cardCode, sets) ?? null;
+		cardSet = findSetInLookup(cardCode, setLookup) ?? null;
 		setLookupCache.set(cardCode, cardSet);
 	}
 	return cardSet;
@@ -128,7 +130,6 @@ export interface FilterCardsOptions {
 /** Applies the active store filters, then reorders by supertype when no supertype filter is set. */
 export function filterCards(
 	cards: FullCard[],
-	pokemons: Pokemon[],
 	sets: Set[],
 	selectedSet: Set | null,
 	{ applyFilters, groupBySupertype }: FilterCardsOptions,
@@ -137,7 +138,7 @@ export function filterCards(
 		return groupBySupertype ? sortBySupertype([...cards]) : cards;
 	}
 
-	const pokemonMap = new Map(pokemons.map(pokemon => [pokemon.id, pokemon]));
+	const filters = readActiveFilters();
 
 	const filtered = cards.filter(card => {
 		const cardSet = getCardSet(card.cardCode, sets) ?? {
@@ -146,7 +147,7 @@ export function filterCards(
 			printedTotal: 0,
 			releaseDate: new Date(),
 		};
-		return isVisible(card, pokemonMap.get(card.pokemonNumber ?? 0), cardSet, selectedSet);
+		return isVisible(card, cardSet, selectedSet, filters);
 	});
 
 	return groupBySupertype ? sortBySupertype(filtered) : filtered;

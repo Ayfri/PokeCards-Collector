@@ -34,7 +34,6 @@
 	import Loader from "$lib/components/Loader.svelte";
 	import { cardSize, getCardDimensions } from "$lib/stores/gridStore";
 	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
-	import { debounce } from '$helpers/debounce';
 
 	interface Props {
 		cards: FullCard[];
@@ -102,7 +101,7 @@
 		mounted = true;
 	});
 
-	const debouncedSetFilterName = debounce((value: string) => {
+	function setFilterName(value: string) {
 		$filterName = value;
 
 		// Update URL with name parameter when search is used
@@ -136,7 +135,7 @@
 				inputElement.setSelectionRange(len, len);
 			}
 		});
-	}, 300);
+	}
 
 	// Local reset function to clear both store and local state
 	function localResetFilters() {
@@ -182,14 +181,15 @@
 	// Find the selected set based on the filter and determine the correct total count to display
 	const selectedSet = $derived($filterSet && $filterSet !== "all" ? findSetByCardCode($filterSet, sets) : null);
 
-	const filteredCards = $derived(filterCards(displayedCards, pokemons, sets, selectedSet ?? null, {
+	const filteredCards = $derived(filterCards(displayedCards, sets, selectedSet ?? null, {
 		applyFilters: Boolean(hasActiveFilters),
 		groupBySupertype: $filterSupertype === "all",
 	}));
 
 	const visibleCardsCount = $derived(filteredCards.length);
+	// 66 Pokémon cards carry no dex id; without the guard they all collapse into one extra entry in the count.
 	const uniquePokemonCount = $derived(new Set(
-		filteredCards.filter(card => card.supertype === "Pokémon").map(card => card.pokemonNumber),
+		filteredCards.filter(card => card.supertype === "Pokémon" && card.pokemonNumber != null).map(card => card.pokemonNumber),
 	).size);
 
 	// Count active filters
@@ -295,7 +295,7 @@
 					label="Name"
 					bind:value={searchName}
 					placeholder="Search by name..."
-					debounceFunction={debouncedSetFilterName}
+					debounceFunction={setFilterName}
 				/>
 			</div>
 			<!-- Filters Button (Always Visible) -->
