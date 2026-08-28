@@ -151,3 +151,43 @@ export interface ServiceResponse<T> {
 	// Accommodate Supabase PostgrestError (which is an object with message, details, hint, code) or other error types
 	error: Error | { message: string; details?: string; hint?: string; code?: string; } | string | null;
 }
+
+// Per-attribute comparison between a card.dle guess and the card of the day
+export interface CardDleFeedback {
+	artistCorrect: boolean;
+	artistValue: string;
+	pokemonCorrect: boolean;
+	pokemonValue: string;
+	priceComparison: 'higher' | 'lower' | 'correct';
+	priceValue: number;
+	setCorrect: boolean;
+	setValue: string;
+	supertypeCorrect: boolean;
+	supertypeValue: string;
+	typesCorrect: boolean;
+	typesValue: string;
+}
+
+// Response of POST /api/card-dle/guess
+export type CardDleGuessResponse =
+	| {
+		feedback: CardDleFeedback;
+		guessedCardImage: string;
+		guessedCardName: string;
+		guessedPokemonNumber?: number;
+		isCorrectGuess: boolean;
+		success: true;
+	}
+	| { error: string; success?: false };
+
+// Row returned by the search_public_users_with_stats RPC
+export interface SearchedUserWithStats extends SearchedUser {
+	created_at: string;
+	profile_color: string | null;
+	unique_card_count: number;
+}
+
+// Response of GET /api/search-users
+export type SearchUsersResponse =
+	| { success: true; users: SearchedUserWithStats[] }
+	| { success?: false; error: string };
