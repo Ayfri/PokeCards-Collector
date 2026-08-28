@@ -4,14 +4,18 @@
 	import type { FullCard, Pokemon, Set, PriceData } from "$lib/types";
 	import { fade } from 'svelte/transition';	
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
 
-	$: allCards = data.allCards as FullCard[];
-	$: pokemonCards = data.pokemonCards as FullCard[];
-	$: pokemons = data.pokemons as Pokemon[];
-	$: sets = data.sets as Set[];
-	$: pokemon = data.pokemon as Pokemon;
-	$: prices = (data.prices as Record<string, PriceData> | undefined) || {};
+	let { data }: Props = $props();
+
+	let allCards = $derived(data.allCards as FullCard[]);
+	let pokemonCards = $derived(data.pokemonCards as FullCard[]);
+	let pokemons = $derived(data.pokemons as Pokemon[]);
+	let sets = $derived(data.sets as Set[]);
+	let pokemon = $derived(data.pokemon as Pokemon);
+	let prices = $derived((data.prices as Record<string, PriceData> | undefined) || {});
 	
 	// This will ensure all components know we're in the Japanese card context
 	let isJpContext = true;

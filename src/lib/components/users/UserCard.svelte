@@ -1,23 +1,34 @@
 <script lang="ts">
 	import Avatar from '@components/auth/Avatar.svelte';
-	import CalendarDaysIcon from 'lucide-svelte/icons/calendar-days';
-	import HashIcon from 'lucide-svelte/icons/hash';
+	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
+	import HashIcon from '@lucide/svelte/icons/hash';
 	import { timeAgo } from '$helpers/dates';
 	import { goto } from '$app/navigation';
-    import { ChevronRight } from 'lucide-svelte';
+    import { ChevronRight } from '@lucide/svelte';
 
-	export let user: {
+	interface Props {
+		user: {
 		auth_id: string;
 		username: string;
 		profile_color?: string | null;
 		created_at: string;
 		unique_card_count: number;
 	};
-	export let highlightClass: string = 'text-blue-300 group-hover:text-blue-300'; // Default for search
-	export let hoverBorderClass: string = 'hover:border-blue-400/80';
-	export let hoverShadowClass: string = 'hover:shadow-blue-500/25';
-	export let countTextPrefix: string = '';
-	export let countTextSuffix: string = 'unique card';
+		highlightClass?: string; // Default for search
+		hoverBorderClass?: string;
+		hoverShadowClass?: string;
+		countTextPrefix?: string;
+		countTextSuffix?: string;
+	}
+
+	let {
+		user,
+		highlightClass = 'text-blue-300 group-hover:text-blue-300',
+		hoverBorderClass = 'hover:border-blue-400/80',
+		hoverShadowClass = 'hover:shadow-blue-500/25',
+		countTextPrefix = '',
+		countTextSuffix = 'unique card'
+	}: Props = $props();
 
 	function viewProfile(username: string) {
 		goto(`/profile/${encodeURIComponent(username)}`);

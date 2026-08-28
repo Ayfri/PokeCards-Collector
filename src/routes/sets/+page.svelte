@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { fade, fly } from 'svelte/transition';
 	import type { PageData } from './$types';
 	import { NO_IMAGES } from '$lib/images';
@@ -9,69 +11,75 @@
 	import type { SetWithPrice } from '$lib/types';
 	import { debounce } from '$helpers/debounce';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	let sortDirection = persistentWritable<'desc' | 'asc'>('sortDirection', 'desc');
 	let sortValue = persistentWritable<'code' | 'name' | 'printedTotal' | 'releaseDate' | 'totalPrice'>('sortValue', 'releaseDate');
-	let sortedSets: SetWithPrice[] = []; // Initialize as empty, will be updated reactively
+	let sortedSets: SetWithPrice[] = $state([]); // Initialize as empty, will be updated reactively
 
-	let searchTerm = '';
+	let searchTerm = $state('');
 
 	// Reactive declaration for typedSets using data.sets
-	$: typedSets = data.setsWithPrices;
+	let typedSets = $derived(data.setsWithPrices);
 
 	const debouncedSetSearchTerm = debounce((value: string) => {
 		searchTerm = value;
 	}, 300);
 
 	// Reactive effect to update sortedSets when dependencies change
-	$: if (sortValue && sortDirection && typedSets) {
-		let tempSortedSets = [...typedSets]; // Work with a copy
-		if ($sortValue === 'code') {
-			tempSortedSets.sort((a, b) => {
-				const codeA = a.ptcgoCode || '';
-				const codeB = b.ptcgoCode || '';
-				return $sortDirection === 'desc' ? codeB.localeCompare(codeA) : codeA.localeCompare(codeB);
-			});
-		} else if ($sortValue === 'name') {
-			tempSortedSets.sort((a, b) => {
-				return $sortDirection === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
-			});
-		} else if ($sortValue === 'printedTotal') {
-			tempSortedSets.sort((a, b) => {
-				return $sortDirection === 'desc' ? b.printedTotal - a.printedTotal : a.printedTotal - b.printedTotal;
-			});
-		} else if ($sortValue === 'releaseDate') {
-			tempSortedSets.sort((a, b) => {
-				const aTime = new Date(a.releaseDate).getTime();
-				const bTime = new Date(b.releaseDate).getTime();
-				return $sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
-			});
-		} else if ($sortValue === 'totalPrice') {
-			tempSortedSets.sort((a, b) => {
-				return $sortDirection === 'desc' ? b.totalPrice - a.totalPrice : a.totalPrice - b.totalPrice;
-			});
+	run(() => {
+		if (sortValue && sortDirection && typedSets) {
+			let tempSortedSets = [...typedSets]; // Work with a copy
+			if ($sortValue === 'code') {
+				tempSortedSets.sort((a, b) => {
+					const codeA = a.ptcgoCode || '';
+					const codeB = b.ptcgoCode || '';
+					return $sortDirection === 'desc' ? codeB.localeCompare(codeA) : codeA.localeCompare(codeB);
+				});
+			} else if ($sortValue === 'name') {
+				tempSortedSets.sort((a, b) => {
+					return $sortDirection === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
+				});
+			} else if ($sortValue === 'printedTotal') {
+				tempSortedSets.sort((a, b) => {
+					return $sortDirection === 'desc' ? b.printedTotal - a.printedTotal : a.printedTotal - b.printedTotal;
+				});
+			} else if ($sortValue === 'releaseDate') {
+				tempSortedSets.sort((a, b) => {
+					const aTime = new Date(a.releaseDate).getTime();
+					const bTime = new Date(b.releaseDate).getTime();
+					return $sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
+				});
+			} else if ($sortValue === 'totalPrice') {
+				tempSortedSets.sort((a, b) => {
+					return $sortDirection === 'desc' ? b.totalPrice - a.totalPrice : a.totalPrice - b.totalPrice;
+				});
+			}
+			sortedSets = tempSortedSets; // Assign the sorted array back
+		} else {
+			sortedSets = typedSets ? [...typedSets] : []; // Fallback if dependencies are missing
 		}
-		sortedSets = tempSortedSets; // Assign the sorted array back
-	} else {
-		sortedSets = typedSets ? [...typedSets] : []; // Fallback if dependencies are missing
-	}
+	});
 
-	$: filteredSets = searchTerm
+	let filteredSets = $derived(searchTerm
 		? sortedSets.filter(set =>
 				set.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
 				(set.ptcgoCode && set.ptcgoCode.toLowerCase().includes(searchTerm.toLowerCase()))
 			)
-		: sortedSets;
+		: sortedSets);
 
-	$: groupedSets = filteredSets.reduce((acc, set) => {
+	let groupedSets = $derived(filteredSets.reduce((acc, set) => {
 		const series = set.series || 'Other';
 		acc[series] ??= [];
 		acc[series].push(set);
 		return acc;
-	}, {} as Record<string, SetWithPrice[]>);
+	}, {} as Record<string, SetWithPrice[]>));
 
-	$: seriesKeys = Object.keys(groupedSets).sort((a, b) => {
+	let seriesKeys = $derived(Object.keys(groupedSets).sort((a, b) => {
 		const firstSetA = groupedSets[a][0];
 		const firstSetB = groupedSets[b][0];
 
@@ -93,7 +101,7 @@
 			return $sortDirection === 'desc' ? firstSetB.totalPrice - firstSetA.totalPrice : firstSetA.totalPrice - firstSetB.totalPrice;
 		}
 		return 0;
-	});
+	}));
 
 	function formatCurrency(value: number): string {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);

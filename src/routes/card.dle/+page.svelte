@@ -6,16 +6,20 @@
 	import Button from '@components/filters/Button.svelte';
 	import BouncyLoader from '@components/BouncyLoader.svelte';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
 
-	let searchInput = '';
+	let { data }: Props = $props();
+
+	let searchInput = $state('');
 	let activeSuggestions: {
 		name: string;
 		cardCode: string;
 		pokemonName: string;
 		image: string;
 		price: number;
-	}[] = [];
+	}[] = $state([]);
 	let historicGuesses: {
 		id: number;
 		name: string;
@@ -23,10 +27,10 @@
 		pokemonNumber?: number;
 		feedback: any;
 		isCorrect: boolean;
-	}[] = [];
+	}[] = $state([]);
 
-	let historicGuessesContainer: HTMLDivElement;
-	let showRulesModal = false;
+	let historicGuessesContainer = $state<HTMLDivElement>();
+	let showRulesModal = $state(false);
 
 	// Loading state
 	let loadingGuess: {
@@ -34,10 +38,10 @@
 		name: string;
 		cardImage: string;
 		pokemonNumber?: number;
-	} | null = null;
+	} | null = $state(null);
 
 	// Game state
-	let hasWon = false;
+	let hasWon = $state(false);
 
 	function displayMatchingCards(searchTerm?: string) {
 		const term = searchTerm || searchInput.trim();
@@ -72,7 +76,7 @@
 		}
 	}
 
-	let isSubmitting = false;
+	let isSubmitting = $state(false);
 
 	async function selectSuggestion(card: any) {
 		if (isSubmitting) return;
@@ -355,7 +359,7 @@
 					{#each activeSuggestions as suggestion (suggestion.cardCode)}
 						<button
 							type="button"
-							on:click={(e) => {
+							onclick={(e) => {
 								e.preventDefault();
 								e.stopPropagation();
 								selectSuggestion(suggestion);

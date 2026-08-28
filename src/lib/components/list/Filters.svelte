@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { filterArtist, filterName, filterNumero, filterRarity, filterSet, filterSupertype, filterType, mostExpensiveOnly, sortBy, sortOrder } from '$helpers/filters';
 	import type { Set } from '$lib/types';
-	import { afterUpdate, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { filterStates } from '$stores/filterStates';
 	import Button from '@components/filters/Button.svelte';
 	import Section from '@components/filters/Section.svelte';
@@ -10,27 +10,37 @@
 	import TextInput from '@components/filters/TextInput.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
-	import ArrowUp from 'lucide-svelte/icons/arrow-up';
-	import ArrowDown from 'lucide-svelte/icons/arrow-down';
+	import ArrowUp from '@lucide/svelte/icons/arrow-up';
+	import ArrowDown from '@lucide/svelte/icons/arrow-down';
 	import { debounce } from '$helpers/debounce';
 
-	export let artists: string[] = [];
-	export let rarities: string[];
-	export let sets: Set[];
-	export let types: string[];
-	export let onUpdate: () => void = () => {};
+	interface Props {
+		artists?: string[];
+		rarities: string[];
+		sets: Set[];
+		types: string[];
+		onUpdate?: () => void;
+	}
+
+	let {
+		artists = [],
+		rarities,
+		sets,
+		types,
+		onUpdate = () => {}
+	}: Props = $props();
 
 	// Inputs text variables
 	let debounceTimeout: number;
-	let searchNumero = '';
-	let searchName = '';
-	let supertypeValue = 'all';
-	let pokemonTypeValue = 'all';
-	let sortDirectionValue: 'asc' | 'desc' = 'asc';
-	let sortValueValue: string = 'sort-pokedex';
-	let rarityValue = 'all';
-	let artistValue = 'all';
-	let setValue = 'all';
+	let searchNumero = $state('');
+	let searchName = $state('');
+	let supertypeValue = $state('all');
+	let pokemonTypeValue = $state('all');
+	let sortDirectionValue: 'asc' | 'desc' = $state('asc');
+	let sortValueValue: string = $state('sort-pokedex');
+	let rarityValue = $state('all');
+	let artistValue = $state('all');
+	let setValue = $state('all');
 
 	// Initialize search values from stores when component is loaded
 	onMount(() => {
@@ -57,7 +67,11 @@
 		}
 	});
 
-	afterUpdate(onUpdate);
+	/** Notifies the parent whenever any filter value changes, so it can relayout. */
+	$effect(() => {
+		[artistValue, pokemonTypeValue, rarityValue, searchName, searchNumero, setValue, sortDirectionValue, sortValueValue, supertypeValue];
+		onUpdate();
+	});
 
 	const debouncedSetFilterNumero = debounce((value: string) => {
 		$filterNumero = value;
@@ -254,25 +268,25 @@
 	];
 
 	// Prepare options for types, rarities, sets and illustrators
-	$: artistOptions = [
+	let artistOptions = $derived([
 		{ value: 'all', label: 'All illustrators' },
 		...artists.map(artist => ({ value: artist.toLowerCase(), label: artist }))
-	];
+	]);
 
-	$: rarityOptions = [
+	let rarityOptions = $derived([
 		{ value: 'all', label: 'All rarities' },
 		...rarities.map(rarity => ({ value: rarity.toLowerCase(), label: rarity }))
-	];
+	]);
 
-	$: setOptions = [
+	let setOptions = $derived([
 		{ value: 'all', label: 'All sets' },
 		...sets.map(set => ({ value: set.name.toLowerCase(), label: set.name }))
-	];
+	]);
 
-	$: typeOptions = [
+	let typeOptions = $derived([
 		{ value: 'all', label: 'All types' },
 		...types.map(type => ({ value: type.toLowerCase(), label: type }))
-	];
+	]);
 	
 	function handleRarityChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
@@ -460,7 +474,7 @@
 						</Button>
 						<select
 							id="sort"
-							on:change={handleSortValueChange}
+							onchange={handleSortValueChange}
 							value={sortValueValue}
 							class="bg-transparent border-2 cursor-pointer rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 border-white"
 						>
@@ -511,7 +525,7 @@
 				<label for="supertype" class="text-xs text-gray-300">Card Type</label>
 				<select
 					id="supertype"
-					on:change={handleSupertypeChange}
+					onchange={handleSupertypeChange}
 					value={supertypeValue}
 					class="bg-transparent border-2 cursor-pointer rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {supertypeValue !== 'all' ? 'border-amber-400 text-amber-400' : 'border-white'}"
 				>
@@ -525,7 +539,7 @@
 				<label for="pokemontype" class="text-xs text-gray-300">Pokémon Type</label>
 				<select
 					id="pokemontype"
-					on:change={handlePokemonTypeChange}
+					onchange={handlePokemonTypeChange}
 					value={pokemonTypeValue}
 					class="bg-transparent border-2 cursor-pointer rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {pokemonTypeValue !== 'all' ? 'border-amber-400 text-amber-400' : 'border-white'}"
 				>
@@ -539,7 +553,7 @@
 				<label for="rarity" class="text-xs text-gray-300">Rarity</label>
 				<select
 					id="rarity"
-					on:change={handleRarityChange}
+					onchange={handleRarityChange}
 					value={rarityValue}
 					class="bg-transparent border-2 cursor-pointer rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {rarityValue !== 'all' ? 'border-amber-400 text-amber-400' : 'border-white'}"
 				>
@@ -557,7 +571,7 @@
 				<label for="set" class="text-xs text-gray-300">Set</label>
 				<select
 					id="set"
-					on:change={handleSetChange}
+					onchange={handleSetChange}
 					value={setValue}
 					class="bg-transparent border-2 cursor-pointer rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {setValue !== 'all' ? 'border-amber-400 text-amber-400' : 'border-white'}"
 				>
@@ -571,7 +585,7 @@
 				<label for="artist" class="text-xs text-gray-300">Illustrator</label>
 				<select
 					id="artist"
-					on:change={handleArtistChange}
+					onchange={handleArtistChange}
 					value={artistValue}
 					class="bg-transparent border-2 cursor-pointer rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {artistValue !== 'all' ? 'border-amber-400 text-amber-400' : 'border-white'}"
 				>

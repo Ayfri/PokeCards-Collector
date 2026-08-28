@@ -1,11 +1,21 @@
 <script lang="ts">
-	export let id: string;
-	export let label: string;
-	export let checked: boolean = false;
-	export let disabled: boolean = false;
 	
-	let className: string = "";
-	export { className as class };
+	interface Props {
+		id: string;
+		label: string;
+		checked?: boolean;
+		disabled?: boolean;
+		class?: string;
+	}
+
+	let {
+		id,
+		label,
+		checked = $bindable(false),
+		disabled = false,
+		class: className = ""
+	}: Props = $props();
+	
 </script>
 
 <div class="flex items-center gap-2 {className}">

@@ -1,12 +1,16 @@
 <script lang="ts">
-	import ArrowUp from 'lucide-svelte/icons/arrow-up';
-	import ArrowDown from 'lucide-svelte/icons/arrow-down';
+	import ArrowUp from '@lucide/svelte/icons/arrow-up';
+	import ArrowDown from '@lucide/svelte/icons/arrow-down';
 	import Select from '@components/filters/Select.svelte';
 	import Button from '@components/filters/Button.svelte';
 
-	export let sortDirection: 'asc' | 'desc';
-	export let sortValue: string;
-	export let options: { value: string; label: string }[];
+	interface Props {
+		sortDirection: 'asc' | 'desc';
+		sortValue: string;
+		options: { value: string; label: string }[];
+	}
+
+	let { sortDirection = $bindable(), sortValue = $bindable(), options }: Props = $props();
 
 	function toggleSortDirection() {
 		sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';

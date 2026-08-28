@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { createBubbler, stopPropagation } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import {fade} from 'svelte/transition';
-	import ExternalLink from 'lucide-svelte/icons/external-link';
+	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import { persistentWritable } from '$lib/stores/persistentStore';
 	import SortControl from '@components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '$lib/images';
@@ -10,30 +13,43 @@
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
 	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
 	import { collectionStore } from '$lib/stores/collection';
-	import { Heart, Minus, Plus } from 'lucide-svelte';
+	import { Heart, Minus, Plus } from '@lucide/svelte';
 	import { page } from '$app/state';
 	import { wishlistStore } from '$lib/stores/wishlist';
 
-	// --- Props ---
-	export let cards: FullCard[];
-	export let pokemons: Pokemon[]; // Still needed for lookups if a card *is* a pokemon
-	export let prices: Record<string, PriceData>;
-	export let sets: Set[];
-	export let pokemon: Pokemon | undefined = undefined; // Optional Pokemon context
-	export let onCardSelect: (card: FullCard) => void;
-	export let lowRes: boolean = false;
+	
+	interface Props {
+		// --- Props ---
+		cards: FullCard[];
+		pokemons: Pokemon[]; // Still needed for lookups if a card *is* a pokemon
+		prices: Record<string, PriceData>;
+		sets: Set[];
+		pokemon?: Pokemon | undefined; // Optional Pokemon context
+		onCardSelect: (card: FullCard) => void;
+		lowRes?: boolean;
+	}
+
+	let {
+		cards,
+		pokemons,
+		prices,
+		sets,
+		pokemon = undefined,
+		onCardSelect,
+		lowRes = false
+	}: Props = $props();
 
 	// --- Persistent Sorting State ---
 	const relatedSortBy = persistentWritable('related-cards-sort-by', 'sort-set');
 	const relatedSortOrder = persistentWritable<'asc' | 'desc'>('related-cards-sort-order', 'asc');
 
 	// --- Force reactivity for stores ---
-	$: _collection = $collectionStore;
-	$: _wishlist = $wishlistStore;
+	let _collection = $derived($collectionStore);
+	let _wishlist = $derived($wishlistStore);
 
 	// --- User/Profile State ---
-	$: user = page.data.user;
-	$: profile = page.data.profile;
+	let user = $derived(page.data.user);
+	let profile = $derived(page.data.profile);
 
 	// --- Collection/Wishlist State ---
 	function getCollectionCount(cardCode: string) {
@@ -103,12 +119,12 @@
 	}
 
 	// Sort the cards based on the current sort settings (use the passed 'cards' directly)
-	$: sortedCards = sortCards(cards, $relatedSortBy, $relatedSortOrder);
+	let sortedCards = $derived(sortCards(cards, $relatedSortBy, $relatedSortOrder));
 
 	// Determine the title based on whether a specific Pokémon context is provided
-	$: titleName = pokemon
+	let titleName = $derived(pokemon
 		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
-		: (sortedCards[0]?.name || 'Related'); // Fallback to first card name or generic term
+		: (sortedCards[0]?.name || 'Related')); // Fallback to first card name or generic term
 
 	// --- Actions ---
 	async function toggleWishlist(cardCode: string, event: MouseEvent) {
@@ -172,7 +188,7 @@
 				<button
 					class="flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5 cursor-pointer"
 					transition:fade={{ duration: 200 }}
-					on:click={() => onCardSelect(card)}
+					onclick={() => onCardSelect(card)}
 					aria-label={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
 				>
 					<div class="relative rounded-lg overflow-hidden shadow-lg w-full" style="aspect-ratio: 63/88;">
@@ -207,7 +223,7 @@
 									<button
 										aria-label="Remove one copy from collection"
 										class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-										on:click={(e) => handleRemoveCard(card.cardCode, e)}
+										onclick={(e) => handleRemoveCard(card.cardCode, e)}
 										disabled={getCollectionCount(card.cardCode) === 0}
 										title="Remove one copy from collection"
 									>
@@ -223,7 +239,7 @@
 								<button
 									aria-label="Add one copy to collection"
 									class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-									on:click={(e) => handleAddCard(card.cardCode, e)}
+									onclick={(e) => handleAddCard(card.cardCode, e)}
 									disabled={getCollectionCount(card.cardCode) >= MAX_CARD_QUANTITY}
 									title={getCollectionCount(card.cardCode) >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 								>
@@ -233,7 +249,7 @@
 								<button
 									aria-label={isInWishlist(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
 									class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-									on:click={(e) => toggleWishlist(card.cardCode, e)}
+									onclick={(e) => toggleWishlist(card.cardCode, e)}
 									title={isInWishlist(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
 								>
 									<Heart size={16} class={isInWishlist(card.cardCode) ? 'text-red-500 fill-red-500' : 'text-white'} />
@@ -250,7 +266,7 @@
 									target="_blank"
 									rel="noopener noreferrer"
 									class="hover:text-gold-300 transition-colors duration-200 text-center"
-									on:click|stopPropagation
+									onclick={stopPropagation(bubble('click'))}
 									aria-label="View on Cardmarket"
 								>
 									<div class="flex items-center justify-center whitespace-nowrap">

@@ -1,5 +1,9 @@
 <script lang="ts">
-	export let onKeyPress: (key: string) => void;
+	interface Props {
+		onKeyPress: (key: string) => void;
+	}
+
+	let { onKeyPress }: Props = $props();
 
 	const numpadLayout = [
 		['7', '8', '9'],
@@ -24,7 +28,7 @@
 							focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-gold-400 
 							text-xl md:text-2xl font-semibold transition-all duration-150
 							{key === 'C' || key === 'Backspace' ? 'text-gold-400 hover:text-gold-300' : 'text-gold-300'}"
-				on:click={() => onKeyPress(key)}
+				onclick={() => onKeyPress(key)}
 			>
 				{getKeyText(key)}
 			</button>

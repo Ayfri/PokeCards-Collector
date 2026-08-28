@@ -1,31 +1,42 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { type Writable } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import Button from '@components/filters/Button.svelte';
-	import TrashIcon from 'lucide-svelte/icons/trash';
-	import FilterIcon from 'lucide-svelte/icons/filter';
-	import X from 'lucide-svelte/icons/x';
+	import TrashIcon from '@lucide/svelte/icons/trash';
+	import FilterIcon from '@lucide/svelte/icons/filter';
+	import X from '@lucide/svelte/icons/x';
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import type { FullCard, Set } from '$lib/types';
 	import { slide } from 'svelte/transition';
-	import ArrowUp from 'lucide-svelte/icons/arrow-up';
-	import ArrowDown from 'lucide-svelte/icons/arrow-down';
+	import ArrowUp from '@lucide/svelte/icons/arrow-up';
+	import ArrowDown from '@lucide/svelte/icons/arrow-down';
 	import { parseCardCode, isCardCode } from '$helpers/card-utils';
 
-	export let cards: Writable<string[]>;
-	export let allCards: FullCard[];
-	export let sets: Set[];
-	export let toggleClearStorageModal: () => void;
+	interface Props {
+		cards: Writable<string[]>;
+		allCards: FullCard[];
+		sets: Set[];
+		toggleClearStorageModal: () => void;
+	}
+
+	let {
+		cards,
+		allCards,
+		sets,
+		toggleClearStorageModal
+	}: Props = $props();
 	
-	$: cardDataMap = new Map(allCards.map(card => [card.cardCode, card]));
+	let cardDataMap = $derived(new Map(allCards.map(card => [card.cardCode, card])));
 	
 	// Search and filter state
-	let searchTerm = '';
-	let sortBy = 'type'; // Default sort: card codes first, then URLs
-	let sortOrder = 'asc';
-	let filteredCardCodes: string[] = [];
-	let showFilters = false;
+	let searchTerm = $state('');
+	let sortBy = $state('type'); // Default sort: card codes first, then URLs
+	let sortOrder = $state('asc');
+	let filteredCardCodes: string[] = $state([]);
+	let showFilters = $state(false);
 	
 	// Load saved preferences on mount
 	onMount(() => {
@@ -39,7 +50,7 @@
 	});
 
 	// Update filtered cards when original cards or filters change
-	$: {
+	run(() => {
 		let filtered = [...$cards];
 		
 		if (searchTerm.trim()) {
@@ -84,7 +95,7 @@
 		});
 		
 		filteredCardCodes = filtered;
-	}
+	});
 	
 	// Handle drag start for stored cards
 	function onDragStart(e: DragEvent, item: string) {
@@ -170,20 +181,20 @@
 							<div 
 								class="relative aspect-2/3 border-2 border-gray-700 rounded-sm group transition-all duration-200 hover:border-gold-400"
 								draggable="true"
-								on:dragstart={(e) => onDragStart(e, item)}
+								ondragstart={(e) => onDragStart(e, item)}
 							>
-								<CardImage imageUrl={fullCard.image} alt={fullCard.name} class="w-full h-full object-contain p-1" lazy={true} highRes={false} />
+								<CardImage imageUrl={fullCard.image} alt={fullCard.name} class="w-full h-full object-contain p-1" lazy={true} />
 								<div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[0.6rem] leading-tight text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">
 									<div class="font-semibold truncate">{fullCard.name}</div>
 									<div class="truncate">#{setIndex}/{set?.printedTotal}</div>
 									<div class="truncate text-gray-300">{fullCard.rarity}</div>
 								</div>
-								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" on:click={() => removeItem(item)} > <X size={14} /> </button>
+								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onclick={() => removeItem(item)} > <X size={14} /> </button>
 							</div>
 						{:else}
 							<div class="relative aspect-2/3 border-2 border-dashed border-red-700 rounded-sm flex items-center justify-center text-center p-1">
 								<span class="text-red-400 text-xs">Data missing for {item}</span>
-								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5" on:click={() => removeItem(item)} > <X size={14} /> </button>
+								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5" onclick={() => removeItem(item)} > <X size={14} /> </button>
 							</div>
 						{/if}
 					{:else} 
@@ -191,14 +202,14 @@
 						<div 
 							class="relative aspect-2/3 border-2 border-gray-700 rounded-sm group transition-all duration-200 hover:border-gold-400"
 							draggable="true"
-							on:dragstart={(e) => onDragStart(e, item)}
+							ondragstart={(e) => onDragStart(e, item)}
 						>
-							<CardImage imageUrl={item} alt="Imported from URL" class="w-full h-full object-contain p-1" lazy={true} highRes={false} />
+							<CardImage imageUrl={item} alt="Imported from URL" class="w-full h-full object-contain p-1" lazy={true} />
 							<div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[0.6rem] leading-tight text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">
 								<div class="font-semibold truncate">Imported from URL</div>
 								<div class="truncate text-gray-300 break-all">{item}</div> 
 							</div>
-							<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" on:click={() => removeItem(item)} > <X size={14} /> </button>
+							<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onclick={() => removeItem(item)} > <X size={14} /> </button>
 						</div>
 					{/if}
 				{/each}

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
@@ -7,20 +9,24 @@
 	import Loader from "$lib/components/Loader.svelte";
 	import { cardSize } from '$lib/stores/gridStore';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	// Use allCards from layout data passed down via PageData
 	// $: allCards = data.allCards; // No longer needed here, will come from data.streamed.allCards
-	$: sets = data.sets;
-	$: rarities = data.rarities;
-	$: types = data.types;
-	$: artists = data.artists;
+	let sets = $derived(data.sets);
+	let rarities = $derived(data.rarities);
+	let types = $derived(data.types);
+	let artists = $derived(data.artists);
 
 	// Determine lowRes based on cardSize
-	$: lowRes = !($cardSize === 2 || $cardSize === 3); // true if not L or XL
+	let lowRes = $derived(!($cardSize === 2 || $cardSize === 3)); // true if not L or XL
 
-	let selectedSetName: string | null;
-	let selectedArtistName: string | null;
+	let selectedSetName = $state<string | null>();
+	let selectedArtistName = $state<string | null>();
 
 	onMount(() => {
 		const mountStart = performance.now();
@@ -150,12 +156,12 @@
 		console.log(`✅ CardsListPage: Mount completed in ${performance.now() - mountStart}ms`);
 	});
 
-	$: {
+	run(() => {
 		const reactiveStart = performance.now();
 		selectedSetName = $filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null;
 		selectedArtistName = $filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null;
 		console.log(`🔄 CardsListPage: Reactive selectedNames calculated in ${performance.now() - reactiveStart}ms - Set: ${selectedSetName}, Artist: ${selectedArtistName}`);
-	}
+	});
 </script>
 
 <main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">

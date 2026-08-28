@@ -1,16 +1,29 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { CountUp as CountUpJs, type CountUpOptions } from '$lib/countup-wrapper';
 	import { onMount } from 'svelte';
 
-	export let duration = 2;
-	export let end: number;
-	export let start = 0;
-	export let options: CountUpOptions = {};
+	interface Props {
+		duration?: number;
+		end: number;
+		start?: number;
+		options?: CountUpOptions;
+	}
 
-	let countUpAnim: CountUpJs;
-	let spanElement: HTMLSpanElement;
+	let {
+		duration = 2,
+		end,
+		start = 0,
+		options = {}
+	}: Props = $props();
+
+	let countUpAnim = $state<CountUpJs>();
+	let spanElement = $state<HTMLSpanElement>();
 
 	onMount(() => {
+		if (!spanElement) return;
+
 		countUpAnim = new CountUpJs(spanElement, end, {
 			startVal: start,
 			duration,
@@ -29,9 +42,11 @@
 	});
 
 	// Update the countUp animation when the end value changes
-	$: if (countUpAnim && end !== undefined) {
-		countUpAnim.update(end);
-	}
+	run(() => {
+		if (countUpAnim && end !== undefined) {
+			countUpAnim.update(end);
+		}
+	});
 </script>
 
 <span bind:this={spanElement}>{start}</span> 

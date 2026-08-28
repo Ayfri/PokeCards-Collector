@@ -1,20 +1,26 @@
 <script lang="ts">
+	import { preventDefault } from 'svelte/legacy';
+
 	import { supabase } from '../../supabase';
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import { page } from '$app/stores';
 	import { goto, invalidateAll } from '$app/navigation';
 
-	export let onSuccess: (() => void) | undefined = undefined;
+	interface Props {
+		onSuccess?: (() => void) | undefined;
+	}
 
-	let email = '';
-	let password = '';
-	let loading = false;
-	let errorMessage = '';
-	let showReset = false;
-	let resetEmail = '';
-	let resetLoading = false;
-	let resetMessage = '';
-	let showPassword = false;
+	let { onSuccess = undefined }: Props = $props();
+
+	let email = $state('');
+	let password = $state('');
+	let loading = $state(false);
+	let errorMessage = $state('');
+	let showReset = $state(false);
+	let resetEmail = $state('');
+	let resetLoading = $state(false);
+	let resetMessage = $state('');
+	let showPassword = $state(false);
 
 	async function handleSubmit() {
 		if (!email || !password) {
@@ -108,7 +114,7 @@
 	};
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="space-y-4">
+<form onsubmit={preventDefault(handleSubmit)} class="space-y-4">
 	{#if errorMessage}
 		<div class="p-3 bg-red-100 text-red-800 rounded-lg text-sm">
 			{errorMessage}
@@ -157,14 +163,14 @@
 			{/if}
 			<button
 				class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300"
-				on:click={togglePasswordVisibility}
+				onclick={togglePasswordVisibility}
 				type="button"
 			>
 				{showPassword ? 'Hide' : 'Show'}
 			</button>
 		</div>
 		<div class="mt-2 text-right">
-			<button type="button" class="text-xs text-red-600 hover:underline focus:outline-hidden" on:click={() => { showReset = !showReset; resetMessage = ''; }}>
+			<button type="button" class="text-xs text-red-600 hover:underline focus:outline-hidden" onclick={() => { showReset = !showReset; resetMessage = ''; }}>
 				{showReset ? 'Cancel' : 'Forgot password?'}
 			</button>
 		</div>
@@ -183,7 +189,7 @@
 			/>
 			<button type="button"
 				class="w-full py-2 px-4 bg-gold-400 text-black rounded-lg transition-all duration-400 flex items-center justify-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-				on:click={handlePasswordReset}
+				onclick={handlePasswordReset}
 				disabled={resetLoading}
 			>
 				{resetLoading ? 'Sending...' : 'Send reset email'}

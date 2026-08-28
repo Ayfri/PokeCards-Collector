@@ -8,37 +8,46 @@
 	import { wishlistStore } from '$lib/stores/wishlist';
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
 	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
-	import Heart from 'lucide-svelte/icons/heart';
-	import Plus from 'lucide-svelte/icons/plus';
-	import Minus from 'lucide-svelte/icons/minus';
+	import Heart from '@lucide/svelte/icons/heart';
+	import Plus from '@lucide/svelte/icons/plus';
+	import Minus from '@lucide/svelte/icons/minus';
 	import { fly } from 'svelte/transition';
 
-	export let set: Set;
-	export let card: FullCard;
-	export let cardPrices: PriceData | undefined = undefined;
-	export let pokemon: Pokemon | undefined = undefined;
+	interface Props {
+		set: Set;
+		card: FullCard;
+		cardPrices?: PriceData | undefined;
+		pokemon?: Pokemon | undefined;
+	}
+
+	let {
+		set,
+		card,
+		cardPrices = undefined,
+		pokemon = undefined
+	}: Props = $props();
 
 	const cardNumber = parseCardCode(card.cardCode).cardNumber;
 
 	// Compute the display name: Pokemon name if available, otherwise card name
-	$: displayName = pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name;
+	let displayName = $derived(pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name);
 	// Compute description: Pokemon description if available, otherwise card rules/basic info
-	$: displayDescription = pokemon ? pokemon.description : `Details for ${card?.name}`;
+	let displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card?.name}`);
 
 	function formatDate(date: Date) {
 		return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 	}
 
 	// --- User/Profile State ---
-	$: user = $page.data.user;
-	$: profile = $page.data.profile;
+	let user = $derived($page.data.user);
+	let profile = $derived($page.data.profile);
 
 	// --- Collection/Wishlist State ---
 	const MAX_CARD_QUANTITY = 99;
 
 	// Reactive declarations for template
-	$: collectionCount = card ? ($collectionStore.get(card.cardCode) || 0) : 0;
-	$: cardIsWishlisted = card ? $wishlistStore.has(card.cardCode) : false;
+	let collectionCount = $derived(card ? ($collectionStore.get(card.cardCode) || 0) : 0);
+	let cardIsWishlisted = $derived(card ? $wishlistStore.has(card.cardCode) : false);
 
 	// --- Actions ---
 	async function toggleWishlist(event: MouseEvent) {
@@ -69,8 +78,8 @@
 	}
 
 	// --- Force reactivity for stores ---
-	$: _collection = $collectionStore;
-	$: _wishlist = $wishlistStore;
+	let _collection = $derived($collectionStore);
+	let _wishlist = $derived($wishlistStore);
 </script>
 
 <div class="pokemon-info-container flex flex-col items-center gap-4 mt-6 lg:mt-12 max-lg:gap-0">
@@ -82,7 +91,7 @@
 					<button
 						aria-label="Remove one copy from collection"
 						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-						on:click={handleRemoveCard}
+						onclick={handleRemoveCard}
 						disabled={collectionCount === 0}
 						title="Remove one copy from collection"
 						in:fly={{ y: -5, duration: 200, delay: 100 }}
@@ -100,7 +109,7 @@
 				<button
 					aria-label="Add one copy to collection"
 					class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-					on:click={handleAddCard}
+					onclick={handleAddCard}
 					disabled={collectionCount >= MAX_CARD_QUANTITY}
 					title={collectionCount >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 					in:fly={{ y: -5, duration: 200, delay: collectionCount > 0 ? 200: 100 }}
@@ -117,7 +126,7 @@
 				<button
 					aria-label={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
 					class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-					on:click={toggleWishlist}
+					onclick={toggleWishlist}
 					title={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
 					in:fly={{ y: -5, duration: 200, delay: 250 }}
 				>

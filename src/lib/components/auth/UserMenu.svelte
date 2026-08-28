@@ -1,11 +1,13 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { onMount, onDestroy } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import User from 'lucide-svelte/icons/user';
-	import LogOut from 'lucide-svelte/icons/log-out';
-	import Heart from 'lucide-svelte/icons/heart';
-	import Library from 'lucide-svelte/icons/library';
-	import Settings from 'lucide-svelte/icons/settings';
+	import User from '@lucide/svelte/icons/user';
+	import LogOut from '@lucide/svelte/icons/log-out';
+	import Heart from '@lucide/svelte/icons/heart';
+	import Library from '@lucide/svelte/icons/library';
+	import Settings from '@lucide/svelte/icons/settings';
 	import { page } from '$app/stores';
 	import AuthModal from './AuthModal.svelte';
 	import { browser } from '$app/environment';
@@ -15,20 +17,24 @@
 	import type { User as AuthUser } from '@supabase/supabase-js';
 	import { goto, invalidateAll } from '$app/navigation';
 
-	let isMenuOpen = false;
-	let isAuthModalOpen = false;
-	let menuElement: HTMLElement;
+	let isMenuOpen = $state(false);
+	let isAuthModalOpen = $state(false);
+	let menuElement = $state<HTMLElement>();
 
-	$: user = $page.data.user as AuthUser | null;
-	$: profile = $page.data.profile as UserProfile | null;
+	let user = $derived($page.data.user as AuthUser | null);
+	let profile = $derived($page.data.profile as UserProfile | null);
 
-	export let userProp: AuthUser | null = $page.data.user as AuthUser | null;
-	export let profileProp: UserProfile | null = $page.data.profile as UserProfile | null;
+	interface Props {
+		userProp?: AuthUser | null;
+		profileProp?: UserProfile | null;
+	}
 
-	$: {
+	let { userProp = $bindable($page.data.user as AuthUser | null), profileProp = $bindable($page.data.profile as UserProfile | null) }: Props = $props();
+
+	run(() => {
 		userProp = $page.data.user as AuthUser | null;
 		profileProp = $page.data.profile as UserProfile | null;
-	}
+	});
 
 	function toggleMenu() {
 		isMenuOpen = !isMenuOpen;
@@ -109,7 +115,7 @@
 	<button
 		type="button"
 		class="flex items-center justify-center size-9 text-gray-400 hover:text-white rounded-full focus:outline-hidden"
-		on:click={() => {
+		onclick={() => {
 			if (userProp && profileProp) {
 				toggleMenu();
 			} else {
@@ -148,7 +154,7 @@
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
-						on:click={handleNavigation}
+						onclick={handleNavigation}
 					>
 						<User class="mr-3" size={16} />
 						My profile
@@ -158,7 +164,7 @@
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
-						on:click={handleNavigation}
+						onclick={handleNavigation}
 					>
 						<Library class="mr-3" size={16} />
 						My collection
@@ -168,7 +174,7 @@
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
-						on:click={handleNavigation}
+						onclick={handleNavigation}
 					>
 						<Heart class="mr-3" size={16} />
 						My wishlist
@@ -177,7 +183,7 @@
 						href="/settings"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
-						on:click={handleNavigation}
+						onclick={handleNavigation}
 					>
 						<Settings class="mr-3" size={16} />
 						Settings
@@ -186,7 +192,7 @@
 						type="button"
 						class="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
-						on:click={handleSignOut}
+						onclick={handleSignOut}
 					>
 						<LogOut class="mr-3" size={16} />
 						Sign out

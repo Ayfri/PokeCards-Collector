@@ -1,17 +1,38 @@
 <script lang="ts">
-	export let id: string;
-	export let label: string;
-	export let labelClass: string = '';
-	export let value: string;
-	export let placeholder: string = "";
-	export let autocomplete: string | undefined = undefined;
-	export let debounceFunction: (value: string) => void = () => {};
-	export let debounceDelay: number = 300; // Debounce delay in milliseconds
-	export let type: "email" | "password" | "text" | "url" = "text";
-	export let onInput: (event: Event) => void = () => {};
-	export let onKeydown: (event: KeyboardEvent) => void = () => {};
-	let className: string = "";
-	export {className as class};
+	import type { FullAutoFill } from 'svelte/elements';
+
+	interface Props {
+		id: string;
+		label: string;
+		labelClass?: string;
+		value: string;
+		placeholder?: string;
+		autocomplete?: FullAutoFill | undefined;
+		debounceFunction?: (value: string) => void;
+		debounceDelay?: number; // Debounce delay in milliseconds
+		type?: "email" | "password" | "text" | "url";
+		onInput?: (event: Event) => void;
+		onKeydown?: (event: KeyboardEvent) => void;
+		class?: string;
+		[key: string]: any
+	}
+
+	let {
+		id,
+		label,
+		labelClass = '',
+		value = $bindable(),
+		placeholder = "",
+		autocomplete = undefined,
+		debounceFunction = () => {},
+		debounceDelay = 300,
+		type = "text",
+		onInput = () => {},
+		onKeydown = () => {},
+		class: className = "",
+		...rest
+	}: Props = $props();
+	
 
 	let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -45,9 +66,9 @@
 			{placeholder}
 			type="email"
 			bind:value={value}
-			on:input={handleInput}
-			on:keydown={handleKeydown}
-			{...$$restProps}
+			oninput={handleInput}
+			onkeydown={handleKeydown}
+			{...rest}
 		/>
 	{:else if type === "password"}
 		<input
@@ -56,10 +77,10 @@
 			{id}
 			{placeholder}
 			bind:value={value}
-			on:input={handleInput}
-			on:keydown={handleKeydown}
+			oninput={handleInput}
+			onkeydown={handleKeydown}
 			type="password"
-			{...$$restProps}
+			{...rest}
 		/>
 	{:else if type === "text"}
 		<input
@@ -68,10 +89,10 @@
 			{id}
 			{placeholder}
 			bind:value={value}
-			on:input={handleInput}
-			on:keydown={handleKeydown}
+			oninput={handleInput}
+			onkeydown={handleKeydown}
 			type="text"
-			{...$$restProps}
+			{...rest}
 		/>
 	{:else if type === "url"}
 		<input
@@ -80,10 +101,10 @@
 			{id}
 			{placeholder}
 			bind:value={value}
-			on:input={handleInput}
-			on:keydown={handleKeydown}
+			oninput={handleInput}
+			onkeydown={handleKeydown}
 			type="url"
-			{...$$restProps}
+			{...rest}
 		/>
 	{/if}
 </div>

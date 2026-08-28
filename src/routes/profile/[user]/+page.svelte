@@ -1,40 +1,48 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { onMount } from 'svelte';
 	import { toggleProfileVisibility } from '$lib/services/profiles';
 	import PageTitle from '@components/PageTitle.svelte';
 	import type { Set } from '$lib/types';
 	import Avatar from '@components/auth/Avatar.svelte';
 	import { NO_IMAGES } from '$lib/images';
-	import { Home, UserCog, BookOpen, ListTodo, ChevronRight } from 'lucide-svelte';
+	import { House, UserCog, BookOpen, ListTodo, ChevronRight } from '@lucide/svelte';
 	import { fly } from 'svelte/transition';
 	import type { PageData } from './$types';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	// Component state
-	let isLoading = false;
-	let errorMessage = '';
-	let successMessage = '';
-	let ready = false;
+	let isLoading = $state(false);
+	let errorMessage = $state('');
+	let successMessage = $state('');
+	let ready = $state(false);
 
 	// Reactive data from page store
-	$: ({ allCards, sets, targetProfile, isPublic, collectionStats, isOwnProfile, loggedInUsername, title, description } = data);
-	$: pageTitle = title;
-	$: user = data.user;
-	$: profile = data.profile;
+	let { allCards, sets, targetProfile, isPublic, collectionStats, isOwnProfile, loggedInUsername, title, description } = $derived(data);
+	let pageTitle = $derived(title);
+	let user = $derived(data.user);
+	let profile = $derived(data.profile);
 
 	// Profile visibility state, initialized from server data
-	let currentVisibility = isPublic;
-	$: currentVisibility = isPublic;
+	let currentVisibility = $state(isPublic);
+	run(() => {
+		currentVisibility = isPublic;
+	});
 
 	// Calculate total completion percentage reactively
-	$: totalCompletionPercentage = (() => {
+	let totalCompletionPercentage = $derived((() => {
 		if (!collectionStats?.set_completion) return 0;
 		const setCompletionData = collectionStats.set_completion as Record<string, { percentage: number }>;
 		const totalPercentage = Object.values(setCompletionData).reduce((sum: number, set: { percentage: number }) => sum + set.percentage, 0);
 		const setCount = Object.keys(setCompletionData).length;
 		return setCount > 0 ? totalPercentage / setCount : 0;
-	})();
+	})());
 
 	// Toggle profile visibility
 	async function handleToggleVisibility() {
@@ -99,7 +107,7 @@
 	// 	ready = true;
 	// });
 
-	$: {
+	run(() => {
 		if (data) {
 			const canDisplayUserNotFound = !data.targetProfile && data.title === 'User Not Found';
 			// targetProfile being present implies data.targetProfile is not null/undefined
@@ -112,7 +120,7 @@
 				ready = true;
 			}
 		}
-	}
+	});
 </script>
 
 <main class="container mx-auto px-4 pb-8 text-white overflow-x-hidden">
@@ -139,7 +147,7 @@
 					class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded-sm flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
 				>
 					<span class="relative z-10 flex items-center gap-2">
-						<Home size={16} />
+						<House size={16} />
 						Return to Home
 					</span>
 				</a>
@@ -156,7 +164,7 @@
 					class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded-sm flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
 				>
 					<span class="relative z-10 flex items-center gap-2">
-						<Home size={16} />
+						<House size={16} />
 						Return to Home
 					</span>
 				</a>
@@ -217,7 +225,7 @@
 								<button
 									type="button"
 									class="animated-hover-button relative overflow-hidden w-full py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:text-black"
-									on:click={handleToggleVisibility}
+									onclick={handleToggleVisibility}
 									disabled={isLoading}
 								>
 									<span class="relative z-10 flex items-center">

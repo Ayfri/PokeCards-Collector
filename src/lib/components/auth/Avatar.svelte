@@ -1,7 +1,11 @@
 <script lang="ts">
-	export let username: string;
-	export let size: string = "size-8 text-lg";
-	export let profileColor: string | null = null; // Expecting a hex color string e.g., "#RRGGBB"
+	interface Props {
+		username: string;
+		size?: string;
+		profileColor?: string | null; // Expecting a hex color string e.g., "#RRGGBB"
+	}
+
+	let { username, size = "size-8 text-lg", profileColor = null }: Props = $props();
 
 	// Default gold colors
 	const defaultColorStart = '#fbc54a'; // gold-400
@@ -20,7 +24,7 @@
 		return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 	}
 
-	$: gradientStyle = (() => {
+	let gradientStyle = $derived((() => {
 		let startColor = defaultColorStart;
 		let endColor = defaultColorEnd;
 
@@ -29,7 +33,7 @@
 			endColor = darkenHexColor(profileColor, 45); // Accentue le dégradé (plus foncé)
 		}
 		return `background-image: linear-gradient(to bottom right, ${startColor}, ${endColor});`;
-	})();
+	})());
 </script>
 
 <div

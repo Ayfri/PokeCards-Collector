@@ -11,7 +11,11 @@
 	import { parseCardCode } from '$helpers/card-utils';
 	import { fade, fly } from 'svelte/transition';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	interface ArtistWithCards {
 		firstReleaseDate: Date;
@@ -22,11 +26,11 @@
 	}
 
 	// Sorting state
-	let sortDirection: 'asc' | 'desc' = 'asc'; // Default to A-Z
-	let sortValue: 'firstReleaseDate' | 'lastReleaseDate' | 'name' | 'totalCards' = 'name'; // Default sort by name
+	let sortDirection: 'asc' | 'desc' = $state('asc'); // Default to A-Z
+	let sortValue: 'firstReleaseDate' | 'lastReleaseDate' | 'name' | 'totalCards' = $state('name'); // Default sort by name
 
     // Search state
-    let searchTerm = '';
+    let searchTerm = $state('');
 
     const debouncedSetSearchTerm = debounce((value: string) => {
         searchTerm = value;
@@ -202,18 +206,18 @@
 	}
 
 	// --- Reactive Data Derivations ---
-	$: cardsByArtistMap = groupCardsByArtist(data.allCards);
-	$: cardReleaseDates = calculateCardReleaseDates(data.allCards, data.sets);
+	let cardsByArtistMap = $derived(groupCardsByArtist(data.allCards));
+	let cardReleaseDates = $derived(calculateCardReleaseDates(data.allCards, data.sets));
 
-	$: artistsWithCards = createArtistsWithCardsList(
+	let artistsWithCards = $derived(createArtistsWithCardsList(
 		data.artists,
 		cardsByArtistMap,
 		cardReleaseDates,
 		data.prices
-	);
+	));
 
-	$: sortedArtists = sortArtistList(artistsWithCards, sortValue, sortDirection);
-	$: filteredArtists = filterArtistList(sortedArtists, searchTerm);
+	let sortedArtists = $derived(sortArtistList(artistsWithCards, sortValue, sortDirection));
+	let filteredArtists = $derived(filterArtistList(sortedArtists, searchTerm));
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -268,7 +272,6 @@
 											<CardImage
 												alt="{card.name} by {artist.name}"
 												imageUrl={card.image}
-												highRes={false}
 												lazy={true}
 												class="h-full w-auto max-w-none object-contain mx-auto transform-gpu"
 												style="

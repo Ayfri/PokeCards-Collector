@@ -2,25 +2,29 @@
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import { page } from '$app/state'; // Keep page store if needed for URL params, etc.
-	import { Home, UserX, ShieldAlert, Search } from 'lucide-svelte'; // Keep icon import
+	import { House, UserX, ShieldAlert, Search } from '@lucide/svelte'; // Keep icon import
 	import PageTitle from '@components/PageTitle.svelte'; // Import PageTitle
 	import { fade, fly } from 'svelte/transition'; // Import transitions
 	import BouncyLoader from '$lib/components/BouncyLoader.svelte'; // Import BouncyLoader
 	import { onMount } from 'svelte';
 	import { resetFilters } from '$lib/helpers/filters';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	// --- Use Server Data Directly (for non-streamed parts) ---
-	$: targetProfile = data.targetProfile;
-	$: isPublic = data.isPublic;
-	$: targetUsername = data.targetUsername;
-	$: pageTitleDisplay = data.title; // Use server title
-	$: description = data.description; // Use server description
-	$: loggedInUsername = page.data.profile?.username; // Get logged-in user from layout data via page store
-	$: isOwnCollection = !targetUsername || (loggedInUsername === targetUsername);
-	$: profileNotFound = !targetProfile && !!targetUsername; // If targetUsername exists but targetProfile doesn't
-	$: profileIsPrivate = !!targetProfile && !isPublic && !isOwnCollection; // If profile exists, not public, and not own
+	let targetProfile = $derived(data.targetProfile);
+	let isPublic = $derived(data.isPublic);
+	let targetUsername = $derived(data.targetUsername);
+	let pageTitleDisplay = $derived(data.title); // Use server title
+	let description = $derived(data.description); // Use server description
+	let loggedInUsername = $derived(page.data.profile?.username); // Get logged-in user from layout data via page store
+	let isOwnCollection = $derived(!targetUsername || (loggedInUsername === targetUsername));
+	let profileNotFound = $derived(!targetProfile && !!targetUsername); // If targetUsername exists but targetProfile doesn't
+	let profileIsPrivate = $derived(!!targetProfile && !isPublic && !isOwnCollection); // If profile exists, not public, and not own
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
@@ -66,7 +70,7 @@
 				href="/"
 				class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
 			>
-				<Home size={18} />
+				<House size={18} />
 				Return to Home
 			</a>
 			<a
@@ -130,7 +134,7 @@
             href="/"
             class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
         >
-            <Home size={18} />
+            <House size={18} />
             Return to Home
         </a>
     </div>

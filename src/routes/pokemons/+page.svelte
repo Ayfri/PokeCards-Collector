@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import type { PageData } from './$types';
 	import { goto } from '$app/navigation';
 	import { pascalCase } from '$helpers/strings';
@@ -16,19 +18,23 @@
 
 	type PokemonWithCardCount = Pokemon & { cardCount: number };
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	const { pokemons: initialPokemons, allCards, prices } = data;
 
 	// Sorting state
-	let sortBy = 'pokedex'; // Default sort by Pokedex number
-	let sortOrder: 'asc' | 'desc' = 'asc'; // Default sort order ascending
+	let sortBy = $state('pokedex'); // Default sort by Pokedex number
+	let sortOrder: 'asc' | 'desc' = $state('asc'); // Default sort order ascending
 
-	let sortedPokemons: PokemonWithCardCount[] = [];
-	let searchTerm = '';
+	let sortedPokemons: PokemonWithCardCount[] = $state([]);
+	let searchTerm = $state('');
 
 	// Reactive statement to filter and sort pokemons
-	$: {
+	run(() => {
 		let tempPokemons = [...initialPokemons]
 			.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -52,9 +58,9 @@
 			});
 		}
 		sortedPokemons = tempPokemons as PokemonWithCardCount[];
-	}
+	});
 
-	let hasScrolled = false;
+	let hasScrolled = $state(false);
 	const scrollThreshold = 100; // Pixels to scroll before showing ScrollToTop
 	const scrollDuration = 500; // Milliseconds for smooth scroll
 
@@ -157,7 +163,7 @@
 	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8 align-items-start align-content-start">
 		{#each sortedPokemons as pokemon (pokemon.id)}
 			<button
-				on:click={() => navigateToPokemonCard(pokemon)}
+				onclick={() => navigateToPokemonCard(pokemon)}
 				class="pokemon-card-item group bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-hidden focus:ring-2 focus:ring-gold-400/75 p-3 flex flex-col items-center text-center"
 			>
 				<div class="image-container relative w-24 h-24 md:w-28 md:h-28 mb-2">
@@ -166,7 +172,7 @@
 							src={getPokemonImageSrc(pokemon.id)}
 							alt={pascalCase(pokemon.name)}
 							class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300 ease-in-out"
-							on:error={(e) => handlePokemonImageError(e, pokemon.id, allCards)} 
+							onerror={(e) => handlePokemonImageError(e, pokemon.id, allCards)} 
 							loading="lazy"
 						/>
 					{:else}
@@ -191,10 +197,10 @@
 
 {#if hasScrolled}
 	<div transition:fade={{ duration: 300 }}>
-		<ScrollToTop on:click={scrollToTopPage} />
+		<ScrollToTop onclick={scrollToTopPage} />
 	</div>
 {/if}
-<ScrollToBottom on:click={scrollToBottomPage} />
+<ScrollToBottom onclick={scrollToBottomPage} />
 
 <style lang="postcss">
 	.pokemon-card-item {

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { stopPropagation } from 'svelte/legacy';
+
 	import { page } from '$app/state';
 	import { NO_IMAGES } from '$lib/images';
 	import type { FullCard, Set, PriceData } from '$lib/types';
@@ -9,28 +11,28 @@
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	// Import icons
-	import type { Icon } from 'lucide-svelte';
-	import CardStackIcon from 'lucide-svelte/icons/layers';
-	import LibraryIcon from 'lucide-svelte/icons/library';
-	import ArtistIcon from 'lucide-svelte/icons/paintbrush';
-	import ShuffleIcon from 'lucide-svelte/icons/shuffle';
-	import BinderIcon from 'lucide-svelte/icons/book-open';
-	import SearchUsersIcon from 'lucide-svelte/icons/users';
-	import MenuIcon from 'lucide-svelte/icons/menu';
-	import XIcon from 'lucide-svelte/icons/x';
-	import GlobeIcon from 'lucide-svelte/icons/globe';
-	import ListIcon from 'lucide-svelte/icons/list';
-	import PuzzleIcon from 'lucide-svelte/icons/puzzle';
-	import GamepadIcon from 'lucide-svelte/icons/gamepad-2';
-	import SearchIcon from 'lucide-svelte/icons/search';
-	import ChevronDownIcon from 'lucide-svelte/icons/chevron-down';
+	import type { LucideIcon } from '@lucide/svelte';
+	import CardStackIcon from '@lucide/svelte/icons/layers';
+	import LibraryIcon from '@lucide/svelte/icons/library';
+	import ArtistIcon from '@lucide/svelte/icons/paintbrush';
+	import ShuffleIcon from '@lucide/svelte/icons/shuffle';
+	import BinderIcon from '@lucide/svelte/icons/book-open';
+	import SearchUsersIcon from '@lucide/svelte/icons/users';
+	import MenuIcon from '@lucide/svelte/icons/menu';
+	import XIcon from '@lucide/svelte/icons/x';
+	import GlobeIcon from '@lucide/svelte/icons/globe';
+	import ListIcon from '@lucide/svelte/icons/list';
+	import PuzzleIcon from '@lucide/svelte/icons/puzzle';
+	import GamepadIcon from '@lucide/svelte/icons/gamepad-2';
+	import SearchIcon from '@lucide/svelte/icons/search';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import { slide } from 'svelte/transition';
 
 	// New interface for navigation groups with dropdowns
 	interface NavLink {
 		href?: string;
 		name: string;
-		icon: typeof Icon | null;
+		icon: LucideIcon | null;
 		isDropdown?: boolean;
 		children?: NavLink[];
 	}
@@ -64,17 +66,17 @@
 	];
 
 	// State for mobile menu and dropdowns
-	let isMobileMenuOpen = false;
-	let mobileMenuButton: HTMLButtonElement;
-	let mobileMenuNav: HTMLDivElement;
-	let openDropdown: string | null = null; // Track which dropdown is open
+	let isMobileMenuOpen = $state(false);
+	let mobileMenuButton = $state<HTMLButtonElement>();
+	let mobileMenuNav = $state<HTMLDivElement>();
+	let openDropdown: string | null = $state(null); // Track which dropdown is open
 
 	// Use data from page state directly
-	$: user = page.data.user;
-	$: profile = page.data.profile;
-	$: prices = page.data.prices as Record<string, PriceData> || {};
-	$: allCards = page.data.allCards as FullCard[] || [];
-	$: sets = page.data.sets as Set[] || [];
+	let user = $derived(page.data.user);
+	let profile = $derived(page.data.profile);
+	let prices = $derived(page.data.prices as Record<string, PriceData> || {});
+	let allCards = $derived(page.data.allCards as FullCard[] || []);
+	let sets = $derived(page.data.sets as Set[] || []);
 
 	// Use afterNavigate instead of reactive statement
 	afterNavigate(() => {
@@ -119,7 +121,7 @@
 			<button
 				aria-label="Toggle menu"
 				class="lg:hidden text-gray-400 hover:text-gold-400 transition-colors duration-200 p-1 -ml-1"
-				on:click|stopPropagation={() => isMobileMenuOpen = !isMobileMenuOpen}
+				onclick={stopPropagation(() => isMobileMenuOpen = !isMobileMenuOpen)}
 				bind:this={mobileMenuButton}
 			>
 				{#if isMobileMenuOpen}
@@ -150,10 +152,10 @@
 					<div class="relative">
 						<button
 							class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1"
-							on:click|stopPropagation={() => toggleDropdown(link.name)}
+							onclick={stopPropagation(() => toggleDropdown(link.name))}
 						>
 							{#if !NO_IMAGES && link.icon}
-								<svelte:component this={link.icon} size={16} />
+								<link.icon size={16} />
 							{/if}
 							{link.name}
 							<ChevronDownIcon size={14} class="transition-transform duration-200 {openDropdown === link.name ? 'rotate-180' : ''}" />
@@ -170,7 +172,7 @@
 										class="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-gold-400 hover:bg-gray-700 transition-colors duration-200"
 									>
 										{#if !NO_IMAGES && child.icon}
-											<svelte:component this={child.icon} size={16} />
+											<child.icon size={16} />
 										{/if}
 										{child.name}
 									</a>
@@ -181,7 +183,7 @@
 				{:else}
 					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href}>
 						{#if !NO_IMAGES && link.icon}
-							<svelte:component this={link.icon} size={16} />
+							<link.icon size={16} />
 						{/if}
 						{link.name}
 					</a>
@@ -241,7 +243,7 @@
 			aria-modal="true"
 			transition:slide={{ duration: 150, axis: 'y' }}
 			bind:this={mobileMenuNav}
-			on:click|stopPropagation={() => {}}
+			onclick={stopPropagation(() => {})}
 		>
 			<nav class="flex flex-col gap-3">
 				{#each navLinks as link}
@@ -262,14 +264,14 @@
 						<div class="border-t border-gray-700 pt-2 mt-1">
 							<div class="flex items-center gap-2 px-2 py-1 text-gray-400 text-sm font-semibold">
 								{#if !NO_IMAGES && link.icon}
-									<svelte:component this={link.icon} size={16} />
+									<link.icon size={16} />
 								{/if}
 								{link.name}
 							</div>
 							{#each link.children as child}
 								<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 pl-6 rounded-sm hover:bg-gray-600" href={child.href}>
 									{#if !NO_IMAGES && child.icon}
-										<svelte:component this={child.icon} size={18} />
+										<child.icon size={18} />
 									{/if}
 									{child.name}
 								</a>
@@ -278,7 +280,7 @@
 					{:else}
 						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href}>
 							{#if !NO_IMAGES && link.icon}
-								<svelte:component this={link.icon} size={20} />
+								<link.icon size={20} />
 							{/if}
 							{link.name}
 						</a>

@@ -3,15 +3,26 @@
 	import type { FullCard, Pokemon, Set } from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
 
-	// --- Props ---
-	export let card: FullCard | undefined;
-	export let currentSet: Set | undefined;
-	export let currentType: string;
-	export let handlePokemonImageError: (event: Event) => void; // Pass through if CardImage needs it
-	export let pokemon: Pokemon | undefined; // For alt text and class logic
+	
+	interface Props {
+		// --- Props ---
+		card: FullCard | undefined;
+		currentSet: Set | undefined;
+		currentType: string;
+		handlePokemonImageError: (event: Event) => void; // Pass through if CardImage needs it
+		pokemon: Pokemon | undefined; // For alt text and class logic
+	}
+
+	let {
+		card,
+		currentSet,
+		currentType,
+		handlePokemonImageError,
+		pokemon
+	}: Props = $props();
 
 	// --- Internal State ---
-	let centerCard: HTMLElement;
+	let centerCard = $state<HTMLElement>();
 	let maxRotate = 25; // Max rotation in degrees
 
 	// --- Functions ---
@@ -29,8 +40,8 @@
 	}
 
 	const throttledUpdateCardStyle = throttle((clientX: number, clientY: number) => {
-		const rect = centerCard?.getBoundingClientRect();
-		if (!rect) return;
+		if (!centerCard) return;
+		const rect = centerCard.getBoundingClientRect();
 
 		const isInCard = clientX >= rect.left && clientX <= rect.right &&
 			clientY >= rect.top && clientY <= rect.bottom;
@@ -60,7 +71,7 @@
 	}
 </script>
 
-<svelte:window on:mousemove={handleMouseMove}/>
+<svelte:window onmousemove={handleMouseMove}/>
 
 <div
 	class="w-84 h-116 sm:w-[20rem] sm:h-112 lg:w-92 lg:h-128 max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {pokemon ? '' : 'non-pokemon'}"
@@ -78,7 +89,7 @@
 				width={384}
 				class="image rounded-xl"
 				lazy={false}
-				on:error={handlePokemonImageError}
+				onerror={handlePokemonImageError}
 			/>
 		{:else}
 			<div class="w-full h-full flex items-center justify-center">

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { browser } from '$app/environment';
@@ -9,11 +11,11 @@
 	import BinderStorage from '@components/binder/BinderStorage.svelte';
 	import README from '@components/binder/README.svelte';
 	import Modal from '@components/ui/Modal.svelte';
-	import HelpCircleIcon from 'lucide-svelte/icons/help-circle';
-	import LayersIcon from 'lucide-svelte/icons/layers';
-	import LinkIcon from 'lucide-svelte/icons/link';
-	import DownloadIcon from 'lucide-svelte/icons/download';
-	import BookUserIcon from 'lucide-svelte/icons/book-user';
+	import HelpCircleIcon from '@lucide/svelte/icons/help-circle';
+	import LayersIcon from '@lucide/svelte/icons/layers';
+	import LinkIcon from '@lucide/svelte/icons/link';
+	import DownloadIcon from '@lucide/svelte/icons/download';
+	import BookUserIcon from '@lucide/svelte/icons/book-user';
 	import type { PageData } from './$types';
 	import Select from '@components/filters/Select.svelte';
 	import NumberInput from '@components/filters/NumberInput.svelte';
@@ -21,12 +23,17 @@
 	import type { BinderCards, FullCard } from '$lib/types';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import TextArea from '@components/filters/TextArea.svelte';
-	import RotateCwIcon from 'lucide-svelte/icons/rotate-cw';
+	import RotateCwIcon from '@lucide/svelte/icons/rotate-cw';
 
-	// Page data from server
-	export let data: PageData;
+	
+	interface Props {
+		// Page data from server
+		data: PageData;
+	}
 
-	$: sets = data.sets;
+	let { data }: Props = $props();
+
+	let sets = $derived(data.sets);
 
 	// Binder configuration
 	const rows = writable(3);
@@ -138,7 +145,7 @@
 		$binderCards = Array(totalCells).fill(null);
 	}
 
-	$: {
+	run(() => {
 		const totalCells = $rows * $columns;
 		if ($binderCards.length !== totalCells) {
 			const newGrid = Array(totalCells).fill(null);
@@ -147,7 +154,7 @@
 			});
 			$binderCards = newGrid;
 		}
-	}
+	});
 
 	function toggleHelp() { $showHelp = !$showHelp; }
 	function toggleSetModal() {
@@ -486,21 +493,23 @@
 		/>
 	</div>
 
-	<svelte:fragment slot="footer">
-		<Button
-			onClick={toggleSetModal}
-			class="text-sm px-4 py-2 border border-gray-600"
-		>
-			Cancel
-		</Button>
-		<Button
-			onClick={addSetToStorage}
-			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
-			disabled={!$selectedSet}
-		>
-			Add set
-		</Button>
-	</svelte:fragment>
+	{#snippet footer()}
+	
+			<Button
+				onClick={toggleSetModal}
+				class="text-sm px-4 py-2 border border-gray-600"
+			>
+				Cancel
+			</Button>
+			<Button
+				onClick={addSetToStorage}
+				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
+				disabled={!$selectedSet}
+			>
+				Add set
+			</Button>
+		
+	{/snippet}
 </Modal>
 
 <!-- My Cards Modal -->
@@ -543,21 +552,23 @@
 		{/if}
 	</div>
 
-	<svelte:fragment slot="footer">
-		<Button
-			onClick={toggleMyCardsModal}
-			class="text-sm px-4 py-2 border border-gray-600"
-		>
-			Cancel
-		</Button>
-		<Button
-			onClick={addMyCardsToStorage}
-			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
-			disabled={(!$includeCollection || !data.serverCollectionCards) && (!$includeWishlist || !data.serverWishlistCards)}
-		>
-			Add to binder
-		</Button>
-	</svelte:fragment>
+	{#snippet footer()}
+	
+			<Button
+				onClick={toggleMyCardsModal}
+				class="text-sm px-4 py-2 border border-gray-600"
+			>
+				Cancel
+			</Button>
+			<Button
+				onClick={addMyCardsToStorage}
+				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
+				disabled={(!$includeCollection || !data.serverCollectionCards) && (!$includeWishlist || !data.serverWishlistCards)}
+			>
+				Add to binder
+			</Button>
+		
+	{/snippet}
 </Modal>
 
 <!-- URL Card Modal -->
@@ -585,10 +596,12 @@ https://images.pokemontcg.io/card4.png; https://images.pokemontcg.io/card5.png"
 			rows={4}
 		/>
 	</div>
-	<svelte:fragment slot="footer">
-		<Button onClick={toggleUrlModal} class="text-sm px-4 py-2 border border-gray-600">Cancel</Button>
-		<Button onClick={addCardFromUrl} class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50" disabled={!$cardUrl && !$multipleCardUrls}> Add card(s) </Button>
-	</svelte:fragment>
+	{#snippet footer()}
+	
+			<Button onClick={toggleUrlModal} class="text-sm px-4 py-2 border border-gray-600">Cancel</Button>
+			<Button onClick={addCardFromUrl} class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50" disabled={!$cardUrl && !$multipleCardUrls}> Add card(s) </Button>
+		
+	{/snippet}
 </Modal>
 
 <!-- Empty Slots Confirmation Modal -->
@@ -597,23 +610,25 @@ https://images.pokemontcg.io/card4.png; https://images.pokemontcg.io/card5.png"
 		Your binder has empty slots. Do you still want to export it as an image?
 	</p>
 
-	<svelte:fragment slot="footer">
-		<Button
-			onClick={() => $showEmptySlotsModal = false}
-			class="text-sm px-4 py-2 border border-gray-600"
-		>
-			Cancel
-		</Button>
-		<Button
-			onClick={() => {
-				$showEmptySlotsModal = false;
-				generateBinderImageProcess();
-			}}
-			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black"
-		>
-			Export Anyway
-		</Button>
-	</svelte:fragment>
+	{#snippet footer()}
+	
+			<Button
+				onClick={() => $showEmptySlotsModal = false}
+				class="text-sm px-4 py-2 border border-gray-600"
+			>
+				Cancel
+			</Button>
+			<Button
+				onClick={() => {
+					$showEmptySlotsModal = false;
+					generateBinderImageProcess();
+				}}
+				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black"
+			>
+				Export Anyway
+			</Button>
+		
+	{/snippet}
 </Modal>
 
 <!-- Clear Storage Confirmation Modal -->
@@ -622,18 +637,20 @@ https://images.pokemontcg.io/card4.png; https://images.pokemontcg.io/card5.png"
 		Are you sure you want to remove all stored cards? This cannot be undone.
 	</p>
 
-	<svelte:fragment slot="footer">
-		<Button
-			onClick={toggleClearStorageModal}
-			class="text-sm px-4 py-2 border border-gray-600"
-		>
-			Cancel
-		</Button>
-		<Button
-			onClick={clearAllStoredCards}
-			class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black"
-		>
-			Clear All Cards
-		</Button>
-	</svelte:fragment>
+	{#snippet footer()}
+	
+			<Button
+				onClick={toggleClearStorageModal}
+				class="text-sm px-4 py-2 border border-gray-600"
+			>
+				Cancel
+			</Button>
+			<Button
+				onClick={clearAllStoredCards}
+				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black"
+			>
+				Clear All Cards
+			</Button>
+		
+	{/snippet}
 </Modal>

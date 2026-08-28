@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { fade, fly } from 'svelte/transition';
 	import { onDestroy, onMount } from 'svelte';
-	import Search from 'lucide-svelte/icons/search';
-	import X from 'lucide-svelte/icons/x';
-	import PlusCircle from 'lucide-svelte/icons/plus-circle';
-	import Check from 'lucide-svelte/icons/check';
+	import Search from '@lucide/svelte/icons/search';
+	import X from '@lucide/svelte/icons/x';
+	import PlusCircle from '@lucide/svelte/icons/plus-circle';
+	import Check from '@lucide/svelte/icons/check';
 	import { processCardImage } from '$helpers/card-images';
 	import type { FullCard, Set, PriceData } from '$lib/types';
 	import { browser } from '$app/environment';
@@ -14,26 +16,40 @@
 	import type { Writable } from 'svelte/store';
 	import { debounce } from '$helpers/debounce';
 
-	// --- Props ---
-	export let prices: Record<string, PriceData>;
-	export let allCards: FullCard[];
-	export let autoFocus: boolean = false;
-	export let mobileMode: boolean = false;
-	export let onToggleModal: (() => void) | undefined = undefined;
-	export let sets: Set[];
+	
+	interface Props {
+		// --- Props ---
+		prices: Record<string, PriceData>;
+		allCards: FullCard[];
+		autoFocus?: boolean;
+		mobileMode?: boolean;
+		onToggleModal?: (() => void) | undefined;
+		sets: Set[];
+	}
+
+	let {
+		prices,
+		allCards,
+		autoFocus = false,
+		mobileMode = false,
+		onToggleModal = undefined,
+		sets
+	}: Props = $props();
 
 	// --- State ---
-	let inputElement: HTMLInputElement;
-	let searchQuery = '';
-	let searchResults: FullCard[] = [];
-	let showResults = false;
-	let isBinderPage = false;
-	let addedCards = new Set<string>(); // Pour stocker les IDs des cartes ajoutées
-	let platformModifierKey = ''; // Will be 'Ctrl' or 'Cmd'
-	let inputFocused = false; // Track input focus state
+	let inputElement = $state<HTMLInputElement>();
+	let searchQuery = $state('');
+	let searchResults: FullCard[] = $state([]);
+	let showResults = $state(false);
+	let isBinderPage = $state(false);
+	let addedCards = $state(new Set<string>()); // Pour stocker les IDs des cartes ajoutées
+	let platformModifierKey = $state(''); // Will be 'Ctrl' or 'Cmd'
+	let inputFocused = $state(false); // Track input focus state
 
 	// Check if we're on the Binder page
-	$: isBinderPage = $page.url.pathname === '/binder';
+	run(() => {
+		isBinderPage = $page.url.pathname === '/binder';
+	});
 
 	// Try to get the storedCards store from context ONLY during initialization if on binder page
 	let binderStoredCards: Writable<string[]> | null = null;
@@ -212,7 +228,7 @@
 
 			if (autoFocus && inputElement) {
 				setTimeout(() => {
-					inputElement.focus();
+					inputElement?.focus();
 				}, 100);
 			}
 		}
@@ -245,15 +261,17 @@
 
 	// --- Reactive Statements ---
 	// Trigger search only when query changes (and is not undefined/null)
-	$: if (typeof searchQuery === 'string') {
-		if (searchQuery.trim()) {
-			debouncedSearch();
-		} else {
-			// Clear results immediately when query is emptied
-			searchResults = [];
-			showResults = false;
+	run(() => {
+		if (typeof searchQuery === 'string') {
+			if (searchQuery.trim()) {
+				debouncedSearch();
+			} else {
+				// Clear results immediately when query is emptied
+				searchResults = [];
+				showResults = false;
+			}
 		}
-	}
+	});
 </script>
 
 <div class="relative {mobileMode ? 'flex flex-col w-full' : ''}">
@@ -265,15 +283,15 @@
 			bind:this={inputElement}
 			bind:value={searchQuery}
 			class="bg-black border text-white px-4 py-2 rounded-full w-full outline-hidden pl-10 pr-10 {mobileMode ? '' : 'pr-24'} transition-all duration-300 ease-in-out {inputFocused ? 'ring-2 ring-gold-400 shadow-lg shadow-gold-400/20 border-transparent' : 'border border-gray-700 hover:border-gray-500'}"
-			on:focus={handleInputFocus}
-			on:blur={() => inputFocused = false}
+			onfocus={handleInputFocus}
+			onblur={() => inputFocused = false}
 			placeholder="Search cards..."
 			type="text"
 		/>
 		{#if searchQuery.length > 0}
 			<button
 				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white z-10 flex items-center justify-center h-6 w-6"
-				on:click={handleClearSearch}
+				onclick={handleClearSearch}
 				aria-label="Clear search"
 			>
 				<X size={18} />
@@ -302,7 +320,7 @@
 				<a 
 					href={cardLink}
 					class="block hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700 last:border-b-0 relative"
-					on:click={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
+					onclick={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
 				>
 					<div class="flex items-center p-3 relative">
 						<img
@@ -328,7 +346,7 @@
 									<div class="shrink-0 ml-2">
 										<button 
 											class="py-1 px-2 rounded-sm flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white hover:bg-gray-700'} hover:shadow-lg transform hover:-translate-y-px"
-											on:click={(e) => {
+											onclick={(e) => {
 												e.preventDefault();
 												e.stopPropagation();
 												if (!isAdded) addToBinderStorage(card);

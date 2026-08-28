@@ -8,66 +8,70 @@
 	import { NO_IMAGES } from "$lib/images";
 	import { fly, fade } from "svelte/transition";
 	import { getArtists } from "$helpers/supabase-data";
-	import { ChevronLeft, ChevronRight } from "lucide-svelte";
+	import { ChevronLeft, ChevronRight } from "@lucide/svelte";
 	// Import icons
-	import GiftIcon from "lucide-svelte/icons/gift";
-	import Tag from "lucide-svelte/icons/tag";
-	import ArrowRight from "lucide-svelte/icons/arrow-right";
-	import PokemonIcon from "lucide-svelte/icons/gamepad-2";
-	import SetIcon from "lucide-svelte/icons/layers";
-	import CardIcon from "lucide-svelte/icons/layout-grid";
-	import PaintbrushIcon from "lucide-svelte/icons/paintbrush";
-	import ChartIcon from "lucide-svelte/icons/bar-chart-3";
-	import HeartIcon from "lucide-svelte/icons/heart";
-	import SearchIcon from "lucide-svelte/icons/search";
-	import BookOpenCheckIcon from "lucide-svelte/icons/book-open-check";
-	import LogInIcon from "lucide-svelte/icons/log-in";
-	import UserPlusIcon from "lucide-svelte/icons/user-plus";
-	import GridIcon from "lucide-svelte/icons/layout-grid";
-	import GlobeIcon from "lucide-svelte/icons/globe";
+	import GiftIcon from "@lucide/svelte/icons/gift";
+	import Tag from "@lucide/svelte/icons/tag";
+	import ArrowRight from "@lucide/svelte/icons/arrow-right";
+	import PokemonIcon from "@lucide/svelte/icons/gamepad-2";
+	import SetIcon from "@lucide/svelte/icons/layers";
+	import CardIcon from "@lucide/svelte/icons/layout-grid";
+	import PaintbrushIcon from "@lucide/svelte/icons/paintbrush";
+	import ChartIcon from "@lucide/svelte/icons/bar-chart-3";
+	import HeartIcon from "@lucide/svelte/icons/heart";
+	import SearchIcon from "@lucide/svelte/icons/search";
+	import BookOpenCheckIcon from "@lucide/svelte/icons/book-open-check";
+	import LogInIcon from "@lucide/svelte/icons/log-in";
+	import UserPlusIcon from "@lucide/svelte/icons/user-plus";
+	import GridIcon from "@lucide/svelte/icons/layout-grid";
+	import GlobeIcon from "@lucide/svelte/icons/globe";
 	import AuthModal from '@components/auth/AuthModal.svelte';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
 
-	$: latestSet = data.latestSet;
-	$: mostExpensiveLatestSetCards = data.mostExpensiveLatestSetCards;
-	$: mostExpensiveCards = data.mostExpensiveCards;
-	$: stats = data.stats;
-	$: sets = data.sets;
-	$: prices = data.prices;
-	$: session = page.data.session;
+	let { data }: Props = $props();
+
+	let latestSet = $derived(data.latestSet);
+	let mostExpensiveLatestSetCards = $derived(data.mostExpensiveLatestSetCards);
+	let mostExpensiveCards = $derived(data.mostExpensiveCards);
+	let stats = $derived(data.stats);
+	let sets = $derived(data.sets);
+	let prices = $derived(data.prices);
+	let session = $derived(page.data.session);
 
 	// Récupérer les données des cartes de la page.server.ts
-	$: allCards = data.allCards || [];
+	let allCards = $derived(data.allCards || []);
 
 	// Calculer les statistiques du dernier set
-	$: latestSetCards = latestSet
+	let latestSetCards = $derived(latestSet
 		? allCards.filter(
 				(card: FullCard) =>
 					card.setName?.toLowerCase() ===
 					latestSet.name.toLowerCase(),
 			)
-		: [];
+		: []);
 
-	$: latestSetPokemonCards = latestSetCards.filter(
+	let latestSetPokemonCards = $derived(latestSetCards.filter(
 		(card: FullCard) => card.supertype === "Pokémon",
-	);
-	$: latestSetTrainerCards = latestSetCards.filter(
+	));
+	let latestSetTrainerCards = $derived(latestSetCards.filter(
 		(card: FullCard) => card.supertype === "Trainer",
-	);
-	$: latestSetEnergyCards = latestSetCards.filter(
+	));
+	let latestSetEnergyCards = $derived(latestSetCards.filter(
 		(card: FullCard) => card.supertype === "Energy",
-	);
+	));
 
 	// Calculer la valeur totale du set
-	$: totalSetValue = latestSetCards.reduce(
+	let totalSetValue = $derived(latestSetCards.reduce(
 		(sum: number, card: FullCard) =>
 			sum + (prices[card.cardCode]?.simple || 0),
 		0,
-	);
+	));
 
 	// Artists count
-	let artistsCount = 0;
+	let artistsCount = $state(0);
 	onMount(async () => {
 		try {
 			const artists = [...new Set(allCards.map(card => card.artist))];
@@ -100,13 +104,13 @@
 		easing: "cubic-bezier(0.5, 0, 0.5, 1)",
 	};
 
-	let ready = false;
+	let ready = $state(false);
 	onMount(() => {
 		ready = true;
 	});
 
-	let isAuthModalOpen = false;
-	let authMode: 'login' | 'register' = 'login';
+	let isAuthModalOpen = $state(false);
+	let authMode: 'login' | 'register' = $state('login');
 	function openAuthModal(mode: 'login' | 'register') {
 		authMode = mode;
 		isAuthModalOpen = true;
@@ -671,7 +675,7 @@
 						</a>
 					{:else}
 						<button
-							on:click={() => openAuthModal('login')}
+							onclick={() => openAuthModal('login')}
 							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-hidden"
 							type="button"
 						>
@@ -702,7 +706,7 @@
 						</a>
 					{:else}
 						<button
-							on:click={() => openAuthModal('register')}
+							onclick={() => openAuthModal('register')}
 							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-hidden"
 							type="button"
 						>
@@ -903,7 +907,7 @@
 				</p>
 				<div class="flex flex-wrap justify-center gap-4">
 					<button
-						on:click={() => openAuthModal('login')}
+						onclick={() => openAuthModal('login')}
 						class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 focus:outline-hidden"
 						type="button"
 					>
@@ -911,7 +915,7 @@
 						{#if !NO_IMAGES}<LogInIcon size={18} />{/if}
 					</button>
 					<button
-						on:click={() => openAuthModal('register')}
+						onclick={() => openAuthModal('register')}
 						class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2 focus:outline-hidden"
 						type="button"
 					>

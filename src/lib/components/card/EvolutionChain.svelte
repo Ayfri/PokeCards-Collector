@@ -8,16 +8,26 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { setNavigationLoading } from '$lib/stores/loading';
 
-	export let allCards: FullCard[];
-	export let pokemons: Pokemon[];
-	export let pokemonCards: FullCard[];
-	export let prices: Record<string, PriceData>;
-	export let card: FullCard;
+	interface Props {
+		allCards: FullCard[];
+		pokemons: Pokemon[];
+		pokemonCards: FullCard[];
+		prices: Record<string, PriceData>;
+		card: FullCard;
+	}
+
+	let {
+		allCards,
+		pokemons,
+		pokemonCards,
+		prices,
+		card
+	}: Props = $props();
 	
 	// Determine if we're in the Japanese cards context by checking the URL
-	let isJapaneseContext = false;
+	let isJapaneseContext = $state(false);
 	
-	$: baseCardUrl = isJapaneseContext ? '/jp-card/' : '/card/';
+	let baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
 	
 	// Function to handle navigation to another Pokémon card
 	function navigateToPokemon(cardCode: string) {
@@ -88,8 +98,8 @@
 		return uniqueChain;
 	}
 
-	$: currentPokemon = pokemons.find(p => p.id === card.pokemonNumber);
-	$: uniqueChain = buildEvolutionChain(card);
+	let currentPokemon = $derived(pokemons.find(p => p.id === card.pokemonNumber));
+	let uniqueChain = $derived(buildEvolutionChain(card));
 </script>
 
 {#if uniqueChain.length > 1}
@@ -98,7 +108,7 @@
 			{@const representativeCard = getRepresentativeCardForPokemon(pokemon.id, allCards, prices)}
 			<div class="evolution-item flex flex-col items-center">
 				<button
-					on:click={() => representativeCard ? navigateToPokemon(representativeCard.cardCode) : navigateToPokemon(pokemon.id.toString())}
+					onclick={() => representativeCard ? navigateToPokemon(representativeCard.cardCode) : navigateToPokemon(pokemon.id.toString())}
 					class="evolution-image-wrapper relative"
 					class:current={pokemon.id === currentPokemon?.id}
 				>
@@ -112,7 +122,7 @@
 						alt={pokemon.name}
 						class="evolution-image w-16 h-16 object-contain"
 						title={pascalCase(pokemon.name)}
-						on:error={(e) => handlePokemonImageError(e, pokemon.id, pokemonCards)}
+						onerror={(e) => handlePokemonImageError(e, pokemon.id, pokemonCards)}
 						data-pokemon-id={pokemon.id}
 					/>
 					{:else}

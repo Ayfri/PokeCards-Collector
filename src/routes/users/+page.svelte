@@ -2,22 +2,26 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import Avatar from '@components/auth/Avatar.svelte';
-	import AlertTriangleIcon from 'lucide-svelte/icons/alert-triangle';
-	import CrownIcon from 'lucide-svelte/icons/crown';
-	import SearchIcon from 'lucide-svelte/icons/search';
-	import TrendingUpIcon from 'lucide-svelte/icons/trending-up';
-	import UserXIcon from 'lucide-svelte/icons/user-x';
-	import InfoIcon from 'lucide-svelte/icons/info';
+	import AlertTriangleIcon from '@lucide/svelte/icons/alert-triangle';
+	import CrownIcon from '@lucide/svelte/icons/crown';
+	import SearchIcon from '@lucide/svelte/icons/search';
+	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
+	import UserXIcon from '@lucide/svelte/icons/user-x';
+	import InfoIcon from '@lucide/svelte/icons/info';
 	import type { PageData } from './$types';
 	import PageTitle from '@components/PageTitle.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import UserCard from '@components/users/UserCard.svelte';
 	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
 
-	$: featuredUsers = data.featuredUsers || [];
-	$: featuredUsersError = data.featuredUsersError;
+	let { data }: Props = $props();
+
+	let featuredUsers = $derived(data.featuredUsers || []);
+	let featuredUsersError = $derived(data.featuredUsersError);
 
 	interface SearchResultUser {
 		auth_id: string;
@@ -28,12 +32,12 @@
 		unique_card_count: number;
 	}
 
-	let searchQuery = '';
-	let searchResults: SearchResultUser[] = [];
-	let isLoadingSearch = false;
+	let searchQuery = $state('');
+	let searchResults: SearchResultUser[] = $state([]);
+	let isLoadingSearch = $state(false);
 	let debounceTimer: ReturnType<typeof setTimeout>;
-	let isInitialSearchState = true;
-	let searchErrorMessage = '';
+	let isInitialSearchState = $state(true);
+	let searchErrorMessage = $state('');
 
 	function updateUrlWithoutNavigating(query: string) {
 		const url = new URL(window.location.href);
@@ -151,7 +155,7 @@
 			<p class="text-gray-300 mb-3 text-sm px-4">{searchErrorMessage}</p>
 			<button
 				class="px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors text-sm font-medium shadow-md hover:shadow-lg"
-				on:click={performSearchUsers}
+				onclick={performSearchUsers}
 			>
 				Try Again
 			</button>

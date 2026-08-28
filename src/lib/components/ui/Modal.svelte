@@ -1,16 +1,37 @@
 <script lang="ts">
+	import { createBubbler, stopPropagation } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { onMount, onDestroy } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
-	import XIcon from 'lucide-svelte/icons/x';
+	import XIcon from '@lucide/svelte/icons/x';
 	import { browser } from '$app/environment';
 
-	export let open = false;
-	export let title = '';
-	export let transitionFn = fly; // Default transition
-	export let transitionParams = { y: 20, duration: 200 }; // Default params
-	export let containerClass = 'max-w-md';
-	export let fullscreen = false; // Add fullscreen prop
-	export let onClose: () => void = () => {};
+	interface Props {
+		open?: boolean;
+		title?: string;
+		transitionFn?: any; // Default transition
+		transitionParams?: any; // Default params
+		containerClass?: string;
+		fullscreen?: boolean; // Add fullscreen prop
+		onClose?: () => void;
+		header?: import('svelte').Snippet;
+		children?: import('svelte').Snippet;
+		footer?: import('svelte').Snippet;
+	}
+
+	let {
+		open = $bindable(false),
+		title = '',
+		transitionFn = fly,
+		transitionParams = { y: 20, duration: 200 },
+		containerClass = 'max-w-md',
+		fullscreen = false,
+		onClose = () => {},
+		header,
+		children,
+		footer
+	}: Props = $props();
 
 	
 	function handleKeydown(event: KeyboardEvent) {
@@ -36,27 +57,27 @@
 	<div
 		class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center"
 		transition:fade={{ duration: 200 }}
-		on:click={onClose}
+		onclick={onClose}
 		role="presentation"
 	>
 		<div
 			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto modal-content {containerClass} {fullscreen ? 'w-[95vw] h-[95vh] max-w-none max-h-none' : ''}"
 			transition:transitionFn={transitionParams}
-			on:click|stopPropagation
+			onclick={stopPropagation(bubble('click'))}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="modal-title"
 		>
-			{#if $$slots.header || title}
+			{#if header || title}
 				<div class="flex justify-between items-center mb-4">
-					<slot name="header">
+					{#if header}{@render header()}{:else}
 						{#if title}
 							<h2 id="modal-title" class="text-xl text-gold-400 font-medium">{title}</h2>
 						{/if}
-					</slot>
+					{/if}
 					<button
 						class="text-gray-400 hover:text-white"
-						on:click={onClose}
+						onclick={onClose}
 						aria-label="Close modal"
 					>
 						<XIcon size={20} />
@@ -65,12 +86,12 @@
 			{/if}
 
 			<div class="modal-body">
-				<slot />
+				{@render children?.()}
 			</div>
 
-			{#if $$slots.footer}
+			{#if footer}
 				<div class="flex justify-end gap-3 mt-6">
-					<slot name="footer" />
+					{@render footer?.()}
 				</div>
 			{/if}
 		</div>

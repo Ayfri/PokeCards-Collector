@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -8,29 +10,31 @@
 	import { browser } from '$app/environment';
 	import { enhance } from '$app/forms';
 	import Button from '@components/filters/Button.svelte';
-	import RotateCcwIcon from 'lucide-svelte/icons/rotate-ccw';
-	import CopyIcon from 'lucide-svelte/icons/copy';
+	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
+	import CopyIcon from '@lucide/svelte/icons/copy';
 	import { supabase } from '$lib/supabase';
-	import LockIcon from 'lucide-svelte/icons/lock';
+	import LockIcon from '@lucide/svelte/icons/lock';
 
-	let ready = false;
+	let ready = $state(false);
 	// Default gold color from Avatar.svelte, in case profile.profile_color is not set
 	const defaultProfileHexColor = '#fbc54a';
-	let profileColorInput: string = defaultProfileHexColor;
-	let showColorPicker = false;
-	let colorPickerRef: HTMLDivElement | null = null;
-	let resetPasswordLoading = false;
-	let resetPasswordMessage = '';
-	let resetPasswordError = '';
+	let profileColorInput: string = $state(defaultProfileHexColor);
+	let showColorPicker = $state(false);
+	let colorPickerRef: HTMLDivElement | null = $state(null);
+	let resetPasswordLoading = $state(false);
+	let resetPasswordMessage = $state('');
+	let resetPasswordError = $state('');
 
-	$: user = page.data.user;
-	$: profile = page.data.profile;
+	let user = $derived(page.data.user);
+	let profile = $derived(page.data.profile);
 
 	// Simpler reactive update for profileColorInput:
 	// It directly reflects profile.profile_color or defaults.
-	$: profileColorInput = (profile && profile.profile_color && typeof profile.profile_color === 'string' && profile.profile_color.startsWith('#'))
-							? profile.profile_color
-							: defaultProfileHexColor;
+	run(() => {
+		profileColorInput = (profile && profile.profile_color && typeof profile.profile_color === 'string' && profile.profile_color.startsWith('#'))
+								? profile.profile_color
+								: defaultProfileHexColor;
+	});
 
 	onMount(async () => {
 		// Initialize from page.data on mount, which might have been set by server load.
@@ -72,13 +76,15 @@
 		}
 	}
 
-	$: if (browser) {
-		if (showColorPicker) {
-			window.addEventListener('mousedown', handleClickOutside);
-		} else {
-			window.removeEventListener('mousedown', handleClickOutside);
+	run(() => {
+		if (browser) {
+			if (showColorPicker) {
+				window.addEventListener('mousedown', handleClickOutside);
+			} else {
+				window.removeEventListener('mousedown', handleClickOutside);
+			}
 		}
-	}
+	});
 
 	async function handlePasswordReset() {
 		if (!user?.email) {
@@ -222,16 +228,16 @@
 									<button type="button"
 										class="w-10 h-10 rounded-full border shrink-0 focus:outline-hidden"
 										style={`background: ${profileColorInput}`}
-										on:click={openColorPicker}
+										onclick={openColorPicker}
 										title="Change color"
 									></button>
 									<!-- Popover color picker -->
 									{#if showColorPicker}
 										<div bind:this={colorPickerRef} class="absolute z-50 mt-2 bg-gray-900 p-4 rounded-lg shadow-lg border border-gold-400">
 											<div class="flex justify-end mb-2">
-												<button type="button" class="text-gray-400 hover:text-gold-400 text-xl font-bold" on:click={closeColorPicker}>&times;</button>
+												<button type="button" class="text-gray-400 hover:text-gold-400 text-xl font-bold" onclick={closeColorPicker}>&times;</button>
 											</div>
-											<hex-color-picker color={profileColorInput} on:color-changed={handleColorChange}></hex-color-picker>
+											<hex-color-picker color={profileColorInput} oncolor-changed={handleColorChange}></hex-color-picker>
 
 											<!-- Hex input and copy/paste in popup -->
 											<div class="mt-3 flex items-center gap-2">
@@ -244,7 +250,7 @@
 												/>
 												<button
 													type="button"
-													on:click={copyHexValue}
+													onclick={copyHexValue}
 													title="Copy hex value"
 													class="p-1 text-gray-400 hover:text-gold-400 border border-gray-600 rounded-sm bg-gray-800 hover:bg-gray-700 transition-colors"
 												>

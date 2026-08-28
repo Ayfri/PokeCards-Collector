@@ -2,8 +2,12 @@
 	import { fly } from 'svelte/transition';
 	import Modal from '@components/ui/Modal.svelte';
 
-	export let showHelp: boolean;
-	export let toggleHelp: () => void;
+	interface Props {
+		showHelp: boolean;
+		toggleHelp: () => void;
+	}
+
+	let { showHelp, toggleHelp }: Props = $props();
 </script>
 
 <Modal
@@ -14,9 +18,11 @@
 	title="Binder Builder - Help"
 	containerClass="max-w-xl lg:max-w-4xl"
 >
-	<svelte:fragment slot="header">
-		<h2 id="modal-title" class="text-xl text-gold-400 font-bold">Binder Builder - Help</h2>
-	</svelte:fragment>
+	{#snippet header()}
+	
+			<h2 id="modal-title" class="text-xl text-gold-400 font-bold">Binder Builder - Help</h2>
+		
+	{/snippet}
 
 	<div class="space-y-4 text-gray-200 text-sm">
 		<section>

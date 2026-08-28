@@ -1,22 +1,24 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { page } from '$app/state';
 	import PageTitle from '@components/PageTitle.svelte';
-	import { Home, AlertTriangle } from 'lucide-svelte';
+	import { House, TriangleAlert } from '@lucide/svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { onMount } from 'svelte';
 
-	let ready = false;
+	let ready = $state(false);
 	onMount(() => {
 		ready = true;
 	});
 
-	$: errorStatus = page.status;
-	$: errorMessage = page.error?.message;
+	let errorStatus = $derived(page.status);
+	let errorMessage = $derived(page.error?.message);
 
-	let displayTitle = '';
-	let displayMessage = '';
+	let displayTitle = $state('');
+	let displayMessage = $state('');
 
-    $: {
+    run(() => {
 		if (errorStatus === 404) {
 			displayTitle = '404 - Page Not Found';
 			displayMessage = "Looks like this page used Teleport, and it failed!";
@@ -24,7 +26,7 @@
 			displayTitle = `Error ${errorStatus}`;
 			displayMessage = errorMessage || 'Something went wrong on our end. Please try again later.';
 		}
-	}
+	});
 </script>
 
 {#if ready}
@@ -33,7 +35,7 @@
 		in:fade={{ duration: 300, delay: 100 }}
 	>
 		<div in:fly={{ y: 20, duration: 400, delay: 200 }} class="mb-8">
-			<AlertTriangle size={64} class="mx-auto text-gold-400" />
+			<TriangleAlert size={64} class="mx-auto text-gold-400" />
 		</div>
 
 		<div in:fly={{ y: 20, duration: 400, delay: 300 }}>
@@ -49,7 +51,7 @@
 			class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
 			in:fly={{ y: 20, duration: 400, delay: 500 }}
 		>
-			<Home size={18} />
+			<House size={18} />
 			Go to Homepage
 		</a>
 	</main>

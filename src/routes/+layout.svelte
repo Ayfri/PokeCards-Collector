@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import '~/app.css';
 	import "~/fonts/stylesheet.css";
 	import {onNavigate} from '$app/navigation';
@@ -14,9 +16,14 @@
 	import { collectionStore } from '$lib/stores/collection';
 	import type { UserWishlist, UserCollection } from '$lib/types';
 	import pokestore from '~/assets/pokecards-collector.png';
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
+
+	let { children }: Props = $props();
 
 	// Reactive statement to update stores when server data changes
-	$: {
+	run(() => {
 		// Update wishlist store
 		const wishlistSet = new Set<string>();
 		if ($page.data.wishlistItems && Array.isArray($page.data.wishlistItems)) {
@@ -33,7 +40,7 @@
 			});
 		}
 		collectionStore.set(collectionMap);
-	}
+	});
 
 	// Capture clicks on links before navigation starts
 	onMount(() => {
@@ -134,7 +141,7 @@
 	<LoadingBar />
 	<Header />
 	<main class="grow pt-24 lg:pt-32">
-		<slot/>
+		{@render children?.()}
 	</main>
 	<div class="background fixed top-[15%] -z-50 flex place-content-center h-lvh w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
 		<img src={pokestore} alt="Background" class="absolute w-1/2" />

@@ -1,30 +1,32 @@
 <script lang="ts">
+	import { run, preventDefault } from 'svelte/legacy';
+
 import { onMount } from 'svelte';
 import { supabase } from '../../lib/supabase';
 import { page } from '$app/stores';
 import { goto } from '$app/navigation';
 import BouncyLoader from '$lib/components/BouncyLoader.svelte';
 
-let password = '';
-let confirmPassword = '';
-let loading = false;
-let errorMessage = '';
-let successMessage = '';
+let password = $state('');
+let confirmPassword = $state('');
+let loading = $state(false);
+let errorMessage = $state('');
+let successMessage = $state('');
 let token = '';
 let type = '';
-let passwordStrength = 0;
-let passwordCriteria = {
+let passwordStrength = $state(0);
+let passwordCriteria = $state({
 	length: false,
 	digit: false,
 	special: false
-};
+});
 
-$: {
+run(() => {
 	passwordCriteria.length = password.length >= 8;
 	passwordCriteria.digit = /[0-9]/.test(password);
 	passwordCriteria.special = /[^a-zA-Z0-9]/.test(password);
 	passwordStrength = [passwordCriteria.length, passwordCriteria.digit, passwordCriteria.special].filter(Boolean).length;
-}
+});
 
 // Get token from URL or hash
 onMount(() => {
@@ -76,7 +78,7 @@ async function handleReset() {
 	{#if successMessage}
 		<div class="mb-4 p-3 bg-green-100 text-green-800 rounded-sm">{successMessage}</div>
 	{/if}
-	<form on:submit|preventDefault={handleReset} class="space-y-4">
+	<form onsubmit={preventDefault(handleReset)} class="space-y-4">
 		<div>
 			<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New password</label>
 			<input

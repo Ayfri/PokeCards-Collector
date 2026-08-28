@@ -2,10 +2,19 @@
 	import BouncyLoader from './BouncyLoader.svelte';
 	import { fade, fly } from 'svelte/transition';
 
-	export let message: string = "Loading...";
-	export let size: number = 48;
-	export let gradientColorStart: string = '#fbc54a';
-	export let gradientColorEnd: string = '#ae8833';
+	interface Props {
+		message?: string;
+		size?: number;
+		gradientColorStart?: string;
+		gradientColorEnd?: string;
+	}
+
+	let {
+		message = "Loading...",
+		size = 48,
+		gradientColorStart = '#fbc54a',
+		gradientColorEnd = '#ae8833'
+	}: Props = $props();
 </script>
 
 <div

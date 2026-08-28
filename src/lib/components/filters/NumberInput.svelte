@@ -1,13 +1,26 @@
 <script lang="ts">
-	export let id: string;
-	export let label: string;
-	export let value: number | undefined = undefined;
-	export let placeholder: string = "";
-	export let min: number | undefined = undefined;
-	export let max: number | undefined = undefined;
-	export let debounceFunction: (value: number | undefined) => void = () => {};
-	let className: string = "";
-	export {className as class};
+	interface Props {
+		id: string;
+		label: string;
+		value?: number | undefined;
+		placeholder?: string;
+		min?: number | undefined;
+		max?: number | undefined;
+		debounceFunction?: (value: number | undefined) => void;
+		class?: string;
+	}
+
+	let {
+		id,
+		label,
+		value = $bindable(undefined),
+		placeholder = "",
+		min = undefined,
+		max = undefined,
+		debounceFunction = () => {},
+		class: className = ""
+	}: Props = $props();
+	
 
 	function handleInput(event: Event) {
 		const target = event.target as HTMLInputElement;
@@ -27,7 +40,7 @@
 		{min}
 		{placeholder}
 		bind:value={value}
-		on:input={handleInput}
+		oninput={handleInput}
 		type="number"
 	/>
 </div> 

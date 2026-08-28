@@ -1,10 +1,21 @@
 <script lang="ts">
-	export let id: string;
-	export let label: string;
-	export let value: string;
-	export let placeholder: string | undefined = undefined;
-	export let options: { value: string; label: string }[];
-	export let activeCondition: boolean = value !== 'all';
+	interface Props {
+		id: string;
+		label: string;
+		value: string;
+		placeholder?: string | undefined;
+		options: { value: string; label: string }[];
+		activeCondition?: boolean;
+	}
+
+	let {
+		id,
+		label,
+		value = $bindable(),
+		placeholder = undefined,
+		options,
+		activeCondition = value !== 'all'
+	}: Props = $props();
 
 	// Event dispatcher pour la mise à jour de la valeur
 	function handleChange(event: Event) {
@@ -19,7 +30,7 @@
 	{/if}
 	<select
 		{id}
-		on:change={handleChange}
+		onchange={handleChange}
 		value={value}
 		class="bg-transparent border-2 cursor-pointer rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {activeCondition ? 'border-amber-400 text-amber-400' : 'border-white'}"
 	>

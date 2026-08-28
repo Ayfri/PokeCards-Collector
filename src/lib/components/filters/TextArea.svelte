@@ -1,17 +1,31 @@
 <script lang="ts">
+	import type { FullAutoFill } from 'svelte/elements';
 	import { onMount } from 'svelte';
 
-	export let id: string;
-	export let label: string;
-	export let value: string;
-	export let placeholder: string = "";
-	export let autocomplete: string | undefined = undefined;
-	export let debounceFunction: (value: string) => void = () => {};
-	export let rows: number = 4;
-    let className: string = "";
-    export {className as class};
+	interface Props {
+		id: string;
+		label: string;
+		value: string;
+		placeholder?: string;
+		autocomplete?: FullAutoFill | undefined;
+		debounceFunction?: (value: string) => void;
+		rows?: number;
+		class?: string;
+	}
 
-	let textareaElement: HTMLTextAreaElement;
+	let {
+		id,
+		label,
+		value = $bindable(),
+		placeholder = "",
+		autocomplete = undefined,
+		debounceFunction = () => {},
+		rows = 4,
+		class: className = ""
+	}: Props = $props();
+    
+
+	let textareaElement = $state<HTMLTextAreaElement>();
 
 	function adjustHeight(element: HTMLTextAreaElement) {
 		if (!element) return;
@@ -42,6 +56,6 @@
 		{placeholder}
 		{rows}
 		bind:value={value}
-		on:input={handleInput}
-	/>
+		oninput={handleInput}
+	></textarea>
 </div>

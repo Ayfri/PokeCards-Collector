@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import CardInfo from '@components/card/CardInfo.svelte';
 	import EvolutionChain from '@components/card/EvolutionChain.svelte';
 	import RelatedCards from '@components/card/RelatedCards.svelte';
@@ -13,34 +15,47 @@
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 	import { setNavigationLoading } from '$lib/stores/loading';
 
-	// --- Props ---
-	export let allCards: FullCard[];
-	export let pokemons: Pokemon[];
-	export let prices: Record<string, PriceData>;
-	export let sets: Set[];
-	export let pokemonCards: FullCard[];
-	export let isJapaneseContext: boolean = false;
-	export let lowRes: boolean = false;
+	
+	interface Props {
+		// --- Props ---
+		allCards: FullCard[];
+		pokemons: Pokemon[];
+		prices: Record<string, PriceData>;
+		sets: Set[];
+		pokemonCards: FullCard[];
+		isJapaneseContext?: boolean;
+		lowRes?: boolean;
+	}
+
+	let {
+		allCards,
+		pokemons,
+		prices,
+		sets,
+		pokemonCards,
+		isJapaneseContext = false,
+		lowRes = false
+	}: Props = $props();
 
 	// --- Internal State ---
-	let currentCard: FullCard | undefined = undefined;
-	let isInitialRenderComplete = false;
-	let shouldRenderAllCards = false;
+	let currentCard = $state<FullCard | undefined>(undefined);
+	let isInitialRenderComplete = $state(false);
+	let shouldRenderAllCards = $state(false);
 
 	// --- Reactive Computations ---
-	$: baseCardUrl = isJapaneseContext ? '/jp-card/' : '/card/';
-	$: cardPrices = currentCard ? prices[currentCard.cardCode] : undefined;
-	$: currentSet = currentCard ? findSetByCardCode(currentCard.cardCode, sets) : undefined;
-	$: currentType = currentCard?.types?.toLowerCase().split(',')[0] || 'unknown';
-	$: currentPokemonId = currentCard?.pokemonNumber;
+	let baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
+	let cardPrices = $derived(currentCard ? prices[currentCard.cardCode] : undefined);
+	let currentSet = $derived(currentCard ? findSetByCardCode(currentCard.cardCode, sets) : undefined);
+	let currentType = $derived(currentCard?.types?.toLowerCase().split(',')[0] || 'unknown');
+	let currentPokemonId = $derived(currentCard?.pokemonNumber);
 
-	$: currentPokemon = currentPokemonId ? pokemons.find(p => p.id === currentPokemonId) : undefined;
-	$: previousPokemon = currentPokemonId ? pokemons.find(p => p.id === currentPokemonId - 1) : undefined;
-	$: nextPokemon = currentPokemonId ? pokemons.find(p => p.id === currentPokemonId + 1) : undefined;
-	$: previousPokemonCard = previousPokemon ? getRepresentativeCardForPokemon(previousPokemon.id, allCards, prices) : undefined;
-	$: nextPokemonCard = nextPokemon ? getRepresentativeCardForPokemon(nextPokemon.id, allCards, prices) : undefined;
+	let currentPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId) : undefined);
+	let previousPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId - 1) : undefined);
+	let nextPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId + 1) : undefined);
+	let previousPokemonCard = $derived(previousPokemon ? getRepresentativeCardForPokemon(previousPokemon.id, allCards, prices) : undefined);
+	let nextPokemonCard = $derived(nextPokemon ? getRepresentativeCardForPokemon(nextPokemon.id, allCards, prices) : undefined);
 
-	$: currentPokemonCards = currentPokemonId ? allCards.filter(c => c.pokemonNumber === currentPokemonId) : [];
+	let currentPokemonCards = $derived(currentPokemonId ? allCards.filter(c => c.pokemonNumber === currentPokemonId) : []);
 
 	// --- Functions ---
 	function handlePokemonImageError(event: Event) {
@@ -108,20 +123,22 @@
 	});
 
 	// Ensure unique cards in currentPokemonCards
-	$: if (currentPokemonId) {
-		const uniqueCardCodes = new Set<string>();
-		currentPokemonCards = allCards
-			.filter(c => c.pokemonNumber === currentPokemonId)
-			.filter(c => {
-				if (!uniqueCardCodes.has(c.cardCode)) {
-					uniqueCardCodes.add(c.cardCode);
-					return true;
-				}
-				return false;
-			});
-	} else {
-		currentPokemonCards = [];
-	}
+	run(() => {
+		if (currentPokemonId) {
+			const uniqueCardCodes = new Set<string>();
+			currentPokemonCards = allCards
+				.filter(c => c.pokemonNumber === currentPokemonId)
+				.filter(c => {
+					if (!uniqueCardCodes.has(c.cardCode)) {
+						uniqueCardCodes.add(c.cardCode);
+						return true;
+					}
+					return false;
+				});
+		} else {
+			currentPokemonCards = [];
+		}
+	});
 </script>
 
 <div class="flex flex-col gap-1 lg:gap-4 items-center content-center">
@@ -164,7 +181,7 @@
 			<!-- Previous Pokemon (Mobile) -->
 			{#if previousPokemon && previousPokemonCard}
 				<button
-					on:click={() => handlePokemonNavigation(previousPokemonCard.cardCode)}
+					onclick={() => handlePokemonNavigation(previousPokemonCard.cardCode)}
 					class="prev-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
 					in:fly={{ x: -50, duration: 400, delay: 400 }}
 				>
@@ -174,7 +191,7 @@
 						alt={pascalCase(previousPokemon.name)}
 						class="w-16 h-16 object-contain nav-pokemon-image"
 						title={pascalCase(previousPokemon.name)}
-						on:error={handlePokemonImageError}
+						onerror={handlePokemonImageError}
 						data-pokemon-id={previousPokemon.id}
 					/>
 					{:else}
@@ -192,7 +209,7 @@
 			<!-- Next Pokemon (Mobile) -->
 			{#if nextPokemon && nextPokemonCard}
 				<button
-					on:click={() => handlePokemonNavigation(nextPokemonCard.cardCode)}
+					onclick={() => handlePokemonNavigation(nextPokemonCard.cardCode)}
 					class="next-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
 					in:fly={{ x: 50, duration: 400, delay: 400 }}
 				>
@@ -202,7 +219,7 @@
 						alt={pascalCase(nextPokemon.name)}
 						class="w-16 h-16 object-contain nav-pokemon-image"
 						title={pascalCase(nextPokemon.name)}
-						on:error={handlePokemonImageError}
+						onerror={handlePokemonImageError}
 						data-pokemon-id={nextPokemon.id}
 					/>
 					{:else}
@@ -222,7 +239,7 @@
 		<!-- Previous Pokemon (Desktop) -->
 		{#if previousPokemon && previousPokemonCard}
 			<button
-				on:click={() => handlePokemonNavigation(previousPokemonCard.cardCode)}
+				onclick={() => handlePokemonNavigation(previousPokemonCard.cardCode)}
 				class="prev-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-1"
 				in:fly={{ x: -50, duration: 400, delay: 400 }}
 			>
@@ -232,7 +249,7 @@
 						alt={pascalCase(previousPokemon.name)}
 						class="w-24 h-24 object-contain nav-pokemon-image"
 						title={pascalCase(previousPokemon.name)}
-						on:error={handlePokemonImageError}
+						onerror={handlePokemonImageError}
 						data-pokemon-id={previousPokemon.id}
 					/>
 				{:else}
@@ -250,7 +267,7 @@
 		<!-- Next Pokemon (Desktop) -->
 		{#if nextPokemon && nextPokemonCard}
 			<button
-				on:click={() => handlePokemonNavigation(nextPokemonCard.cardCode)}
+				onclick={() => handlePokemonNavigation(nextPokemonCard.cardCode)}
 				class="next-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-3"
 				in:fly={{ x: 50, duration: 400, delay: 400 }}
 			>
@@ -260,7 +277,7 @@
 						alt={pascalCase(nextPokemon.name)}
 						class="w-24 h-24 object-contain nav-pokemon-image"
 						title={pascalCase(nextPokemon.name)}
-						on:error={handlePokemonImageError}
+						onerror={handlePokemonImageError}
 						data-pokemon-id={nextPokemon.id}
 					/>
 				{:else}

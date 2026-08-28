@@ -1,10 +1,21 @@
 <script lang="ts">
-	export let isActive: boolean = false;
-	export let onClick: () => void;
-	export let disabled: boolean = false;
 
-	let classNames = '';
-	export { classNames as class };
+	interface Props {
+		isActive?: boolean;
+		onClick: () => void;
+		disabled?: boolean;
+		class?: string;
+		children?: import('svelte').Snippet;
+	}
+
+	let {
+		isActive = false,
+		onClick,
+		disabled = false,
+		class: classNames = '',
+		children
+	}: Props = $props();
+	
 </script>
 
 <button
@@ -14,10 +25,10 @@
 			: 'border-white text-white hover:border-[#FFB700]'}
 		   {disabled ? 'opacity-50 cursor-not-allowed border-gray-600 text-gray-600 hover:text-gray-600 hover:border-gray-600' : ''}
 		   {classNames}"
-	on:click={onClick}
+	onclick={onClick}
 	disabled={disabled}
 >
-	<span class="relative z-10 flex items-center gap-2"><slot /></span>
+	<span class="relative z-10 flex items-center gap-2">{@render children?.()}</span>
 </button>
 
 <style>

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { cardSize, sizes } from '$lib/stores/gridStore';
-	import Grid2x2Icon from 'lucide-svelte/icons/grid-2x2';
+	import Grid2x2Icon from '@lucide/svelte/icons/grid-2x2';
 	import { writable } from 'svelte/store';
 
 	// Local state to track if the size is being updated (for visual feedback)
@@ -27,7 +27,7 @@
             {@const index = parseFloat(key)}
 			<button
 				type="button"
-				on:click={() => setSize(index)}
+				onclick={() => setSize(index)}
 				class="relative z-10 w-6 h-6 rounded-full transition-colors duration-150 flex items-center justify-center"
 				class:bg-gold-400={$cardSize === index}
 				class:text-black={$cardSize === index}

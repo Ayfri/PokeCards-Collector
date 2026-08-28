@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import ScrollToBottom from '@components/list/ScrollToBottom.svelte';
 	import ScrollToTop from '@components/list/ScrollToTop.svelte';
 	import { updateScrollProgress } from '$helpers/scrollStore';
@@ -7,33 +9,46 @@
 	import type { FullCard } from '$lib/types';
 	import { browser } from '$app/environment';
 
-	export let items: FullCard[];
-	export let itemHeight: number;
-	export let itemWidth: number;
-	export let gapX: number = 0;
-	export let gapY: number = 0;
-	export let marginTop: number = 0;
-	export let forcedItemsPerRow: number | null = null;
+	interface Props {
+		items: FullCard[];
+		itemHeight: number;
+		itemWidth: number;
+		gapX?: number;
+		gapY?: number;
+		marginTop?: number;
+		forcedItemsPerRow?: number | null;
+		children?: import('svelte').Snippet<[any]>;
+		empty?: import('svelte').Snippet;
+	}
+
+	let {
+		items,
+		itemHeight,
+		itemWidth,
+		gapX = 0,
+		gapY = 0,
+		marginTop = 0,
+		forcedItemsPerRow = null,
+		children,
+		empty
+	}: Props = $props();
 
 	const marginRows = 4;
 	const scrollThreshold = itemHeight * 0.8;
 	const scrollDuration = 800;
 
-	let container: HTMLDivElement;
-	let clientWidth: number = 0;
-	let itemsPerRow: number = 1;
+	let container = $state<HTMLDivElement>();
+	let clientWidth: number = $state(0);
+	let itemsPerRow: number = $state(1);
 	let visibleRows: number = 0;
-	let visibleItems: FullCard[] = [];
+	let visibleItems: FullCard[] = $state([]);
 	let scrollingTo: boolean = false;
 	let previousScroll: number = 0;
-	let hasScrolled: boolean = false;
-	let isInitialized: boolean = false;
-	let leftMargin: number = 0;
+	let hasScrolled: boolean = $state(false);
+	let isInitialized: boolean = $state(false);
+	let leftMargin: number = $state(0);
 	let viewportHeight: number = 800;
 
-	$: if (isInitialized && (itemWidth || itemHeight || gapX || gapY || forcedItemsPerRow || clientWidth)) {
-		recalculateLayout();
-	}
 
 	onMount(() => {
 		viewportHeight = window.innerHeight;
@@ -154,11 +169,16 @@
 		}, 100);
 	}
 
+	run(() => {
+		if (isInitialized && (itemWidth || itemHeight || gapX || gapY || forcedItemsPerRow || clientWidth)) {
+			recalculateLayout();
+		}
+	});
 </script>
 
-<svelte:window on:resize={handleResize}/>
+<svelte:window onresize={handleResize}/>
 
-<div bind:this={container} class="virtual-grid-container top-2 relative flex-1 w-full overflow-y-scroll scrollbar-hide" on:scroll={handleScroll}>
+<div bind:this={container} class="virtual-grid-container top-2 relative flex-1 w-full overflow-y-scroll scrollbar-hide" onscroll={handleScroll}>
 	{#if isInitialized && itemsPerRow > 0}
 		<div class="absolute size-px" style="top: {Math.ceil(items.length / itemsPerRow) * (itemHeight + gapY) + marginTop}px;"></div>
 
@@ -166,23 +186,23 @@
 			{#if visibleItems.some(visible => visible.cardCode === item.cardCode)}
 				{#key item.cardCode}
 					<div class="absolute transition-all duration-150 ease-out" style="top: {Math.floor(i / itemsPerRow) * (itemHeight + gapY) + marginTop}px; left: {i % itemsPerRow * (itemWidth + gapX) + leftMargin}px; width: {itemWidth}px; height: {itemHeight}px;">
-						<slot {item}/>
+						{@render children?.({ item, })}
 					</div>
 				{/key}
 			{/if}
 		{:else}
-			<slot name="empty"/>
+			{@render empty?.()}
 		{/each}
 	{:else if !isInitialized}
 		<div class="w-full h-[80vh]"></div>
 	{:else if items.length === 0}
-        <slot name="empty"/>
+        {@render empty?.()}
 	{/if}
 </div>
 
 {#if hasScrolled}
 <div transition:fade={{ duration: 300 }}>
-	<ScrollToTop on:click={scrollToTop}/>
+	<ScrollToTop onclick={scrollToTop}/>
 </div>
 {/if}
-<ScrollToBottom on:click={scrollToLast}/>
+<ScrollToBottom onclick={scrollToLast}/>

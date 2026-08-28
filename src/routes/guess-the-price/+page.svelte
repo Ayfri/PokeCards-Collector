@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { run, preventDefault } from 'svelte/legacy';
+
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -6,47 +8,53 @@
 	import Numpad from '$lib/components/Numpad.svelte'; // Import Numpad
 	import PageTitle from '$lib/components/PageTitle.svelte'; // Import PageTitle
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	// Local state for the currently displayed card details
-	let displayedCard: Card | null = null;
-	let displayedCardPrice: number | null = null;
-	let displayedReleaseDate: Date | null = null;
+	let displayedCard: Card | null = $state(null);
+	let displayedCardPrice: number | null = $state(null);
+	let displayedReleaseDate: Date | null = $state(null);
 
-	let guessString: string = '';
-	let message: string = '';
-	let feedbackColor: string = '';
-	let showConfetti: boolean = false;
-	let guessSubmitted: boolean = false; // True after a guess is made, false after Play Again
-	let isLoadingNextCard: boolean = false; // True while invalidateAll from checkGuess is running
+	let guessString: string = $state('');
+	let message: string = $state('');
+	let feedbackColor: string = $state('');
+	let showConfetti: boolean = $state(false);
+	let guessSubmitted: boolean = $state(false); // True after a guess is made, false after Play Again
+	let isLoadingNextCard: boolean = $state(false); // True while invalidateAll from checkGuess is running
 
-	let dataSnapshotForLoadingCheck = data; // Snapshot to detect data prop update
+	let dataSnapshotForLoadingCheck = $state(data); // Snapshot to detect data prop update
 
 	// Initialize displayed card data on initial load
 	// This runs once when the component mounts and `data` is first available.
 	// Subsequent updates to displayedCard are handled by playAgain.
-	$: if (data.currentCard && !displayedCard) { // Only set if displayedCard is not yet set
-		displayedCard = data.currentCard;
-		displayedCardPrice = data.currentCardPrice;
-		displayedReleaseDate = data.currentReleaseDate ? new Date(data.currentReleaseDate) : null;
-		// Initial game state reset
-		message = '';
-		guessString = ''; // Reset guessString
-		showConfetti = false;
-		guessSubmitted = false;
-	} else if (!data.currentCard && !displayedCard && data.error) {
-		// Handle initial error from server if no card is loaded
-		message = data.error;
-		feedbackColor = 'text-red-400';
-	}
+	run(() => {
+		if (data.currentCard && !displayedCard) { // Only set if displayedCard is not yet set
+			displayedCard = data.currentCard;
+			displayedCardPrice = data.currentCardPrice;
+			displayedReleaseDate = data.currentReleaseDate ? new Date(data.currentReleaseDate) : null;
+			// Initial game state reset
+			message = '';
+			guessString = ''; // Reset guessString
+			showConfetti = false;
+			guessSubmitted = false;
+		} else if (!data.currentCard && !displayedCard && data.error) {
+			// Handle initial error from server if no card is loaded
+			message = data.error;
+			feedbackColor = 'text-red-400';
+		}
+	});
 
 	// Reactive block to manage loading state after checkGuess initiates a fetch
-	$: {
+	run(() => {
 		if (isLoadingNextCard && data !== dataSnapshotForLoadingCheck) {
 			isLoadingNextCard = false;
 			dataSnapshotForLoadingCheck = data; // Update snapshot for the next cycle
 		}
-	}
+	});
 
 	function handleNumpadKeyPress(key: string) {
 		if (guessSubmitted) return; // Don't allow input after submission
@@ -163,13 +171,15 @@
 	}
 	
 	// Reactive statement to trigger confetti
-	$: if (showConfetti && typeof (window as any).confetti === 'function') {
-		(window as any).confetti({
-			particleCount: 150,
-			spread: 100,
-			origin: { y: 0.6 }
-		});
-	}
+	run(() => {
+		if (showConfetti && typeof (window as any).confetti === 'function') {
+			(window as any).confetti({
+				particleCount: 150,
+				spread: 100,
+				origin: { y: 0.6 }
+			});
+		}
+	});
 
 </script>
 
@@ -191,7 +201,7 @@
 	{#if data.error && !displayedCard}
 		<p class="text-red-500 text-xl">{data.error}</p>
 		<button 
-			on:click={playAgain} 
+			onclick={playAgain} 
 			class="mt-4 bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 px-4 rounded-sm focus:outline-hidden focus:shadow-outline transition-colors duration-200"
 		>
 			Try Again
@@ -211,7 +221,7 @@
 					{/if}
 					<img src={displayedCard.image} alt={displayedCard.name} class="mx-auto mb-3 sm:mb-4 rounded-lg shadow-md w-48 sm:w-64 h-auto object-contain" />
 
-					<form on:submit|preventDefault={checkGuess} class="w-full">
+					<form onsubmit={preventDefault(checkGuess)} class="w-full">
 						<label for="price-guess" class="block text-base sm:text-lg font-medium text-gray-300 mb-1 sm:mb-2">Your Guess ($):</label>
 						<input
 							type="text" 
@@ -219,7 +229,7 @@
 							id="price-guess"
 							name="price-guess"
 							bind:value={guessString}
-							on:input={handleGuessInput}
+							oninput={handleGuessInput}
 							min="0"
 							step="1"
 							class="shadow-sm appearance-none border border-gold-500 rounded-sm w-full py-2 sm:py-3 px-3 sm:px-4 text-gray-200 bg-gray-700 leading-tight focus:outline-hidden focus:shadow-outline focus:border-gold-300 mb-3 sm:mb-4 text-sm sm:text-base"
@@ -249,7 +259,7 @@
 					<p class={`text-base sm:text-lg font-semibold text-center ${feedbackColor}`}>{message}</p>
 				{/if}
 				<button 
-					on:click={playAgain} 
+					onclick={playAgain} 
 					class="play-again-button bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-sm focus:outline-hidden focus:shadow-outline transition-all duration-200 text-base sm:text-lg relative { (guessSubmitted && !isLoadingNextCard) ? 'ripple-active' : '' } { isLoadingNextCard ? 'opacity-50' : '' }"
 					disabled={isLoadingNextCard || !guessSubmitted}
 				>
@@ -260,7 +270,7 @@
 	{:else}
 		<p class="text-xl text-gray-400">Loading card or no card to display...</p>
 		<button 
-			on:click={() => { isLoadingNextCard = true; dataSnapshotForLoadingCheck = data; invalidateAll(); }} 
+			onclick={() => { isLoadingNextCard = true; dataSnapshotForLoadingCheck = data; invalidateAll(); }} 
 			class="mt-4 bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 px-4 rounded-sm focus:outline-hidden focus:shadow-outline transition-colors duration-200 {isLoadingNextCard ? 'opacity-50' : ''}"
 			disabled={isLoadingNextCard}
 		>

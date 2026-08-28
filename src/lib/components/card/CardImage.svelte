@@ -1,93 +1,82 @@
 <script lang="ts">
+	import { run } from 'svelte/legacy';
+
 	import { processCardImage } from '$lib/helpers/card-images';
 	import { NO_IMAGES } from '~/lib/images';
 
-	/**
-	 * Alt text for the image
-	 * Defaults to "Pokemon card"
-	 */
-	export let alt: string = 'Pokemon card';
+	interface Props {
+		/** Alt text for the image. */
+		alt?: string;
+		/** CSS classes to apply to the image. */
+		class?: string;
+		/** Height of the image, optional if width is specified. */
+		height?: number | undefined;
+		/** The image URL from the API, e.g. "https://images.pokemontcg.io/pop5/17_hires.png". */
+		imageUrl: string;
+		/** Whether the image is lazy loaded. */
+		lazy?: boolean;
+		/** Whether to use the low-resolution image: `_hires.png` is stripped from the URL. */
+		lowRes?: boolean;
+		/** Called when the image fails to load. */
+		onerror?: (event: Event) => void;
+		/** Inline style of the image. */
+		style?: string | undefined;
+		/** Width of the image, optional if height is specified. */
+		width?: number | undefined;
+	}
 
-	/**
-	 * The image URL from the API
-	 * e.g. "https://images.pokemontcg.io/pop5/17_hires.png"
-	 */
-	export let imageUrl: string;
+	let {
+		alt = 'Pokemon card',
+		class: classNames = '',
+		height = undefined,
+		imageUrl,
+		lazy = true,
+		lowRes = false,
+		onerror,
+		style = undefined,
+		width = undefined
+	}: Props = $props();
 
-	/**
-	 * Whether to use low-resolution image. 
-	 * If true, _hires.png will be removed from the URL.
-	 */
-	export let lowRes: boolean = false;
-
-	/**
-	 * Whether the image is for lazy loading
-	 */
-	export let lazy: boolean = true;
-
-	/**
-	 * Height of the image
-	 * Optional if width is specified
-	 */
-	export let height: number | undefined = undefined;
-
-	/**
-	 * Style of the image
-	 */
-	export let style: string | undefined = undefined;
-
-	/**
-	 * Width of the image
-	 * Optional if height is specified
-	 */
-	export let width: number | undefined = undefined;
-
-	/**
-	 * CSS classes to apply to the image
-	 */
-	let classNames: string = '';
-
-	export {classNames as class};
-
-	let loaded = false;
-	let error = false;
+	let loaded = $state(false);
+	let error = $state(false);
 
 	// Determine whether to use high resolution based on the lowRes prop
-	$: useHighRes = !lowRes;
+	let useHighRes = $derived(!lowRes);
 
 	// Process the image URL using our centralized function - make reactive to imageUrl changes
-	$: standardImageUrl = imageUrl ? processCardImage(imageUrl, useHighRes) : '';
-	$: lowResImageUrl = imageUrl ? processCardImage(imageUrl, false) : '';
+	let standardImageUrl = $derived(imageUrl ? processCardImage(imageUrl, useHighRes) : '');
+	let lowResImageUrl = $derived(imageUrl ? processCardImage(imageUrl, false) : '');
 	
 	// Default fallback image for missing images
 	const DEFAULT_FALLBACK_IMAGE = '/default-card-image.png';
 	
 	// Check if this is an external URL (not from Pokemon TCG API)
 	// If so, route it through the proxy to prevent CORS issues
-	$: isExternalUrl = standardImageUrl && !standardImageUrl.includes('pokemontcg.io');
+	let isExternalUrl = $derived(standardImageUrl && !standardImageUrl.includes('pokemontcg.io'));
 	
 	// For external URLs, we'll use the proxy endpoint
-	$: proxyStandardUrl = !standardImageUrl ? DEFAULT_FALLBACK_IMAGE : 
+	let proxyStandardUrl = $derived(!standardImageUrl ? DEFAULT_FALLBACK_IMAGE : 
 	                      isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(standardImageUrl)}` : 
-	                      standardImageUrl;
+	                      standardImageUrl);
 	                      
-	$: proxyLowResUrl = !lowResImageUrl ? DEFAULT_FALLBACK_IMAGE : 
+	let proxyLowResUrl = $derived(!lowResImageUrl ? DEFAULT_FALLBACK_IMAGE : 
 	                   isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(lowResImageUrl)}` : 
-	                   lowResImageUrl;
+	                   lowResImageUrl);
 
 	// Prepare srcset based on actual dimensions
-	$: srcsetValue = width ? 
+	let srcsetValue = $derived(width ? 
 		`${proxyLowResUrl} ${Math.floor(width*0.82)}w, ${standardImageUrl} ${width}w` :
-		`${proxyLowResUrl} 245w, ${standardImageUrl} 300w`;
+		`${proxyLowResUrl} 245w, ${standardImageUrl} 300w`);
 
-	$: sizesValue = width ? 
+	let sizesValue = $derived(width ? 
 		`(max-width: ${Math.floor(width*0.82)}px) ${Math.floor(width*0.82)}px, ${width}w` :
-		'(max-width: 245px) 245px, 300w';
+		'(max-width: 245px) 245px, 300w');
 
 	// Handle error case
-	function handleError() {
+	function handleError(event: Event) {
 		error = true;
 		console.warn(`Image failed to load: ${imageUrl || 'undefined'}`);
+		onerror?.(event);
 	}
 
 	function onLoad() {
@@ -96,10 +85,12 @@
 	}
 	
 	// Reset the loaded state when imageUrl changes
-	$: if (imageUrl) {
-		loaded = false;
-		error = false;
-	}
+	run(() => {
+		if (imageUrl) {
+			loaded = false;
+			error = false;
+		}
+	});
 </script>
 {#if error}
 	<div class="flex items-center justify-center bg-red-900 text-white rounded-lg {classNames}" style="{style || ''} {width ? `width: ${width}px;` : ''} {height ? `height: ${height}px;` : ''}">
@@ -113,8 +104,8 @@
 		draggable="false"
 		{height}
 		loading={lazy ? 'lazy' : 'eager'}
-		on:error={handleError}
-		on:load={onLoad}
+		onerror={handleError}
+		onload={onLoad}
 		sizes={sizesValue}
 		src={standardImageUrl}
 		srcset={srcsetValue}

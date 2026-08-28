@@ -1,26 +1,32 @@
 <script lang="ts">
+	import { run, preventDefault } from 'svelte/legacy';
+
 	import { onMount } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import BouncyLoader from '../BouncyLoader.svelte';
 
-	export let onSuccess: (() => void) | undefined = undefined;
-	export let onSwitch: ((tab: 'login' | 'register') => void) | undefined = undefined;
+	interface Props {
+		onSuccess?: (() => void) | undefined;
+		onSwitch?: ((tab: 'login' | 'register') => void) | undefined;
+	}
 
-	let email = '';
-	let username = '';
-	let password = '';
-	let confirmPassword = '';
-	let loading = false;
-	let errorMessage = '';
-	let passwordStrength = 0;
-	let passwordCriteria = {
+	let { onSuccess = undefined, onSwitch = undefined }: Props = $props();
+
+	let email = $state('');
+	let username = $state('');
+	let password = $state('');
+	let confirmPassword = $state('');
+	let loading = $state(false);
+	let errorMessage = $state('');
+	let passwordStrength = $state(0);
+	let passwordCriteria = $state({
 		length: false,
 		digit: false,
 		special: false
-	};
-	let showPassword = false;
-	let showConfirmPassword = false;
+	});
+	let showPassword = $state(false);
+	let showConfirmPassword = $state(false);
 
 	onMount(() => {
 		// Composant monté
@@ -215,15 +221,15 @@
 		showConfirmPassword = !showConfirmPassword;
 	};
 
-	$: {
+	run(() => {
 		passwordCriteria.length = password.length >= 8;
 		passwordCriteria.digit = /[0-9]/.test(password);
 		passwordCriteria.special = /[^a-zA-Z0-9]/.test(password);
 		passwordStrength = [passwordCriteria.length, passwordCriteria.digit, passwordCriteria.special].filter(Boolean).length;
-	}
+	});
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="space-y-4">
+<form onsubmit={preventDefault(handleSubmit)} class="space-y-4">
 	{#if errorMessage}
 		<div class="p-3 bg-red-100 text-red-800 rounded-lg text-sm">
 			{errorMessage}
@@ -287,7 +293,7 @@
 			{/if}
 			<button
 				class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300"
-				on:click={togglePasswordVisibility}
+				onclick={togglePasswordVisibility}
 				type="button"
 			>
 				{showPassword ? 'Hide' : 'Show'}
@@ -334,7 +340,7 @@
 			{/if}
 			<button
 				class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300"
-				on:click={toggleConfirmPasswordVisibility}
+				onclick={toggleConfirmPasswordVisibility}
 				type="button"
 			>
 				{showConfirmPassword ? 'Hide' : 'Show'}

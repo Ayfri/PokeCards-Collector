@@ -2,12 +2,16 @@
 	import { type Writable } from 'svelte/store';
 	import CardImage from '@components/card/CardImage.svelte';
 	import { NO_IMAGES } from '$lib/images';
-	import { X } from 'lucide-svelte';
+	import { X } from '@lucide/svelte';
 	import type { BinderCards } from '$lib/types';
 
-	export let binderCards: Writable<Array<BinderCards | null>>;
-	export let rows: Writable<number>;
-	export let columns: Writable<number>;
+	interface Props {
+		binderCards: Writable<Array<BinderCards | null>>;
+		rows: Writable<number>;
+		columns: Writable<number>;
+	}
+
+	let { binderCards, rows, columns }: Props = $props();
 	
 	// Handle drag events
 	function onDragOver(e: DragEvent) {
@@ -133,9 +137,9 @@
 					style="aspect-ratio: 2.5 / 3.5;"
 					role="gridcell"
 					tabindex="0"
-					on:dragover={onDragOver}
-					on:dragleave={onDragLeave}
-					on:drop={(e) => onDrop(e, index)}
+					ondragover={onDragOver}
+					ondragleave={onDragLeave}
+					ondrop={(e) => onDrop(e, index)}
 				>
 					{#if card}
 						<div
@@ -143,18 +147,17 @@
 							draggable="true"
 							role="button"
 							tabindex="-1"
-							on:dragstart={(e) => onDragStart(e, card)}
+							ondragstart={(e) => onDragStart(e, card)}
 						>
 							<CardImage
 								imageUrl={card.url}
 								alt={card.cardCode}
 								class="card-image max-w-full max-h-full object-contain {NO_IMAGES ? 'ring-1 ring-gold-400 ring-inset' : ''}"
 								lazy={true}
-								highRes={true}
 							/>
 							<button 
 								class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-								on:click={() => removeCard(index)}
+								onclick={() => removeCard(index)}
 							>
 								<X size={14} />
 							</button>

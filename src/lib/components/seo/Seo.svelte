@@ -6,19 +6,29 @@
 	// Define the static site description
 	const SITE_DESCRIPTION = 'Explore and manage your Pokémon TCG collection. Browse, search, and filter through a comprehensive list of Pokémon TCG cards.';
 
-	export let title: string = SITE_NAME; // Default title
-	export let description: string = SITE_DESCRIPTION; // Default description updated
-	export let image: Image | null = null;
-	export let canonicalUrl: string | null = null;
-	export let type: 'WebSite' | 'WebPage' | 'Article' | 'Product' = 'WebPage'; // Default type
+	interface Props {
+		title?: string; // Default title
+		description?: string; // Default description updated
+		image?: Image | null;
+		canonicalUrl?: string | null;
+		type?: 'WebSite' | 'WebPage' | 'Article' | 'Product'; // Default type
+	}
 
-	$: effectiveTitle =
-		title.trim().toLowerCase().endsWith(SITE_NAME.toLowerCase())
+	let {
+		title = SITE_NAME,
+		description = SITE_DESCRIPTION,
+		image = null,
+		canonicalUrl = null,
+		type = 'WebPage'
+	}: Props = $props();
+
+	let effectiveTitle =
+		$derived(title.trim().toLowerCase().endsWith(SITE_NAME.toLowerCase())
 			? title.trim()
-			: `${title.trim()} - ${SITE_NAME}`;
-	$: effectiveCanonicalUrl = canonicalUrl ?? `${BASE_URL}${page.url.pathname}${page.url.search}`;
+			: `${title.trim()} - ${SITE_NAME}`);
+	let effectiveCanonicalUrl = $derived(canonicalUrl ?? `${BASE_URL}${page.url.pathname}${page.url.search}`);
 
-	const jsonLd = {
+	let jsonLd = $derived({
 		'@context': 'https://schema.org',
 		'@type': type,
 		name: effectiveTitle,
@@ -43,9 +53,9 @@
 				url: BASE_URL,
 			},
 		}),
-	};
+	});
 
-	const jsonLdString = JSON.stringify(jsonLd, null, 2);
+	let jsonLdString = $derived(JSON.stringify(jsonLd, null, 2));
 </script>
 
 <svelte:head>

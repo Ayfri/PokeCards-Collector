@@ -4,14 +4,18 @@
 	import type { Card, Pokemon, Set, PriceData } from "$lib/types";
 	import { fade } from 'svelte/transition';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
 
-	$: allCards = data.allCards as Card[];
-	$: pokemonCards = data.pokemonCards as Card[];
-	$: pokemons = data.pokemons as Pokemon[];
-	$: sets = data.sets as Set[];
-	$: prices = data.prices as Record<string, PriceData>;
-	$: targetCard = data.targetCard as Card;
+	let { data }: Props = $props();
+
+	let allCards = $derived(data.allCards as Card[]);
+	let pokemonCards = $derived(data.pokemonCards as Card[]);
+	let pokemons = $derived(data.pokemons as Pokemon[]);
+	let sets = $derived(data.sets as Set[]);
+	let prices = $derived(data.prices as Record<string, PriceData>);
+	let targetCard = $derived(data.targetCard as Card);
 </script>
 
 <main class="max-w-[100vw] p-4 mb-4 text-lg text-white">

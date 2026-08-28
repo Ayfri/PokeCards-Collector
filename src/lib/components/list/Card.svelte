@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { createBubbler, stopPropagation } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import {NO_IMAGES} from '$lib/images';
 	import {addCardToWishlist, removeCardFromWishlist} from '$lib/services/wishlists';
 	import {addCardToCollection, removeCardFromCollection} from '$lib/services/collections';
@@ -8,21 +11,33 @@
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import { parseCardCode } from '$lib/helpers/card-utils';
 	import CardImage from '@components/card/CardImage.svelte';
-	import ExternalLink from 'lucide-svelte/icons/external-link';
-	import Heart from 'lucide-svelte/icons/heart';
+	import ExternalLink from '@lucide/svelte/icons/external-link';
+	import Heart from '@lucide/svelte/icons/heart';
 	import { findSetByCardCode } from '$lib/helpers/set-utils';
-	import { Plus, Minus } from 'lucide-svelte';
+	import { Plus, Minus } from '@lucide/svelte';
 	import { fly } from 'svelte/transition';
 	import Button from '@components/filters/Button.svelte';
-	import CardStackIcon from 'lucide-svelte/icons/layers';
+	import CardStackIcon from '@lucide/svelte/icons/layers';
 
-	export let card: FullCard;
-	export let pokemons: Pokemon[];
-	export let prices: PriceData | undefined;
-	export let sets: Set[];
-	export let customWidth: number | null = null;
-	export let customHeight: number | null = null;
-	export let lowRes: boolean = false;
+	interface Props {
+		card: FullCard;
+		pokemons: Pokemon[];
+		prices: PriceData | undefined;
+		sets: Set[];
+		customWidth?: number | null;
+		customHeight?: number | null;
+		lowRes?: boolean;
+	}
+
+	let {
+		card,
+		pokemons,
+		prices,
+		sets,
+		customWidth = null,
+		customHeight = null,
+		lowRes = false
+	}: Props = $props();
 
 	const {
 		// image, // We will use card.image directly
@@ -33,34 +48,34 @@
 	} = card;
 
 	// Calculer les dimensions réelles à utiliser
-	$: width = customWidth || 300;
-	$: height = customHeight || 420;
-	$: mobileWidth = customWidth ? Math.floor(customWidth * 0.82) : 245;
-	$: mobileHeight = customHeight ? Math.floor(customHeight * 0.82) : 342;
+	let width = $derived(customWidth || 300);
+	let height = $derived(customHeight || 420);
+	let mobileWidth = $derived(customWidth ? Math.floor(customWidth * 0.82) : 245);
+	let mobileHeight = $derived(customHeight ? Math.floor(customHeight * 0.82) : 342);
 
 	const { pokemonNumber, cardNumber = '0' } = parseCardCode(cardCode);
 	const pokemon = pokemonNumber ? pokemons.find(p => p.id === pokemonNumber) : null;
 	const set = findSetByCardCode(cardCode, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null };
 
 	// Access user and profile from page state
-	$: user = page.data.user;
-	$: profile = page.data.profile;
+	let user = $derived(page.data.user);
+	let profile = $derived(page.data.profile);
 
 	// Détermine si la carte est dans la wishlist en fonction du store
-	$: isInWishlist = $wishlistStore.has(cardCode);
-	let isUpdatingWishlist = false;
+	let isInWishlist = $derived($wishlistStore.has(cardCode));
+	let isUpdatingWishlist = $state(false);
 
 	// Get the count of the card in the collection from the store
-	$: collectionCount = $collectionStore.get(cardCode) || 0;
-	let isUpdatingCollection = false;
+	let collectionCount = $derived($collectionStore.get(cardCode) || 0);
+	let isUpdatingCollection = $state(false);
 
 	// Define the maximum quantity allowed (should match backend)
 	const MAX_CARD_QUANTITY = 99;
-	$: isCollectionLimitReached = collectionCount >= MAX_CARD_QUANTITY;
+	let isCollectionLimitReached = $derived(collectionCount >= MAX_CARD_QUANTITY);
 
 	// Déterminer si nous sommes sur la page japonaise
-	$: isJapaneseCard = page.url.pathname.includes('/japan');
-	$: cardLink = isJapaneseCard ? `/jp-card/${cardCode}/` : `/card/${cardCode}/`;
+	let isJapaneseCard = $derived(page.url.pathname.includes('/japan'));
+	let cardLink = $derived(isJapaneseCard ? `/jp-card/${cardCode}/` : `/card/${cardCode}/`);
 
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
@@ -152,7 +167,7 @@
 						<button
 							aria-label="Remove one copy from collection"
 							class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-							on:click={handleRemoveCard}
+							onclick={handleRemoveCard}
 							disabled={isUpdatingCollection}
 							title="Remove one copy from collection"
 						>
@@ -171,7 +186,7 @@
 					<button
 						aria-label="Add one copy to collection"
 						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-						on:click={handleAddCard}
+						onclick={handleAddCard}
 						disabled={isUpdatingCollection || isCollectionLimitReached}
 						title={isCollectionLimitReached ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 					>
@@ -186,7 +201,7 @@
 					<button
 						aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
 						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-						on:click={toggleWishlist}
+						onclick={toggleWishlist}
 						disabled={isUpdatingWishlist}
 						title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
 					>
@@ -209,12 +224,12 @@
 			/>
 
 			{#if set && set.name && set.name !== 'Unknown Set'}
-				<a href={`/cards-list?set=${encodeURIComponent(set.name)}`} class="absolute bottom-2 left-2 z-10" on:click|stopPropagation aria-label={`View all cards from set ${set.name}`} tabindex="-1">
+				<a href={`/cards-list?set=${encodeURIComponent(set.name)}`} class="absolute bottom-2 left-2 z-10" onclick={stopPropagation(bubble('click'))} aria-label={`View all cards from set ${set.name}`} tabindex="-1">
 					<button
 						class="p-1 bg-black/50 border border-white/70 rounded-full hover:bg-white/20 transition-colors w-8 h-8 flex items-center justify-center"
 						tabindex="-1"
 						type="button"
-						on:click|stopPropagation
+						onclick={stopPropagation(bubble('click'))}
 					>
 						{#if 'logo' in set && set.logo}
 							<img src={set.logo} alt={set.name} class="w-6 h-6 object-contain" />
@@ -240,7 +255,7 @@
 						target="_blank"
 						rel="noopener noreferrer"
 						class="text-center text-sm lg:text-base hover:text-gold-300 transition-colors duration-200"
-						on:click|stopPropagation
+						onclick={stopPropagation(bubble('click'))}
 						aria-label="View on Cardmarket"
 					>
 						<div class="flex items-center justify-center whitespace-nowrap">

@@ -3,7 +3,7 @@
 	import { fade } from 'svelte/transition';
 	
 	// Show loading bar if either regular loading or navigation loading is active
-	$: isLoading = $loadingStore || $navigationLoadingStore;
+	let isLoading = $derived($loadingStore || $navigationLoadingStore);
 </script>
 
 {#if isLoading}

@@ -2,24 +2,28 @@
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import { page } from '$app/state';
-	import { Home, UserX, ShieldAlert, Search } from 'lucide-svelte';
+	import { House, UserX, ShieldAlert, Search } from '@lucide/svelte';
 	import PageTitle from '@components/PageTitle.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
 	import { onMount } from 'svelte';
 	import { resetFilters } from '$lib/helpers/filters';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	// --- Use Server Data Directly (for non-streamed parts) ---
-	$: targetProfile = data.targetProfile;
-	$: isPublic = data.isPublic;
-	$: targetUsername = data.targetUsername;
-	$: description = data.description;
-	$: loggedInUsername = page.data.profile?.username;
-	$: isOwnWishlist = !targetUsername || (loggedInUsername === targetUsername);
-	$: profileNotFound = !targetProfile && !!targetUsername && !data.streamed?.wishlistData;
-	$: profileIsPrivate = !!targetProfile && !isPublic && !isOwnWishlist && !data.streamed?.wishlistData;
+	let targetProfile = $derived(data.targetProfile);
+	let isPublic = $derived(data.isPublic);
+	let targetUsername = $derived(data.targetUsername);
+	let description = $derived(data.description);
+	let loggedInUsername = $derived(page.data.profile?.username);
+	let isOwnWishlist = $derived(!targetUsername || (loggedInUsername === targetUsername));
+	let profileNotFound = $derived(!targetProfile && !!targetUsername && !data.streamed?.wishlistData);
+	let profileIsPrivate = $derived(!!targetProfile && !isPublic && !isOwnWishlist && !data.streamed?.wishlistData);
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
@@ -28,14 +32,14 @@
 	});
 
 	// pageTitleDisplay will be reactive to targetProfile and isOwnWishlist, considering data.title as fallback
-	$: pageTitleDisplay = (() => {
+	let pageTitleDisplay = $derived((() => {
 		if (profileNotFound) return 'User Not Found';
 		if (profileIsPrivate) return 'Wishlist is Private';
 		if (targetProfile) {
 			return isOwnWishlist ? 'My Wishlist' : `${targetProfile.username}'s Wishlist`;
 		}
 		return data.title || 'Wishlist'; // Fallback to server title or generic
-	})();
+	})());
 
 </script>
 
@@ -73,7 +77,7 @@
 				href="/"
 				class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
 			>
-				<Home size={18} />
+				<House size={18} />
 				Return to Home
 			</a>
 			<a
@@ -139,7 +143,7 @@
             href="/"
             class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
         >
-            <Home size={18} />
+            <House size={18} />
             Return to Home
         </a>
     </div>

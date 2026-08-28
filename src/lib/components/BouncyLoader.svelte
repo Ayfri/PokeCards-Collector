@@ -1,8 +1,17 @@
 <script lang="ts">
-    export let size: number = 45;
-    export let speed: number = 1.75;
-    export let gradientColorStart: string = '#fbc54a';
-    export let gradientColorEnd: string = '#ae8833';
+  interface Props {
+    size?: number;
+    speed?: number;
+    gradientColorStart?: string;
+    gradientColorEnd?: string;
+  }
+
+  let {
+    size = 45,
+    speed = 1.75,
+    gradientColorStart = '#fbc54a',
+    gradientColorEnd = '#ae8833'
+  }: Props = $props();
 </script>
 
 <div class="container" style="--uib-size: {size}px; --uib-speed: {speed}s; --gradient-start: {gradientColorStart}; --gradient-end: {gradientColorEnd};">

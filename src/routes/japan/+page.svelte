@@ -6,15 +6,19 @@
 	import { page } from '$app/state';
 	import BouncyLoader from '@components/BouncyLoader.svelte';
 
-	export let data: PageData;
+	interface Props {
+		data: PageData;
+	}
+
+	let { data }: Props = $props();
 
 	// Data that is available immediately
-	$: sets = data.sets;
-	$: rarities = data.rarities;
-	$: types = data.types;
-	$: artists = data.artists;
-	$: pokemons = data.pokemons;
-	$: prices = data.prices;
+	let sets = $derived(data.sets);
+	let rarities = $derived(data.rarities);
+	let types = $derived(data.types);
+	let artists = $derived(data.artists);
+	let pokemons = $derived(data.pokemons);
+	let prices = $derived(data.prices);
 
 	onMount(() => {
 		// Check if we have any filter parameters in the URL
@@ -99,8 +103,8 @@
 		}
 	});
 
-	$: selectedSetName = $filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null;
-	$: selectedArtistName = $filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null;
+	let selectedSetName = $derived($filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null);
+	let selectedArtistName = $derived($filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null);
 </script>
 
 {#await data.streamed.cardData}

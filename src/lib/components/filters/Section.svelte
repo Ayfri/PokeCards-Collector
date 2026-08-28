@@ -1,9 +1,14 @@
 <script lang="ts">
-	import ChevronDown from 'lucide-svelte/icons/chevron-down';
+	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import { slide } from 'svelte/transition';
 
-	export let title: string;
-	export let isOpen: boolean;
+	interface Props {
+		title: string;
+		isOpen: boolean;
+		children?: import('svelte').Snippet;
+	}
+
+	let { title, isOpen = $bindable(), children }: Props = $props();
 
 	// Generate a unique ID for ARIA attributes
 	const panelId = `section-panel-${Math.random().toString(36).substring(2, 9)}`;
@@ -13,7 +18,7 @@
 	<button
 		type="button"
 		class="flex justify-between items-center w-full px-4 py-2 cursor-pointer bg-black/30 hover:bg-black/40 rounded-md border border-white/10 {isOpen ? 'rounded-b-none' : ''}"
-		on:click={() => (isOpen = !isOpen)}
+		onclick={() => (isOpen = !isOpen)}
 		aria-expanded={isOpen}
 		aria-controls={panelId}
 	>
@@ -30,7 +35,7 @@
 			id={panelId}
 			role="region"
 		>
-			<slot />
+			{@render children?.()}
 		</div>
 	{/if}
 </div>

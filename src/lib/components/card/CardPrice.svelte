@@ -1,9 +1,13 @@
 <script lang="ts">
 	import type { FullCard, PriceData } from '$lib/types';
-	import ExternalLink from 'lucide-svelte/icons/external-link';
+	import ExternalLink from '@lucide/svelte/icons/external-link';
 
-	export let card: FullCard;
-	export let cardPrices: PriceData;
+	interface Props {
+		card: FullCard;
+		cardPrices: PriceData;
+	}
+
+	let { card, cardPrices }: Props = $props();
 </script>
 
 <div class="detailed-prices bg-gray-800 border-2 border-gold-400 rounded-xl p-4 w-full max-w-[500px] h-full">
