@@ -1,7 +1,7 @@
-#!/usr/bin/env node
+#!/usr/bin/env bun
 
 import { select } from '@inquirer/prompts';
-import chalk from 'chalk';
+import { styleText } from 'node:util';
 import { downloadAllImages } from './src/scrapers/download_images.js';
 import { fetchAndSaveAllCards } from './src/scrapers/card_fetcher.js';
 import { fetchHoloCards } from './src/scrapers/holo_scraper.js';
@@ -174,12 +174,12 @@ const scrapers: ScraperOption[] = [
 
             for (const scraper of defaultScrapers) {
                 if (!scraper) continue;
-                console.log(chalk.yellow(`Running ${scraper.name} scraper...`));
+                console.log(styleText('yellow', `Running ${scraper.name} scraper...`));
                 try {
                     await scraper.action();
-                    console.log(chalk.green(`✓ ${scraper.name} scraper completed successfully!`));
+                    console.log(styleText('green', `✓ ${scraper.name} scraper completed successfully!`));
                 } catch (error) {
-                    console.error(chalk.red(`✗ Error running ${scraper.name} scraper:`), error);
+                    console.error(styleText('red', `✗ Error running ${scraper.name} scraper:`), error);
                 }
             }
         }
@@ -204,12 +204,12 @@ const scrapers: ScraperOption[] = [
 
             for (const scraper of scrapersInOrder) {
                 if (!scraper) continue;
-                console.log(chalk.yellow(`Running ${scraper.name} scraper...`));
+                console.log(styleText('yellow', `Running ${scraper.name} scraper...`));
                 try {
                     await scraper.action();
-                    console.log(chalk.green(`✓ ${scraper.name} scraper completed successfully!`));
+                    console.log(styleText('green', `✓ ${scraper.name} scraper completed successfully!`));
                 } catch (error) {
-                    console.error(chalk.red(`✗ Error running ${scraper.name} scraper:`), error);
+                    console.error(styleText('red', `✗ Error running ${scraper.name} scraper:`), error);
                 }
             }
         }
@@ -221,19 +221,19 @@ const scrapers: ScraperOption[] = [
             const supabaseChoice = await select({
                 message: 'Choose a Supabase upload task:',
                 choices: supabaseUploadTasks.map(scraper => ({
-                    name: `${chalk.blue(scraper.name)} - ${scraper.description}`,
+                    name: `${styleText('blue', scraper.name)} - ${scraper.description}`,
                     value: scraper.name,
                 })),
             });
 
             const selectedSupabaseScraper = supabaseUploadTasks.find(scraper => scraper.name === supabaseChoice);
             if (selectedSupabaseScraper) {
-                console.log(chalk.yellow(`Running ${selectedSupabaseScraper.name}...`));
+                console.log(styleText('yellow', `Running ${selectedSupabaseScraper.name}...`));
                 try {
                     await selectedSupabaseScraper.action();
-                    console.log(chalk.green(`✓ ${selectedSupabaseScraper.name} completed successfully!`));
+                    console.log(styleText('green', `✓ ${selectedSupabaseScraper.name} completed successfully!`));
                 } catch (error) {
-                    console.error(chalk.red(`✗ Error running ${selectedSupabaseScraper.name}:`), error);
+                    console.error(styleText('red', `✗ Error running ${selectedSupabaseScraper.name}:`), error);
                 }
             }
         }
@@ -242,13 +242,13 @@ const scrapers: ScraperOption[] = [
 ];
 
 async function main() {
-    console.log(chalk.blue.bold('=== Pokémon Data Scraper CLI ==='));
-    console.log(chalk.gray('Select a scraper to run:'));
+    console.log(styleText(['blue', 'bold'], '=== Pokémon Data Scraper CLI ==='));
+    console.log(styleText('gray', 'Select a scraper to run:'));
 
     const choice = await select({
         message: 'Choose a scraper to run:',
         choices: scrapers.map(scraper => ({
-            name: `${chalk.green(scraper.name)} - ${scraper.description}`,
+            name: `${styleText('green', scraper.name)} - ${scraper.description}`,
             value: scraper.name,
         })),
     });
@@ -259,20 +259,20 @@ async function main() {
         if (selectedScraper.name === 'all') {
             await selectedScraper.action();
         } else {
-            console.log(chalk.yellow(`Running ${selectedScraper.name} scraper...`));
+            console.log(styleText('yellow', `Running ${selectedScraper.name} scraper...`));
             try {
                 await selectedScraper.action();
-                console.log(chalk.green(`✓ ${selectedScraper.name} scraper completed successfully!`));
+                console.log(styleText('green', `✓ ${selectedScraper.name} scraper completed successfully!`));
             } catch (error) {
-                console.error(chalk.red(`✗ Error running ${selectedScraper.name} scraper:`), error);
+                console.error(styleText('red', `✗ Error running ${selectedScraper.name} scraper:`), error);
             }
         }
     } else {
-        console.error(chalk.red('Invalid selection'));
+        console.error(styleText('red', 'Invalid selection'));
     }
 }
 
 main().catch(error => {
-    console.error(chalk.red('Fatal error:'), error);
+    console.error(styleText('red', 'Fatal error:'), error);
     process.exit(1);
 });

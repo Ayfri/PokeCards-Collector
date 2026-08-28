@@ -92,7 +92,6 @@ Check out the live website [here](https://pokecards-collector.pages.dev).
     <td>Tools</td>
     <td>
       <a href="https://bun.sh/"><img src="https://img.shields.io/badge/Bun-000000?style=flat&logo=bun&logoColor=white" alt="Bun"/></a>
-      <a href="https://github.com/esbuild-kit/tsx"><img src="https://img.shields.io/badge/TSX-3178C6?style=flat&logo=typescript&logoColor=white" alt="TSX"/></a>
       <a href="https://github.com/SBoudrias/Inquirer.js/tree/master/packages/prompts"><img src="https://img.shields.io/badge/Inquirer-FFCF00?style=flat&logo=javascript&logoColor=black" alt="Inquirer"/></a>
     </td>
   </tr>
