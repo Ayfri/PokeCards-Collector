@@ -4,15 +4,14 @@ import { findSetByCardCode } from '$helpers/set-utils';
 import { parseCardCode } from '$helpers/card-utils';
 import { isVisible } from '$helpers/filters';
 
-/** Set lookups are the hot path of the grid: cache them across renders, keyed on the set list identity. */
+/** Set lookups are the hot path of the grid: cache them across renders, invalidated on the set array's identity. */
 const setLookupCache = new Map<string, Set | null>();
-let setLookupCacheKey = '';
+let cachedSets: Set[] | null = null;
 
 export function getCardSet(cardCode: string, sets: Set[]): Set | null {
-	const cacheKey = sets.map(set => set.name).join(',');
-	if (cacheKey !== setLookupCacheKey) {
+	if (cachedSets !== sets) {
 		setLookupCache.clear();
-		setLookupCacheKey = cacheKey;
+		cachedSets = sets;
 	}
 
 	let cardSet = setLookupCache.get(cardCode);
