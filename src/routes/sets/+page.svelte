@@ -7,6 +7,9 @@
 	import TextInput from '@components/filters/TextInput.svelte';
 	import { persistentWritable } from '$stores/persistentStore';
 	import type { SetWithPrice } from '$lib/types';
+	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
+	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
+	import LayersIcon from '@lucide/svelte/icons/layers';
 
 	interface Props {
 		data: PageData;
@@ -154,7 +157,7 @@
 				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ y: 50, duration: 500, delay: 200 * index }}>
 					{#each groupedSets[series] as set (set.name)}
 						<div in:fly={{ y: 20, duration: 300, delay: 50 }}>
-							<a href="/cards-list?set={encodeURIComponent(set.name)}" class="block h-full">
+							<a href="/cards-list?set={encodeURIComponent(set.name)}" class="block h-full" title={`Browse every card in ${set.name}`}>
 								<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
 									<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
 										{#if set.logo}
@@ -166,13 +169,13 @@
 									<div class="p-4 flex-1 flex flex-col">
 										<h2 class="text-lg font-semibold text-white">{set.name}</h2>
 										<div class="flex justify-between mt-2 text-sm text-gray-400">
-											<span>{set.printedTotal} cards</span>
-											<span class="text-gold-400">{formatCurrency(set.totalPrice)}</span>
+											<span class="flex items-center gap-1.5" title="Cards printed in this set"><LayersIcon size={14} /> {set.printedTotal} cards</span>
+											<span class="flex items-center gap-1.5 text-gold-400" title="Cardmarket value of a complete set"><CircleEuroIcon size={14} /> {formatCurrency(set.totalPrice)}</span>
 										</div>
 										<div class="flex justify-between mt-1 text-sm text-gray-400">
-											<span>{new Date(set.releaseDate).toLocaleDateString()}</span>
+											<span class="flex items-center gap-1.5" title="Release date"><CalendarDaysIcon size={14} /> {new Date(set.releaseDate).toLocaleDateString()}</span>
 											{#if set.ptcgoCode}
-												<span class="px-2 py-1 bg-gray-700 rounded-sm text-gold-400 text-xs">{set.ptcgoCode}</span>
+												<span class="px-2 py-1 bg-gray-700 rounded-sm text-gold-400 text-xs" title="PTCGO set code">{set.ptcgoCode}</span>
 											{:else}
 												<span class="px-2 py-1 bg-transparent">&nbsp;</span>
 											{/if}

@@ -2,12 +2,13 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import Avatar from '@components/auth/Avatar.svelte';
-	import AlertTriangleIcon from '@lucide/svelte/icons/alert-triangle';
+	import AlertTriangleIcon from '@lucide/svelte/icons/triangle-alert';
 	import CrownIcon from '@lucide/svelte/icons/crown';
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import TrendingUpIcon from '@lucide/svelte/icons/trending-up';
 	import UserXIcon from '@lucide/svelte/icons/user-x';
 	import InfoIcon from '@lucide/svelte/icons/info';
+	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import type { PageData } from './$types';
 	import type { SearchedUserWithStats, SearchUsersResponse } from '$lib/types';
 	import { readJson } from '$helpers/http';
@@ -145,7 +146,9 @@
 			<button
 				class="px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors text-sm font-medium shadow-md hover:shadow-lg"
 				onclick={performSearchUsers}
+				title="Run the search again"
 			>
+				<RotateCcwIcon class="inline -mt-0.5 mr-1" size={14} />
 				Try Again
 			</button>
 		</div>

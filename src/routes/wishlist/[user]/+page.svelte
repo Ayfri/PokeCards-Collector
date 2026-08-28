@@ -2,7 +2,10 @@
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import { page } from '$app/state';
-	import { House, UserX, ShieldAlert, Search } from '@lucide/svelte';
+	import House from '@lucide/svelte/icons/house';
+	import Search from '@lucide/svelte/icons/search';
+	import ShieldAlert from '@lucide/svelte/icons/shield-alert';
+	import UserX from '@lucide/svelte/icons/user-x';
 	import PageTitle from '@components/PageTitle.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
@@ -76,6 +79,7 @@
 			<a
 				href="/"
 				class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+				title="Back to the home page"
 			>
 				<House size={18} />
 				Return to Home
@@ -83,6 +87,7 @@
 			<a
 				href="/users"
 				class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+				title="Find another collector"
 			>
 				<Search size={18} />
 				Search Users
@@ -142,6 +147,7 @@
         <a
             href="/"
             class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+title="Back to the home page"
         >
             <House size={18} />
             Return to Home

@@ -7,7 +7,8 @@
 	import { onMount } from "svelte";
 	import { NO_IMAGES } from "$lib/images";
 	import { fly, fade } from "svelte/transition";
-	import { ChevronLeft, ChevronRight } from "@lucide/svelte";
+	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	// Import icons
 	import GiftIcon from "@lucide/svelte/icons/gift";
 	import Tag from "@lucide/svelte/icons/tag";
@@ -16,7 +17,7 @@
 	import SetIcon from "@lucide/svelte/icons/layers";
 	import CardIcon from "@lucide/svelte/icons/layout-grid";
 	import PaintbrushIcon from "@lucide/svelte/icons/paintbrush";
-	import ChartIcon from "@lucide/svelte/icons/bar-chart-3";
+	import ChartIcon from "@lucide/svelte/icons/chart-column";
 	import HeartIcon from "@lucide/svelte/icons/heart";
 	import SearchIcon from "@lucide/svelte/icons/search";
 	import BookOpenCheckIcon from "@lucide/svelte/icons/book-open-check";
@@ -139,6 +140,7 @@
 					<a
 						href="/cards-list"
 						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-hidden"
+						title="Browse every English card"
 					>
 						{#if !NO_IMAGES}
 							<div class="flex justify-center mb-2">
@@ -169,6 +171,7 @@
 					<a
 						href="/japan"
 						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-hidden"
+						title="Browse the Japanese catalogue"
 					>
 						{#if !NO_IMAGES}
 							<div class="flex justify-center mb-2">
@@ -199,6 +202,7 @@
 					<a
 						href="/cards-list?type=pokemon"
 						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+						title="Browse the Pokemon cards"
 					>
 						{#if !NO_IMAGES}
 							<div class="flex justify-center mb-2">
@@ -232,6 +236,7 @@
 					<a
 						href="/sets"
 						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+						title="Browse every set"
 					>
 						{#if !NO_IMAGES}
 							<div class="flex justify-center mb-2">
@@ -262,6 +267,7 @@
 					<a
 						href="/artists"
 						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+						title="Browse every illustrator"
 					>
 						{#if !NO_IMAGES}
 							<div class="flex justify-center mb-2">
@@ -678,6 +684,7 @@
 						<button
 							onclick={() => openAuthModal('login')}
 							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-hidden"
+							title="Sign in to track your collection"
 							type="button"
 						>
 							Log in to manage your collection
@@ -709,6 +716,7 @@
 						<button
 							onclick={() => openAuthModal('register')}
 							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-hidden"
+							title="Create an account to build a wishlist"
 							type="button"
 						>
 							Log in to build your wishlist
@@ -794,6 +802,7 @@
 							<a
 								href="/binder"
 								class="px-6 py-3 w-fit bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 mt-2 flex items-center gap-2"
+								title="Open the Binder Builder"
 							>
 								Try Binder Builder
 								{#if !NO_IMAGES}<GridIcon size={18} />{/if}
@@ -910,6 +919,7 @@
 					<button
 						onclick={() => openAuthModal('login')}
 						class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 focus:outline-hidden"
+						title="Sign in to your account"
 						type="button"
 					>
 						Log In
@@ -918,6 +928,7 @@
 					<button
 						onclick={() => openAuthModal('register')}
 						class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2 focus:outline-hidden"
+						title="Create a new account"
 						type="button"
 					>
 						Sign Up

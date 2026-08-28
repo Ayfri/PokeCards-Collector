@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import PageTitle from '@components/PageTitle.svelte';
-	import { House, TriangleAlert } from '@lucide/svelte';
+	import House from '@lucide/svelte/icons/house';
+	import SearchX from '@lucide/svelte/icons/search-x';
+	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
 	import { fade, fly } from 'svelte/transition';
 	import { onMount } from 'svelte';
 
@@ -24,8 +26,12 @@
 		class="container mx-auto flex min-h-[calc(100svh-200px)] flex-col items-center justify-center px-4 py-8 text-center text-white"
 		in:fade={{ duration: 300, delay: 100 }}
 	>
-		<div in:fly={{ y: 20, duration: 400, delay: 200 }} class="mb-8">
-			<TriangleAlert size={64} class="mx-auto text-gold-400" />
+		<div in:fly={{ y: 20, duration: 400, delay: 200 }} class="mb-8" title={displayTitle}>
+			{#if errorStatus === 404}
+				<SearchX size={64} class="mx-auto text-gold-400" />
+			{:else}
+				<TriangleAlert size={64} class="mx-auto text-gold-400" />
+			{/if}
 		</div>
 
 		<div in:fly={{ y: 20, duration: 400, delay: 300 }}>
@@ -40,6 +46,7 @@
 			href="/"
 			class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
 			in:fly={{ y: 20, duration: 400, delay: 500 }}
+			title="Back to the home page"
 		>
 			<House size={18} />
 			Go to Homepage

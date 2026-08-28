@@ -5,7 +5,17 @@
 	import type { Set } from '$lib/types';
 	import Avatar from '@components/auth/Avatar.svelte';
 	import { NO_IMAGES } from '$lib/images';
-	import { House, UserCog, BookOpen, ListTodo, ChevronRight } from '@lucide/svelte';
+	import BookOpen from '@lucide/svelte/icons/book-open';
+	import ChartColumn from '@lucide/svelte/icons/chart-column';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import CircleEuro from '@lucide/svelte/icons/circle-euro';
+	import EyeIcon from '@lucide/svelte/icons/eye';
+	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+	import House from '@lucide/svelte/icons/house';
+	import Layers from '@lucide/svelte/icons/layers';
+	import LibraryIcon from '@lucide/svelte/icons/library';
+	import ListTodo from '@lucide/svelte/icons/list-todo';
+	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import { fly } from 'svelte/transition';
 	import type { PageData } from './$types';
 
@@ -210,7 +220,11 @@
 							<div class="border-t border-gray-700 pt-4">
 								<div class="mb-4">
 									<span class="text-sm font-medium text-gray-400">Profile visibility:</span>
-									<span class="ml-2 text-sm text-gold-400">
+									<span
+										class="ml-2 inline-flex items-center gap-1 text-sm text-gold-400"
+										title={currentVisibility ? 'Anyone can browse your collection and wishlist' : 'Only you can see your collection and wishlist'}
+									>
+										{#if currentVisibility}<EyeIcon size={14} />{:else}<EyeOffIcon size={14} />{/if}
 										{currentVisibility ? 'Public' : 'Private'}
 									</span>
 								</div>
@@ -220,6 +234,7 @@
 									class="animated-hover-button relative overflow-hidden w-full py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:text-black"
 									onclick={handleToggleVisibility}
 									disabled={isLoading}
+									title={currentVisibility ? 'Hide your collection and wishlist from other users' : 'Let other users browse your collection and wishlist'}
 								>
 									<span class="relative z-10 flex items-center">
 										{#if isLoading}
@@ -246,6 +261,7 @@
 							<a
 								href={`/collection/${encodeURIComponent(targetProfile.username)}`}
 								class="block p-6 bg-gray-800/60 rounded-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+								title={isOwnProfile ? 'Browse every card you own' : `Browse ${targetProfile.username}'s collected cards`}
 							>
 								<div class="flex items-center justify-between gap-3">
 									<div class="flex items-center gap-3">
@@ -264,6 +280,7 @@
 							<a
 								href={`/wishlist/${encodeURIComponent(targetProfile.username)}`}
 								class="block p-6 bg-gray-800/60 rounded-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+								title={isOwnProfile ? 'Browse every card on your wishlist' : `Browse ${targetProfile.username}'s wishlist`}
 							>
 								<div class="flex items-center justify-between gap-3">
 									<div class="flex items-center gap-3">
@@ -291,30 +308,36 @@
 							<h2 class="text-xl font-semibold mb-6 text-gold-400">Collection Statistics</h2>
 
 							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8 mb-8">
-								<div class="text-center">
+								<div class="text-center" title="Every copy owned, duplicates included">
+									<Layers class="mx-auto mb-1 text-gold-400/70" size={20} />
 									<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.total_instances || 0}</span>
 									<span class="text-sm text-gray-400">Total Cards</span>
 								</div>
-								<div class="text-center">
+								<div class="text-center" title={`${collectionStats?.unique_cards || 0} distinct cards out of ${allCards.length || 0} in the database`}>
+									<Sparkles class="mx-auto mb-1 text-gold-400/70" size={20} />
 									<div class="flex items-center justify-center gap-1 mb-2">
 										<span class="text-3xl md:text-4xl font-bold text-gold-400">{collectionStats?.unique_cards || 0}</span>
 										<span class="text-sm text-gray-500">/ {allCards.length || 0}</span>
 									</div>
 									<span class="text-sm text-gray-400">Unique Cards</span>
 								</div>
-								<div class="text-center">
+								<div class="text-center" title="Cards on the wishlist">
+									<ListTodo class="mx-auto mb-1 text-gold-400/70" size={20} />
 									<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.wishlist_count || 0}</span>
 									<span class="text-sm text-gray-400">Wishlist Cards</span>
 								</div>
-								<div class="text-center">
+								<div class="text-center" title="Sets with at least one card collected">
+									<LibraryIcon class="mx-auto mb-1 text-gold-400/70" size={20} />
 									<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{collectionStats?.set_completion ? Object.keys(collectionStats.set_completion).length : 0}</span>
 									<span class="text-sm text-gray-400">Different Sets</span>
 								</div>
-								<div class="text-center">
+								<div class="text-center" title="Cardmarket value of the whole collection">
+									<CircleEuro class="mx-auto mb-1 text-gold-400/70" size={20} />
 									<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{formatCurrency(collectionStats.total_value || 0)}</span>
 									<span class="text-sm text-gray-400">Collection Value</span>
 								</div>
-								<div class="text-center">
+								<div class="text-center" title="Share of every known card that is collected">
+									<ChartColumn class="mx-auto mb-1 text-gold-400/70" size={20} />
 									<span class="block text-3xl md:text-4xl font-bold text-gold-400 mb-2">{totalCompletionPercentage.toFixed(1)}%</span>
 									<span class="text-sm text-gray-400">Total Completion</span>
 								</div>

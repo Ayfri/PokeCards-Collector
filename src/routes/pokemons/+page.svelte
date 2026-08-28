@@ -13,6 +13,7 @@
 	import { fade } from 'svelte/transition';
 	import SortControl from '@components/filters/SortControl.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
+	import LayersIcon from "@lucide/svelte/icons/layers";
 
 	type PokemonWithCardCount = Pokemon & { cardCount: number };
 
@@ -164,6 +165,7 @@
 			<button
 				onclick={() => navigateToPokemonCard(pokemon)}
 				class="pokemon-card-item group bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-hidden focus:ring-2 focus:ring-gold-400/75 p-3 flex flex-col items-center text-center"
+				title={`View the most valuable ${pascalCase(pokemon.name)} card`}
 			>
 				<div class="image-container relative w-24 h-24 md:w-28 md:h-28 mb-2">
 					{#if !NO_IMAGES}
@@ -186,7 +188,8 @@
 				<span class="pokemon-name text-sm md:text-base font-semibold group-hover:text-gold-400 transition-colors duration-200">
 					{pascalCase(pokemon.name)}
 				</span>
-				<span class="text-xs text-gray-400 mt-1">
+				<span class="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-1" title="Cards featuring this Pokémon">
+					<LayersIcon size={12} />
 					{pokemon.cardCount} card{pokemon.cardCount === 1 ? '' : 's'}
 				</span>
 			</button>

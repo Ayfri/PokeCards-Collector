@@ -9,6 +9,9 @@
 	import { artistsSortDirection, artistsSortValue, type ArtistsSortValue } from '$stores/artistsSort';
 	import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 	import { fade, fly } from 'svelte/transition';
+	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
+	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
+	import LayersIcon from '@lucide/svelte/icons/layers';
 
 	interface Props {
 		data: PageData;
@@ -273,7 +276,7 @@
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ y: 50, duration: 400, delay: 400 }}>
 		{#each filteredArtists as artist (artist.name)}
 			<div in:fly={{ y: 20, duration: 300, delay: 50 }}>
-				<a href="/cards-list?artist={encodeURIComponent(artist.name.toLowerCase())}" class="block h-full">
+					<a href="/cards-list?artist={encodeURIComponent(artist.name.toLowerCase())}" class="block h-full" title={`Browse every card illustrated by ${artist.name}`}>
 					<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
 						<div class="bg-gray-900 p-2 {NO_IMAGES ? 'hidden' : ''}">
 							<div class="flex justify-center items-center gap-1 h-40 overflow-hidden perspective-500">
@@ -304,12 +307,12 @@
 						<div class="p-4 flex-1 flex flex-col">
 							<h2 class="text-lg font-semibold text-white">{artist.name}</h2>
 							<div class="mt-2 text-sm text-gray-400 flex justify-between">
-								<span class="text-gold-400">{artist.totalCards} {artist.totalCards === 1 ? 'card' : 'cards'}</span>
-								<span>{artist.firstReleaseDate.getFullYear()} - {artist.lastReleaseDate.getFullYear()}</span>
+								<span class="flex items-center gap-1.5 text-gold-400" title="Cards illustrated by this artist"><LayersIcon size={14} /> {artist.totalCards} {artist.totalCards === 1 ? "card" : "cards"}</span>
+								<span class="flex items-center gap-1.5" title="First and last year this artist was printed"><CalendarDaysIcon size={14} /> {artist.firstReleaseDate.getFullYear()} - {artist.lastReleaseDate.getFullYear()}</span>
 							</div>
-							<div class="mt-1 text-sm text-gray-400 flex justify-between" title="Cardmarket value of every card by this artist">
-								<span class="text-green-400 font-semibold">{formatEuros(artist.totalValue)}</span>
-								<span>{formatEuros(artist.averageValue)} avg</span>
+							<div class="mt-1 text-sm text-gray-400 flex justify-between">
+								<span class="flex items-center gap-1.5 text-green-400 font-semibold" title="Cardmarket value of every card by this artist"><CircleEuroIcon size={14} /> {formatEuros(artist.totalValue)}</span>
+								<span title="Average value of one card by this artist">{formatEuros(artist.averageValue)} avg</span>
 							</div>
 						</div>
 					</div>

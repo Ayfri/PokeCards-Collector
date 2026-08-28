@@ -6,11 +6,13 @@
 	import {enhance} from '$app/forms';
 	import {supabase} from '$lib/supabase';
 	import {fade, fly} from 'svelte/transition';
+	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 	import LockIcon from '@lucide/svelte/icons/lock';
 	import MailIcon from '@lucide/svelte/icons/mail';
 	import PaletteIcon from '@lucide/svelte/icons/palette';
+	import SaveIcon from '@lucide/svelte/icons/save';
 	import ShieldIcon from '@lucide/svelte/icons/shield';
 	import UserIcon from '@lucide/svelte/icons/user';
 
@@ -25,10 +27,10 @@
 	const DEFAULT_PROFILE_COLOR = '#fbc54a';
 
 	const TABS = [
-		{icon: UserIcon, id: 'account', label: 'Account'},
-		{icon: PaletteIcon, id: 'appearance', label: 'Appearance'},
-		{icon: ShieldIcon, id: 'privacy', label: 'Privacy'},
-		{icon: LockIcon, id: 'security', label: 'Security'}
+		{description: 'The identity attached to your collection', icon: UserIcon, id: 'account', label: 'Account'},
+		{description: 'The color that tints your avatar', icon: PaletteIcon, id: 'appearance', label: 'Appearance'},
+		{description: 'Who can see your collection and wishlist', icon: ShieldIcon, id: 'privacy', label: 'Privacy'},
+		{description: 'Change the password you sign in with', icon: LockIcon, id: 'security', label: 'Security'}
 	] as const;
 
 	type TabId = (typeof TABS)[number]['id'];
@@ -113,13 +115,13 @@
 					</div>
 					<dl class="mt-4 space-y-2 border-t border-gray-700 pt-4 text-sm">
 						{#if memberSince}
-							<div class="flex justify-between gap-2">
-								<dt class="text-gray-400">Member since</dt>
+							<div class="flex justify-between gap-2" title={`Account created on ${memberSince}`}>
+								<dt class="flex items-center gap-1.5 text-gray-400"><CalendarDaysIcon size={14} /> Member since</dt>
 								<dd class="text-gray-200">{memberSince}</dd>
 							</div>
 						{/if}
-						<div class="flex justify-between gap-2">
-							<dt class="text-gray-400">Profile</dt>
+						<div class="flex justify-between gap-2" title={profile.is_public ? 'Anyone can browse your collection and wishlist' : 'Only you can see your collection and wishlist'}>
+							<dt class="flex items-center gap-1.5 text-gray-400"><ShieldIcon size={14} /> Profile</dt>
 							<dd class="flex items-center gap-1 {profile.is_public ? 'text-green-400' : 'text-gray-300'}">
 								{#if profile.is_public}
 									<EyeIcon size={14} /> Public
@@ -138,6 +140,7 @@
 							class="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-200 lg:w-full
 								{activeTab === tab.id ? 'bg-gold-400/15 text-gold-400' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}"
 							onclick={() => (activeTab = tab.id)}
+							title={tab.description}
 							type="button"
 						>
 							<Icon size={16} />
@@ -194,9 +197,13 @@
 							<button
 								class="animated-hover-button relative inline-flex w-fit items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
 								disabled={saving}
+								title="Save this color to your profile"
 								type="submit"
 							>
-								<span class="relative z-10">{saving ? 'Saving...' : 'Save profile color'}</span>
+								<span class="relative z-10 flex items-center gap-2">
+									<SaveIcon size={16} />
+									{saving ? "Saving..." : "Save profile color"}
+								</span>
 							</button>
 						</form>
 					</div>
@@ -212,6 +219,7 @@
 						<a
 							class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 hover:text-black"
 							href="/profile"
+							title="Open your profile page to change visibility"
 						>
 							<span class="relative z-10 flex items-center gap-2"><ShieldIcon size={16} /> Go to profile settings</span>
 						</a>
@@ -228,6 +236,7 @@
 							class="animated-hover-button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
 							disabled={resetPasswordLoading}
 							onclick={handlePasswordReset}
+							title="Email yourself a password reset link"
 							type="button"
 						>
 							<span class="relative z-10 flex items-center gap-2">
