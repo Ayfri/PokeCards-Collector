@@ -11,7 +11,8 @@
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
 	import { getCardSet } from '$helpers/card-grid';
-	import { Plus, Minus } from '@lucide/svelte';
+	import Plus from '@lucide/svelte/icons/plus';
+	import Minus from '@lucide/svelte/icons/minus';
 	import CardStackIcon from '@lucide/svelte/icons/layers';
 
 	interface Props {
@@ -48,6 +49,11 @@
 	// Calculer les dimensions réelles à utiliser
 	const width = $derived(customWidth || 300);
 	const height = $derived(customHeight || 420);
+
+	/** Floored at 14px: a plain width/16 left the S preset (180px cards) with 11px icons, too small to hit. */
+	const controlIconSize = $derived(Math.round(Math.max(14, Math.min(18, width / 16))));
+	/** Insets the overlay controls proportionally, so they do not sit in the very corner of a small card. */
+	const controlInset = $derived(Math.round(Math.max(10, width * 0.045)));
 
 	const parsedCardCode = $derived(parseCardCode(cardCode));
 	const cardNumber = $derived(parsedCardCode.cardNumber ?? '0');
@@ -143,6 +149,7 @@
 	<!-- Stretched link: covers the whole card so nested links stay valid HTML. -->
 	<a
 		aria-label={`Go to the card page of ${cardName}`}
+		title={`Go to the card page of ${cardName}`}
 		class="absolute inset-0 z-2"
 		draggable="false"
 		href={cardLink}
@@ -158,7 +165,7 @@
 	{/if}
 	<div class="relative" style="width: {width}px; height: {height}px; max-width: 100%;">
 		{#if user && profile}
-			<div class="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/50 p-1">
+			<div class="absolute z-10 flex items-center gap-1 rounded-full bg-black/50 p-1" style="bottom: {controlInset}px; right: {controlInset}px;">
 				{#if collectionCount > 0}
 					<button
 						aria-label="Remove one copy from collection"
@@ -168,7 +175,7 @@
 						title="Remove one copy from collection"
 					>
 						<Minus
-							size={Math.min(18, Math.floor(width/16))}
+							size={controlIconSize}
 							class="text-white"
 						/>
 					</button>
@@ -187,7 +194,7 @@
 					title={isCollectionLimitReached ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 				>
 					<Plus
-						size={Math.min(18, Math.floor(width/16))}
+						size={controlIconSize}
 						class={collectionCount > 0 ? 'text-green-400' : 'text-white'}
 					/>
 				</button>
@@ -202,7 +209,7 @@
 					title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
 				>
 					<Heart
-						size={Math.min(18, Math.floor(width/16))}
+						size={controlIconSize}
 						class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'}
 					/>
 				</button>
@@ -224,8 +231,10 @@
 		{#if set && set.name && set.name !== 'Unknown Set'}
 			<a
 				href={`/cards-list?set=${encodeURIComponent(set.name)}`}
-				class="absolute bottom-2 left-2 z-10 p-1 bg-black/50 border border-white/70 rounded-full hover:bg-white/20 transition-colors w-8 h-8 flex items-center justify-center"
+				class="absolute z-10 p-1 bg-black/50 border border-white/70 rounded-full hover:bg-white/20 transition-colors w-8 h-8 flex items-center justify-center"
+				style="bottom: {controlInset}px; left: {controlInset}px;"
 				aria-label={`View all cards from set ${set.name}`}
+				title={`View all cards from set ${set.name}`}
 				tabindex="-1"
 			>
 				{#if 'logo' in set && set.logo}
