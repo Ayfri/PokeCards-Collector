@@ -1,0 +1,30 @@
+# Weekly TCGdex -> Supabase refresh, deployed apart from the site Worker:
+#   bun run deploy:scraper
+#   bunx wrangler secret put SUPABASE_SERVICE_ROLE_KEY -c wrangler.scraper.toml
+#   bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
+name = "pokecards-scraper"
+main = "src/workers/scraper.ts"
+compatibility_date = "2026-08-28"
+compatibility_flags = ["nodejs_compat"]
+
+# The scraper shares the app's module aliases; wrangler bundles it without SvelteKit.
+[alias]
+"$lib" = "./src/lib"
+"$scrapers" = "./src/scrapers"
+
+[vars]
+PUBLIC_SUPABASE_URL = "https://ptbwuqaqkqntmgmaqboq.supabase.co"
+
+# A full pass is ~50k TCGdex calls plus the Supabase upserts, far over the 10k default.
+[limits]
+subrequests = 1_000_000
+
+[observability]
+enabled = true
+
+# `schedules` creates one Workflow instance per firing, so no `[triggers] crons` and no `scheduled` handler.
+[[workflows]]
+name = "pokecards-scrape"
+binding = "SCRAPER"
+class_name = "ScrapeWorkflow"
+schedules = ["0 4 * * 1"] # Mondays, 04:00 UTC
