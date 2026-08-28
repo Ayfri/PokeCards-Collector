@@ -10,30 +10,30 @@
 	},
 	"dependencies": {
 		"@aws-sdk/client-s3": "^3.893.0",
+		"@lucide/svelte": "^1.35.0",
 		"@supabase/ssr": "^0.7.0",
 		"@supabase/supabase-js": "^2.57.4",
-		"@sveltejs/adapter-cloudflare": "^7.2.3",
-		"@sveltejs/kit": "^2.49.5",
+		"@sveltejs/adapter-cloudflare": "^7.2.9",
+		"@sveltejs/kit": "^2.70.3",
 		"countup.js": "^2.9.0",
 		"fast-average-color-node": "^3.1.0",
-		"lucide-svelte": "^0.544.0",
 		"node-html-parser": "^7.0.1",
 		"pako": "^2.1.0",
 		"sharp": "^0.34.4",
-		"svelte": "^4.2.20",
+		"svelte": "^5.56.10",
 		"vanilla-colorful": "^0.7.2"
 	},
 	"devDependencies": {
 		"@inquirer/prompts": "^7.8.6",
-		"@sveltejs/vite-plugin-svelte": "^3.1.2",
+		"@sveltejs/vite-plugin-svelte": "^7.3.0",
 		"@tailwindcss/vite": "^4.3.3",
-		"@types/node": "^22.18.6",
+		"@types/node": "^26.4.0",
 		"@types/pako": "^2.0.4",
 		"chalk": "^5.6.2",
-		"svelte-check": "^3.8.6",
+		"svelte-check": "^4.7.6",
 		"tailwindcss": "^4.3.3",
 		"tsx": "^4.20.5",
-		"typescript": "^5.8.2",
-		"vite": "^5.4.20"
+		"typescript": "^6.0.3",
+		"vite": "^8.2.2"
 	}
 }
