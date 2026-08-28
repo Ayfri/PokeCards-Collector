@@ -11,12 +11,23 @@
 	import ChevronsDownIcon from '@lucide/svelte/icons/chevrons-down';
 	import ChevronsUpIcon from '@lucide/svelte/icons/chevrons-up';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
+	import CircleXIcon from '@lucide/svelte/icons/circle-x';
+	import ClipboardListIcon from '@lucide/svelte/icons/clipboard-list';
+	import Gamepad2Icon from '@lucide/svelte/icons/gamepad-2';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import LibraryIcon from '@lucide/svelte/icons/library';
+	import LightbulbIcon from '@lucide/svelte/icons/lightbulb';
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
+	import PartyPopperIcon from '@lucide/svelte/icons/party-popper';
 	import PawPrintIcon from '@lucide/svelte/icons/paw-print';
+	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import ScrollTextIcon from '@lucide/svelte/icons/scroll-text';
+	import SearchIcon from '@lucide/svelte/icons/search';
 	import SparklesIcon from '@lucide/svelte/icons/sparkles';
+	import TagIcon from '@lucide/svelte/icons/tag';
+	import TargetIcon from '@lucide/svelte/icons/target';
+	import Trash2Icon from '@lucide/svelte/icons/trash-2';
+	import XIcon from '@lucide/svelte/icons/x';
 
 	interface Props {
 		data: PageData;
@@ -24,36 +35,27 @@
 
 	let { data }: Props = $props();
 
-	let searchInput = $state('');
-	let activeSuggestions: {
-		name: string;
-		cardCode: string;
-		pokemonName: string;
-		image: string;
-		price: number;
-	}[] = $state([]);
-	let historicGuesses: {
+	type CardSuggestion = PageData['cardSuggestions'][number];
+
+	interface PendingGuess {
+		cardImage: string;
 		id: number;
 		name: string;
-		cardImage: string;
 		pokemonNumber?: number;
+	}
+
+	interface HistoricGuess extends PendingGuess {
 		feedback: CardDleFeedback;
 		isCorrect: boolean;
-	}[] = $state([]);
+	}
 
-	let historicGuessesContainer = $state<HTMLDivElement>();
+	let searchInput = $state('');
+	let activeSuggestions = $state<CardSuggestion[]>([]);
+	let historicGuesses = $state<HistoricGuess[]>([]);
+	let loadingGuess = $state<PendingGuess | null>(null);
 	let showRulesModal = $state(false);
-
-	// Loading state
-	let loadingGuess: {
-		id: number;
-		name: string;
-		cardImage: string;
-		pokemonNumber?: number;
-	} | null = $state(null);
-
-	// Game state
 	let hasWon = $state(false);
+	let isSubmitting = $state(false);
 
 	function displayMatchingCards(searchTerm?: string) {
 		const term = searchTerm || searchInput.trim();
@@ -88,9 +90,7 @@
 		}
 	}
 
-	let isSubmitting = $state(false);
-
-	async function selectSuggestion(card: any) {
+	async function selectSuggestion(card: CardSuggestion) {
 		if (isSubmitting) return;
 
 		isSubmitting = true;
@@ -125,7 +125,7 @@
 					isCorrect: result.isCorrectGuess
 				};
 
-				historicGuesses = [newGuess, ...historicGuesses];
+				historicGuesses = [...historicGuesses, newGuess];
 
 				if (result.isCorrectGuess) {
 					activeSuggestions = [];
@@ -135,7 +135,7 @@
 				loadingGuess = null;
 				isSubmitting = false;
 
-				// Scroll to the latest guess (first in the list due to reverse order)
+				// Scroll to the guess that was just appended at the end of the list
 				setTimeout(() => {
 					const latestGuess = document.querySelector('.historic-guess-item:last-child');
 					if (latestGuess) {
@@ -154,16 +154,14 @@
 		}
 	}
 
-	function getFeedbackBgClass(correct: boolean | undefined, isPokemonCell: boolean = false): string {
-		if (correct === undefined && !isPokemonCell) return 'bg-gray-800 text-gray-300';
-		if (correct === undefined && isPokemonCell) return 'bg-gray-800 text-gray-300';
-
+	function getFeedbackBgClass(correct: boolean | undefined): string {
+		if (correct === undefined) return 'bg-gray-800 text-gray-300';
 		return correct ? 'bg-green-600 text-white' : 'bg-red-600 text-white';
 	}
 
 	function getPriceComparisonText(comparison: string | undefined): string {
-		if (comparison === 'higher') return '(Higher)';
-		if (comparison === 'lower') return '(Lower)';
+		if (comparison === 'higher') return 'Mystery card is higher';
+		if (comparison === 'lower') return 'Mystery card is lower';
 		return '';
 	}
 
@@ -193,14 +191,13 @@
 		<!-- Game Introduction -->
 		<div class="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8 max-w-3xl mx-auto shadow-lg">
 			<div class="flex items-center justify-center gap-3 mb-4">
-				<span class="text-3xl">🃏</span>
+				<Gamepad2Icon class="text-gold-400" size={28} />
 				<h2 class="text-2xl font-bold text-gold-400">How to Play</h2>
-				<span class="text-3xl">⚡</span>
 			</div>
 
 			<div class="text-center space-y-4 flex flex-col items-center">
-				<p class="text-gray-300 text-lg">
-					<strong class="text-gold-400">🎯</strong> Guess the daily Pokémon card by comparing attributes!
+				<p class="flex items-center justify-center gap-2 text-gray-300 text-lg">
+					<TargetIcon class="text-gold-400 shrink-0" size={20} /> Guess the daily Pokémon card by comparing attributes!
 				</p>
 
 				<div class="flex items-center justify-center gap-6 text-sm">
@@ -233,7 +230,7 @@
 	</div>
 
 	<!-- Historic Guesses Display -->
-	<div class="mt-8 w-full overflow-x-auto" bind:this={historicGuessesContainer}>
+	<div class="mt-8 w-full overflow-x-auto">
 		{#if historicGuesses.length > 0 || loadingGuess}
 			<!-- Global Header for Grid -->
 			<div class="historic-guesses-header grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-1 bg-gray-900 text-gold-400 p-1 rounded-t-md text-xs sticky top-0 z-10">
@@ -246,7 +243,7 @@
 				<div class="flex items-center justify-center gap-1 p-2" title="Cardmarket value of the card"><CircleEuroIcon size={12} /> Price</div>
 			</div>
 
-			{#each historicGuesses.toReversed() as guess, i (guess.id)}
+			{#each historicGuesses as guess, i (guess.id)}
 				<div class="historic-guess-item mb-2 scroll-mt-80">
 					<h3 class="font-bold text-lg my-2 text-center text-gold-400">Guess {i + 1} - {guess.name}</h3>
 					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
@@ -261,9 +258,8 @@
 						</div>
 						<!-- Pokémon Sprite & Name Cell -->
 						<div class={`p-1 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(
-							guess.feedback.supertypeValue === 'Pokémon' ? guess.feedback.pokemonCorrect : undefined,
-							guess.feedback.supertypeValue === 'Pokémon'
-						)}`}>
+							guess.feedback.supertypeValue === 'Pokémon' ? guess.feedback.pokemonCorrect : undefined
+						)}`} title={getFeedbackHint('Pokémon', guess.feedback.supertypeValue === 'Pokémon' ? guess.feedback.pokemonCorrect : undefined)}>
 							{#if guess.pokemonNumber && guess.feedback.supertypeValue === 'Pokémon'}
 								<img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${guess.pokemonNumber}.png`} alt="Sprite for {guess.feedback.pokemonValue}" class="h-10 w-10 sm:h-12 sm:w-12 object-contain"/>
 							{:else if guess.feedback.supertypeValue === 'Trainer' || guess.feedback.supertypeValue === 'Energy'}
@@ -293,7 +289,9 @@
 						</div>
 					</div>
 					{#if guess.isCorrect}
-						<p class="text-green-400 font-bold text-lg mt-2 text-center">🎉 Correct! You guessed the card! 🎉</p>
+						<p class="flex items-center justify-center gap-2 text-green-400 font-bold text-lg mt-2">
+							<PartyPopperIcon size={20} /> Correct! You guessed the card!
+						</p>
 					{/if}
 				</div>
 			{/each}
@@ -329,7 +327,7 @@
 							<span class="mt-1 text-center block leading-tight text-xxs sm:text-xs opacity-75">{loadingGuess.name}</span>
 						</div>
 						<!-- Loading cells for attributes -->
-						{#each Array(5) as _, i}
+						{#each Array(5) as _}
 							<div class="p-2 flex items-center justify-center text-center bg-gray-800 text-gray-400">
 								<div class="w-12 h-4 bg-gray-700 rounded-sm animate-pulse"></div>
 							</div>
@@ -346,7 +344,7 @@
 			<div class="flex gap-3 w-full max-w-md justify-center">
 				<TextInput
 					id="searchInput"
-					label="🔍 Start typing to search for Pokémon cards:"
+					label="Start typing to search for Pokémon cards:"
 					labelClass="font-bold text-lg text-gold-400 mb-4 text-center"
 					bind:value={searchInput}
 					placeholder="E.g., Pikachu, Charizard..."
@@ -361,14 +359,17 @@
 					class="self-end h-12 px-6 font-bold text-lg"
 					onClick={() => { searchInput = ''; activeSuggestions = []; }}
 					disabled={hasWon}
+					title="Empty the search field and the results"
 				>
-					🗑️ Clear
+					<Trash2Icon size={18} /> Clear
 				</Button>
 			</div>
 
 			{#if hasWon}
 				<div class="mt-4 p-4 bg-green-900 border-2 border-green-600 rounded-lg text-center">
-					<p class="text-green-300 font-bold text-lg">🎉 Congratulations! You found today's card! 🎉</p>
+					<p class="flex items-center justify-center gap-2 text-green-300 font-bold text-lg">
+						<PartyPopperIcon size={20} /> Congratulations! You found today's card!
+					</p>
 					<p class="text-green-400 text-sm mt-2">Come back tomorrow for a new challenge!</p>
 				</div>
 			{/if}
@@ -379,8 +380,8 @@
 	<div class="my-8">
 		<div class="bg-gray-800 rounded-xl shadow-lg p-6 max-w-7xl mx-auto border border-gray-700 flex flex-col items-center">
 			{#if activeSuggestions.length > 0}
-				<h3 class="text-2xl font-bold mb-6 text-center text-gold-400">
-					🎯 Select a Card to Guess:
+				<h3 class="flex items-center justify-center gap-2 text-2xl font-bold mb-6 text-gold-400">
+					<TargetIcon size={22} /> Select a Card to Guess:
 					<span class="text-lg font-normal text-gray-400">({activeSuggestions.length} found)</span>
 				</h3>
 				<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -412,8 +413,8 @@
 							</div>
 							<p class="text-xs leading-tight font-bold text-white mb-1">{suggestion.name}</p>
 							<div class="flex items-center justify-center gap-1 text-xxs text-gray-400">
-								<span class="bg-green-800 text-green-300 px-2 py-1 rounded-full font-semibold">
-									${suggestion.price.toFixed(2)}
+								<span class="bg-green-800 text-green-300 px-2 py-1 rounded-full font-semibold" title="Cardmarket value of this card">
+									{suggestion.price.toFixed(2)} €
 								</span>
 							</div>
 						</button>
@@ -424,27 +425,29 @@
 					<Button
 						onClick={() => { activeSuggestions = []; }}
 						class="px-4 py-2"
+						title="Hide these results and search again"
 					>
-						↩️ Search Again
+						<RotateCcwIcon size={16} /> Search Again
 					</Button>
 				</div>
 			{:else if searchInput.trim().length > 0}
 				<div class="text-center py-8 flex flex-col items-center">
-					<h3 class="text-xl font-bold mb-4 text-gray-400">
-						🔍 No cards found for "{searchInput}"
+					<h3 class="flex items-center justify-center gap-2 text-xl font-bold mb-4 text-gray-400">
+						<SearchIcon size={20} /> No cards found for "{searchInput}"
 					</h3>
 					<p class="text-gray-500 mb-4">Try searching for a different Pokémon name</p>
 					<Button
-						onClick={() => { activeSuggestions = []; }}
+						onClick={() => { searchInput = ''; activeSuggestions = []; }}
 						class="px-4 py-2"
+						title="Empty the search field"
 					>
-						↩️ Clear Search
+						<RotateCcwIcon size={16} /> Clear Search
 					</Button>
 				</div>
 			{:else}
 				<div class="text-center py-8">
-					<h3 class="text-xl font-bold mb-4 text-gold-400">
-						🎯 Ready to Play?
+					<h3 class="flex items-center justify-center gap-2 text-xl font-bold mb-4 text-gold-400">
+						<TargetIcon size={20} /> Ready to Play?
 					</h3>
 					<p class="text-gray-300">Search for a Pokémon name above to see available cards!</p>
 				</div>
@@ -455,19 +458,19 @@
 	<!-- Example Grid (shown when no guesses have been made) -->
 	{#if historicGuesses.length === 0 && !activeSuggestions.length}
 		<div class="mt-8 mb-8">
-			<h3 class="text-2xl font-bold text-center mb-6 text-gold-400">
-				📋 This is how your guesses will appear:
+			<h3 class="flex items-center justify-center gap-2 text-2xl font-bold mb-6 text-gold-400">
+				<ClipboardListIcon size={22} /> This is how your guesses will appear:
 			</h3>
 			<div class="bg-gray-800 rounded-xl shadow-lg p-6 max-w-6xl mx-auto border border-gray-700">
 				<!-- Example Header -->
 				<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-3 bg-gray-900 text-gold-400 p-2 rounded-t-md text-xs">
 					<div class="p-2">Card</div>
-					<div class="p-2">Pokémon</div>
-					<div class="p-2">Artist</div>
-					<div class="p-2">Set</div>
-					<div class="p-2">Supertype</div>
-					<div class="p-2">Type(s)</div>
-					<div class="p-2">Price</div>
+					<div class="flex items-center justify-center gap-1 p-2"><PawPrintIcon size={12} /> Pokémon</div>
+					<div class="flex items-center justify-center gap-1 p-2"><PaintbrushIcon size={12} /> Artist</div>
+					<div class="flex items-center justify-center gap-1 p-2"><LibraryIcon size={12} /> Set</div>
+					<div class="flex items-center justify-center gap-1 p-2"><LayersIcon size={12} /> Supertype</div>
+					<div class="flex items-center justify-center gap-1 p-2"><SparklesIcon size={12} /> Type(s)</div>
+					<div class="flex items-center justify-center gap-1 p-2"><CircleEuroIcon size={12} /> Price</div>
 				</div>
 
 				<!-- Example Row -->
@@ -482,25 +485,28 @@
 						</div>
 						<!-- Example Pokémon Sprite -->
 						<div class="p-1 flex flex-col items-center justify-center text-center bg-red-600 text-white">
-							<div class="h-10 w-10 bg-red-500 rounded-full flex items-center justify-center text-xs">🔴</div>
+							<CircleXIcon size={28} />
 							<span class="mt-1 text-center block text-xs">Wrong Pokémon</span>
 						</div>
 						<!-- Example attributes -->
-						<div class="p-2 flex items-center justify-center text-center bg-green-600 text-white">✅ Correct Artist</div>
-						<div class="p-2 flex items-center justify-center text-center bg-red-600 text-white">❌ Wrong Set</div>
-						<div class="p-2 flex items-center justify-center text-center bg-green-600 text-white">✅ Pokémon</div>
-						<div class="p-2 flex items-center justify-center text-center bg-red-600 text-white">❌ Fire</div>
+						<div class="p-2 flex items-center justify-center gap-1 text-center bg-green-600 text-white"><CheckIcon size={14} /> Correct Artist</div>
+						<div class="p-2 flex items-center justify-center gap-1 text-center bg-red-600 text-white"><XIcon size={14} /> Wrong Set</div>
+						<div class="p-2 flex items-center justify-center gap-1 text-center bg-green-600 text-white"><CheckIcon size={14} /> Pokémon</div>
+						<div class="p-2 flex items-center justify-center gap-1 text-center bg-red-600 text-white"><XIcon size={14} /> Fire</div>
 						<div class="p-2 flex flex-col items-center justify-center text-center bg-red-600 text-white">
-							<span>🔼 $15.99</span>
-							<span class="text-xxs">(Higher)</span>
+							<span class="flex items-center justify-center gap-1"><ChevronsUpIcon size={14} /> 15.99 €</span>
+							<span class="text-xxs">Mystery card is higher</span>
 						</div>
 					</div>
 				</div>
 
 				<div class="text-center mt-4 p-3 bg-gray-900 rounded-lg border border-gray-700">
-					<p class="text-sm text-gold-400">
-						<strong>💡 This example shows:</strong> The artist matches the mystery card (green),
-						but the Pokémon, set, and type are wrong (red). The price arrow indicates the mystery card costs less than $15.99.
+					<p class="flex items-start justify-center gap-2 text-sm text-gold-400">
+						<LightbulbIcon class="mt-0.5 shrink-0" size={16} />
+						<span>
+							<strong>This example shows:</strong> the artist matches the mystery card (green),
+							but the Pokémon, set and type are wrong (red). The arrow says the mystery card costs more than 15.99 €.
+						</span>
 					</p>
 				</div>
 			</div>
@@ -518,7 +524,7 @@
 	<div class="space-y-4 text-gray-300">
 		<!-- Card Attributes -->
 		<div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
-			<h3 class="font-bold text-gold-400 mb-3">🏷️ Attributes:</h3>
+			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-3"><TagIcon size={16} /> Attributes</h3>
 			<div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
 				<div><strong class="text-white">Pokémon:</strong> Character name</div>
 				<div><strong class="text-white">Artist:</strong> Card illustrator</div>
@@ -531,13 +537,16 @@
 
 		<!-- Game Rules -->
 		<div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
-			<h3 class="font-bold text-gold-400 mb-3">📋 How to Play:</h3>
+			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-3"><ClipboardListIcon size={16} /> How to Play</h3>
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
 				<ul class="space-y-1 list-disc list-inside">
 					<li>Search Pokémon name → Select card → Get feedback</li>
 					<li><strong class="text-green-400">Green</strong> = perfect match</li>
 					<li><strong class="text-red-400">Red</strong> = wrong attribute</li>
-					<li><strong>🔼</strong> mystery card costs more, <strong>🔽</strong> costs less</li>
+					<li class="flex items-center gap-1">
+						<ChevronsUpIcon class="text-gold-400" size={14} /> mystery card costs more,
+						<ChevronsDownIcon class="text-gold-400" size={14} /> costs less
+					</li>
 				</ul>
 				<ul class="space-y-1 list-disc list-inside">
 					<li>Trainer/Energy cards show "None" for Type</li>
@@ -550,7 +559,7 @@
 
 		<!-- Tips -->
 		<div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
-			<h3 class="font-bold text-gold-400 mb-3">💡 Strategy:</h3>
+			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-3"><LightbulbIcon size={16} /> Strategy</h3>
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
 				<ul class="space-y-1 list-disc list-inside">
 					<li>Start with popular Pokémon (Pikachu, Charizard)</li>

@@ -9,14 +9,14 @@ interface CardSuggestion extends FullCard {
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
 
-	// Attendre que les données streamées soient résolues
+	// Wait for the layout streamed data to resolve
 	const [allCards, prices] = await Promise.all([
 		parentData.streamed.allCards,
 		parentData.streamed.prices
 	]);
 
 	if (!allCards || !prices) {
-		console.error('Card.dle: Données critiques non chargées.');
+		console.error('Card.dle: critical data failed to load.');
 		return {
 			...parentData,
 			cardSuggestions: [],
@@ -25,22 +25,21 @@ export const load: PageServerLoad = async ({ parent }) => {
 		};
 	}
 
-	// Générer les suggestions de cartes filtrées et avec prix
+	// Keep only the cards that can be guessed: real Pokémon cards worth at least 3 EUR
 	const suggestions: CardSuggestion[] = [];
 	for (const card of allCards) {
 		const priceEntry = prices[card.cardCode];
 
-		// Exclure les cartes test et s'assurer qu'elles ont un prix >= 3€
 		if (card.pokemonNumber !== 9999 && priceEntry?.simple && priceEntry.simple >= 3) {
 			suggestions.push({
 				...card,
-				pokemonName: card.name.split(' ')[0], // Premier mot du nom
+				pokemonName: card.name.split(' ')[0], // First word of the card name
 				price: priceEntry.simple
 			});
 		}
 	}
 
-	// Trier par nom pour faciliter la recherche
+	// Sort by name so the search results read alphabetically
 	suggestions.sort((a, b) => a.name.localeCompare(b.name));
 
 	return {
@@ -49,6 +48,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 		allCards,
 		prices,
 		title: 'Card.dle - PokéCards-Collector',
-		description: 'Devinez la carte Pokémon du jour !',
+		description: "Guess today's mystery Pokémon card!",
 	};
 };
