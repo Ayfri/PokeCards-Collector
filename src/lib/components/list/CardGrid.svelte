@@ -69,23 +69,16 @@
 	let clientWidth: number = $state(0);
 	let showFilters = $state(false);
 	let searchName = $state("");
-	let debounceTimeout: number;
 	let showLoader = $state(true);
 	let mounted = $state(false);
-	let filterSetFromURL = false;
-
-	// Référence vers le composant VirtualGrid
-	let virtualGridComponent = $state<VirtualGrid>();
+	/** Cards above the fold skip lazy loading so the LCP candidate is requested with the document, not after layout. */
+	const eagerCards = 12;
 
 	// Fixed height for the info container in Card.svelte
 	const infoContainerHeight = 70;
 
 	onMount(() => {
-		const mountStart = performance.now();
-		console.log('🏗️ CardGrid: Starting mount');
-
 		// Initialize searchName from URL parameter or from store
-		const urlParamsStart = performance.now();
 		const nameParam = page.url.searchParams.get('name');
 		if (nameParam) {
 			searchName = decodeURIComponent(nameParam);
@@ -101,49 +94,12 @@
 			const matchingSet = sets.find(set => set.name.toLowerCase() === decodedSetName.toLowerCase());
 			if (matchingSet) {
 				$filterSet = matchingSet.name.toLowerCase(); // Use the correct case from set options format
-				filterSetFromURL = true;
 			} else {
 				$filterSet = decodedSetName.toLowerCase(); // Ensure lowercase to match the option format
-				filterSetFromURL = true;
 			}
 		}
-		console.log(`⚡ CardGrid: URL params processed in ${performance.now() - urlParamsStart}ms`);
-
-		// Set up a MutationObserver to watch for card-link elements
-		const observerStart = performance.now();
-		const observer = new MutationObserver((mutations) => {
-			for (const mutation of mutations) {
-				if (mutation.type === "childList") {
-					// Check for card-link or any card being rendered
-					const firstCard = document.querySelector(".card-link") || document.querySelector("[data-card-code]");
-					if (firstCard) {
-						const loaderHideTime = performance.now();
-						console.log(`🎯 CardGrid: First card rendered, hiding loader at ${loaderHideTime - mountStart}ms`);
-						showLoader = false;
-						observer.disconnect();
-						break;
-					}
-				}
-			}
-		});
-
-		// Start observing the document with the configured parameters
-		observer.observe(document.body, { childList: true, subtree: true });
-
-				// Fallback timeout to hide loader if MutationObserver doesn't catch it
-		const fallbackTimeout = setTimeout(() => {
-			if (showLoader) {
-				console.log(`⏰ CardGrid: Fallback timeout hiding loader at ${performance.now() - mountStart}ms`);
-				showLoader = false;
-				observer.disconnect();
-				clearTimeout(fallbackTimeout);
-			}
-		}, 2000);
-
-		console.log(`👀 CardGrid: MutationObserver setup in ${performance.now() - observerStart}ms`);
 
 		mounted = true;
-		console.log(`✅ CardGrid: Mount completed in ${performance.now() - mountStart}ms`);
 	});
 
 	const debouncedSetFilterName = debounce((value: string) => {
@@ -171,24 +127,13 @@
 		const activeElementId = activeElement?.id;
 
 		goto(url.toString(), { replaceState: true }).then(() => {
-			// Force recalculation of VirtualGrid layout after filter and URL update
-			if (virtualGridComponent) {
-				setTimeout(() => {
-					virtualGridComponent?.recalculateLayout();
-
-					// Restore focus to the input if it was active
-					if (activeElementId === 'name') {
-						const inputElement = document.getElementById('name') as HTMLInputElement;
-						if (inputElement) {
-							inputElement.focus();
-							// Preserve cursor position if possible
-							if (typeof inputElement.selectionStart === 'number') {
-								const len = inputElement.value.length;
-								inputElement.setSelectionRange(len, len);
-							}
-						}
-					}
-				}, 50); // Small delay to ensure filters have been applied
+			if (activeElementId !== 'name') return;
+			const inputElement = document.getElementById('name') as HTMLInputElement | null;
+			if (!inputElement) return;
+			inputElement.focus();
+			if (typeof inputElement.selectionStart === 'number') {
+				const len = inputElement.value.length;
+				inputElement.setSelectionRange(len, len);
 			}
 		});
 	}, 300);
@@ -212,14 +157,7 @@
 		}
 
 		// Navigate to the cleaned URL
-		goto(url.toString(), { replaceState: true }).then(() => {
-			// Force recalculation of layout after filters have been reset
-			if (virtualGridComponent) {
-				setTimeout(() => {
-					virtualGridComponent?.recalculateLayout();
-				}, 50); // Small delay to ensure all stores are updated
-			}
-		});
+		goto(url.toString(), { replaceState: true });
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -229,6 +167,8 @@
 	}
 	// Use the store value directly; mobile logic is now in getCardDimensions
 	const cardDimensions = $derived(getCardDimensions($cardSize, clientWidth));
+
+	const pokemonMap = $derived(new Map(pokemons.map(pokemon => [pokemon.id, pokemon])));
 
 	// Step 1: keep only the priciest card of each group when the filter is on.
 	const baseCards = $derived($mostExpensiveOnly ? keepMostExpensivePerGroup(cards, prices) : cards);
@@ -300,7 +240,7 @@
 			</button>
 		</div>
 		<div class="flex-1 overflow-y-auto p-6 pointer-events-auto">
-			<Filters {rarities} {sets} {types} {artists} onUpdate={() => virtualGridComponent?.recalculateLayout()} />
+			<Filters {rarities} {sets} {types} {artists} />
 		</div>
 	</div>
 {/if}
@@ -397,33 +337,30 @@
 	{/if}
 
 	<VirtualGrid
-		bind:this={virtualGridComponent}
 		gapX={cardDimensions.gapX}
 		gapY={cardDimensions.gapY}
 		itemHeight={cardDimensions.height + infoContainerHeight}
 		itemWidth={cardDimensions.width}
 		forcedItemsPerRow={cardDimensions.cardsPerRow}
 		items={filteredCards}
-		
 		marginTop={clientWidth ? 20 : 50}
+		onready={() => (showLoader = false)}
 	>
-		{#snippet children({ item })}
-						<CardComponent
+		{#snippet children({ item, index })}
+			<CardComponent
 				card={item}
-				{pokemons}
-				{sets}
-				prices={prices[item.cardCode]}
-				customWidth={cardDimensions.width}
 				customHeight={cardDimensions.height}
+				customWidth={cardDimensions.width}
+				eager={index < eagerCards}
 				{lowRes}
+				{pokemonMap}
+				prices={prices[item.cardCode]}
+				{sets}
 			/>
-
-			{/snippet}
-					{#snippet empty()}
-						<div >
-				<p class="text-white text-center mt-32 text-2xl">No cards found</p>
-			</div>
-					{/snippet}
+		{/snippet}
+		{#snippet empty()}
+			<p class="text-white text-center mt-32 text-2xl">No cards found</p>
+		{/snippet}
 	</VirtualGrid>
 </div>
 {/if}

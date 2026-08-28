@@ -1,43 +1,12 @@
 <script lang="ts">
-  import { scrollProgress } from '$helpers/scrollStore';
+	import { scrollProgress } from '$helpers/scrollStore';
 </script>
 
-<div class="progress-container">
-  <div class="progress-background"></div>
-  <div class="progress-bar" style="width: {$scrollProgress}%"></div>
+<div class="relative z-10 h-[3px] w-full overflow-hidden max-lg:h-[2px]">
+	<div class="absolute size-full bg-white/20"></div>
+	<!-- Scaled rather than resized: `width` would relayout the bar on every scroll frame, `transform` stays on the compositor. -->
+	<div
+		class="absolute size-full origin-left bg-linear-to-r from-[#ffd700cc] via-[#ffd700] via-60% to-[#ffc107] shadow-[0_0_8px_1px_#ffd700b3] transition-transform duration-200 ease-out will-change-transform max-lg:shadow-[0_0_6px_1px_#ffd70099]"
+		style="transform: scaleX({$scrollProgress / 100})"
+	></div>
 </div>
-
-<style>
-  .progress-container {
-    position: relative;
-    width: 100%;
-    height: 3px;
-    overflow: hidden;
-    z-index: 10;
-  }
-
-  .progress-background {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(255, 255, 255, 0.2);
-  }
-
-  .progress-bar {
-    position: absolute;
-    height: 100%;
-    background: linear-gradient(to right, rgba(255, 215, 0, 0.8) 0%, #FFD700 60%, #FFC107 100%);
-    box-shadow: 0 0 8px 1px rgba(255, 215, 0, 0.7);
-    transition: width 0.2s ease-out;
-  }
-
-  @media (max-width: 1024px) {
-    .progress-container {
-      height: 2px;
-    }
-
-    .progress-bar {
-      box-shadow: 0 0 6px 1px rgba(255, 215, 0, 0.6);
-    }
-  }
-</style>

@@ -1,117 +1,94 @@
 <script lang="ts">
 	import ScrollToBottom from '@components/list/ScrollToBottom.svelte';
 	import ScrollToTop from '@components/list/ScrollToTop.svelte';
-	import { updateScrollProgress } from '$helpers/scrollStore';
-	import { onMount } from 'svelte';
+	import { setScrollProgress } from '$helpers/scrollStore';
 	import { fade } from 'svelte/transition';
 	import type { FullCard } from '$lib/types';
-	import { browser } from '$app/environment';
 
 	interface Props {
-		items: FullCard[];
-		itemHeight: number;
-		itemWidth: number;
+		children?: import('svelte').Snippet<[{ item: FullCard; index: number }]>;
+		empty?: import('svelte').Snippet;
+		forcedItemsPerRow?: number | null;
 		gapX?: number;
 		gapY?: number;
+		itemHeight: number;
+		itemWidth: number;
+		items: FullCard[];
 		marginTop?: number;
-		forcedItemsPerRow?: number | null;
-		children?: import('svelte').Snippet<[any]>;
-		empty?: import('svelte').Snippet;
+		/** Fired once the grid has measured itself and rendered its first tiles. */
+		onready?: () => void;
 	}
 
 	let {
-		items,
-		itemHeight,
-		itemWidth,
+		children,
+		empty,
+		forcedItemsPerRow = null,
 		gapX = 0,
 		gapY = 0,
+		itemHeight,
+		itemWidth,
+		items,
 		marginTop = 0,
-		forcedItemsPerRow = null,
-		children,
-		empty
+		onready
 	}: Props = $props();
 
+	/** Rows rendered above and below the viewport so a fast scroll never shows a hole. */
 	const marginRows = 4;
-	const scrollThreshold = $derived(itemHeight * 0.8);
 	const scrollDuration = 800;
 
 	let container = $state<HTMLDivElement>();
-	let clientWidth: number = $state(0);
-	let itemsPerRow: number = $state(1);
-	let visibleRows: number = 0;
-	let visibleItems: FullCard[] = $state([]);
-	let scrollingTo: boolean = false;
-	let previousScroll: number = 0;
-	let hasScrolled: boolean = $state(false);
-	let isInitialized: boolean = $state(false);
-	let leftMargin: number = $state(0);
-	let viewportHeight: number = 800;
+	let containerWidth = $state(0);
+	let containerHeight = $state(0);
+	let scrollTop = $state(0);
+	let isInitialized = $state(false);
+	let scrollingTo = false;
 
+	const rowHeight = $derived(itemHeight + gapY);
+	const itemsPerRow = $derived(forcedItemsPerRow ?? Math.max(1, Math.floor(containerWidth / (itemWidth + gapX))));
+	const rowCount = $derived(Math.ceil(items.length / itemsPerRow));
+	const totalHeight = $derived(rowCount * rowHeight + marginTop);
+	const leftMargin = $derived(Math.max(0, (containerWidth - (itemsPerRow * itemWidth + (itemsPerRow - 1) * gapX)) / 2));
 
-	onMount(() => {
-		viewportHeight = window.innerHeight;
+	const startRow = $derived(Math.max(0, Math.floor(scrollTop / rowHeight) - marginRows));
+	const endRow = $derived(startRow + Math.ceil(containerHeight / rowHeight) + marginRows * 2);
+	const startIndex = $derived(startRow * itemsPerRow);
+	/** Only the on-screen slice is rendered: iterating the full list here is what used to cost ~12 ms per scroll step. */
+	const visibleItems = $derived(isInitialized ? items.slice(startIndex, Math.min(items.length, endRow * itemsPerRow)) : []);
 
-		setTimeout(() => {
-			if (!container) return;
-			clientWidth = container.clientWidth;
-			isInitialized = true;
-			recalculateLayout();
-			updateScrollProgress(container);
-		}, 50);
+	/** Progress is derived from the sizes we already track, so scrolling never reads scrollHeight and never forces a reflow. */
+	$effect(() => {
+		const scrollable = totalHeight - containerHeight;
+		setScrollProgress(scrollable > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollable) * 100)) : 0);
 	});
 
+	$effect(() => {
+		if (!container) return;
+		const observer = new ResizeObserver(([entry]) => {
+			containerWidth = entry.contentRect.width;
+			containerHeight = entry.contentRect.height;
+			if (!isInitialized && containerWidth > 0) {
+				isInitialized = true;
+				onready?.();
+			}
+		});
+		observer.observe(container);
+		return () => observer.disconnect();
+	});
+
+	/** Keeps `recalculateLayout()` working for callers that force a re-measure after a filter or URL change. */
 	export function recalculateLayout() {
-		if (!isInitialized || !container) return;
-
-		clientWidth = container.clientWidth;
-
-		itemsPerRow = forcedItemsPerRow ?? Math.max(1, Math.floor((clientWidth) / (itemWidth + gapX)));
-
-		visibleRows = Math.ceil(viewportHeight / (itemHeight + gapY));
-
-		const totalGridWidth = itemsPerRow * itemWidth + (itemsPerRow - 1) * gapX;
-		leftMargin = Math.max(0, (clientWidth - totalGridWidth) / 2);
-
-		updateVisibleItems();
-		updateScrollProgress(container);
+		if (!container) return;
+		containerWidth = container.clientWidth;
+		containerHeight = container.clientHeight;
 	}
 
-	function updateVisibleItems() {
-		if (scrollingTo || !isInitialized || !container || itemsPerRow <= 0) return;
-
-		const fullRowHeight = itemHeight + gapY;
-
-		const scrollTop = container.scrollTop;
-		const startRow = fullRowHeight > 0 ? Math.floor(scrollTop / fullRowHeight) : 0;
-
-		const rowsToRender = visibleRows + marginRows * 2;
-
-		const startIndex = Math.max(0, (startRow - marginRows) * itemsPerRow);
-		const endIndex = Math.min(items.length, (startRow + rowsToRender) * itemsPerRow);
-
-		const newVisibleItems = items.slice(startIndex, endIndex);
-
-		if (
-			newVisibleItems.length !== visibleItems.length ||
-			newVisibleItems[0]?.cardCode !== visibleItems[0]?.cardCode ||
-			newVisibleItems[newVisibleItems.length - 1]?.cardCode !== visibleItems[visibleItems.length - 1]?.cardCode
-		) {
-			visibleItems = newVisibleItems;
-		}
-	}
-
+	let scrollFrame = 0;
 	function handleScroll() {
-		if (!isInitialized || !container) return;
-
-		const scrollTop = container.scrollTop;
-		if (Math.abs(scrollTop - previousScroll) >= scrollThreshold) {
-			previousScroll = scrollTop;
-			updateVisibleItems();
-		}
-
-		hasScrolled = scrollTop > 100;
-
-		updateScrollProgress(container);
+		if (scrollFrame || !container) return;
+		scrollFrame = requestAnimationFrame(() => {
+			scrollFrame = 0;
+			if (container && !scrollingTo) scrollTop = container.scrollTop;
+		});
 	}
 
 	function smoothScroll(element: HTMLElement, targetPosition: number, duration: number) {
@@ -121,86 +98,57 @@
 		const startTime = performance.now();
 
 		function scrollStep(timestamp: number) {
-			const currentTime = timestamp - startTime;
-			const progress = Math.min(currentTime / duration, 1);
-			const easeInOutCubic = (p: number) => p < 0.5 ? 4 * p ** 3 : 1 - Math.pow(-2 * p + 2, 3) / 2;
+			const elapsed = timestamp - startTime;
+			const progress = Math.min(elapsed / duration, 1);
+			const eased = progress < 0.5 ? 4 * progress ** 3 : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-			element.scrollTop = startPosition + distance * easeInOutCubic(progress);
+			element.scrollTop = startPosition + distance * eased;
+			scrollTop = element.scrollTop;
 
-			if (currentTime < duration) {
-				window.requestAnimationFrame(scrollStep);
+			if (progress < 1) {
+				requestAnimationFrame(scrollStep);
 			} else {
 				element.scrollTop = targetPosition;
+				scrollTop = targetPosition;
 				scrollingTo = false;
-				updateVisibleItems();
-				updateScrollProgress(element);
 			}
 		}
 
-		window.requestAnimationFrame(scrollStep);
+		requestAnimationFrame(scrollStep);
 	}
 
 	function scrollToLast() {
-		if (!container || itemsPerRow <= 0) return;
-		const fullRowHeight = itemHeight + gapY;
-		const totalHeight = Math.ceil(items.length / itemsPerRow) * fullRowHeight + marginTop;
-		const targetScrollTop = totalHeight - container.clientHeight;
-		smoothScroll(container, Math.max(0, targetScrollTop), scrollDuration);
+		if (!container) return;
+		smoothScroll(container, Math.max(0, totalHeight - containerHeight), scrollDuration);
 	}
 
 	function scrollToTop() {
 		if (!container) return;
 		smoothScroll(container, 0, scrollDuration);
-		setTimeout(() => { hasScrolled = false; }, scrollDuration);
 	}
-
-	let resizeTimeout: number;
-	function handleResize() {
-		clearTimeout(resizeTimeout);
-		resizeTimeout = window.setTimeout(() => {
-			if (isInitialized && container) {
-				if (browser) {
-					viewportHeight = window.innerHeight;
-				}
-				recalculateLayout();
-			}
-		}, 100);
-	}
-
-	$effect(() => {
-		if (isInitialized && (itemWidth || itemHeight || gapX || gapY || forcedItemsPerRow || clientWidth)) {
-			recalculateLayout();
-		}
-	});
 </script>
 
-<svelte:window onresize={handleResize}/>
-
 <div bind:this={container} class="virtual-grid-container top-2 relative flex-1 w-full overflow-y-scroll scrollbar-hide" onscroll={handleScroll}>
-	{#if isInitialized && itemsPerRow > 0}
-		<div class="absolute size-px" style="top: {Math.ceil(items.length / itemsPerRow) * (itemHeight + gapY) + marginTop}px;"></div>
+	{#if items.length === 0 && isInitialized}
+		{@render empty?.()}
+	{:else}
+		<div class="absolute size-px" style="top: {totalHeight}px;"></div>
 
-		{#each items as item, i}
-			{#if visibleItems.some(visible => visible.cardCode === item.cardCode)}
-				{#key item.cardCode}
-					<div class="absolute transition-all duration-150 ease-out" style="top: {Math.floor(i / itemsPerRow) * (itemHeight + gapY) + marginTop}px; left: {i % itemsPerRow * (itemWidth + gapX) + leftMargin}px; width: {itemWidth}px; height: {itemHeight}px;">
-						{@render children?.({ item, })}
-					</div>
-				{/key}
-			{/if}
-		{:else}
-			{@render empty?.()}
+		{#each visibleItems as item, offset (item.cardCode)}
+			{@const index = startIndex + offset}
+			<div
+				class="absolute"
+				style="top: {Math.floor(index / itemsPerRow) * rowHeight + marginTop}px; left: {(index % itemsPerRow) * (itemWidth + gapX) + leftMargin}px; width: {itemWidth}px; height: {itemHeight}px;"
+			>
+				{@render children?.({ item, index })}
+			</div>
 		{/each}
-	{:else if !isInitialized}
-		<div class="w-full h-[80vh]"></div>
-	{:else if items.length === 0}
-        {@render empty?.()}
 	{/if}
 </div>
 
-{#if hasScrolled}
-<div transition:fade={{ duration: 300 }}>
-	<ScrollToTop onclick={scrollToTop}/>
-</div>
+{#if scrollTop > 100}
+	<div transition:fade={{ duration: 300 }}>
+		<ScrollToTop onclick={scrollToTop}/>
+	</div>
 {/if}
 <ScrollToBottom onclick={scrollToLast}/>

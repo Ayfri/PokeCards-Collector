@@ -10,30 +10,32 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
-	import { findSetByCardCode } from '$lib/helpers/set-utils';
+	import { getCardSet } from '$helpers/card-grid';
 	import { Plus, Minus } from '@lucide/svelte';
-	import { fly } from 'svelte/transition';
-	import Button from '@components/filters/Button.svelte';
 	import CardStackIcon from '@lucide/svelte/icons/layers';
 
 	interface Props {
 		card: FullCard;
-		pokemons: Pokemon[];
+		customHeight?: number | null;
+		customWidth?: number | null;
+		/** Loads the first screenful without waiting for the lazy-loading pass, so the LCP card is requested immediately. */
+		eager?: boolean;
+		lowRes?: boolean;
+		/** Prebuilt by the grid: a linear `find` over ~1000 Pokémon per card was showing up on every scroll frame. */
+		pokemonMap: Map<number, Pokemon>;
 		prices: PriceData | undefined;
 		sets: Set[];
-		customWidth?: number | null;
-		customHeight?: number | null;
-		lowRes?: boolean;
 	}
 
 	let {
 		card,
-		pokemons,
-		prices,
-		sets,
-		customWidth = null,
 		customHeight = null,
-		lowRes = false
+		customWidth = null,
+		eager = false,
+		lowRes = false,
+		pokemonMap,
+		prices,
+		sets
 	}: Props = $props();
 
 	/** Maximum quantity allowed per card, mirrors the backend limit. */
@@ -49,8 +51,8 @@
 
 	const parsedCardCode = $derived(parseCardCode(cardCode));
 	const cardNumber = $derived(parsedCardCode.cardNumber ?? '0');
-	const pokemon = $derived(parsedCardCode.pokemonNumber ? pokemons.find(p => p.id === parsedCardCode.pokemonNumber) : null);
-	const set = $derived(findSetByCardCode(cardCode, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null });
+	const pokemon = $derived(parsedCardCode.pokemonNumber ? pokemonMap.get(parsedCardCode.pokemonNumber) : null);
+	const set = $derived(getCardSet(cardCode, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null });
 
 	// Access user and profile from page state
 	const user = $derived(page.data.user);
@@ -149,8 +151,8 @@
 	<div class:list={rarity.toLowerCase()}></div>
 	{#if !NO_IMAGES}
 		<div
-			class={`aura absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-(--type-color)
-			transition-all duration-700 ease-out group-hover:blur-[2.5rem] ${types.toLowerCase().split(',')}`}
+			class={`aura absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-(--type-color) will-change-transform
+			transition-transform duration-700 ease-out group-hover:scale-110 ${types.toLowerCase().split(',')}`}
 			style="width: {width * 0.8}px; height: {height * 0.85}px;"
 		></div>
 	{/if}
@@ -208,11 +210,12 @@
 		{/if}
 		<CardImage
 			alt={cardName}
-			class="rounded-lg transition-opacity duration-300 absolute top-0 left-0"
+			class="rounded-lg absolute top-0 left-0"
 			style="width: {width}px; height: {height}px; max-width: 100%;"
 			imageUrl={card.image}
 			{lowRes}
-			lazy={true}
+			lazy={!eager}
+			priority={eager}
 			width={width}
 			height={height}
 		/>
@@ -225,7 +228,7 @@
 				tabindex="-1"
 			>
 				{#if 'logo' in set && set.logo}
-					<img src={set.logo} alt={set.name} class="w-6 h-6 object-contain" />
+					<img src={set.logo} alt={set.name} class="w-6 h-6 object-contain" width="24" height="24" loading="lazy" decoding="async" />
 				{:else}
 					<CardStackIcon size={20} />
 				{/if}
@@ -264,17 +267,3 @@
 		</div>
 	</div>
 </div>
-
-<style>
-	.loader {
-		animation-duration: 4s;
-		animation-fill-mode: forwards;
-		animation-iteration-count: infinite;
-		animation-name: placeHolderShimmer;
-		animation-timing-function: linear;
-		background: linear-gradient(to right, var(--card-color) 8%, color-mix(in oklab, var(--card-color), white 30%) 38%, var(--card-color) 54%);
-		background-size: auto;
-		border-radius: 0.5rem;
-		z-index: -1;
-	}
-</style>
