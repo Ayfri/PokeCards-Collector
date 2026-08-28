@@ -15,6 +15,7 @@
   --breakpoint-2xs: 350px;
 
   --animate-gradient-x: gradient-x 6s ease infinite;
+  --animate-ripple-wave: ripple-wave 1.5s ease-out infinite;
 
   @keyframes gradient-x {
     0%, 100% {
@@ -22,6 +23,26 @@
     }
     50% {
       background-position: right center;
+    }
+  }
+
+  /* Centering lives in the keyframes rather than a utility, since every step has to rewrite `transform` anyway. */
+  @keyframes ripple-wave {
+    0% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0);
+    }
+    10% {
+      opacity: 0.3;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    40% {
+      opacity: 0.5;
+      transform: translate(-50%, -50%) scale(1.2);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(1.4);
     }
   }
 }
