@@ -3,18 +3,29 @@ compatibility_date = "2026-08-28"
 compatibility_flags = ["nodejs_compat"]
 main = ".svelte-kit/cloudflare/_worker.js"
 
-# The hostname still resolves through the proxied CNAME the Pages project left behind, so the Worker
-# claims it as a route rather than a custom domain: a custom domain refuses to take over an existing record.
+# Wrangler owns the DNS record for this hostname since the Pages project released it.
 [[routes]]
-pattern = "pokecards-collector.ayfri.com/*"
-zone_name = "ayfri.com"
+pattern = "pokecards-collector.ayfri.com"
+custom_domain = true
 
 [assets]
 directory = ".svelte-kit/cloudflare"
 binding = "ASSETS"
 
 [observability]
+enabled = false
+head_sampling_rate = 1
+
+[observability.logs]
 enabled = true
+head_sampling_rate = 1
+persist = true
+invocation_logs = true
+
+[observability.traces]
+enabled = true
+persist = true
+head_sampling_rate = 1
 
 [placement]
 mode = "smart"
