@@ -8,9 +8,15 @@
 	import { wishlistStore } from '$lib/stores/wishlist';
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
 	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
+	import CalendarDays from '@lucide/svelte/icons/calendar-days';
+	import Gem from '@lucide/svelte/icons/gem';
+	import Hash from '@lucide/svelte/icons/hash';
 	import Heart from '@lucide/svelte/icons/heart';
-	import Plus from '@lucide/svelte/icons/plus';
+	import Library from '@lucide/svelte/icons/library';
 	import Minus from '@lucide/svelte/icons/minus';
+	import Paintbrush from '@lucide/svelte/icons/paintbrush';
+	import Plus from '@lucide/svelte/icons/plus';
+	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import { fly } from 'svelte/transition';
 
 	interface Props {
@@ -148,7 +154,7 @@
 					<!-- Add types as the first item -->
 					{#if card?.types || card?.supertype}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
-							<dt class="font-semibold text-gold-300">Type:</dt>
+							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Energy type, or the card category for Trainer and Energy cards"><Sparkles size={14} /> Type:</dt>
 							<dd class="flex flex-wrap justify-end gap-1.5">
 								{#if card?.types}
 									{#each card.types.toLowerCase().split(',') as type}
@@ -167,7 +173,7 @@
 
 					{#if card.artist !== 'Unknown'}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
-							<dt class="font-semibold text-gold-300">Artist:</dt>
+							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Illustrator of this card"><Paintbrush size={14} /> Artist:</dt>
 							<dd class="text-white text-right">
 								<a 
 									href="/cards-list?artist={encodeURIComponent(card.artist.toLowerCase())}" 
@@ -183,18 +189,18 @@
 
 					{#if cardNumber && set.printedTotal}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
-							<dt class="font-semibold text-gold-300">Number:</dt>
+							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Position of this card inside its set"><Hash size={14} /> Number:</dt>
 							<dd class="text-white text-right">{cardNumber} / {set.printedTotal}</dd>
 						</div>
 					{/if}
 
 					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
-						<dt class="font-semibold text-gold-300">Rarity:</dt>
+						<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="How scarce this print is"><Gem size={14} /> Rarity:</dt>
 						<dd class="text-white text-right">{card.rarity}</dd>
 					</div>
 
 					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
-						<dt class="font-semibold text-gold-300">Set:</dt>
+						<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Set this card was printed in"><Library size={14} /> Set:</dt>
 						<dd class="flex items-center gap-2 justify-end">
 							<a 
 								href="/cards-list?set={encodeURIComponent(set.name)}" 
@@ -218,7 +224,7 @@
 					</div>
 
 					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
-						<dt class="font-semibold text-gold-300">Release Date:</dt>
+						<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Release date of the set"><CalendarDays size={14} /> Release Date:</dt>
 						<dd class="text-white text-right">{formatDate(set.releaseDate)}</dd>
 					</div>
 				</div>

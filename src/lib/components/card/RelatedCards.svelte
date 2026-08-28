@@ -10,7 +10,9 @@
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
 	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
 	import { collectionStore } from '$lib/stores/collection';
-	import { Heart, Minus, Plus } from '@lucide/svelte';
+	import Heart from '@lucide/svelte/icons/heart';
+	import Minus from '@lucide/svelte/icons/minus';
+	import Plus from '@lucide/svelte/icons/plus';
 	import { page } from '$app/state';
 	import { wishlistStore } from '$lib/stores/wishlist';
 
@@ -184,6 +186,7 @@
 						class="absolute inset-0 z-2 cursor-pointer"
 						onclick={() => onCardSelect(card)}
 						aria-label={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
+						title={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
 					></button>
 					<div class="relative rounded-lg overflow-hidden shadow-lg w-full" style="aspect-ratio: 63/88;">
 						{#if !NO_IMAGES}
@@ -262,6 +265,7 @@
 									rel="noopener noreferrer"
 									class="relative z-10 hover:text-gold-300 transition-colors duration-200 text-center"
 									aria-label="View on Cardmarket"
+									title="Open this card on Cardmarket (new tab)"
 								>
 									<div class="flex items-center justify-center whitespace-nowrap">
 										<span class="text-sm">

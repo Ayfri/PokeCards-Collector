@@ -1,6 +1,10 @@
 <script lang="ts">
 	import type { FullCard, PriceData } from '$lib/types';
+	import ChartLine from '@lucide/svelte/icons/chart-line';
+	import Clock from '@lucide/svelte/icons/clock';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
+	import Repeat2 from '@lucide/svelte/icons/repeat-2';
+	import Tag from '@lucide/svelte/icons/tag';
 
 	interface Props {
 		card: FullCard;
@@ -8,11 +12,20 @@
 	}
 
 	let { card, cardPrices }: Props = $props();
+
+	const UPDATED_AT_FORMAT = new Intl.DateTimeFormat('en-GB', {dateStyle: 'long', timeStyle: 'short'});
+
+	/** TCGdex sends the Cardmarket timestamp as an opaque string, so an unparseable value falls back to the raw text. */
+	const updatedAt = $derived.by(() => {
+		if (!card.cardMarketUpdatedAt) return null;
+		const date = new Date(card.cardMarketUpdatedAt);
+		return Number.isNaN(date.getTime()) ? card.cardMarketUpdatedAt : UPDATED_AT_FORMAT.format(date);
+	});
 </script>
 
 <div class="detailed-prices bg-gray-800 border-2 border-gold-400 rounded-xl p-4 w-full max-w-[500px] h-full">
 	{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
-		<a href={card.cardMarketUrl} target="_blank" rel="noopener noreferrer" class="text-gold-400 font-bold text-xl mb-3 flex items-center justify-center hover:text-gold-300 transition-colors duration-200">
+		<a href={card.cardMarketUrl} target="_blank" rel="noopener noreferrer" class="text-gold-400 font-bold text-xl mb-3 flex items-center justify-center hover:text-gold-300 transition-colors duration-200" title="Open this card on Cardmarket (new tab)">
 			Cardmarket Prices
 			<ExternalLink size={18} class="ml-1" />
 		</a>
@@ -28,7 +41,7 @@
 	</div>
 
 	<div class="price-details-container grow overflow-y-auto">
-		<h4 class="text-lg text-gold-400 font-bold mb-2 text-center">Market Prices (€)</h4>
+		<h4 class="text-lg text-gold-400 font-bold mb-2 flex items-center justify-center gap-2" title="Current Cardmarket listings for the normal print"><Tag size={16} /> Market Prices (€)</h4>
 		<div class="grid grid-cols-2 gap-3">
 			{#if cardPrices.simple}
 				<div class="price-item">
@@ -51,7 +64,7 @@
 		</div>
 
 		{#if cardPrices.reverseSimple !== undefined && cardPrices.reverseSimple > 0}
-			<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 text-center">Reverse Prices</h4>
+			<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Prices for the reverse holo print"><Repeat2 size={16} /> Reverse Prices</h4>
 			<div class="grid grid-cols-2 gap-3">
 				{#if cardPrices.reverseSimple !== undefined && cardPrices.reverseSimple > 0}
 					<div class="price-item">
@@ -74,7 +87,7 @@
 			</div>
 		{/if}
 
-		<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 text-center">Average Prices</h4>
+		<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Average sale price over the last days"><ChartLine size={16} /> Average Prices</h4>
 		<div class="grid grid-cols-2 gap-3">
 			{#if cardPrices.avg1 !== undefined}
 				<div class="price-item">
@@ -99,7 +112,7 @@
 		{#if (cardPrices.reverseAvg1 !== undefined && cardPrices.reverseAvg1 > 0) ||
 			(cardPrices.reverseAvg7 !== undefined && cardPrices.reverseAvg7 > 0) ||
 			(cardPrices.reverseAvg30 !== undefined && cardPrices.reverseAvg30 > 0)}
-			<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 text-center">Reverse Averages</h4>
+			<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Average sale price of the reverse holo print"><Repeat2 size={16} /> Reverse Averages</h4>
 			<div class="grid grid-cols-2 gap-3">
 				{#if cardPrices.reverseAvg1 !== undefined && cardPrices.reverseAvg1 > 0}
 					<div class="price-item">
@@ -123,8 +136,8 @@
 		{/if}
 	</div>
 
-	{#if card.cardMarketUpdatedAt}
-		<p class="text-sm text-gray-400 mt-4 text-center">Last updated: {card.cardMarketUpdatedAt}</p>
+	{#if updatedAt}
+		<p class="text-sm text-gray-400 mt-4 flex items-center justify-center gap-1.5" title="When Cardmarket last refreshed these prices"><Clock size={14} /> Last updated: {updatedAt}</p>
 	{/if}
 </div>
 

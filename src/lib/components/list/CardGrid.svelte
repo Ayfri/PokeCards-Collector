@@ -232,6 +232,8 @@
 			<button
 				class="bg-transparent border-none text-white p-1 rounded-sm hover:bg-white/10 transition-colors flex items-center justify-center"
 				onclick={() => (showFilters = false)}
+				aria-label="Close filters"
+				title="Close filters"
 			>
 				<XIcon size={20} />
 			</button>
@@ -297,6 +299,7 @@
 					onClick={() => (showFilters = true)}
 					isActive={activeFiltersCount > 0}
 					class="px-4"
+					title={activeFiltersCount > 0 ? `Open filters (${activeFiltersCount} active)` : 'Open filters'}
 				>
 					<SlidersHorizontalIcon size={16} /> Filters
 				</Button>
@@ -315,6 +318,7 @@
 				onClick={localResetFilters}
 				disabled={activeFiltersCount === 0}
 				class="p-1.5"
+				title="Reset every filter and the sort order"
 			>
 				<RotateCcwIcon size={16} />
 			</Button>
