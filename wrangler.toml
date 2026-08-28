@@ -13,10 +13,6 @@ pattern = "pokecards-collector.ayfri.com"
 custom_domain = true
 zone_name = "ayfri.com"
 
-# Runtime var, kept so a deploy stops wiping it; pinning the build image's Bun needs a *build* variable instead.
-[vars]
-BUN_VERSION = "1.4.0"
-
 [assets]
 directory = ".svelte-kit/cloudflare"
 binding = "ASSETS"
