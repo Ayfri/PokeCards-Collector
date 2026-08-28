@@ -1,7 +1,7 @@
 import { supabase } from '../supabase';
 import { updateCollectionStoreCount } from '$lib/stores/collection';
 import type { Card, PriceData, Set } from '../types';
-import { findSetByCardCode } from '$helpers/set-utils';
+import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import { setLoading } from '$lib/stores/loading';
 import { getUserWishlist } from './wishlists';
 
@@ -131,6 +131,13 @@ export async function getCardInstancesInCollection(username: string, cardCode: s
 	}
 }
 
+interface SetTotals {
+	collected: number;
+	collectedValue: number;
+	total: number;
+	totalValue: number;
+}
+
 // Get collection stats (count by rarity, set, total value, etc. - BASED ON UNIQUE CARDS)
 export async function getCollectionStats(username: string, allCards: Card[], allSets: Set[], prices: Record<string, PriceData>) {
 	try {
@@ -198,37 +205,33 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 			setsWithCards.add(card.setName);
 		});
 		
-		// Calculate stats for each set in the collection
-		allSets.forEach(set => {
-			if (setsWithCards.has(set.name)) {
-				const setCards = allCards.filter(card => findSetByCardCode(card.cardCode, [set]));
-				const collectionSetCards = cardsInCollection.filter(card => findSetByCardCode(card.cardCode, [set]));
+		// One pass over the cards instead of one filter per set: the catalogue is 23k cards for 218 sets.
+		const setLookup = buildSetLookupMap(allSets);
+		const cardsBySet = new Map<string, SetTotals>();
+		for (const card of allCards) {
+			const set = findSetInLookup(card.cardCode, setLookup);
+			if (!set || !setsWithCards.has(set.name)) continue;
 
-				let collectedSetValue = 0;
-				collectionSetCards.forEach(card => {
-					const cardPrice = prices[card.cardCode];
-					if (cardPrice && cardPrice.simple) {
-						collectedSetValue += cardPrice.simple;
-					}
-				});
-
-				let totalSetValue = 0;
-				setCards.forEach(card => {
-					const cardPrice = prices[card.cardCode];
-					if (cardPrice && cardPrice.simple) {
-						totalSetValue += cardPrice.simple;
-					}
-				});
-
-				setStats[set.name] = {
-					count: collectionSetCards.length,
-					total: setCards.length,
-					percentage: setCards.length > 0 ? (collectionSetCards.length / setCards.length) * 100 : 0,
-					collectedValue: Math.round(collectedSetValue * 100) / 100,
-					totalValue: Math.round(totalSetValue * 100) / 100,
-				};
+			const totals = cardsBySet.get(set.name) ?? { collected: 0, collectedValue: 0, total: 0, totalValue: 0 };
+			const price = prices[card.cardCode]?.simple ?? 0;
+			totals.total++;
+			totals.totalValue += price;
+			if (collectionCardCodes.has(card.cardCode)) {
+				totals.collected++;
+				totals.collectedValue += price;
 			}
-		});
+			cardsBySet.set(set.name, totals);
+		}
+
+		for (const [setName, totals] of cardsBySet) {
+			setStats[setName] = {
+				count: totals.collected,
+				total: totals.total,
+				percentage: totals.total > 0 ? (totals.collected / totals.total) * 100 : 0,
+				collectedValue: Math.round(totals.collectedValue * 100) / 100,
+				totalValue: Math.round(totals.totalValue * 100) / 100,
+			};
+		}
 		
 		return {
 			data: {

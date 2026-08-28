@@ -29,8 +29,10 @@ export function generateUniqueCardCode(
 		.normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
 		.replace(/[^a-z0-9]/g, '');
 
-	// Normalize card number
+	// Normalize card number the same way as the set code, so "H7" and "7" stay distinct cards
 	const normalizedCardNumber = (cardNumber || '')
+		.toLowerCase()
+		.normalize("NFD").replace(/[̀-ͯ]/g, "") // Remove accents
 		.replace(/[^a-z0-9]/g, '');
 
 	// Generate unique code in format: supertype_pokemonid_setcode_cardnumber

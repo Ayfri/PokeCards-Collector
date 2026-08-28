@@ -7,8 +7,7 @@
 	import TextInput from '@components/filters/TextInput.svelte';
 	import type { Card, Set } from '$lib/types';
 	import { debounce } from '$helpers/debounce';
-	import { buildSetLookupMap } from '$helpers/set-utils';
-	import { parseCardCode } from '$helpers/card-utils';
+	import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 	import { fade, fly } from 'svelte/transition';
 
 	interface Props {
@@ -75,14 +74,7 @@
 				continue;
 			}
 
-			const parsed = parseCardCode(card.cardCode);
-			if (!parsed || !parsed.setCode) {
-				dates.set(card.cardCode, new Date('0000-01-01')); // Default for unparsable/no setCode
-				continue;
-			}
-
-			const targetSetCodeLower = parsed.setCode.toLowerCase();
-			const foundSet = setLookup.get(targetSetCodeLower);
+			const foundSet = findSetInLookup(card.cardCode, setLookup);
 
 			dates.set(card.cardCode, foundSet ? new Date(foundSet.releaseDate) : new Date('0000-01-01'));
 		}

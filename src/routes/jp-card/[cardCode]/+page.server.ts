@@ -1,4 +1,4 @@
-import { getPokemons, getJapaneseCards } from '$helpers/supabase-data';
+import { getJapaneseCards, getJapanesePrices, getPokemons } from '$helpers/supabase-data';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
@@ -6,10 +6,9 @@ import { error } from '@sveltejs/kit';
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
 	const { sets, streamed, ...layoutData } = await parent();
-	const prices = await streamed.prices; // Prices are streamed by the root layout
 
-	// Load all Japanese cards
-	const allJpCards = await getJapaneseCards(); // Renamed to avoid conflict if allCards was from parent
+	// Japanese cards carry their own prices, the layout only streams the English ones.
+	const [allJpCards, prices] = await Promise.all([getJapaneseCards(), getJapanesePrices()]);
 	
 	// Find the specific card
 	const card = allJpCards.find(c => c.cardCode === cardCode);
@@ -43,7 +42,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		pokemonCards,
 		pokemons,
 		sets,     // from parent
-		prices,   // from parent
+		prices,
 		...pageSeoData
 	};
 }; 

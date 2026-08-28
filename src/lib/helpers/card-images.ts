@@ -2,6 +2,11 @@ import {env} from '$env/dynamic/public';
 import {NO_IMAGES} from '$lib/images';
 import type {FullCard} from '$lib/types';
 
+export type ImageQuality = 'high' | 'low';
+export type ImageExtension = 'webp' | 'png';
+
+const PLACEHOLDER = 'https://placehold.co/300x450/transparent/transparent';
+
 /**
  * Gets the image URL for a Pokémon
  * If CDN_URL environment variable is set, it will use that as the base URL
@@ -17,84 +22,23 @@ export function getCardImageForPokemon(pokemonId: number, cards: FullCard[]): st
 }
 
 /**
- * Centralized function to process all card images
- * Handles CDN configurations, NO_IMAGES mode, and high-res options
- *
- * @param imageUrl The original image URL from the API
- * @param highRes Whether to use high-resolution images (default: true)
- * @returns The processed image URL
+ * Turns a TCGdex extensionless image base into a real URL.
+ * `https://assets.tcgdex.net/en/swsh/swsh3/136` -> `.../136/high.webp`, which is ~4x lighter than the
+ * PNG the old pipeline served. `PUBLIC_CARD_CDN_URL` swaps the host for an R2 mirror keyed the same way,
+ * and `NO_IMAGES` returns a placeholder so dev runs cost no bandwidth.
  */
-export function processCardImage(imageUrl: string, highRes: boolean = true): string {
+export function processCardImage(imageUrl: string, quality: ImageQuality = 'high', extension: ImageExtension = 'webp'): string {
+	if (NO_IMAGES) return PLACEHOLDER;
+	if (!imageUrl) return '';
+
 	const CDN_URL = env.PUBLIC_CARD_CDN_URL;
+	if (!CDN_URL) return `${imageUrl}/${quality}.${extension}`;
 
-	// Check for NO_IMAGES mode
-	if (NO_IMAGES) {
-		return "https://placehold.co/300x450/transparent/transparent";
-	}
+	// TCGdex bases end in `/{lang}/{serie}/{setId}/{localId}`; the mirror is keyed by set and card.
+	const parts = imageUrl.split('/');
+	const localId = parts.at(-1);
+	const setId = parts.at(-2);
+	if (!localId || !setId) return `${imageUrl}/${quality}.${extension}`;
 
-	// If this is an external URL (not from the Pokemon TCG API), 
-	// return it directly but route through the proxy endpoint
-	if (!imageUrl.includes('pokemontcg.io')) {
-		// Return the original URL - it will be proxied at the component level
-		return imageUrl;
-	}
-
-	// If no CDN URL is set, handle high-res if needed
-	if (!CDN_URL) {
-		return highRes ? getHighResCardImage(imageUrl) : getLowResCardImage(imageUrl);
-	}
-
-	// Extract set code and card ID from the original URL
-	// Example input: "https://images.pokemontcg.io/pop5/17_hires.png"
-	const urlParts = imageUrl.split('/');
-	if (urlParts.length < 2) {
-		return imageUrl; // Invalid URL format, return original
-	}
-
-	const setCode = urlParts[urlParts.length - 2];
-	const cardIdWithExt = urlParts[urlParts.length - 1];
-	const cardId = cardIdWithExt.split('_')[0]; // Remove "_hires" part if present
-
-	// Construct the CDN URL
-	// Format: CDN_URL/setCode/cardId.png
-	return `${CDN_URL}/${setCode}/${cardId}${highRes ? '_hires' : ''}.png`;
-}
-
-/**
- * Legacy function for backward compatibility
- * @deprecated Use processCardImage instead
- */
-export function getCardImage(imageUrl: string): string {
-	return processCardImage(imageUrl);
-}
-
-/**
- * Gets the high-resolution image URL for a card
- *
- * @param imageUrl The original image URL from the API
- * @returns The high-resolution image URL
- */
-export function getHighResCardImage(imageUrl: string): string {
-	// Check if the URL already contains "_hires"
-	if (imageUrl.includes('_hires')) {
-		return imageUrl;
-	}
-
-	// Insert "_hires" before the file extension
-	const lastDotIndex = imageUrl.lastIndexOf('.');
-	if (lastDotIndex === -1) {
-		return imageUrl; // No file extension found, return original
-	}
-
-	return imageUrl.substring(0, lastDotIndex) + '_hires' + imageUrl.substring(lastDotIndex);
-}
-
-/**
- * Gets the low-resolution image URL for a card
- *
- * @param imageUrl The original image URL from the API
- * @returns The low-resolution image URL
- */
-export function getLowResCardImage(imageUrl: string): string {
-	return imageUrl.replace('_hires', '');
+	return `${CDN_URL}/${setId}/${localId}/${quality}.${extension}`;
 }

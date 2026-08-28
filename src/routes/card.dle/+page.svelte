@@ -262,7 +262,7 @@
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.supertypeCorrect)}`}>{guess.feedback.supertypeValue}</div>
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.typesCorrect)}`}>{guess.feedback.typesValue}</div>
 						<div class={`p-2 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.priceComparison === 'correct')}`}>
-							<span>{getPriceComparisonIcon(guess.feedback.priceComparison)} ${guess.feedback.priceValue.toFixed(2)}</span>
+							<span>{getPriceComparisonIcon(guess.feedback.priceComparison)} {guess.feedback.priceValue.toFixed(2)} €</span>
 							<span class="text-xxs">{getPriceComparisonText(guess.feedback.priceComparison)}</span>
 						</div>
 					</div>
@@ -499,7 +499,7 @@
 				<div><strong class="text-white">Set:</strong> Collection name</div>
 				<div><strong class="text-white">Supertype:</strong> Pokémon/Trainer/Energy</div>
 				<div><strong class="text-white">Type:</strong> Element (Fire, Water...)</div>
-				<div><strong class="text-white">Price:</strong> Market value (USD)</div>
+				<div><strong class="text-white">Price:</strong> Market value (EUR)</div>
 			</div>
 		</div>
 

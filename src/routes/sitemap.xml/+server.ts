@@ -1,4 +1,4 @@
-import { getCards } from '$lib/helpers/data';
+import { getCards } from '$lib/helpers/supabase-data';
 import { BASE_URL } from '~/constants';
 
 export async function GET() {

@@ -1,15 +1,14 @@
-import { getPokemons, getRarities, getJapaneseSets, getTypes, getArtists, getJapaneseCards } from '$helpers/supabase-data';
+import { getPokemons, getRarities, getJapaneseSets, getTypes, getArtists, getJapaneseCards, getJapanesePrices } from '$helpers/supabase-data';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent, url }) => {
 	const parentData = await parent(); // Get the full parent data structure
 
-	// Await the prices from the parent's streamed object
-	const pricesResolved = await parentData.streamed.prices || {};
+	// Japanese cards have their own cardmarket prices, keyed by the same card codes.
+	const pricesResolved = await getJapanesePrices();
 
 	// Extract other necessary layout data (e.g., user, profile, default SEO from parent)
-	// Avoid spreading `streamed` or properties already handled (like prices or parent's allCards/sets if not used here)
 	const layoutDataFromParent = {
 		user: parentData.user,
 		profile: parentData.profile,
@@ -89,7 +88,7 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 		types,
 		artists,
 		pokemons,
-		prices: pricesResolved, // Prices from parent, now resolved
+		prices: pricesResolved,
 		// Page-specific SEO (overrides parent's defaults if set)
 		title: ogTitle,
 		description: ogDescription,

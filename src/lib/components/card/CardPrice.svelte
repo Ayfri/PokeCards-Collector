@@ -22,7 +22,7 @@
 
 	<div class="main-price-display bg-gray-900 border-2 border-gold-400 rounded-lg p-3 mb-4 text-center">
 		<span class="text-2xl font-bold">
-			{cardPrices.simple !== undefined ? `${cardPrices.simple || cardPrices.trend} $` : 'Priceless'}
+			{cardPrices.simple !== undefined ? `${cardPrices.simple || cardPrices.trend} €` : 'Priceless'}
 		</span>
 		<span class="text-sm text-gray-400 block">Main Price</span>
 	</div>

@@ -9,11 +9,11 @@
 		class?: string;
 		/** Height of the image, optional if width is specified. */
 		height?: number | undefined;
-		/** The image URL from the API, e.g. "https://images.pokemontcg.io/pop5/17_hires.png". */
+		/** The extensionless TCGdex image base, e.g. "https://assets.tcgdex.net/en/swsh/swsh3/136". */
 		imageUrl: string;
 		/** Whether the image is lazy loaded. */
 		lazy?: boolean;
-		/** Whether to use the low-resolution image: `_hires.png` is stripped from the URL. */
+		/** Whether to request the low-quality image instead of the high-quality one. */
 		lowRes?: boolean;
 		/** Called when the image fails to load. */
 		onerror?: (event: Event) => void;
@@ -38,33 +38,17 @@
 	let loaded = $state(false);
 	let error = $state(false);
 
-	// Determine whether to use high resolution based on the lowRes prop
-	const useHighRes = $derived(!lowRes);
-
-	// Process the image URL using our centralized function - make reactive to imageUrl changes
-	const standardImageUrl = $derived(imageUrl ? processCardImage(imageUrl, useHighRes) : '');
-	const lowResImageUrl = $derived(imageUrl ? processCardImage(imageUrl, false) : '');
-	
 	// Default fallback image for missing images
 	const DEFAULT_FALLBACK_IMAGE = '/default-card-image.png';
-	
-	// Check if this is an external URL (not from Pokemon TCG API)
-	// If so, route it through the proxy to prevent CORS issues
-	const isExternalUrl = $derived(standardImageUrl && !standardImageUrl.includes('pokemontcg.io'));
-	
-	// For external URLs, we'll use the proxy endpoint
-	const proxyStandardUrl = $derived(!standardImageUrl ? DEFAULT_FALLBACK_IMAGE : 
-	                      isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(standardImageUrl)}` : 
-	                      standardImageUrl);
-	                      
-	const proxyLowResUrl = $derived(!lowResImageUrl ? DEFAULT_FALLBACK_IMAGE : 
-	                   isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(lowResImageUrl)}` : 
-	                   lowResImageUrl);
+
+	// assets.tcgdex.net answers with `Access-Control-Allow-Origin: *`, so no proxy is needed.
+	const standardImageUrl = $derived(imageUrl ? processCardImage(imageUrl, lowRes ? 'low' : 'high') : DEFAULT_FALLBACK_IMAGE);
+	const lowResImageUrl = $derived(imageUrl ? processCardImage(imageUrl, 'low') : DEFAULT_FALLBACK_IMAGE);
 
 	// Prepare srcset based on actual dimensions
-	const srcsetValue = $derived(width ? 
-		`${proxyLowResUrl} ${Math.floor(width*0.82)}w, ${standardImageUrl} ${width}w` :
-		`${proxyLowResUrl} 245w, ${standardImageUrl} 300w`);
+	const srcsetValue = $derived(width ?
+		`${lowResImageUrl} ${Math.floor(width*0.82)}w, ${standardImageUrl} ${width}w` :
+		`${lowResImageUrl} 245w, ${standardImageUrl} 300w`);
 
 	const sizesValue = $derived(width ? 
 		`(max-width: ${Math.floor(width*0.82)}px) ${Math.floor(width*0.82)}px, ${width}w` :

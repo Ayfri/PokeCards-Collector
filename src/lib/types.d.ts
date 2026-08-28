@@ -1,17 +1,32 @@
+export interface CardVariants {
+	firstEdition: boolean;
+	holo: boolean;
+	normal: boolean;
+	reverse: boolean;
+	wPromo: boolean;
+}
+
 export interface Card {
 	artist: string;
 	cardCode: string;
 	cardMarketUpdatedAt: string;
 	cardMarketUrl: string;
+	hp?: number;
 	image: string;
-	meanColor: string;
+	legalStandard?: boolean;
+	localId?: string;
 	name: string;
 	pokemonNumber?: number;
 	ptcgoCode?: string;
 	rarity: string;
+	regulationMark?: string;
+	setId?: string;
 	setName: string;
+	stage?: string;
 	supertype: string;
+	tcgdexId?: string;
 	types: string;
+	variants?: CardVariants | null;
 }
 
 export type FullCard = Card;
@@ -40,13 +55,15 @@ export interface PriceData {
 }
 
 export interface Set {
-	aliases?: string[];
 	name: string;
 	logo: string;
 	printedTotal: number;
 	ptcgoCode?: string;
 	releaseDate: Date;
 	series?: string;
+	setId?: string;
+	symbol?: string;
+	totalCards?: number;
 }
 
 

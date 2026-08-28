@@ -1,7 +1,6 @@
 import { get } from 'svelte/store';
 import type { FullCard, Pokemon, Set } from '$lib/types';
 import { persistentWritable } from '$lib/stores/persistentStore';
-import { getSetCodeFromImage } from '$lib/helpers/set-utils';
 
 export const sortBy = persistentWritable('sort-by', 'sort-pokedex');
 export const sortOrder = persistentWritable<'asc' | 'desc'>('sort-order', 'asc');
@@ -45,14 +44,7 @@ export function isVisible(card: FullCard, cardPokemon: Pokemon | undefined, card
 
 	let hasSet = setFilterValue === 'all';
 	if (!hasSet && mainSelectedSet) {
-		if (cardSet.name.toLowerCase() === mainSelectedSet.name.toLowerCase()) {
-			hasSet = true;
-		} else if (mainSelectedSet.aliases && mainSelectedSet.aliases.length > 0) {
-			const cardDerivedCode = getSetCodeFromImage(cardSet.logo);
-			if (cardDerivedCode && mainSelectedSet.aliases.includes(cardDerivedCode)) {
-				hasSet = true;
-			}
-		}
+		hasSet = cardSet.name.toLowerCase() === mainSelectedSet.name.toLowerCase() || (!!cardSet.setId && cardSet.setId === mainSelectedSet.setId);
 	} else if (!hasSet && !mainSelectedSet && setFilterValue !== 'all') {
 		hasSet = cardSet.name.toLowerCase() === setFilterValue;
 	}

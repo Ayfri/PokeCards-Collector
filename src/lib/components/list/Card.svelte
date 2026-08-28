@@ -241,7 +241,7 @@
 			<span class="text-sm opacity-85"> #{cardNumber}/{set?.printedTotal || '?'}</span>
 		</h2>
 		<div class="flex items-center justify-center gap-2 mt-1">
-			{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== '' && (prices?.simple && prices.simple !== 100_000)}
+			{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== '' && prices?.simple}
 				<a
 					href={card.cardMarketUrl}
 					target="_blank"
@@ -250,7 +250,7 @@
 					aria-label="View on Cardmarket"
 				>
 					<div class="flex items-center justify-center whitespace-nowrap">
-						<span>{prices?.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</span>
+						<span>{prices?.simple ? `${prices.simple} €` : 'Priceless'}</span>
 						<span class="mx-1">-</span>
 						<span class="text-gold-400 font-bold underline flex items-center">
 							Cardmarket
@@ -259,7 +259,7 @@
 					</div>
 				</a>
 			{:else}
-				<h3 class="text-center text-sm lg:text-base">{prices?.simple && prices.simple !== 100_000 ? `${prices.simple} $` : 'Priceless'}</h3>
+				<h3 class="text-center text-sm lg:text-base">{prices?.simple ? `${prices.simple} €` : 'Priceless'}</h3>
 			{/if}
 		</div>
 	</div>

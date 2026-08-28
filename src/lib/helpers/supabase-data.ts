@@ -1,7 +1,138 @@
-import type { Card, FullCard, Pokemon, PriceData, Set } from "$lib/types";
+import type { FullCard, Pokemon, PriceData, Set } from "$lib/types";
 import { supabase } from '$lib/supabase';
 
-// Utility function to fetch all data with pagination
+/** Columns every card read shares; keep it in sync with the `cards` / `jp_cards` schema. */
+const CARD_COLUMNS = `
+	card_code,
+	artist,
+	card_market_updated_at,
+	card_market_url,
+	hp,
+	image,
+	legal_standard,
+	local_id,
+	name,
+	pokemon_id,
+	rarity,
+	regulation_mark,
+	set_id,
+	set_name,
+	stage,
+	supertype,
+	tcgdex_id,
+	types,
+	variants
+`;
+
+interface CardRow {
+	card_code: string;
+	artist: string | null;
+	card_market_updated_at: string | null;
+	card_market_url: string | null;
+	hp: number | null;
+	image: string | null;
+	legal_standard: boolean | null;
+	local_id: string | null;
+	name: string;
+	pokemon_id: number | null;
+	rarity: string | null;
+	regulation_mark: string | null;
+	set_id: string | null;
+	set_name: string | null;
+	stage: string | null;
+	supertype: string | null;
+	tcgdex_id: string | null;
+	types: string | null;
+	variants: FullCard['variants'];
+}
+
+interface PriceRow {
+	card_code: string;
+	simple: number | null;
+	low: number | null;
+	trend: number | null;
+	avg1: number | null;
+	avg7: number | null;
+	avg30: number | null;
+	reverse_simple: number | null;
+	reverse_low: number | null;
+	reverse_trend: number | null;
+	reverse_avg1: number | null;
+	reverse_avg7: number | null;
+	reverse_avg30: number | null;
+}
+
+interface SetRow {
+	name: string;
+	logo: string | null;
+	printed_total: number | null;
+	ptcgo_code: string | null;
+	release_date: string | null;
+	series: string | null;
+	set_id: string | null;
+	symbol: string | null;
+	total_cards: number | null;
+}
+
+function toCard(card: CardRow): FullCard {
+	return {
+		artist: card.artist || '',
+		cardCode: card.card_code,
+		cardMarketUpdatedAt: card.card_market_updated_at || '',
+		cardMarketUrl: card.card_market_url || '',
+		hp: card.hp ?? undefined,
+		image: card.image || '',
+		legalStandard: card.legal_standard ?? false,
+		localId: card.local_id || '',
+		name: card.name,
+		pokemonNumber: card.pokemon_id ?? undefined,
+		rarity: card.rarity || '',
+		regulationMark: card.regulation_mark || '',
+		setId: card.set_id || '',
+		setName: card.set_name || '',
+		stage: card.stage || '',
+		supertype: card.supertype || '',
+		tcgdexId: card.tcgdex_id || '',
+		types: card.types || '',
+		variants: card.variants ?? null,
+	};
+}
+
+function toPrice(price: PriceRow): PriceData {
+	return {
+		simple: price.simple ?? undefined,
+		low: price.low ?? undefined,
+		trend: price.trend ?? undefined,
+		avg1: price.avg1 ?? undefined,
+		avg7: price.avg7 ?? undefined,
+		avg30: price.avg30 ?? undefined,
+		reverseSimple: price.reverse_simple ?? undefined,
+		reverseLow: price.reverse_low ?? undefined,
+		reverseTrend: price.reverse_trend ?? undefined,
+		reverseAvg1: price.reverse_avg1 ?? undefined,
+		reverseAvg7: price.reverse_avg7 ?? undefined,
+		reverseAvg30: price.reverse_avg30 ?? undefined,
+	};
+}
+
+function toSet(set: SetRow): Set {
+	return {
+		name: set.name,
+		logo: set.logo || '',
+		printedTotal: set.printed_total || 0,
+		ptcgoCode: set.ptcgo_code || '',
+		releaseDate: set.release_date ? new Date(set.release_date) : new Date('1995-01-01'),
+		series: set.series || '',
+		setId: set.set_id || '',
+		symbol: set.symbol || '',
+		totalCards: set.total_cards || 0,
+	};
+}
+
+/**
+ * Fetches a whole table. The card tables exceed Supabase's per-select row cap, so the rows are counted
+ * first and every 5000-row page is then requested in parallel.
+ */
 async function getAllData<T>(
 	tableName: string,
 	selectQuery: string = '*',
@@ -10,7 +141,6 @@ async function getAllData<T>(
 	const batchSize = 5000;
 	let allData: T[] = [];
 
-	// First, get the total count to determine how many batches we need
 	const { count, error: countError } = await supabase
 		.from(tableName)
 		.select('*', { count: 'exact', head: true });
@@ -23,7 +153,6 @@ async function getAllData<T>(
 	const totalCount = count || 0;
 	const numberOfBatches = Math.ceil(totalCount / batchSize);
 
-	// Create all batch promises simultaneously
 	const batchPromises = Array.from({ length: numberOfBatches }, (_, index) => {
 		const from = index * batchSize;
 
@@ -39,10 +168,8 @@ async function getAllData<T>(
 		return query;
 	});
 
-	// Execute all batches simultaneously
 	const results = await Promise.all(batchPromises);
 
-	// Process results and check for errors
 	for (const { data, error } of results) {
 		if (error) {
 			console.error(`Error fetching ${tableName}:`, error);
@@ -62,119 +189,40 @@ export async function getPokemons(): Promise<Pokemon[]> {
 }
 
 export async function getCards(): Promise<FullCard[]> {
-	const data = await getAllData<any>('cards', `
-		card_code,
-		artist,
-		card_market_updated_at,
-		card_market_url,
-		image,
-		name,
-		pokemon_id,
-		rarity,
-		set_name,
-		supertype,
-		types
-	`, { column: 'name', ascending: true });
-
-	// Transform database format to FullCard format
-	return data.map(card => ({
-		cardCode: card.card_code,
-		artist: card.artist || '',
-		cardMarketUpdatedAt: card.card_market_updated_at || '',
-		cardMarketUrl: card.card_market_url || '',
-		image: card.image || '',
-		meanColor: '', // This field is not in database, set default
-		name: card.name,
-		pokemonNumber: card.pokemon_id,
-		rarity: card.rarity || '',
-		setName: card.set_name || '',
-		supertype: card.supertype || '',
-		types: card.types || ''
-	}));
+	const data = await getAllData<CardRow>('cards', CARD_COLUMNS, { column: 'name', ascending: true });
+	return data.map(toCard);
 }
 
 export async function getJapaneseCards(): Promise<FullCard[]> {
-	const data = await getAllData<any>('jp_cards', `
-		card_code,
-		artist,
-		card_market_updated_at,
-		card_market_url,
-		image,
-		name,
-		pokemon_id,
-		rarity,
-		set_name,
-		supertype,
-		types
-	`, { column: 'name', ascending: true });
-
-	// Transform database format to FullCard format
-	return data.map(card => ({
-		cardCode: card.card_code,
-		artist: card.artist || '',
-		cardMarketUpdatedAt: card.card_market_updated_at || '',
-		cardMarketUrl: card.card_market_url || '',
-		image: card.image || '',
-		meanColor: '', // This field is not in database, set default
-		name: card.name,
-		pokemonNumber: card.pokemon_id,
-		rarity: card.rarity || '',
-		setName: card.set_name || '',
-		supertype: card.supertype || '',
-		types: card.types || ''
-	}));
+	const data = await getAllData<CardRow>('jp_cards', CARD_COLUMNS, { column: 'name', ascending: true });
+	return data.map(toCard);
 }
 
 export async function getPrices(): Promise<Record<string, PriceData>> {
-	const data = await getAllData<any>('prices');
+	return pricesByCardCode(await getAllData<PriceRow>('prices'));
+}
 
-	// Convert array to object with card_code as key
+/** Japanese cards carry cardmarket pricing too, in their own table. */
+export async function getJapanesePrices(): Promise<Record<string, PriceData>> {
+	return pricesByCardCode(await getAllData<PriceRow>('jp_prices'));
+}
+
+function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
 	const pricesObject: Record<string, PriceData> = {};
-	data.forEach(price => {
-		pricesObject[price.card_code] = {
-			simple: price.simple,
-			low: price.low,
-			trend: price.trend,
-			avg1: price.avg1,
-			avg7: price.avg7,
-			avg30: price.avg30,
-			reverseSimple: price.reverse_simple,
-			reverseLow: price.reverse_low,
-			reverseTrend: price.reverse_trend,
-			reverseAvg1: price.reverse_avg1,
-			reverseAvg7: price.reverse_avg7,
-			reverseAvg30: price.reverse_avg30
-		};
-	});
-
+	for (const price of rows) {
+		pricesObject[price.card_code] = toPrice(price);
+	}
 	return pricesObject;
 }
 
 export async function getSets(): Promise<Set[]> {
-	const data = await getAllData<any>('sets', '*', { column: 'name', ascending: true });
-
-	return data.map(set => ({
-		name: set.name,
-		logo: set.logo || '',
-		printedTotal: set.printed_total || 0,
-		ptcgoCode: set.ptcgo_code || '',
-		releaseDate: set.release_date ? new Date(set.release_date) : new Date('1995-01-01'),
-		series: set.series || ''
-	}));
+	const data = await getAllData<SetRow>('sets', '*', { column: 'name', ascending: true });
+	return data.map(toSet);
 }
 
 export async function getJapaneseSets(): Promise<Set[]> {
-	const data = await getAllData<any>('jp_sets', '*', { column: 'name', ascending: true });
-
-	return data.map(set => ({
-		name: set.name,
-		logo: set.logo || '',
-		printedTotal: set.printed_total || 0,
-		ptcgoCode: set.ptcgo_code || '',
-		releaseDate: set.release_date ? new Date(set.release_date) : new Date('1995-01-01'),
-		series: set.series || '',
-		aliases: [] // Les alias ne sont pas dans la DB pour l'instant
-	}));
+	const data = await getAllData<SetRow>('jp_sets', '*', { column: 'name', ascending: true });
+	return data.map(toSet);
 }
 
 export async function getTypes(): Promise<string[]> {
@@ -183,7 +231,6 @@ export async function getTypes(): Promise<string[]> {
 }
 
 export async function getRarities(): Promise<string[]> {
-	// Pour les raretés, on peut utiliser une requête optimisée
 	const { data, error } = await supabase
 		.from('cards')
 		.select('rarity')
@@ -195,9 +242,8 @@ export async function getRarities(): Promise<string[]> {
 		throw new Error(`Failed to fetch rarities: ${error.message}`);
 	}
 
-	// Paginer si nécessaire
+	// A full page back means there are probably more rows than the cap; page through the table instead.
 	if (data && data.length === 50_000) {
-		// Si on a exactement 1000 résultats, il y en a probablement plus
 		const allData = await getAllData<{ rarity: string }>('cards', 'rarity');
 		const rarities = [...new Set(allData.map(card => card.rarity).filter(Boolean))];
 		return rarities.sort();
@@ -208,7 +254,6 @@ export async function getRarities(): Promise<string[]> {
 }
 
 export async function getArtists(): Promise<string[]> {
-	// Pour les artistes, on peut utiliser une requête optimisée
 	const { data, error } = await supabase
 		.from('cards')
 		.select('artist')
@@ -220,9 +265,7 @@ export async function getArtists(): Promise<string[]> {
 		throw new Error(`Failed to fetch artists: ${error.message}`);
 	}
 
-	// Paginer si nécessaire
 	if (data && data.length === 50_000) {
-		// Si on a exactement 1000 résultats, il y en a probablement plus
 		const allData = await getAllData<{ artist: string }>('cards', 'artist');
 		const artists = [...new Set(allData.map(card => card.artist).filter(Boolean))];
 		return artists.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
@@ -232,7 +275,6 @@ export async function getArtists(): Promise<string[]> {
 	return artists.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 }
 
-// Fonctions optimisées pour les filtres avec cache
 export async function getCardsWithFilters(filters: {
 	setName?: string;
 	pokemon?: string;
@@ -241,23 +283,8 @@ export async function getCardsWithFilters(filters: {
 	artist?: string;
 	supertype?: string;
 }): Promise<FullCard[]> {
-	let query = supabase
-		.from('cards')
-		.select(`
-			card_code,
-			artist,
-			card_market_updated_at,
-			card_market_url,
-			image,
-			name,
-			pokemon_id,
-			rarity,
-			set_name,
-			supertype,
-			types
-		`);
+	let query = supabase.from('cards').select(CARD_COLUMNS);
 
-	// Appliquer les filtres
 	if (filters.setName) {
 		query = query.eq('set_name', filters.setName);
 	}
@@ -286,99 +313,44 @@ export async function getCardsWithFilters(filters: {
 		throw new Error(`Failed to fetch filtered cards: ${error.message}`);
 	}
 
-	// Transform database format to FullCard format
-	return (data || []).map(card => ({
-		cardCode: card.card_code,
-		artist: card.artist || '',
-		cardMarketUpdatedAt: card.card_market_updated_at || '',
-		cardMarketUrl: card.card_market_url || '',
-		image: card.image || '',
-		meanColor: '', // This field is not in database, set default
-		name: card.name,
-		pokemonNumber: card.pokemon_id,
-		rarity: card.rarity || '',
-		setName: card.set_name || '',
-		supertype: card.supertype || '',
-		types: card.types || ''
-	}));
+	return ((data ?? []) as unknown as CardRow[]).map(toCard);
 }
 
-// Fonction pour récupérer une carte spécifique
+/** Returns `null` when no card carries this code: a collection row can outlive the card it points at. */
 export async function getCardByCode(cardCode: string): Promise<FullCard | null> {
-	const { data, error } = await supabase
-		.from('cards')
-		.select(`
-			card_code,
-			artist,
-			card_market_updated_at,
-			card_market_url,
-			image,
-			name,
-			pokemon_id,
-			rarity,
-			set_name,
-			supertype,
-			types
-		`)
-		.eq('card_code', cardCode)
-		.single();
+	for (const table of ['cards', 'jp_cards']) {
+		const { data, error } = await supabase
+			.from(table)
+			.select(CARD_COLUMNS)
+			.eq('card_code', cardCode)
+			.maybeSingle();
 
-	if (error) {
-		if (error.code === 'PGRST116') {
-			return null; // Carte non trouvée
+		if (error) {
+			console.error(`Error fetching card by code from ${table}:`, error);
+			throw new Error(`Failed to fetch card: ${error.message}`);
 		}
-		console.error('Error fetching card by code:', error);
-		throw new Error(`Failed to fetch card: ${error.message}`);
+
+		if (data) return toCard(data as unknown as CardRow);
 	}
 
-	if (!data) return null;
-
-	return {
-		cardCode: data.card_code,
-		artist: data.artist || '',
-		cardMarketUpdatedAt: data.card_market_updated_at || '',
-		cardMarketUrl: data.card_market_url || '',
-		image: data.image || '',
-		meanColor: '', // This field is not in database, set default
-		name: data.name,
-		pokemonNumber: data.pokemon_id,
-		rarity: data.rarity || '',
-		setName: data.set_name || '',
-		supertype: data.supertype || '',
-		types: data.types || ''
-	};
+	return null;
 }
 
-// Fonction pour récupérer les prix d'une carte spécifique
 export async function getCardPrice(cardCode: string): Promise<PriceData | null> {
-	const { data, error } = await supabase
-		.from('prices')
-		.select('*')
-		.eq('card_code', cardCode)
-		.single();
+	for (const table of ['prices', 'jp_prices']) {
+		const { data, error } = await supabase
+			.from(table)
+			.select('*')
+			.eq('card_code', cardCode)
+			.maybeSingle();
 
-	if (error) {
-		if (error.code === 'PGRST116') {
-			return null; // Prix non trouvé
+		if (error) {
+			console.error(`Error fetching card price from ${table}:`, error);
+			throw new Error(`Failed to fetch card price: ${error.message}`);
 		}
-		console.error('Error fetching card price:', error);
-		throw new Error(`Failed to fetch card price: ${error.message}`);
+
+		if (data) return toPrice(data as PriceRow);
 	}
 
-	if (!data) return null;
-
-	return {
-		simple: data.simple,
-		low: data.low,
-		trend: data.trend,
-		avg1: data.avg1,
-		avg7: data.avg7,
-		avg30: data.avg30,
-		reverseSimple: data.reverse_simple,
-		reverseLow: data.reverse_low,
-		reverseTrend: data.reverse_trend,
-		reverseAvg1: data.reverse_avg1,
-		reverseAvg7: data.reverse_avg7,
-		reverseAvg30: data.reverse_avg30
-	};
+	return null;
 }

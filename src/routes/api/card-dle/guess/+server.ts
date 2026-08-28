@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { FullCard, PriceData } from '$lib/types';
-import { getCards, getPrices } from '$helpers/data';
+import { getCards, getPrices } from '$helpers/supabase-data';
 
 interface CardOfTheDay extends FullCard {
 	price: number;

@@ -1,116 +1,64 @@
 import { json } from '@sveltejs/kit';
-import { fetchAllCardsData } from '$scrapers/card_fetcher';
-import { fetchJapCardsData } from '$scrapers/jap_cards_scraper';
-import { getR2Env, getS3Client, uploadBufferToR2 } from '$lib/r2';
-import type { RequestEvent } from './$types';
 import { env } from '$env/dynamic/private';
-import { setAPIKey } from '$scrapers/api_utils';
+import { getR2Env, getS3Client, uploadBufferToR2 } from '$lib/r2';
+import { FetchClient } from '$scrapers/tcgdex/client';
+import type { Language } from '$scrapers/tcgdex/mappers';
+import { scrapeLanguage } from '$scrapers/tcgdex/scraper';
+import type { RequestEvent } from './$types';
+
+/**
+ * Rebuilds the JSON assets mirrored on R2 straight from TCGdex. One language is one full pass over every
+ * set and card, so a complete refresh is tens of thousands of subrequests - past a Worker's cap. Ask for
+ * one language at a time (`?lang=ja`), or run `bun run scrapers scrape` locally for the whole dataset.
+ */
+const FILES: Record<Language, {cards: string; prices: string; sets: string}> = {
+	en: {cards: 'cards-full.json', prices: 'prices.json', sets: 'sets-full.json'},
+	ja: {cards: 'jp-cards-full.json', prices: 'jp-prices.json', sets: 'jp-sets-full.json'},
+};
 
 export async function GET(event: RequestEvent): Promise<Response> {
-	console.log('SvelteKit API endpoint /api/regenerate-assets called');
-
-	const platformEnv = env as Record<string, any>;
-	const fileToUpdate = event.url.searchParams.get('file');
-
-	if (!platformEnv) {
-		console.error('Platform environment context not available.');
-		return json(
-			{ success: false, message: 'Server environment configuration error.' },
-			{ status: 500 }
-		);
-	}
-
 	const expectedToken = env.PCC_TOKEN;
-	const providedToken = event.request.headers.get('PCC_TOKEN');
-
 	if (!expectedToken) {
 		console.error('PCC_TOKEN is not set in the server environment.');
-		return json(
-			{ success: false, message: 'Server security configuration error.' },
-			{ status: 500 }
-		);
+		return json({ success: false, message: 'Server security configuration error.' }, { status: 500 });
 	}
 
-	if (!providedToken || providedToken !== expectedToken) {
+	if (event.request.headers.get('PCC_TOKEN') !== expectedToken) {
 		console.warn('Unauthorized attempt to regenerate assets. Invalid or missing PCC_TOKEN.');
-		return json(
-			{ success: false, message: 'Unauthorized. Invalid or missing PCC_TOKEN.' },
-			{ status: 401 }
-		);
+		return json({ success: false, message: 'Unauthorized. Invalid or missing PCC_TOKEN.' }, { status: 401 });
 	}
 
-	console.log('PCC_TOKEN validated successfully.');
+	const requestedLang = event.url.searchParams.get('lang');
+	if (requestedLang && !(requestedLang in FILES)) {
+		return json({ success: false, message: `Invalid 'lang' query parameter. Allowed values are ${Object.keys(FILES).join(', ')}.` }, { status: 400 });
+	}
+	const langs = (requestedLang ? [requestedLang] : Object.keys(FILES)) as Language[];
 
-	setAPIKey(env.POKEMON_TCG_API_KEY);
-
-	// R2 environment variables are now fetched by getR2Env
 	try {
-		const r2Env = getR2Env(platformEnv);
+		const r2Env = getR2Env(env as Record<string, any>);
 		const s3Client = getS3Client(r2Env);
+		const client = new FetchClient();
+		const written: string[] = [];
 
-		const shouldUpdateCards = !fileToUpdate || fileToUpdate === 'cards';
-		const shouldUpdatePrices = !fileToUpdate || fileToUpdate === 'prices';
-		const shouldUpdateJapCards = !fileToUpdate || fileToUpdate === 'jp-cards';
+		for (const lang of langs) {
+			const result = await scrapeLanguage(client, lang);
+			const files = FILES[lang];
 
-		if (fileToUpdate && !shouldUpdateCards && !shouldUpdatePrices && !shouldUpdateJapCards) {
-			return json(
-				{ success: false, message: "Invalid 'file' query parameter. Allowed values are 'cards', 'prices', 'jp-cards', or empty." },
-				{ status: 400 }
-			);
-		}
-
-		if (shouldUpdateCards || shouldUpdatePrices) {
-			console.log('Fetching English cards and prices...');
-			const { allCards, allPrices } = await fetchAllCardsData();
-
-			if (shouldUpdateCards) {
-				const allCardsBuffer = Buffer.from(JSON.stringify(allCards), 'utf-8');
-				console.log('Uploading English cards data (cards-full.json)...');
+			for (const [objectName, content] of [[files.cards, result.cards], [files.prices, result.prices], [files.sets, result.sets]] as const) {
 				await uploadBufferToR2({
 					s3Client,
 					bucketName: r2Env.bucketName,
-					objectName: 'cards-full.json',
-					contentBuffer: allCardsBuffer,
-					contentType: 'application/json'
+					objectName,
+					contentBuffer: Buffer.from(JSON.stringify(content), 'utf-8'),
+					contentType: 'application/json',
 				});
-			}
-
-			if (shouldUpdatePrices) {
-				const allPricesBuffer = Buffer.from(JSON.stringify(allPrices), 'utf-8');
-				console.log('Uploading prices data (prices.json)...');
-				await uploadBufferToR2({
-					s3Client,
-					bucketName: r2Env.bucketName,
-					objectName: 'prices.json',
-					contentBuffer: allPricesBuffer,
-					contentType: 'application/json'
-				});
+				written.push(objectName);
 			}
 		}
 
-		if (shouldUpdateJapCards) {
-			console.log('Fetching Japanese cards...');
-			const japCards = await fetchJapCardsData();
-			const japCardsBuffer = Buffer.from(JSON.stringify(japCards), 'utf-8');
-			console.log('Uploading Japanese cards data (jp-cards-full.json)...');
-			await uploadBufferToR2({
-				s3Client,
-				bucketName: r2Env.bucketName,
-				objectName: 'jp-cards-full.json',
-				contentBuffer: japCardsBuffer,
-				contentType: 'application/json'
-			});
-		}
-
-		console.log('Successfully regenerated and uploaded selected card assets.');
-		return json(
-			{ success: true, message: 'Selected card assets regenerated and uploaded.' }
-		);
-	} catch (error: any) {
-		console.error('Failed to regenerate assets in SvelteKit endpoint:', error);
-		return json(
-			{ success: false, message: 'Failed to regenerate assets.', error: error.message },
-			{ status: 500 }
-		);
+		return json({ success: true, message: `Regenerated ${written.join(', ')}.` });
+	} catch (error) {
+		console.error('Failed to regenerate assets:', error);
+		return json({ success: false, message: 'Failed to regenerate assets.', error: (error as Error).message }, { status: 500 });
 	}
 }

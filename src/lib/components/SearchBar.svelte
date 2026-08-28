@@ -364,7 +364,7 @@
 							{#if prices[card.cardCode]?.simple}
 								<p class="text-gold-400 font-medium mt-1 text-sm">
 									{#if prices[card.cardCode]?.simple}
-										{prices[card.cardCode]?.simple?.toFixed(2)} $
+										{prices[card.cardCode]?.simple?.toFixed(2)} €
 									{:else}
 										Priceless
 									{/if}
