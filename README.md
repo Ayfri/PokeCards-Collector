@@ -201,11 +201,6 @@ This command will present a menu allowing you to choose which scraper to run. Av
     <td>Upload one JSON file into its table (<code>all</code>, <code>cards</code>, <code>jp-cards</code>, <code>prices</code>, <code>jp-prices</code>, <code>sets</code>, <code>jp-sets</code>, <code>types</code>, <code>pokemons</code>).</td>
     <td>Requires <code>scrape</code></td>
   </tr>
-  <tr>
-    <td><code>upload</code></td>
-    <td>Mirror the JSON assets to the R2 bucket.</td>
-    <td>Requires <code>scrape</code>, R2 credentials</td>
-  </tr>
 </table>
 
 Every command takes `--dry-run` (run without writing), `--json` (raw report), `-q` (summary only) and `--help`.

@@ -115,23 +115,6 @@ const commands: Command[] = [
 		},
 	},
 	{
-		name: 'upload',
-		description: 'Upload the JSON assets to the R2 bucket',
-		run: async () => {
-			const { uploadFileForCli, filesToUpload } = await import('./src/scrapers/upload.js');
-			const path = await import('node:path');
-			heading('upload');
-			for (const filePath of filesToUpload) {
-				try {
-					await uploadFileForCli(filePath, path.basename(filePath), { env: process.env as Record<string, any>, contentType: 'application/json' });
-					row(path.basename(filePath), styleText('green', 'uploaded'));
-				} catch (error) {
-					row(path.basename(filePath), styleText('red', (error as Error).message));
-				}
-			}
-		},
-	},
-	{
 		name: 'all',
 		description: 'scrape, then pokemons, then push everything to Supabase',
 		flags: '--lang en,ja  --dry-run',

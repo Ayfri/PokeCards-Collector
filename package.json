@@ -9,14 +9,12 @@
 		"scrapers": "bun --env-file=.env scraper-cli.ts"
 	},
 	"dependencies": {
-		"@aws-sdk/client-s3": "^3.1120.0",
 		"@lucide/svelte": "^1.35.0",
 		"@supabase/ssr": "^0.12.5",
 		"@supabase/supabase-js": "^2.112.4",
 		"@sveltejs/adapter-cloudflare": "^7.2.9",
 		"@sveltejs/kit": "^2.70.3",
 		"countup.js": "^2.10.1",
-		"pako": "^3.0.1",
 		"svelte": "^5.56.10",
 		"vanilla-colorful": "^0.7.2"
 	},
