@@ -9,7 +9,7 @@
   [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
   [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
   [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare_Pages-F38020?style=flat&logo=cloudflare&logoColor=white)](https://pages.cloudflare.com/)
-  [![PNPM](https://img.shields.io/badge/PNPM-F69220?style=flat&logo=pnpm&logoColor=white)](https://pnpm.io/)
+  [![Bun](https://img.shields.io/badge/Bun-000000?style=flat&logo=bun&logoColor=white)](https://bun.sh/)
 
   <p>A modern web application for managing your Pokémon Trading Card Game collection</p>
 </div>
@@ -91,7 +91,7 @@ Check out the live website [here](https://pokecards-collector.pages.dev).
   <tr>
     <td>Tools</td>
     <td>
-      <a href="https://pnpm.io/"><img src="https://img.shields.io/badge/PNPM-F69220?style=flat&logo=pnpm&logoColor=white" alt="PNPM"/></a>
+      <a href="https://bun.sh/"><img src="https://img.shields.io/badge/Bun-000000?style=flat&logo=bun&logoColor=white" alt="Bun"/></a>
       <a href="https://github.com/esbuild-kit/tsx"><img src="https://img.shields.io/badge/TSX-3178C6?style=flat&logo=typescript&logoColor=white" alt="TSX"/></a>
       <a href="https://github.com/SBoudrias/Inquirer.js/tree/master/packages/prompts"><img src="https://img.shields.io/badge/Inquirer-FFCF00?style=flat&logo=javascript&logoColor=black" alt="Inquirer"/></a>
     </td>
@@ -104,7 +104,7 @@ Check out the live website [here](https://pokecards-collector.pages.dev).
 <summary><b>Prerequisites</b></summary>
 
 - [Node.js](https://nodejs.org/) (v18 or higher)
-- [PNPM](https://pnpm.io/installation) package manager
+- [Bun](https://bun.sh/docs/installation) package manager
 - A [Supabase](https://supabase.io/) account
 - A [Pokémon TCG API](https://pokemontcg.io/) key
 </details>
@@ -120,7 +120,7 @@ Check out the live website [here](https://pokecards-collector.pages.dev).
 
 2.  **Install dependencies:**
     ```bash
-    pnpm install
+    bun install
     ```
 
 3.  **Set up Supabase:**
@@ -153,7 +153,7 @@ Check out the live website [here](https://pokecards-collector.pages.dev).
 
 6.  **Run the development server:**
     ```bash
-    pnpm dev
+    bun run dev
     ```
     The application should now be running on `http://localhost:5173` (or the next available port).
 </details>
@@ -166,7 +166,7 @@ The project includes an interactive CLI tool to fetch and update various Pokémo
 <summary><b>Running the Scraper CLI</b></summary>
 
 ```bash
-pnpm scrapers
+bun run scrapers
 ```
 
 This command will present a menu allowing you to choose which scraper to run. Available options include:
@@ -253,19 +253,19 @@ After running the `download-images` scraper, you will have local copies of the c
     <th>Description</th>
   </tr>
   <tr>
-    <td><code>pnpm dev</code></td>
+    <td><code>bun run dev</code></td>
     <td>Starts the development server</td>
   </tr>
   <tr>
-    <td><code>pnpm build</code></td>
+    <td><code>bun run build</code></td>
     <td>Builds the application for production (outputs to <code>.svelte-kit/cloudflare</code>)</td>
   </tr>
   <tr>
-    <td><code>pnpm preview</code></td>
+    <td><code>bun run preview</code></td>
     <td>Runs a local preview of the production build</td>
   </tr>
   <tr>
-    <td><code>pnpm scrapers</code></td>
+    <td><code>bun run scrapers</code></td>
     <td>Runs the interactive data scraping CLI</td>
   </tr>
 </table>
@@ -299,7 +299,7 @@ After running the `download-images` scraper, you will have local copies of the c
 ├── .env.example        # Example environment variables
 ├── .gitignore          # Git ignore rules
 ├── package.json        # Project metadata and dependencies
-├── pnpm-lock.yaml      # PNPM lock file
+├── bun.lock            # Bun lock file
 ├── svelte.config.js    # SvelteKit configuration
 ├── supabase-schema.sql # Initial Supabase database schema
 ├── supabase-schema-update.sql # Database schema updates (if any)
