@@ -8,7 +8,7 @@
 	import { processCardImage } from '$helpers/card-images';
 	import type { FullCard, Set, PriceData } from '$lib/types';
 	import { browser } from '$app/environment';
-	import { findSetByCardCode } from '$helpers/set-utils';
+	import { buildSetLookupMap, findSetByCardCode, findSetInLookup } from '$helpers/set-utils';
 	import { page } from '$app/stores';
 	import { getContext } from 'svelte';
 	import type { Writable } from 'svelte/store';
@@ -84,10 +84,78 @@
 		}, 1500);
 	}
 
+
 	// Helper to extract card number from cardCode (preferred)
 	function extractCardNumberFromCode(cardCode: string): string {
 		// Assuming format: supertype_pokemonId_setCode_cardNumber
 		return cardCode?.split('_')[3] || '';
+	}
+
+	interface SearchEntry {
+		card: FullCard;
+		name: string;
+		number: string;
+		printedTotal: string;
+		setCode: string;
+		setName: string;
+	}
+
+	/**
+	 * Resolving the set and lowercasing the fields per keystroke cost ~1 s over the 23k cards, because
+	 * `findSetByCardCode` rescans every set. The index pays that once and each search is then a plain loop.
+	 */
+	let searchIndex: SearchEntry[] = [];
+	let indexedCards: FullCard[] | null = null;
+
+	function buildSearchIndex(): SearchEntry[] {
+		if (indexedCards === allCards) return searchIndex;
+		const lookup = buildSetLookupMap(sets);
+		searchIndex = allCards.map(card => {
+			const set = findSetInLookup(card.cardCode, lookup);
+			return {
+				card,
+				name: card.name.toLowerCase(),
+				number: extractCardNumberFromCode(card.cardCode).toLowerCase(),
+				printedTotal: set?.printedTotal?.toString() ?? '',
+				setCode: set?.ptcgoCode?.toLowerCase() ?? '',
+				setName: set?.name.toLowerCase() ?? '',
+			};
+		});
+		indexedCards = allCards;
+		return searchIndex;
+	}
+
+	/** Higher is more relevant; 0 drops the card. Without it "pikachu" surfaced the Detective Pikachu set before any Pikachu. */
+	function scoreEntry(entry: SearchEntry, query: string): number {
+		const { name, number, printedTotal, setCode, setName } = entry;
+
+		// Explicit combined forms win: they name a single printing.
+		if (query.includes('/')) {
+			const [queryNumber, queryTotal] = query.split('/');
+			if (number === queryNumber && (queryTotal ? printedTotal === queryTotal : query.endsWith('/'))) return 130;
+		}
+
+		if (query.includes(' ')) {
+			const parts = query.split(' ');
+			const last = parts[parts.length - 1];
+			if (/^\d+$/.test(last) && number === last) {
+				const head = parts.slice(0, -1).join(' ');
+				if (setCode === head) return 125;
+				if (name.includes(head)) return 120;
+			}
+			// Card name + set name, trying every split point ("pikachu base set").
+			for (let i = 1; i < parts.length; i++) {
+				if (name.includes(parts.slice(0, i).join(' ')) && setName.includes(parts.slice(i).join(' '))) return 115;
+			}
+		}
+
+		if (name === query) return 110;
+		if (name.startsWith(query)) return 100;
+		if (number === query) return 90;
+		if (name.includes(query)) return 80;
+		if (setCode === query) return 50;
+		if (setName.includes(query)) return 40;
+		return 0;
 	}
 
 	const performSearch = () => {
@@ -99,80 +167,16 @@
 			return;
 		}
 
-		searchResults = allCards.filter(card => {
-			const set = findSetByCardCode(card.cardCode, sets)!!;
-			const cardName = card.name.toLowerCase();
-			const cardNumber = extractCardNumberFromCode(card.cardCode).toLowerCase();
-			const setName = set?.name.toLowerCase() || '';
-			const setCode = set?.ptcgoCode?.toLowerCase() || '';
+		const matches: { entry: SearchEntry; score: number }[] = [];
+		for (const entry of buildSearchIndex()) {
+			const score = scoreEntry(entry, query);
+			if (score > 0) matches.push({ entry, score });
+		}
 
-			// --- Search Logic (Order matters for relevance) ---
-
-			// 1. Exact Card Number match
-			if (cardNumber === query) return true;
-
-			// 2. Exact Set Code match
-			if (setCode === query) return true;
-
-			// 3. Card Name includes query
-			if (cardName.includes(query)) return true;
-
-			// 4. Set Name includes query
-			if (setName.includes(query)) return true;
-
-			// 5. Card Number / Set Total match (X/Y or X/ format)
-			if (query.includes('/')) {
-				const parts = query.split('/');
-				const queryNumber = parts[0];
-				const queryTotal = parts[1]; // Might be undefined or ""
-
-				// Check if the extracted card number matches the part before the slash
-				if (cardNumber === queryNumber) {
-					// Case 1: Query is like "25/" (queryTotal is empty/undefined and query ends with /)
-					if (!queryTotal && query.endsWith('/')) {
-						return true;
-					}
-					// Case 2: Query is like "25/156" (queryTotal exists and matches set's printedTotal)
-					else if (queryTotal && set?.printedTotal?.toString() === queryTotal) {
-						return true;
-					}
-				}
-			}
-
-			// 6. Combined formats with space
-			if (query.includes(' ')) {
-				// 6a. Set Code + Card Number (e.g., "SV01 123")
-				if (/^[a-zA-Z]+[0-9]*\s+\d+$/.test(query)) {
-					const [querySetCode, queryCardNumber] = query.split(' ');
-					if (setCode === querySetCode.toLowerCase() && cardNumber === queryCardNumber) {
-						return true;
-					}
-				}
-
-				// 6b. Card Name + Card Number (e.g., "Pikachu 104")
-				if (/\s+\d+$/.test(query)) { // Ends with space + number
-					const parts = query.split(' ');
-					const searchNumber = parts.pop(); // Known to be a number due to regex
-					const searchName = parts.join(' ');
-					if (cardName.includes(searchName) && cardNumber === searchNumber) {
-						return true;
-					}
-				}
-
-				// 6c. Card Name + Set Name (e.g., "Pikachu Base Set") - Try splitting
-				const queryParts = query.split(' ');
-				for (let i = 1; i < queryParts.length; i++) {
-					const potentialName = queryParts.slice(0, i).join(' ');
-					const potentialSet = queryParts.slice(i).join(' ');
-					if (cardName.includes(potentialName) && setName.includes(potentialSet)) {
-						return true;
-					}
-				}
-			}
-
-			return false;
-		})
-		.slice(0, 10); // Limit to 10 search results for all devices
+		searchResults = matches
+			.sort((a, b) => b.score - a.score || a.entry.name.length - b.entry.name.length)
+			.slice(0, 10) // Limit to 10 search results for all devices
+			.map(match => match.entry.card);
 
 		showResults = searchResults.length > 0;
 	};
