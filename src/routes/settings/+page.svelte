@@ -1,83 +1,55 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
-	import PageTitle from '$lib/components/PageTitle.svelte';
+	import type {ActionData, PageData} from './$types';
 	import Avatar from '$lib/components/auth/Avatar.svelte';
-	import { fly, fade } from 'svelte/transition';
-	import { browser } from '$app/environment';
-	import { enhance } from '$app/forms';
-	import Button from '@components/filters/Button.svelte';
-	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
-	import CopyIcon from '@lucide/svelte/icons/copy';
-	import { supabase } from '$lib/supabase';
+	import ColorPicker from '@components/settings/ColorPicker.svelte';
+	import PageTitle from '$lib/components/PageTitle.svelte';
+	import {enhance} from '$app/forms';
+	import {supabase} from '$lib/supabase';
+	import {fade, fly} from 'svelte/transition';
+	import EyeIcon from '@lucide/svelte/icons/eye';
+	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 	import LockIcon from '@lucide/svelte/icons/lock';
+	import MailIcon from '@lucide/svelte/icons/mail';
+	import PaletteIcon from '@lucide/svelte/icons/palette';
+	import ShieldIcon from '@lucide/svelte/icons/shield';
+	import UserIcon from '@lucide/svelte/icons/user';
 
-	let ready = $state(false);
-	// Default gold color from Avatar.svelte, in case profile.profile_color is not set
-	const defaultProfileHexColor = '#fbc54a';
-	let profileColorInput: string = $state(defaultProfileHexColor);
-	let showColorPicker = $state(false);
-	let colorPickerRef: HTMLDivElement | null = $state(null);
+	interface Props {
+		data: PageData;
+		form: ActionData;
+	}
+
+	let {data, form}: Props = $props();
+
+	/** Gold-400, the color Avatar.svelte falls back to. */
+	const DEFAULT_PROFILE_COLOR = '#fbc54a';
+
+	const TABS = [
+		{icon: UserIcon, id: 'account', label: 'Account'},
+		{icon: PaletteIcon, id: 'appearance', label: 'Appearance'},
+		{icon: ShieldIcon, id: 'privacy', label: 'Privacy'},
+		{icon: LockIcon, id: 'security', label: 'Security'}
+	] as const;
+
+	type TabId = (typeof TABS)[number]['id'];
+
+	let activeTab = $state<TabId>('account');
+	let profileColor = $state(DEFAULT_PROFILE_COLOR);
+	let saving = $state(false);
 	let resetPasswordLoading = $state(false);
 	let resetPasswordMessage = $state('');
 	let resetPasswordError = $state('');
 
-	const user = $derived(page.data.user);
-	const profile = $derived(page.data.profile);
+	const user = $derived(data.user);
+	const profile = $derived(data.profile);
+	const memberSince = $derived(profile?.created_at
+		? new Date(profile.created_at).toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'})
+		: null);
 
-	// Simpler reactive update for profileColorInput:
-	// It directly reflects profile.profile_color or defaults.
+	// The stored color wins whenever the server sends a fresh profile, so a save shows up without a reload.
 	$effect(() => {
-		profileColorInput = (profile && profile.profile_color && typeof profile.profile_color === 'string' && profile.profile_color.startsWith('#'))
-								? profile.profile_color
-								: defaultProfileHexColor;
-	});
-
-	onMount(async () => {
-		// Initialize from page.data on mount, which might have been set by server load.
-		if (page.data.profile) {
-			profileColorInput = (page.data.profile.profile_color && typeof page.data.profile.profile_color === 'string' && page.data.profile.profile_color.startsWith('#'))
-								? page.data.profile.profile_color
-								: defaultProfileHexColor;
-		} else {
-			// If no profile on mount, ensure default is set (though already done at declaration)
-			profileColorInput = defaultProfileHexColor;
-		}
-
-		if (browser && !page.data.user) {
-			goto('/');
-		}
-
-		// Import vanilla-colorful only on client-side to avoid SSR issues
-		if (browser) {
-			await import('vanilla-colorful/hex-color-picker.js');
-		}
-
-		ready = true;
-	});
-
-	function handleColorChange(event: CustomEvent) {
-		profileColorInput = event.detail.value;
-	}
-
-	function openColorPicker() {
-		showColorPicker = true;
-	}
-	function closeColorPicker() {
-		showColorPicker = false;
-	}
-
-	function handleClickOutside(event: MouseEvent) {
-		if (colorPickerRef && !colorPickerRef.contains(event.target as Node)) {
-			closeColorPicker();
-		}
-	}
-
-	$effect(() => {
-		if (!browser || !showColorPicker) return;
-		window.addEventListener('mousedown', handleClickOutside);
-		return () => window.removeEventListener('mousedown', handleClickOutside);
+		const stored = profile?.profile_color;
+		profileColor = typeof stored === 'string' && /^#[0-9A-Fa-f]{6}$/.test(stored) ? stored : DEFAULT_PROFILE_COLOR;
 	});
 
 	async function handlePasswordReset() {
@@ -89,251 +61,194 @@
 		resetPasswordMessage = '';
 		resetPasswordError = '';
 
-		const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+		const {error} = await supabase.auth.resetPasswordForEmail(user.email, {
 			redirectTo: `${window.location.origin}/reset-password`
 		});
 
 		resetPasswordLoading = false;
 		if (error) {
 			resetPasswordError = error.message || 'Failed to send password reset email.';
-			resetPasswordMessage = '';
 		} else {
 			resetPasswordMessage = 'Password reset email sent! Check your inbox.';
-			resetPasswordError = '';
-		}
-	}
-
-	async function copyHexValue() {
-		if (browser && navigator.clipboard) {
-			try {
-				await navigator.clipboard.writeText(profileColorInput);
-				// You could add a toast notification here
-			} catch (err) {
-				console.error('Failed to copy: ', err);
-			}
 		}
 	}
 </script>
 
-<main class="container mx-auto px-4 pb-8 text-white overflow-x-hidden">
-	<div class="w-full mx-auto pb-4 lg:pb-5">
-		<div class="flex justify-between mx-28 max-lg:mx-4 items-center">
+{#snippet readOnlyField(id: string, label: string, value: string, hint: string)}
+	<div>
+		<label class="mb-1 block text-sm font-medium text-gray-300" for={id}>{label}</label>
+		<input
+			class="w-full cursor-not-allowed rounded-md border border-gray-700 bg-gray-800/60 px-3 py-2 text-gray-400"
+			disabled
+			{id}
+			type="text"
+			{value}
+		/>
+		<p class="mt-1 text-xs text-gray-500">{hint}</p>
+	</div>
+{/snippet}
+
+<main class="container mx-auto px-4 pb-12 text-white">
+	<div class="w-full pb-4 lg:pb-5">
+		<div class="mx-4 flex items-center justify-between lg:mx-28">
 			<PageTitle title="Settings" />
 		</div>
-		<div class="w-full max-w-[800px] mx-auto my-2 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
+		<div class="mx-auto my-2 h-1 w-full max-w-[800px] bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
 	</div>
 
-	{#if ready}
-		<!-- Use reactive user/profile variables -->
-		{#if !user || !profile}
-			<div class="text-center p-8 bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl my-10" in:fade={{ duration: 700 }}>
-				<p class="text-xl text-gold-400 font-bold mb-4">Please sign in to view settings.</p>
-				<div class="flex flex-wrap justify-center gap-4 mt-6">
-					<a href="/login" class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900">
-						Log In
-					</a>
-					<a href="/signup" class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2">
-						Sign Up
-					</a>
-				</div>
-			</div>
-		{:else}
-			<div class="grid grid-cols-1 lg:grid-cols-3 gap-8" in:fly={{ y: 20, duration: 500, delay: 100 }} out:fade={{ duration: 200 }}>
-				<!-- Settings Navigation -->
-				<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6">
-					<div class="flex items-center gap-4 mb-6">
-						<!-- Use reactive profile variable and pass profile_color -->
-						<Avatar username={profile?.username || 'U'} size="size-12 text-xl" profileColor={profileColorInput} />
-						<div>
-							<!-- Use reactive profile variable -->
-							<h2 class="text-xl font-semibold text-gold-400">{profile?.username}</h2>
-							<!-- Use reactive user variable -->
-							<p class="text-sm text-gray-400">{user?.email}</p>
+	{#if !profile}
+		<p class="rounded-xl border border-red-500/40 bg-red-500/10 p-6 text-center text-red-300">
+			Your profile could not be loaded. Try reloading the page.
+		</p>
+	{:else}
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_1fr]" in:fly={{y: 20, duration: 400}}>
+			<aside class="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
+				<div class="rounded-xl border border-gray-700/60 bg-linear-to-br from-gray-800 to-gray-900 p-5 shadow-xl">
+					<div class="flex items-center gap-4">
+						<Avatar profileColor={profileColor} size="size-14 text-2xl" username={profile.username || 'U'} />
+						<div class="min-w-0">
+							<h2 class="truncate text-lg font-semibold text-gold-400">{profile.username}</h2>
+							<p class="truncate text-sm text-gray-400">{user?.email}</p>
 						</div>
 					</div>
-
-					<div class="border-t border-gray-700 pt-4">
-						<nav class="flex flex-col space-y-1">
-							<a href="#account" class="py-2 px-3 rounded-md bg-gray-800/80 font-medium text-gold-400 border border-transparent hover:border-gold-400 transition-all duration-300">
-								Account Settings
-							</a>
-							<a href="#privacy" class="py-2 px-3 rounded-md hover:bg-gray-800/80 text-gray-300 border border-transparent hover:border-gold-400 transition-all duration-300">
-								Privacy
-							</a>
-							<a href="#password" class="py-2 px-3 rounded-md hover:bg-gray-800/80 text-gray-300 border border-transparent hover:border-gold-400 transition-all duration-300">
-								Password
-							</a>
-						</nav>
-					</div>
+					<dl class="mt-4 space-y-2 border-t border-gray-700 pt-4 text-sm">
+						{#if memberSince}
+							<div class="flex justify-between gap-2">
+								<dt class="text-gray-400">Member since</dt>
+								<dd class="text-gray-200">{memberSince}</dd>
+							</div>
+						{/if}
+						<div class="flex justify-between gap-2">
+							<dt class="text-gray-400">Profile</dt>
+							<dd class="flex items-center gap-1 {profile.is_public ? 'text-green-400' : 'text-gray-300'}">
+								{#if profile.is_public}
+									<EyeIcon size={14} /> Public
+								{:else}
+									<EyeOffIcon size={14} /> Private
+								{/if}
+							</dd>
+						</div>
+					</dl>
 				</div>
 
-				<!-- Settings Content -->
-				<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 lg:col-span-2">
-					<div id="account" class="mb-8">
-						<h2 class="text-xl font-semibold mb-4 text-gold-400">Account Settings</h2>
+				<nav class="flex gap-1 overflow-x-auto rounded-xl border border-gray-700/60 bg-gray-900/60 p-2 lg:flex-col lg:overflow-visible">
+					{#each TABS as tab (tab.id)}
+						{@const Icon = tab.icon}
+						<button
+							class="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-200 lg:w-full
+								{activeTab === tab.id ? 'bg-gold-400/15 text-gold-400' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}"
+							onclick={() => (activeTab = tab.id)}
+							type="button"
+						>
+							<Icon size={16} />
+							{tab.label}
+						</button>
+					{/each}
+				</nav>
+			</aside>
+
+			<section class="rounded-xl border border-gray-700/60 bg-linear-to-br from-gray-800 to-gray-900 p-6 shadow-xl">
+				{#if activeTab === 'account'}
+					<div in:fade={{duration: 200}}>
+						<h2 class="mb-1 text-xl font-semibold text-gold-400">Account</h2>
+						<p class="mb-5 text-sm text-gray-400">The identity attached to your collection.</p>
+						<div class="grid gap-4 sm:grid-cols-2">
+							{@render readOnlyField('email', 'Email', user?.email || '', 'To change your email, please contact support.')}
+							{@render readOnlyField('username', 'Username', profile.username || '', 'Username cannot be changed.')}
+						</div>
+					</div>
+				{:else if activeTab === 'appearance'}
+					<div in:fade={{duration: 200}}>
+						<h2 class="mb-1 text-xl font-semibold text-gold-400">Appearance</h2>
+						<p class="mb-5 text-sm text-gray-400">Your color tints your avatar everywhere on the site.</p>
 
 						<form
-							method="POST"
 							action="?/updateProfile"
+							class="flex flex-col gap-5"
+							method="POST"
 							use:enhance={() => {
-								return async ({ result }) => {
-									// After the form submission, if it's successful, reload the page.
-									if (result.type === 'success' && result.data?.success) {
-										window.location.reload();
-									}
+								saving = true;
+								return async ({update}) => {
+									await update({reset: false});
+									saving = false;
 								};
 							}}
-							class="space-y-4"
 						>
-							<div>
-								<label class="block text-sm font-medium text-gray-300 mb-1" for="email">
-									Email
-								</label>
-								<input
-									id="email"
-									type="email"
-									value={user?.email || ''}
-									disabled
-									class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-xs bg-gray-800/60 text-gray-400"
-								/>
-								<p class="mt-1 text-xs text-gray-500">To change your email, please contact support.</p>
-							</div>
-
-							<div>
-								<label class="block text-sm font-medium text-gray-300 mb-1" for="username">
-									Username
-								</label>
-								<input
-									id="username"
-									type="text"
-									value={profile?.username || ''}
-									disabled
-									class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-xs bg-gray-800/60 text-gray-400"
-								/>
-								<p class="mt-1 text-xs text-gray-500">Username cannot be changed.</p>
-							</div>
-
-							<div>
-								<label class="block text-sm font-medium text-gray-300 mb-1" for="profileColor">
-									Profile Color (Hex)
-								</label>
-								<div class="flex items-center gap-3">
-									<!-- Swatch bouton -->
-									<button type="button"
-										class="w-10 h-10 rounded-full border shrink-0 focus:outline-hidden"
-										style={`background: ${profileColorInput}`}
-										onclick={openColorPicker}
-										title="Change color"
-									></button>
-									<!-- Popover color picker -->
-									{#if showColorPicker}
-										<div bind:this={colorPickerRef} class="absolute z-50 mt-2 bg-gray-900 p-4 rounded-lg shadow-lg border border-gold-400">
-											<div class="flex justify-end mb-2">
-												<button type="button" class="text-gray-400 hover:text-gold-400 text-xl font-bold" onclick={closeColorPicker}>&times;</button>
-											</div>
-											<hex-color-picker color={profileColorInput} oncolor-changed={handleColorChange}></hex-color-picker>
-
-											<!-- Hex input and copy/paste in popup -->
-											<div class="mt-3 flex items-center gap-2">
-												<input
-													type="text"
-													bind:value={profileColorInput}
-													placeholder="#RRGGBB"
-													pattern={"^#[0-9A-Fa-f]{6}$"}
-													class="flex-1 px-2 py-1 text-sm border border-gray-600 rounded-sm bg-gray-800 text-gray-300 focus:border-gold-400 focus:outline-hidden"
-												/>
-												<button
-													type="button"
-													onclick={copyHexValue}
-													title="Copy hex value"
-													class="p-1 text-gray-400 hover:text-gold-400 border border-gray-600 rounded-sm bg-gray-800 hover:bg-gray-700 transition-colors"
-												>
-													<CopyIcon size={14} />
-												</button>
-											</div>
-										</div>
-									{/if}
-									<!-- Champ caché pour le submit -->
-									<input type="hidden" name="profile_color" bind:value={profileColorInput} />
-									<input
-										id="profileColorText"
-										aria-label="Profile color hex value"
-										type="text"
-										bind:value={profileColorInput}
-										placeholder="#RRGGBB"
-										pattern={"^#[0-9A-Fa-f]{6}$"}
-										class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-xs bg-gray-800/60 text-gray-300 focus:border-gold-400 focus:ring-gold-400"
-									/>
-									<!-- Bouton reset -->
-									<Button
-										onClick={() => profileColorInput = defaultProfileHexColor}
-										class="ml-2"
-										disabled={profileColorInput === defaultProfileHexColor}
-									>
-										<RotateCcwIcon size={16} />
-									</Button>
+							<div class="flex items-center gap-4 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4">
+								<Avatar profileColor={profileColor} size="size-16 text-3xl" username={profile.username || 'U'} />
+								<div>
+									<p class="font-medium text-white">Live preview</p>
+									<p class="font-mono text-sm text-gray-400">{profileColor}</p>
 								</div>
-								<p class="mt-1 text-xs text-gray-500">Choose your profile color or enter a hex value (e.g., #FF0000).</p>
 							</div>
+
+							<ColorPicker bind:value={profileColor} defaultValue={DEFAULT_PROFILE_COLOR} />
+							<input name="profile_color" type="hidden" value={profileColor} />
+
+							{#if form?.error}
+								<p class="text-sm text-red-400">{form.error}</p>
+							{:else if form?.success}
+								<p class="text-sm text-green-400">{form.message}</p>
+							{/if}
 
 							<button
+								class="animated-hover-button relative inline-flex w-fit items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+								disabled={saving}
 								type="submit"
-								class="animated-hover-button relative overflow-hidden inline-flex items-center justify-center py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent transition-all duration-300 hover:text-black mt-2"
 							>
-								<span class="relative z-10">Save Profile Settings</span>
+								<span class="relative z-10">{saving ? 'Saving...' : 'Save profile color'}</span>
 							</button>
 						</form>
 					</div>
-
-					<div id="privacy" class="mb-8">
-						<h2 class="text-xl font-semibold mb-4 text-gold-400">Privacy</h2>
-
-						<div class="space-y-4">
-							<p class="text-sm text-gray-300">
-								Your data is stored securely. You can visit your profile page to toggle your profile visibility.
-							</p>
-
-							<a
-								href="/profile"
-								class="animated-hover-button relative overflow-hidden inline-block py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent transition-all duration-300 hover:text-black mt-2"
-							>
-								<span class="relative z-10">Go to Profile Settings</span>
-							</a>
-						</div>
-					</div>
-
-					<div id="password">
-						<h2 class="text-xl font-semibold mb-4 text-gold-400">Password Management</h2>
-						<p class="text-sm text-gray-300 mb-4">
-							If you want to change your password, click the button below. We will send you an email with a link to reset your password.
+				{:else if activeTab === 'privacy'}
+					<div in:fade={{duration: 200}}>
+						<h2 class="mb-1 text-xl font-semibold text-gold-400">Privacy</h2>
+						<p class="mb-5 text-sm text-gray-400">Who can see your collection and wishlist.</p>
+						<p class="mb-4 text-sm text-gray-300">
+							Your profile is currently <span class={profile.is_public ? 'text-green-400' : 'text-gray-100'}>{profile.is_public ? 'public' : 'private'}</span>.
+							{profile.is_public ? 'Anyone can browse your collection and wishlist.' : 'Only you can see your collection and wishlist.'}
+							Visibility is toggled from your profile page.
 						</p>
-						<Button
-							onClick={handlePasswordReset}
-							disabled={resetPasswordLoading}
-							class="animated-hover-button relative overflow-hidden inline-flex items-center justify-center py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent transition-all duration-300 hover:text-black"
+						<a
+							class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 hover:text-black"
+							href="/profile"
 						>
-							<LockIcon size={16} class="mr-2" />
-							{resetPasswordLoading ? 'Sending...' : 'Send Password Reset Email'}
-						</Button>
+							<span class="relative z-10 flex items-center gap-2"><ShieldIcon size={16} /> Go to profile settings</span>
+						</a>
+					</div>
+				{:else}
+					<div in:fade={{duration: 200}}>
+						<h2 class="mb-1 text-xl font-semibold text-gold-400">Security</h2>
+						<p class="mb-5 text-sm text-gray-400">Change the password you sign in with.</p>
+						<div class="flex items-center gap-3 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4 text-sm text-gray-300">
+							<MailIcon class="shrink-0 text-gold-400" size={18} />
+							<span>We send a reset link to <span class="font-medium text-white">{user?.email}</span>, and it opens the page where you pick a new password.</span>
+						</div>
+						<button
+							class="animated-hover-button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+							disabled={resetPasswordLoading}
+							onclick={handlePasswordReset}
+							type="button"
+						>
+							<span class="relative z-10 flex items-center gap-2">
+								<LockIcon size={16} />
+								{resetPasswordLoading ? 'Sending...' : 'Send password reset email'}
+							</span>
+						</button>
 						{#if resetPasswordMessage}
-							<p class="mt-2 text-sm text-green-400">{resetPasswordMessage}</p>
+							<p class="mt-3 text-sm text-green-400">{resetPasswordMessage}</p>
 						{/if}
 						{#if resetPasswordError}
-							<p class="mt-2 text-sm text-red-400">{resetPasswordError}</p>
+							<p class="mt-3 text-sm text-red-400">{resetPasswordError}</p>
 						{/if}
 					</div>
-				</div>
-			</div>
-		{/if}
+				{/if}
+			</section>
+		</div>
 	{/if}
 </main>
 
 <style>
-	@keyframes spin {
-		0% { transform: rotate(0deg); }
-		100% { transform: rotate(360deg); }
-	}
-
 	.animated-hover-button::before {
 		background-color: #fbc54a;
 		bottom: 0;
@@ -346,30 +261,7 @@
 		z-index: 0;
 	}
 
-	.animated-hover-button:hover::before {
+	.animated-hover-button:not(:disabled):hover::before {
 		height: 100%;
-	}
-
-	/* Styles for vanilla-colorful */
-	hex-color-picker {
-		--width: 200px;
-		--height: 200px;
-	}
-
-	hex-color-picker::part(saturation) {
-		border-radius: 8px 8px 0 0;
-	}
-
-	hex-color-picker::part(hue) {
-		margin-top: 10px;
-		border-radius: 8px;
-	}
-
-	hex-color-picker::part(saturation-pointer),
-	hex-color-picker::part(hue-pointer) {
-		width: 20px;
-		height: 20px;
-		border: 2px solid white;
-		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
 	}
 </style>
