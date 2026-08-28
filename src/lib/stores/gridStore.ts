@@ -4,18 +4,23 @@ import { browser } from '$app/environment';
 // Default card size corresponds to 'M' in the slider
 const defaultSize = 1;
 
-// Function to safely get the initial size from localStorage
+interface Size {
+	name: string;
+	width: number;
+}
+
+export const sizes: Record<number, Size> = {
+	0.75: { name: 'S', width: 180 },
+	1: { name: 'M', width: 280 },
+	2: { name: 'L', width: 380 },
+	3: { name: 'XL', width: 500 }
+};
+
+/** Validated against `sizes` itself, so the S preset (0.75) survives a reload. */
 function getInitialSize(): number {
 	if (!browser) return defaultSize;
-	const storedValue = localStorage.getItem('cardSize');
-	if (storedValue) {
-		const parsedValue = parseFloat(storedValue);
-		// Check if the parsed value is one of the allowed sizes
-		if ([0.66, 1, 2, 3].includes(parsedValue)) {
-			return parsedValue;
-		}
-	}
-	return defaultSize;
+	const parsedValue = parseFloat(localStorage.getItem('cardSize') ?? '');
+	return parsedValue in sizes ? parsedValue : defaultSize;
 }
 
 const initialSize = getInitialSize();
@@ -29,18 +34,6 @@ if (browser) {
 		localStorage.setItem('cardSize', value.toString());
 	});
 }
-
-interface Size {
-    name: string;
-    width: number;
-}
-
-export const sizes: Record<number, Size> = {
-    0.75: { name: 'S', width: 180 },
-    1: { name: 'M', width: 280 },
-    2: { name: 'L', width: 380 },
-    3: { name: 'XL', width: 500 }
-};
 
 // Helper function to get the card dimensions based on size
 export function getCardDimensions(size: number, clientWidth: number) {
