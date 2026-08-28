@@ -1,29 +1,23 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, setContext } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { browser } from '$app/environment';
-	import { setContext } from 'svelte';
 	import PageTitle from '@components/PageTitle.svelte';
 	import Button from '@components/filters/Button.svelte';
-	import BinderGrid from '@components/binder/BinderGrid.svelte';
+	import Checkbox from '@components/filters/Checkbox.svelte';
+	import Select from '@components/filters/Select.svelte';
+	import TextArea from '@components/filters/TextArea.svelte';
+	import TextInput from '@components/filters/TextInput.svelte';
+	import BinderBoard from '@components/binder/BinderBoard.svelte';
 	import BinderStorage from '@components/binder/BinderStorage.svelte';
+	import BinderToolbar from '@components/binder/BinderToolbar.svelte';
 	import README from '@components/binder/README.svelte';
 	import Modal from '@components/ui/Modal.svelte';
 	import HelpCircleIcon from '@lucide/svelte/icons/circle-question-mark';
-	import LayersIcon from '@lucide/svelte/icons/layers';
-	import LinkIcon from '@lucide/svelte/icons/link';
-	import DownloadIcon from '@lucide/svelte/icons/download';
-	import BookUserIcon from '@lucide/svelte/icons/book-user';
-	import type { PageData } from './$types';
-	import Select from '@components/filters/Select.svelte';
-	import NumberInput from '@components/filters/NumberInput.svelte';
-	import Checkbox from '$lib/components/filters/Checkbox.svelte';
+	import { downloadDataUrl, renderBinderImage } from '$helpers/binder-export';
 	import type { BinderCards, FullCard } from '$lib/types';
-	import TextInput from '@components/filters/TextInput.svelte';
-	import TextArea from '@components/filters/TextArea.svelte';
-	import RotateCwIcon from '@lucide/svelte/icons/rotate-cw';
+	import type { PageData } from './$types';
 
-	
 	interface Props {
 		// Page data from server
 		data: PageData;
@@ -36,31 +30,53 @@
 	// Binder configuration
 	const rows = writable(3);
 	const columns = writable(3);
-	const binderCards = writable<Array<BinderCards | null>>([]);
+	const pages = writable<Array<Array<BinderCards | null>>>([[]]);
+	const currentPage = writable(0);
+	const spread = writable(true);
 	const storedCards = writable<string[]>([]);
+
+	let selectedItem = $state<string | null>(null);
+	let storageOrder = $state<string[]>([]);
+	let exporting = $state(false);
+
 	const showHelp = writable(false);
 	const showSetModal = writable(false);
-	const selectedSet = writable('');
 	const showUrlModal = writable(false);
-	const showEmptySlotsModal = writable(false);
+	const showExportModal = writable(false);
 	const showClearStorageModal = writable(false);
+	const showMyCardsModal = writable(false);
+	const selectedSet = writable('');
 	const cardUrl = writable('');
 	const multipleCardUrls = writable('');
-
-	// My Cards modal
-	const showMyCardsModal = writable(false);
 	const includeCollection = writable(true);
 	const includeWishlist = writable(true);
 
-	// Rendre storedCards disponible via setContext pour SearchBar
+	// Exposed to SearchBar, which drops searched cards straight into the storage.
 	setContext('storedCards', storedCards);
 
-	// Load and save functions
+	const slotsPerPage = $derived($rows * $columns);
+	const totalSlots = $derived($pages.length * slotsPerPage);
+	const filledSlots = $derived($pages.reduce((total, page) => total + page.filter(Boolean).length, 0));
+	/** A slot holds either a card code or a raw URL, and the storage keys on the same two shapes. */
+	const placedItems = $derived(new Set($pages.flat().map(slot => slot?.cardCode ?? slot?.url).filter((key): key is string => Boolean(key))));
+	/** Global index of the slot an armed card lands in: the first empty one from the current page onwards. */
+	const nextEmpty = $derived.by(() => {
+		if (!selectedItem) return -1;
+		for (let page = $currentPage; page < $pages.length; page++) {
+			const position = $pages[page].findIndex(slot => !slot);
+			if (position !== -1) return page * slotsPerPage + position;
+		}
+		return -1;
+	});
+
+	function emptyPage(): Array<BinderCards | null> {
+		return Array($rows * $columns).fill(null);
+	}
+
 	function saveToLocalStorage() {
 		if (!browser) return;
 		try {
-			const binderData = { cards: $binderCards, rows: $rows, columns: $columns };
-			window.localStorage.setItem('binderGridData', JSON.stringify(binderData));
+			window.localStorage.setItem('binderGridData', JSON.stringify({ columns: $columns, pages: $pages, rows: $rows, spread: $spread }));
 			window.localStorage.setItem('binderStoredCards', JSON.stringify($storedCards));
 		} catch (e) { console.error('Erreur de sauvegarde:', e); }
 	}
@@ -73,24 +89,17 @@
 				const parsed = JSON.parse(storedDataString);
 				if (Array.isArray(parsed)) {
 					if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0] !== null && 'url' in parsed[0]) {
-						console.warn('Migrating old storedCards format...');
+						// Pre-cardCode storage kept raw image URLs, so they are matched back onto the catalogue once.
 						const migratedCardCodes: string[] = [];
 						for (const oldCard of parsed) {
-							if (typeof oldCard.url === 'string') {
-								const foundCard = data.allCards.find(c => c.image === oldCard.url);
-								if (foundCard) {
-									migratedCardCodes.push(foundCard.cardCode);
-								} else {
-									console.warn(`Could not find cardCode for old stored URL: ${oldCard.url}`);
-								}
-							}
+							if (typeof oldCard.url !== 'string') continue;
+							const foundCard = data.allCards.find(card => card.image === oldCard.url);
+							if (foundCard) migratedCardCodes.push(foundCard.cardCode);
 						}
 						$storedCards = [...new Set(migratedCardCodes)];
-						console.log('Migration complete, loaded cardCodes:', $storedCards.length);
 						saveToLocalStorage();
 					} else if (parsed.every(item => typeof item === 'string')) {
 						$storedCards = parsed;
-						console.log('CardCodes stockés chargées:', parsed.length);
 					} else {
 						console.warn('Invalid format found in binderStoredCards, resetting.');
 						$storedCards = [];
@@ -99,60 +108,177 @@
 			}
 
 			const binderDataString = window.localStorage.getItem('binderGridData');
-			if (binderDataString) {
-				const binderData = JSON.parse(binderDataString);
-				if (typeof binderData.rows === 'number' && typeof binderData.columns === 'number') {
-					$rows = Math.max(2, binderData.rows);
-					$columns = Math.max(2, binderData.columns);
-				}
-				if (Array.isArray(binderData.cards)) { $binderCards = binderData.cards; }
-			} else { resetBinderGrid(); }
+			if (!binderDataString) {
+				$pages = [emptyPage()];
+				return;
+			}
+
+			const binderData = JSON.parse(binderDataString);
+			if (typeof binderData.rows === 'number' && typeof binderData.columns === 'number') {
+				$rows = Math.max(1, binderData.rows);
+				$columns = Math.max(1, binderData.columns);
+			}
+			if (typeof binderData.spread === 'boolean') $spread = binderData.spread;
+
+			if (Array.isArray(binderData.pages)) {
+				$pages = binderData.pages.length ? binderData.pages : [emptyPage()];
+			} else if (Array.isArray(binderData.cards)) {
+				// Single-grid layout from before the binder held several pages.
+				$pages = [binderData.cards];
+			} else {
+				$pages = [emptyPage()];
+			}
 		} catch (e) {
 			console.error('Erreur de chargement:', e);
-			resetBinderGrid();
+			$pages = [emptyPage()];
 			$storedCards = [];
 		}
 	}
 
-	function applyChanges() { saveToLocalStorage(); }
-
 	onMount(() => {
 		loadFromLocalStorage();
-		binderCards.subscribe(applyChanges);
-		storedCards.subscribe(applyChanges);
-		rows.subscribe(applyChanges);
-		columns.subscribe(applyChanges);
+		const unsubscribers = [pages, storedCards, rows, columns, spread].map(store => store.subscribe(saveToLocalStorage));
 
-		const handleAddToBinder = (event: CustomEvent) => {
-			const codeToAdd: string | undefined = event.detail?.cardCode;
-
-			if (codeToAdd && !$storedCards.includes(codeToAdd)) {
-				$storedCards = [...$storedCards, codeToAdd];
-			} else if (!codeToAdd) {
-				 console.warn('add-to-binder event triggered without cardCode in detail.');
+		const handleAddToBinder = (event: Event) => {
+			const codeToAdd: string | undefined = (event as CustomEvent).detail?.cardCode;
+			if (!codeToAdd) {
+				console.warn('add-to-binder event triggered without cardCode in detail.');
+				return;
 			}
+			if (!$storedCards.includes(codeToAdd)) $storedCards = [...$storedCards, codeToAdd];
 		};
-		document.addEventListener('add-to-binder', handleAddToBinder as EventListener);
-		return () => { document.removeEventListener('add-to-binder', handleAddToBinder as EventListener); };
+		document.addEventListener('add-to-binder', handleAddToBinder);
+
+		return () => {
+			document.removeEventListener('add-to-binder', handleAddToBinder);
+			unsubscribers.forEach(unsubscribe => unsubscribe());
+		};
 	});
 
-	function resetBinderGrid() {
-		if ($rows < 2) $rows = 2;
-		if ($columns < 2) $columns = 2;
-		const totalCells = $rows * $columns;
-		$binderCards = Array(totalCells).fill(null);
+	// Resizing the pocket layout keeps whatever fits and drops the overflow, page by page.
+	$effect(() => {
+		const size = $rows * $columns;
+		if ($pages.every(page => page.length === size)) return;
+		$pages = $pages.map(page => {
+			const resized: Array<BinderCards | null> = Array(size).fill(null);
+			page.forEach((card, index) => { if (card && index < size) resized[index] = { ...card, position: index }; });
+			return resized;
+		});
+	});
+
+	$effect(() => { if ($currentPage > $pages.length - 1) $currentPage = Math.max(0, $pages.length - 1); });
+
+	function updatePage(pageIndex: number, updater: (page: Array<BinderCards | null>) => Array<BinderCards | null>) {
+		$pages = $pages.map((page, index) => (index === pageIndex ? updater([...page]) : page));
 	}
 
-	$effect(() => {
-		const totalCells = $rows * $columns;
-		if ($binderCards.length !== totalCells) {
-			const newGrid = Array(totalCells).fill(null);
-			$binderCards.forEach((card, index) => {
-				if (card && index < totalCells) { newGrid[index] = { ...card, position: index }; }
-			});
-			$binderCards = newGrid;
+	function makeSlot(url: string, cardCode: string | undefined, position: number): BinderCards {
+		return { cardCode, id: crypto.randomUUID(), position, url };
+	}
+
+	function handleDrop(pageIndex: number, position: number, event: DragEvent) {
+		const sourceType = event.dataTransfer?.getData('source-type');
+
+		if (sourceType === 'storage' || sourceType === 'storage-url') {
+			const url = event.dataTransfer?.getData('cardUrl');
+			if (!url) return;
+			const cardCode = sourceType === 'storage' ? event.dataTransfer?.getData('cardCode') || undefined : undefined;
+			updatePage(pageIndex, page => { page[position] = makeSlot(url, cardCode, position); return page; });
+			return;
 		}
-	});
+
+		if (sourceType !== 'binder') return;
+
+		const sourcePage = parseInt(event.dataTransfer?.getData('source-page') ?? '-1');
+		const sourcePosition = parseInt(event.dataTransfer?.getData('source-position') ?? '-1');
+		if (sourcePage < 0 || sourcePosition < 0 || (sourcePage === pageIndex && sourcePosition === position)) return;
+
+		const sourceCard = $pages[sourcePage]?.[sourcePosition];
+		if (!sourceCard) return;
+		const targetCard = $pages[pageIndex]?.[position] ?? null;
+
+		$pages = $pages.map((page, index) => {
+			if (index !== sourcePage && index !== pageIndex) return page;
+			const next = [...page];
+			if (index === sourcePage) next[sourcePosition] = targetCard ? { ...targetCard, position: sourcePosition } : null;
+			if (index === pageIndex) next[position] = { ...sourceCard, position };
+			return next;
+		});
+	}
+
+	function handleSlotClick(pageIndex: number, position: number) {
+		if (!selectedItem) return;
+		const item = selectedItem;
+		const fullCard = data.allCards.find((card: FullCard) => card.cardCode === item);
+		updatePage(pageIndex, page => {
+			page[position] = makeSlot(fullCard?.image ?? item, fullCard?.cardCode, position);
+			return page;
+		});
+		selectedItem = null;
+	}
+
+	function removeCard(pageIndex: number, position: number) {
+		updatePage(pageIndex, page => { page[position] = null; return page; });
+	}
+
+	/** Dropping a slot back onto the storage empties it, and puts the card back in the list if it had been removed. */
+	function handleStorageDrop(event: DragEvent) {
+		if (event.dataTransfer?.getData('source-type') !== 'binder') return;
+		const pageIndex = parseInt(event.dataTransfer.getData('source-page'));
+		const position = parseInt(event.dataTransfer.getData('source-position'));
+		const card = $pages[pageIndex]?.[position];
+		if (!card) return;
+		removeCard(pageIndex, position);
+		addToStorage([card.cardCode ?? card.url]);
+	}
+
+	function addPage() {
+		$pages = [...$pages, emptyPage()];
+		$currentPage = $pages.length - 1;
+	}
+
+	function duplicatePages(pageIndices: number[]) {
+		const copies = pageIndices.map(index => $pages[index].map(slot => (slot ? { ...slot, id: crypto.randomUUID() } : null)));
+		const after = pageIndices[pageIndices.length - 1] + 1;
+		$pages = [...$pages.slice(0, after), ...copies, ...$pages.slice(after)];
+		$currentPage = after;
+	}
+
+	function clearPages(pageIndices: number[]) {
+		$pages = $pages.map((page, index) => (pageIndices.includes(index) ? emptyPage() : page));
+	}
+
+	function deletePages(pageIndices: number[]) {
+		const kept = $pages.filter((_, index) => !pageIndices.includes(index));
+		$pages = kept.length ? kept : [emptyPage()];
+		$currentPage = Math.min($currentPage, $pages.length - 1);
+	}
+
+	function resetAllPages() {
+		$pages = $pages.map(() => emptyPage());
+	}
+
+	/** Pours everything still unplaced into the empty slots, appending pages until the storage runs out. */
+	function autoFill() {
+		const queue = (storageOrder.length ? storageOrder : $storedCards).filter(item => !placedItems.has(item));
+		if (!queue.length) return;
+
+		const nextPages = $pages.map(page => [...page]);
+		let pageIndex = 0;
+		for (const item of queue) {
+			const fullCard = data.allCards.find((card: FullCard) => card.cardCode === item);
+			let position = -1;
+			while (position === -1) {
+				if (pageIndex >= nextPages.length) nextPages.push(emptyPage());
+				position = nextPages[pageIndex].findIndex(slot => !slot);
+				if (position === -1) pageIndex++;
+			}
+			nextPages[pageIndex][position] = makeSlot(fullCard?.image ?? item, fullCard?.cardCode, position);
+		}
+
+		$pages = nextPages;
+		selectedItem = null;
+	}
 
 	function toggleHelp() { $showHelp = !$showHelp; }
 	function toggleSetModal() {
@@ -163,492 +289,229 @@
 		$showUrlModal = !$showUrlModal;
 		if (!$showUrlModal) { $cardUrl = ''; $multipleCardUrls = ''; }
 	}
-	function toggleMyCardsModal() {
-		$showMyCardsModal = !$showMyCardsModal;
-	}
+	function toggleMyCardsModal() { $showMyCardsModal = !$showMyCardsModal; }
+	function toggleClearStorageModal() { $showClearStorageModal = !$showClearStorageModal; }
+	function toggleExportModal() { $showExportModal = !$showExportModal; }
 
-	function toggleClearStorageModal() {
-		$showClearStorageModal = !$showClearStorageModal;
+	function addToStorage(codes: string[]) {
+		const current = new Set($storedCards);
+		const additions = [...new Set(codes)].filter(code => !current.has(code));
+		if (additions.length) $storedCards = [...$storedCards, ...additions];
 	}
 
 	function clearAllStoredCards() {
 		$storedCards = [];
+		selectedItem = null;
 		toggleClearStorageModal();
 	}
 
 	function addSetToStorage() {
 		if (!$selectedSet) return;
-
-		// Filter allCards directly by setName matching the selected set name
-		const cardCodesFromSet = data.allCards
-			.filter((card: FullCard) => card.setName === $selectedSet)
-			.map((card: FullCard) => card.cardCode);
-
-		// Ensure the codes from the set are unique first
-		const uniqueCodesFromSet = [...new Set(cardCodesFromSet)];
-
-		// Add only those unique codes that are not already in storage
-		const currentStoredCodes = new Set($storedCards);
-		const newCardCodesToAdd = uniqueCodesFromSet.filter(code => !currentStoredCodes.has(code));
-		if (newCardCodesToAdd.length > 0) {
-			$storedCards = [...$storedCards, ...newCardCodesToAdd];
-		}
-
+		addToStorage(data.allCards.filter((card: FullCard) => card.setName === $selectedSet).map((card: FullCard) => card.cardCode));
 		toggleSetModal();
 	}
 
 	function addMyCardsToStorage() {
-		if (!$includeCollection && !$includeWishlist) return;
-
-		const currentStoredCodes = new Set($storedCards);
-		const newCardCodesToAdd: string[] = [];
-
-		// Add cards from collection if selected
-		if ($includeCollection && data.serverCollectionCards) {
-			data.serverCollectionCards.forEach((card: FullCard) => {
-				if (!currentStoredCodes.has(card.cardCode) && !newCardCodesToAdd.includes(card.cardCode)) {
-					newCardCodesToAdd.push(card.cardCode);
-				}
-			});
-		}
-
-		// Add cards from wishlist if selected
-		if ($includeWishlist && data.serverWishlistCards) {
-			data.serverWishlistCards.forEach((card: FullCard) => {
-				if (!currentStoredCodes.has(card.cardCode) && !newCardCodesToAdd.includes(card.cardCode)) {
-					newCardCodesToAdd.push(card.cardCode);
-				}
-			});
-		}
-
-		if (newCardCodesToAdd.length > 0) {
-			$storedCards = [...$storedCards, ...newCardCodesToAdd];
-		}
-
+		const codes: string[] = [];
+		if ($includeCollection && data.serverCollectionCards) codes.push(...data.serverCollectionCards.map((card: FullCard) => card.cardCode));
+		if ($includeWishlist && data.serverWishlistCards) codes.push(...data.serverWishlistCards.map((card: FullCard) => card.cardCode));
+		addToStorage(codes);
 		toggleMyCardsModal();
 	}
 
 	function addCardFromUrl() {
-		if (!$cardUrl && !$multipleCardUrls) return;
-		const urlsToAdd: string[] = [];
-		const currentStored = new Set($storedCards); // Use Set for efficient checking
-
-		// Helper to validate and add URL
-		const validateAndAdd = (url: string) => {
-			const trimmedUrl = url.trim();
-			if (trimmedUrl.startsWith('http') && !currentStored.has(trimmedUrl) && !urlsToAdd.includes(trimmedUrl)) {
-				urlsToAdd.push(trimmedUrl);
-			} else if (!trimmedUrl.startsWith('http')) {
-				console.warn(`Invalid URL format (must start with http): ${trimmedUrl}`);
-			}
-		};
-
-		if ($cardUrl) {
-			validateAndAdd($cardUrl);
-		}
-
-		if ($multipleCardUrls) {
-			// First split by newlines
-			const lines = $multipleCardUrls.split(/\n/);
-			for (let line of lines) {
-				line = line.trim();
-				if (!line) continue;
-
-				// Then split each line by semicolons in case multiple URLs are on one line
-				const urlsInLine = line.split(';');
-				for (let url of urlsInLine) {
-					url = url.trim();
-					// Remove trailing period if present
-					url = url.replace(/\.$/, '');
-					if (url && url.startsWith('http')) {
-						validateAndAdd(url);
-					}
-				}
-			}
-		}
-
-		if (urlsToAdd.length > 0) $storedCards = [...$storedCards, ...urlsToAdd];
+		const candidates = [$cardUrl, ...$multipleCardUrls.split(/[\n;]/)]
+			.map(url => url.trim().replace(/\.$/, ''))
+			.filter(url => url.startsWith('http'));
+		addToStorage(candidates);
 		toggleUrlModal();
 	}
 
-	async function generateBinderImage() {
+	async function exportBinder(scope: 'page' | 'all') {
 		if (!browser) return;
-		const hasEmptySlots = $binderCards.some(card => card === null);
-		if (hasEmptySlots) { $showEmptySlotsModal = true; return; }
-		generateBinderImageProcess();
-	}
-
-	async function generateBinderImageProcess() {
-		const cardWidth = 150, cardHeight = 210, padding = 10;
-		const canvasGridWidth = $columns * (cardWidth + padding) + padding;
-		const canvasGridHeight = $rows * (cardHeight + padding) + padding;
-
-		const headerHeight = 50; // Height for the area above the grid
-		const canvasTotalWidth = canvasGridWidth;
-		const canvasTotalHeight = canvasGridHeight + headerHeight;
-
-		const canvas = document.createElement('canvas');
-		canvas.width = canvasTotalWidth; canvas.height = canvasTotalHeight;
-		const ctx = canvas.getContext('2d');
-		if (!ctx) { console.error('Could not get canvas context'); alert('Could not generate image: Canvas context unavailable.'); return; }
-
-		ctx.fillStyle = '#1f2937'; // Background for the entire canvas
-		ctx.fillRect(0, 0, canvasTotalWidth, canvasTotalHeight);
-
-		const imageLoadPromises = $binderCards.map((binderSlot, index) => {
-			if (!binderSlot || !binderSlot.url) return Promise.resolve();
-			return new Promise<void>((resolve) => {
-				const img = new Image(); img.crossOrigin = 'Anonymous';
-				img.onload = () => {
-					const col = index % $columns, row = Math.floor(index / $columns);
-					// Shift card grid down by headerHeight
-					const x = padding + col * (cardWidth + padding);
-					const y = headerHeight + padding + row * (cardHeight + padding);
-					ctx.drawImage(img, x, y, cardWidth, cardHeight); resolve();
-				};
-				img.onerror = (error) => {
-					console.error(`Error loading image ${binderSlot.url}:`, error);
-					const col = index % $columns, row = Math.floor(index / $columns);
-					// Shift card grid down by headerHeight
-					const x = padding + col * (cardWidth + padding);
-					const y = headerHeight + padding + row * (cardHeight + padding);
-					ctx.fillStyle = '#4b5563'; ctx.fillRect(x, y, cardWidth, cardHeight);
-					ctx.fillStyle = '#d1d5db'; ctx.textAlign = 'center';
-					ctx.fillText('Error', x + cardWidth / 2, y + cardHeight / 2); resolve();
-				};
-				img.src = `/api/image-proxy?url=${encodeURIComponent(binderSlot.url)}`;
-			});
-		});
-
+		toggleExportModal();
+		exporting = true;
 		try {
-			await Promise.all(imageLoadPromises);
-
-			const logo = new Image();
-			logo.crossOrigin = 'Anonymous';
-			logo.onload = () => {
-				const marginFromEdge = 10;
-				const contentMaxHeight = 30; 
-
-				let logoRenderHeight = contentMaxHeight;
-				let logoRenderWidth = (logo.width / logo.height) * logoRenderHeight;
-
-				const maxLogoRenderWidth = 40;
-				if (logoRenderWidth > maxLogoRenderWidth) {
-					logoRenderWidth = maxLogoRenderWidth;
-					logoRenderHeight = (logo.height / logo.width) * logoRenderWidth;
-				}
-
-				const username = data.profile?.username;
-				const textString = username ? `${username}'s binder` : 'PCC';
-				ctx.font = 'bold 14px "Clash Display"';
-				ctx.textAlign = 'left';
-				ctx.textBaseline = 'middle';
-				const textMetrics = ctx.measureText(textString);
-
-				const boxInternalPadding = 6;
-				const contentGap = 8;
-				
-				const boxContentWidth = logoRenderWidth + contentGap + textMetrics.width;
-				const textApproxHeight = 14;
-				const boxContentHeight = Math.max(logoRenderHeight, textApproxHeight);
-
-				const boxTotalWidth = boxContentWidth + 2 * boxInternalPadding;
-				const boxTotalHeight = boxContentHeight + 2 * boxInternalPadding;
-
-				// Position the entire background box (top-left of canvas, within header area)
-				const boxActualX = marginFromEdge;
-				const boxActualY = marginFromEdge; // Positioned within the top headerHeight area
-
-				ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-				ctx.fillRect(boxActualX, boxActualY, boxTotalWidth, boxTotalHeight);
-
-				const logoActualX_inBox = boxActualX + boxInternalPadding;
-				const logoActualY_inBox = boxActualY + boxInternalPadding + (boxContentHeight - logoRenderHeight) / 2;
-				ctx.drawImage(logo, logoActualX_inBox, logoActualY_inBox, logoRenderWidth, logoRenderHeight);
-
-				const textActualX_inBox = logoActualX_inBox + logoRenderWidth + contentGap;
-				const textActualY_inBox = boxActualY + boxInternalPadding + boxContentHeight / 2;
-				ctx.fillStyle = 'white';
-				ctx.fillText(textString, textActualX_inBox, textActualY_inBox);
-
-				const dataUrl = canvas.toDataURL('image/png');
-				const link = document.createElement('a');
-				link.href = dataUrl;
-				link.download = 'pokecards-collector-binder.png';
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-			};
-			logo.onerror = () => {
-				console.error('Failed to load logo image.');
-				// Proceed without logo if it fails to load
-				const dataUrl = canvas.toDataURL('image/png');
-				const link = document.createElement('a');
-				link.href = dataUrl;
-				link.download = 'pokecards-collector-binder.png';
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-			};
-			logo.src = '/favicon.png'; // User changed this path
-
-		} catch (error) { console.error('Error generating binder image:', error); alert('An error occurred while generating the image.'); }
+			const target = scope === 'all' ? $pages : [$pages[$currentPage]];
+			const dataUrl = await renderBinderImage({ columns: $columns, pages: target, rows: $rows, username: data.profile?.username });
+			downloadDataUrl(dataUrl, scope === 'all' ? 'binder-all-pages.png' : `binder-page-${$currentPage + 1}.png`);
+		} catch (error) {
+			console.error('Error generating binder image:', error);
+			alert('An error occurred while generating the image.');
+		} finally {
+			exporting = false;
+		}
 	}
 </script>
 
 <README showHelp={$showHelp} toggleHelp={toggleHelp} />
 
-<div class="flex flex-col p-6 gap-6">
-	<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+<div class="-mt-6 flex flex-col gap-4 p-4 md:p-6 lg:-mt-12">
+	<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
 		<div class="flex items-center gap-3">
 			<PageTitle title="Binder Builder" />
-			<Button onClick={toggleHelp} class="p-1.5 mt-1" title="How the Binder Builder works">
+			<Button class="mt-1 p-1.5" onClick={toggleHelp} title="How the Binder Builder works">
 				<HelpCircleIcon size={20} />
 			</Button>
 		</div>
 
-		<div class="flex flex-wrap gap-3 items-end">
-			<div class="flex gap-2 items-center">
-				<NumberInput
-					id="rows"
-					bind:value={$rows}
-					min={2}
-					max={8}
-					label="Rows:"
-				/>
-			</div>
-
-			<div class="flex gap-2 items-center">
-				<NumberInput
-					id="columns"
-					bind:value={$columns}
-					min={2}
-					max={8}
-					label="Columns:"
-				/>
-			</div>
-
-			<Button onClick={resetBinderGrid} class="text-sm" title="Empty every slot of the grid">
-				<RotateCwIcon size={16} />
-				Reset Grid
-			</Button>
-
-			<Button onClick={toggleSetModal} class="text-sm flex items-center gap-1 px-3 py-2" title="Send a whole set to the storage">
-				<LayersIcon size={16} />
-				<span>Add set</span>
-			</Button>
-
-			<Button onClick={toggleMyCardsModal} class="text-sm flex items-center gap-1 px-3 py-2" title="Send your collection or wishlist to the storage">
-				<BookUserIcon size={16} />
-				<span>My Cards</span>
-			</Button>
-
-			<Button onClick={toggleUrlModal} class="text-sm flex items-center gap-1 px-3 py-2" title="Add cards from image URLs"><LinkIcon size={16} /> <span>Add from URL</span></Button>
-
-			<Button onClick={generateBinderImage} class="text-sm flex items-center gap-1 px-3 py-2" title="Download the binder page as a PNG">
-				<DownloadIcon size={16} />
-				<span>Export as Image</span>
-			</Button>
+		<div class="flex flex-wrap gap-2 text-xs">
+			<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{$pages.length} page{$pages.length > 1 ? 's' : ''} of {slotsPerPage}</span>
+			<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{filledSlots}/{totalSlots} slots filled</span>
+			<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{$storedCards.length - placedItems.size} left in storage</span>
+			{#if exporting}<span class="rounded-full bg-gold-500 px-3 py-1 text-black">Rendering image...</span>{/if}
 		</div>
 	</div>
 
-	<!-- Binder Grid and Storage -->
-	<div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
-		<div class="lg:col-span-9">
-			<div class="bg-gray-800 rounded-lg h-[calc(100vh-250px)] min-h-[450px] flex items-stretch">
-				<BinderGrid {binderCards} {rows} {columns} />
-			</div>
+	<BinderToolbar
+		bind:columns={$columns}
+		bind:rows={$rows}
+		bind:spread={$spread}
+		onAddSet={toggleSetModal}
+		onAddUrl={toggleUrlModal}
+		onExport={toggleExportModal}
+		onMyCards={toggleMyCardsModal}
+		onResetAll={resetAllPages}
+	/>
+
+	<div class="grid grid-cols-1 gap-3 lg:grid-cols-12">
+		<div class="h-[calc(100dvh-19rem)] min-h-[26rem] lg:col-span-8">
+			<BinderBoard
+				columns={$columns}
+				currentPage={$currentPage}
+				{nextEmpty}
+				onAddPage={addPage}
+				onClearPages={clearPages}
+				onDeletePages={deletePages}
+				onDrop={handleDrop}
+				onDuplicatePages={duplicatePages}
+				onGoTo={index => ($currentPage = index)}
+				onRemove={removeCard}
+				onSlotClick={handleSlotClick}
+				pages={$pages}
+				rows={$rows}
+				spread={$spread}
+			/>
 		</div>
 
-		<div class="lg:col-span-3">
-			<div class="h-[calc(100vh-250px)] min-h-[450px]">
-				<BinderStorage cards={storedCards} allCards={data.allCards} {sets} {toggleClearStorageModal} />
-			</div>
+		<div class="h-[calc(100dvh-19rem)] min-h-[26rem] lg:col-span-4">
+			<BinderStorage
+				allCards={data.allCards}
+				bind:visibleItems={storageOrder}
+				cards={storedCards}
+				onAutoFill={autoFill}
+				onDropFromBinder={handleStorageDrop}
+				onSelect={item => (selectedItem = item)}
+				{placedItems}
+				prices={data.prices}
+				selected={selectedItem}
+				{sets}
+				{toggleClearStorageModal}
+			/>
 		</div>
 	</div>
 </div>
 
 <!-- Set Selection Modal -->
 <Modal bind:open={$showSetModal} onClose={toggleSetModal} title="Add complete set">
-	<p class="text-gray-300 mb-4 text-sm">
-		Choose a set to add all its cards (cardCodes) to storage.
-	</p>
+	<p class="mb-4 text-sm text-gray-300">Choose a set to send all of its cards to the storage.</p>
 
 	<div class="mb-4">
-		<label for="set-select" class="block text-gray-300 mb-2">Choose a set:</label>
 		<Select
 			id="set-select"
 			bind:value={$selectedSet}
 			label="Choose a set:"
-			placeholder="-- Select a set --"
 			options={data.sets
-				.sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime()) // Sort by date timestamp
+				.slice()
+				.sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime())
 				.map(set => ({
-					value: set.name,
-					label: `${set.name} (${new Date(set.releaseDate).toLocaleDateString()}) - ${set.printedTotal} cards`
-				}))
-			}
+					label: `${set.name} (${new Date(set.releaseDate).toLocaleDateString()}) - ${set.printedTotal} cards`,
+					value: set.name
+				}))}
+			placeholder="-- Select a set --"
 		/>
 	</div>
 
 	{#snippet footer()}
-	
-			<Button
-				onClick={toggleSetModal}
-				class="text-sm px-4 py-2 border border-gray-600"
-			>
-				Cancel
-			</Button>
-			<Button
-				onClick={addSetToStorage}
-				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
-				disabled={!$selectedSet}
-			>
-				Add set
-			</Button>
-		
+		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleSetModal}>Cancel</Button>
+		<Button class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600 disabled:opacity-50" disabled={!$selectedSet} onClick={addSetToStorage}>Add set</Button>
 	{/snippet}
 </Modal>
 
 <!-- My Cards Modal -->
 <Modal bind:open={$showMyCardsModal} onClose={toggleMyCardsModal} title="Add my cards">
-	<p class="text-gray-300 mb-4 text-sm">
-		Choose which cards to add to your binder.
-	</p>
+	<p class="mb-4 text-sm text-gray-300">Choose which cards to send to the storage.</p>
 
 	<div class="mb-4 flex flex-col gap-4">
-		<Checkbox
-			id="include-collection"
-			label="Include my collection"
-			bind:checked={$includeCollection}
-			disabled={!data.serverCollectionCards}
-		/>
-		{#if data.serverCollectionCards}
-			<p class="text-gray-400 text-xs ml-6">
-				{data.serverCollectionCards.length} cards in your collection
-			</p>
-		{:else}
-			<p class="text-gray-400 text-xs ml-6">
-				You need to be logged in to access your collection
-			</p>
-		{/if}
+		<Checkbox id="include-collection" bind:checked={$includeCollection} disabled={!data.serverCollectionCards} label="Include my collection" />
+		<p class="-mt-3 ml-6 text-xs text-gray-400">
+			{#if data.serverCollectionCards}{data.serverCollectionCards.length} cards in your collection{:else}You need to be logged in to access your collection{/if}
+		</p>
 
-		<Checkbox
-			id="include-wishlist"
-			label="Include my wishlist"
-			bind:checked={$includeWishlist}
-			disabled={!data.serverWishlistCards}
-		/>
-		{#if data.serverWishlistCards}
-			<p class="text-gray-400 text-xs ml-6">
-				{data.serverWishlistCards.length} cards in your wishlist
-			</p>
-		{:else}
-			<p class="text-gray-400 text-xs ml-6">
-				You need to be logged in to access your wishlist
-			</p>
-		{/if}
+		<Checkbox id="include-wishlist" bind:checked={$includeWishlist} disabled={!data.serverWishlistCards} label="Include my wishlist" />
+		<p class="-mt-3 ml-6 text-xs text-gray-400">
+			{#if data.serverWishlistCards}{data.serverWishlistCards.length} cards in your wishlist{:else}You need to be logged in to access your wishlist{/if}
+		</p>
 	</div>
 
 	{#snippet footer()}
-	
-			<Button
-				onClick={toggleMyCardsModal}
-				class="text-sm px-4 py-2 border border-gray-600"
-			>
-				Cancel
-			</Button>
-			<Button
-				onClick={addMyCardsToStorage}
-				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50"
-				disabled={(!$includeCollection || !data.serverCollectionCards) && (!$includeWishlist || !data.serverWishlistCards)}
-			>
-				Add to binder
-			</Button>
-		
+		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleMyCardsModal}>Cancel</Button>
+		<Button
+			class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600 disabled:opacity-50"
+			disabled={(!$includeCollection || !data.serverCollectionCards) && (!$includeWishlist || !data.serverWishlistCards)}
+			onClick={addMyCardsToStorage}
+		>
+			Add to storage
+		</Button>
 	{/snippet}
 </Modal>
 
 <!-- URL Card Modal -->
 <Modal bind:open={$showUrlModal} onClose={toggleUrlModal} title="Add card from URL">
-	<p class="text-gray-300 mb-4 text-sm">
-		Paste image URLs to add them to storage. URLs must start with 'http'. You can paste multiple URLs separated by line breaks or semicolons.
+	<p class="mb-4 text-sm text-gray-300">
+		Paste image URLs to add them to the storage. URLs must start with 'http', and several can be separated by line breaks or semicolons.
 	</p>
 	<div class="mb-4">
-		<label for="cardUrl" class="block text-gray-300 mb-2">Single card image URL:</label>
-		<TextInput id="cardUrl" label="Single card image URL" bind:value={$cardUrl} type="url" placeholder="https://images.pokemontcg.io/..." />
+		<TextInput id="cardUrl" bind:value={$cardUrl} label="Single card image URL" placeholder="https://assets.tcgdex.net/..." type="url" />
 	</div>
 	<div class="mb-4">
-		<label for="multipleCardUrls" class="block text-gray-300 mb-2">Or multiple URLs (one per line):</label>
 		<TextArea
+			id="multipleCardUrls"
 			bind:value={$multipleCardUrls}
 			class="max-h-80 overflow-y-auto"
-			id="multipleCardUrls"
 			label="Or multiple URLs (one per line)"
-			placeholder="https://images.pokemontcg.io/card1.png
-https://images.pokemontcg.io/card2.png
-https://images.pokemontcg.io/card3.png
-
-You can also separate URLs with semicolons:
-https://images.pokemontcg.io/card4.png; https://images.pokemontcg.io/card5.png"
+			placeholder={'https://example.com/card1.png\nhttps://example.com/card2.png'}
 			rows={4}
 		/>
 	</div>
 	{#snippet footer()}
-	
-			<Button onClick={toggleUrlModal} class="text-sm px-4 py-2 border border-gray-600">Cancel</Button>
-			<Button onClick={addCardFromUrl} class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black disabled:opacity-50" disabled={!$cardUrl && !$multipleCardUrls}> Add card(s) </Button>
-		
+		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleUrlModal}>Cancel</Button>
+		<Button class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600 disabled:opacity-50" disabled={!$cardUrl && !$multipleCardUrls} onClick={addCardFromUrl}>Add card(s)</Button>
 	{/snippet}
 </Modal>
 
-<!-- Empty Slots Confirmation Modal -->
-<Modal bind:open={$showEmptySlotsModal} title="Incomplete Binder" onClose={() => $showEmptySlotsModal = false}>
-	<p class="text-gray-300 mb-4">
-		Your binder has empty slots. Do you still want to export it as an image?
+<!-- Export Modal -->
+<Modal bind:open={$showExportModal} onClose={toggleExportModal} title="Export as image">
+	<p class="mb-4 text-sm text-gray-300">
+		Pages render at 300px per card, numbered slot by slot so you can follow the sheet while filling the real binder.
 	</p>
+	{#if filledSlots < totalSlots}
+		<p class="mb-4 rounded-sm bg-gray-900 p-2 text-xs text-gray-400">Some slots are still empty - they export as numbered placeholders.</p>
+	{/if}
 
 	{#snippet footer()}
-	
-			<Button
-				onClick={() => $showEmptySlotsModal = false}
-				class="text-sm px-4 py-2 border border-gray-600"
-			>
-				Cancel
-			</Button>
-			<Button
-				onClick={() => {
-					$showEmptySlotsModal = false;
-					generateBinderImageProcess();
-				}}
-				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black"
-			>
-				Export Anyway
-			</Button>
-		
+		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleExportModal}>Cancel</Button>
+		<Button class="px-4 py-2 text-sm" onClick={() => exportBinder('page')}>Current page</Button>
+		<Button class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600" onClick={() => exportBinder('all')}>All {$pages.length} pages</Button>
 	{/snippet}
 </Modal>
 
 <!-- Clear Storage Confirmation Modal -->
 <Modal bind:open={$showClearStorageModal} onClose={toggleClearStorageModal} title="Clear Storage">
-	<p class="text-gray-300 mb-4">
-		Are you sure you want to remove all stored cards? This cannot be undone.
-	</p>
+	<p class="mb-4 text-gray-300">Are you sure you want to remove all stored cards? This cannot be undone.</p>
 
 	{#snippet footer()}
-	
-			<Button
-				onClick={toggleClearStorageModal}
-				class="text-sm px-4 py-2 border border-gray-600"
-			>
-				Cancel
-			</Button>
-			<Button
-				onClick={clearAllStoredCards}
-				class="text-sm px-4 py-2 bg-gold-500 hover:bg-gold-600 text-black"
-			>
-				Clear All Cards
-			</Button>
-		
+		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleClearStorageModal}>Cancel</Button>
+		<Button class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600" onClick={clearAllStoredCards}>Clear all cards</Button>
 	{/snippet}
 </Modal>
