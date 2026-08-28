@@ -3,6 +3,12 @@ compatibility_date = "2026-08-28"
 compatibility_flags = ["nodejs_compat"]
 main = ".svelte-kit/cloudflare/_worker.js"
 
+# The hostname still resolves through the proxied CNAME the Pages project left behind, so the Worker
+# claims it as a route rather than a custom domain: a custom domain refuses to take over an existing record.
+[[routes]]
+pattern = "pokecards-collector.ayfri.com/*"
+zone_name = "ayfri.com"
+
 [assets]
 directory = ".svelte-kit/cloudflare"
 binding = "ASSETS"
