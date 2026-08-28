@@ -6,6 +6,9 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
+		"preview:worker": "vite build && wrangler dev",
+		"deploy": "vite build && wrangler deploy",
+		"deploy:scraper": "wrangler deploy -c wrangler.scraper.toml",
 		"scrapers": "bun --env-file=.env scraper-cli.ts"
 	},
 	"dependencies": {
@@ -26,6 +29,7 @@
 		"svelte-check": "^4.7.6",
 		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.3",
-		"vite": "^8.2.2"
+		"vite": "^8.2.2",
+		"wrangler": "^4.127.1"
 	}
 }
