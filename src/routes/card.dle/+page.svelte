@@ -7,6 +7,16 @@
 	import TextInput from '@components/filters/TextInput.svelte';
 	import Button from '@components/filters/Button.svelte';
 	import BouncyLoader from '@components/BouncyLoader.svelte';
+	import CheckIcon from '@lucide/svelte/icons/check';
+	import ChevronsDownIcon from '@lucide/svelte/icons/chevrons-down';
+	import ChevronsUpIcon from '@lucide/svelte/icons/chevrons-up';
+	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
+	import LayersIcon from '@lucide/svelte/icons/layers';
+	import LibraryIcon from '@lucide/svelte/icons/library';
+	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
+	import PawPrintIcon from '@lucide/svelte/icons/paw-print';
+	import ScrollTextIcon from '@lucide/svelte/icons/scroll-text';
+	import SparklesIcon from '@lucide/svelte/icons/sparkles';
 
 	interface Props {
 		data: PageData;
@@ -151,17 +161,22 @@
 		return correct ? 'bg-green-600 text-white' : 'bg-red-600 text-white';
 	}
 
-	function getPriceComparisonIcon(comparison: string | undefined): string {
-		if (comparison === 'correct') return '✅';
-		if (comparison === 'higher') return '🔼';
-		if (comparison === 'lower') return '🔽';
-		return '';
-	}
-
 	function getPriceComparisonText(comparison: string | undefined): string {
 		if (comparison === 'higher') return '(Higher)';
 		if (comparison === 'lower') return '(Lower)';
 		return '';
+	}
+
+	function getPriceComparisonHint(comparison: string | undefined): string {
+		if (comparison === 'correct') return 'Same price as the mystery card';
+		if (comparison === 'higher') return 'The mystery card costs more than this one';
+		if (comparison === 'lower') return 'The mystery card costs less than this one';
+		return 'Price of this guess';
+	}
+
+	function getFeedbackHint(attribute: string, correct: boolean | undefined): string {
+		if (correct === undefined) return attribute;
+		return correct ? `${attribute} matches the mystery card` : `Wrong ${attribute.toLowerCase()}`;
 	}
 </script>
 
@@ -197,8 +212,9 @@
 						<div class="w-3 h-3 bg-red-600 rounded-sm"></div>
 						<span class="text-red-400">Wrong</span>
 					</div>
-					<div class="flex items-center gap-2">
-						<span class="text-lg">🔼🔽</span>
+					<div class="flex items-center gap-2" title="An arrow tells you whether the mystery card costs more or less than your guess">
+						<ChevronsUpIcon class="text-gold-400" size={16} />
+						<ChevronsDownIcon class="text-gold-400" size={16} />
 						<span class="text-gold-400">Price hints</span>
 					</div>
 				</div>
@@ -207,8 +223,9 @@
 					<Button
 						onClick={() => showRulesModal = true}
 						class="px-4 py-2"
+						title="Read the full rules of Card.dle"
 					>
-						📋 View Detailed Rules
+						<ScrollTextIcon size={16} /> View Detailed Rules
 					</Button>
 				</div>
 			</div>
@@ -220,13 +237,13 @@
 		{#if historicGuesses.length > 0 || loadingGuess}
 			<!-- Global Header for Grid -->
 			<div class="historic-guesses-header grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-1 bg-gray-900 text-gold-400 p-1 rounded-t-md text-xs sticky top-0 z-10">
-				<div class="p-2">Card</div>
-				<div class="p-2">Pokémon</div>
-				<div class="p-2">Artist</div>
-				<div class="p-2">Set</div>
-				<div class="p-2">Supertype</div>
-				<div class="p-2">Type(s)</div>
-				<div class="p-2">Price</div>
+				<div class="p-2" title="The card you guessed">Card</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Pokémon on the card"><PawPrintIcon size={12} /> Pokémon</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Illustrator of the card"><PaintbrushIcon size={12} /> Artist</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Set the card was printed in"><LibraryIcon size={12} /> Set</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Pokémon, Trainer or Energy"><LayersIcon size={12} /> Supertype</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Energy types on the card"><SparklesIcon size={12} /> Type(s)</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Cardmarket value of the card"><CircleEuroIcon size={12} /> Price</div>
 			</div>
 
 			{#each historicGuesses.toReversed() as guess, i (guess.id)}
@@ -257,12 +274,21 @@
 							<span class="mt-1 text-center block leading-tight text-xxs sm:text-xs">{guess.feedback.pokemonValue}</span>
 						</div>
 						<!-- Attribute Cells -->
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.artistCorrect)}`}>{guess.feedback.artistValue}</div>
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.setCorrect)}`}>{guess.feedback.setValue}</div>
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.supertypeCorrect)}`}>{guess.feedback.supertypeValue}</div>
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.typesCorrect)}`}>{guess.feedback.typesValue}</div>
-						<div class={`p-2 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.priceComparison === 'correct')}`}>
-							<span>{getPriceComparisonIcon(guess.feedback.priceComparison)} {guess.feedback.priceValue.toFixed(2)} €</span>
+						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.artistCorrect)}`} title={getFeedbackHint('Artist', guess.feedback.artistCorrect)}>{guess.feedback.artistValue}</div>
+						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.setCorrect)}`} title={getFeedbackHint('Set', guess.feedback.setCorrect)}>{guess.feedback.setValue}</div>
+						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.supertypeCorrect)}`} title={getFeedbackHint('Supertype', guess.feedback.supertypeCorrect)}>{guess.feedback.supertypeValue}</div>
+						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.typesCorrect)}`} title={getFeedbackHint('Type', guess.feedback.typesCorrect)}>{guess.feedback.typesValue}</div>
+						<div class={`p-2 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.priceComparison === 'correct')}`} title={getPriceComparisonHint(guess.feedback.priceComparison)}>
+							<span class="flex items-center justify-center gap-1">
+								{#if guess.feedback.priceComparison === 'correct'}
+									<CheckIcon size={14} />
+								{:else if guess.feedback.priceComparison === 'higher'}
+									<ChevronsUpIcon size={14} />
+								{:else if guess.feedback.priceComparison === 'lower'}
+									<ChevronsDownIcon size={14} />
+								{/if}
+								{guess.feedback.priceValue.toFixed(2)} €
+							</span>
 							<span class="text-xxs">{getPriceComparisonText(guess.feedback.priceComparison)}</span>
 						</div>
 					</div>

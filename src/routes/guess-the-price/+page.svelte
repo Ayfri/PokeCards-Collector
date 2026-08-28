@@ -5,6 +5,11 @@
 	import type { Card } from '$lib/types'; // Assuming Card type is needed for local state
 	import Numpad from '$lib/components/Numpad.svelte'; // Import Numpad
 	import PageTitle from '$lib/components/PageTitle.svelte'; // Import PageTitle
+	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
+	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
+	import GemIcon from '@lucide/svelte/icons/gem';
+	import LibraryIcon from '@lucide/svelte/icons/library';
+	import RotateCwIcon from '@lucide/svelte/icons/rotate-cw';
 
 	interface Props {
 		data: PageData;
@@ -212,12 +217,12 @@
 			<div class="card-display-wrapper order-1 md:order-2 w-full flex justify-center">
 				<div class="card-display p-4 sm:p-6 bg-gray-800 rounded-lg shadow-xl w-full max-w-xs sm:max-w-sm text-center border-2 border-gold-500 relative">
 					<h2 class="text-xl sm:text-2xl font-semibold text-gold-300 mb-2">{displayedCard.name}</h2>
-					<p class="text-xs sm:text-sm text-gray-400 mb-1">Set: {displayedCard.setName}</p>
-					<p class="text-xs sm:text-sm text-gray-400 mb-1">Rarity: {displayedCard.rarity}</p>
+					<p class="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-gray-400 mb-1" title="Set this card was printed in"><LibraryIcon size={14} /> {displayedCard.setName}</p>
+					<p class="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-gray-400 mb-1" title="How scarce this print is"><GemIcon size={14} /> {displayedCard.rarity}</p>
 					{#if displayedReleaseDate}
-						<p class="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">Released: {new Date(displayedReleaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+						<p class="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4" title="Release date of the set"><CalendarDaysIcon size={14} /> {new Date(displayedReleaseDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
 					{:else}
-						<p class="text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4">Released: N/A</p> 
+						<p class="flex items-center justify-center gap-1.5 text-xs sm:text-sm text-gray-400 mb-3 sm:mb-4" title="Release date of the set"><CalendarDaysIcon size={14} /> N/A</p> 
 					{/if}
 					<img src={displayedCard.image} alt={displayedCard.name} class="mx-auto mb-3 sm:mb-4 rounded-lg shadow-md w-48 sm:w-64 h-auto object-contain" />
 
@@ -239,9 +244,11 @@
 						/>
 						<button 
 							type="submit" 
-							class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 sm:py-3 px-4 rounded-sm focus:outline-hidden focus:shadow-outline transition-colors duration-200 text-sm sm:text-base {guessSubmitted ? 'opacity-50 cursor-not-allowed' : ''}"
-							disabled={guessSubmitted} 
+							class="flex w-full items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 sm:py-3 px-4 rounded-sm focus:outline-hidden focus:shadow-outline transition-colors duration-200 text-sm sm:text-base {guessSubmitted ? 'opacity-50 cursor-not-allowed' : ''}"
+							disabled={guessSubmitted}
+							title="Check how close your guess is"
 						>
+							<CircleEuroIcon size={16} />
 							Submit Guess
 						</button>
 					</form>
@@ -262,8 +269,12 @@
 					onclick={playAgain} 
 					class="play-again-button bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-sm focus:outline-hidden focus:shadow-outline transition-all duration-200 text-base sm:text-lg relative { (guessSubmitted && !isLoadingNextCard) ? 'ripple-active' : '' } { isLoadingNextCard ? 'opacity-50' : '' }"
 					disabled={isLoadingNextCard || !guessSubmitted}
+					title="Draw another random card"
 				>
-					<span class="relative z-10">{isLoadingNextCard ? 'Loading Next Card...' : 'Play Again (New Card)'}</span>
+					<span class="relative z-10 flex items-center justify-center gap-2">
+						<RotateCwIcon size={18} />
+						{isLoadingNextCard ? 'Loading Next Card...' : 'Play Again (New Card)'}
+					</span>
 				</button>
 			</div>
 		</div>
