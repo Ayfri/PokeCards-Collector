@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { stopPropagation } from 'svelte/legacy';
-
 	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import SearchBar from './SearchBar.svelte';
@@ -58,7 +56,7 @@
 <!-- Mobile search icon (only on xs screens) -->
 <button
 	class="text-gray-400 hover:text-white rounded-full sm:hidden"
-	onclick={stopPropagation(toggleModal)}
+	onclick={event => { event.stopPropagation(); toggleModal(); }}
 	aria-label="Open search"
 	bind:this={searchButton}
 >
@@ -71,7 +69,7 @@
 		class="fixed inset-0 bg-black/80 z-110 flex-col pt-4"
 		transition:fade={{ duration: 200 }}
 	>
-		<div class="w-full px-4" bind:this={modalContent} onclick={stopPropagation(() => {})}>
+		<div class="w-full px-4" bind:this={modalContent}>
 			<div class="flex items-center justify-between mb-4">
 				<span class="text-white text-lg font-semibold">Search Cards</span>
 				<button class="text-gray-400 hover:text-white p-2" onclick={closeModal}>

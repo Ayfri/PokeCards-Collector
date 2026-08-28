@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { createBubbler, stopPropagation } from 'svelte/legacy';
-
-	const bubble = createBubbler();
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import CardImage from '@components/card/CardImage.svelte';
 	import {fade} from 'svelte/transition';
@@ -43,13 +40,9 @@
 	const relatedSortBy = persistentWritable('related-cards-sort-by', 'sort-set');
 	const relatedSortOrder = persistentWritable<'asc' | 'desc'>('related-cards-sort-order', 'asc');
 
-	// --- Force reactivity for stores ---
-	let _collection = $derived($collectionStore);
-	let _wishlist = $derived($wishlistStore);
-
 	// --- User/Profile State ---
-	let user = $derived(page.data.user);
-	let profile = $derived(page.data.profile);
+	const user = $derived(page.data.user);
+	const profile = $derived(page.data.profile);
 
 	// --- Collection/Wishlist State ---
 	function getCollectionCount(cardCode: string) {
@@ -119,10 +112,10 @@
 	}
 
 	// Sort the cards based on the current sort settings (use the passed 'cards' directly)
-	let sortedCards = $derived(sortCards(cards, $relatedSortBy, $relatedSortOrder));
+	const sortedCards = $derived(sortCards(cards, $relatedSortBy, $relatedSortOrder));
 
 	// Determine the title based on whether a specific Pokémon context is provided
-	let titleName = $derived(pokemon
+	const titleName = $derived(pokemon
 		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
 		: (sortedCards[0]?.name || 'Related')); // Fallback to first card name or generic term
 
@@ -136,7 +129,6 @@
 		} else {
 			await addCardToWishlist(profile.username, cardCode);
 		}
-		sortedCards = [...sortedCards]; // Force re-render
 	}
 	async function handleAddCard(cardCode: string, event: MouseEvent) {
 		event.preventDefault();
@@ -145,7 +137,6 @@
 		const count = getCollectionCount(cardCode);
 		if (count >= MAX_CARD_QUANTITY) return;
 		await addCardToCollection(profile.username, cardCode);
-		sortedCards = [...sortedCards]; // Force re-render
 	}
 	async function handleRemoveCard(cardCode: string, event: MouseEvent) {
 		event.preventDefault();
@@ -154,7 +145,6 @@
 		const count = getCollectionCount(cardCode);
 		if (count === 0) return;
 		await removeCardFromCollection(profile.username, cardCode);
-		sortedCards = [...sortedCards]; // Force re-render
 	}
 </script>
 
@@ -185,12 +175,16 @@
 			{#each sortedCards as card (card.cardCode)}
 				{@const cardPokemon = getPokemon(card.pokemonNumber)}
 				{@const cardSet = findSetByCardCode(card.cardCode, sets)}
-				<button
-					class="flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5 cursor-pointer"
+				<div
+					class="relative flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5"
 					transition:fade={{ duration: 200 }}
-					onclick={() => onCardSelect(card)}
-					aria-label={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
 				>
+					<!-- Stretched button: covers the whole tile so the nested controls stay valid HTML. -->
+					<button
+						class="absolute inset-0 z-2 cursor-pointer"
+						onclick={() => onCardSelect(card)}
+						aria-label={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
+					></button>
 					<div class="relative rounded-lg overflow-hidden shadow-lg w-full" style="aspect-ratio: 63/88;">
 						{#if !NO_IMAGES}
 							<CardImage
@@ -265,8 +259,7 @@
 									href={card.cardMarketUrl}
 									target="_blank"
 									rel="noopener noreferrer"
-									class="hover:text-gold-300 transition-colors duration-200 text-center"
-									onclick={stopPropagation(bubble('click'))}
+									class="relative z-10 hover:text-gold-300 transition-colors duration-200 text-center"
 									aria-label="View on Cardmarket"
 								>
 									<div class="flex items-center justify-center whitespace-nowrap">
@@ -287,7 +280,7 @@
 							{/if}
 						</div>
 					</div>
-				</button>
+				</div>
 			{/each}
 		</div>
 	{:else}

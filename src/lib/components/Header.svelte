@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { stopPropagation } from 'svelte/legacy';
-
 	import { page } from '$app/state';
 	import { NO_IMAGES } from '$lib/images';
 	import type { FullCard, Set, PriceData } from '$lib/types';
@@ -72,11 +70,11 @@
 	let openDropdown: string | null = $state(null); // Track which dropdown is open
 
 	// Use data from page state directly
-	let user = $derived(page.data.user);
-	let profile = $derived(page.data.profile);
-	let prices = $derived(page.data.prices as Record<string, PriceData> || {});
-	let allCards = $derived(page.data.allCards as FullCard[] || []);
-	let sets = $derived(page.data.sets as Set[] || []);
+	const user = $derived(page.data.user);
+	const profile = $derived(page.data.profile);
+	const prices = $derived(page.data.prices as Record<string, PriceData> || {});
+	const allCards = $derived(page.data.allCards as FullCard[] || []);
+	const sets = $derived(page.data.sets as Set[] || []);
 
 	// Use afterNavigate instead of reactive statement
 	afterNavigate(() => {
@@ -121,7 +119,7 @@
 			<button
 				aria-label="Toggle menu"
 				class="lg:hidden text-gray-400 hover:text-gold-400 transition-colors duration-200 p-1 -ml-1"
-				onclick={stopPropagation(() => isMobileMenuOpen = !isMobileMenuOpen)}
+				onclick={event => { event.stopPropagation(); isMobileMenuOpen = !isMobileMenuOpen; }}
 				bind:this={mobileMenuButton}
 			>
 				{#if isMobileMenuOpen}
@@ -152,7 +150,7 @@
 					<div class="relative">
 						<button
 							class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1"
-							onclick={stopPropagation(() => toggleDropdown(link.name))}
+							onclick={event => { event.stopPropagation(); toggleDropdown(link.name); }}
 						>
 							{#if !NO_IMAGES && link.icon}
 								<link.icon size={16} />
@@ -231,7 +229,7 @@
 				</svg>
 			</a>
 			<!-- User menu - Pass down user and profile props with correct names -->
-			<UserMenu userProp={user} profileProp={profile} />
+			<UserMenu />
 		</div>
 	</div>
 
@@ -243,7 +241,7 @@
 			aria-modal="true"
 			transition:slide={{ duration: 150, axis: 'y' }}
 			bind:this={mobileMenuNav}
-			onclick={stopPropagation(() => {})}
+			tabindex="-1"
 		>
 			<nav class="flex flex-col gap-3">
 				{#each navLinks as link}

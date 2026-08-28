@@ -6,6 +6,7 @@
 	class="fixed right-3 lg:right-6 bottom-20 xs:bottom-24 lg:bottom-24 size-12 z-30 opacity-50 border-white border-solid border-2 rounded-full bg-black fill-white p-2 cursor-pointer transition-all ease-in-out duration-300 hover:scale-110 hover:opacity-100"
 	id="scroll-top-btn"
 	{onclick}
+	aria-label="Scroll to top"
 >
 	<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
 		<path

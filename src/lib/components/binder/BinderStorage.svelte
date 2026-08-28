@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { type Writable } from 'svelte/store';
 	import { onMount } from 'svelte';
 	import Button from '@components/filters/Button.svelte';
@@ -29,13 +27,12 @@
 		toggleClearStorageModal
 	}: Props = $props();
 	
-	let cardDataMap = $derived(new Map(allCards.map(card => [card.cardCode, card])));
+	const cardDataMap = $derived(new Map(allCards.map(card => [card.cardCode, card])));
 	
 	// Search and filter state
 	let searchTerm = $state('');
 	let sortBy = $state('type'); // Default sort: card codes first, then URLs
 	let sortOrder = $state('asc');
-	let filteredCardCodes: string[] = $state([]);
 	let showFilters = $state(false);
 	
 	// Load saved preferences on mount
@@ -50,7 +47,7 @@
 	});
 
 	// Update filtered cards when original cards or filters change
-	run(() => {
+	const filteredCardCodes = $derived.by(() => {
 		let filtered = [...$cards];
 		
 		if (searchTerm.trim()) {
@@ -94,7 +91,7 @@
 			return sortOrder === 'asc' ? comparison : -comparison;
 		});
 		
-		filteredCardCodes = filtered;
+		return filtered;
 	});
 	
 	// Handle drag start for stored cards
@@ -171,7 +168,7 @@
 		{:else if filteredCardCodes.length === 0}
 			<p class="text-gray-500 text-center py-4 text-sm">No items match your search/filters.</p>
 		{:else}
-			<div class="grid grid-cols-2 gap-2">
+			<div class="grid grid-cols-2 gap-2" role="list">
 				{#each filteredCardCodes as item (item)}
 					{#if isCardCode(item)}
 						{@const fullCard = cardDataMap.get(item)}
@@ -182,6 +179,7 @@
 								class="relative aspect-2/3 border-2 border-gray-700 rounded-sm group transition-all duration-200 hover:border-gold-400"
 								draggable="true"
 								ondragstart={(e) => onDragStart(e, item)}
+								role="listitem"
 							>
 								<CardImage imageUrl={fullCard.image} alt={fullCard.name} class="w-full h-full object-contain p-1" lazy={true} />
 								<div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[0.6rem] leading-tight text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">
@@ -203,6 +201,7 @@
 							class="relative aspect-2/3 border-2 border-gray-700 rounded-sm group transition-all duration-200 hover:border-gold-400"
 							draggable="true"
 							ondragstart={(e) => onDragStart(e, item)}
+							role="listitem"
 						>
 							<CardImage imageUrl={item} alt="Imported from URL" class="w-full h-full object-contain p-1" lazy={true} />
 							<div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[0.6rem] leading-tight text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">

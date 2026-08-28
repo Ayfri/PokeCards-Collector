@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { createBubbler, stopPropagation } from 'svelte/legacy';
-
-	const bubble = createBubbler();
 	import { onMount, onDestroy } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import XIcon from '@lucide/svelte/icons/x';
@@ -57,16 +54,16 @@
 	<div
 		class="fixed inset-0 z-50 bg-black/70 flex items-center justify-center"
 		transition:fade={{ duration: 200 }}
-		onclick={onClose}
+		onclick={event => { if (event.target === event.currentTarget) onClose(); }}
 		role="presentation"
 	>
 		<div
 			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto modal-content {containerClass} {fullscreen ? 'w-[95vw] h-[95vh] max-w-none max-h-none' : ''}"
 			transition:transitionFn={transitionParams}
-			onclick={stopPropagation(bubble('click'))}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="modal-title"
+			tabindex="-1"
 		>
 			{#if header || title}
 				<div class="flex justify-between items-center mb-4">

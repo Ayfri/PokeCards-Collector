@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import LoginForm from './LoginForm.svelte';
 	import RegisterForm from './RegisterForm.svelte';
 	import X from '@lucide/svelte/icons/x';
@@ -14,13 +12,11 @@
 
 	let { isOpen = $bindable(false), onClose = undefined, initialMode = 'login' }: Props = $props();
 	
-	let activeTab: 'login' | 'register' = $state(initialMode);
+	let activeTab = $state<'login' | 'register'>('login');
 	let modalContent = $state<HTMLDivElement>();
 
-	run(() => {
-		if (isOpen) {
-			activeTab = initialMode;
-		}
+	$effect(() => {
+		if (isOpen) activeTab = initialMode;
 	});
 
 	function closeModal() {
@@ -33,16 +29,15 @@
 	}
 
 	function handleOverlayClick(event: MouseEvent) {
-		if (modalContent && !modalContent.contains(event.target as Node)) {
-			closeModal();
-		}
+		if (event.target === event.currentTarget) closeModal();
 	}
 </script>
 
 {#if isOpen}
 	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 		transition:fade={{ duration: 200 }}
-		onclick={handleOverlayClick}>
+		onclick={handleOverlayClick}
+		role="presentation">
 		<div class="relative bg-white dark:bg-gray-800 rounded-lg w-full max-w-md mx-4 overflow-hidden"
 			bind:this={modalContent}
 			transition:fly={{ y: 40, opacity: 0, duration: 250 }}>
