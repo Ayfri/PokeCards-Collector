@@ -3,7 +3,7 @@
 	import { onDestroy, onMount } from 'svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
-	import PlusCircle from '@lucide/svelte/icons/plus-circle';
+	import PlusCircle from '@lucide/svelte/icons/circle-plus';
 	import Check from '@lucide/svelte/icons/check';
 	import { processCardImage } from '$helpers/card-images';
 	import type { FullCard, Set, PriceData } from '$lib/types';
@@ -286,6 +286,7 @@
 				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white z-10 flex items-center justify-center h-6 w-6"
 				onclick={handleClearSearch}
 				aria-label="Clear search"
+				title="Clear search"
 			>
 				<X size={18} />
 			</button>

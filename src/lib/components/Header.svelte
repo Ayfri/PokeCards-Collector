@@ -19,8 +19,9 @@
 	import MenuIcon from '@lucide/svelte/icons/menu';
 	import XIcon from '@lucide/svelte/icons/x';
 	import GlobeIcon from '@lucide/svelte/icons/globe';
-	import ListIcon from '@lucide/svelte/icons/list';
+	import PokedexIcon from '@lucide/svelte/icons/paw-print';
 	import PuzzleIcon from '@lucide/svelte/icons/puzzle';
+	import PriceGameIcon from '@lucide/svelte/icons/circle-euro';
 	import GamepadIcon from '@lucide/svelte/icons/gamepad-2';
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
@@ -31,36 +32,39 @@
 		href?: string;
 		name: string;
 		icon: LucideIcon | null;
+		description?: string;
 		isDropdown?: boolean;
 		children?: NavLink[];
 	}
 
 	const navLinks: NavLink[] = [
-		{ href: '/', name: 'PCC', icon: null },
+		{ href: '/', name: 'PCC', icon: null, description: 'PokéCards-Collector home' },
 		{
 			name: 'Browse',
 			icon: SearchIcon,
+			description: 'Browse the card database',
 			isDropdown: true,
 			children: [
-				{ href: '/pokemons', name: 'Pokémons', icon: ListIcon },
-				{ href: '/cards-list', name: 'Cards', icon: CardStackIcon },
-				{ href: '/sets', name: 'Sets', icon: LibraryIcon },
-				{ href: '/artists', name: 'Artists', icon: ArtistIcon },
-				{ href: '/japan', name: 'Japan', icon: GlobeIcon },
-				{ href: '/random', name: 'Random Card', icon: ShuffleIcon },
+				{ href: '/pokemons', name: 'Pokémons', icon: PokedexIcon, description: 'Every Pokémon and its cards' },
+				{ href: '/cards-list', name: 'Cards', icon: CardStackIcon, description: 'Browse and filter every card' },
+				{ href: '/sets', name: 'Sets', icon: LibraryIcon, description: 'Every set, grouped by series' },
+				{ href: '/artists', name: 'Artists', icon: ArtistIcon, description: 'Every card illustrator' },
+				{ href: '/japan', name: 'Japan', icon: GlobeIcon, description: 'The Japanese catalogue' },
+				{ href: '/random', name: 'Random Card', icon: ShuffleIcon, description: 'Jump to a random card' },
 			]
 		},
 		{
 			name: 'Games',
 			icon: GamepadIcon,
+			description: 'Daily card games',
 			isDropdown: true,
 			children: [
-				{ href: '/card.dle', name: 'Card.dle', icon: PuzzleIcon },
-				{ href: '/guess-the-price', name: 'Guess The Price', icon: PuzzleIcon },
+				{ href: '/card.dle', name: 'Card.dle', icon: PuzzleIcon, description: 'Guess the daily mystery card' },
+				{ href: '/guess-the-price', name: 'Guess The Price', icon: PriceGameIcon, description: 'Guess what a card is worth' },
 			]
 		},
-		{ href: '/binder', name: 'Binder', icon: BinderIcon },
-		{ href: '/users', name: 'Users', icon: SearchUsersIcon },
+		{ href: '/binder', name: 'Binder', icon: BinderIcon, description: 'Lay out a digital binder page' },
+		{ href: '/users', name: 'Users', icon: SearchUsersIcon, description: 'Find other collectors' },
 	];
 
 	// State for mobile menu and dropdowns
@@ -121,6 +125,7 @@
 				class="lg:hidden text-gray-400 hover:text-gold-400 transition-colors duration-200 p-1 -ml-1"
 				onclick={event => { event.stopPropagation(); isMobileMenuOpen = !isMobileMenuOpen; }}
 				bind:this={mobileMenuButton}
+				title={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
 			>
 				{#if isMobileMenuOpen}
 					<XIcon size={24} />
@@ -134,7 +139,7 @@
 		<nav class="hidden lg:flex items-center gap-4">
 			{#each navLinks as link}
 				{#if link.href === '/'}
-					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2" href={link.href}>
+					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2" href={link.href} title={link.description}>
 						{#if !NO_IMAGES}
 							<img
 								alt="PokéCards-Collector Logo"
@@ -151,6 +156,8 @@
 						<button
 							class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1"
 							onclick={event => { event.stopPropagation(); toggleDropdown(link.name); }}
+							aria-expanded={openDropdown === link.name}
+							title={link.description}
 						>
 							{#if !NO_IMAGES && link.icon}
 								<link.icon size={16} />
@@ -168,6 +175,7 @@
 									<a
 										href={child.href}
 										class="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-gold-400 hover:bg-gray-700 transition-colors duration-200"
+										title={child.description}
 									>
 										{#if !NO_IMAGES && child.icon}
 											<child.icon size={16} />
@@ -179,7 +187,7 @@
 						{/if}
 					</div>
 				{:else}
-					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href}>
+					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href} title={link.description}>
 						{#if !NO_IMAGES && link.icon}
 							<link.icon size={16} />
 						{/if}
@@ -246,7 +254,7 @@
 			<nav class="flex flex-col gap-3">
 				{#each navLinks as link}
 					{#if link.href === '/'}
-						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href}>
+						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href} title={link.description}>
 							{#if !NO_IMAGES}
 								<img
 									alt="PokéCards-Collector Logo"
@@ -267,7 +275,7 @@
 								{link.name}
 							</div>
 							{#each link.children as child}
-								<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 pl-6 rounded-sm hover:bg-gray-600" href={child.href}>
+								<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 pl-6 rounded-sm hover:bg-gray-600" href={child.href} title={child.description}>
 									{#if !NO_IMAGES && child.icon}
 										<child.icon size={18} />
 									{/if}
@@ -276,7 +284,7 @@
 							{/each}
 						</div>
 					{:else}
-						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href}>
+						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href} title={link.description}>
 							{#if !NO_IMAGES && link.icon}
 								<link.icon size={20} />
 							{/if}
