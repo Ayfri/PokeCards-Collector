@@ -2,12 +2,31 @@ import { getCards, getSets, getPrices } from '$helpers/supabase-data';
 import type { LayoutServerLoad } from './$types';
 import { getUserWishlist } from '$lib/services/wishlists';
 import { getUserCollection } from '$lib/services/collections';
-import type { UserWishlist } from '$lib/types';
+import type { FullCard, PriceData, UserWishlist } from '$lib/types';
 import type { UserCollection } from '$lib/types';
 
-export const load: LayoutServerLoad = async ({ locals }) => {
-	// Fetch sets directly, assuming it's fast and needed.
-	const sets = await getSets();
+/**
+ * Routes whose load reads `streamed.allCards` / `streamed.prices`. Every other route paid for the whole card
+ * and price tables without ever touching them, because the promises start executing the moment they are created.
+ */
+const ROUTES_NEEDING_CARDS = new Set([
+	'/',
+	'/artists',
+	'/binder',
+	'/card.dle',
+	'/card/[cardCode]',
+	'/cards-list',
+	'/collection/[user]',
+	'/guess-the-price',
+	'/profile/[user]',
+	'/sets',
+	'/users',
+	'/wishlist/[user]',
+]);
+
+export const load: LayoutServerLoad = async ({ locals, route }) => {
+	// Sets and the user's own rows are independent queries, so they overlap instead of running back to back.
+	const setsPromise = getSets();
 
 	// Initialize with specific types
 	let wishlistItems: UserWishlist[] = [];
@@ -37,10 +56,13 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		}
 	}
 
+	const sets = await setsPromise;
+	const needsCards = route.id !== null && ROUTES_NEEDING_CARDS.has(route.id);
+
 	return {
 		streamed: {
-			allCards: getCards(), // Return promise
-			prices: getPrices(),   // Return promise
+			allCards: needsCards ? getCards() : Promise.resolve([] as FullCard[]),
+			prices: needsCards ? getPrices() : Promise.resolve({} as Record<string, PriceData>),
 		},
 		sets,                 // Resolved sets
 		user: locals.user,
