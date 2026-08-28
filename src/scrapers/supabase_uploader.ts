@@ -1,17 +1,17 @@
 import * as fs from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
+import { CARDS, JP_CARDS, JP_PRICES, JP_SETS, POKEMONS, PRICES, SETS, TYPES } from './files';
+import type { MappedCard, MappedPrice, MappedSet } from './tcgdex/mappers';
 
-// Configuration Supabase pour le CLI
 const supabaseUrl = process.env.PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseKey = process.env.PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? process.env.PUBLIC_SUPABASE_ANON_KEY!;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-	throw new Error('Supabase URL or Anon Key is missing. Check your environment variables.');
+if (!supabaseUrl || !supabaseKey) {
+	throw new Error('Supabase URL or key is missing. Check your environment variables.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Types pour les données
 interface PokemonData {
 	id: number;
 	name: string;
@@ -20,524 +20,158 @@ interface PokemonData {
 	evolves_from?: number;
 }
 
-interface TypeData {
-	name: string;
-}
+const read = <T>(path: string): T => {
+	if (!fs.existsSync(path)) throw new Error(`File not found: ${path}`);
+	return JSON.parse(fs.readFileSync(path, 'utf-8')) as T;
+};
 
-interface SetData {
-	name: string;
-	logo?: string;
-	printedTotal?: number;
-	ptcgoCode?: string;
-	releaseDate?: string;
-	series?: string;
-}
-
-interface CardData {
-	cardCode: string;
-	artist?: string;
-	cardMarketUpdatedAt?: string;
-	cardMarketUrl?: string;
-	image?: string;
-	name: string;
-	pokemonNumber?: number;
-	rarity?: string;
-	setName?: string;
-	supertype?: string;
-	types?: string;
-}
-
-interface PriceData {
-	cardCode: string;
-	simple?: number;
-	low?: number;
-	trend?: number;
-	avg1?: number;
-	avg7?: number;
-	avg30?: number;
-	reverseSimple?: number;
-	reverseLow?: number;
-	reverseTrend?: number;
-	reverseAvg1?: number;
-	reverseAvg7?: number;
-	reverseAvg30?: number;
-}
-
-const PROJECT_ID = 'ptbwuqaqkqntmgmaqboq';
-
-// Fonction utilitaire pour échapper les valeurs SQL
-function escapeSqlValue(value: any): string {
-	if (value === null || value === undefined) {
-		return 'NULL';
+/** Upserts in batches; Supabase rejects a single statement carrying tens of thousands of rows. */
+async function upsertAll(table: string, rows: Record<string, unknown>[], onConflict: string, batchSize = 500): Promise<void> {
+	for (let index = 0; index < rows.length; index += batchSize) {
+		const { error } = await supabase.from(table).upsert(rows.slice(index, index + batchSize), { onConflict });
+		if (error) throw new Error(`Error upserting ${table} at ${index}: ${error.message}`);
+		if (index % (batchSize * 10) === 0 && index > 0) console.log(`  ${table}: ${index}/${rows.length}`);
 	}
-	if (typeof value === 'string') {
-		return `'${value.replace(/'/g, "''")}'`;
-	}
-	if (typeof value === 'number') {
-		return value.toString();
-	}
-	if (Array.isArray(value)) {
-		return `ARRAY[${value.map(v => escapeSqlValue(v)).join(',')}]`;
-	}
-	return `'${String(value).replace(/'/g, "''")}'`;
+	console.log(`✅ Upserted ${rows.length} rows into ${table}`);
 }
 
-// Upload des types Pokémon
-export async function uploadTypes() {
+/** Deduplicates on the primary key, keeping the last occurrence, and reports what it dropped. */
+function deduplicate(rows: Record<string, unknown>[], key: string, label: string): Record<string, unknown>[] {
+	const byKey = new Map<unknown, Record<string, unknown>>();
+	for (const row of rows) byKey.set(row[key], row);
+	if (byKey.size !== rows.length) console.log(`  ${label}: ${rows.length} → ${byKey.size} (${rows.length - byKey.size} duplicates)`);
+	return [...byKey.values()];
+}
+
+export async function uploadTypes(): Promise<void> {
 	console.log('📤 Uploading Pokémon types...');
-	
-	const typesPath = 'src/assets/types.json';
-	if (!fs.existsSync(typesPath)) {
-		throw new Error(`File not found: ${typesPath}`);
-	}
+	const types = read<string[]>(TYPES);
 
-	const typesData: string[] = JSON.parse(fs.readFileSync(typesPath, 'utf-8'));
-	
-	// Clear existing data
-	const { error: deleteError } = await supabase.from('types').delete().neq('name', '');
-	if (deleteError) {
-		throw new Error(`Error clearing types: ${deleteError.message}`);
-	}
-	
-	// Insert types
-	const typesToInsert = typesData.map(name => ({ name }));
-	const { error: insertError } = await supabase
-		.from('types')
-		.insert(typesToInsert);
-		
-	if (insertError) {
-		throw new Error(`Error inserting types: ${insertError.message}`);
-	}
-	
-	console.log(`✅ Uploaded ${typesData.length} types`);
+	const { error } = await supabase.from('types').delete().neq('name', '');
+	if (error) throw new Error(`Error clearing types: ${error.message}`);
+
+	const { error: insertError } = await supabase.from('types').insert(types.map(name => ({ name })));
+	if (insertError) throw new Error(`Error inserting types: ${insertError.message}`);
+	console.log(`✅ Uploaded ${types.length} types`);
 }
 
-// Upload des Pokémon
-export async function uploadPokemons() {
+export async function uploadPokemons(): Promise<void> {
 	console.log('📤 Uploading Pokémon data...');
-	
-	const pokemonsPath = 'src/assets/pokemons-full.json';
-	if (!fs.existsSync(pokemonsPath)) {
-		throw new Error(`File not found: ${pokemonsPath}`);
-	}
+	const pokemons = read<PokemonData[]>(POKEMONS);
 
-	const pokemonsData: PokemonData[] = JSON.parse(fs.readFileSync(pokemonsPath, 'utf-8'));
-	
-	// Clear existing data
-	const { error: deleteError } = await supabase.from('pokemons').delete().neq('id', 0);
-	if (deleteError) {
-		throw new Error(`Error clearing pokemons: ${deleteError.message}`);
-	}
-	
-	// Insert pokemons in batches
-	const batchSize = 100;
-	for (let i = 0; i < pokemonsData.length; i += batchSize) {
-		const batch = pokemonsData.slice(i, i + batchSize);
-		
-		// Transform data to ensure compatibility with the table structure
-		const pokemonsToInsert = batch.map(pokemon => ({
-			id: pokemon.id,
-			name: pokemon.name,
-			description: pokemon.description,
-			evolves_to: pokemon.evolves_to || null,
-			evolves_from: pokemon.evolves_from || null
-		}));
-		
-		const { error } = await supabase
-			.from('pokemons')
-			.insert(pokemonsToInsert);
-			
-		if (error) {
-			throw new Error(`Error inserting pokemon batch ${i}: ${error.message}`);
-		}
-		
-		if (i % 300 === 0) {
-			console.log(`  Processed ${i}/${pokemonsData.length} Pokémon...`);
-		}
-	}
-	
-	console.log(`✅ Uploaded ${pokemonsData.length} Pokémon`);
+	await upsertAll('pokemons', pokemons.map(pokemon => ({
+		id: pokemon.id,
+		name: pokemon.name,
+		description: pokemon.description,
+		evolves_to: pokemon.evolves_to ?? null,
+		evolves_from: pokemon.evolves_from ?? null,
+	})), 'id');
 }
 
-// Upload des sets (non-japonais)
-export async function uploadSets() {
-	console.log('📤 Uploading card sets...');
-	
-	const setsPath = 'src/assets/sets-full.json';
-	if (!fs.existsSync(setsPath)) {
-		throw new Error(`File not found: ${setsPath}`);
-	}
+async function uploadSetsTo(table: string, path: string): Promise<void> {
+	console.log(`📤 Uploading ${table}...`);
+	const sets = read<MappedSet[]>(path);
 
-	const setsData: SetData[] = JSON.parse(fs.readFileSync(setsPath, 'utf-8'));
-	
-	// Transform data to match database schema
-	const setsToInsert = setsData.map(set => ({
+	await upsertAll(table, sets.map(set => ({
 		name: set.name,
 		logo: set.logo || null,
 		printed_total: set.printedTotal || null,
 		ptcgo_code: set.ptcgoCode || null,
 		release_date: set.releaseDate || null,
-		series: set.series || null
-	}));
-	
-	// Use upsert instead of clearing data to avoid foreign key constraint issues
-	console.log(`  Upserting ${setsToInsert.length} sets...`);
-	
-	// Insert/update sets in batches
-	const batchSize = 50;
-	for (let i = 0; i < setsToInsert.length; i += batchSize) {
-		const batch = setsToInsert.slice(i, i + batchSize);
-		
-		const { error } = await supabase
-			.from('sets')
-			.upsert(batch, { onConflict: 'name' });
-			
-		if (error) {
-			throw new Error(`Error upserting sets batch ${i}: ${error.message}`);
-		}
-	}
-	
-	console.log(`✅ Upserted ${setsData.length} sets`);
+		series: set.series || null,
+		set_id: set.setId,
+		symbol: set.symbol || null,
+		total_cards: set.totalCards || null,
+	})), 'name', 100);
 }
 
-// Upload des sets japonais
-export async function uploadJapaneseSets() {
-	console.log('📤 Uploading Japanese card sets...');
-	
-	const jpSetsPath = 'src/assets/jp-sets-full.json';
-	if (!fs.existsSync(jpSetsPath)) {
-		throw new Error(`File not found: ${jpSetsPath}`);
-	}
+export const uploadSets = () => uploadSetsTo('sets', SETS);
+export const uploadJapaneseSets = () => uploadSetsTo('jp_sets', JP_SETS);
 
-	const jpSetsData: SetData[] = JSON.parse(fs.readFileSync(jpSetsPath, 'utf-8'));
-	
-	// Transform data to match database schema
-	const setsToInsert = jpSetsData.map(set => ({
-		name: set.name,
-		logo: set.logo || null,
-		printed_total: set.printedTotal || null,
-		ptcgo_code: set.ptcgoCode || null,
-		release_date: set.releaseDate || null,
-		series: set.series || null
-	}));
-	
-	// Use upsert instead of clearing data to avoid foreign key constraint issues
-	console.log(`  Upserting ${setsToInsert.length} Japanese sets...`);
-	
-	// Insert/update Japanese sets in batches
-	const batchSize = 50;
-	for (let i = 0; i < setsToInsert.length; i += batchSize) {
-		const batch = setsToInsert.slice(i, i + batchSize);
-		
-		const { error } = await supabase
-			.from('jp_sets')
-			.upsert(batch, { onConflict: 'name' });
-			
-		if (error) {
-			throw new Error(`Error upserting jp_sets batch ${i}: ${error.message}`);
-		}
-	}
-	
-	console.log(`✅ Upserted ${jpSetsData.length} Japanese sets`);
-}
+/**
+ * Replaces a card table wholesale with the TCGdex content: everything is upserted, then the rows no
+ * TCGdex card claimed are deleted. `collections` and `wishlists` are never touched - a row pointing at a
+ * card TCGdex does not have yet is kept and renders again once the upstream database fills the set in.
+ */
+async function uploadCardsTo(table: string, path: string, setsTable: string): Promise<void> {
+	console.log(`📤 Uploading ${table}...`);
+	const cards = read<MappedCard[]>(path);
 
-// Upload des cartes (non-japonaises)
-export async function uploadCards() {
-	console.log('📤 Uploading cards...');
-	
-	const cardsPath = 'src/assets/cards-full.json';
-	if (!fs.existsSync(cardsPath)) {
-		throw new Error(`File not found: ${cardsPath}`);
-	}
+	const { data: validSets, error: setsError } = await supabase.from(setsTable).select('name');
+	if (setsError) throw new Error(`Error fetching ${setsTable}: ${setsError.message}`);
+	const validSetNames = new Set(validSets.map(set => set.name as string));
 
-	const cardsContent = fs.readFileSync(cardsPath, 'utf-8');
-	const cardsData: CardData[] = JSON.parse(cardsContent);
-	
-	// Get list of valid set names from the database
-	const { data: validSets, error: setsError } = await supabase
-		.from('sets')
-		.select('name');
-		
-	if (setsError) {
-		throw new Error(`Error fetching valid sets: ${setsError.message}`);
-	}
-	
-	const validSetNames = new Set(validSets.map(set => set.name));
-	
-	// Transform data to match database schema
-	const cardsTransformed = cardsData.map(card => ({
+	const rows = cards.map(card => ({
 		card_code: card.cardCode,
 		artist: card.artist || null,
 		card_market_updated_at: card.cardMarketUpdatedAt || null,
 		card_market_url: card.cardMarketUrl || null,
+		hp: card.hp,
 		image: card.image || null,
+		legal_standard: card.legalStandard,
+		local_id: card.localId || null,
 		name: card.name,
-		pokemon_id: card.pokemonNumber || null,
+		pokemon_id: card.pokemonNumber ?? null,
 		rarity: card.rarity || null,
-		set_name: (card.setName && validSetNames.has(card.setName)) ? card.setName : null,
+		regulation_mark: card.regulationMark || null,
+		set_id: card.setId || null,
+		set_name: validSetNames.has(card.setName) ? card.setName : null,
+		stage: card.stage || null,
 		supertype: card.supertype || null,
-		types: card.types || null
+		tcgdex_id: card.tcgdexId,
+		types: card.types || null,
+		variants: card.variants,
 	}));
-	
-	// Deduplicate by card_code (keep last occurrence)
-	const cardMap = new Map();
-	const duplicates: { card_code: string; name: string; set_name: string | null }[] = [];
-	
-	cardsTransformed.forEach(card => {
-		if (cardMap.has(card.card_code)) {
-			duplicates.push({
-				card_code: card.card_code,
-				name: card.name,
-				set_name: card.set_name
-			});
-		}
-		cardMap.set(card.card_code, card);
-	});
-	
-	const cardsToInsert = Array.from(cardMap.values());
-	
-	console.log(`  Deduplicated: ${cardsData.length} → ${cardsToInsert.length} cards (removed ${cardsData.length - cardsToInsert.length} duplicates)`);
-	
-	if (duplicates.length > 0) {
-		console.log(`  📋 Duplicate cards found:`);
-		duplicates.slice(0, 10).forEach(dup => {
-			console.log(`    - ${dup.card_code} (${dup.name} - ${dup.set_name || 'No Set'})`);
-		});
-		if (duplicates.length > 10) {
-			console.log(`    ... and ${duplicates.length - 10} more duplicates`);
-		}
-	}
-	
-	// Note: We don't clear existing data due to foreign key constraints from prices table
-	// Instead we'll use upsert to update existing records
-	
-	// Count invalid sets for reporting
-	const invalidSets = cardsData.filter(card => card.setName && !validSetNames.has(card.setName));
-	if (invalidSets.length > 0) {
-		const uniqueInvalidSets = [...new Set(invalidSets.map(card => card.setName))];
-		console.log(`⚠️  Found ${invalidSets.length} cards with invalid set names: ${uniqueInvalidSets.slice(0, 5).join(', ')}${uniqueInvalidSets.length > 5 ? '...' : ''}`);
-	}
-	
-	// Insert cards in smaller batches to avoid memory issues
-	const batchSize = 25;
-	for (let i = 0; i < cardsToInsert.length; i += batchSize) {
-		const batch = cardsToInsert.slice(i, i + batchSize);
-		
-		const { error } = await supabase
-			.from('cards')
-			.upsert(batch, { onConflict: 'card_code' });
-			
-		if (error) {
-			throw new Error(`Error inserting cards batch ${i}: ${error.message}`);
-		}
-		
-		// Progress indicator
-		if (i % 500 === 0) {
-			console.log(`  Processed ${i}/${cardsToInsert.length} cards...`);
-		}
-	}
-	
-	console.log(`✅ Uploaded ${cardsToInsert.length} cards`);
+
+	const missingSets = [...new Set(cards.filter(card => card.setName && !validSetNames.has(card.setName)).map(card => card.setName))];
+	if (missingSets.length) console.log(`⚠️  ${missingSets.length} set names are not in ${setsTable}: ${missingSets.slice(0, 5).join(', ')}${missingSets.length > 5 ? '...' : ''}`);
+
+	await upsertAll(table, deduplicate(rows, 'card_code', table), 'card_code');
+
+	const { error, count } = await supabase.from(table).delete({ count: 'exact' }).is('tcgdex_id', null);
+	if (error) throw new Error(`Error dropping legacy ${table} rows: ${error.message}`);
+	console.log(`🧹 Dropped ${count ?? 0} ${table} rows TCGdex no longer has`);
 }
 
-// Upload des cartes japonaises
-export async function uploadJapaneseCards() {
-	console.log('📤 Uploading Japanese cards...');
-	
-	const jpCardsPath = 'src/assets/jp-cards-full.json';
-	if (!fs.existsSync(jpCardsPath)) {
-		throw new Error(`File not found: ${jpCardsPath}`);
-	}
+export const uploadCards = () => uploadCardsTo('cards', CARDS, 'sets');
+export const uploadJapaneseCards = () => uploadCardsTo('jp_cards', JP_CARDS, 'jp_sets');
 
-	const jpCardsContent = fs.readFileSync(jpCardsPath, 'utf-8');
-	const jpCardsData: CardData[] = JSON.parse(jpCardsContent);
-	
-	// Get list of valid set names from the database (check both sets and jp_sets)
-	const { data: validSets, error: setsError } = await supabase
-		.from('jp_sets')
-		.select('name');
-		
-	if (setsError) {
-		throw new Error(`Error fetching valid Japanese sets: ${setsError.message}`);
-	}
-	
-	const validSetNames = new Set(validSets.map(set => set.name));
-	
-	// Transform data to match database schema
-	const cardsTransformed = jpCardsData.map(card => ({
-		card_code: card.cardCode,
-		artist: card.artist || null,
-		card_market_updated_at: card.cardMarketUpdatedAt || null,
-		card_market_url: card.cardMarketUrl || null,
-		image: card.image || null,
-		name: card.name,
-		pokemon_id: card.pokemonNumber || null,
-		rarity: card.rarity || null,
-		set_name: (card.setName && validSetNames.has(card.setName)) ? card.setName : null,
-		supertype: card.supertype || null,
-		types: card.types || null
-	}));
-	
-	// Deduplicate by card_code (keep last occurrence)
-	const cardMap = new Map();
-	const duplicates: { card_code: string; name: string; set_name: string | null }[] = [];
-	
-	cardsTransformed.forEach(card => {
-		if (cardMap.has(card.card_code)) {
-			duplicates.push({
-				card_code: card.card_code,
-				name: card.name,
-				set_name: card.set_name
-			});
-		}
-		cardMap.set(card.card_code, card);
-	});
-	
-	const cardsToInsert = Array.from(cardMap.values());
-	
-	console.log(`  Deduplicated: ${jpCardsData.length} → ${cardsToInsert.length} Japanese cards (removed ${jpCardsData.length - cardsToInsert.length} duplicates)`);
-	
-	if (duplicates.length > 0) {
-		console.log(`  📋 Duplicate Japanese cards found:`);
-		duplicates.slice(0, 10).forEach(dup => {
-			console.log(`    - ${dup.card_code} (${dup.name} - ${dup.set_name || 'No Set'})`);
-		});
-		if (duplicates.length > 10) {
-			console.log(`    ... and ${duplicates.length - 10} more duplicates`);
-		}
-	}
-	
-	// Note: We don't clear existing data due to foreign key constraints from prices table
-	// Instead we'll use upsert to update existing records
-	
-	// Count invalid sets for reporting
-	const invalidSets = jpCardsData.filter(card => card.setName && !validSetNames.has(card.setName));
-	if (invalidSets.length > 0) {
-		const uniqueInvalidSets = [...new Set(invalidSets.map(card => card.setName))];
-		console.log(`⚠️  Found ${invalidSets.length} Japanese cards with invalid set names: ${uniqueInvalidSets.slice(0, 5).join(', ')}${uniqueInvalidSets.length > 5 ? '...' : ''}`);
-	}
-	
-	// Insert Japanese cards in smaller batches
-	const batchSize = 25;
-	for (let i = 0; i < cardsToInsert.length; i += batchSize) {
-		const batch = cardsToInsert.slice(i, i + batchSize);
-		
-		const { error } = await supabase
-			.from('jp_cards')
-			.upsert(batch, { onConflict: 'card_code' });
-			
-		if (error) {
-			throw new Error(`Error inserting jp_cards batch ${i}: ${error.message}`);
-		}
-		
-		// Progress indicator
-		if (i % 500 === 0) {
-			console.log(`  Processed ${i}/${cardsToInsert.length} Japanese cards...`);
-		}
-	}
-	
-	console.log(`✅ Uploaded ${cardsToInsert.length} Japanese cards`);
-}
+async function uploadPricesTo(table: string, path: string): Promise<void> {
+	console.log(`📤 Uploading ${table}...`);
+	const prices = read<Record<string, MappedPrice>>(path);
 
-// Upload des prix
-export async function uploadPrices() {
-	console.log('📤 Uploading prices...');
-	
-	const pricesPath = 'src/assets/prices.json';
-	if (!fs.existsSync(pricesPath)) {
-		throw new Error(`File not found: ${pricesPath}`);
-	}
-
-	const pricesContent = fs.readFileSync(pricesPath, 'utf-8');
-	const pricesObject: Record<string, Omit<PriceData, 'cardCode'>> = JSON.parse(pricesContent);
-	
-	// Convert object to array and transform data to match database schema
-	const pricesTransformed = Object.entries(pricesObject).map(([cardCode, priceData]) => ({
+	const rows = Object.entries(prices).map(([cardCode, price]) => ({
 		card_code: cardCode,
-		simple: priceData.simple || null,
-		low: priceData.low || null,
-		trend: priceData.trend || null,
-		avg1: priceData.avg1 || null,
-		avg7: priceData.avg7 || null,
-		avg30: priceData.avg30 || null,
-		reverse_simple: priceData.reverseSimple || null,
-		reverse_low: priceData.reverseLow || null,
-		reverse_trend: priceData.reverseTrend || null,
-		reverse_avg1: priceData.reverseAvg1 || null,
-		reverse_avg7: priceData.reverseAvg7 || null,
-		reverse_avg30: priceData.reverseAvg30 || null
+		simple: price.simple ?? null,
+		low: price.low ?? null,
+		trend: price.trend ?? null,
+		avg1: price.avg1 ?? null,
+		avg7: price.avg7 ?? null,
+		avg30: price.avg30 ?? null,
+		reverse_simple: price.reverseSimple ?? null,
+		reverse_low: price.reverseLow ?? null,
+		reverse_trend: price.reverseTrend ?? null,
+		reverse_avg1: price.reverseAvg1 ?? null,
+		reverse_avg7: price.reverseAvg7 ?? null,
+		reverse_avg30: price.reverseAvg30 ?? null,
 	}));
-	
-	// Deduplicate by card_code (keep last occurrence)
-	const priceMap = new Map();
-	const duplicates: { card_code: string }[] = [];
-	
-	pricesTransformed.forEach(price => {
-		if (priceMap.has(price.card_code)) {
-			duplicates.push({
-				card_code: price.card_code
-			});
-		}
-		priceMap.set(price.card_code, price);
-	});
-	
-	const pricesToInsert = Array.from(priceMap.values());
-	
-	const originalCount = Object.keys(pricesObject).length;
-	console.log(`  Deduplicated: ${originalCount} → ${pricesToInsert.length} prices (removed ${originalCount - pricesToInsert.length} duplicates)`);
-	
-	if (duplicates.length > 0) {
-		console.log(`  📋 Duplicate prices found:`);
-		duplicates.slice(0, 10).forEach(dup => {
-			console.log(`    - ${dup.card_code}`);
-		});
-		if (duplicates.length > 10) {
-			console.log(`    ... and ${duplicates.length - 10} more duplicates`);
-		}
-	}
-	
-	// Use upsert instead of clearing data to avoid any potential issues
-	console.log(`  Upserting ${pricesToInsert.length} prices...`);
-	
-	// Insert/update prices in batches
-	const batchSize = 50;
-	for (let i = 0; i < pricesToInsert.length; i += batchSize) {
-		const batch = pricesToInsert.slice(i, i + batchSize);
-		
-		const { error } = await supabase
-			.from('prices')
-			.upsert(batch, { onConflict: 'card_code' });
-			
-		if (error) {
-			throw new Error(`Error upserting prices batch ${i}: ${error.message}`);
-		}
-		
-		// Progress indicator
-		if (i % 1000 === 0) {
-			console.log(`  Processed ${i}/${pricesToInsert.length} prices...`);
-		}
-	}
-	
-	console.log(`✅ Upserted ${pricesToInsert.length} prices`);
+
+	await upsertAll(table, rows, 'card_code');
 }
 
-// Upload de toutes les données dans l'ordre correct
-export async function uploadAllData() {
+export const uploadPrices = () => uploadPricesTo('prices', PRICES);
+export const uploadJapanesePrices = () => uploadPricesTo('jp_prices', JP_PRICES);
+
+/** Dependency order: sets before cards (cards reference set names), cards before prices (prices reference card codes). */
+export async function uploadAllData(): Promise<void> {
 	console.log('🚀 Starting full Supabase data upload...');
-	
-	try {
-		// Upload dans l'ordre des dépendances
-		await uploadTypes();
-		await uploadPokemons();
-		await uploadSets();
-		await uploadJapaneseSets();
-		await uploadCards();
-		await uploadJapaneseCards();
-		await uploadPrices();
-		
-		console.log('🎉 All data uploaded successfully to Supabase!');
-	} catch (error) {
-		console.error('❌ Error during upload:', error);
-		throw error;
-	}
-} 
+	await uploadTypes();
+	await uploadPokemons();
+	await uploadSets();
+	await uploadJapaneseSets();
+	await uploadCards();
+	await uploadJapaneseCards();
+	await uploadPrices();
+	await uploadJapanesePrices();
+	console.log('🎉 All data uploaded successfully to Supabase!');
+}
