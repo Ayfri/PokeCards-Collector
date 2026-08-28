@@ -132,9 +132,14 @@ function toSet(set: SetRow): Set {
 /**
  * Fetches a whole table. The card tables exceed Supabase's per-select row cap, so the rows are counted
  * first and every 5000-row page is then requested in parallel.
+ *
+ * `keyColumn` must hold a unique value: the pages are separate queries, and Postgres only returns them in a
+ * repeatable order when the sort is total. Paging `cards` on `name` alone dropped ~1700 rows and duplicated
+ * others, because only 4618 of its 23546 rows have a name no other row shares.
  */
 async function getAllData<T>(
 	tableName: string,
+	keyColumn: string,
 	selectQuery: string = '*',
 	orderBy?: { column: string; ascending: boolean }
 ): Promise<T[]> {
@@ -156,16 +161,13 @@ async function getAllData<T>(
 	const batchPromises = Array.from({ length: numberOfBatches }, (_, index) => {
 		const from = index * batchSize;
 
-		let query = supabase
-			.from(tableName)
-			.select(selectQuery)
-			.range(from, from + batchSize - 1);
+		let query = supabase.from(tableName).select(selectQuery);
 
 		if (orderBy) {
 			query = query.order(orderBy.column, { ascending: orderBy.ascending });
 		}
 
-		return query;
+		return query.order(keyColumn, { ascending: true }).range(from, from + batchSize - 1);
 	});
 
 	const results = await Promise.all(batchPromises);
@@ -181,30 +183,34 @@ async function getAllData<T>(
 		}
 	}
 
+	if (allData.length !== totalCount) {
+		console.warn(`${tableName}: paged ${allData.length} rows for a count of ${totalCount}`);
+	}
+
 	return allData;
 }
 
 export async function getPokemons(): Promise<Pokemon[]> {
-	return await getAllData<Pokemon>('pokemons', '*', { column: 'id', ascending: true });
+	return await getAllData<Pokemon>('pokemons', 'id', '*', { column: 'id', ascending: true });
 }
 
 export async function getCards(): Promise<FullCard[]> {
-	const data = await getAllData<CardRow>('cards', CARD_COLUMNS, { column: 'name', ascending: true });
+	const data = await getAllData<CardRow>('cards', 'card_code', CARD_COLUMNS, { column: 'name', ascending: true });
 	return data.map(toCard);
 }
 
 export async function getJapaneseCards(): Promise<FullCard[]> {
-	const data = await getAllData<CardRow>('jp_cards', CARD_COLUMNS, { column: 'name', ascending: true });
+	const data = await getAllData<CardRow>('jp_cards', 'card_code', CARD_COLUMNS, { column: 'name', ascending: true });
 	return data.map(toCard);
 }
 
 export async function getPrices(): Promise<Record<string, PriceData>> {
-	return pricesByCardCode(await getAllData<PriceRow>('prices'));
+	return pricesByCardCode(await getAllData<PriceRow>('prices', 'card_code'));
 }
 
 /** Japanese cards carry cardmarket pricing too, in their own table. */
 export async function getJapanesePrices(): Promise<Record<string, PriceData>> {
-	return pricesByCardCode(await getAllData<PriceRow>('jp_prices'));
+	return pricesByCardCode(await getAllData<PriceRow>('jp_prices', 'card_code'));
 }
 
 function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
@@ -216,17 +222,17 @@ function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
 }
 
 export async function getSets(): Promise<Set[]> {
-	const data = await getAllData<SetRow>('sets', '*', { column: 'name', ascending: true });
+	const data = await getAllData<SetRow>('sets', 'set_id', '*', { column: 'name', ascending: true });
 	return data.map(toSet);
 }
 
 export async function getJapaneseSets(): Promise<Set[]> {
-	const data = await getAllData<SetRow>('jp_sets', '*', { column: 'name', ascending: true });
+	const data = await getAllData<SetRow>('jp_sets', 'set_id', '*', { column: 'name', ascending: true });
 	return data.map(toSet);
 }
 
 export async function getTypes(): Promise<string[]> {
-	const data = await getAllData<{ name: string }>('types', 'name', { column: 'name', ascending: true });
+	const data = await getAllData<{ name: string }>('types', 'name', 'name', { column: 'name', ascending: true });
 	return data.map(type => type.name);
 }
 
@@ -244,7 +250,7 @@ export async function getRarities(): Promise<string[]> {
 
 	// A full page back means there are probably more rows than the cap; page through the table instead.
 	if (data && data.length === 50_000) {
-		const allData = await getAllData<{ rarity: string }>('cards', 'rarity');
+		const allData = await getAllData<{ rarity: string }>('cards', 'card_code', 'rarity');
 		const rarities = [...new Set(allData.map(card => card.rarity).filter(Boolean))];
 		return rarities.sort();
 	}
@@ -266,7 +272,7 @@ export async function getArtists(): Promise<string[]> {
 	}
 
 	if (data && data.length === 50_000) {
-		const allData = await getAllData<{ artist: string }>('cards', 'artist');
+		const allData = await getAllData<{ artist: string }>('cards', 'card_code', 'artist');
 		const artists = [...new Set(allData.map(card => card.artist).filter(Boolean))];
 		return artists.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 	}
