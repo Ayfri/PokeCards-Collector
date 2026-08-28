@@ -1,0 +1,28 @@
+{
+	"mcpServers": {
+		"svelte": {
+			"command": "npx",
+			"args": ["-y", "@sveltejs/mcp"]
+		},
+		"supabase": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@supabase/mcp-server-supabase@latest",
+				"--read-only",
+				"--project-ref=ptbwuqaqkqntmgmaqboq"
+			],
+			"env": {
+				"SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
+			}
+		},
+		"cloudflare-docs": {
+			"type": "http",
+			"url": "https://docs.mcp.cloudflare.com/mcp"
+		},
+		"cloudflare-bindings": {
+			"type": "http",
+			"url": "https://bindings.mcp.cloudflare.com/mcp"
+		}
+	}
+}
