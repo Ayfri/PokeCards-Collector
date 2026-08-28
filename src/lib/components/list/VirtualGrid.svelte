@@ -160,7 +160,7 @@
 
 <div bind:this={container} class="virtual-grid-container top-2 relative flex-1 w-full overflow-y-scroll scrollbar-hide" on:scroll={handleScroll}>
 	{#if isInitialized && itemsPerRow > 0}
-		<div class="absolute size-[1px]" style="top: {Math.ceil(items.length / itemsPerRow) * (itemHeight + gapY) + marginTop}px;"></div>
+		<div class="absolute size-px" style="top: {Math.ceil(items.length / itemsPerRow) * (itemHeight + gapY) + marginTop}px;"></div>
 
 		{#each items as item, i}
 			{#if visibleItems.some(visible => visible.cardCode === item.cardCode)}

@@ -32,7 +32,7 @@
 </script>
 
 {#if isOpen}
-	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
 		transition:fade={{ duration: 200 }}
 		on:click={handleOverlayClick}>
 		<div class="relative bg-white dark:bg-gray-800 rounded-lg w-full max-w-md mx-4 overflow-hidden"
@@ -44,7 +44,7 @@
 				</h2>
 				<button 
 					type="button" 
-					class="text-gray-400 hover:text-gray-500 focus:outline-none"
+					class="text-gray-400 hover:text-gray-500 focus:outline-hidden"
 					on:click={closeModal}
 				>
 					<X size={24} />

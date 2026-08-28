@@ -130,7 +130,7 @@
 
 <div class="container mx-auto px-4 py-8 text-white">
 	<div class="flex justify-between items-center mb-4">
-		<div class="flex-shrink-0">
+		<div class="shrink-0">
 			<PageTitle title="All Pokémons" />
 		</div>
 		<div class="flex items-end gap-4">
@@ -152,13 +152,13 @@
 			/>
 		</div>
 	</div>
-	<div class="w-full max-w-[800px] mx-auto my-6 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
+	<div class="w-full max-w-[800px] mx-auto my-6 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
 
 	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8 align-items-start align-content-start">
 		{#each sortedPokemons as pokemon (pokemon.id)}
 			<button
 				on:click={() => navigateToPokemonCard(pokemon)}
-				class="pokemon-card-item group bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-opacity-75 p-3 flex flex-col items-center text-center"
+				class="pokemon-card-item group bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-hidden focus:ring-2 focus:ring-gold-400/75 p-3 flex flex-col items-center text-center"
 			>
 				<div class="image-container relative w-24 h-24 md:w-28 md:h-28 mb-2">
 					{#if !NO_IMAGES}
@@ -201,6 +201,6 @@
 		border: 1px solid transparent;
 	}
 	.pokemon-card-item:hover {
-		border-color: theme(colors.gold.400);
+		border-color: var(--color-gold-400);
 	}
 </style> 

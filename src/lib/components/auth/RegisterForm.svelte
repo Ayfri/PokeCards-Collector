@@ -238,7 +238,7 @@
 			type="email"
 			id="email"
 			bind:value={email}
-			class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+			class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 			placeholder="your@email.com"
 			required
 		/>
@@ -252,7 +252,7 @@
 			type="text"
 			id="username"
 			bind:value={username}
-			class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+			class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 			placeholder="username"
 			required
 			maxlength="20"
@@ -267,7 +267,7 @@
 			{#if showPassword}
 				<input
 					bind:value={password}
-					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 					id="password"
 					name="password"
 					placeholder="Choose a strong password"
@@ -277,7 +277,7 @@
 			{:else}
 				<input
 					bind:value={password}
-					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 					id="password"
 					name="password"
 					placeholder="Choose a strong password"
@@ -294,8 +294,8 @@
 			</button>
 		</div>
 		<!-- Password strength bar -->
-		<div class="mt-2 h-2 w-full bg-gray-200 dark:bg-gray-700 rounded">
-			<div class="h-2 rounded transition-all duration-300 {passwordStrength === 1 ? 'bg-red-500' : passwordStrength === 2 ? 'bg-yellow-400' : passwordStrength === 3 ? 'bg-green-500' : 'bg-gray-200'}"
+		<div class="mt-2 h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-sm">
+			<div class="h-2 rounded-sm transition-all duration-300 {passwordStrength === 1 ? 'bg-red-500' : passwordStrength === 2 ? 'bg-yellow-400' : passwordStrength === 3 ? 'bg-green-500' : 'bg-gray-200'}"
 				style="width: {passwordStrength * 33.33}%;">
 			</div>
 		</div>
@@ -314,7 +314,7 @@
 			{#if showConfirmPassword}
 				<input
 					bind:value={confirmPassword}
-					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 					id="confirm-password"
 					name="confirm-password"
 					placeholder="••••••••"
@@ -324,7 +324,7 @@
 			{:else}
 				<input
 					bind:value={confirmPassword}
-					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 					id="confirm-password"
 					name="confirm-password"
 					placeholder="••••••••"
@@ -345,7 +345,7 @@
 	<button
 		type="submit"
 		disabled={loading}
-		class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+		class="w-full py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
 	>
 		{#if loading}
 			<BouncyLoader size={20} gradientColorStart="#FFFFFF" gradientColorEnd="#FFFFFF" />

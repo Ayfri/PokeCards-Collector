@@ -145,7 +145,7 @@
 	<div class="card-display-area w-full px-4 md:px-12 max-w-8xl mx-auto perspective-container flex flex-col items-center">
 
 		<!-- Center Card -->
-		<div class="center-card-wrapper relative flex-shrink-0 order-1 lg:order-2 perspective-container" in:fly={{ y: 50, duration: 500, delay: 300 }}>
+		<div class="center-card-wrapper relative shrink-0 order-1 lg:order-2 perspective-container" in:fly={{ y: 50, duration: 500, delay: 300 }}>
 			<!-- Conditional Aura for Pokemon Types -->
 			{#if currentPokemon && !NO_IMAGES}
 				<div class="card-aura {currentType}" id="card-aura"></div>
@@ -283,7 +283,7 @@
 		</div>
 	{/if}
 
-	<div class="separator w-full max-w-[800px] my-12 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent" in:fade={{ duration: 600, delay: 600 }}></div>
+	<div class="separator w-full max-w-[800px] my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent" in:fade={{ duration: 600, delay: 600 }}></div>
 
 	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
 	{#if currentPokemonCards.length > 1 && shouldRenderAllCards}

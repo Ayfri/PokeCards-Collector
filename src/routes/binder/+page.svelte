@@ -573,7 +573,7 @@
 		<label for="multipleCardUrls" class="block text-gray-300 mb-2">Or multiple URLs (one per line):</label>
 		<TextArea
 			bind:value={$multipleCardUrls}
-			class="max-h-[20rem] overflow-y-auto"
+			class="max-h-80 overflow-y-auto"
 			id="multipleCardUrls"
 			label="Or multiple URLs (one per line)"
 			placeholder="https://images.pokemontcg.io/card1.png

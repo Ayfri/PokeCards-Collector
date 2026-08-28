@@ -162,7 +162,7 @@
 <div class="container mx-auto p-4 text-white">
 	<!-- Hero Section -->
 	<div class="text-center mb-8">
-		<h1 class="text-5xl font-bold mb-4 bg-gradient-to-r from-gold-400 via-yellow-400 to-gold-400 bg-clip-text text-transparent">
+		<h1 class="text-5xl font-bold mb-4 bg-linear-to-r from-gold-400 via-yellow-400 to-gold-400 bg-clip-text text-transparent">
 			Card.dle
 		</h1>
 		<p class="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
@@ -184,11 +184,11 @@
 
 				<div class="flex items-center justify-center gap-6 text-sm">
 					<div class="flex items-center gap-2">
-						<div class="w-3 h-3 bg-green-600 rounded"></div>
+						<div class="w-3 h-3 bg-green-600 rounded-sm"></div>
 						<span class="text-green-400">Correct</span>
 					</div>
 					<div class="flex items-center gap-2">
-						<div class="w-3 h-3 bg-red-600 rounded"></div>
+						<div class="w-3 h-3 bg-red-600 rounded-sm"></div>
 						<span class="text-red-400">Wrong</span>
 					</div>
 					<div class="flex items-center gap-2">
@@ -224,7 +224,7 @@
 			</div>
 
 			{#each historicGuesses.toReversed() as guess, i (guess.id)}
-				<div class="historic-guess-item mb-2 scroll-mt-[20rem]">
+				<div class="historic-guess-item mb-2 scroll-mt-80">
 					<h3 class="font-bold text-lg my-2 text-center text-gold-400">Guess {i + 1} - {guess.name}</h3>
 					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
 						<!-- Card Image Cell -->
@@ -232,7 +232,7 @@
 							<CardImage
 								imageUrl={guess.cardImage}
 								alt="Card: {guess.name}"
-								class="max-w-full max-h-full object-contain rounded"
+								class="max-w-full max-h-full object-contain rounded-sm"
 								lazy={true}
 							/>
 						</div>
@@ -282,7 +282,7 @@
 							<CardImage
 								imageUrl={loadingGuess.cardImage}
 								alt="Card: {loadingGuess.name}"
-								class="max-w-full max-h-full object-contain rounded opacity-75"
+								class="max-w-full max-h-full object-contain rounded-sm opacity-75"
 								lazy={true}
 								lowRes={true}
 							/>
@@ -292,14 +292,14 @@
 							{#if loadingGuess.pokemonNumber}
 								<img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${loadingGuess.pokemonNumber}.png`} alt="Sprite" class="h-10 w-10 sm:h-12 sm:w-12 object-contain opacity-75"/>
 							{:else}
-								<div class="h-10 w-10 sm:h-12 sm:w-12 bg-gray-700 rounded animate-pulse"></div>
+								<div class="h-10 w-10 sm:h-12 sm:w-12 bg-gray-700 rounded-sm animate-pulse"></div>
 							{/if}
 							<span class="mt-1 text-center block leading-tight text-xxs sm:text-xs opacity-75">{loadingGuess.name}</span>
 						</div>
 						<!-- Loading cells for attributes -->
 						{#each Array(5) as _, i}
 							<div class="p-2 flex items-center justify-center text-center bg-gray-800 text-gray-400">
-								<div class="w-12 h-4 bg-gray-700 rounded animate-pulse"></div>
+								<div class="w-12 h-4 bg-gray-700 rounded-sm animate-pulse"></div>
 							</div>
 						{/each}
 					</div>
@@ -319,7 +319,7 @@
 					bind:value={searchInput}
 					placeholder="E.g., Pikachu, Charizard..."
 					autocomplete="off"
-					class="flex-grow text-lg bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-gold-400 h-12 py-3"
+					class="grow text-lg bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-gold-400 h-12 py-3"
 					disabled={hasWon}
 					debounceFunction={handleDebouncedSearch}
 					debounceDelay={500}
@@ -365,7 +365,7 @@
 							disabled={isSubmitting || hasWon}
 						>
 							{#if isSubmitting && loadingGuess?.cardImage === suggestion.image}
-								<div class="absolute inset-0 bg-black bg-opacity-50 rounded-xl flex items-center justify-center z-10">
+								<div class="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center z-10">
 									<BouncyLoader size={24} speed={0.8} />
 								</div>
 							{/if}
@@ -444,7 +444,7 @@
 					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
 						<!-- Example Card Image -->
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center">
-							<div class="w-full h-full bg-gradient-to-br from-gray-700 to-gray-800 rounded flex items-center justify-center">
+							<div class="w-full h-full bg-linear-to-br from-gray-700 to-gray-800 rounded-sm flex items-center justify-center">
 								<span class="text-gray-400 text-xs text-center">Card<br/>Image</span>
 							</div>
 						</div>
@@ -566,7 +566,7 @@
 		}
 	}
 
-	.bg-gradient-to-r {
+	.bg-linear-to-r {
 		animation: gradient-x 6s ease infinite;
 	}
 

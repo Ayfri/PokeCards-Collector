@@ -264,7 +264,7 @@
 		<input
 			bind:this={inputElement}
 			bind:value={searchQuery}
-			class="bg-black border text-white px-4 py-2 rounded-full w-full outline-none pl-10 pr-10 {mobileMode ? '' : 'pr-24'} transition-all duration-300 ease-in-out {inputFocused ? 'ring-2 ring-gold-400 shadow-lg shadow-gold-400/20 border-transparent' : 'border border-gray-700 hover:border-gray-500'}"
+			class="bg-black border text-white px-4 py-2 rounded-full w-full outline-hidden pl-10 pr-10 {mobileMode ? '' : 'pr-24'} transition-all duration-300 ease-in-out {inputFocused ? 'ring-2 ring-gold-400 shadow-lg shadow-gold-400/20 border-transparent' : 'border border-gray-700 hover:border-gray-500'}"
 			on:focus={handleInputFocus}
 			on:blur={() => inputFocused = false}
 			placeholder="Search cards..."
@@ -280,16 +280,16 @@
 			</button>
 		{:else if !inputFocused && platformModifierKey && !mobileMode}
 			<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 text-xs text-gray-500 pointer-events-none">
-				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded">{platformModifierKey === 'Cmd' ? '⌘' : 'Ctrl'}</kbd>
+				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded-sm">{platformModifierKey === 'Cmd' ? '⌘' : 'Ctrl'}</kbd>
 				<span class="text-base">+</span>
-				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded">K</kbd>
+				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded-sm">K</kbd>
 			</div>
 		{/if}
 	</div>
 
 	{#if showResults && searchResults.length > 0}
 		<div
-			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg overflow-y-auto max-h-96 z-[100] border border-gray-700"
+			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg overflow-y-auto max-h-96 z-100 border border-gray-700"
 			transition:fade={{ duration: 150 }}
 		>
 			{#each searchResults as card (card.cardCode)}
@@ -308,26 +308,26 @@
 						<img
 							src={cardImage}
 							alt={card.name}
-							class="h-20 w-14 object-contain rounded mr-4 flex-shrink-0"
+							class="h-20 w-14 object-contain rounded-sm mr-4 shrink-0"
 							loading="lazy"
 						/>
 
-						<div class="flex-grow min-w-0 pr-2 flex flex-col">
+						<div class="grow min-w-0 pr-2 flex flex-col">
 							<p class="font-semibold text-white truncate">{card.name}</p>
 							
 							<div class="flex justify-between items-center mt-1">
-								<div class="flex-grow min-w-0 flex items-center">
+								<div class="grow min-w-0 flex items-center">
 									<p class="text-sm text-gray-400 truncate max-w-[70%]">{set?.name || 'Unknown Set'}</p>
-									<div class="text-xs text-gray-500 text-right ml-1 flex-shrink-0">
+									<div class="text-xs text-gray-500 text-right ml-1 shrink-0">
 										#{cardNumber || '?'}{#if set?.printedTotal}/{set.printedTotal}{/if}
 									</div>
 								</div>
 								
 								{#if isBinderPage}
 									<!-- Button to add to binder storage when on binder page -->
-									<div class="flex-shrink-0 ml-2">
+									<div class="shrink-0 ml-2">
 										<button 
-											class="py-1 px-2 rounded flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white hover:bg-gray-700'} hover:shadow-lg transform hover:translate-y-[-1px]"
+											class="py-1 px-2 rounded-sm flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white hover:bg-gray-700'} hover:shadow-lg transform hover:-translate-y-px"
 											on:click={(e) => {
 												e.preventDefault();
 												e.stopPropagation();

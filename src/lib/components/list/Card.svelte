@@ -140,7 +140,7 @@
 		<div class:list={rarity.toLowerCase()}></div>
 		{#if !NO_IMAGES}
 			<div
-				class={`aura absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-[var(--type-color)]
+				class={`aura absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-(--type-color)
 				transition-all duration-700 ease-out group-hover:blur-[2.5rem] ${types.toLowerCase().split(',')}`}
 				style="width: {width * 0.8}px; height: {height * 0.85}px;"
 			></div>
@@ -225,7 +225,7 @@
 				</a>
 			{/if}
 		</div>
-		<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-sm rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
+		<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-xs rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
 			<h2 class="text-center font-bold text-md lg:text-lg text-pretty leading-none flex flex-wrap gap-x-2 items-center justify-center">
 				{cardName}
 				{#if set?.ptcgoCode}

@@ -169,7 +169,7 @@
 										<div class="flex justify-between mt-1 text-sm text-gray-400">
 											<span>{new Date(set.releaseDate).toLocaleDateString()}</span>
 											{#if set.ptcgoCode}
-												<span class="px-2 py-1 bg-gray-700 rounded text-gold-400 text-xs">{set.ptcgoCode}</span>
+												<span class="px-2 py-1 bg-gray-700 rounded-sm text-gold-400 text-xs">{set.ptcgoCode}</span>
 											{:else}
 												<span class="px-2 py-1 bg-transparent">&nbsp;</span>
 											{/if}

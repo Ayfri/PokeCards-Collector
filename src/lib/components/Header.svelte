@@ -111,7 +111,7 @@
 	const discordInviteUrl = 'https://discord.com/invite/7c7nzHqxJx';
 </script>
 
-<header class="fixed top-0 left-0 w-full p-2 pb-6 lg:pb-12 z-50 bg-gradient-to-b from-gray-900 to-transparent">
+<header class="fixed top-0 left-0 w-full p-2 pb-6 lg:pb-12 z-50 bg-linear-to-b from-gray-900 to-transparent">
 	<div class="relative py-1.5 xs:py-2.5 lg:py-3 px-4 xs:px-6 lg:px-8 flex items-center justify-between gap-4 rounded-full bg-gray-800">
 		<!-- Hamburger Menu and Optional Mobile Logo -->
 		<div class="flex items-center gap-2">
@@ -246,7 +246,7 @@
 			<nav class="flex flex-col gap-3">
 				{#each navLinks as link}
 					{#if link.href === '/'}
-						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
+						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href}>
 							{#if !NO_IMAGES}
 								<img
 									alt="PokéCards-Collector Logo"
@@ -267,7 +267,7 @@
 								{link.name}
 							</div>
 							{#each link.children as child}
-								<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 pl-6 rounded hover:bg-gray-600" href={child.href}>
+								<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 pl-6 rounded-sm hover:bg-gray-600" href={child.href}>
 									{#if !NO_IMAGES && child.icon}
 										<svelte:component this={child.icon} size={18} />
 									{/if}
@@ -276,7 +276,7 @@
 							{/each}
 						</div>
 					{:else}
-						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded hover:bg-gray-600" href={link.href}>
+						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href}>
 							{#if !NO_IMAGES && link.icon}
 								<svelte:component this={link.icon} size={20} />
 							{/if}
@@ -301,7 +301,7 @@
 		left: 0;
 		width: 100%;
 		height: 2px;
-		background-color: theme(colors.gold.400);
+		background-color: var(--color-gold-400);
 		transform-origin: center;
 		transform: scaleX(1);
 		transition: transform 0.3s ease;
@@ -314,7 +314,7 @@
 		left: 0;
 		width: 100%;
 		height: 2px;
-		background-color: theme(colors.gold.400);
+		background-color: var(--color-gold-400);
 		transform-origin: center;
 		transform: scaleX(0);
 		transition: transform 0.3s ease;

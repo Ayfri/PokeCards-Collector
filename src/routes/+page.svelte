@@ -147,7 +147,7 @@
 						>
 							<ChevronRight
 								size={12}
-								class="text-gold-400 flex-shrink-0 mr-1"
+								class="text-gold-400 shrink-0 mr-1"
 								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 							<span
@@ -157,7 +157,7 @@
 							</span>
 							<ChevronLeft
 								size={12}
-								class="text-gold-400 flex-shrink-0 ml-1"
+								class="text-gold-400 shrink-0 ml-1"
 								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 						</div>
@@ -177,7 +177,7 @@
 						>
 							<ChevronRight
 								size={12}
-								class="text-gold-400 flex-shrink-0 mr-1"
+								class="text-gold-400 shrink-0 mr-1"
 								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 							<span
@@ -187,7 +187,7 @@
 							</span>
 							<ChevronLeft
 								size={12}
-								class="text-gold-400 flex-shrink-0 ml-1"
+								class="text-gold-400 shrink-0 ml-1"
 								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 						</div>
@@ -207,7 +207,7 @@
 						>
 							<ChevronRight
 								size={12}
-								class="text-gold-400 flex-shrink-0 mr-1"
+								class="text-gold-400 shrink-0 mr-1"
 								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 							<span
@@ -220,7 +220,7 @@
 							</span>
 							<ChevronLeft
 								size={12}
-								class="text-gold-400 flex-shrink-0 ml-1"
+								class="text-gold-400 shrink-0 ml-1"
 								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 						</div>
@@ -240,7 +240,7 @@
 						>
 							<ChevronRight
 								size={12}
-								class="text-gold-400 flex-shrink-0 mr-1"
+								class="text-gold-400 shrink-0 mr-1"
 								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 							<span
@@ -250,7 +250,7 @@
 							</span>
 							<ChevronLeft
 								size={12}
-								class="text-gold-400 flex-shrink-0 ml-1"
+								class="text-gold-400 shrink-0 ml-1"
 								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 						</div>
@@ -273,7 +273,7 @@
 						>
 							<ChevronRight
 								size={12}
-								class="text-gold-400 flex-shrink-0 mr-1"
+								class="text-gold-400 shrink-0 mr-1"
 								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 							<span
@@ -283,7 +283,7 @@
 							</span>
 							<ChevronLeft
 								size={12}
-								class="text-gold-400 flex-shrink-0 ml-1"
+								class="text-gold-400 shrink-0 ml-1"
 								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 							/>
 						</div>
@@ -294,12 +294,12 @@
 				<div class="flex flex-wrap gap-4 mb-10 md:mb-0">
 					<a
 						href="/cards-list"
-						class="group px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-[400ms] flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900"
+						class="group px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-400 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900"
 					>
 						Explore Cards
 						<ArrowRight
 							size={18}
-							class="group-hover:translate-x-1 transition-all duration-[400ms]"
+							class="group-hover:translate-x-1 transition-all duration-400"
 						/>
 					</a>
 				</div>
@@ -321,7 +321,7 @@
 							/>
 						{/if}
 						<div
-							class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-gray-900/90 via-gray-900/50 to-transparent p-4 rounded-b-2xl"
+							class="absolute bottom-0 left-0 right-0 bg-linear-to-t from-gray-900/90 via-gray-900/50 to-transparent p-4 rounded-b-2xl"
 						>
 							<h3
 								class="text-xl font-bold text-gold-400 w-fit drop-shadow-[0_0_7px_black]"
@@ -342,7 +342,7 @@
 
 	<!-- Separator after hero section -->
 	<div
-		class="w-full max-w-[800px] mx-auto my-16 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"
+		class="w-full max-w-[800px] mx-auto my-16 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 		class:hidden={!ready}
 	></div>
 
@@ -374,7 +374,7 @@
 					View all cards in this set
 					<ArrowRight
 						size={16}
-						class="group-hover:translate-x-1 transition-all duration-[400ms]"
+						class="group-hover:translate-x-1 transition-all duration-400"
 					/>
 				</a>
 			</div>
@@ -438,7 +438,7 @@
 					</h3>
 
 					<div class="grid grid-cols-3 gap-4 mb-4">
-						<div class="bg-gray-700 p-3 rounded text-center">
+						<div class="bg-gray-700 p-3 rounded-sm text-center">
 							<p class="text-lg font-bold text-gold-400">
 								<CountUp
 									end={latestSetPokemonCards.length}
@@ -447,7 +447,7 @@
 							</p>
 							<p class="text-xs text-gray-300">Pokémon Cards</p>
 						</div>
-						<div class="bg-gray-700 p-3 rounded text-center">
+						<div class="bg-gray-700 p-3 rounded-sm text-center">
 							<p class="text-lg font-bold text-gold-400">
 								<CountUp
 									end={latestSetTrainerCards.length}
@@ -456,7 +456,7 @@
 							</p>
 							<p class="text-xs text-gray-300">Trainer Cards</p>
 						</div>
-						<div class="bg-gray-700 p-3 rounded text-center">
+						<div class="bg-gray-700 p-3 rounded-sm text-center">
 							<p class="text-lg font-bold text-gold-400">
 								<CountUp
 									end={latestSetEnergyCards.length}
@@ -486,7 +486,7 @@
 
 	<!-- Separator before Most Expensive Cards section -->
 	<div
-		class="w-full max-w-[200px] mx-auto my-12 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"
+		class="w-full max-w-[200px] mx-auto my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 		class:hidden={!ready}
 	></div>
 
@@ -513,7 +513,7 @@
 					View all cards
 					<ArrowRight
 						size={16}
-						class="group-hover:translate-x-1 transition-all duration-[400ms]"
+						class="group-hover:translate-x-1 transition-all duration-400"
 					/>
 				</a>
 			</div>
@@ -579,7 +579,7 @@
 					View all cards
 					<ArrowRight
 						size={16}
-						class="group-hover:translate-x-1 transition-all duration-[400ms]"
+						class="group-hover:translate-x-1 transition-all duration-400"
 					/>
 				</a>
 			</div>
@@ -624,7 +624,7 @@
 
 	<!-- Separator -->
 	<div
-		class="w-full max-w-[800px] mx-auto my-20 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"
+		class="w-full max-w-[800px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 		class:hidden={!ready}
 	></div>
 
@@ -672,7 +672,7 @@
 					{:else}
 						<button
 							on:click={() => openAuthModal('login')}
-							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-none"
+							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-hidden"
 							type="button"
 						>
 							Log in to manage your collection
@@ -703,7 +703,7 @@
 					{:else}
 						<button
 							on:click={() => openAuthModal('register')}
-							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-none"
+							class="text-gold-400 hover:underline mt-4 inline-block focus:outline-hidden"
 							type="button"
 						>
 							Log in to build your wishlist
@@ -744,7 +744,7 @@
 		>
 			<div class="feature-cards-container">
 				<div
-					class="bg-gradient-to-r from-gray-800 via-gray-700 to-gray-800 rounded-xl p-6 lg:p-10 shadow-2xl border border-gold-600/30"
+					class="bg-linear-to-r from-gray-800 via-gray-700 to-gray-800 rounded-xl p-6 lg:p-10 shadow-2xl border border-gold-600/30"
 				>
 					<div class="flex flex-col lg:flex-row items-center gap-8">
 						<div class="flex-1">
@@ -855,14 +855,14 @@
 
 	<!-- Separator -->
 	<div
-		class="w-full max-w-[200px] mx-auto my-20 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"
+		class="w-full max-w-[200px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 		class:hidden={!ready}
 	></div>
 
 	<!-- Call to Action Section -->
 	{#if ready}
 		<section
-			class="text-center bg-gradient-to-br from-gray-800 to-gray-900 p-8 rounded-lg shadow-xl mb-20 border border-gold-600/30"
+			class="text-center bg-linear-to-br from-gray-800 to-gray-900 p-8 rounded-lg shadow-xl mb-20 border border-gold-600/30"
 			in:fade={{ duration: 700, delay: 500 }}
 			out:fade={{ duration: 200 }}
 		>
@@ -904,7 +904,7 @@
 				<div class="flex flex-wrap justify-center gap-4">
 					<button
 						on:click={() => openAuthModal('login')}
-						class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 focus:outline-none"
+						class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 focus:outline-hidden"
 						type="button"
 					>
 						Log In
@@ -912,7 +912,7 @@
 					</button>
 					<button
 						on:click={() => openAuthModal('register')}
-						class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2 focus:outline-none"
+						class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2 focus:outline-hidden"
 						type="button"
 					>
 						Sign Up

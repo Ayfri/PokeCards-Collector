@@ -132,7 +132,7 @@
 					placeholder="Search public users by username..."
 					bind:value={searchQuery}
 					debounceFunction={handleSearchInput}
-					class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-none text-white shadow-sm placeholder-gray-500 !h-auto"
+					class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-hidden text-white shadow-xs placeholder-gray-500 h-auto!"
 					aria-label="Search users by username"
 				/>
 			</div>
@@ -145,7 +145,7 @@
 			<span class="ml-3 text-white">Searching users...</span>
 		</div>
 	{:else if searchErrorMessage}
-		<div class="text-center py-6 bg-gray-800/70 backdrop-blur-sm rounded-lg border border-red-600 max-w-md mx-auto shadow-xl">
+		<div class="text-center py-6 bg-gray-800/70 backdrop-blur-xs rounded-lg border border-red-600 max-w-md mx-auto shadow-xl">
 			<AlertTriangleIcon size={36} class="mx-auto mb-2 text-red-400" />
 			<h3 class="text-lg font-medium text-white mb-1">Search Error</h3>
 			<p class="text-gray-300 mb-3 text-sm px-4">{searchErrorMessage}</p>
@@ -172,7 +172,7 @@
 				</div>
 			</div>
 		{:else if searchQuery.trim() !== ''}
-			<div class="text-center py-8 bg-gray-800/70 backdrop-blur-sm rounded-lg border border-gray-700 max-w-md mx-auto shadow-lg">
+			<div class="text-center py-8 bg-gray-800/70 backdrop-blur-xs rounded-lg border border-gray-700 max-w-md mx-auto shadow-lg">
 				<UserXIcon size={40} class="mx-auto mb-3 text-gray-400" />
 				<h3 class="text-xl font-medium text-white mb-1">No Users Found</h3>
 				<p class="text-gray-400 px-4">No public users match <strong class="text-gold-400">"{searchQuery}"</strong>. Try a different search term.</p>
@@ -180,7 +180,7 @@
 		{/if}
 	{:else if featuredUsers.length > 0 || featuredUsersError}
 	    <!-- Separator, only show if there are featured users or an error for them, and no search is active -->
-	    <div class="w-full max-w-[700px] mx-auto h-px bg-gradient-to-r from-transparent via-gold-400/50 to-transparent my-6"></div>
+	    <div class="w-full max-w-[700px] mx-auto h-px bg-linear-to-r from-transparent via-gold-400/50 to-transparent my-6"></div>
 	{/if}
 
 
@@ -191,7 +191,7 @@
 			Featured Collectors
 		</h2>
 		{#if featuredUsersError}
-			<div class="text-center my-6 p-5 bg-gray-800/70 backdrop-blur-sm rounded-lg border border-red-600 shadow-xl">
+			<div class="text-center my-6 p-5 bg-gray-800/70 backdrop-blur-xs rounded-lg border border-red-600 shadow-xl">
 				<AlertTriangleIcon size={40} class="mx-auto mb-3 text-red-400" />
 				<h3 class="text-xl font-medium text-white mb-1">Error Loading Featured Collectors</h3>
 				<p class="text-gray-300">{featuredUsersError}</p>
@@ -209,7 +209,7 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="text-center my-6 p-5 bg-gray-800/70 backdrop-blur-sm rounded-lg border border-gray-700 shadow-lg">
+			<div class="text-center my-6 p-5 bg-gray-800/70 backdrop-blur-xs rounded-lg border border-gray-700 shadow-lg">
 				<TrendingUpIcon size={40} class="mx-auto mb-3 text-gray-400" />
 				<h3 class="text-xl font-medium text-white mb-1">No Featured Collectors Yet</h3>
 				<p class="text-gray-400 mb-2">Check back later to see top collectors!</p>
@@ -219,7 +219,7 @@
 	</section>
 
 	<div class="text-center p-3 bg-gray-800/50 rounded-lg border border-gray-700/50 flex items-center justify-center gap-2 text-sm text-gray-400">
-		<InfoIcon size={16} class="flex-shrink-0" />
+		<InfoIcon size={16} class="shrink-0" />
 		<span>Want to be featured? Make your profile public and grow your collection!</span>
 	</div>
 </div>

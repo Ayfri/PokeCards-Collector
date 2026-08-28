@@ -121,7 +121,7 @@
 			<div class="flex justify-between mx-28 max-lg:mx-4 items-center">
 				<PageTitle title={pageTitle} />
 			</div>
-			<div class="w-full max-w-[800px] mx-auto my-2 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
+			<div class="w-full max-w-[800px] mx-auto my-2 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
 		</div>
 	</div>
 
@@ -129,14 +129,14 @@
 	{#if ready}
 		{#if !targetProfile && pageTitle === 'User Not Found'}
 			<!-- User Not Found -->
-			<div class="text-center p-8 flex flex-col items-center justify-center flex-grow" in:fly|global={{ y: 50, duration: 400, delay: 300 }}>
+			<div class="text-center p-8 flex flex-col items-center justify-center grow" in:fly|global={{ y: 50, duration: 400, delay: 300 }}>
 				<p class="font-bold mb-4 text-4xl text-gold-400">
 					{pageTitle}
 				</p>
 				<p class="mb-4 text-gray-300">{description}</p>
 				<a
 					href="/"
-					class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
+					class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded-sm flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
 				>
 					<span class="relative z-10 flex items-center gap-2">
 						<Home size={16} />
@@ -146,14 +146,14 @@
 			</div>
 		{:else if targetProfile && !isPublic && !isOwnProfile}
 			<!-- Private Profile -->
-			<div class="text-center p-8 flex flex-col items-center justify-center flex-grow" in:fly|global={{ y: 50, duration: 400, delay: 300 }}>
+			<div class="text-center p-8 flex flex-col items-center justify-center grow" in:fly|global={{ y: 50, duration: 400, delay: 300 }}>
 				<p class="font-bold mb-4 text-3xl text-gold-400">
 					{pageTitle}
 				</p>
 				<p class="mb-4 text-gray-300">{description}</p>
 				<a
 					href="/"
-					class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
+					class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded-sm flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
 				>
 					<span class="relative z-10 flex items-center gap-2">
 						<Home size={16} />
@@ -163,7 +163,7 @@
 			</div>
 		{:else if !loggedInUsername && !targetProfile}
 			<!-- Not logged in, trying to view own profile -->
-			<div class="text-center p-8 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl my-10 border border-gold-600/30" in:fly|global={{ y: 50, duration: 400, delay: 300 }}>
+			<div class="text-center p-8 bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl my-10 border border-gold-600/30" in:fly|global={{ y: 50, duration: 400, delay: 300 }}>
 				<p class="text-xl text-gold-400 font-bold mb-4">{description}</p>
 				<div class="flex flex-wrap justify-center gap-4 mt-6">
 					<a href="/login" class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900">
@@ -178,14 +178,14 @@
 			<!-- Display Profile (Own or Public) -->
 			<!-- Success message -->
 			{#if successMessage}
-				<div class="mb-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded" in:fly={{ y: -20, duration: 300 }}>
+				<div class="mb-4 p-4 bg-green-100 border-l-4 border-green-500 text-green-700 rounded-sm" in:fly={{ y: -20, duration: 300 }}>
 					<p>{successMessage}</p>
 				</div>
 			{/if}
 
 			<!-- Error message for toggle -->
 			{#if errorMessage}
-				<div class="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded" in:fly={{ y: -20, duration: 300 }}>
+				<div class="mb-4 p-4 bg-red-100 border-l-4 border-red-500 text-red-700 rounded-sm" in:fly={{ y: -20, duration: 300 }}>
 					<p>{errorMessage}</p>
 				</div>
 			{/if}
@@ -194,7 +194,7 @@
 				<!-- Profile info and controls -->
 				<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
 					<!-- Profile Information -->
-					<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6" in:fly={{ y: 20, duration: 300, delay: 50 }}>
+					<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6" in:fly={{ y: 20, duration: 300, delay: 50 }}>
 						<div class="flex items-center gap-4 mb-6">
 							<Avatar username={targetProfile.username} size="size-16 text-3xl" profileColor={targetProfile.profile_color} />
 							<div>
@@ -238,7 +238,7 @@
 					</div>
 
 					<!-- Quick links -->
-					<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 lg:col-span-2" in:fly={{ y: 20, duration: 300, delay: 100 }}>
+					<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 lg:col-span-2" in:fly={{ y: 20, duration: 300, delay: 100 }}>
 						<h2 class="text-xl font-semibold mb-4 text-gold-400">{isOwnProfile ? 'My' : `${targetProfile.username}'s`} Collections</h2>
 
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -286,7 +286,7 @@
 				<!-- Collection Stats Section -->
 				{#if collectionStats && (isPublic || isOwnProfile)}
 					<div in:fly|global={{ y: 50, duration: 400, delay: 450 }}>
-						<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 mb-10" in:fly={{ y: 20, duration: 300, delay: 50 }}>
+						<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 mb-10" in:fly={{ y: 20, duration: 300, delay: 50 }}>
 							<h2 class="text-xl font-semibold mb-6 text-gold-400">Collection Statistics</h2>
 
 							<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-8 mb-8">
@@ -367,7 +367,7 @@
 						</div>
 					</div>
 				{:else if !targetProfile && !isOwnProfile && loggedInUsername}
-					<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 text-center" in:fly|global={{ y: 50, duration: 400, delay: 300 }}>
+					<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 text-center" in:fly|global={{ y: 50, duration: 400, delay: 300 }}>
 						<p class="text-gray-400">Could not load the requested profile.</p>
 						<a href="/" class="text-gold-400 hover:underline mt-2 inline-block">Return Home</a>
 					</div>
@@ -378,27 +378,27 @@
 			<div class="animate-pulse">
 				<!-- Profile Info Skeleton -->
 				<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-					<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6">
+					<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6">
 						<div class="flex items-center gap-4 mb-6">
 							<div class="bg-gray-700 rounded-full size-16"></div>
 							<div>
-								<div class="h-6 bg-gray-700 rounded w-3/4 mb-2"></div>
-								<div class="h-4 bg-gray-700 rounded w-1/2"></div>
+								<div class="h-6 bg-gray-700 rounded-sm w-3/4 mb-2"></div>
+								<div class="h-4 bg-gray-700 rounded-sm w-1/2"></div>
 							</div>
 						</div>
 						<div class="border-t border-gray-700 pt-4">
-							<div class="h-4 bg-gray-700 rounded w-1/3 mb-2"></div>
-							<div class="h-8 bg-gray-700 rounded w-1/2"></div>
+							<div class="h-4 bg-gray-700 rounded-sm w-1/3 mb-2"></div>
+							<div class="h-8 bg-gray-700 rounded-sm w-1/2"></div>
 						</div>
 					</div>
 					<!-- Statistics Skeleton -->
-					<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 lg:col-span-2">
-						<div class="h-6 bg-gray-700 rounded w-1/4 mb-4"></div>
+					<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 lg:col-span-2">
+						<div class="h-6 bg-gray-700 rounded-sm w-1/4 mb-4"></div>
 						<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
 							{#each Array(4) as _}
 								<div>
-									<div class="h-4 bg-gray-700 rounded w-1/2 mb-1"></div>
-									<div class="h-5 bg-gray-700 rounded w-3/4"></div>
+									<div class="h-4 bg-gray-700 rounded-sm w-1/2 mb-1"></div>
+									<div class="h-5 bg-gray-700 rounded-sm w-3/4"></div>
 								</div>
 							{/each}
 						</div>
@@ -406,31 +406,31 @@
 				</div>
 
 				<!-- Set Completion Skeleton -->
-				<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 mb-10">
-					<div class="h-6 bg-gray-700 rounded w-1/3 mb-6"></div>
+				<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 mb-10">
+					<div class="h-6 bg-gray-700 rounded-sm w-1/3 mb-6"></div>
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 						{#each Array(3) as _}
 							<div class="p-4 rounded-lg bg-gray-700/30 border border-gold-600/20">
 								<div class="flex items-center mb-3">
-									<div class="bg-gray-600 w-10 h-10 mr-3 rounded"></div>
+									<div class="bg-gray-600 w-10 h-10 mr-3 rounded-sm"></div>
 									<div>
-										<div class="h-5 bg-gray-600 rounded w-3/4 mb-1"></div>
-										<div class="h-3 bg-gray-600 rounded w-1/2"></div>
+										<div class="h-5 bg-gray-600 rounded-sm w-3/4 mb-1"></div>
+										<div class="h-3 bg-gray-600 rounded-sm w-1/2"></div>
 									</div>
 								</div>
 								<div class="mb-1">
 									<div class="flex justify-between text-xs mb-0.5">
-										<div class="h-3 bg-gray-600 rounded w-1/4"></div>
-										<div class="h-3 bg-gray-600 rounded w-1/4"></div>
+										<div class="h-3 bg-gray-600 rounded-sm w-1/4"></div>
+										<div class="h-3 bg-gray-600 rounded-sm w-1/4"></div>
 									</div>
 									<div class="w-full bg-gray-600 rounded-full h-2.5">
 										<div class="bg-gray-500 h-2.5 rounded-full" style="width: 60%"></div>
 									</div>
 								</div>
 								<div class="text-xs mt-2 space-y-1">
-									<div class="h-3 bg-gray-600 rounded w-full"></div>
-									<div class="h-3 bg-gray-600 rounded w-5/6"></div>
-									<div class="h-3 bg-gray-600 rounded w-4/6"></div>
+									<div class="h-3 bg-gray-600 rounded-sm w-full"></div>
+									<div class="h-3 bg-gray-600 rounded-sm w-5/6"></div>
+									<div class="h-3 bg-gray-600 rounded-sm w-4/6"></div>
 								</div>
 							</div>
 						{/each}

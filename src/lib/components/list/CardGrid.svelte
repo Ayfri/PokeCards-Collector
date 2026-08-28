@@ -601,7 +601,7 @@
 	<div
 		class="fixed top-0 h-screen w-full md:w-[450px] bg-gray-800 z-60 shadow-lg flex flex-col {showFilters
 			? 'right-0'
-			: '-right-[380px]'} transition-all duration-300 z-50"
+			: 'right-[-380px]'} transition-all duration-300 z-50"
 		transition:fly={{ x: 380, duration: 300 }}
 	>
 		<div
@@ -609,7 +609,7 @@
 		>
 			<h2 class="m-0 text-xl text-[#FFB700] font-semibold">Filters</h2>
 			<button
-				class="bg-transparent border-none text-white p-1 rounded hover:bg-white/10 transition-colors flex items-center justify-center"
+				class="bg-transparent border-none text-white p-1 rounded-sm hover:bg-white/10 transition-colors flex items-center justify-center"
 				on:click={() => (showFilters = false)}
 			>
 				<XIcon size={20} />
@@ -631,7 +631,7 @@
 				<div in:fly={{ y: -10, delay: 200, duration: 300 }}>
 					<PageTitle title={pageTitle} />
 					{#if pageTitle === 'Japanese Cards'}
-						<div class="bg-yellow-200 text-yellow-900 border-l-4 border-yellow-500 p-2 rounded shadow max-w-xl mx-auto mt-2 text-center text-xs">
+						<div class="bg-yellow-200 text-yellow-900 border-l-4 border-yellow-500 p-2 rounded-sm shadow-sm max-w-xl mx-auto mt-2 text-center text-xs">
 							⚠️ Some features may be missing because Japanese data is not yet complete.
 						</div>
 					{/if}

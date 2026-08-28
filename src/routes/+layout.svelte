@@ -133,10 +133,10 @@
 <div class="flex flex-col min-h-screen">
 	<LoadingBar />
 	<Header />
-	<main class="flex-grow pt-24 lg:pt-32">
+	<main class="grow pt-24 lg:pt-32">
 		<slot/>
 	</main>
-	<div class="background fixed top-[15%] -z-50 flex place-content-center h-[100lvh] w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
+	<div class="background fixed top-[15%] -z-50 flex place-content-center h-lvh w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
 		<img src={pokestore} alt="Background" class="absolute w-1/2" />
 	</div>
 </div>

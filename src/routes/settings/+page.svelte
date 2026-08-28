@@ -120,13 +120,13 @@
 		<div class="flex justify-between mx-28 max-lg:mx-4 items-center">
 			<PageTitle title="Settings" />
 		</div>
-		<div class="w-full max-w-[800px] mx-auto my-2 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
+		<div class="w-full max-w-[800px] mx-auto my-2 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
 	</div>
 
 	{#if ready}
 		<!-- Use reactive user/profile variables -->
 		{#if !user || !profile}
-			<div class="text-center p-8 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl my-10" in:fade={{ duration: 700 }}>
+			<div class="text-center p-8 bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl my-10" in:fade={{ duration: 700 }}>
 				<p class="text-xl text-gold-400 font-bold mb-4">Please sign in to view settings.</p>
 				<div class="flex flex-wrap justify-center gap-4 mt-6">
 					<a href="/login" class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900">
@@ -140,7 +140,7 @@
 		{:else}
 			<div class="grid grid-cols-1 lg:grid-cols-3 gap-8" in:fly={{ y: 20, duration: 500, delay: 100 }} out:fade={{ duration: 200 }}>
 				<!-- Settings Navigation -->
-				<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6">
+				<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6">
 					<div class="flex items-center gap-4 mb-6">
 						<!-- Use reactive profile variable and pass profile_color -->
 						<Avatar username={profile?.username || 'U'} size="size-12 text-xl" profileColor={profileColorInput} />
@@ -168,7 +168,7 @@
 				</div>
 
 				<!-- Settings Content -->
-				<div class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 lg:col-span-2">
+				<div class="bg-linear-to-br from-gray-800 to-gray-900 rounded-lg shadow-xl p-6 lg:col-span-2">
 					<div id="account" class="mb-8">
 						<h2 class="text-xl font-semibold mb-4 text-gold-400">Account Settings</h2>
 
@@ -194,7 +194,7 @@
 									type="email"
 									value={user?.email || ''}
 									disabled
-									class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800/60 text-gray-400"
+									class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-xs bg-gray-800/60 text-gray-400"
 								/>
 								<p class="mt-1 text-xs text-gray-500">To change your email, please contact support.</p>
 							</div>
@@ -208,7 +208,7 @@
 									type="text"
 									value={profile?.username || ''}
 									disabled
-									class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800/60 text-gray-400"
+									class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-xs bg-gray-800/60 text-gray-400"
 								/>
 								<p class="mt-1 text-xs text-gray-500">Username cannot be changed.</p>
 							</div>
@@ -220,7 +220,7 @@
 								<div class="flex items-center gap-3">
 									<!-- Swatch bouton -->
 									<button type="button"
-										class="w-10 h-10 rounded-full border flex-shrink-0 focus:outline-none"
+										class="w-10 h-10 rounded-full border shrink-0 focus:outline-hidden"
 										style={`background: ${profileColorInput}`}
 										on:click={openColorPicker}
 										title="Change color"
@@ -240,13 +240,13 @@
 													bind:value={profileColorInput}
 													placeholder="#RRGGBB"
 													pattern={"^#[0-9A-Fa-f]{6}$"}
-													class="flex-1 px-2 py-1 text-sm border border-gray-600 rounded bg-gray-800 text-gray-300 focus:border-gold-400 focus:outline-none"
+													class="flex-1 px-2 py-1 text-sm border border-gray-600 rounded-sm bg-gray-800 text-gray-300 focus:border-gold-400 focus:outline-hidden"
 												/>
 												<button
 													type="button"
 													on:click={copyHexValue}
 													title="Copy hex value"
-													class="p-1 text-gray-400 hover:text-gold-400 border border-gray-600 rounded bg-gray-800 hover:bg-gray-700 transition-colors"
+													class="p-1 text-gray-400 hover:text-gold-400 border border-gray-600 rounded-sm bg-gray-800 hover:bg-gray-700 transition-colors"
 												>
 													<CopyIcon size={14} />
 												</button>
@@ -262,7 +262,7 @@
 										bind:value={profileColorInput}
 										placeholder="#RRGGBB"
 										pattern={"^#[0-9A-Fa-f]{6}$"}
-										class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm bg-gray-800/60 text-gray-300 focus:border-gold-400 focus:ring-gold-400"
+										class="w-full px-3 py-2 border border-gray-700 rounded-md shadow-xs bg-gray-800/60 text-gray-300 focus:border-gold-400 focus:ring-gold-400"
 									/>
 									<!-- Bouton reset -->
 									<Button

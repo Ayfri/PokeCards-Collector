@@ -185,14 +185,14 @@
 		<div class="flex justify-center items-center">
 			<PageTitle title="Guess the Price!" />
 		</div>
-		<div class="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto my-2 h-1 bg-gradient-to-r from-transparent via-gold-400 to-transparent"></div>
+		<div class="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg mx-auto my-2 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
 	</div>
 
 	{#if data.error && !displayedCard}
 		<p class="text-red-500 text-xl">{data.error}</p>
 		<button 
 			on:click={playAgain} 
-			class="mt-4 bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200"
+			class="mt-4 bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 px-4 rounded-sm focus:outline-hidden focus:shadow-outline transition-colors duration-200"
 		>
 			Try Again
 		</button>
@@ -222,14 +222,14 @@
 							on:input={handleGuessInput}
 							min="0"
 							step="1"
-							class="shadow appearance-none border border-gold-500 rounded w-full py-2 sm:py-3 px-3 sm:px-4 text-gray-200 bg-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-gold-300 mb-3 sm:mb-4 text-sm sm:text-base"
+							class="shadow-sm appearance-none border border-gold-500 rounded-sm w-full py-2 sm:py-3 px-3 sm:px-4 text-gray-200 bg-gray-700 leading-tight focus:outline-hidden focus:shadow-outline focus:border-gold-300 mb-3 sm:mb-4 text-sm sm:text-base"
 							placeholder="e.g., 12"
 							required
 							readonly={guessSubmitted}
 						/>
 						<button 
 							type="submit" 
-							class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 sm:py-3 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200 text-sm sm:text-base {guessSubmitted ? 'opacity-50 cursor-not-allowed' : ''}"
+							class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 sm:py-3 px-4 rounded-sm focus:outline-hidden focus:shadow-outline transition-colors duration-200 text-sm sm:text-base {guessSubmitted ? 'opacity-50 cursor-not-allowed' : ''}"
 							disabled={guessSubmitted} 
 						>
 							Submit Guess
@@ -250,7 +250,7 @@
 				{/if}
 				<button 
 					on:click={playAgain} 
-					class="play-again-button bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 sm:py-3 px-4 sm:px-6 rounded focus:outline-none focus:shadow-outline transition-all duration-200 text-base sm:text-lg relative { (guessSubmitted && !isLoadingNextCard) ? 'ripple-active' : '' } { isLoadingNextCard ? 'opacity-50' : '' }"
+					class="play-again-button bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-sm focus:outline-hidden focus:shadow-outline transition-all duration-200 text-base sm:text-lg relative { (guessSubmitted && !isLoadingNextCard) ? 'ripple-active' : '' } { isLoadingNextCard ? 'opacity-50' : '' }"
 					disabled={isLoadingNextCard || !guessSubmitted}
 				>
 					<span class="relative z-10">{isLoadingNextCard ? 'Loading Next Card...' : 'Play Again (New Card)'}</span>
@@ -261,7 +261,7 @@
 		<p class="text-xl text-gray-400">Loading card or no card to display...</p>
 		<button 
 			on:click={() => { isLoadingNextCard = true; dataSnapshotForLoadingCheck = data; invalidateAll(); }} 
-			class="mt-4 bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-200 {isLoadingNextCard ? 'opacity-50' : ''}"
+			class="mt-4 bg-gold-400 hover:bg-gold-500 text-black font-bold py-2 px-4 rounded-sm focus:outline-hidden focus:shadow-outline transition-colors duration-200 {isLoadingNextCard ? 'opacity-50' : ''}"
 			disabled={isLoadingNextCard}
 		>
 			{isLoadingNextCard ? 'Loading...' : 'Refresh'}
@@ -304,7 +304,7 @@
 		display: block;
 		transform-origin: center;
 		border-radius: inherit; 
-		background-color: theme('colors.gold.400'); 
+		background-color: var(--color-gold-400); 
 		opacity: 0; /* Start hidden, animation will show it */
 		animation-name: ripple_wave_fade_in_out;
     animation-duration: 1.5s;

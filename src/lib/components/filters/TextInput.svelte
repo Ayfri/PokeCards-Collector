@@ -35,11 +35,11 @@
 	}
 </script>
 
-<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
+<div class="flex flex-col gap-1 min-w-32 flex-1">
 	<label for={id} class="text-xs text-gray-300 {labelClass}">{label}</label>
 	{#if type === "email"}
 		<input
-			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
+			class="bg-transparent border-2 rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
 			{autocomplete}
 			{id}
 			{placeholder}
@@ -51,7 +51,7 @@
 		/>
 	{:else if type === "password"}
 		<input
-			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
+			class="bg-transparent border-2 rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
 			{autocomplete}
 			{id}
 			{placeholder}
@@ -63,7 +63,7 @@
 		/>
 	{:else if type === "text"}
 		<input
-			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
+			class="bg-transparent border-2 rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
 			{autocomplete}
 			{id}
 			{placeholder}
@@ -75,7 +75,7 @@
 		/>
 	{:else if type === "url"}
 		<input
-			class="bg-transparent border-2 rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
+			class="bg-transparent border-2 rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
 			{autocomplete}
 			{id}
 			{placeholder}

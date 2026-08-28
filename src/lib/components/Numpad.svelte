@@ -21,7 +21,7 @@
 				class="numpad-button flex items-center justify-center h-12 md:h-14 
 							bg-gray-800 text-gold-300 rounded-md border border-gray-700 
 							hover:bg-gray-700 hover:border-gold-400 
-							focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-gold-400 
+							focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-gold-400 
 							text-xl md:text-2xl font-semibold transition-all duration-150
 							{key === 'C' || key === 'Backspace' ? 'text-gold-400 hover:text-gold-300' : 'text-gold-300'}"
 				on:click={() => onKeyPress(key)}
@@ -35,6 +35,6 @@
 <style>
 	.numpad-button:active {
 		transform: scale(0.95);
-		background-color: theme('colors.gray.600'); /* Darker active state */
+		background-color: var(--color-gray-600); /* Darker active state */
 	}
 </style> 

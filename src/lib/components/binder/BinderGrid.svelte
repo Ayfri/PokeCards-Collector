@@ -129,7 +129,7 @@
 			{#each Array($rows * $columns) as _, index (index)} 
 				{@const card = index < $binderCards.length ? $binderCards[index] : null}
 				<div 
-					class="relative binder-cell justify-self-center w-full border border-gray-700 rounded-sm hover:border-gray-600 {card ? 'bg-gray-900' : 'bg-gray-800/50'}"
+					class="relative binder-cell justify-self-center w-full border border-gray-700 rounded-xs hover:border-gray-600 {card ? 'bg-gray-900' : 'bg-gray-800/50'}"
 					style="aspect-ratio: 2.5 / 3.5;"
 					role="gridcell"
 					tabindex="0"

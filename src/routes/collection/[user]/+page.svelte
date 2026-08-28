@@ -38,7 +38,7 @@
 
 {#if profileNotFound || profileIsPrivate}
 	<main 
-		class="flex-grow flex flex-col items-center justify-center text-center p-6 space-y-5"
+		class="grow flex flex-col items-center justify-center text-center p-6 space-y-5"
 		in:fade={{ duration: 300, delay: 100 }}
 	>
 		<div in:fly={{ y: 20, duration: 400, delay: 200 }} class="mb-4">
@@ -64,14 +64,14 @@
 		<div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-4" in:fly={{ y: 20, duration: 400, delay: 500 }}>
 			<a
 				href="/"
-				class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+				class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
 			>
 				<Home size={18} />
 				Return to Home
 			</a>
 			<a
 				href="/users"
-				class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+				class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
 			>
 				<Search size={18} />
 				Search Users
@@ -80,7 +80,7 @@
 	</main>
 {:else}
   {#await data.streamed.collectionData}
-    <div class="flex flex-col flex-grow py-8 min-h-[calc(100svh-200px)] items-center justify-center text-center">
+    <div class="flex flex-col grow py-8 min-h-[calc(100svh-200px)] items-center justify-center text-center">
         <BouncyLoader size={40} />
         <p class="text-white text-xl mt-3">Loading collection...</p>
     </div>
@@ -99,7 +99,7 @@
       return null;
     })()}
 
-    <div class="flex flex-col flex-grow py-8 min-h-[calc(100svh-200px)]">
+    <div class="flex flex-col grow py-8 min-h-[calc(100svh-200px)]">
       <CardGrid 
         cards={displayCards} 
         {pokemons} 
@@ -122,13 +122,13 @@
       {/if}
     </div>
   {:catch error}
-    <div class="flex flex-col flex-grow py-8 min-h-[calc(100svh-200px)] items-center justify-center text-center p-6 space-y-5">
+    <div class="flex flex-col grow py-8 min-h-[calc(100svh-200px)] items-center justify-center text-center p-6 space-y-5">
         <ShieldAlert size={64} class="mx-auto text-red-500" />
         <PageTitle title="Error Loading Collection" />
         <p class="max-w-md text-lg text-gray-300">There was an error loading the card collection data: {error.message}</p>
         <a
             href="/"
-            class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-none focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+            class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
         >
             <Home size={18} />
             Return to Home

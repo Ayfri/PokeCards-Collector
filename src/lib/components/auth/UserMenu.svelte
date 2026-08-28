@@ -108,7 +108,7 @@
 
 	<button
 		type="button"
-		class="flex items-center justify-center size-9 text-gray-400 hover:text-white rounded-full focus:outline-none"
+		class="flex items-center justify-center size-9 text-gray-400 hover:text-white rounded-full focus:outline-hidden"
 		on:click={() => {
 			if (userProp && profileProp) {
 				toggleMenu();
@@ -131,7 +131,7 @@
 		<div
 			bind:this={menuElement}
 			transition:fly={{ y: -10, duration: 200 }}
-			class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+			class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 focus:outline-hidden"
 			role="menu"
 			aria-orientation="vertical"
 			aria-labelledby="user-menu-button"

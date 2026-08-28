@@ -13,7 +13,7 @@
 	}
 </script>
 
-<div class="flex flex-col gap-1 min-w-[8rem] flex-1">
+<div class="flex flex-col gap-1 min-w-32 flex-1">
 	{#if label}
 		<label for={id} class="text-xs text-gray-300">{label}</label>
 	{/if}
@@ -21,7 +21,7 @@
 		{id}
 		on:change={handleChange}
 		value={value}
-		class="bg-transparent border-2 cursor-pointer rounded text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-none focus:border-amber-400 {activeCondition ? 'border-amber-400 text-amber-400' : 'border-white'}"
+		class="bg-transparent border-2 cursor-pointer rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {activeCondition ? 'border-amber-400 text-amber-400' : 'border-white'}"
 	>
 		{#if placeholder}
 			<option value="" selected disabled>{placeholder}</option>

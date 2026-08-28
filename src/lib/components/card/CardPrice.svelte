@@ -23,7 +23,7 @@
 		<span class="text-sm text-gray-400 block">Main Price</span>
 	</div>
 
-	<div class="price-details-container flex-grow overflow-y-auto">
+	<div class="price-details-container grow overflow-y-auto">
 		<h4 class="text-lg text-gold-400 font-bold mb-2 text-center">Market Prices (€)</h4>
 		<div class="grid grid-cols-2 gap-3">
 			{#if cardPrices.simple}

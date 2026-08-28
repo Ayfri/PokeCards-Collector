@@ -68,13 +68,13 @@ async function handleReset() {
 }
 </script>
 
-<div class="max-w-md mx-auto mt-16 p-6 bg-white dark:bg-gray-800 rounded-lg shadow">
+<div class="max-w-md mx-auto mt-16 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
 	<h1 class="text-2xl font-bold mb-4 text-center">Reset your password</h1>
 	{#if errorMessage}
-		<div class="mb-4 p-3 bg-red-100 text-red-800 rounded">{errorMessage}</div>
+		<div class="mb-4 p-3 bg-red-100 text-red-800 rounded-sm">{errorMessage}</div>
 	{/if}
 	{#if successMessage}
-		<div class="mb-4 p-3 bg-green-100 text-green-800 rounded">{successMessage}</div>
+		<div class="mb-4 p-3 bg-green-100 text-green-800 rounded-sm">{successMessage}</div>
 	{/if}
 	<form on:submit|preventDefault={handleReset} class="space-y-4">
 		<div>
@@ -83,14 +83,14 @@ async function handleReset() {
 				type="password"
 				id="password"
 				bind:value={password}
-				class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+				class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 				placeholder="••••••••"
 				required
 				minlength="8"
 			/>
 			<!-- Password strength bar -->
-			<div class="mt-2 h-2 w-full bg-gray-200 dark:bg-gray-700 rounded">
-				<div class="h-2 rounded transition-all duration-300 {passwordStrength === 1 ? 'bg-red-500' : passwordStrength === 2 ? 'bg-yellow-400' : passwordStrength === 3 ? 'bg-green-500' : 'bg-gray-200'}"
+			<div class="mt-2 h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-sm">
+				<div class="h-2 rounded-sm transition-all duration-300 {passwordStrength === 1 ? 'bg-red-500' : passwordStrength === 2 ? 'bg-yellow-400' : passwordStrength === 3 ? 'bg-green-500' : 'bg-gray-200'}"
 					style="width: {passwordStrength * 33.33}%">
 				</div>
 			</div>
@@ -106,7 +106,7 @@ async function handleReset() {
 				type="password"
 				id="confirm-password"
 				bind:value={confirmPassword}
-				class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+				class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 				placeholder="••••••••"
 				required
 				minlength="8"
@@ -115,7 +115,7 @@ async function handleReset() {
 		<button
 			type="submit"
 			disabled={loading}
-			class="w-full py-2 px-4 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+			class="w-full py-2 px-4 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
 		>
 			{#if loading}
 				<BouncyLoader size={20} gradientColorStart="#FFFFFF" gradientColorEnd="#FFFFFF" />

@@ -135,7 +135,7 @@
 			<div class="bg-gray-800 border-2 border-gold-400 rounded-xl p-4 h-full flex flex-col">
 				<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Details</h3>
 
-				<div class="space-y-2 flex-grow">
+				<div class="space-y-2 grow">
 					<!-- Add types as the first item -->
 					{#if card?.types || card?.supertype}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
@@ -143,7 +143,7 @@
 							<dd class="flex flex-wrap justify-end gap-1.5">
 								{#if card?.types}
 									{#each card.types.toLowerCase().split(',') as type}
-										<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${type} bg-[var(--type-color)] text-white`}>
+										<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${type} bg-(--type-color) text-white`}>
 											{type}
 										</span>
 									{/each}

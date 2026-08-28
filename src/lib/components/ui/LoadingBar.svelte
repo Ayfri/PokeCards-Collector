@@ -8,7 +8,7 @@
 
 {#if isLoading}
 	<div 
-		class="fixed top-0 left-0 w-full h-2 z-[9999]" 
+		class="fixed top-0 left-0 w-full h-2 z-9999" 
 		in:fade={{ duration: 100 }} 
 		out:fade={{ duration: 200 }}
 	>
@@ -19,7 +19,7 @@
 <style lang="postcss">
 	.loading-bar {
 		height: 100%;
-		background: linear-gradient(90deg, theme(colors.gray.800) 0%, theme(colors.gold.400) 50%, theme(colors.gray.800) 100%);
+		background: linear-gradient(90deg, var(--color-gray-800) 0%, var(--color-gold-400) 50%, var(--color-gray-800) 100%);
 		background-size: 200% 100%;
 		animation: loading-animation 1.5s infinite linear;
 		width: 100%;

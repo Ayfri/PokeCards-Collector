@@ -123,7 +123,7 @@
 			type="email"
 			id="email"
 			bind:value={email}
-			class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+			class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 			placeholder="your@email.com"
 			required
 		/>
@@ -137,7 +137,7 @@
 			{#if showPassword}
 				<input
 					bind:value={password}
-					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 					id="password"
 					name="password"
 					placeholder="Enter your password"
@@ -147,7 +147,7 @@
 			{:else}
 				<input
 					bind:value={password}
-					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
+					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
 					id="password"
 					name="password"
 					placeholder="Enter your password"
@@ -164,7 +164,7 @@
 			</button>
 		</div>
 		<div class="mt-2 text-right">
-			<button type="button" class="text-xs text-red-600 hover:underline focus:outline-none" on:click={() => { showReset = !showReset; resetMessage = ''; }}>
+			<button type="button" class="text-xs text-red-600 hover:underline focus:outline-hidden" on:click={() => { showReset = !showReset; resetMessage = ''; }}>
 				{showReset ? 'Cancel' : 'Forgot password?'}
 			</button>
 		</div>
@@ -177,12 +177,12 @@
 				type="email"
 				id="reset-email"
 				bind:value={resetEmail}
-				class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white mb-2"
+				class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white mb-2"
 				placeholder="your@email.com"
 				disabled={resetLoading}
 			/>
 			<button type="button"
-				class="w-full py-2 px-4 bg-gold-400 text-black rounded-lg transition-all duration-[400ms] flex items-center justify-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+				class="w-full py-2 px-4 bg-gold-400 text-black rounded-lg transition-all duration-400 flex items-center justify-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
 				on:click={handlePasswordReset}
 				disabled={resetLoading}
 			>
@@ -197,7 +197,7 @@
 	<button
 		type="submit"
 		disabled={loading}
-		class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+		class="w-full py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
 	>
 		{#if loading}
 			<BouncyLoader size={20} gradientColorStart="#FFFFFF" gradientColorEnd="#FFFFFF" />

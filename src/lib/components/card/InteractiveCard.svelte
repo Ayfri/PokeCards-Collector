@@ -63,7 +63,7 @@
 <svelte:window on:mousemove={handleMouseMove}/>
 
 <div
-	class="w-[21rem] h-[29rem] sm:w-[20rem] sm:h-[28rem] lg:w-[23rem] lg:h-[32rem] max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {pokemon ? '' : 'non-pokemon'}"
+	class="w-84 h-116 sm:w-[20rem] sm:h-112 lg:w-92 lg:h-128 max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {pokemon ? '' : 'non-pokemon'}"
 	bind:this={centerCard}
 	data-card-id={currentSet?.name}
 	data-card-type={currentType}
