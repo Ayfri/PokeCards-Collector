@@ -54,8 +54,8 @@ export interface MappedPrice {
 	reverseAvg30?: number;
 }
 
-/** Pokemon cards whose species TCGdex does not know keep the legacy 99999 sentinel; non-Pokemon cards use 0. */
-const UNKNOWN_POKEMON = 99999;
+/** Pokemon cards whose species TCGdex does not know keep the legacy 99999 sentinel; non-Pokemon cards use 0. The `pokemons` table has no such row, so the column stores null. */
+export const UNKNOWN_POKEMON = 99999;
 
 const reverseAliases: Record<Language, Map<string, string>> = {
 	en: buildReverse('en'),

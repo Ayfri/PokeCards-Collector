@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 import { CARDS, JP_CARDS, JP_PRICES, JP_SETS, POKEMONS, PRICES, SETS, TYPES } from './files';
-import type { MappedCard, MappedPrice, MappedSet } from './tcgdex/mappers';
+import { UNKNOWN_POKEMON, type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
 
 const supabaseUrl = process.env.PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? process.env.PUBLIC_SUPABASE_ANON_KEY!;
@@ -82,7 +82,7 @@ async function uploadSetsTo(table: string, path: string): Promise<void> {
 		set_id: set.setId,
 		symbol: set.symbol || null,
 		total_cards: set.totalCards || null,
-	})), 'name', 100);
+	})), 'set_id', 100);
 }
 
 export const uploadSets = () => uploadSetsTo('sets', SETS);
@@ -93,13 +93,9 @@ export const uploadJapaneseSets = () => uploadSetsTo('jp_sets', JP_SETS);
  * TCGdex card claimed are deleted. `collections` and `wishlists` are never touched - a row pointing at a
  * card TCGdex does not have yet is kept and renders again once the upstream database fills the set in.
  */
-async function uploadCardsTo(table: string, path: string, setsTable: string): Promise<void> {
+async function uploadCardsTo(table: string, path: string): Promise<void> {
 	console.log(`📤 Uploading ${table}...`);
 	const cards = read<MappedCard[]>(path);
-
-	const { data: validSets, error: setsError } = await supabase.from(setsTable).select('name');
-	if (setsError) throw new Error(`Error fetching ${setsTable}: ${setsError.message}`);
-	const validSetNames = new Set(validSets.map(set => set.name as string));
 
 	const rows = cards.map(card => ({
 		card_code: card.cardCode,
@@ -111,20 +107,17 @@ async function uploadCardsTo(table: string, path: string, setsTable: string): Pr
 		legal_standard: card.legalStandard,
 		local_id: card.localId || null,
 		name: card.name,
-		pokemon_id: card.pokemonNumber ?? null,
+		pokemon_id: card.pokemonNumber && card.pokemonNumber !== UNKNOWN_POKEMON ? card.pokemonNumber : null,
 		rarity: card.rarity || null,
 		regulation_mark: card.regulationMark || null,
 		set_id: card.setId || null,
-		set_name: validSetNames.has(card.setName) ? card.setName : null,
+		set_name: card.setName || null,
 		stage: card.stage || null,
 		supertype: card.supertype || null,
 		tcgdex_id: card.tcgdexId,
 		types: card.types || null,
 		variants: card.variants,
 	}));
-
-	const missingSets = [...new Set(cards.filter(card => card.setName && !validSetNames.has(card.setName)).map(card => card.setName))];
-	if (missingSets.length) console.log(`⚠️  ${missingSets.length} set names are not in ${setsTable}: ${missingSets.slice(0, 5).join(', ')}${missingSets.length > 5 ? '...' : ''}`);
 
 	await upsertAll(table, deduplicate(rows, 'card_code', table), 'card_code');
 
@@ -133,8 +126,8 @@ async function uploadCardsTo(table: string, path: string, setsTable: string): Pr
 	console.log(`🧹 Dropped ${count ?? 0} ${table} rows TCGdex no longer has`);
 }
 
-export const uploadCards = () => uploadCardsTo('cards', CARDS, 'sets');
-export const uploadJapaneseCards = () => uploadCardsTo('jp_cards', JP_CARDS, 'jp_sets');
+export const uploadCards = () => uploadCardsTo('cards', CARDS);
+export const uploadJapaneseCards = () => uploadCardsTo('jp_cards', JP_CARDS);
 
 async function uploadPricesTo(table: string, path: string): Promise<void> {
 	console.log(`📤 Uploading ${table}...`);
@@ -162,7 +155,7 @@ async function uploadPricesTo(table: string, path: string): Promise<void> {
 export const uploadPrices = () => uploadPricesTo('prices', PRICES);
 export const uploadJapanesePrices = () => uploadPricesTo('jp_prices', JP_PRICES);
 
-/** Dependency order: sets before cards (cards reference set names), cards before prices (prices reference card codes). */
+/** Dependency order: cards before prices, which carry a foreign key on `card_code`. */
 export async function uploadAllData(): Promise<void> {
 	console.log('🚀 Starting full Supabase data upload...');
 	await uploadTypes();
