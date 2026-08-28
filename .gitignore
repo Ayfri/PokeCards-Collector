@@ -1,14 +1,11 @@
 # Build output
 .output
-.vercel
-.netlify
 .wrangler
 /.svelte-kit
 /build
 
 # dependencies
 node_modules/
-package-lock.json
 
 # logs
 npm-debug.log*
@@ -33,6 +30,3 @@ vite.config.ts.timestamp-*
 
 # Images
 images/
-
-# Cursor
-.cursor/mcp.json
