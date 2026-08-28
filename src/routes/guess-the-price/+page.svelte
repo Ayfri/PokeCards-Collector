@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run, preventDefault } from 'svelte/legacy';
-
 	import type { PageData } from './$types';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
@@ -26,12 +24,12 @@
 	let guessSubmitted: boolean = $state(false); // True after a guess is made, false after Play Again
 	let isLoadingNextCard: boolean = $state(false); // True while invalidateAll from checkGuess is running
 
-	let dataSnapshotForLoadingCheck = $state(data); // Snapshot to detect data prop update
+	let dataSnapshotForLoadingCheck: PageData | null = null; // Reference of the last `data` seen, to detect the prop update
 
 	// Initialize displayed card data on initial load
 	// This runs once when the component mounts and `data` is first available.
 	// Subsequent updates to displayedCard are handled by playAgain.
-	run(() => {
+	$effect(() => {
 		if (data.currentCard && !displayedCard) { // Only set if displayedCard is not yet set
 			displayedCard = data.currentCard;
 			displayedCardPrice = data.currentCardPrice;
@@ -49,7 +47,7 @@
 	});
 
 	// Reactive block to manage loading state after checkGuess initiates a fetch
-	run(() => {
+	$effect(() => {
 		if (isLoadingNextCard && data !== dataSnapshotForLoadingCheck) {
 			isLoadingNextCard = false;
 			dataSnapshotForLoadingCheck = data; // Update snapshot for the next cycle
@@ -87,7 +85,9 @@
 		}
 	}
 
-	function checkGuess() {
+	function checkGuess(event: SubmitEvent) {
+		event.preventDefault();
+
 		const guess = parseInt(guessString, 10); // Changed to parseInt
 		if (isNaN(guess)) {
 			message = 'Please enter a valid price.';
@@ -171,7 +171,7 @@
 	}
 	
 	// Reactive statement to trigger confetti
-	run(() => {
+	$effect(() => {
 		if (showConfetti && typeof (window as any).confetti === 'function') {
 			(window as any).confetti({
 				particleCount: 150,
@@ -221,7 +221,7 @@
 					{/if}
 					<img src={displayedCard.image} alt={displayedCard.name} class="mx-auto mb-3 sm:mb-4 rounded-lg shadow-md w-48 sm:w-64 h-auto object-contain" />
 
-					<form onsubmit={preventDefault(checkGuess)} class="w-full">
+					<form onsubmit={checkGuess} class="w-full">
 						<label for="price-guess" class="block text-base sm:text-lg font-medium text-gray-300 mb-1 sm:mb-2">Your Guess ($):</label>
 						<input
 							type="text" 
@@ -280,13 +280,6 @@
 </div>
 
 <style>
-	/* Numpad specific styling can go here or in Numpad.svelte if more complex */
-	/* Ensure the grid layout accommodates the numpad */
-	.game-layout-grid {
-		/* Desktop: grid-template-columns: 1fr auto 1fr; (implicit via md:grid-cols-3) */
-		/* Mobile: grid-template-columns: 1fr; (implicit via grid-cols-1) */
-	}
-
 	/* Adjust Numpad container for mobile if Numpad itself doesn't scale well */
 	@media (max-width: 767px) { /* Below md breakpoint */
 		.numpad-container {
@@ -294,9 +287,6 @@
 			/* For now, rely on Numpad internal styling and centering */
 			margin-top: 1rem; /* Add some space above numpad on mobile */
 			margin-bottom: 1rem; /* Add some space below numpad on mobile */
-		}
-		.card-display-wrapper {
-			/* Ensure it doesn't get too small or too large on mobile */
 		}
 		.play-again-message-container {
 			margin-top: 1rem;

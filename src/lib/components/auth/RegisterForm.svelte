@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { run, preventDefault } from 'svelte/legacy';
-
-	import { onMount } from 'svelte';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
 	import BouncyLoader from '../BouncyLoader.svelte';
+	import { readJson, type ApiError } from '$helpers/http';
 
 	interface Props {
 		onSuccess?: (() => void) | undefined;
@@ -19,18 +17,14 @@
 	let confirmPassword = $state('');
 	let loading = $state(false);
 	let errorMessage = $state('');
-	let passwordStrength = $state(0);
-	let passwordCriteria = $state({
-		length: false,
-		digit: false,
-		special: false
+	const passwordCriteria = $derived({
+		digit: /[0-9]/.test(password),
+		length: password.length >= 8,
+		special: /[^a-zA-Z0-9]/.test(password)
 	});
+	const passwordStrength = $derived(Object.values(passwordCriteria).filter(Boolean).length);
 	let showPassword = $state(false);
 	let showConfirmPassword = $state(false);
-
-	onMount(() => {
-		// Composant monté
-	});
 
 	async function validateUsername() {
 		try {
@@ -66,7 +60,7 @@
 					})
 				});
 				
-				const data = await response.json();
+				const data = await readJson<{ success?: boolean; exists?: boolean }>(response, {});
 				
 				if (!data.success) {
 					errorMessage = 'Error checking username availability';
@@ -90,7 +84,8 @@
 		}
 	}
 
-	async function handleSubmit() {
+	async function handleSubmit(event: SubmitEvent) {
+		event.preventDefault();
 		try {
 			// Basic validation
 			if (!email || !username || !password || !confirmPassword) {
@@ -143,16 +138,13 @@
 
 				if (!signupResponse.ok) {
 					clearTimeout(registerTimeout);
-					let signupErrorMsg = 'Error during registration';
-					try {
-						const errorData = await signupResponse.json();
-						signupErrorMsg = errorData.message || errorData.error || signupErrorMsg;
-						if (signupErrorMsg.includes('already registered')) {
-							signupErrorMsg = 'This email is already registered';
-						} else if (signupErrorMsg.includes('already taken')) {
-							signupErrorMsg = 'This username is already taken';
-						}
-					} catch (e) { /* Ignore parsing error, use default */ }
+					const errorData = await readJson<ApiError>(signupResponse, {});
+					let signupErrorMsg = errorData.message || errorData.error || 'Error during registration';
+					if (signupErrorMsg.includes('already registered')) {
+						signupErrorMsg = 'This email is already registered';
+					} else if (signupErrorMsg.includes('already taken')) {
+						signupErrorMsg = 'This username is already taken';
+					}
 					errorMessage = signupErrorMsg;
 					loading = false;
 					return;
@@ -170,12 +162,8 @@
 
 				if (!loginResponse.ok) {
 					console.error('Automatic sign in failed after signup:', loginResponse.status);
-					let loginErrorMsg = 'Registration successful, but automatic login failed.';
-					try {
-						const errorData = await loginResponse.json();
-						loginErrorMsg += ` ${errorData.message || 'Please log in manually.'}`;
-					} catch(e) { loginErrorMsg += ' Please log in manually.'; }
-					errorMessage = loginErrorMsg;
+					const errorData = await readJson<ApiError>(loginResponse, {});
+					errorMessage = `Registration successful, but automatic login failed. ${errorData.message || 'Please log in manually.'}`;
 					loading = false;
 					onSwitch?.('login'); // Switch to login tab
 					return;
@@ -221,15 +209,9 @@
 		showConfirmPassword = !showConfirmPassword;
 	};
 
-	run(() => {
-		passwordCriteria.length = password.length >= 8;
-		passwordCriteria.digit = /[0-9]/.test(password);
-		passwordCriteria.special = /[^a-zA-Z0-9]/.test(password);
-		passwordStrength = [passwordCriteria.length, passwordCriteria.digit, passwordCriteria.special].filter(Boolean).length;
-	});
 </script>
 
-<form onsubmit={preventDefault(handleSubmit)} class="space-y-4">
+<form onsubmit={handleSubmit} class="space-y-4">
 	{#if errorMessage}
 		<div class="p-3 bg-red-100 text-red-800 rounded-lg text-sm">
 			{errorMessage}

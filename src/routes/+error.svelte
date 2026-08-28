@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { page } from '$app/state';
 	import PageTitle from '@components/PageTitle.svelte';
 	import { House, TriangleAlert } from '@lucide/svelte';
@@ -12,21 +10,13 @@
 		ready = true;
 	});
 
-	let errorStatus = $derived(page.status);
-	let errorMessage = $derived(page.error?.message);
+	const errorStatus = $derived(page.status);
+	const errorMessage = $derived(page.error?.message);
 
-	let displayTitle = $state('');
-	let displayMessage = $state('');
-
-    run(() => {
-		if (errorStatus === 404) {
-			displayTitle = '404 - Page Not Found';
-			displayMessage = "Looks like this page used Teleport, and it failed!";
-		} else {
-			displayTitle = `Error ${errorStatus}`;
-			displayMessage = errorMessage || 'Something went wrong on our end. Please try again later.';
-		}
-	});
+	const displayTitle = $derived(errorStatus === 404 ? '404 - Page Not Found' : `Error ${errorStatus}`);
+	const displayMessage = $derived(errorStatus === 404
+		? "Looks like this page used Teleport, and it failed!"
+		: errorMessage || 'Something went wrong on our end. Please try again later.');
 </script>
 
 {#if ready}

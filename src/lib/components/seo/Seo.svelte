@@ -26,9 +26,9 @@
 		$derived(title.trim().toLowerCase().endsWith(SITE_NAME.toLowerCase())
 			? title.trim()
 			: `${title.trim()} - ${SITE_NAME}`);
-	let effectiveCanonicalUrl = $derived(canonicalUrl ?? `${BASE_URL}${page.url.pathname}${page.url.search}`);
+	const effectiveCanonicalUrl = $derived(canonicalUrl ?? `${BASE_URL}${page.url.pathname}${page.url.search}`);
 
-	let jsonLd = $derived({
+	const jsonLd = $derived({
 		'@context': 'https://schema.org',
 		'@type': type,
 		name: effectiveTitle,
@@ -55,7 +55,7 @@
 		}),
 	});
 
-	let jsonLdString = $derived(JSON.stringify(jsonLd, null, 2));
+	const jsonLdString = $derived(JSON.stringify(jsonLd, null, 2));
 </script>
 
 <svelte:head>

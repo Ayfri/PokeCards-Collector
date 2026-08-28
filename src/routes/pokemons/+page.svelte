@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import type { PageData } from './$types';
 	import { goto } from '$app/navigation';
 	import { pascalCase } from '$helpers/strings';
@@ -24,18 +22,19 @@
 
 	let { data }: Props = $props();
 
-	const { pokemons: initialPokemons, allCards, prices } = data;
+	const initialPokemons = $derived(data.pokemons);
+	const allCards = $derived(data.allCards);
+	const prices = $derived(data.prices);
 
 	// Sorting state
 	let sortBy = $state('pokedex'); // Default sort by Pokedex number
 	let sortOrder: 'asc' | 'desc' = $state('asc'); // Default sort order ascending
 
-	let sortedPokemons: PokemonWithCardCount[] = $state([]);
 	let searchTerm = $state('');
 
 	// Reactive statement to filter and sort pokemons
-	run(() => {
-		let tempPokemons = [...initialPokemons]
+	const sortedPokemons = $derived.by(() => {
+		const tempPokemons = [...initialPokemons]
 			.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
 		if (sortBy === 'pokedex') {
@@ -57,7 +56,7 @@
 				return sortOrder === 'asc' ? countA - countB : countB - countA;
 			});
 		}
-		sortedPokemons = tempPokemons as PokemonWithCardCount[];
+		return tempPokemons as PokemonWithCardCount[];
 	});
 
 	let hasScrolled = $state(false);

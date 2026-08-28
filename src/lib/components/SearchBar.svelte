@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { fade, fly } from 'svelte/transition';
 	import { onDestroy, onMount } from 'svelte';
 	import Search from '@lucide/svelte/icons/search';
@@ -41,15 +39,12 @@
 	let searchQuery = $state('');
 	let searchResults: FullCard[] = $state([]);
 	let showResults = $state(false);
-	let isBinderPage = $state(false);
 	let addedCards = $state(new Set<string>()); // Pour stocker les IDs des cartes ajoutées
 	let platformModifierKey = $state(''); // Will be 'Ctrl' or 'Cmd'
 	let inputFocused = $state(false); // Track input focus state
 
 	// Check if we're on the Binder page
-	run(() => {
-		isBinderPage = $page.url.pathname === '/binder';
-	});
+	const isBinderPage = $derived($page.url.pathname === '/binder');
 
 	// Try to get the storedCards store from context ONLY during initialization if on binder page
 	let binderStoredCards: Writable<string[]> | null = null;
@@ -261,15 +256,13 @@
 
 	// --- Reactive Statements ---
 	// Trigger search only when query changes (and is not undefined/null)
-	run(() => {
-		if (typeof searchQuery === 'string') {
-			if (searchQuery.trim()) {
-				debouncedSearch();
-			} else {
-				// Clear results immediately when query is emptied
-				searchResults = [];
-				showResults = false;
-			}
+	$effect(() => {
+		if (searchQuery.trim()) {
+			debouncedSearch();
+		} else {
+			// Clear results immediately when query is emptied
+			searchResults = [];
+			showResults = false;
 		}
 	});
 </script>

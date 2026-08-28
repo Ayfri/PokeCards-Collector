@@ -10,12 +10,12 @@
 
 	let { data }: Props = $props();
 
-	let allCards = $derived(data.allCards as Card[]);
-	let pokemonCards = $derived(data.pokemonCards as Card[]);
-	let pokemons = $derived(data.pokemons as Pokemon[]);
-	let sets = $derived(data.sets as Set[]);
-	let prices = $derived(data.prices as Record<string, PriceData>);
-	let targetCard = $derived(data.targetCard as Card);
+	const allCards = $derived(data.allCards as Card[]);
+	const pokemonCards = $derived(data.pokemonCards as Card[]);
+	const pokemons = $derived(data.pokemons as Pokemon[]);
+	const sets = $derived(data.sets as Set[]);
+	const prices = $derived(data.prices as Record<string, PriceData>);
+	const targetCard = $derived(data.targetCard as Card);
 </script>
 
 <main class="max-w-[100vw] p-4 mb-4 text-lg text-white">

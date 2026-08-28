@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { CardDleFeedback, CardDleGuessResponse } from '$lib/types';
+	import { readJson } from '$helpers/http';
 	import Modal from '@components/ui/Modal.svelte';
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
@@ -25,7 +27,7 @@
 		name: string;
 		cardImage: string;
 		pokemonNumber?: number;
-		feedback: any;
+		feedback: CardDleFeedback;
 		isCorrect: boolean;
 	}[] = $state([]);
 
@@ -47,7 +49,7 @@
 		const term = searchTerm || searchInput.trim();
 		if (term.length > 0) {
 			const searchTermLower = term.toLowerCase();
-			let filteredCards = (data.cardSuggestions || []).filter(card =>
+			const filteredCards = (data.cardSuggestions || []).filter(card =>
 				card.pokemonName.toLowerCase().includes(searchTermLower) ||
 				card.name.toLowerCase().includes(searchTermLower)
 			);
@@ -101,7 +103,7 @@
 				body: formData
 			});
 
-			const result = await response.json();
+			const result = await readJson<CardDleGuessResponse>(response, { error: 'Invalid server response' });
 
 			if (result.success) {
 				const newGuess = {

@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { processCardImage } from '$lib/helpers/card-images';
 	import { NO_IMAGES } from '~/lib/images';
 
@@ -41,34 +39,34 @@
 	let error = $state(false);
 
 	// Determine whether to use high resolution based on the lowRes prop
-	let useHighRes = $derived(!lowRes);
+	const useHighRes = $derived(!lowRes);
 
 	// Process the image URL using our centralized function - make reactive to imageUrl changes
-	let standardImageUrl = $derived(imageUrl ? processCardImage(imageUrl, useHighRes) : '');
-	let lowResImageUrl = $derived(imageUrl ? processCardImage(imageUrl, false) : '');
+	const standardImageUrl = $derived(imageUrl ? processCardImage(imageUrl, useHighRes) : '');
+	const lowResImageUrl = $derived(imageUrl ? processCardImage(imageUrl, false) : '');
 	
 	// Default fallback image for missing images
 	const DEFAULT_FALLBACK_IMAGE = '/default-card-image.png';
 	
 	// Check if this is an external URL (not from Pokemon TCG API)
 	// If so, route it through the proxy to prevent CORS issues
-	let isExternalUrl = $derived(standardImageUrl && !standardImageUrl.includes('pokemontcg.io'));
+	const isExternalUrl = $derived(standardImageUrl && !standardImageUrl.includes('pokemontcg.io'));
 	
 	// For external URLs, we'll use the proxy endpoint
-	let proxyStandardUrl = $derived(!standardImageUrl ? DEFAULT_FALLBACK_IMAGE : 
+	const proxyStandardUrl = $derived(!standardImageUrl ? DEFAULT_FALLBACK_IMAGE : 
 	                      isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(standardImageUrl)}` : 
 	                      standardImageUrl);
 	                      
-	let proxyLowResUrl = $derived(!lowResImageUrl ? DEFAULT_FALLBACK_IMAGE : 
+	const proxyLowResUrl = $derived(!lowResImageUrl ? DEFAULT_FALLBACK_IMAGE : 
 	                   isExternalUrl ? `/api/image-proxy?url=${encodeURIComponent(lowResImageUrl)}` : 
 	                   lowResImageUrl);
 
 	// Prepare srcset based on actual dimensions
-	let srcsetValue = $derived(width ? 
+	const srcsetValue = $derived(width ? 
 		`${proxyLowResUrl} ${Math.floor(width*0.82)}w, ${standardImageUrl} ${width}w` :
 		`${proxyLowResUrl} 245w, ${standardImageUrl} 300w`);
 
-	let sizesValue = $derived(width ? 
+	const sizesValue = $derived(width ? 
 		`(max-width: ${Math.floor(width*0.82)}px) ${Math.floor(width*0.82)}px, ${width}w` :
 		'(max-width: 245px) 245px, 300w');
 
@@ -85,7 +83,7 @@
 	}
 	
 	// Reset the loaded state when imageUrl changes
-	run(() => {
+	$effect.pre(() => {
 		if (imageUrl) {
 			loaded = false;
 			error = false;

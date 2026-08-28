@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import CardInfo from '@components/card/CardInfo.svelte';
 	import EvolutionChain from '@components/card/EvolutionChain.svelte';
 	import RelatedCards from '@components/card/RelatedCards.svelte';
@@ -43,19 +41,22 @@
 	let shouldRenderAllCards = $state(false);
 
 	// --- Reactive Computations ---
-	let baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
-	let cardPrices = $derived(currentCard ? prices[currentCard.cardCode] : undefined);
-	let currentSet = $derived(currentCard ? findSetByCardCode(currentCard.cardCode, sets) : undefined);
-	let currentType = $derived(currentCard?.types?.toLowerCase().split(',')[0] || 'unknown');
-	let currentPokemonId = $derived(currentCard?.pokemonNumber);
+	const baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
+	const cardPrices = $derived(currentCard ? prices[currentCard.cardCode] : undefined);
+	const currentSet = $derived(currentCard ? findSetByCardCode(currentCard.cardCode, sets) : undefined);
+	const currentType = $derived(currentCard?.types?.toLowerCase().split(',')[0] || 'unknown');
+	const currentPokemonId = $derived(currentCard?.pokemonNumber);
 
-	let currentPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId) : undefined);
-	let previousPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId - 1) : undefined);
-	let nextPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId + 1) : undefined);
-	let previousPokemonCard = $derived(previousPokemon ? getRepresentativeCardForPokemon(previousPokemon.id, allCards, prices) : undefined);
-	let nextPokemonCard = $derived(nextPokemon ? getRepresentativeCardForPokemon(nextPokemon.id, allCards, prices) : undefined);
+	const currentPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId) : undefined);
+	const previousPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId - 1) : undefined);
+	const nextPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId + 1) : undefined);
+	const previousPokemonCard = $derived(previousPokemon ? getRepresentativeCardForPokemon(previousPokemon.id, allCards, prices) : undefined);
+	const nextPokemonCard = $derived(nextPokemon ? getRepresentativeCardForPokemon(nextPokemon.id, allCards, prices) : undefined);
 
-	let currentPokemonCards = $derived(currentPokemonId ? allCards.filter(c => c.pokemonNumber === currentPokemonId) : []);
+	// Deduplicated by cardCode: the same card can appear more than once in allCards.
+	const currentPokemonCards = $derived(currentPokemonId
+		? [...new Map(allCards.filter(c => c.pokemonNumber === currentPokemonId).map(c => [c.cardCode, c])).values()]
+		: []);
 
 	// --- Functions ---
 	function handlePokemonImageError(event: Event) {
@@ -119,24 +120,6 @@
 		isInitialRenderComplete = true;
 		if (!shouldRenderAllCards) {
 			setTimeout(() => shouldRenderAllCards = true, 800);
-		}
-	});
-
-	// Ensure unique cards in currentPokemonCards
-	run(() => {
-		if (currentPokemonId) {
-			const uniqueCardCodes = new Set<string>();
-			currentPokemonCards = allCards
-				.filter(c => c.pokemonNumber === currentPokemonId)
-				.filter(c => {
-					if (!uniqueCardCodes.has(c.cardCode)) {
-						uniqueCardCodes.add(c.cardCode);
-						return true;
-					}
-					return false;
-				});
-		} else {
-			currentPokemonCards = [];
 		}
 	});
 </script>

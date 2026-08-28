@@ -10,15 +10,15 @@
 
 	let { data }: Props = $props();
 
-	let allCards = $derived(data.allCards as FullCard[]);
-	let pokemonCards = $derived(data.pokemonCards as FullCard[]);
-	let pokemons = $derived(data.pokemons as Pokemon[]);
-	let sets = $derived(data.sets as Set[]);
-	let pokemon = $derived(data.pokemon as Pokemon);
-	let prices = $derived((data.prices as Record<string, PriceData> | undefined) || {});
+	const allCards = $derived(data.allCards as FullCard[]);
+	const pokemonCards = $derived(data.pokemonCards as FullCard[]);
+	const pokemons = $derived(data.pokemons as Pokemon[]);
+	const sets = $derived(data.sets as Set[]);
+	const pokemon = $derived(data.pokemon as Pokemon);
+	const prices = $derived((data.prices as Record<string, PriceData> | undefined) || {});
 	
 	// This will ensure all components know we're in the Japanese card context
-	let isJpContext = true;
+	const isJpContext = true;
 </script>
 
 <main class="max-w-[100vw] p-4 mb-4 text-lg text-white">

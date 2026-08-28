@@ -16,14 +16,14 @@
 	let { data }: Props = $props();
 
 	// --- Use Server Data Directly (for non-streamed parts) ---
-	let targetProfile = $derived(data.targetProfile);
-	let isPublic = $derived(data.isPublic);
-	let targetUsername = $derived(data.targetUsername);
-	let description = $derived(data.description);
-	let loggedInUsername = $derived(page.data.profile?.username);
-	let isOwnWishlist = $derived(!targetUsername || (loggedInUsername === targetUsername));
-	let profileNotFound = $derived(!targetProfile && !!targetUsername && !data.streamed?.wishlistData);
-	let profileIsPrivate = $derived(!!targetProfile && !isPublic && !isOwnWishlist && !data.streamed?.wishlistData);
+	const targetProfile = $derived(data.targetProfile);
+	const isPublic = $derived(data.isPublic);
+	const targetUsername = $derived(data.targetUsername);
+	const description = $derived(data.description);
+	const loggedInUsername = $derived(page.data.profile?.username);
+	const isOwnWishlist = $derived(!targetUsername || (loggedInUsername === targetUsername));
+	const profileNotFound = $derived(!targetProfile && !!targetUsername && !data.streamed?.wishlistData);
+	const profileIsPrivate = $derived(!!targetProfile && !isPublic && !isOwnWishlist && !data.streamed?.wishlistData);
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
@@ -32,7 +32,7 @@
 	});
 
 	// pageTitleDisplay will be reactive to targetProfile and isOwnWishlist, considering data.title as fallback
-	let pageTitleDisplay = $derived((() => {
+	const pageTitleDisplay = $derived((() => {
 		if (profileNotFound) return 'User Not Found';
 		if (profileIsPrivate) return 'Wishlist is Private';
 		if (targetProfile) {

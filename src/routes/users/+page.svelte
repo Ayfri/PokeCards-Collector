@@ -9,6 +9,8 @@
 	import UserXIcon from '@lucide/svelte/icons/user-x';
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import type { PageData } from './$types';
+	import type { SearchedUserWithStats, SearchUsersResponse } from '$lib/types';
+	import { readJson } from '$helpers/http';
 	import PageTitle from '@components/PageTitle.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import UserCard from '@components/users/UserCard.svelte';
@@ -20,20 +22,11 @@
 
 	let { data }: Props = $props();
 
-	let featuredUsers = $derived(data.featuredUsers || []);
-	let featuredUsersError = $derived(data.featuredUsersError);
-
-	interface SearchResultUser {
-		auth_id: string;
-		username: string;
-		is_public: boolean; // Will be true based on new query, but kept for structure
-		profile_color: string | null;
-		created_at: string;
-		unique_card_count: number;
-	}
+	const featuredUsers = $derived(data.featuredUsers || []);
+	const featuredUsersError = $derived(data.featuredUsersError);
 
 	let searchQuery = $state('');
-	let searchResults: SearchResultUser[] = $state([]);
+	let searchResults: SearchedUserWithStats[] = $state([]);
 	let isLoadingSearch = $state(false);
 	let debounceTimer: ReturnType<typeof setTimeout>;
 	let isInitialSearchState = $state(true);
@@ -63,7 +56,7 @@
 			}
 
 			const response = await fetch(`/api/search-users?q=${encodeURIComponent(searchQuery)}&limit=12`);
-			const responseData = await response.json();
+			const responseData = await readJson<SearchUsersResponse>(response, { error: 'Invalid server response' });
 
 			if (responseData.success) {
 				console.log('responseData.users', responseData.users);

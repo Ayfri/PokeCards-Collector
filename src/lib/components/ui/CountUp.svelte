@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { CountUp as CountUpJs, type CountUpOptions } from '$lib/countup-wrapper';
 	import { onMount } from 'svelte';
 
@@ -35,17 +33,11 @@
 		} else {
 			console.error(countUpAnim.error);
 		}
-
-		return () => {
-			// Cleanup if necessary, although CountUp.js might not require explicit cleanup
-		};
 	});
 
 	// Update the countUp animation when the end value changes
-	run(() => {
-		if (countUpAnim && end !== undefined) {
-			countUpAnim.update(end);
-		}
+	$effect(() => {
+		countUpAnim?.update(end);
 	});
 </script>
 

@@ -33,19 +33,19 @@
 
 	let { data }: Props = $props();
 
-	let latestSet = $derived(data.latestSet);
-	let mostExpensiveLatestSetCards = $derived(data.mostExpensiveLatestSetCards);
-	let mostExpensiveCards = $derived(data.mostExpensiveCards);
-	let stats = $derived(data.stats);
-	let sets = $derived(data.sets);
-	let prices = $derived(data.prices);
-	let session = $derived(page.data.session);
+	const latestSet = $derived(data.latestSet);
+	const mostExpensiveLatestSetCards = $derived(data.mostExpensiveLatestSetCards);
+	const mostExpensiveCards = $derived(data.mostExpensiveCards);
+	const stats = $derived(data.stats);
+	const sets = $derived(data.sets);
+	const prices = $derived(data.prices);
+	const session = $derived(page.data.session);
 
 	// Récupérer les données des cartes de la page.server.ts
-	let allCards = $derived(data.allCards || []);
+	const allCards = $derived(data.allCards || []);
 
 	// Calculer les statistiques du dernier set
-	let latestSetCards = $derived(latestSet
+	const latestSetCards = $derived(latestSet
 		? allCards.filter(
 				(card: FullCard) =>
 					card.setName?.toLowerCase() ===
@@ -53,18 +53,18 @@
 			)
 		: []);
 
-	let latestSetPokemonCards = $derived(latestSetCards.filter(
+	const latestSetPokemonCards = $derived(latestSetCards.filter(
 		(card: FullCard) => card.supertype === "Pokémon",
 	));
-	let latestSetTrainerCards = $derived(latestSetCards.filter(
+	const latestSetTrainerCards = $derived(latestSetCards.filter(
 		(card: FullCard) => card.supertype === "Trainer",
 	));
-	let latestSetEnergyCards = $derived(latestSetCards.filter(
+	const latestSetEnergyCards = $derived(latestSetCards.filter(
 		(card: FullCard) => card.supertype === "Energy",
 	));
 
 	// Calculer la valeur totale du set
-	let totalSetValue = $derived(latestSetCards.reduce(
+	const totalSetValue = $derived(latestSetCards.reduce(
 		(sum: number, card: FullCard) =>
 			sum + (prices[card.cardCode]?.simple || 0),
 		0,

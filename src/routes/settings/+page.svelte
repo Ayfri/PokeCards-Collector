@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
@@ -25,12 +23,12 @@
 	let resetPasswordMessage = $state('');
 	let resetPasswordError = $state('');
 
-	let user = $derived(page.data.user);
-	let profile = $derived(page.data.profile);
+	const user = $derived(page.data.user);
+	const profile = $derived(page.data.profile);
 
 	// Simpler reactive update for profileColorInput:
 	// It directly reflects profile.profile_color or defaults.
-	run(() => {
+	$effect(() => {
 		profileColorInput = (profile && profile.profile_color && typeof profile.profile_color === 'string' && profile.profile_color.startsWith('#'))
 								? profile.profile_color
 								: defaultProfileHexColor;
@@ -76,14 +74,10 @@
 		}
 	}
 
-	run(() => {
-		if (browser) {
-			if (showColorPicker) {
-				window.addEventListener('mousedown', handleClickOutside);
-			} else {
-				window.removeEventListener('mousedown', handleClickOutside);
-			}
-		}
+	$effect(() => {
+		if (!browser || !showColorPicker) return;
+		window.addEventListener('mousedown', handleClickOutside);
+		return () => window.removeEventListener('mousedown', handleClickOutside);
 	});
 
 	async function handlePasswordReset() {

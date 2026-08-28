@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import ScrollToBottom from '@components/list/ScrollToBottom.svelte';
 	import ScrollToTop from '@components/list/ScrollToTop.svelte';
 	import { updateScrollProgress } from '$helpers/scrollStore';
@@ -34,7 +32,7 @@
 	}: Props = $props();
 
 	const marginRows = 4;
-	const scrollThreshold = itemHeight * 0.8;
+	const scrollThreshold = $derived(itemHeight * 0.8);
 	const scrollDuration = 800;
 
 	let container = $state<HTMLDivElement>();
@@ -169,7 +167,7 @@
 		}, 100);
 	}
 
-	run(() => {
+	$effect(() => {
 		if (isInitialized && (itemWidth || itemHeight || gapX || gapY || forcedItemsPerRow || clientWidth)) {
 			recalculateLayout();
 		}

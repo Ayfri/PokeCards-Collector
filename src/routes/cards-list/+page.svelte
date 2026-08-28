@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
@@ -17,16 +15,16 @@
 
 	// Use allCards from layout data passed down via PageData
 	// $: allCards = data.allCards; // No longer needed here, will come from data.streamed.allCards
-	let sets = $derived(data.sets);
-	let rarities = $derived(data.rarities);
-	let types = $derived(data.types);
-	let artists = $derived(data.artists);
+	const sets = $derived(data.sets);
+	const rarities = $derived(data.rarities);
+	const types = $derived(data.types);
+	const artists = $derived(data.artists);
 
 	// Determine lowRes based on cardSize
-	let lowRes = $derived(!($cardSize === 2 || $cardSize === 3)); // true if not L or XL
+	const lowRes = $derived(!($cardSize === 2 || $cardSize === 3)); // true if not L or XL
 
-	let selectedSetName = $state<string | null>();
-	let selectedArtistName = $state<string | null>();
+	const selectedSetName = $derived($filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null);
+	const selectedArtistName = $derived($filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null);
 
 	onMount(() => {
 		const mountStart = performance.now();
@@ -154,13 +152,6 @@
 		}
 
 		console.log(`✅ CardsListPage: Mount completed in ${performance.now() - mountStart}ms`);
-	});
-
-	run(() => {
-		const reactiveStart = performance.now();
-		selectedSetName = $filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null;
-		selectedArtistName = $filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null;
-		console.log(`🔄 CardsListPage: Reactive selectedNames calculated in ${performance.now() - reactiveStart}ms - Set: ${selectedSetName}, Artist: ${selectedArtistName}`);
 	});
 </script>
 

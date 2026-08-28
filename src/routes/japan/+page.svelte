@@ -13,12 +13,12 @@
 	let { data }: Props = $props();
 
 	// Data that is available immediately
-	let sets = $derived(data.sets);
-	let rarities = $derived(data.rarities);
-	let types = $derived(data.types);
-	let artists = $derived(data.artists);
-	let pokemons = $derived(data.pokemons);
-	let prices = $derived(data.prices);
+	const sets = $derived(data.sets);
+	const rarities = $derived(data.rarities);
+	const types = $derived(data.types);
+	const artists = $derived(data.artists);
+	const pokemons = $derived(data.pokemons);
+	const prices = $derived(data.prices);
 
 	onMount(() => {
 		// Check if we have any filter parameters in the URL
@@ -103,8 +103,8 @@
 		}
 	});
 
-	let selectedSetName = $derived($filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null);
-	let selectedArtistName = $derived($filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null);
+	const selectedSetName = $derived($filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null);
+	const selectedArtistName = $derived($filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null);
 </script>
 
 {#await data.streamed.cardData}

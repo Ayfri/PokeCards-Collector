@@ -206,18 +206,18 @@
 	}
 
 	// --- Reactive Data Derivations ---
-	let cardsByArtistMap = $derived(groupCardsByArtist(data.allCards));
-	let cardReleaseDates = $derived(calculateCardReleaseDates(data.allCards, data.sets));
+	const cardsByArtistMap = $derived(groupCardsByArtist(data.allCards));
+	const cardReleaseDates = $derived(calculateCardReleaseDates(data.allCards, data.sets));
 
-	let artistsWithCards = $derived(createArtistsWithCardsList(
+	const artistsWithCards = $derived(createArtistsWithCardsList(
 		data.artists,
 		cardsByArtistMap,
 		cardReleaseDates,
 		data.prices
 	));
 
-	let sortedArtists = $derived(sortArtistList(artistsWithCards, sortValue, sortDirection));
-	let filteredArtists = $derived(filterArtistList(sortedArtists, searchTerm));
+	const sortedArtists = $derived(sortArtistList(artistsWithCards, sortValue, sortDirection));
+	const filteredArtists = $derived(filterArtistList(sortedArtists, searchTerm));
 </script>
 
 <div class="container mx-auto px-4 py-8">

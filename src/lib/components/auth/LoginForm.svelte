@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { preventDefault } from 'svelte/legacy';
-
 	import { supabase } from '../../supabase';
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import { page } from '$app/stores';
 	import { goto, invalidateAll } from '$app/navigation';
+	import { readJson, type ApiError } from '$helpers/http';
 
 	interface Props {
 		onSuccess?: (() => void) | undefined;
@@ -22,7 +21,9 @@
 	let resetMessage = $state('');
 	let showPassword = $state(false);
 
-	async function handleSubmit() {
+	async function handleSubmit(event: SubmitEvent) {
+		event.preventDefault();
+
 		if (!email || !password) {
 			errorMessage = 'Please fill in all fields';
 			return;
@@ -51,7 +52,7 @@
 			clearTimeout(loginTimeout);
 
 			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({ message: 'Invalid login credentials' })); // Default message if JSON parse fails
+				const errorData = await readJson<ApiError>(response, { message: 'Invalid login credentials' });
 				console.error('Error during login:', response.status, errorData.message);
 				errorMessage = errorData.message || 'Incorrect email or password'; // Use server message or default
 				loading = false;
@@ -114,7 +115,7 @@
 	};
 </script>
 
-<form onsubmit={preventDefault(handleSubmit)} class="space-y-4">
+<form onsubmit={handleSubmit} class="space-y-4">
 	{#if errorMessage}
 		<div class="p-3 bg-red-100 text-red-800 rounded-lg text-sm">
 			{errorMessage}

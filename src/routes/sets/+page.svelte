@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { fade, fly } from 'svelte/transition';
 	import type { PageData } from './$types';
 	import { NO_IMAGES } from '$lib/images';
@@ -17,23 +15,22 @@
 
 	let { data }: Props = $props();
 
-	let sortDirection = persistentWritable<'desc' | 'asc'>('sortDirection', 'desc');
-	let sortValue = persistentWritable<'code' | 'name' | 'printedTotal' | 'releaseDate' | 'totalPrice'>('sortValue', 'releaseDate');
-	let sortedSets: SetWithPrice[] = $state([]); // Initialize as empty, will be updated reactively
+	const sortDirection = persistentWritable<'desc' | 'asc'>('sortDirection', 'desc');
+	const sortValue = persistentWritable<'code' | 'name' | 'printedTotal' | 'releaseDate' | 'totalPrice'>('sortValue', 'releaseDate');
 
 	let searchTerm = $state('');
 
 	// Reactive declaration for typedSets using data.sets
-	let typedSets = $derived(data.setsWithPrices);
+	const typedSets = $derived(data.setsWithPrices);
 
 	const debouncedSetSearchTerm = debounce((value: string) => {
 		searchTerm = value;
 	}, 300);
 
 	// Reactive effect to update sortedSets when dependencies change
-	run(() => {
-		if (sortValue && sortDirection && typedSets) {
-			let tempSortedSets = [...typedSets]; // Work with a copy
+	const sortedSets = $derived.by(() => {
+		if (typedSets) {
+			const tempSortedSets = [...typedSets]; // Work with a copy
 			if ($sortValue === 'code') {
 				tempSortedSets.sort((a, b) => {
 					const codeA = a.ptcgoCode || '';
@@ -59,27 +56,26 @@
 					return $sortDirection === 'desc' ? b.totalPrice - a.totalPrice : a.totalPrice - b.totalPrice;
 				});
 			}
-			sortedSets = tempSortedSets; // Assign the sorted array back
-		} else {
-			sortedSets = typedSets ? [...typedSets] : []; // Fallback if dependencies are missing
+			return tempSortedSets;
 		}
+		return [];
 	});
 
-	let filteredSets = $derived(searchTerm
+	const filteredSets = $derived(searchTerm
 		? sortedSets.filter(set =>
 				set.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
 				(set.ptcgoCode && set.ptcgoCode.toLowerCase().includes(searchTerm.toLowerCase()))
 			)
 		: sortedSets);
 
-	let groupedSets = $derived(filteredSets.reduce((acc, set) => {
+	const groupedSets = $derived(filteredSets.reduce((acc, set) => {
 		const series = set.series || 'Other';
 		acc[series] ??= [];
 		acc[series].push(set);
 		return acc;
 	}, {} as Record<string, SetWithPrice[]>));
 
-	let seriesKeys = $derived(Object.keys(groupedSets).sort((a, b) => {
+	const seriesKeys = $derived(Object.keys(groupedSets).sort((a, b) => {
 		const firstSetA = groupedSets[a][0];
 		const firstSetB = groupedSets[b][0];
 

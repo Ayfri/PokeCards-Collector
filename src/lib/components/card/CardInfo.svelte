@@ -27,27 +27,27 @@
 		pokemon = undefined
 	}: Props = $props();
 
-	const cardNumber = parseCardCode(card.cardCode).cardNumber;
+	const cardNumber = $derived(parseCardCode(card.cardCode).cardNumber);
 
 	// Compute the display name: Pokemon name if available, otherwise card name
-	let displayName = $derived(pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name);
+	const displayName = $derived(pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name);
 	// Compute description: Pokemon description if available, otherwise card rules/basic info
-	let displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card?.name}`);
+	const displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card?.name}`);
 
 	function formatDate(date: Date) {
 		return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 	}
 
 	// --- User/Profile State ---
-	let user = $derived($page.data.user);
-	let profile = $derived($page.data.profile);
+	const user = $derived($page.data.user);
+	const profile = $derived($page.data.profile);
 
 	// --- Collection/Wishlist State ---
 	const MAX_CARD_QUANTITY = 99;
 
 	// Reactive declarations for template
-	let collectionCount = $derived(card ? ($collectionStore.get(card.cardCode) || 0) : 0);
-	let cardIsWishlisted = $derived(card ? $wishlistStore.has(card.cardCode) : false);
+	const collectionCount = $derived(card ? ($collectionStore.get(card.cardCode) || 0) : 0);
+	const cardIsWishlisted = $derived(card ? $wishlistStore.has(card.cardCode) : false);
 
 	// --- Actions ---
 	async function toggleWishlist(event: MouseEvent) {
@@ -78,8 +78,8 @@
 	}
 
 	// --- Force reactivity for stores ---
-	let _collection = $derived($collectionStore);
-	let _wishlist = $derived($wishlistStore);
+	const _collection = $derived($collectionStore);
+	const _wishlist = $derived($wishlistStore);
 </script>
 
 <div class="pokemon-info-container flex flex-col items-center gap-4 mt-6 lg:mt-12 max-lg:gap-0">

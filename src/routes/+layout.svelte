@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import '~/app.css';
 	import "~/fonts/stylesheet.css";
 	import {onNavigate} from '$app/navigation';
@@ -23,7 +21,7 @@
 	let { children }: Props = $props();
 
 	// Reactive statement to update stores when server data changes
-	run(() => {
+	$effect(() => {
 		// Update wishlist store
 		const wishlistSet = new Set<string>();
 		if ($page.data.wishlistItems && Array.isArray($page.data.wishlistItems)) {

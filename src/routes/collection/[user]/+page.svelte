@@ -16,15 +16,15 @@
 	let { data }: Props = $props();
 
 	// --- Use Server Data Directly (for non-streamed parts) ---
-	let targetProfile = $derived(data.targetProfile);
-	let isPublic = $derived(data.isPublic);
-	let targetUsername = $derived(data.targetUsername);
-	let pageTitleDisplay = $derived(data.title); // Use server title
-	let description = $derived(data.description); // Use server description
-	let loggedInUsername = $derived(page.data.profile?.username); // Get logged-in user from layout data via page store
-	let isOwnCollection = $derived(!targetUsername || (loggedInUsername === targetUsername));
-	let profileNotFound = $derived(!targetProfile && !!targetUsername); // If targetUsername exists but targetProfile doesn't
-	let profileIsPrivate = $derived(!!targetProfile && !isPublic && !isOwnCollection); // If profile exists, not public, and not own
+	const targetProfile = $derived(data.targetProfile);
+	const isPublic = $derived(data.isPublic);
+	const targetUsername = $derived(data.targetUsername);
+	const pageTitleDisplay = $derived(data.title); // Use server title
+	const description = $derived(data.description); // Use server description
+	const loggedInUsername = $derived(page.data.profile?.username); // Get logged-in user from layout data via page store
+	const isOwnCollection = $derived(!targetUsername || (loggedInUsername === targetUsername));
+	const profileNotFound = $derived(!targetProfile && !!targetUsername); // If targetUsername exists but targetProfile doesn't
+	const profileIsPrivate = $derived(!!targetProfile && !isPublic && !isOwnCollection); // If profile exists, not public, and not own
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {

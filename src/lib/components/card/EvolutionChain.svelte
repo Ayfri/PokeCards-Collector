@@ -27,7 +27,7 @@
 	// Determine if we're in the Japanese cards context by checking the URL
 	let isJapaneseContext = $state(false);
 	
-	let baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
+	const baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
 	
 	// Function to handle navigation to another Pokémon card
 	function navigateToPokemon(cardCode: string) {
@@ -98,8 +98,8 @@
 		return uniqueChain;
 	}
 
-	let currentPokemon = $derived(pokemons.find(p => p.id === card.pokemonNumber));
-	let uniqueChain = $derived(buildEvolutionChain(card));
+	const currentPokemon = $derived(pokemons.find(p => p.id === card.pokemonNumber));
+	const uniqueChain = $derived(buildEvolutionChain(card));
 </script>
 
 {#if uniqueChain.length > 1}

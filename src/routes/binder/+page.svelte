@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { browser } from '$app/environment';
@@ -33,7 +31,7 @@
 
 	let { data }: Props = $props();
 
-	let sets = $derived(data.sets);
+	const sets = $derived(data.sets);
 
 	// Binder configuration
 	const rows = writable(3);
@@ -145,7 +143,7 @@
 		$binderCards = Array(totalCells).fill(null);
 	}
 
-	run(() => {
+	$effect(() => {
 		const totalCells = $rows * $columns;
 		if ($binderCards.length !== totalCells) {
 			const newGrid = Array(totalCells).fill(null);

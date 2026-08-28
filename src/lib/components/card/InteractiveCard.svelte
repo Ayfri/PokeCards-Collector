@@ -23,7 +23,7 @@
 
 	// --- Internal State ---
 	let centerCard = $state<HTMLElement>();
-	let maxRotate = 25; // Max rotation in degrees
+	const maxRotate = 25; // Max rotation in degrees
 
 	// --- Functions ---
 	function throttle(fn: Function, delay: number) {

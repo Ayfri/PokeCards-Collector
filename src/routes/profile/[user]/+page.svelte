@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { onMount } from 'svelte';
 	import { toggleProfileVisibility } from '$lib/services/profiles';
 	import PageTitle from '@components/PageTitle.svelte';
@@ -24,19 +22,19 @@
 	let ready = $state(false);
 
 	// Reactive data from page store
-	let { allCards, sets, targetProfile, isPublic, collectionStats, isOwnProfile, loggedInUsername, title, description } = $derived(data);
-	let pageTitle = $derived(title);
-	let user = $derived(data.user);
-	let profile = $derived(data.profile);
+	const { allCards, sets, targetProfile, isPublic, collectionStats, isOwnProfile, loggedInUsername, title, description } = $derived(data);
+	const pageTitle = $derived(title);
+	const user = $derived(data.user);
+	const profile = $derived(data.profile);
 
-	// Profile visibility state, initialized from server data
-	let currentVisibility = $state(isPublic);
-	run(() => {
+	// Profile visibility state, mirrors server data until the user toggles it
+	let currentVisibility = $state(false);
+	$effect(() => {
 		currentVisibility = isPublic;
 	});
 
 	// Calculate total completion percentage reactively
-	let totalCompletionPercentage = $derived((() => {
+	const totalCompletionPercentage = $derived((() => {
 		if (!collectionStats?.set_completion) return 0;
 		const setCompletionData = collectionStats.set_completion as Record<string, { percentage: number }>;
 		const totalPercentage = Object.values(setCompletionData).reduce((sum: number, set: { percentage: number }) => sum + set.percentage, 0);
@@ -102,12 +100,7 @@
 			.sort((a, b) => b[1].percentage - a[1].percentage);
 	}
 
-	// Initialize component readiness
-	// onMount(() => {
-	// 	ready = true;
-	// });
-
-	run(() => {
+	$effect(() => {
 		if (data) {
 			const canDisplayUserNotFound = !data.targetProfile && data.title === 'User Not Found';
 			// targetProfile being present implies data.targetProfile is not null/undefined

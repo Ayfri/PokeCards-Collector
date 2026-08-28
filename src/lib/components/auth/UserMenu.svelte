@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { run } from 'svelte/legacy';
-
 	import { onMount, onDestroy } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import User from '@lucide/svelte/icons/user';
@@ -21,20 +19,8 @@
 	let isAuthModalOpen = $state(false);
 	let menuElement = $state<HTMLElement>();
 
-	let user = $derived($page.data.user as AuthUser | null);
-	let profile = $derived($page.data.profile as UserProfile | null);
-
-	interface Props {
-		userProp?: AuthUser | null;
-		profileProp?: UserProfile | null;
-	}
-
-	let { userProp = $bindable($page.data.user as AuthUser | null), profileProp = $bindable($page.data.profile as UserProfile | null) }: Props = $props();
-
-	run(() => {
-		userProp = $page.data.user as AuthUser | null;
-		profileProp = $page.data.profile as UserProfile | null;
-	});
+	const user = $derived($page.data.user as AuthUser | null);
+	const profile = $derived($page.data.profile as UserProfile | null);
 
 	function toggleMenu() {
 		isMenuOpen = !isMenuOpen;
@@ -116,7 +102,7 @@
 		type="button"
 		class="flex items-center justify-center size-9 text-gray-400 hover:text-white rounded-full focus:outline-hidden"
 		onclick={() => {
-			if (userProp && profileProp) {
+			if (user && profile) {
 				toggleMenu();
 			} else {
 				openAuthModal();
@@ -124,9 +110,9 @@
 		}}
 		aria-expanded={isMenuOpen}
 	>
-		{#if userProp && profileProp}
+		{#if user && profile}
 			<span class="sr-only">Open user menu</span>
-			<Avatar username={profileProp.username} profileColor={profileProp.profile_color} />
+			<Avatar username={profile.username} profileColor={profile.profile_color} />
 		{:else}
 			<span class="sr-only">Sign in</span>
 			<User size={24} />
@@ -143,14 +129,14 @@
 			aria-labelledby="user-menu-button"
 			tabindex="-1"
 		>
-			{#if userProp && profileProp}
+			{#if user && profile}
 				<div class="py-2 px-3 border-b dark:border-gray-700">
-					<p class="text-sm font-medium text-gray-900 dark:text-white">{profileProp.username}</p>
-					<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{userProp.email}</p>
+					<p class="text-sm font-medium text-gray-900 dark:text-white">{profile.username}</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
 				</div>
 				<div class="py-1">
 					<a
-						href={`/profile/${encodeURIComponent(profileProp.username)}`}
+						href={`/profile/${encodeURIComponent(profile.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
@@ -160,7 +146,7 @@
 						My profile
 					</a>
 					<a
-						href={`/collection/${encodeURIComponent(profileProp.username)}`}
+						href={`/collection/${encodeURIComponent(profile.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
@@ -170,7 +156,7 @@
 						My collection
 					</a>
 					<a
-						href={`/wishlist/${encodeURIComponent(profileProp.username)}`}
+						href={`/wishlist/${encodeURIComponent(profile.username)}`}
 						target="_self"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
