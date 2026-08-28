@@ -2,7 +2,7 @@
 	import { type Writable } from 'svelte/store';
 	import CardImage from '@components/card/CardImage.svelte';
 	import { NO_IMAGES } from '$lib/images';
-	import { X } from '@lucide/svelte';
+	import X from '@lucide/svelte/icons/x';
 	import type { BinderCards } from '$lib/types';
 
 	interface Props {
@@ -158,6 +158,8 @@
 							<button 
 								class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
 								onclick={() => removeCard(index)}
+								aria-label="Remove this card from the binder"
+								title="Remove this card from the binder"
 							>
 								<X size={14} />
 							</button>

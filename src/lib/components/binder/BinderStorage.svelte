@@ -137,7 +137,7 @@
 	<!-- Header -->
 	<div class="flex justify-between items-center mb-1">
 		<h3 class="text-gold-400 text-lg">Storage ({$cards.length})</h3>
-		<div class="flex gap-1"> {#if $cards.length > 0}<Button onClick={toggleClearStorageModal} class="p-1"><TrashIcon size={14} /></Button>{/if} </div>
+		<div class="flex gap-1"> {#if $cards.length > 0}<Button onClick={toggleClearStorageModal} class="p-1" title="Clear the whole storage"><TrashIcon size={14} /></Button>{/if} </div>
 	</div>
 	<p class="text-xs text-gray-400 mb-2">Drag cards from here to position them in your binder grid.</p>
 	
@@ -145,17 +145,17 @@
 	{#if $cards.length > 0}
 		<div class="relative mb-2 flex gap-1 items-end">
 			<TextInput id="search-storage" label="Search storage:" bind:value={searchTerm} placeholder="Search by code, name, set..." />
-			<Button onClick={toggleFilters} ><FilterIcon size={14} /></Button>
+			<Button onClick={toggleFilters} isActive={showFilters} title={showFilters ? "Hide sort options" : "Show sort options"}><FilterIcon size={14} /></Button>
 		</div>
 		{#if showFilters}
 			<div class="mb-2 p-2 rounded-sm text-sm" transition:slide={{ duration: 200 }}>
 				<div class="flex justify-between items-center mb-1">
 					<span class="text-gray-300">Sort by:</span>
-					<Button onClick={toggleSortOrder} class="px-2 py-1 text-xs h-auto"> {#if sortOrder === 'asc'}<ArrowUp size={12} />{:else}<ArrowDown size={12} />{/if} </Button>
+					<Button onClick={toggleSortOrder} class="px-2 py-1 text-xs h-auto" title={sortOrder === "asc" ? "Sorted ascending, click for descending" : "Sorted descending, click for ascending"}> {#if sortOrder === "asc"}<ArrowUp size={12} />{:else}<ArrowDown size={12} />{/if} </Button>
 				</div>
 				<div class="grid grid-cols-2 gap-1">
-					<Button onClick={() => setSortBy('number')} isActive={sortBy === 'number'} class="px-2 py-1 text-xs h-auto"> Card # </Button>
-					<Button onClick={() => setSortBy('set')} isActive={sortBy === 'set'} class="px-2 py-1 text-xs h-auto"> Set </Button>
+					<Button onClick={() => setSortBy("number")} isActive={sortBy === "number"} class="px-2 py-1 text-xs h-auto" title="Sort by card number"> Card # </Button>
+					<Button onClick={() => setSortBy("set")} isActive={sortBy === "set"} class="px-2 py-1 text-xs h-auto" title="Sort by set code"> Set </Button>
 				</div>
 			</div>
 		{/if}
@@ -187,12 +187,12 @@
 									<div class="truncate">#{setIndex}/{set?.printedTotal}</div>
 									<div class="truncate text-gray-300">{fullCard.rarity}</div>
 								</div>
-								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onclick={() => removeItem(item)} > <X size={14} /> </button>
+								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onclick={() => removeItem(item)} aria-label="Remove from storage" title="Remove from storage"> <X size={14} /> </button>
 							</div>
 						{:else}
 							<div class="relative aspect-2/3 border-2 border-dashed border-red-700 rounded-sm flex items-center justify-center text-center p-1">
 								<span class="text-red-400 text-xs">Data missing for {item}</span>
-								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5" onclick={() => removeItem(item)} > <X size={14} /> </button>
+								<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5" onclick={() => removeItem(item)} aria-label="Remove from storage" title="Remove from storage"> <X size={14} /> </button>
 							</div>
 						{/if}
 					{:else} 
@@ -208,7 +208,7 @@
 								<div class="font-semibold truncate">Imported from URL</div>
 								<div class="truncate text-gray-300 break-all">{item}</div> 
 							</div>
-							<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onclick={() => removeItem(item)} > <X size={14} /> </button>
+							<button class="absolute top-1 right-1 bg-red-500 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity" onclick={() => removeItem(item)} aria-label="Remove from storage" title="Remove from storage"> <X size={14} /> </button>
 						</div>
 					{/if}
 				{/each}

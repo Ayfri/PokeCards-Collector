@@ -9,7 +9,7 @@
 	import BinderStorage from '@components/binder/BinderStorage.svelte';
 	import README from '@components/binder/README.svelte';
 	import Modal from '@components/ui/Modal.svelte';
-	import HelpCircleIcon from '@lucide/svelte/icons/help-circle';
+	import HelpCircleIcon from '@lucide/svelte/icons/circle-question-mark';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import LinkIcon from '@lucide/svelte/icons/link';
 	import DownloadIcon from '@lucide/svelte/icons/download';
@@ -402,7 +402,7 @@
 	<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 		<div class="flex items-center gap-3">
 			<PageTitle title="Binder Builder" />
-			<Button onClick={toggleHelp} class="p-1.5 mt-1">
+			<Button onClick={toggleHelp} class="p-1.5 mt-1" title="How the Binder Builder works">
 				<HelpCircleIcon size={20} />
 			</Button>
 		</div>
@@ -428,24 +428,24 @@
 				/>
 			</div>
 
-			<Button onClick={resetBinderGrid} class="text-sm">
+			<Button onClick={resetBinderGrid} class="text-sm" title="Empty every slot of the grid">
 				<RotateCwIcon size={16} />
 				Reset Grid
 			</Button>
 
-			<Button onClick={toggleSetModal} class="text-sm flex items-center gap-1 px-3 py-2">
+			<Button onClick={toggleSetModal} class="text-sm flex items-center gap-1 px-3 py-2" title="Send a whole set to the storage">
 				<LayersIcon size={16} />
 				<span>Add set</span>
 			</Button>
 
-			<Button onClick={toggleMyCardsModal} class="text-sm flex items-center gap-1 px-3 py-2">
+			<Button onClick={toggleMyCardsModal} class="text-sm flex items-center gap-1 px-3 py-2" title="Send your collection or wishlist to the storage">
 				<BookUserIcon size={16} />
 				<span>My Cards</span>
 			</Button>
 
-			<Button onClick={toggleUrlModal} class="text-sm flex items-center gap-1 px-3 py-2"><LinkIcon size={16} /> <span>Add from URL</span></Button>
+			<Button onClick={toggleUrlModal} class="text-sm flex items-center gap-1 px-3 py-2" title="Add cards from image URLs"><LinkIcon size={16} /> <span>Add from URL</span></Button>
 
-			<Button onClick={generateBinderImage} class="text-sm flex items-center gap-1 px-3 py-2">
+			<Button onClick={generateBinderImage} class="text-sm flex items-center gap-1 px-3 py-2" title="Download the binder page as a PNG">
 				<DownloadIcon size={16} />
 				<span>Export as Image</span>
 			</Button>
