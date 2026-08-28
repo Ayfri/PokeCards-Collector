@@ -530,6 +530,7 @@
 							<div class="relative pt-[140%]">
 								<CardImage
 									imageUrl={card.image}
+									types={card.types}
 									alt={card.name}
 									class="absolute inset-0 w-full h-full object-cover"
 									lazy={i > 1}
@@ -596,6 +597,7 @@
 							<div class="relative pt-[140%]">
 								<CardImage
 									imageUrl={card.image}
+									types={card.types}
 									alt={card.name}
 									class="absolute inset-0 w-full h-full object-cover"
 									lazy={i > 1}

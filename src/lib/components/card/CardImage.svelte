@@ -23,6 +23,8 @@
 		sizes?: string | undefined;
 		/** Inline style of the image. */
 		style?: string | undefined;
+		/** Comma-separated energy types, e.g. `"Fire, Water"`: tints the skeleton when the card has no art. */
+		types?: string | undefined;
 		/** Width of the image, optional if height is specified. */
 		width?: number | undefined;
 	}
@@ -38,6 +40,7 @@
 		priority = false,
 		sizes = undefined,
 		style = undefined,
+		types = undefined,
 		width = undefined
 	}: Props = $props();
 
@@ -70,6 +73,23 @@
 	/** Own speed and phase per instance, so a grid of skeletons sweeps out of sync instead of blinking in lockstep. */
 	const shimmerStyle = `--shimmer-duration: ${(1.7 + Math.random() * 1.6).toFixed(2)}s; --shimmer-delay: -${(Math.random() * 3).toFixed(2)}s`;
 
+	/** The energy names `src/styles/colors.css` declares a `--<type>` / `--<type>2` pair for. */
+	const TYPE_COLORS = new Set(['colorless', 'darkness', 'dragon', 'fairy', 'fighting', 'fire', 'grass', 'lightning', 'metal', 'psychic', 'water']);
+
+	/**
+	 * 70% of the japanese cards carry no art, so the skeleton borrows the card's energy colors - already in the
+	 * payload, no extra column and no image to fetch - and mixes them into the gray plate.
+	 */
+	const tintStyle = $derived.by(() => {
+		const names = (types ?? '')
+			.toLowerCase()
+			.split(',')
+			.map(name => name.trim())
+			.filter(name => TYPE_COLORS.has(name));
+		if (!names.length) return '';
+		return `--tint-a: var(--${names[0]}); --tint-b: var(--${names[1] ?? names[0]}2)`;
+	});
+
 	function handleError(event: Event) {
 		error = true;
 		onerror?.(event);
@@ -89,7 +109,7 @@
 	</div>
 {:else if !imageUrl}
 	<!-- No art for this card: a skeleton box costs no request, unlike a placeholder file. -->
-	<div class="card-skeleton rounded-lg {classNames}" style="{boxStyle}; {shimmerStyle}"></div>
+	<div class="card-skeleton rounded-lg {classNames}" style="{boxStyle}; {shimmerStyle}; {tintStyle}"></div>
 {:else}
 	<img
 		bind:this={img}
@@ -111,32 +131,30 @@
 {/if}
 
 <style>
-	/* Gold sweep over a card-shaped plate: the highlight travels, the plate never flashes. */
+	/* No art exists for these cards, so the plate is built from their energy colors mixed into gray, swept by a highlight. */
 	.card-skeleton {
-		background-color: #232323;
-		background-image: linear-gradient(
-			105deg,
-			transparent 30%,
-			rgba(251, 197, 74, 0.07) 42%,
-			rgba(251, 197, 74, 0.16) 50%,
-			rgba(251, 197, 74, 0.07) 58%,
-			transparent 70%
-		);
+		--tint-a: #5a5a5a;
+		--tint-b: #2f2f2f;
+		background-color: color-mix(in oklab, var(--tint-a) 18%, #191919);
+		background-image:
+			linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, 0.11) 50%, transparent 68%),
+			radial-gradient(120% 90% at 20% 0%, color-mix(in oklab, var(--tint-a) 45%, transparent) 0%, transparent 60%),
+			radial-gradient(120% 90% at 85% 100%, color-mix(in oklab, var(--tint-b) 55%, transparent) 0%, transparent 65%);
+		background-position: 150% 0, 0 0, 0 0;
 		background-repeat: no-repeat;
-		background-size: 250% 100%;
-		box-shadow: inset 0 0 0 1px rgba(251, 197, 74, 0.12);
+		background-size: 250% 100%, 100% 100%, 100% 100%;
+		box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tint-a) 35%, transparent);
 		animation: card-skeleton-sweep var(--shimmer-duration, 2s) var(--shimmer-delay, 0s) cubic-bezier(0.4, 0, 0.2, 1) infinite;
 	}
 
 	@keyframes card-skeleton-sweep {
-		from { background-position: 150% 0; }
-		to { background-position: -50% 0; }
+		to { background-position: -50% 0, 0 0, 0 0; }
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.card-skeleton {
 			animation: none;
-			background-position: 50% 0;
+			background-position: 50% 0, 0 0, 0 0;
 		}
 	}
 </style>

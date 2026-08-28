@@ -84,6 +84,7 @@
 			<CardImage
 				alt={pokemon ? pascalCase(pokemon.name) : card?.name || 'Card image'}
 				imageUrl={card?.image}
+				types={card?.types}
 				lowRes={false}
 				height={544}
 				width={384}

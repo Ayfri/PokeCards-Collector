@@ -181,7 +181,7 @@
 								ondragstart={(e) => onDragStart(e, item)}
 								role="listitem"
 							>
-								<CardImage imageUrl={fullCard.image} alt={fullCard.name} class="w-full h-full object-contain p-1" lazy={true} />
+								<CardImage imageUrl={fullCard.image} types={fullCard.types} alt={fullCard.name} class="w-full h-full object-contain p-1" lazy={true} />
 								<div class="absolute bottom-0 left-0 right-0 bg-black/70 text-[0.6rem] leading-tight text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity text-center">
 									<div class="font-semibold truncate">{fullCard.name}</div>
 									<div class="truncate">#{setIndex}/{set?.printedTotal}</div>

@@ -263,6 +263,7 @@
 											<CardImage
 												alt="{card.name} by {artist.name}"
 												imageUrl={card.image}
+												types={card.types}
 												lazy={true}
 												class="h-full w-auto max-w-none object-contain mx-auto transform-gpu"
 												style="

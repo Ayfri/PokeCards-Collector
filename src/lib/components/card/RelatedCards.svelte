@@ -189,6 +189,7 @@
 						{#if !NO_IMAGES}
 							<CardImage
 								imageUrl={card.image}
+								types={card.types}
 								alt={cardPokemon ? cardPokemon.name : card.name}
 								class="card-image"
 								lazy={true}
