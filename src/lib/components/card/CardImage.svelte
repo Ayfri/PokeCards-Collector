@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { processCardImage } from '$helpers/card-images';
+	import { cardTypeTint, processCardImage } from '$helpers/card-images';
 	import { NO_IMAGES } from '$lib/images';
 
 	interface Props {
@@ -70,22 +70,8 @@
 		[style, width && `width: ${width}px`, height && `height: ${height}px`, !(width && height) && 'aspect-ratio: 245 / 337'].filter(Boolean).join('; ')
 	);
 
-	/** The energy names `src/styles/colors.css` declares a `--<type>` / `--<type>2` pair for. */
-	const TYPE_COLORS = new Set(['colorless', 'darkness', 'dragon', 'fairy', 'fighting', 'fire', 'grass', 'lightning', 'metal', 'psychic', 'water']);
-
-	/**
-	 * 70% of the japanese cards carry no art, so the plate borrows the card's energy colors - already in the
-	 * payload, no extra column and no image to fetch - and mixes them into the gray.
-	 */
-	const tintStyle = $derived.by(() => {
-		const names = (types ?? '')
-			.toLowerCase()
-			.split(',')
-			.map(name => name.trim())
-			.filter(name => TYPE_COLORS.has(name));
-		if (!names.length) return '';
-		return `--tint-a: var(--${names[0]}); --tint-b: var(--${names[1] ?? names[0]}2)`;
-	});
+	/** 70% of the japanese cards carry no art, so the plate borrows the card's energy colors and mixes them into the gray. */
+	const tintStyle = $derived(cardTypeTint(types));
 
 	function handleError(event: Event) {
 		error = true;

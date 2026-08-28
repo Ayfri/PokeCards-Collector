@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CardImage from '@components/card/CardImage.svelte';
+	import MissingCardArt from '@components/card/MissingCardArt.svelte';
 	import type { FullCard, Pokemon, Set } from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
 
@@ -92,10 +93,8 @@
 				lazy={false}
 				onerror={handlePokemonImageError}
 			/>
-		{:else}
-			<div class="w-full h-full flex items-center justify-center">
-				<div class="text-gray-400 text-sm">No image available</div>
-			</div>
+		{:else if card}
+			<MissingCardArt {card} />
 		{/if}
 	{/key}
 </div>

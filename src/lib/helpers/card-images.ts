@@ -29,3 +29,16 @@ export function processCardImage(imageUrl: string, quality: ImageQuality = 'high
 	if (NO_IMAGES) return PLACEHOLDER;
 	return imageUrl ? `${imageUrl}/${quality}.${extension}` : '';
 }
+
+/** The energy names `src/styles/colors.css` declares a `--<type>` / `--<type>2` pair for. */
+const TYPE_COLORS = new Set(['colorless', 'darkness', 'dragon', 'fairy', 'fighting', 'fire', 'grass', 'lightning', 'metal', 'psychic', 'water']);
+
+/**
+ * Inline `--tint-a` / `--tint-b` for a card with no art: the energy colors are already in the payload, so the
+ * placeholder needs no extra column and no image. Empty when the card carries no known type.
+ */
+export function cardTypeTint(types: string | undefined): string {
+	const names = (types ?? '').toLowerCase().split(',').map(name => name.trim()).filter(name => TYPE_COLORS.has(name));
+	if (!names.length) return '';
+	return `--tint-a: var(--${names[0]}); --tint-b: var(--${names[1] ?? names[0]}2)`;
+}
