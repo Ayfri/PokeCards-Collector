@@ -933,12 +933,6 @@
 </main>
 
 <style>
-	:global(body) {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-	}
-
 	.feature-cards-container {
 		/* Use the same grid structure as the feature cards to ensure identical width */
 		display: grid;

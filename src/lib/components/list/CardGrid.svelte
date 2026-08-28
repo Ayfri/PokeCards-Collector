@@ -69,7 +69,6 @@
 	let showFilters = $state(false);
 	let searchName = $state("");
 	let showLoader = $state(true);
-	let mounted = $state(false);
 	/** Cards above the fold skip lazy loading so the LCP candidate is requested with the document, not after layout. */
 	const eagerCards = 12;
 
@@ -97,8 +96,6 @@
 				$filterSet = decodedSetName.toLowerCase(); // Ensure lowercase to match the option format
 			}
 		}
-
-		mounted = true;
 	});
 
 	function setFilterName(value: string) {
@@ -245,14 +242,13 @@
 	</div>
 {/if}
 
-{#if mounted}
 <div class="min-h-[calc(100svh-100px)] flex flex-col">
 	<!-- Header Row -->
-	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-4 lg:px-10 gap-1 md:gap-0 mb-0" in:fade={{ delay: 150, duration: 300 }}>
+	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-4 lg:px-10 gap-1 md:gap-0 mb-0">
 		<!-- Left Side (Title conditional based on prop, Counts always present) -->
 		<div class="flex flex-col md:flex-row items-center md:ml-14">
 			{#if pageTitle}
-				<div in:fly={{ y: -10, delay: 200, duration: 300 }}>
+				<div>
 					<PageTitle title={pageTitle} />
 					{#if pageTitle === 'Japanese Cards'}
 						<div class="bg-yellow-200 text-yellow-900 border-l-4 border-yellow-500 p-2 rounded-sm shadow-sm max-w-xl mx-auto mt-2 text-center text-xs">
@@ -263,10 +259,7 @@
 			{/if}
 
 			<!-- Counts (on same line for desktop, below for mobile) -->
-			<span
-				class="text-gold-400 text-xs md:text-sm mt-1 md:mt-0 md:ml-3"
-				in:fade={{ delay: 250, duration: 300 }}
-			>
+			<span class="text-gold-400 text-xs md:text-sm mt-1 md:mt-0 md:ml-3">
 				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
 			</span>
 			{#if selectedSetName || selectedArtistName}
@@ -282,7 +275,7 @@
 		</div>
 
 		<!-- Right Side (Controls) -->
-		<div class="flex items-end gap-2" in:fly={{ y: -10, delay: 300, duration: 300 }}>
+		<div class="flex items-end gap-2">
 			<!-- Grid Size Slider -->
 			<div class="mr-3 ml-1 hidden md:block">
 				<SizeSlider />
@@ -328,47 +321,42 @@
 		</div>
 	</div>
 
-	<div class="w-full" in:fade={{ delay: 150, duration: 300 }}>
+	<div class="w-full">
 		<ScrollProgress />
 	</div>
 
-	{#if showLoader && !disableLoader}
-		<Loader message="Loading cards..." />
-	{/if}
+	<div class="relative flex flex-1 flex-col">
+		{#if showLoader && !disableLoader}
+			<div class="absolute inset-x-0 top-16 z-10 flex justify-center">
+				<Loader message="Loading cards..." />
+			</div>
+		{/if}
 
-	<VirtualGrid
-		gapX={cardDimensions.gapX}
-		gapY={cardDimensions.gapY}
-		itemHeight={cardDimensions.height + infoContainerHeight}
-		itemWidth={cardDimensions.width}
-		forcedItemsPerRow={cardDimensions.cardsPerRow}
-		items={filteredCards}
-		marginTop={clientWidth ? 20 : 50}
-		onready={() => (showLoader = false)}
-	>
-		{#snippet children({ item, index })}
-			<CardComponent
-				card={item}
-				customHeight={cardDimensions.height}
-				customWidth={cardDimensions.width}
-				eager={index < eagerCards}
-				{lowRes}
-				{pokemonMap}
-				prices={prices[item.cardCode]}
-				{sets}
-			/>
-		{/snippet}
-		{#snippet empty()}
-			<p class="text-white text-center mt-32 text-2xl">No cards found</p>
-		{/snippet}
-	</VirtualGrid>
+		<VirtualGrid
+			gapX={cardDimensions.gapX}
+			gapY={cardDimensions.gapY}
+			itemHeight={cardDimensions.height + infoContainerHeight}
+			itemWidth={cardDimensions.width}
+			forcedItemsPerRow={cardDimensions.cardsPerRow}
+			items={filteredCards}
+			marginTop={clientWidth ? 20 : 50}
+			onready={() => (showLoader = false)}
+		>
+			{#snippet children({ item, index })}
+				<CardComponent
+					card={item}
+					customHeight={cardDimensions.height}
+					customWidth={cardDimensions.width}
+					eager={index < eagerCards}
+					{lowRes}
+					{pokemonMap}
+					prices={prices[item.cardCode]}
+					{sets}
+				/>
+			{/snippet}
+			{#snippet empty()}
+				<p class="text-white text-center mt-32 text-2xl">No cards found</p>
+			{/snippet}
+		</VirtualGrid>
+	</div>
 </div>
-{/if}
-
-<style>
-	:global(body) {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-	}
-</style>

@@ -147,12 +147,6 @@
 </div>
 
 <style>
-	:global(body) {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-	}
-
 	.background {
 		filter: grayscale(100%) opacity(0.05) contrast(3) brightness(0.5);
 	}

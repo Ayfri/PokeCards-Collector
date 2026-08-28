@@ -42,7 +42,7 @@ html {
 }
 
 body {
-	@apply font-clash bg-black m-0 p-0;
+	@apply font-clash bg-black m-0 p-0 flex flex-col min-h-screen;
 }
 
 button {
