@@ -70,15 +70,12 @@
 		[style, width && `width: ${width}px`, height && `height: ${height}px`, !(width && height) && 'aspect-ratio: 245 / 337'].filter(Boolean).join('; ')
 	);
 
-	/** Own speed and phase per instance, so a grid of skeletons sweeps out of sync instead of blinking in lockstep. */
-	const shimmerStyle = `--shimmer-duration: ${(1.7 + Math.random() * 1.6).toFixed(2)}s; --shimmer-delay: -${(Math.random() * 3).toFixed(2)}s`;
-
 	/** The energy names `src/styles/colors.css` declares a `--<type>` / `--<type>2` pair for. */
 	const TYPE_COLORS = new Set(['colorless', 'darkness', 'dragon', 'fairy', 'fighting', 'fire', 'grass', 'lightning', 'metal', 'psychic', 'water']);
 
 	/**
-	 * 70% of the japanese cards carry no art, so the skeleton borrows the card's energy colors - already in the
-	 * payload, no extra column and no image to fetch - and mixes them into the gray plate.
+	 * 70% of the japanese cards carry no art, so the plate borrows the card's energy colors - already in the
+	 * payload, no extra column and no image to fetch - and mixes them into the gray.
 	 */
 	const tintStyle = $derived.by(() => {
 		const names = (types ?? '')
@@ -108,8 +105,10 @@
 		<span>Image not available</span>
 	</div>
 {:else if !imageUrl}
-	<!-- No art for this card: a skeleton box costs no request, unlike a placeholder file. -->
-	<div class="card-skeleton rounded-lg {classNames}" style="{boxStyle}; {shimmerStyle}; {tintStyle}"></div>
+	<!-- TCGdex has no art for this card, so nothing will ever replace the plate: it stays still rather than pretending to load. -->
+	<div class="card-plate rounded-lg {classNames}" style="{boxStyle}; {tintStyle}">
+		<span class="card-plate-label">No artwork</span>
+	</div>
 {:else}
 	<img
 		bind:this={img}
@@ -131,30 +130,26 @@
 {/if}
 
 <style>
-	/* No art exists for these cards, so the plate is built from their energy colors mixed into gray, swept by a highlight. */
-	.card-skeleton {
+	/* No art exists for these cards, so the plate is built from their energy colors mixed into gray. */
+	.card-plate {
 		--tint-a: #5a5a5a;
 		--tint-b: #2f2f2f;
+		align-items: center;
 		background-color: color-mix(in oklab, var(--tint-a) 18%, #191919);
 		background-image:
-			linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, 0.11) 50%, transparent 68%),
 			radial-gradient(120% 90% at 20% 0%, color-mix(in oklab, var(--tint-a) 45%, transparent) 0%, transparent 60%),
 			radial-gradient(120% 90% at 85% 100%, color-mix(in oklab, var(--tint-b) 55%, transparent) 0%, transparent 65%);
-		background-position: 150% 0, 0 0, 0 0;
-		background-repeat: no-repeat;
-		background-size: 250% 100%, 100% 100%, 100% 100%;
 		box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tint-a) 35%, transparent);
-		animation: card-skeleton-sweep var(--shimmer-duration, 2s) var(--shimmer-delay, 0s) cubic-bezier(0.4, 0, 0.2, 1) infinite;
+		/* The label scales with the tile, so `cqw` needs the plate itself as the query container. */
+		container-type: inline-size;
+		display: flex;
+		justify-content: center;
 	}
 
-	@keyframes card-skeleton-sweep {
-		to { background-position: -50% 0, 0 0, 0 0; }
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.card-skeleton {
-			animation: none;
-			background-position: 50% 0, 0 0, 0 0;
-		}
+	.card-plate-label {
+		color: rgba(255, 255, 255, 0.45);
+		font-size: clamp(0.55rem, 9cqw, 0.85rem);
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
 	}
 </style>
