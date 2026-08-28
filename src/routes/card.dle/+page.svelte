@@ -14,10 +14,12 @@
 	import CircleXIcon from '@lucide/svelte/icons/circle-x';
 	import ClipboardListIcon from '@lucide/svelte/icons/clipboard-list';
 	import Gamepad2Icon from '@lucide/svelte/icons/gamepad-2';
+	import InfoIcon from '@lucide/svelte/icons/info';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import LibraryIcon from '@lucide/svelte/icons/library';
 	import LightbulbIcon from '@lucide/svelte/icons/lightbulb';
 	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
+	import PaletteIcon from '@lucide/svelte/icons/palette';
 	import PartyPopperIcon from '@lucide/svelte/icons/party-popper';
 	import PawPrintIcon from '@lucide/svelte/icons/paw-print';
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
@@ -172,6 +174,33 @@
 		return 'Price of this guess';
 	}
 
+	const rulesSteps = [
+		{ detail: 'Type a Pokémon name to list the cards you can guess.', title: 'Search' },
+		{ detail: 'Pick one card from the results, it becomes your guess.', title: 'Select' },
+		{ detail: 'Compare the six coloured cells and guess again.', title: 'Read the row' }
+	];
+
+	const rulesAttributes = [
+		{ detail: 'Character printed on the card', icon: PawPrintIcon, name: 'Pokémon' },
+		{ detail: 'Illustrator credited on the card', icon: PaintbrushIcon, name: 'Artist' },
+		{ detail: 'Set the card was printed in', icon: LibraryIcon, name: 'Set' },
+		{ detail: 'Pokémon, Trainer or Energy', icon: LayersIcon, name: 'Supertype' },
+		{ detail: 'Element: Fire, Water, Psychic...', icon: SparklesIcon, name: 'Type' },
+		{ detail: 'Cardmarket value, in euros', icon: CircleEuroIcon, name: 'Price' }
+	];
+
+	const rulesNotes = [
+		'Trainer and Energy cards show "None" as their type.',
+		'Only cards worth 3 € or more can be the mystery card.',
+		'A new mystery card is drawn every day.'
+	];
+
+	const rulesTips = [
+		'Open with a popular Pokémon, Pikachu or Charizard cover a lot of sets.',
+		'Follow the price arrows to jump between cheap and expensive prints.',
+		'A green set means the answer is another card from that same set.'
+	];
+
 	function getFeedbackHint(attribute: string, correct: boolean | undefined): string {
 		if (correct === undefined) return attribute;
 		return correct ? `${attribute} matches the mystery card` : `Wrong ${attribute.toLowerCase()}`;
@@ -181,7 +210,7 @@
 <div class="container mx-auto p-4 text-white">
 	<!-- Hero Section -->
 	<div class="text-center mb-8">
-		<h1 class="text-5xl font-bold mb-4 bg-linear-to-r from-gold-400 via-yellow-400 to-gold-400 bg-clip-text text-transparent">
+		<h1 class="text-5xl font-bold mb-4 bg-linear-to-r from-gold-400 via-yellow-400 to-gold-400 bg-[length:200%_200%] bg-clip-text text-transparent animate-gradient-x">
 			Card.dle
 		</h1>
 		<p class="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
@@ -233,20 +262,20 @@
 	<div class="mt-8 w-full overflow-x-auto">
 		{#if historicGuesses.length > 0 || loadingGuess}
 			<!-- Global Header for Grid -->
-			<div class="historic-guesses-header grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-1 bg-gray-900 text-gold-400 p-1 rounded-t-md text-xs sticky top-0 z-10">
+			<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-1 bg-gray-900 text-gold-400 p-1 rounded-t-md text-sm sticky top-0 z-10">
 				<div class="p-2" title="The card you guessed">Card</div>
-				<div class="flex items-center justify-center gap-1 p-2" title="Pokémon on the card"><PawPrintIcon size={12} /> Pokémon</div>
-				<div class="flex items-center justify-center gap-1 p-2" title="Illustrator of the card"><PaintbrushIcon size={12} /> Artist</div>
-				<div class="flex items-center justify-center gap-1 p-2" title="Set the card was printed in"><LibraryIcon size={12} /> Set</div>
-				<div class="flex items-center justify-center gap-1 p-2" title="Pokémon, Trainer or Energy"><LayersIcon size={12} /> Supertype</div>
-				<div class="flex items-center justify-center gap-1 p-2" title="Energy types on the card"><SparklesIcon size={12} /> Type(s)</div>
-				<div class="flex items-center justify-center gap-1 p-2" title="Cardmarket value of the card"><CircleEuroIcon size={12} /> Price</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Pokémon on the card"><PawPrintIcon size={14} /> Pokémon</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Illustrator of the card"><PaintbrushIcon size={14} /> Artist</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Set the card was printed in"><LibraryIcon size={14} /> Set</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Pokémon, Trainer or Energy"><LayersIcon size={14} /> Supertype</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Energy types on the card"><SparklesIcon size={14} /> Type(s)</div>
+				<div class="flex items-center justify-center gap-1 p-2" title="Cardmarket value of the card"><CircleEuroIcon size={14} /> Price</div>
 			</div>
 
 			{#each historicGuesses as guess, i (guess.id)}
 				<div class="historic-guess-item mb-2 scroll-mt-80">
 					<h3 class="font-bold text-lg my-2 text-center text-gold-400">Guess {i + 1} - {guess.name}</h3>
-					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
+					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-sm items-stretch [&>div]:min-h-[50px]">
 						<!-- Card Image Cell -->
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
 							<CardImage
@@ -267,7 +296,7 @@
 							{:else}
 								<span class="text-sm p-2">N/A</span>
 							{/if}
-							<span class="mt-1 text-center block leading-tight text-xxs sm:text-xs">{guess.feedback.pokemonValue}</span>
+							<span class="mt-1 text-center block leading-tight text-xs sm:text-sm">{guess.feedback.pokemonValue}</span>
 						</div>
 						<!-- Attribute Cells -->
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.artistCorrect)}`} title={getFeedbackHint('Artist', guess.feedback.artistCorrect)}>{guess.feedback.artistValue}</div>
@@ -277,15 +306,15 @@
 						<div class={`p-2 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.priceComparison === 'correct')}`} title={getPriceComparisonHint(guess.feedback.priceComparison)}>
 							<span class="flex items-center justify-center gap-1">
 								{#if guess.feedback.priceComparison === 'correct'}
-									<CheckIcon size={14} />
+									<CheckIcon size={16} />
 								{:else if guess.feedback.priceComparison === 'higher'}
-									<ChevronsUpIcon size={14} />
+									<ChevronsUpIcon size={16} />
 								{:else if guess.feedback.priceComparison === 'lower'}
-									<ChevronsDownIcon size={14} />
+									<ChevronsDownIcon size={16} />
 								{/if}
 								{guess.feedback.priceValue.toFixed(2)} €
 							</span>
-							<span class="text-xxs">{getPriceComparisonText(guess.feedback.priceComparison)}</span>
+							<span class="text-xs">{getPriceComparisonText(guess.feedback.priceComparison)}</span>
 						</div>
 					</div>
 					{#if guess.isCorrect}
@@ -306,7 +335,7 @@
 							<span class="ml-1 text-sm font-normal">Analyzing...</span>
 						</span>
 					</h3>
-					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
+					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-sm items-stretch [&>div]:min-h-[50px]">
 						<!-- Card Image Cell -->
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
 							<CardImage
@@ -324,7 +353,7 @@
 							{:else}
 								<div class="h-10 w-10 sm:h-12 sm:w-12 bg-gray-700 rounded-sm animate-pulse"></div>
 							{/if}
-							<span class="mt-1 text-center block leading-tight text-xxs sm:text-xs opacity-75">{loadingGuess.name}</span>
+							<span class="mt-1 text-center block leading-tight text-xs sm:text-sm opacity-75">{loadingGuess.name}</span>
 						</div>
 						<!-- Loading cells for attributes -->
 						{#each Array(5) as _}
@@ -345,7 +374,7 @@
 				<TextInput
 					id="searchInput"
 					label="Start typing to search for Pokémon cards:"
-					labelClass="font-bold text-lg text-gold-400 mb-4 text-center"
+					labelClass="font-bold text-xl text-gold-400 mb-4 text-center"
 					bind:value={searchInput}
 					placeholder="E.g., Pikachu, Charizard..."
 					autocomplete="off"
@@ -393,7 +422,7 @@
 								e.stopPropagation();
 								selectSuggestion(suggestion);
 							}}
-							class="card-suggestion-button bg-gray-900 hover:bg-gray-700 p-3 rounded-xl shadow-md hover:shadow-xl focus:ring-2 focus:ring-gold-400 transition-all duration-200 flex flex-col items-center text-center border border-gray-600 hover:border-gold-400 group relative {isSubmitting && loadingGuess?.cardImage === suggestion.image ? 'opacity-75 scale-95' : ''}"
+							class="bg-gray-900 hover:bg-gray-700 p-3 rounded-xl shadow-md hover:shadow-xl focus:ring-2 focus:ring-gold-400 transition-all duration-200 hover:-translate-y-0.5 flex flex-col items-center text-center border border-gray-600 hover:border-gold-400 group relative {isSubmitting && loadingGuess?.cardImage === suggestion.image ? 'opacity-75 scale-95' : ''}"
 							title={suggestion.name}
 							disabled={isSubmitting || hasWon}
 						>
@@ -406,13 +435,13 @@
 								<CardImage
 									imageUrl={suggestion.image}
 									alt={suggestion.name}
-									class="w-full h-auto object-contain aspect-[0.717]"
+									class="w-full h-auto object-contain aspect-[0.717] transition-opacity duration-300"
 									lazy={true}
 									lowRes={true}
 								/>
 							</div>
-							<p class="text-xs leading-tight font-bold text-white mb-1">{suggestion.name}</p>
-							<div class="flex items-center justify-center gap-1 text-xxs text-gray-400">
+							<p class="text-sm leading-tight font-bold text-white mb-1">{suggestion.name}</p>
+							<div class="flex items-center justify-center gap-1 text-xs text-gray-400">
 								<span class="bg-green-800 text-green-300 px-2 py-1 rounded-full font-semibold" title="Cardmarket value of this card">
 									{suggestion.price.toFixed(2)} €
 								</span>
@@ -463,20 +492,20 @@
 			</h3>
 			<div class="bg-gray-800 rounded-xl shadow-lg p-6 max-w-6xl mx-auto border border-gray-700">
 				<!-- Example Header -->
-				<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-3 bg-gray-900 text-gold-400 p-2 rounded-t-md text-xs">
+				<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-3 bg-gray-900 text-gold-400 p-2 rounded-t-md text-sm">
 					<div class="p-2">Card</div>
-					<div class="flex items-center justify-center gap-1 p-2"><PawPrintIcon size={12} /> Pokémon</div>
-					<div class="flex items-center justify-center gap-1 p-2"><PaintbrushIcon size={12} /> Artist</div>
-					<div class="flex items-center justify-center gap-1 p-2"><LibraryIcon size={12} /> Set</div>
-					<div class="flex items-center justify-center gap-1 p-2"><LayersIcon size={12} /> Supertype</div>
-					<div class="flex items-center justify-center gap-1 p-2"><SparklesIcon size={12} /> Type(s)</div>
-					<div class="flex items-center justify-center gap-1 p-2"><CircleEuroIcon size={12} /> Price</div>
+					<div class="flex items-center justify-center gap-1 p-2"><PawPrintIcon size={14} /> Pokémon</div>
+					<div class="flex items-center justify-center gap-1 p-2"><PaintbrushIcon size={14} /> Artist</div>
+					<div class="flex items-center justify-center gap-1 p-2"><LibraryIcon size={14} /> Set</div>
+					<div class="flex items-center justify-center gap-1 p-2"><LayersIcon size={14} /> Supertype</div>
+					<div class="flex items-center justify-center gap-1 p-2"><SparklesIcon size={14} /> Type(s)</div>
+					<div class="flex items-center justify-center gap-1 p-2"><CircleEuroIcon size={14} /> Price</div>
 				</div>
 
 				<!-- Example Row -->
 				<div class="mb-2">
 					<h4 class="font-bold text-lg my-2 text-center text-gray-400">Guess 1 - Example Card Name</h4>
-					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-xs items-stretch">
+					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-sm items-stretch [&>div]:min-h-[50px]">
 						<!-- Example Card Image -->
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center">
 							<div class="w-full h-full bg-linear-to-br from-gray-700 to-gray-800 rounded-sm flex items-center justify-center">
@@ -486,16 +515,16 @@
 						<!-- Example Pokémon Sprite -->
 						<div class="p-1 flex flex-col items-center justify-center text-center bg-red-600 text-white">
 							<CircleXIcon size={28} />
-							<span class="mt-1 text-center block text-xs">Wrong Pokémon</span>
+							<span class="mt-1 text-center block text-sm">Wrong Pokémon</span>
 						</div>
 						<!-- Example attributes -->
-						<div class="p-2 flex items-center justify-center gap-1 text-center bg-green-600 text-white"><CheckIcon size={14} /> Correct Artist</div>
-						<div class="p-2 flex items-center justify-center gap-1 text-center bg-red-600 text-white"><XIcon size={14} /> Wrong Set</div>
-						<div class="p-2 flex items-center justify-center gap-1 text-center bg-green-600 text-white"><CheckIcon size={14} /> Pokémon</div>
-						<div class="p-2 flex items-center justify-center gap-1 text-center bg-red-600 text-white"><XIcon size={14} /> Fire</div>
+						<div class="p-2 flex items-center justify-center gap-1 text-center bg-green-600 text-white"><CheckIcon size={16} /> Correct Artist</div>
+						<div class="p-2 flex items-center justify-center gap-1 text-center bg-red-600 text-white"><XIcon size={16} /> Wrong Set</div>
+						<div class="p-2 flex items-center justify-center gap-1 text-center bg-green-600 text-white"><CheckIcon size={16} /> Pokémon</div>
+						<div class="p-2 flex items-center justify-center gap-1 text-center bg-red-600 text-white"><XIcon size={16} /> Fire</div>
 						<div class="p-2 flex flex-col items-center justify-center text-center bg-red-600 text-white">
-							<span class="flex items-center justify-center gap-1"><ChevronsUpIcon size={14} /> 15.99 €</span>
-							<span class="text-xxs">Mystery card is higher</span>
+							<span class="flex items-center justify-center gap-1"><ChevronsUpIcon size={16} /> 15.99 €</span>
+							<span class="text-xs">Mystery card is higher</span>
 						</div>
 					</div>
 				</div>
@@ -517,102 +546,100 @@
 <!-- Rules Modal -->
 <Modal
 	bind:open={showRulesModal}
-	title="Card.dle - Rules"
-	containerClass="max-w-5xl"
+	containerClass="max-w-3xl"
 	onClose={() => showRulesModal = false}
 >
+	{#snippet header()}
+		<h2 id="modal-title" class="flex items-center gap-2 text-xl font-medium text-gold-400">
+			<Gamepad2Icon size={20} /> How to play Card.dle
+		</h2>
+	{/snippet}
+
 	<div class="space-y-4 text-gray-300">
-		<!-- Card Attributes -->
-		<div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
-			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-3"><TagIcon size={16} /> Attributes</h3>
-			<div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-				<div><strong class="text-white">Pokémon:</strong> Character name</div>
-				<div><strong class="text-white">Artist:</strong> Card illustrator</div>
-				<div><strong class="text-white">Set:</strong> Collection name</div>
-				<div><strong class="text-white">Supertype:</strong> Pokémon/Trainer/Energy</div>
-				<div><strong class="text-white">Type:</strong> Element (Fire, Water...)</div>
-				<div><strong class="text-white">Price:</strong> Market value (EUR)</div>
-			</div>
-		</div>
+		<p class="text-sm text-gray-400">
+			One mystery card per day, the same for everyone. Every guess compares six attributes with it, so keep narrowing
+			until they all turn green.
+		</p>
 
-		<!-- Game Rules -->
-		<div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
-			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-3"><ClipboardListIcon size={16} /> How to Play</h3>
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-				<ul class="space-y-1 list-disc list-inside">
-					<li>Search Pokémon name → Select card → Get feedback</li>
-					<li><strong class="text-green-400">Green</strong> = perfect match</li>
-					<li><strong class="text-red-400">Red</strong> = wrong attribute</li>
-					<li class="flex items-center gap-1">
-						<ChevronsUpIcon class="text-gold-400" size={14} /> mystery card costs more,
-						<ChevronsDownIcon class="text-gold-400" size={14} /> costs less
+		<!-- Steps -->
+		<section>
+			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-2"><ClipboardListIcon size={16} /> Three steps</h3>
+			<ol class="grid gap-3 sm:grid-cols-3">
+				{#each rulesSteps as step, i (step.title)}
+					<li class="relative rounded-lg border border-gray-700 bg-gray-900 p-3 pl-11">
+						<span class="absolute left-3 top-3 flex size-6 items-center justify-center rounded-full bg-gold-400 text-xs font-bold text-black">{i + 1}</span>
+						<p class="font-semibold text-white">{step.title}</p>
+						<p class="mt-1 text-xs text-gray-400">{step.detail}</p>
 					</li>
-				</ul>
-				<ul class="space-y-1 list-disc list-inside">
-					<li>Trainer/Energy cards show "None" for Type</li>
-					<li>Match all attributes to win</li>
-					<li>New mystery card daily</li>
-					<li>Unlimited attempts</li>
-				</ul>
-			</div>
-		</div>
+				{/each}
+			</ol>
+		</section>
 
-		<!-- Tips -->
-		<div class="bg-gray-900 rounded-lg p-4 border border-gray-700">
-			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-3"><LightbulbIcon size={16} /> Strategy</h3>
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-				<ul class="space-y-1 list-disc list-inside">
-					<li>Start with popular Pokémon (Pikachu, Charizard)</li>
-					<li>Use price arrows to narrow search</li>
-				</ul>
-				<ul class="space-y-1 list-disc list-inside">
-					<li>Same set → try other cards from collection</li>
-					<li>Different printings = different artists/prices</li>
-				</ul>
+		<!-- Attributes -->
+		<section>
+			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-2"><TagIcon size={16} /> The six compared attributes</h3>
+			<div class="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
+				{#each rulesAttributes as attribute (attribute.name)}
+					<div class="flex items-start gap-2 rounded-lg border border-gray-700 bg-gray-900 p-2.5">
+						<attribute.icon class="mt-0.5 shrink-0 text-gold-400" size={16} />
+						<div>
+							<p class="font-semibold text-white">{attribute.name}</p>
+							<p class="text-xs text-gray-400">{attribute.detail}</p>
+						</div>
+					</div>
+				{/each}
 			</div>
+		</section>
+
+		<!-- Feedback legend -->
+		<section>
+			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-2"><PaletteIcon size={16} /> Reading a row</h3>
+			<div class="grid gap-2 sm:grid-cols-2">
+				<div class="flex items-center gap-3 rounded-lg border border-gray-700 bg-gray-900 p-2.5">
+					<span class="flex h-7 w-20 shrink-0 items-center justify-center gap-1 rounded-sm bg-green-600 text-xs font-semibold text-white"><CheckIcon size={14} /> Match</span>
+					<p class="text-xs text-gray-400">Same value as the mystery card.</p>
+				</div>
+				<div class="flex items-center gap-3 rounded-lg border border-gray-700 bg-gray-900 p-2.5">
+					<span class="flex h-7 w-20 shrink-0 items-center justify-center gap-1 rounded-sm bg-red-600 text-xs font-semibold text-white"><XIcon size={14} /> Wrong</span>
+					<p class="text-xs text-gray-400">Different value, look elsewhere.</p>
+				</div>
+				<div class="flex items-center gap-3 rounded-lg border border-gray-700 bg-gray-900 p-2.5">
+					<span class="flex h-7 w-20 shrink-0 items-center justify-center gap-1 rounded-sm bg-red-600 text-xs font-semibold text-white"><ChevronsUpIcon size={14} /> 15.99 €</span>
+					<p class="text-xs text-gray-400">The mystery card costs more than your guess.</p>
+				</div>
+				<div class="flex items-center gap-3 rounded-lg border border-gray-700 bg-gray-900 p-2.5">
+					<span class="flex h-7 w-20 shrink-0 items-center justify-center gap-1 rounded-sm bg-red-600 text-xs font-semibold text-white"><ChevronsDownIcon size={14} /> 15.99 €</span>
+					<p class="text-xs text-gray-400">The mystery card costs less than your guess.</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Good to know and strategy -->
+		<div class="grid gap-3 md:grid-cols-2">
+			<section class="rounded-lg border border-gray-700 bg-gray-900 p-3">
+				<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-2"><InfoIcon size={16} /> Good to know</h3>
+				<ul class="space-y-1.5 text-sm">
+					{#each rulesNotes as note (note)}
+						<li class="flex items-start gap-2"><span class="mt-2 size-1.5 shrink-0 rounded-full bg-gold-400"></span> {note}</li>
+					{/each}
+				</ul>
+			</section>
+
+			<section class="rounded-lg border border-gray-700 bg-gray-900 p-3">
+				<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-2"><LightbulbIcon size={16} /> Strategy</h3>
+				<ul class="space-y-1.5 text-sm">
+					{#each rulesTips as tip (tip)}
+						<li class="flex items-start gap-2"><span class="mt-2 size-1.5 shrink-0 rounded-full bg-gold-400"></span> {tip}</li>
+					{/each}
+				</ul>
+			</section>
 		</div>
 	</div>
+
+	{#snippet footer()}
+		<Button onClick={() => showRulesModal = false} class="px-4 py-2" title="Close the rules">
+			<CheckIcon size={16} /> Got it
+		</Button>
+	{/snippet}
 </Modal>
 
-<style>
-	.text-xxs {
-		font-size: 0.65rem;
-		line-height: 0.85rem;
-	}
-	.grid {
-		align-items: stretch;
-	}
-	.grid > div {
-		min-height: 50px;
-	}
-
-	/* Custom animations and improvements */
-	.card-suggestion-button {
-		transform-origin: center;
-	}
-
-	.card-suggestion-button:hover {
-		transform: translateY(-2px);
-	}
-
-	/* Smooth gradient text animation */
-	@keyframes gradient-x {
-		0%, 100% {
-			background-size: 200% 200%;
-			background-position: left center;
-		}
-		50% {
-			background-size: 200% 200%;
-			background-position: right center;
-		}
-	}
-
-	.bg-linear-to-r {
-		animation: gradient-x 6s ease infinite;
-	}
-
-	/* Loading state for card images */
-	.card-suggestion-button img {
-		transition: opacity 0.3s ease;
-	}
-</style>
