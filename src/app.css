@@ -13,6 +13,17 @@
 
   --breakpoint-xs: 420px;
   --breakpoint-2xs: 350px;
+
+  --animate-gradient-x: gradient-x 6s ease infinite;
+
+  @keyframes gradient-x {
+    0%, 100% {
+      background-position: left center;
+    }
+    50% {
+      background-position: right center;
+    }
+  }
 }
 
 /*
@@ -47,25 +58,6 @@ body {
 
 button {
 	@apply cursor-pointer;
-}
-
-/* Custom animations for the bouncing chevrons */
-@keyframes bounceLeft {
-	0% {
-		transform: translateX(0);
-	}
-	100% {
-		transform: translateX(4px);
-	}
-}
-
-@keyframes bounceRight {
-	0% {
-		transform: translateX(0);
-	}
-	100% {
-		transform: translateX(-4px);
-	}
 }
 
 /* Custom animations for the bouncing chevrons */
