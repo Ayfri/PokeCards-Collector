@@ -1,9 +1,9 @@
-export function debounce(fn: Function, delay: number) {
+export function debounce<TArgs extends readonly unknown[]>(fn: (...args: TArgs) => void, delay: number) {
 	let debounceTimeout: number;
-	return (...args: any[]) => {
+	return (...args: TArgs) => {
 		clearTimeout(debounceTimeout);
 		debounceTimeout = window.setTimeout(() => {
 			fn(...args);
 		}, delay);
 	};
-} 
+}
