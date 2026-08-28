@@ -52,13 +52,9 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 	const cardDataPromise = (async () => {
 		const allCards: FullCard[] = await getJapaneseCards();
 
-		const seenImages = new Set();
-		const filteredCards = allCards.filter(card => {
-			if (!card.setName) return false;
-			if (seenImages.has(card.image)) return false;
-			seenImages.add(card.image);
-			return true;
-		});
+		// An artless card is still a real card: deduplicating on `image` hid 8899 of the 12781 Japanese cards.
+		// TCGdex gives every card its own art URL, so this only ever removed the cards it has no art for.
+		const filteredCards = allCards.filter(card => Boolean(card.setName));
 
 		const pokemonCards = filteredCards.filter(card => card.supertype === 'Pokémon');
 		const trainerCards = filteredCards.filter(card => card.supertype === 'Trainer');

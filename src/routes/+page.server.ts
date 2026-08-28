@@ -28,14 +28,9 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// Use the resolved allCards for further processing
 	let processedAllCards: FullCard[] = [...allCardsResolved];
 
-	// Apply unique by image filter
-	const seenImages = new Set();
-	processedAllCards = processedAllCards.filter(card => {
-		if (!card.setName) return false;
-		if (seenImages.has(card.image)) return false;
-		seenImages.add(card.image);
-		return true;
-	});
+	// An artless card is still a real card: deduplicating on `image` silently dropped every one of them.
+	// TCGdex gives every card its own art URL, so this only ever removed the cards it has no art for.
+	processedAllCards = processedAllCards.filter(card => Boolean(card.setName));
 
 	// Get real data counts from Supabase for statistics
 	const [pokemons, allCardsFromDb, japaneseCards] = await Promise.all([

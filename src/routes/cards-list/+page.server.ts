@@ -58,15 +58,9 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 				const cardsFromParent = await parentLayoutData.streamed.allCards;
 				if (!cardsFromParent) return [];
 
-				let allCardsResult: FullCard[] = cardsFromParent;
-				const seenImages = new Set();
-				allCardsResult = allCardsResult.filter(card => {
-					if (!card.setName) return false;
-					if (seenImages.has(card.image)) return false;
-					seenImages.add(card.image);
-					return true;
-				});
-				return allCardsResult;
+				// An artless card is still a real card: deduplicating on `image` hid 1717 of them from the list.
+				// TCGdex gives every card its own art URL, so this only ever removed the cards it has no art for.
+				return (cardsFromParent as FullCard[]).filter(card => Boolean(card.setName));
 			})(),
 			prices: (async () => {
 				const pricesFromParent = await parentLayoutData.streamed.prices;
