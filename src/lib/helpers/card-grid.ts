@@ -157,3 +157,14 @@ export function filterCards(
 function sortBySupertype(cards: FullCard[]): FullCard[] {
 	return cards.sort((a, b) => (SUPERTYPE_ORDER[a.supertype] || 99) - (SUPERTYPE_ORDER[b.supertype] || 99));
 }
+
+/** Distinct rarities of a card list. Reading them from Postgres meant a full scan of `cards` for ~30 values. */
+export function distinctRarities(cards: FullCard[]): string[] {
+	return [...new Set(cards.map(card => card.rarity).filter(Boolean))].sort();
+}
+
+/** Distinct artists of a card list, sorted case-insensitively like the filter dropdown expects. */
+export function distinctArtists(cards: FullCard[]): string[] {
+	return [...new Set(cards.map(card => card.artist).filter(Boolean))]
+		.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+}

@@ -14,9 +14,7 @@
 
 	// Data that is available immediately
 	const sets = $derived(data.sets);
-	const rarities = $derived(data.rarities);
 	const types = $derived(data.types);
-	const artists = $derived(data.artists);
 	const pokemons = $derived(data.pokemons);
 	const prices = $derived(data.prices);
 
@@ -43,12 +41,9 @@
 				}
 			}
 
+			// Artist and rarity filters compare lowercased, so the URL value is already the store value.
 			if (artistParam) {
-				const decodedArtistParam = decodeURIComponent(artistParam).toLowerCase();
-				const foundArtist = artists.find(artist => artist.toLowerCase() === decodedArtistParam);
-				if (foundArtist) {
-					$filterArtist = foundArtist.toLowerCase();
-				}
+				$filterArtist = decodeURIComponent(artistParam).toLowerCase();
 			}
 
 			if (typeParam) {
@@ -94,17 +89,13 @@
 			}
 
 			if (rarityParam) {
-				const decodedRarityParam = decodeURIComponent(rarityParam);
-				const rarityExists = rarities.some(rarity => rarity.toLowerCase() === decodedRarityParam.toLowerCase());
-				if (rarityExists) {
-					$filterRarity = decodedRarityParam.toLowerCase();
-				}
+				$filterRarity = decodeURIComponent(rarityParam).toLowerCase();
 			}
 		}
 	});
 
 	const selectedSetName = $derived($filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null);
-	const selectedArtistName = $derived($filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null);
+	const artistName = (artists: string[]) => $filterArtist !== 'all' ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null;
 </script>
 
 {#await data.streamed.cardData}
@@ -115,16 +106,9 @@
 {:then cardDataResolved}
 	{@const allCards = cardDataResolved.allCards}
 	<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
-		<CardGrid cards={allCards} {sets} {rarities} {types} {artists} {pokemons} {prices} pageTitle="Japanese Cards" selectedSetName={selectedSetName} selectedArtistName={selectedArtistName} />
+		<CardGrid cards={allCards} {sets} rarities={cardDataResolved.rarities} {types} artists={cardDataResolved.artists} {pokemons} {prices} pageTitle="Japanese Cards" selectedSetName={selectedSetName} selectedArtistName={artistName(cardDataResolved.artists)} />
 	</main>
 {:catch error}
 	<p style="color: red">Error loading cards: {error.message}</p>
 {/await}
 
-<style>
-	:global(body) {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-	}
-</style>

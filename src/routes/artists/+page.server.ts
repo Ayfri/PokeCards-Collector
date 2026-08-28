@@ -1,4 +1,4 @@
-import { getArtists } from '$helpers/supabase-data';
+import { distinctArtists } from '$helpers/card-grid';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
@@ -20,10 +20,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 		collectionItems: parentData.collectionItems
 	};
 
-	// Fetch the list of artists for this page
-	const [artists] = await Promise.all([
-		getArtists()
-	]);
+	// Derived from the cards the layout already streamed, instead of a second full scan of `cards`.
+	const artists = distinctArtists(allCards);
 
 	// Define page-specific SEO data
 	const pageSeoData = {

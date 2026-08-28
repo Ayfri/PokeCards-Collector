@@ -1,4 +1,5 @@
-import { getPokemons, getRarities, getJapaneseSets, getTypes, getArtists, getJapaneseCards, getJapanesePrices } from '$helpers/supabase-data';
+import { getPokemons, getJapaneseSets, getTypes, getJapaneseCards, getJapanesePrices } from '$helpers/supabase-data';
+import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -22,11 +23,9 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 	};
 
 	// Data specific to this page (Japanese sets, rarities, types, etc.)
-	const [japaneseSetsData, rarities, types, artists, pokemons] = await Promise.all([
+	const [japaneseSetsData, types, pokemons] = await Promise.all([
 		getJapaneseSets(),
-		getRarities(),
 		getTypes(),
-		getArtists(),
 		getPokemons()
 	]);
 
@@ -63,6 +62,9 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 
 		return {
 			allCards: filteredCards,
+			// Derived from the Japanese cards themselves; reading them from `cards` listed rarities and artists this page never shows.
+			artists: distinctArtists(filteredCards),
+			rarities: distinctRarities(filteredCards),
 			stats: {
 				totalCards: filteredCards.length,
 				uniquePokemon,
@@ -80,9 +82,7 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 		},
 		// Non-streamed data specific to this page or resolved from parent
 		sets, // Japanese sets
-		rarities,
 		types,
-		artists,
 		pokemons,
 		prices: pricesResolved,
 		// Page-specific SEO (overrides parent's defaults if set)

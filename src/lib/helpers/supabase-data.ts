@@ -263,51 +263,6 @@ export async function getTypes(): Promise<string[]> {
 	return data.map(type => type.name);
 }
 
-export async function getRarities(): Promise<string[]> {
-	const { data, error } = await supabase
-		.from('cards')
-		.select('rarity')
-		.not('rarity', 'is', null)
-		.limit(50_000);
-
-	if (error) {
-		console.error('Error fetching rarities:', error);
-		throw new Error(`Failed to fetch rarities: ${error.message}`);
-	}
-
-	// A full page back means there are probably more rows than the cap; page through the table instead.
-	if (data && data.length === 50_000) {
-		const allData = await getAllData<{ rarity: string }>('cards', 'card_code', 'rarity');
-		const rarities = [...new Set(allData.map(card => card.rarity).filter(Boolean))];
-		return rarities.sort();
-	}
-
-	const rarities = [...new Set((data || []).map(card => card.rarity))];
-	return rarities.sort();
-}
-
-export async function getArtists(): Promise<string[]> {
-	const { data, error } = await supabase
-		.from('cards')
-		.select('artist')
-		.not('artist', 'is', null)
-		.limit(50_000);
-
-	if (error) {
-		console.error('Error fetching artists:', error);
-		throw new Error(`Failed to fetch artists: ${error.message}`);
-	}
-
-	if (data && data.length === 50_000) {
-		const allData = await getAllData<{ artist: string }>('cards', 'card_code', 'artist');
-		const artists = [...new Set(allData.map(card => card.artist).filter(Boolean))];
-		return artists.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-	}
-
-	const artists = [...new Set((data || []).map(card => card.artist))];
-	return artists.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-}
-
 export async function getCardsWithFilters(filters: {
 	setName?: string;
 	pokemon?: string;

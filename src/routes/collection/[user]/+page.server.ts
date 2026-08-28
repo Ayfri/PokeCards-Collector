@@ -1,5 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
-import { getPokemons, getRarities, getTypes, getArtists } from '$helpers/supabase-data';
+import { getPokemons, getTypes } from '$helpers/supabase-data';
+import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserCollection } from '$lib/services/collections';
 import type { PageServerLoad } from './$types';
@@ -17,14 +18,16 @@ async function getStreamedCollectionData(
 	selectedSetName?: string | null
 ) {
 	// Base data for cards (pokemons, rarities, types, artists)
-	const [pokemons, rarities, types, artists] = await Promise.all([
+	const [pokemons, types] = await Promise.all([
 		getPokemons(),
-		getRarities(),
-		getTypes(),
-		getArtists()
+		getTypes()
 	]).catch(e => {
 		throw new Error('Failed to load necessary card data for page');
 	});
+
+	// The filter lists come from the card list we already hold; reading them back from Postgres cost a full scan of `cards` each.
+	const artists = distinctArtists(allCards);
+	const rarities = distinctRarities(allCards);
 
 	let collectionCards: FullCard[] = [];
 	let itemsToProcess = collectionItemsSource;

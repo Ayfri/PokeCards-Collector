@@ -1,31 +1,14 @@
-import { getRarities, getTypes, getArtists, getPokemons, getCards } from '$helpers/supabase-data';
-import type { FullCard } from '$lib/types'; // Import FullCard type
-import type { PageServerLoad } from './$types'; // Added import for type
+import { getPokemons, getTypes } from '$helpers/supabase-data';
+import { distinctArtists, distinctRarities } from '$helpers/card-grid';
+import type { FullCard } from '$lib/types';
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent, url }) => {
-	const parentLayoutData = await parent(); // This is a promise to the layout's data
+	// Neither query depends on the layout, so they run alongside `getSets` instead of queuing behind `parent()`.
+	const pageQueries = Promise.all([getPokemons(), getTypes()]);
+	const parentLayoutData = await parent();
+	const [pokemons, types] = await pageQueries;
 
-	// Fetch these potentially smaller lists directly if they are fast
-	// If these are also slow, they should be part of the streamed object too.
-	const [pokemons, rarities, types, artists] = await Promise.all([
-		getPokemons(),
-		getRarities(),
-		getTypes(),
-		getArtists()
-	]);
-
-	// Extract non-streamed data needed for immediate page setup.
-	// Explicitly pick known, resolved fields from parentLayoutData.
-	const otherLayoutData = {
-		user: parentLayoutData.user,
-		profile: parentLayoutData.profile,
-		title: parentLayoutData.title, // SEO default from layout
-		description: parentLayoutData.description, // SEO default from layout
-		image: parentLayoutData.image, // SEO default from layout
-		wishlistItems: parentLayoutData.wishlistItems,
-		collectionItems: parentLayoutData.collectionItems
-		// Note: parentLayoutData.sets is already resolved by the modified layout
-	};
 	const sets = [...(parentLayoutData.sets || [])];
 	sets.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -44,47 +27,34 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 		}
 	}
 
+	// Everything the grid needs streams as one promise: the rarity and artist lists are derived from these cards
+	// rather than read back from Postgres, which cost a full scan of `cards` each.
+	const grid = (async () => {
+		const [cards, prices] = await Promise.all([parentLayoutData.streamed.allCards, parentLayoutData.streamed.prices]);
+
+		// An artless card is still a real card: deduplicating on `image` hid 1717 of them from the list.
+		// TCGdex gives every card its own art URL, so this only ever removed the cards it has no art for.
+		const visibleCards = ((cards ?? []) as FullCard[]).filter(card => Boolean(card.setName));
+
+		return {
+			artists: distinctArtists(visibleCards),
+			cards: visibleCards,
+			prices: prices ?? {},
+			rarities: distinctRarities(visibleCards),
+		};
+	})();
+
 	return {
-		...otherLayoutData,
+		user: parentLayoutData.user,
+		profile: parentLayoutData.profile,
+		wishlistItems: parentLayoutData.wishlistItems,
+		collectionItems: parentLayoutData.collectionItems,
 		sets,
 		pokemons,
-		rarities,
 		types,
-		artists,
-		streamed: {
-			allCards: (async () => {
-				// parentLayoutData is already resolved here.
-				// Access the promise from parentLayoutData.streamed and await it.
-				const cardsFromParent = await parentLayoutData.streamed.allCards;
-				if (!cardsFromParent) return [];
-
-				// An artless card is still a real card: deduplicating on `image` hid 1717 of them from the list.
-				// TCGdex gives every card its own art URL, so this only ever removed the cards it has no art for.
-				return (cardsFromParent as FullCard[]).filter(card => Boolean(card.setName));
-			})(),
-			prices: (async () => {
-				const pricesFromParent = await parentLayoutData.streamed.prices;
-				return pricesFromParent || {};
-			})(),
-			stats: (async () => {
-				// Get real data counts from Supabase for accurate statistics
-				const allCardsFromDb = await parentLayoutData.streamed.allCards;
-
-				const pokemonCards = allCardsFromDb.filter(card => card.supertype === 'Pokémon');
-				const trainerCards = allCardsFromDb.filter(card => card.supertype === 'Trainer');
-				const energyCards = allCardsFromDb.filter(card => card.supertype === 'Energy');
-
-				return {
-					totalCards: allCardsFromDb.length, // Real count from database
-					uniquePokemon: pokemons.length, // Real count from pokemons table
-					pokemonCards: pokemonCards.length,
-					trainerCards: trainerCards.length,
-					energyCards: energyCards.length,
-				};
-			})()
-		},
+		streamed: { grid },
 		title: ogTitle,
 		description: ogDescription,
-		image: ogImage ?? otherLayoutData.image,
+		image: ogImage ?? parentLayoutData.image,
 	};
 }

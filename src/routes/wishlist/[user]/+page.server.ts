@@ -1,5 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
-import { getPokemons, getRarities, getTypes, getArtists } from '$helpers/supabase-data';
+import { getPokemons, getTypes } from '$helpers/supabase-data';
+import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserWishlist } from '$lib/services/wishlists';
 import type { PageServerLoad } from './$types';
@@ -14,15 +15,17 @@ async function getStreamedWishlistData(
 	isPublicForWishlist: boolean,
 	loggedInUsernameForWishlist: string | null
 ) {
-	const [pokemons, rarities, types, artists] = await Promise.all([
+	const [pokemons, types] = await Promise.all([
 		getPokemons(),
-		getRarities(),
-		getTypes(),
-		getArtists()
+		getTypes()
 	]).catch(e => {
 		console.error("Error loading page-specific card data for wishlist:", e);
 		throw new Error('Failed to load necessary card data for wishlist');
 	});
+
+	// The filter lists come from the card list we already hold; reading them back from Postgres cost a full scan of `cards` each.
+	const artists = distinctArtists(allCards);
+	const rarities = distinctRarities(allCards);
 
 	let wishlistCards: FullCard[] = [];
 	let itemsToProcess = wishlistItemsSource;

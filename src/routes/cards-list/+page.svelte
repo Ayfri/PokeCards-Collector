@@ -13,18 +13,12 @@
 
 	let { data }: Props = $props();
 
-	// Use allCards from layout data passed down via PageData
-	// $: allCards = data.allCards; // No longer needed here, will come from data.streamed.allCards
 	const sets = $derived(data.sets);
-	const rarities = $derived(data.rarities);
-	const types = $derived(data.types);
-	const artists = $derived(data.artists);
 
 	// Determine lowRes based on cardSize
 	const lowRes = $derived(!($cardSize === 2 || $cardSize === 3)); // true if not L or XL
 
 	const selectedSetName = $derived($filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null);
-	const selectedArtistName = $derived($filterArtist !== 'all' && artists ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null);
 
 	onMount(() => {
 		// Check if we have any filter parameters in the URL
@@ -51,12 +45,9 @@
 				}
 			}
 
+			// Artist, rarity and type filters compare lowercased, so the URL value is already the store value.
 			if (artistParam) {
-				const decodedArtistParam = decodeURIComponent(artistParam).toLowerCase();
-				const foundArtist = artists.find(artist => artist.toLowerCase() === decodedArtistParam);
-				if (foundArtist) {
-					filterArtist.set(foundArtist.toLowerCase());
-				}
+				filterArtist.set(decodeURIComponent(artistParam).toLowerCase());
 			}
 
 			if (typeParam) {
@@ -81,7 +72,7 @@
 
 			if (pokemonTypeParam) {
 				const decodedPokemonTypeParam = decodeURIComponent(pokemonTypeParam);
-				const typeExists = types.some(type => type.toLowerCase() === decodedPokemonTypeParam.toLowerCase());
+				const typeExists = data.types.some(type => type.toLowerCase() === decodedPokemonTypeParam.toLowerCase());
 				if (typeExists) {
 					filterType.set(decodedPokemonTypeParam.toLowerCase());
 				}
@@ -112,61 +103,33 @@
 				mostExpensiveOnly.set(true);
 			}
 
-			// Apply rarity filter from URL
 			if (rarityParam) {
-				const decodedRarityParam = decodeURIComponent(rarityParam);
-				const rarityExists = rarities.some(rarity => rarity.toLowerCase() === decodedRarityParam.toLowerCase());
-				if (rarityExists) {
-					filterRarity.set(decodedRarityParam.toLowerCase());
-				}
+				filterRarity.set(decodeURIComponent(rarityParam).toLowerCase());
 			}
 		}
 	});
 </script>
 
 <main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
-	{#await data.streamed.allCards}
-		<!-- todo: remove these messages when we have a proper loading state -->
-		<!-- Pending for allCards (outer) -->
-		<div class="flex justify-center items-center h-64">
+	{#await data.streamed.grid}
+		<div class="flex flex-1 justify-center items-start pt-32">
 			<Loader message="Loading cards..." />
 		</div>
-	{:then allCardsResolved}
-		<!-- allCards resolved, now handle prices -->
-		{#await data.streamed.prices}
-			<!-- Pending for prices (while allCards is resolved) -->
-			<div class="flex justify-center items-center h-64">
-				<Loader message="Loading prices..." />
-			</div>
-		{:then pricesResolved}
-			<!-- Both allCards and prices are resolved -->
-			<CardGrid
-				cards={allCardsResolved}
-				sets={data.sets}
-				rarities={data.rarities}
-				types={data.types}
-				artists={data.artists}
-				pokemons={data.pokemons}
-				prices={pricesResolved}
-				pageTitle="Cards List"
-				selectedSetName={selectedSetName}
-				selectedArtistName={selectedArtistName}
-				{lowRes}
-			/>
-		{:catch priceError}
-			<p class="text-red-500 p-4">Error loading card prices: {priceError.message}</p>
-		{/await} <!-- Closes inner await for prices -->
+	{:then grid}
+		<CardGrid
+			cards={grid.cards}
+			sets={data.sets}
+			rarities={grid.rarities}
+			types={data.types}
+			artists={grid.artists}
+			pokemons={data.pokemons}
+			prices={grid.prices}
+			pageTitle="Cards List"
+			selectedSetName={selectedSetName}
+			selectedArtistName={$filterArtist !== 'all' ? (grid.artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null}
+			{lowRes}
+		/>
 	{:catch cardError}
-		<!-- Error for allCards (outer) -->
 		<p class="text-red-500 p-4">Error loading cards: {cardError.message}</p>
-	{/await} <!-- Closes outer await for allCards -->
-
+	{/await}
 </main>
-
-<style>
-	:global(body) {
-		display: flex;
-		flex-direction: column;
-		min-height: 100vh;
-	}
-</style>

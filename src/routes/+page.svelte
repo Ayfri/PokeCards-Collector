@@ -7,7 +7,6 @@
 	import { onMount } from "svelte";
 	import { NO_IMAGES } from "$lib/images";
 	import { fly, fade } from "svelte/transition";
-	import { getArtists } from "$helpers/supabase-data";
 	import { ChevronLeft, ChevronRight } from "@lucide/svelte";
 	// Import icons
 	import GiftIcon from "@lucide/svelte/icons/gift";
