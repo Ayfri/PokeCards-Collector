@@ -3,6 +3,8 @@
 	import { page } from '$app/stores';
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import { readJson, type ApiError } from '$helpers/http';
+	import EyeIcon from '@lucide/svelte/icons/eye';
+	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 
 	interface Props {
 		onSuccess?: (() => void) | undefined;
@@ -277,8 +279,10 @@
 				class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300"
 				onclick={togglePasswordVisibility}
 				type="button"
+				title={showPassword ? "Hide password" : "Show password"}
 			>
-				{showPassword ? 'Hide' : 'Show'}
+				<span class="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
+				{#if showPassword}<EyeOffIcon size={18} />{:else}<EyeIcon size={18} />{/if}
 			</button>
 		</div>
 		<!-- Password strength bar -->
@@ -324,8 +328,10 @@
 				class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300"
 				onclick={toggleConfirmPasswordVisibility}
 				type="button"
+				title={showConfirmPassword ? "Hide password" : "Show password"}
 			>
-				{showConfirmPassword ? 'Hide' : 'Show'}
+				<span class="sr-only">{showConfirmPassword ? "Hide password" : "Show password"}</span>
+				{#if showConfirmPassword}<EyeOffIcon size={18} />{:else}<EyeIcon size={18} />{/if}
 			</button>
 		</div>
 	</div>

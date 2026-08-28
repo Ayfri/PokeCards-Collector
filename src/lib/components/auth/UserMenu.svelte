@@ -109,6 +109,7 @@
 			}
 		}}
 		aria-expanded={isMenuOpen}
+		title={user && profile ? 'Open your account menu' : 'Sign in or create an account'}
 	>
 		{#if user && profile}
 			<span class="sr-only">Open user menu</span>
@@ -138,6 +139,7 @@
 					<a
 						href={`/profile/${encodeURIComponent(profile.username)}`}
 						target="_self"
+						title="Your public profile and collection stats"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
 						onclick={handleNavigation}
@@ -148,6 +150,7 @@
 					<a
 						href={`/collection/${encodeURIComponent(profile.username)}`}
 						target="_self"
+						title="Every card you own"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
 						onclick={handleNavigation}
@@ -158,6 +161,7 @@
 					<a
 						href={`/wishlist/${encodeURIComponent(profile.username)}`}
 						target="_self"
+						title="Every card you are after"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
 						onclick={handleNavigation}
@@ -167,6 +171,7 @@
 					</a>
 					<a
 						href="/settings"
+						title="Account, appearance, privacy and security"
 						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
 						onclick={handleNavigation}
@@ -179,6 +184,7 @@
 						class="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
 						role="menuitem"
 						onclick={handleSignOut}
+						title="Sign out of your account"
 					>
 						<LogOut class="mr-3" size={16} />
 						Sign out

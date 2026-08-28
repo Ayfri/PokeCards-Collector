@@ -45,10 +45,12 @@
 				<h2 class="text-xl font-semibold text-gray-900 dark:text-white">
 					{activeTab === 'login' ? 'Sign in' : 'Create an account'}
 				</h2>
-				<button 
-					type="button" 
+				<button
+					type="button"
 					class="text-gray-400 hover:text-gray-500 focus:outline-hidden"
 					onclick={closeModal}
+					aria-label="Close"
+					title="Close (Esc)"
 				>
 					<X size={24} />
 				</button>
