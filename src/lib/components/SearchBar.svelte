@@ -1,22 +1,19 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
-	import { onDestroy, onMount } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
 	import PlusCircle from '@lucide/svelte/icons/circle-plus';
 	import Check from '@lucide/svelte/icons/check';
 	import { processCardImage } from '$helpers/card-images';
 	import type { FullCard, Set, PriceData } from '$lib/types';
-	import { browser } from '$app/environment';
 	import { buildSetLookupMap, findSetByCardCode, findSetInLookup } from '$helpers/set-utils';
-	import { page } from '$app/stores';
-	import { getContext } from 'svelte';
+	import { page } from '$app/state';
 	import type { Writable } from 'svelte/store';
 	import { debounce } from '$helpers/debounce';
+	import { SvelteSet } from 'svelte/reactivity';
 
-	
 	interface Props {
-		// --- Props ---
 		prices: Record<string, PriceData>;
 		allCards: FullCard[];
 		autoFocus?: boolean;
@@ -34,24 +31,21 @@
 		sets
 	}: Props = $props();
 
-	// --- State ---
 	let inputElement = $state<HTMLInputElement>();
 	let searchQuery = $state('');
 	let searchResults: FullCard[] = $state([]);
 	let showResults = $state(false);
-	let addedCards = $state(new Set<string>()); // Card codes flashing the "added" state
+	const addedCards = new SvelteSet<string>(); // Card codes flashing the "added" state
 	let platformModifierKey = $state('');
 	let inputFocused = $state(false);
 
-	const isBinderPage = $derived($page.url.pathname === '/binder');
+	const isBinderPage = $derived(page.url.pathname === '/binder');
 
+	// getContext only works during component initialization, so the binder store is grabbed here rather than when a card is added
 	let binderStoredCards: Writable<string[]> | null = null;
-	try {
-		// getContext MUST be called during component initialization
-		if ($page.url.pathname === '/binder') {
-			binderStoredCards = getContext('storedCards');
-		}
-	} catch (e) {}
+	if (page.url.pathname === '/binder') {
+		binderStoredCards = getContext('storedCards') ?? null;
+	}
 
 	function addToBinderStorage(card: FullCard) {
 		if (!binderStoredCards) {
@@ -73,13 +67,11 @@
 		
 		setTimeout(() => {
 			addedCards.delete(card.cardCode);
-			addedCards = addedCards; // A plain Set is not deeply reactive under $state, so the reassignment is what redraws
 		}, 1500);
 	}
 
 
 	function extractCardNumberFromCode(cardCode: string): string {
-		// Assuming format: supertype_pokemonId_setCode_cardNumber
 		return cardCode?.split('_')[3] || '';
 	}
 
@@ -175,7 +167,6 @@
 
 	const debouncedSearch = debounce(performSearch, 300);
 
-	// --- Event Handlers ---
 	const handleClickOutside = (event: MouseEvent) => {
 		if (mobileMode) return;
 		const target = event.target as Node;
@@ -192,16 +183,6 @@
 		inputFocused = true;
 	};
 
-	const handleKeydown = (event: KeyboardEvent) => {
-		if (event.key === 'Escape') {
-			if (mobileMode && onToggleModal) {
-				onToggleModal();
-			} else {
-				showResults = false;
-			}
-		}
-	};
-
 	const handleClearSearch = () => {
 		searchQuery = '';
 		searchResults = [];
@@ -209,25 +190,11 @@
 		inputElement?.focus();
 	};
 
-	// --- Lifecycle ---
 	onMount(() => {
-		if (browser) {
-			platformModifierKey = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'Cmd' : 'Ctrl';
-			document.addEventListener('click', handleClickOutside);
-			document.addEventListener('keydown', handleGlobalKeydown);
+		platformModifierKey = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'Cmd' : 'Ctrl';
 
-			if (autoFocus && inputElement) {
-				setTimeout(() => {
-					inputElement?.focus();
-				}, 100);
-			}
-		}
-	});
-
-	onDestroy(() => {
-		if (browser) {
-			document.removeEventListener('click', handleClickOutside);
-			document.removeEventListener('keydown', handleGlobalKeydown);
+		if (autoFocus && inputElement) {
+			setTimeout(() => inputElement?.focus(), 100); // The modal is still transitioning in, focusing right away gets undone
 		}
 	});
 
@@ -241,12 +208,11 @@
 		}
 
 		if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-			event.preventDefault(); // Prevent browser's default Ctrl+K action
+			event.preventDefault();
 			inputElement?.focus();
 		}
 	};
 
-	// --- Reactive Statements ---
 	$effect(() => {
 		if (searchQuery.trim()) {
 			debouncedSearch();
@@ -256,6 +222,8 @@
 		}
 	});
 </script>
+
+<svelte:document onclick={handleClickOutside} onkeydown={handleGlobalKeydown} />
 
 <div class="relative {mobileMode ? 'flex flex-col w-full' : ''}">
 	<div class="search-container relative">
@@ -326,7 +294,6 @@
 								</div>
 								
 								{#if isBinderPage}
-									<!-- Button to add to binder storage when on binder page -->
 									<div class="shrink-0 ml-2">
 										<button 
 											class="py-1 px-2 rounded-sm flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white hover:bg-gray-700'} hover:shadow-lg transform hover:-translate-y-px"
