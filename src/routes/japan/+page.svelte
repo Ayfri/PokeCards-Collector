@@ -14,9 +14,6 @@
 	let { data }: Props = $props();
 
 	const sets = $derived(data.sets);
-	const types = $derived(data.types);
-	const pokemons = $derived(data.pokemons);
-	const prices = $derived(data.prices);
 
 	onMount(() => {
 		const setParam = page.url.searchParams.get('set');
@@ -57,12 +54,9 @@
 				$filterName = decodedNameParam;
 			}
 
+			// The type list now streams with the grid, so the value is trusted lowercased like the artist and rarity ones.
 			if (pokemonTypeParam) {
-				const decodedPokemonTypeParam = decodeURIComponent(pokemonTypeParam);
-				const pokemonTypeExists = types.some(type => type.toLowerCase() === decodedPokemonTypeParam.toLowerCase());
-				if (pokemonTypeExists) {
-					$filterType = decodedPokemonTypeParam.toLowerCase();
-				}
+				$filterType = decodeURIComponent(pokemonTypeParam).toLowerCase();
 			}
 
 			if (sortByParam) {
@@ -110,7 +104,7 @@
 {:then cardDataResolved}
 	{@const allCards = cardDataResolved.allCards}
 	<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
-		<CardGrid cards={allCards} {sets} rarities={cardDataResolved.rarities} {types} artists={cardDataResolved.artists} {pokemons} {prices} pageTitle={null} selectedSetName={selectedSetName} selectedArtistName={artistName(cardDataResolved.artists)} />
+		<CardGrid cards={allCards} {sets} rarities={cardDataResolved.rarities} types={cardDataResolved.types} artists={cardDataResolved.artists} pokemons={cardDataResolved.pokemons} prices={cardDataResolved.prices} pageTitle={null} selectedSetName={selectedSetName} selectedArtistName={artistName(cardDataResolved.artists)} />
 	</main>
 {:catch error}
 	<p style="color: red">Error loading cards: {error.message}</p>

@@ -1,14 +1,13 @@
-import { getPokemons, getJapaneseSets, getTypes, getJapaneseCards, getJapanesePrices } from '$helpers/supabase-data';
-import { distinctArtists, distinctRarities } from '$helpers/card-grid';
-import type { FullCard } from '$lib/types';
+import { getJapaneseSets } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, setSchema } from '$helpers/seo';
 
+/**
+ * SEO only: the cards, prices, pokemons and types the grid needs come from `/api/japan-cards` through `+page.ts`.
+ * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends whatever it returns.
+ */
 export const load: PageServerLoad = async ({ parent, url }) => {
 	const parentData = await parent();
-
-	// Japanese cards have their own cardmarket prices, keyed by the same card codes.
-	const pricesResolved = await getJapanesePrices();
 
 	const layoutDataFromParent = {
 		user: parentData.user,
@@ -20,13 +19,7 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 		collectionItems: parentData.collectionItems
 	};
 
-	const [japaneseSetsData, types, pokemons] = await Promise.all([
-		getJapaneseSets(),
-		getTypes(),
-		getPokemons()
-	]);
-
-	const sets = japaneseSetsData;
+	const sets = await getJapaneseSets();
 	sets.sort((a, b) => a.name.localeCompare(b.name));
 
 	const setParam = url.searchParams.get('set');
@@ -50,42 +43,9 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 		}
 	}
 
-	const cardDataPromise = (async () => {
-		const allCards: FullCard[] = await getJapaneseCards();
-
-		// An artless card is still a real card: deduplicating on `image` hid 8899 of the 12781 Japanese cards.
-		// TCGdex gives every card its own art URL, so this only ever removed the cards it has no art for.
-		const filteredCards = allCards.filter(card => Boolean(card.setName));
-
-		const pokemonCards = filteredCards.filter(card => card.supertype === 'Pokémon');
-		const trainerCards = filteredCards.filter(card => card.supertype === 'Trainer');
-		const energyCards = filteredCards.filter(card => card.supertype === 'Energy');
-		const uniquePokemon = new Set(pokemonCards.map(card => card.pokemonNumber).filter(Boolean)).size;
-
-		return {
-			allCards: filteredCards,
-			// Derived from the Japanese cards themselves; reading them from `cards` listed rarities and artists this page never shows.
-			artists: distinctArtists(filteredCards),
-			rarities: distinctRarities(filteredCards),
-			stats: {
-				totalCards: filteredCards.length,
-				uniquePokemon,
-				pokemonCards: pokemonCards.length,
-				trainerCards: trainerCards.length,
-				energyCards: energyCards.length,
-			},
-		};
-	})();
-
 	return {
 		...layoutDataFromParent,
-		streamed: {
-			cardData: cardDataPromise
-		},
 		sets,
-		types,
-		pokemons,
-		prices: pricesResolved,
 		title: ogTitle,
 		description: ogDescription,
 		image: ogImage ?? layoutDataFromParent.image,
