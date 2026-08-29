@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { scrollProgress } from '$helpers/scrollStore';
+	import { scrollProgress } from '$stores/scrollStore';
 </script>
 
 <div class="relative z-10 h-[3px] w-full overflow-hidden max-lg:h-[2px]">

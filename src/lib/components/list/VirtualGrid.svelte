@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ScrollToBottom from '@components/list/ScrollToBottom.svelte';
 	import ScrollToTop from '@components/list/ScrollToTop.svelte';
-	import { setScrollProgress } from '$helpers/scrollStore';
+	import { setScrollProgress } from '$stores/scrollStore';
 	import { fade } from 'svelte/transition';
 	import type { FullCard } from '$lib/types';
 

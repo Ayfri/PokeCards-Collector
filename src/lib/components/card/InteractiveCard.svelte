@@ -3,15 +3,15 @@
 	import MissingCardArt from '@components/card/MissingCardArt.svelte';
 	import type { FullCard, Pokemon, Set } from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
+	import { throttle } from '$helpers/throttle';
 
 	
 	interface Props {
-		// --- Props ---
 		card: FullCard | undefined;
 		currentSet: Set | undefined;
 		currentType: string;
-		handlePokemonImageError: (event: Event) => void; // Pass through if CardImage needs it
-		pokemon: Pokemon | undefined; // For alt text and class logic
+		handlePokemonImageError: (event: Event) => void;
+		pokemon: Pokemon | undefined;
 	}
 
 	let {
@@ -22,24 +22,10 @@
 		pokemon
 	}: Props = $props();
 
-	// --- Internal State ---
 	let centerCard = $state<HTMLElement>();
-	const maxRotate = 25; // Max rotation in degrees
+	const maxRotate = 25;
 
-	// --- Functions ---
-	function throttle(fn: Function, delay: number) {
-		let canRun = true;
-		return (...args: any[]) => {
-			if (canRun) {
-				fn(...args);
-				canRun = false;
-				setTimeout(() => {
-					canRun = true;
-				}, delay);
-			}
-		};
-	}
-
+	/** The tilt follows the pointer, so it is capped to one update per frame. */
 	const throttledUpdateCardStyle = throttle((clientX: number, clientY: number) => {
 		if (!centerCard) return;
 		const rect = centerCard.getBoundingClientRect();
