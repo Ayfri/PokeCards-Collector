@@ -8,7 +8,8 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 
 	try {
-		const response = await fetch(imageUrl);
+		// `cacheEverything` makes the colo hold the upstream image, so a repeat proxy hit never leaves Cloudflare.
+		const response = await fetch(imageUrl, { cf: { cacheEverything: true, cacheTtl: 31536000 } });
 		if (!response.ok) {
 			throw error(response.status, 'Failed to fetch image');
 		}
