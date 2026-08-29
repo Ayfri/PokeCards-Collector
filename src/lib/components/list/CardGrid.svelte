@@ -250,14 +250,7 @@
 		<!-- Left Side (Title conditional based on prop, Counts always present) -->
 		<div class="flex flex-col md:flex-row items-center md:ml-14">
 			{#if pageTitle}
-				<div>
-					<PageTitle title={pageTitle} />
-					{#if pageTitle === 'Japanese Cards'}
-						<div class="bg-yellow-200 text-yellow-900 border-l-4 border-yellow-500 p-2 rounded-sm shadow-sm max-w-xl mx-auto mt-2 text-center text-xs">
-							⚠️ Some features may be missing because Japanese data is not yet complete.
-						</div>
-					{/if}
-				</div>
+				<PageTitle title={pageTitle} />
 			{/if}
 
 			<!-- Counts (on same line for desktop, below for mobile) -->

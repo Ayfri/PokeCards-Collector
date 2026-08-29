@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import CardDisplay from "@components/card/CardDisplay.svelte";
+	import CardHeading from "@components/card/CardHeading.svelte";
 	import type { FullCard, Pokemon, Set, PriceData } from "$lib/types";
 	import { fade } from 'svelte/transition';	
 
@@ -14,15 +15,17 @@
 	const pokemonCards = $derived(data.pokemonCards as FullCard[]);
 	const pokemons = $derived(data.pokemons as Pokemon[]);
 	const sets = $derived(data.sets as Set[]);
+	const card = $derived(data.card as FullCard);
 	const pokemon = $derived(data.pokemon as Pokemon);
 	const prices = $derived((data.prices as Record<string, PriceData> | undefined) || {});
 	
-	// This will ensure all components know we're in the Japanese card context
 	const isJpContext = true;
 </script>
 
 <main class="max-w-[100vw] p-4 mb-4 text-lg text-white">
 	<div class="mt-4 mx-auto flex flex-col gap-8 w-[90%] -z-10">
+		<CardHeading card={card} set={sets.find(set => set.name === card.setName)} />
+
 		{#if !pokemonCards || pokemonCards.length === 0}
 			<p class="text-center text-lg">Loading...</p>
 		{:else}

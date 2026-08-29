@@ -6,7 +6,6 @@
 	import { page } from "$app/state";
 	import { onMount } from "svelte";
 	import { NO_IMAGES } from "$lib/images";
-	import { fly, fade } from "svelte/transition";
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	// Import icons
@@ -101,11 +100,6 @@
 		easing: "cubic-bezier(0.5, 0, 0.5, 1)",
 	};
 
-	let ready = $state(false);
-	onMount(() => {
-		ready = true;
-	});
-
 	let isAuthModalOpen = $state(false);
 	let authMode: 'login' | 'register' = $state('login');
 	function openAuthModal(mode: 'login' | 'register') {
@@ -117,245 +111,239 @@
 
 <main class="container mx-auto px-4 py-8 text-white overflow-x-hidden">
 	<!-- Hero section with welcome message -->
-	{#if ready}
-		<section
-			class="flex flex-col md:flex-row gap-8 mb-20"
-			in:fly={{ y: 20, duration: 500, delay: 100 }}
-			out:fade={{ duration: 200 }}
-		>
-			<div class="flex-1">
-				<h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance text-gold-400">
-					Welcome to PokéCards-Collector
-				</h1>
-				<p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl text-pretty">
-					Your ultimate resource for Pokémon TCG cards. Explore our
-					complete collection, track price trends, and manage your
-					personal collection.
-				</p>
+	<section class="flex flex-col md:flex-row gap-8 mb-20" style="--intro-delay: 100ms">
+		<div class="flex-1">
+			<h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance text-gold-400">
+				Welcome to PokéCards-Collector
+			</h1>
+			<p class="text-lg md:text-xl text-gray-300 mb-8 max-w-2xl text-pretty">
+				Your ultimate resource for Pokémon TCG cards. Explore our
+				complete collection, track price trends, and manage your
+				personal collection.
+			</p>
 
-				<div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-10">
-					<a
-						href="/cards-list"
-						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-hidden"
-						title="Browse every English card"
-					>
-						{#if !NO_IMAGES}
-							<div class="flex justify-center mb-2">
-								<CardIcon size={24} class="text-gold-400" />
-							</div>
-						{/if}
-						<div
-							class="flex items-center justify-center w-full"
-						>
-							<ChevronRight
-								size={12}
-								class="text-gold-400 shrink-0 mr-1"
-								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
-							/>
-							<span
-								class="text-xl md:text-2xl font-bold text-gold-400"
-							>
-								<CountUp end={stats.totalCards} duration={4} />
-							</span>
-							<ChevronLeft
-								size={12}
-								class="text-gold-400 shrink-0 ml-1"
-								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
-							/>
+			<div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-10">
+				<a
+					href="/cards-list"
+					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-hidden"
+					title="Browse every English card"
+				>
+					{#if !NO_IMAGES}
+						<div class="flex justify-center mb-2">
+							<CardIcon size={24} class="text-gold-400" />
 						</div>
-						<p class="text-sm text-gray-400">Cards</p>
-					</a>
-					<a
-						href="/japan"
-						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-hidden"
-						title="Browse the Japanese catalogue"
+					{/if}
+					<div
+						class="flex items-center justify-center w-full"
 					>
-						{#if !NO_IMAGES}
-							<div class="flex justify-center mb-2">
-								<GlobeIcon size={24} class="text-gold-400" />
-							</div>
-						{/if}
-						<div
-							class="flex items-center justify-center w-full"
-						>
-							<ChevronRight
-								size={12}
-								class="text-gold-400 shrink-0 mr-1"
-								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
-							/>
-							<span
-								class="text-xl md:text-2xl font-bold text-gold-400"
-							>
-								<CountUp end={stats.totalJapaneseCards} duration={4} />
-							</span>
-							<ChevronLeft
-								size={12}
-								class="text-gold-400 shrink-0 ml-1"
-								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
-							/>
-						</div>
-						<p class="text-sm text-gray-400">JP Cards</p>
-					</a>
-					<a
-						href="/cards-list?type=pokemon"
-						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
-						title="Browse the Pokemon cards"
-					>
-						{#if !NO_IMAGES}
-							<div class="flex justify-center mb-2">
-								<PokemonIcon size={24} class="text-gold-400" />
-							</div>
-						{/if}
-						<div
-							class="flex items-center justify-center w-full"
-						>
-							<ChevronRight
-								size={12}
-								class="text-gold-400 shrink-0 mr-1"
-								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
-							/>
-							<span
-								class="text-xl md:text-2xl font-bold text-gold-400"
-							>
-								<CountUp
-									end={stats.uniquePokemon}
-									duration={3.5}
-								/>
-							</span>
-							<ChevronLeft
-								size={12}
-								class="text-gold-400 shrink-0 ml-1"
-								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
-							/>
-						</div>
-						<p class="text-sm text-gray-400">Pokémon</p>
-					</a>
-					<a
-						href="/sets"
-						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
-						title="Browse every set"
-					>
-						{#if !NO_IMAGES}
-							<div class="flex justify-center mb-2">
-								<SetIcon size={24} class="text-gold-400" />
-							</div>
-						{/if}
-						<div
-							class="flex items-center justify-center w-full"
-						>
-							<ChevronRight
-								size={12}
-								class="text-gold-400 shrink-0 mr-1"
-								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
-							/>
-							<span
-								class="text-xl md:text-2xl font-bold text-gold-400"
-							>
-								<CountUp end={sets.length} duration={2} />
-							</span>
-							<ChevronLeft
-								size={12}
-								class="text-gold-400 shrink-0 ml-1"
-								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
-							/>
-						</div>
-						<p class="text-sm text-gray-400">Sets</p>
-					</a>
-					<a
-						href="/artists"
-						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
-						title="Browse every illustrator"
-					>
-						{#if !NO_IMAGES}
-							<div class="flex justify-center mb-2">
-								<PaintbrushIcon
-									size={24}
-									class="text-gold-400"
-								/>
-							</div>
-						{/if}
-						<div
-							class="flex items-center justify-center w-full"
-						>
-							<ChevronRight
-								size={12}
-								class="text-gold-400 shrink-0 mr-1"
-								style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
-							/>
-							<span
-								class="text-xl md:text-2xl font-bold text-gold-400"
-							>
-								<CountUp end={artistsCount} duration={2.5} />
-							</span>
-							<ChevronLeft
-								size={12}
-								class="text-gold-400 shrink-0 ml-1"
-								style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
-							/>
-						</div>
-						<p class="text-sm text-gray-400">Artists</p>
-					</a>
-				</div>
-
-				<div class="flex flex-wrap gap-4 mb-10 md:mb-0">
-					<a
-						href="/cards-list"
-						class="group px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-400 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900"
-					>
-						Explore Cards
-						<ArrowRight
-							size={18}
-							class="group-hover:translate-x-1 transition-all duration-400"
+						<ChevronRight
+							size={12}
+							class="text-gold-400 shrink-0 mr-1"
+							style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 						/>
-					</a>
-				</div>
+						<span
+							class="text-xl md:text-2xl font-bold text-gold-400"
+						>
+							<CountUp end={stats.totalCards} duration={4} />
+						</span>
+						<ChevronLeft
+							size={12}
+							class="text-gold-400 shrink-0 ml-1"
+							style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+						/>
+					</div>
+					<p class="text-sm text-gray-400">Cards</p>
+				</a>
+				<a
+					href="/japan"
+					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-hidden"
+					title="Browse the Japanese catalogue"
+				>
+					{#if !NO_IMAGES}
+						<div class="flex justify-center mb-2">
+							<GlobeIcon size={24} class="text-gold-400" />
+						</div>
+					{/if}
+					<div
+						class="flex items-center justify-center w-full"
+					>
+						<ChevronRight
+							size={12}
+							class="text-gold-400 shrink-0 mr-1"
+							style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+						/>
+						<span
+							class="text-xl md:text-2xl font-bold text-gold-400"
+						>
+							<CountUp end={stats.totalJapaneseCards} duration={4} />
+						</span>
+						<ChevronLeft
+							size={12}
+							class="text-gold-400 shrink-0 ml-1"
+							style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+						/>
+					</div>
+					<p class="text-sm text-gray-400">JP Cards</p>
+				</a>
+				<a
+					href="/cards-list?type=pokemon"
+					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+					title="Browse the Pokemon cards"
+				>
+					{#if !NO_IMAGES}
+						<div class="flex justify-center mb-2">
+							<PokemonIcon size={24} class="text-gold-400" />
+						</div>
+					{/if}
+					<div
+						class="flex items-center justify-center w-full"
+					>
+						<ChevronRight
+							size={12}
+							class="text-gold-400 shrink-0 mr-1"
+							style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+						/>
+						<span
+							class="text-xl md:text-2xl font-bold text-gold-400"
+						>
+							<CountUp
+								end={stats.uniquePokemon}
+								duration={3.5}
+							/>
+						</span>
+						<ChevronLeft
+							size={12}
+							class="text-gold-400 shrink-0 ml-1"
+							style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+						/>
+					</div>
+					<p class="text-sm text-gray-400">Pokémon</p>
+				</a>
+				<a
+					href="/sets"
+					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+					title="Browse every set"
+				>
+					{#if !NO_IMAGES}
+						<div class="flex justify-center mb-2">
+							<SetIcon size={24} class="text-gold-400" />
+						</div>
+					{/if}
+					<div
+						class="flex items-center justify-center w-full"
+					>
+						<ChevronRight
+							size={12}
+							class="text-gold-400 shrink-0 mr-1"
+							style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+						/>
+						<span
+							class="text-xl md:text-2xl font-bold text-gold-400"
+						>
+							<CountUp end={sets.length} duration={2} />
+						</span>
+						<ChevronLeft
+							size={12}
+							class="text-gold-400 shrink-0 ml-1"
+							style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+						/>
+					</div>
+					<p class="text-sm text-gray-400">Sets</p>
+				</a>
+				<a
+					href="/artists"
+					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+					title="Browse every illustrator"
+				>
+					{#if !NO_IMAGES}
+						<div class="flex justify-center mb-2">
+							<PaintbrushIcon
+								size={24}
+								class="text-gold-400"
+							/>
+						</div>
+					{/if}
+					<div
+						class="flex items-center justify-center w-full"
+					>
+						<ChevronRight
+							size={12}
+							class="text-gold-400 shrink-0 mr-1"
+							style="animation: bounceRight {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+						/>
+						<span
+							class="text-xl md:text-2xl font-bold text-gold-400"
+						>
+							<CountUp end={artistsCount} duration={2.5} />
+						</span>
+						<ChevronLeft
+							size={12}
+							class="text-gold-400 shrink-0 ml-1"
+							style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
+						/>
+					</div>
+					<p class="text-sm text-gray-400">Artists</p>
+				</a>
 			</div>
 
-			<div class="flex-1 flex justify-center items-center mt-8 lg:mt-0">
-				{#if latestSet}
-					<a
-						href="/cards-list?set={encodeURIComponent(
-							latestSet.name,
-						)}"
-						class="relative w-full max-w-lg transform transition-all duration-300 hover:scale-105 block"
-					>
-						{#if !NO_IMAGES}
-							<img
-								src={latestSet.logo}
-								alt="{latestSet.name} logo"
-								class="w-[95%] mb-2 object-contain mx-auto rounded-lg shadow-md"
-							/>
-						{/if}
-						<div
-							class="absolute bottom-0 left-0 right-0 bg-linear-to-t from-gray-900/90 via-gray-900/50 to-transparent p-4 rounded-b-2xl"
-						>
-							<h3
-								class="text-xl font-bold text-gold-400 w-fit drop-shadow-[0_0_7px_black]"
-							>
-								{latestSet.name}
-							</h3>
-							<p
-								class="text-sm text-gray-300 w-fit drop-shadow-[0_0_7px_black]"
-							>
-								Released on {formatDate(latestSet.releaseDate)}
-							</p>
-						</div>
-					</a>
-				{/if}
+			<div class="flex flex-wrap gap-4 mb-10 md:mb-0">
+				<a
+					href="/cards-list"
+					class="group px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-400 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900"
+				>
+					Explore Cards
+					<ArrowRight
+						size={18}
+						class="group-hover:translate-x-1 transition-all duration-400"
+					/>
+				</a>
 			</div>
-		</section>
-	{/if}
+		</div>
+
+		<div class="flex-1 flex flex-col justify-center items-center gap-3 mt-8 lg:mt-0">
+			{#if latestSet}
+				<h2 class="text-lg font-semibold uppercase tracking-[0.2em] text-gold-400">Latest set</h2>
+				<a
+					href="/cards-list?set={encodeURIComponent(
+						latestSet.name,
+					)}"
+					class="relative w-full max-w-lg transform transition-all duration-300 hover:scale-105 block"
+				>
+					{#if !NO_IMAGES}
+						<img
+							src={latestSet.logo}
+							alt="{latestSet.name} logo"
+							class="w-[95%] mb-2 object-contain mx-auto rounded-lg shadow-md"
+						/>
+					{/if}
+					<div
+						class="absolute bottom-0 left-0 right-0 bg-linear-to-t from-gray-900/90 via-gray-900/50 to-transparent p-4 rounded-b-2xl"
+					>
+						<h3
+							class="text-xl font-bold text-gold-400 w-fit drop-shadow-[0_0_7px_black]"
+						>
+							{latestSet.name}
+						</h3>
+						<p
+							class="text-sm text-gray-300 w-fit drop-shadow-[0_0_7px_black]"
+						>
+							Released on {formatDate(latestSet.releaseDate)}
+						</p>
+					</div>
+				</a>
+			{/if}
+		</div>
+	</section>
 
 	<div
-		class={['w-full max-w-[800px] mx-auto my-16 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent', !ready && 'hidden']}
+		class="w-full max-w-[800px] mx-auto my-16 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
 	<!-- Latest set section -->
-	{#if latestSet && ready}
+	{#if latestSet}
 		<section
 			class="mb-20"
-			in:fly={{ y: 20, duration: 500, delay: 200 }}
-			out:fade={{ duration: 200 }}
+			style="--intro-delay: 200ms"
 		>
 			<div
 				class="flex flex-col sm:flex-row justify-between items-center mb-8"
@@ -489,15 +477,14 @@
 	{/if}
 
 	<div
-		class={['w-full max-w-[200px] mx-auto my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent', !ready && 'hidden']}
+		class="w-full max-w-[200px] mx-auto my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
 	<!-- Most expensive cards latest set section -->
-	{#if mostExpensiveLatestSetCards && mostExpensiveLatestSetCards.length > 0 && ready}
+	{#if mostExpensiveLatestSetCards && mostExpensiveLatestSetCards.length > 0}
 		<section
 			class="mb-20"
-			in:fly={{ y: 20, duration: 500, delay: 300 }}
-			out:fade={{ duration: 200 }}
+			style="--intro-delay: 300ms"
 		>
 			<div class="flex justify-between items-center mb-8">
 				<h2
@@ -560,11 +547,10 @@
 	{/if}
 
 	<!-- Most expensive cards section -->
-	{#if mostExpensiveCards && mostExpensiveCards.length > 0 && ready}
+	{#if mostExpensiveCards && mostExpensiveCards.length > 0}
 		<section
 			class="mt-20 mb-20"
-			in:fly={{ y: 20, duration: 500, delay: 300 }}
-			out:fade={{ duration: 200 }}
+			style="--intro-delay: 300ms"
 		>
 			<div class="flex justify-between items-center mb-8">
 				<h2
@@ -627,15 +613,13 @@
 	{/if}
 
 	<div
-		class={['w-full max-w-[800px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent', !ready && 'hidden']}
+		class="w-full max-w-[800px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
 	<!-- Feature Highlights Section -->
-	{#if ready}
 		<section
 			class="mb-20"
-			in:fly={{ y: 30, duration: 600, delay: 400 }}
-			out:fade={{ duration: 200 }}
+			style="--intro-delay: 400ms"
 		>
 			<h2
 				class="text-2xl md:text-3xl font-bold text-center text-gold-400 mb-12"
@@ -737,14 +721,11 @@
 				</div>
 			</div>
 		</section>
-	{/if}
 
 	<!-- Binder Builder Section -->
-	{#if ready}
 		<section
 			class="mb-20"
-			in:fly={{ y: 30, duration: 600, delay: 450 }}
-			out:fade={{ duration: 200 }}
+			style="--intro-delay: 450ms"
 		>
 			<div class="feature-cards-container">
 				<div
@@ -856,18 +837,15 @@
 				</div>
 			</div>
 		</section>
-	{/if}
 
 	<div
-		class={['w-full max-w-[200px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent', !ready && 'hidden']}
+		class="w-full max-w-[200px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
 	<!-- Call to Action Section -->
-	{#if ready}
 		<section
 			class="text-center bg-linear-to-br from-gray-800 to-gray-900 p-8 rounded-lg shadow-xl mb-20 border border-gold-600/30"
-			in:fade={{ duration: 700, delay: 500 }}
-			out:fade={{ duration: 200 }}
+			style="--intro-delay: 500ms"
 		>
 			{#if session}
 				<h2 class="text-2xl md:text-3xl font-bold text-gold-400 mb-8">
@@ -928,12 +906,28 @@
 				</div>
 			{/if}
 		</section>
-	{/if}
 
 	<AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} initialMode={authMode} />
 </main>
 
 <style>
+	/* The intro used to be a Svelte `in:` transition behind an `onMount` flag, which shipped an empty document to
+	   every crawler. As CSS it plays on hydrated markup, so the page renders in full on the server. */
+	section {
+		animation: intro 500ms var(--intro-delay, 0ms) both;
+	}
+
+	@keyframes intro {
+		from { opacity: 0; transform: translateY(20px); }
+		to { opacity: 1; transform: none; }
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		section {
+			animation: none;
+		}
+	}
+
 	.feature-cards-container {
 		/* Use the same grid structure as the feature cards to ensure identical width */
 		display: grid;

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import CardDisplay from "@components/card/CardDisplay.svelte";
+	import CardHeading from "@components/card/CardHeading.svelte";
 	import type { Card, Pokemon, Set, PriceData } from "$lib/types";
 	import { fade } from 'svelte/transition';
 
@@ -20,6 +21,8 @@
 
 <main class="max-w-[100vw] p-4 mb-4 text-lg text-white">
 	<div class="mt-4 mx-auto flex flex-col gap-8 w-[90%] -z-10">
+		<CardHeading card={targetCard} set={sets.find(set => set.name === targetCard.setName)} />
+
 		{#if !pokemonCards?.length || !targetCard}
 			<p class="text-center text-lg">Chargement en cours...</p>
 		{:else}

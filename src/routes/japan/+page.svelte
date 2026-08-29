@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { filterSet, filterArtist, filterSupertype, filterName, filterType, sortBy, sortOrder, mostExpensiveOnly, filterRarity } from '$helpers/filters';
 	import { page } from '$app/state';
+	import GridHeading from '$lib/components/list/GridHeading.svelte';
 	import BouncyLoader from '@components/BouncyLoader.svelte';
 
 	interface Props {
@@ -95,6 +96,12 @@
 	const artistName = (artists: string[]) => $filterArtist !== 'all' ? (artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null;
 </script>
 
+<GridHeading
+	description={data.description}
+	note="Some features may be missing: the Japanese catalogue is not yet complete."
+	title={data.title}
+/>
+
 {#await data.streamed.cardData}
 	<div class="flex flex-col items-center justify-center text-center text-xl mt-12">
 		<BouncyLoader size={40} />
@@ -103,7 +110,7 @@
 {:then cardDataResolved}
 	{@const allCards = cardDataResolved.allCards}
 	<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
-		<CardGrid cards={allCards} {sets} rarities={cardDataResolved.rarities} {types} artists={cardDataResolved.artists} {pokemons} {prices} pageTitle="Japanese Cards" selectedSetName={selectedSetName} selectedArtistName={artistName(cardDataResolved.artists)} />
+		<CardGrid cards={allCards} {sets} rarities={cardDataResolved.rarities} {types} artists={cardDataResolved.artists} {pokemons} {prices} pageTitle={null} selectedSetName={selectedSetName} selectedArtistName={artistName(cardDataResolved.artists)} />
 	</main>
 {:catch error}
 	<p style="color: red">Error loading cards: {error.message}</p>

@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	import { filterSet, filterArtist, filterSupertype, filterName, filterType, sortBy, sortOrder, mostExpensiveOnly, filterRarity, resetFilters } from '$lib/helpers/filters';
 	import { page } from '$app/state';
+	import GridHeading from '$lib/components/list/GridHeading.svelte';
 	import Loader from "$lib/components/Loader.svelte";
 	import { cardSize } from '$lib/stores/gridStore';
 
@@ -110,6 +111,8 @@
 </script>
 
 <main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
+	<GridHeading description={data.description} title={data.title} />
+
 	{#await data.streamed.grid}
 		<div class="flex flex-1 justify-center items-start pt-32">
 			<Loader message="Loading cards..." />
@@ -123,7 +126,7 @@
 			artists={grid.artists}
 			pokemons={data.pokemons}
 			prices={grid.prices}
-			pageTitle="Cards List"
+			pageTitle={null}
 			selectedSetName={selectedSetName}
 			selectedArtistName={$filterArtist !== 'all' ? (grid.artists.find(artist => artist.toLowerCase() === $filterArtist) ?? null) : null}
 			{lowRes}
