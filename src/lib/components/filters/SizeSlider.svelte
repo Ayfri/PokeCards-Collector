@@ -28,11 +28,7 @@
 			<button
 				type="button"
 				onclick={() => setSize(index)}
-				class="relative z-10 w-6 h-6 rounded-full transition-colors duration-150 flex items-center justify-center"
-				class:bg-gold-400={$cardSize === index}
-				class:text-black={$cardSize === index}
-				class:text-gray-400={$cardSize !== index}
-				class:hover:bg-gray-600={$cardSize !== index}
+				class={['relative z-10 w-6 h-6 rounded-full transition-colors duration-150 flex items-center justify-center', $cardSize === index ? 'bg-gold-400 text-black' : 'text-gray-400 hover:bg-gray-600']}
 				aria-label={`Set grid size to ${name}`}
 				aria-pressed={$cardSize === index}
 				title={`Set grid size to ${name}`}

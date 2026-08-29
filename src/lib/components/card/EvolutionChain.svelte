@@ -24,51 +24,42 @@
 		card
 	}: Props = $props();
 	
-	// Determine if we're in the Japanese cards context by checking the URL
 	let isJapaneseContext = $state(false);
 	
 	const baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
 	
-	// Function to handle navigation to another Pokémon card
 	function navigateToPokemon(cardCode: string) {
 		setNavigationLoading(true);
 		goto(`${baseCardUrl}${cardCode}/`);
 	}
 	
 	onMount(() => {
-		// Check if we're in Japanese context based on URL
 		isJapaneseContext = window.location.pathname.includes('/jp-card/');
 	});
 	
 	afterNavigate(() => {
-		// Update Japanese context check after navigation
 		isJapaneseContext = window.location.pathname.includes('/jp-card/');
 	});
 
 	function buildEvolutionChain(card: FullCard) {
-		// Get current Pokemon from card
 		const currentPokemon = pokemons.find(p => p.id === card.pokemonNumber);
 		if (!currentPokemon) {
 			console.error(`Pokemon #${card.pokemonNumber} not found in pokemons array`);
 			return [];
 		}
 
-		// Find pre-evolution if it exists
 		const preEvolution = currentPokemon.evolves_from ?
 			pokemons.find(pokemon => pokemon.id === currentPokemon.evolves_from) :
 			undefined;
 
-		// Find pre-pre-evolution if it exists (for 3-stage chains)
 		const prePreEvolution = preEvolution?.evolves_from ?
 			pokemons.find(pokemon => pokemon.id === preEvolution.evolves_from) :
 			undefined;
 
-		// Find evolutions if they exist
 		const evolutions = currentPokemon.evolves_to ?
 			currentPokemon.evolves_to.map(evoId => pokemons.find(pokemon => pokemon.id === evoId)) :
 			[];
 
-		// Find further evolutions if they exist
 		const furtherEvolutions = evolutions.length ?
 			evolutions.flatMap(evo =>
 				evo?.evolves_to ?
@@ -77,7 +68,6 @@
 			) :
 			[];
 
-		// Build the full chain
 		const fullChain = [];
 
 		if (prePreEvolution) fullChain.push(prePreEvolution);
@@ -90,7 +80,6 @@
 			if (evo) fullChain.push(evo);
 		});
 
-		// Remove duplicates if any
 		const uniqueChain = fullChain.filter((pokemon, index, self) =>
 			index === self.findIndex(p => p.id === pokemon.id)
 		);
@@ -110,7 +99,6 @@
 				<button
 					onclick={() => representativeCard ? navigateToPokemon(representativeCard.cardCode) : navigateToPokemon(pokemon.id.toString())}
 					class="evolution-image-wrapper relative"
-					class:current={pokemon.id === currentPokemon?.id}
 				>
 					<div class="pokemon-number text-[0.6rem] absolute -top-1 -right-1 bg-black text-white rounded-full w-6 h-6 flex items-center justify-center z-10">
 						{pokemon.id}

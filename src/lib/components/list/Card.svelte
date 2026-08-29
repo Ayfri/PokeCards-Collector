@@ -42,7 +42,6 @@
 	/** Maximum quantity allowed per card, mirrors the backend limit. */
 	const MAX_CARD_QUANTITY = 99;
 
-	const rarity = $derived(card.rarity ?? 'Unknown');
 	const types = $derived(card.types ?? '');
 	const cardCode = $derived(card.cardCode);
 
@@ -59,14 +58,12 @@
 	const pokemon = $derived(parsedCardCode.pokemonNumber ? pokemonMap.get(parsedCardCode.pokemonNumber) : null);
 	const set = $derived(getCardSet(cardCode, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null });
 
-	// Access user and profile from page state
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
 
 	const isInWishlist = $derived($wishlistStore.has(cardCode));
 	let isUpdatingWishlist = $state(false);
 
-	// Get the count of the card in the collection from the store
 	const collectionCount = $derived($collectionStore.get(cardCode) || 0);
 	let isUpdatingCollection = $state(false);
 
@@ -79,17 +76,14 @@
 		event.preventDefault();
 		event.stopPropagation();
 
-		// Use user/profile from $page.data
 		if (!user || !profile) return;
 
 		isUpdatingWishlist = true;
 
 		try {
 			if (isInWishlist) {
-				// Use profile.username from $page.data
 				await removeCardFromWishlist(profile.username, cardCode);
 			} else {
-				// Use profile.username from $page.data
 				await addCardToWishlist(profile.username, cardCode);
 			}
 		} catch (error) {
@@ -103,13 +97,11 @@
 		event.preventDefault();
 		event.stopPropagation();
 
-		// Use user/profile from $page.data
 		if (!user || !profile || isUpdatingCollection || isCollectionLimitReached) return;
 
 		isUpdatingCollection = true;
 
 		try {
-			// Use profile.username from $page.data
 			await addCardToCollection(profile.username, cardCode);
 		} catch (error) {
 			console.error('Error adding card to collection:', error);
@@ -122,13 +114,11 @@
 		event.preventDefault();
 		event.stopPropagation();
 
-		// Use user/profile from $page.data
 		if (!user || !profile || isUpdatingCollection || collectionCount === 0) return;
 
 		isUpdatingCollection = true;
 
 		try {
-			// Use profile.username from $page.data
 			await removeCardFromCollection(profile.username, cardCode);
 		} catch (error) {
 			console.error('Error removing card from collection:', error);
@@ -152,7 +142,6 @@
 		href={cardLink}
 		rel="dofollow"
 	></a>
-	<div class:list={rarity.toLowerCase()}></div>
 	{#if !NO_IMAGES}
 		<div
 			class={`aura absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-(--type-color) will-change-transform

@@ -346,10 +346,8 @@
 		</section>
 	{/if}
 
-	<!-- Separator after hero section -->
 	<div
-		class="w-full max-w-[800px] mx-auto my-16 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
-		class:hidden={!ready}
+		class={['w-full max-w-[800px] mx-auto my-16 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent', !ready && 'hidden']}
 	></div>
 
 	<!-- Latest set section -->
@@ -490,10 +488,8 @@
 		</section>
 	{/if}
 
-	<!-- Separator before Most Expensive Cards section -->
 	<div
-		class="w-full max-w-[200px] mx-auto my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
-		class:hidden={!ready}
+		class={['w-full max-w-[200px] mx-auto my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent', !ready && 'hidden']}
 	></div>
 
 	<!-- Most expensive cards latest set section -->
@@ -630,10 +626,8 @@
 		</section>
 	{/if}
 
-	<!-- Separator -->
 	<div
-		class="w-full max-w-[800px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
-		class:hidden={!ready}
+		class={['w-full max-w-[800px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent', !ready && 'hidden']}
 	></div>
 
 	<!-- Feature Highlights Section -->
@@ -864,10 +858,8 @@
 		</section>
 	{/if}
 
-	<!-- Separator -->
 	<div
-		class="w-full max-w-[200px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
-		class:hidden={!ready}
+		class={['w-full max-w-[200px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent', !ready && 'hidden']}
 	></div>
 
 	<!-- Call to Action Section -->
