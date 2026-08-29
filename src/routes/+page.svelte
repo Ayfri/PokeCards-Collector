@@ -41,10 +41,8 @@
 	const prices = $derived(data.prices);
 	const session = $derived(page.data.session);
 
-	// Récupérer les données des cartes de la page.server.ts
 	const allCards = $derived(data.allCards || []);
 
-	// Calculer les statistiques du dernier set
 	const latestSetCards = $derived(latestSet
 		? allCards.filter(
 				(card: FullCard) =>
@@ -63,7 +61,6 @@
 		(card: FullCard) => card.supertype === "Energy",
 	));
 
-	// Calculer la valeur totale du set
 	const totalSetValue = $derived(latestSetCards.reduce(
 		(sum: number, card: FullCard) =>
 			sum + (prices[card.cardCode]?.simple || 0),

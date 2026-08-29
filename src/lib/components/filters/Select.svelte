@@ -17,7 +17,6 @@
 		activeCondition = value !== 'all'
 	}: Props = $props();
 
-	// Event dispatcher pour la mise à jour de la valeur
 	function handleChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
 		value = target.value;

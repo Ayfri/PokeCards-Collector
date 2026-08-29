@@ -7,15 +7,14 @@ interface CardOfTheDay extends FullCard {
 	price: number;
 }
 
-// Cache des données
 let allCards: FullCard[] | null = null;
 let prices: Record<string, PriceData> | null = null;
 let cardOfTheDay: CardOfTheDay | null = null;
 let lastLoadDate = '';
 
-// Fonction pour générer une carte du jour basée sur la date
+/** Picks the card of the day; the date is the only seed, so every player gets the same one. */
 function selectDailyCard(cards: FullCard[], priceData: Record<string, PriceData>): CardOfTheDay | null {
-	// Filtrer les cartes avec prix >= 3€ et qui ne sont pas des cartes "test" (pokemonNumber !== 9999)
+	// Cheap cards and the 9999 sentinel make for unguessable rounds, so they are excluded.
 	const eligibleCards: CardOfTheDay[] = [];
 
 	for (const card of cards) {
@@ -30,14 +29,12 @@ function selectDailyCard(cards: FullCard[], priceData: Record<string, PriceData>
 
 	if (eligibleCards.length === 0) return null;
 
-	// Utiliser la date du jour pour générer un index reproductible
 	const today = new Date();
 	const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
 
-	// Trier les cartes par cardCode pour avoir un ordre déterministe
+	// Sorting on cardCode pins the order, otherwise the same seed picks a different card between runs.
 	eligibleCards.sort((a, b) => a.cardCode.localeCompare(b.cardCode));
 
-	// Utiliser un simple modulo avec la seed pour sélectionner la carte
 	const index = seed % eligibleCards.length;
 	return eligibleCards[index];
 }
@@ -45,7 +42,7 @@ function selectDailyCard(cards: FullCard[], priceData: Record<string, PriceData>
 async function loadDataIfNeeded(): Promise<boolean> {
 	const today = new Date().toDateString();
 
-	// Charger les données si c'est un nouveau jour ou si les données ne sont pas en cache
+	// Reload once per day, the cached tables are otherwise reused across requests.
 	if (lastLoadDate !== today || !allCards || !prices) {
 		try {
 			[allCards, prices] = await Promise.all([getCards(), getPrices()]);
@@ -62,7 +59,6 @@ async function loadDataIfNeeded(): Promise<boolean> {
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		// Charger les données si nécessaire
 		if (!await loadDataIfNeeded()) {
 			return json({ error: 'Impossible de charger les données du jeu' }, { status: 500 });
 		}
@@ -78,7 +74,6 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Aucune carte sélectionnée' }, { status: 400 });
 		}
 
-		// Trouver la carte devinée
 		const guessedCard = allCards!.find(card => card.cardCode === guessedCardCode);
 		const guessedPrice = prices![guessedCardCode]?.simple;
 
@@ -90,7 +85,6 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Sélection de carte invalide' }, { status: 400 });
 		}
 
-		// Calculer le feedback
 		const feedback = {
 			pokemonCorrect: guessedCard.name === cardOfTheDay.name,
 			pokemonValue: guessedCard.name,

@@ -46,7 +46,6 @@
 	const types = $derived(card.types ?? '');
 	const cardCode = $derived(card.cardCode);
 
-	// Calculer les dimensions réelles à utiliser
 	const width = $derived(customWidth || 300);
 	const height = $derived(customHeight || 420);
 
@@ -64,7 +63,6 @@
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
 
-	// Détermine si la carte est dans la wishlist en fonction du store
 	const isInWishlist = $derived($wishlistStore.has(cardCode));
 	let isUpdatingWishlist = $state(false);
 
@@ -74,7 +72,6 @@
 
 	const isCollectionLimitReached = $derived(collectionCount >= MAX_CARD_QUANTITY);
 
-	// Déterminer si nous sommes sur la page japonaise
 	const isJapaneseCard = $derived(page.url.pathname.includes('/japan'));
 	const cardLink = $derived(isJapaneseCard ? `/jp-card/${cardCode}/` : `/card/${cardCode}/`);
 

@@ -12,14 +12,12 @@
 
 	let { data }: Props = $props();
 
-	// Data that is available immediately
 	const sets = $derived(data.sets);
 	const types = $derived(data.types);
 	const pokemons = $derived(data.pokemons);
 	const prices = $derived(data.prices);
 
 	onMount(() => {
-		// Check if we have any filter parameters in the URL
 		const setParam = page.url.searchParams.get('set');
 		const artistParam = page.url.searchParams.get('artist');
 		const typeParam = page.url.searchParams.get('type');
@@ -30,9 +28,8 @@
 		const mostExpensiveParam = page.url.searchParams.get('mostexpensive');
 		const rarityParam = page.url.searchParams.get('rarity');
 
-		// If we have any filter parameters, appliquer directement les filtres sans resetFilters
+		// Apply the URL filters directly, without resetFilters
 		if (setParam || artistParam || typeParam || nameParam || pokemonTypeParam || sortByParam || sortOrderParam || mostExpensiveParam || rarityParam) {
-			// Puis appliquer les filtres spécifiques depuis l'URL
 			if (setParam) {
 				const decodedSetParam = decodeURIComponent(setParam).toLowerCase();
 				const foundSet = sets.find(set => set.name.toLowerCase() === decodedSetParam);

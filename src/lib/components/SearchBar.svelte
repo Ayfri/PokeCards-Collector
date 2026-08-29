@@ -39,33 +39,28 @@
 	let searchQuery = $state('');
 	let searchResults: FullCard[] = $state([]);
 	let showResults = $state(false);
-	let addedCards = $state(new Set<string>()); // Pour stocker les IDs des cartes ajoutées
-	let platformModifierKey = $state(''); // Will be 'Ctrl' or 'Cmd'
-	let inputFocused = $state(false); // Track input focus state
+	let addedCards = $state(new Set<string>()); // Card codes flashing the "added" state
+	let platformModifierKey = $state('');
+	let inputFocused = $state(false);
 
-	// Check if we're on the Binder page
 	const isBinderPage = $derived($page.url.pathname === '/binder');
 
-	// Try to get the storedCards store from context ONLY during initialization if on binder page
 	let binderStoredCards: Writable<string[]> | null = null;
 	try {
 		// getContext MUST be called during component initialization
-		if ($page.url.pathname === '/binder') { // Check initial path directly
+		if ($page.url.pathname === '/binder') {
 			binderStoredCards = getContext('storedCards');
 		}
 	} catch (e) {}
 
-	// Function to add a card to the binder storage
 	function addToBinderStorage(card: FullCard) {
 		if (!binderStoredCards) {
-			// Dispatch a custom event if we couldn't get the store directly
 			const event = new CustomEvent('add-to-binder', { 
 				detail: { cardCode: card.cardCode },
 				bubbles: true 
 			});
 			document.dispatchEvent(event);
 		} else {
-			// Add directly to the store
 			binderStoredCards.update((cards: string[]) => {
 				if (!cards.includes(card.cardCode)) {
 					return [...cards, card.cardCode];
@@ -74,18 +69,15 @@
 			});
 		}
 		
-		// Marquer la carte comme ajoutée pour l'effet visuel
 		addedCards.add(card.cardCode);
 		
-		// Réinitialiser l'état après un délai
 		setTimeout(() => {
 			addedCards.delete(card.cardCode);
-			addedCards = addedCards; // Force la réactivité en Svelte
+			addedCards = addedCards; // A plain Set is not deeply reactive under $state, so the reassignment is what redraws
 		}, 1500);
 	}
 
 
-	// Helper to extract card number from cardCode (preferred)
 	function extractCardNumberFromCode(cardCode: string): string {
 		// Assuming format: supertype_pokemonId_setCode_cardNumber
 		return cardCode?.split('_')[3] || '';
@@ -175,13 +167,12 @@
 
 		searchResults = matches
 			.sort((a, b) => b.score - a.score || a.entry.name.length - b.entry.name.length)
-			.slice(0, 10) // Limit to 10 search results for all devices
+			.slice(0, 10)
 			.map(match => match.entry.card);
 
 		showResults = searchResults.length > 0;
 	};
 
-	// Debounced search function
 	const debouncedSearch = debounce(performSearch, 300);
 
 	// --- Event Handlers ---
@@ -198,7 +189,7 @@
 			performSearch();
 			showResults = true;
 		}
-		inputFocused = true; // Set focus state
+		inputFocused = true;
 	};
 
 	const handleKeydown = (event: KeyboardEvent) => {
@@ -223,7 +214,7 @@
 		if (browser) {
 			platformModifierKey = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'Cmd' : 'Ctrl';
 			document.addEventListener('click', handleClickOutside);
-			document.addEventListener('keydown', handleGlobalKeydown); // Use the new global handler
+			document.addEventListener('keydown', handleGlobalKeydown);
 
 			if (autoFocus && inputElement) {
 				setTimeout(() => {
@@ -236,13 +227,11 @@
 	onDestroy(() => {
 		if (browser) {
 			document.removeEventListener('click', handleClickOutside);
-			document.removeEventListener('keydown', handleGlobalKeydown); // Clean up global handler
+			document.removeEventListener('keydown', handleGlobalKeydown);
 		}
 	});
 
-	// Global keydown handler for Ctrl+K
 	const handleGlobalKeydown = (event: KeyboardEvent) => {
-		// Handle Escape key for closing results/modal
 		if (event.key === 'Escape') {
 			if (mobileMode && onToggleModal) {
 				onToggleModal();
@@ -251,7 +240,6 @@
 			}
 		}
 
-		// Handle Ctrl+K / Cmd+K for focusing search
 		if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
 			event.preventDefault(); // Prevent browser's default Ctrl+K action
 			inputElement?.focus();
@@ -259,12 +247,10 @@
 	};
 
 	// --- Reactive Statements ---
-	// Trigger search only when query changes (and is not undefined/null)
 	$effect(() => {
 		if (searchQuery.trim()) {
 			debouncedSearch();
 		} else {
-			// Clear results immediately when query is emptied
 			searchResults = [];
 			showResults = false;
 		}

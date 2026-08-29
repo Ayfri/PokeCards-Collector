@@ -21,7 +21,6 @@
 	const selectedSetName = $derived($filterSet !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === $filterSet)?.name ?? null) : null);
 
 	onMount(() => {
-		// Check if we have any filter parameters in the URL
 		const setParam = page.url.searchParams.get('set');
 		const artistParam = page.url.searchParams.get('artist');
 		const typeParam = page.url.searchParams.get('type');

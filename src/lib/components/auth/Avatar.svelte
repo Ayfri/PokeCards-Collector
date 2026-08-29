@@ -7,9 +7,8 @@
 
 	let { username, size = "size-8 text-lg", profileColor = null }: Props = $props();
 
-	// Default gold colors
 	const defaultColorStart = '#fbc54a'; // gold-400
-	const defaultColorEnd = '#c08e1a';   // A darker gold, adjust as needed
+	const defaultColorEnd = '#c08e1a';
 
 	function darkenHexColor(hex: string, percent: number): string {
 		hex = hex.replace(/^#/, '');
@@ -30,7 +29,7 @@
 
 		if (profileColor && /^#[0-9A-Fa-f]{6}$/.test(profileColor)) {
 			startColor = profileColor;
-			endColor = darkenHexColor(profileColor, 45); // Accentue le dégradé (plus foncé)
+			endColor = darkenHexColor(profileColor, 45); // Darker end stop, so the gradient stays visible
 		}
 		return `background-image: linear-gradient(to bottom right, ${startColor}, ${endColor});`;
 	})());
