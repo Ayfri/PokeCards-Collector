@@ -19,6 +19,13 @@ const config = {
 			'$scrapers': 'src/scrapers/*',
 			'~': 'src/*',
 		},
+		typescript: {
+			// The generated include list only covers src/ and vite.config.ts, so the root scraper CLI would go unchecked.
+			config: (config) => {
+				config.include.push('../scraper-cli.ts');
+				return config;
+			},
+		},
 	},
 	preprocess: vitePreprocess(),
 };
