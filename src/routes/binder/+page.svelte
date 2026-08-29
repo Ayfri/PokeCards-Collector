@@ -14,6 +14,7 @@
 	import Modal from '@components/ui/Modal.svelte';
 	import HelpCircleIcon from '@lucide/svelte/icons/circle-question-mark';
 	import { downloadDataUrl, renderBinderImage } from '$helpers/binder-export';
+	import { setCardCount } from '$helpers/set-utils';
 	import type { BinderCards, FullCard } from '$lib/types';
 	import { binderStorage } from '$stores/binder.svelte';
 	import type { PageData } from './$types';
@@ -405,7 +406,7 @@
 				.slice()
 				.sort((a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime())
 				.map(set => ({
-					label: `${set.name} (${new Date(set.releaseDate).toLocaleDateString()}) - ${set.printedTotal} cards`,
+					label: `${set.name} (${new Date(set.releaseDate).toLocaleDateString()}) - ${setCardCount(set)} cards`,
 					value: set.name
 				}))}
 			placeholder="-- Select a set --"

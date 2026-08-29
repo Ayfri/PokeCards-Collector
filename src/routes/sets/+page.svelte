@@ -10,6 +10,7 @@
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import LayersIcon from '@lucide/svelte/icons/layers';
+	import { setCardCount } from '$helpers/set-utils';
 
 	interface Props {
 		data: PageData;
@@ -17,13 +18,13 @@
 
 	let { data }: Props = $props();
 
-	type SetSortValue = 'code' | 'name' | 'printedTotal' | 'releaseDate' | 'totalPrice';
+	type SetSortValue = 'cardCount' | 'code' | 'name' | 'releaseDate' | 'totalPrice';
 
 	/** Every comparator sorts ascending; the direction flips the result rather than duplicating each branch. */
 	const COMPARATORS: Record<SetSortValue, (a: SetWithPrice, b: SetWithPrice) => number> = {
+		cardCount: (a, b) => setCardCount(a) - setCardCount(b),
 		code: (a, b) => (a.ptcgoCode || '').localeCompare(b.ptcgoCode || ''),
 		name: (a, b) => a.name.localeCompare(b.name),
-		printedTotal: (a, b) => a.printedTotal - b.printedTotal,
 		releaseDate: (a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime(),
 		totalPrice: (a, b) => a.totalPrice - b.totalPrice,
 	};
@@ -42,7 +43,9 @@
 	}
 
 	const sortDirection = $derived(setsSort.direction === 'desc' ? -1 : 1);
-	const sortedSets = $derived([...(typedSets ?? [])].sort((a, b) => COMPARATORS[setsSort.value](a, b) * sortDirection));
+	/** localStorage can still hold a sort value from an older build, which would index `COMPARATORS` with a key it no longer has. */
+	const comparator = $derived(COMPARATORS[setsSort.value] ?? COMPARATORS.releaseDate);
+	const sortedSets = $derived([...(typedSets ?? [])].sort((a, b) => comparator(a, b) * sortDirection));
 
 	const filteredSets = $derived(searchTerm
 		? sortedSets.filter(set =>
@@ -65,7 +68,7 @@
 		const [firstSetA] = groupedSets[a];
 		const [firstSetB] = groupedSets[b];
 		if (!firstSetA || !firstSetB) return 0;
-		return COMPARATORS[setsSort.value](firstSetA, firstSetB) * sortDirection;
+		return comparator(firstSetA, firstSetB) * sortDirection;
 	}));
 
 	function formatCurrency(value: number): string {
@@ -95,7 +98,7 @@
 				options={[
 					{ value: 'code', label: 'Code' },
 					{ value: 'name', label: 'Name' },
-					{ value: 'printedTotal', label: 'Total Cards' },
+					{ value: 'cardCount', label: 'Total Cards' },
 					{ value: 'totalPrice', label: 'Total Value' },
 					{ value: 'releaseDate', label: 'Release Date' }
 				]}
@@ -136,7 +139,7 @@
 									<div class="p-4 flex-1 flex flex-col">
 										<h2 class="text-lg font-semibold text-white">{set.name}</h2>
 										<div class="flex justify-between mt-2 text-sm text-gray-400">
-											<span class="flex items-center gap-1.5" title="Cards printed in this set"><LayersIcon size={14} /> {set.printedTotal} cards</span>
+											<span class="flex items-center gap-1.5" title="Cards in this set"><LayersIcon size={14} /> {setCardCount(set)} cards</span>
 											<span class="flex items-center gap-1.5 text-gold-400" title="Cardmarket value of a complete set"><CircleEuroIcon size={14} /> {formatCurrency(set.totalPrice)}</span>
 										</div>
 										<div class="flex justify-between mt-1 text-sm text-gray-400">

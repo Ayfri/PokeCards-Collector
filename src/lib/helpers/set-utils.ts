@@ -16,6 +16,12 @@ for (const langAliases of Object.values(setAliases)) {
 
 const setKey = (setCode: string) => legacyToSetId.get(setCode) ?? setCode;
 
+/**
+ * How many cards a set holds. `printedTotal` is the numbering denominator TCGdex leaves at 0 on the promo sets,
+ * which is why they used to be listed as holding no card at all while their page showed dozens.
+ */
+export const setCardCount = (set: Pick<Set, 'printedTotal' | 'totalCards'>) => set.totalCards || set.printedTotal;
+
 export function findSetByCardCode(cardCode: string, sets: Set[]): Set | undefined {
 	if (!cardCode || !Array.isArray(sets) || sets.length === 0) return undefined;
 
