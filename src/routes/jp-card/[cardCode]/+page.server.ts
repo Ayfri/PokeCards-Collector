@@ -2,6 +2,8 @@ import { getJapaneseCards, getJapanesePrices, getPokemons } from '$helpers/supab
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
+import { processCardImage } from '$helpers/card-images';
+import { breadcrumbs, cardPrice, cardSchema } from '$helpers/seo';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
@@ -27,11 +29,30 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		pokemonCards = allJpCards.filter(c => c.pokemonNumber === card.pokemonNumber);
 	}
 	
-	// Page-specific SEO data
+	const price = prices[card.cardCode];
+	const value = cardPrice(price);
+	const numbering = card.localId ? ` #${card.localId}` : '';
+
+	// `card.image` is a TCGdex base with no extension: handed to a crawler as-is it resolves to nothing.
 	const pageSeoData = {
-		title: `${card.name} - Japanese Card - Pokécards-collector`,
-		description: `View details for the Japanese Pokémon card ${card.name} from the ${card.setName} set.`,
-		image: card.image
+		breadcrumbs: breadcrumbs(
+			{ name: 'Japanese cards', url: '/japan' },
+			{ name: card.name, url: `/jp-card/${card.cardCode}` },
+		),
+		description: [
+			`${card.name} is a Japanese Pokémon TCG card${card.rarity ? ` of rarity ${card.rarity}` : ''} from the ${card.setName} set`,
+			card.artist ? `, illustrated by ${card.artist}` : '',
+			'.',
+			value ? ` It trades around €${value.toFixed(2)} on Cardmarket.` : '',
+		].join('').slice(0, 300),
+		image: {
+			alt: `${card.name} Japanese Pokémon card from ${card.setName}`,
+			url: card.image ? processCardImage(card.image) : '/favicon.png',
+		},
+		keywords: [card.name, `${card.name} japanese card`, card.setName, 'Japanese Pokémon TCG'].filter(Boolean),
+		schemas: [cardSchema(card, price, pokemon, sets.find(s => s.name === card.setName), '/jp-card')],
+		title: `${card.name}${numbering} - ${card.setName} (Japanese)`,
+		type: 'Product' as const,
 	};
 	
 	return {
@@ -41,7 +62,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		allCards: allJpCards, // Pass the fetched Japanese cards
 		pokemonCards,
 		pokemons,
-		sets,     // from parent
+		sets,    
 		prices,
 		...pageSeoData
 	};

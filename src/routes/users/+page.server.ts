@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { breadcrumbs } from '$helpers/seo';
 import { supabase } from '$lib/supabase';
 import { getCollectionStats } from '$lib/services/collections';
 import type { UserProfile } from '$lib/types';
@@ -73,7 +74,21 @@ export const load: PageServerLoad = async ({ locals, parent }) => {
 	return {
 		featuredUsers,
 		featuredUsersError,
-		title: 'Users - PokéStats',
-		description: 'Discover and search for fellow Pokémon TCG collectors. See featured collectors with the largest collections.'
+		breadcrumbs: breadcrumbs({ name: 'Collectors', url: '/users' }),
+		description: 'Browse the public Pokémon TCG collections on PokéCards-Collector. See the collectors holding the most unique cards, and search for a collector by name.',
+		keywords: ['Pokémon TCG collectors', 'public Pokémon collections', 'Pokémon card collection ranking'],
+		schemas: [{
+			'@type': 'ItemList',
+			itemListElement: featuredUsers.map((user, index) => ({
+				'@type': 'ListItem',
+				name: user.username,
+				position: index + 1,
+				url: `/profile/${user.username}`,
+			})),
+			name: 'Featured Pokémon TCG collectors',
+			numberOfItems: featuredUsers.length,
+		}],
+		title: 'Pokémon TCG Collectors',
+		type: 'CollectionPage' as const,
 	};
 };

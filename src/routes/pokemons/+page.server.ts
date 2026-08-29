@@ -1,6 +1,8 @@
 import type { PageServerLoad } from './$types';
 import { getCards, getPokemons, getPrices } from '$helpers/supabase-data';
 import { processCardImage } from '$helpers/card-images';
+import { breadcrumbs } from '$helpers/seo';
+import { POKEMONS_COUNT } from '~/constants';
 
 /**
  * What one grid tile needs. The page used to ship `cards` and `prices` whole - ~14 MB of JSON for 1025 tiles
@@ -50,5 +52,25 @@ export const load: PageServerLoad = async () => {
 		};
 	});
 
-	return { pokemons: entries };
+	const withCards = entries.filter(entry => entry.cardCount > 0).length;
+
+	return {
+		breadcrumbs: breadcrumbs({ name: 'Pokémon', url: '/pokemons' }),
+		description: `Every one of the ${POKEMONS_COUNT} Pokémon and the TCG cards that depict them. ${withCards} of them have at least one card in the catalogue - open any Pokémon to see its full card list with prices.`,
+		keywords: ['Pokémon list', 'Pokémon cards by Pokémon', 'Pokédex TCG', 'all Pokémon cards'],
+		pokemons: entries,
+		schemas: [{
+			'@type': 'ItemList',
+			itemListElement: entries.slice(0, 50).map((entry, index) => ({
+				'@type': 'ListItem',
+				name: entry.name,
+				position: index + 1,
+				url: entry.cardCode ? `/card/${entry.cardCode}` : undefined,
+			})),
+			name: 'Pokémon covered by the Pokémon TCG',
+			numberOfItems: entries.length,
+		}],
+		title: 'All Pokémon and Their Cards',
+		type: 'CollectionPage' as const,
+	};
 };

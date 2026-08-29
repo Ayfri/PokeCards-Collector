@@ -1,20 +1,16 @@
 import { countJapaneseCards, getPokemons } from '$helpers/supabase-data';
+import { cardListSchema, faqSchema } from '$helpers/seo';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ parent }) => {
-	// Get layout data. Parent data now has { streamed: { allCards: Promise, prices: Promise }, sets, user, profile ... }
 	const parentData = await parent();
 
-	// Await the streamed promises from parent for allCards and prices
-	const allCardsResolved: FullCard[] = await parentData.streamed.allCards || []; // Ensure it's an array
-	const pricesResolved = await parentData.streamed.prices || {};      // Ensure it's an object
+	const allCardsResolved: FullCard[] = await parentData.streamed.allCards || [];
+	const pricesResolved = await parentData.streamed.prices || {};
 
-	// 'sets' is already resolved from parent
 	const sets = parentData.sets || [];
 
-	// Extract other necessary layout data (e.g., user, profile, default SEO)
-	// Avoid spreading `streamed` or properties already handled (allCards, prices, sets)
 	const layoutData = {
 		user: parentData.user,
 		profile: parentData.profile,
@@ -25,40 +21,35 @@ export const load: PageServerLoad = async ({ parent }) => {
 		collectionItems: parentData.collectionItems
 	};
 
-	// Use the resolved allCards for further processing
 	let processedAllCards: FullCard[] = [...allCardsResolved];
 
 	// An artless card is still a real card: deduplicating on `image` silently dropped every one of them.
 	// TCGdex gives every card its own art URL, so this only ever removed the cards it has no art for.
 	processedAllCards = processedAllCards.filter(card => Boolean(card.setName));
 
-	// Get real data counts from Supabase for statistics
 	const [pokemons, japaneseCardCount] = await Promise.all([
 		getPokemons(),
 		countJapaneseCards()
 	]);
 
-	// Get latest set based on release date
 	const latestSet = [...sets].sort((a, b) => {
 		const dateA = new Date(a.releaseDate).getTime();
 		const dateB = new Date(b.releaseDate).getTime();
 		return dateB - dateA;
 	})[0];
 
-	// Filter cards from the latest set
 	const latestSetCards = latestSet ? processedAllCards.filter(card => {
 		const cardSetName = card.setName?.toLowerCase();
 		return cardSetName === latestSet.name.toLowerCase();
 	}) : [];
 
-	// Get the most expensive cards from the latest set
 	const mostExpensiveLatestSetCards = [...latestSetCards]
 		.sort((a, b) => {
 			const priceA = pricesResolved[a.cardCode]?.simple || pricesResolved[a.cardCode]?.trend || 0;
 			const priceB = pricesResolved[b.cardCode]?.simple || pricesResolved[b.cardCode]?.trend || 0;
 			return priceB - priceA;
 		})
-		.slice(0, 5); // Get top 5 most expensive cards
+		.slice(0, 5);
 
 	const mostExpensiveCards = [...processedAllCards]
 		.sort((a, b) => {
@@ -66,23 +57,49 @@ export const load: PageServerLoad = async ({ parent }) => {
 			const priceB = pricesResolved[b.cardCode]?.simple || pricesResolved[b.cardCode]?.trend || 0;
 			return priceB - priceA;
 		})
-		.slice(0, 5); // Get top 5 most expensive cards
+		.slice(0, 5);
 
-	// Define page-specific SEO data
+	// The counts are read back into the copy so the description states real numbers rather than a vague claim,
+	// which is what an answer engine can actually quote.
+	const cardTotal = allCardsResolved.length.toLocaleString('en-US');
+	const setTotal = sets.length.toLocaleString('en-US');
+
 	const pageSeoData = {
+		description: `Browse ${cardTotal} Pokémon TCG cards across ${setTotal} sets with live Cardmarket prices in euros. Track your collection, build a wishlist, plan a binder and play two daily card games, all for free.`,
+		keywords: ['Pokémon TCG', 'Pokémon card prices', 'Pokémon card collection tracker', 'Pokémon card list', 'Cardmarket prices'],
+		schemas: [
+			cardListSchema(mostExpensiveCards, '/cards-list?sortby=sort-price&sortorder=desc', 'Most expensive Pokémon cards', 5),
+			faqSchema([
+				{
+					question: 'How many Pokémon cards can I browse on PokéCards-Collector?',
+					answer: `The catalogue covers ${cardTotal} English cards across ${setTotal} sets, plus ${japaneseCardCount.toLocaleString('en-US')} Japanese cards, refreshed from TCGdex every week.`,
+				},
+				{
+					question: 'Where do the Pokémon card prices come from?',
+					answer: 'Every price is the Cardmarket value in euros, pulled from TCGdex and refreshed weekly. Both the standard and the reverse-holo values are stored for each card.',
+				},
+				{
+					question: 'Is PokéCards-Collector free?',
+					answer: 'Yes. Browsing the catalogue needs no account, and tracking a collection, a wishlist and a binder only needs a free account.',
+				},
+				{
+					question: 'Are Japanese Pokémon cards included?',
+					answer: 'Yes. Japanese sets, cards and prices live under the /japan section with their own card pages.',
+				},
+			]),
+		],
 		title: 'PokéCards-Collector - Your Pokémon TCG Collection Manager',
-		description: 'Explore the Pokémon TCG universe. Discover the latest set, check out the prices of the rarest cards, and manage your collection.'
 	};
 
 	return {
 		...layoutData,
-		allCards: processedAllCards, // Send the processed, unique-by-image cards
+		allCards: processedAllCards,
 		latestSet,
 		mostExpensiveLatestSetCards,
 		mostExpensiveCards,
 		sets,
 		pokemons,
-		prices: pricesResolved, // Send the resolved prices
+		prices: pricesResolved,
 		stats: {
 			totalCards: allCardsResolved.length,
 			totalJapaneseCards: japaneseCardCount,

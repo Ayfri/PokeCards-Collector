@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { breadcrumbs, gameSchema } from '$helpers/seo';
 import type { Card, PriceData, Set } from '$lib/types';
 
 /** One playable card: the art to show, the price to guess and the set date shown as a hint. */
@@ -7,6 +8,15 @@ export interface Round {
 	price: number;
 	releaseDate: Date | null;
 }
+
+/** Shared by both exits of the load, so a page with no playable card still ships a full head. */
+const SEO = {
+	breadcrumbs: breadcrumbs({ name: 'Guess the Price', url: '/guess-the-price' }),
+	description: 'Guess what a Pokémon card is worth on Cardmarket. Real cards, real euro prices, a new set of rounds every time. Free and playable without an account.',
+	keywords: ['guess the price', 'Pokémon card price game', 'Pokémon TCG game', 'card value quiz'],
+	schemas: [gameSchema('Guess the Price', 'A Pokémon TCG price guessing game: estimate the Cardmarket value of a real card and score on how close you land.', '/guess-the-price')],
+	title: 'Guess the Price - Pokémon Card Price Game',
+};
 
 /** Below this the guess is a coin flip between 0 and 2, so cheap bulk never gets drawn. */
 const MIN_PRICE = 3;
@@ -35,7 +45,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	}
 
 	if (!playable.length) {
-		return { rounds: [], error: `No card with artwork and a price of ${MIN_PRICE} EUR or more.` };
+		return { ...SEO, rounds: [], error: `No card with artwork and a price of ${MIN_PRICE} EUR or more.` };
 	}
 
 	const releaseDates = new Map(sets.map(set => [set.name, set.releaseDate]));
@@ -49,5 +59,5 @@ export const load: PageServerLoad = async ({ parent }) => {
 		return { card, price, releaseDate: releaseDates.get(card.setName) ?? null };
 	});
 
-	return { rounds, error: null };
+	return { ...SEO, rounds, error: null };
 };

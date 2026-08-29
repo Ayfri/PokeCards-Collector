@@ -1,40 +1,38 @@
 import { findSetByCardCode } from '$helpers/set-utils';
 import type { PageServerLoad } from './$types';
+import { breadcrumbs, setListSchema } from '$helpers/seo';
 import type { SetWithPrice } from '$lib/types';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
 
-	// Await the streamed promises from parent
 	const cards = await parentData.streamed.allCards || [];
 	const prices = await parentData.streamed.prices || {};
-	const setsFromParent = parentData.sets || []; // 'sets' is already resolved in parentData
+	const setsFromParent = parentData.sets || [];
 
-	// Extract other necessary layout data (e.g., user, profile, default SEO)
 	const layoutData = {
 		user: parentData.user,
 		profile: parentData.profile,
-		title: parentData.title, // Parent's default title
-		description: parentData.description, // Parent's default description
-		image: parentData.image, // Parent's default image
+		title: parentData.title,
+		description: parentData.description,
+		image: parentData.image,
 		wishlistItems: parentData.wishlistItems,
 		collectionItems: parentData.collectionItems
 	};
 
 	const setPriceTotals = new Map<string, number>();
 
-	// Populate the price totals map by iterating through cards
-	for (const card of cards) { // Now 'cards' is the resolved array
+	for (const card of cards) {
 
-		const foundSet = findSetByCardCode(card.cardCode, setsFromParent); // Use the helper
+		const foundSet = findSetByCardCode(card.cardCode, setsFromParent);
 
 		if (!foundSet || !foundSet.ptcgoCode) {
-			continue; // Skip if set or its ptcgoCode isn't found
+			continue;
 		}
 
-		const setIdentifierForTotals = foundSet.ptcgoCode; // This is the key we will use for totals
+		const setIdentifierForTotals = foundSet.ptcgoCode;
 
-		const priceData = prices[card.cardCode]; // Now 'prices' is the resolved object
+		const priceData = prices[card.cardCode];
 		const currentPrice = priceData?.simple ?? 0;
 
 		if (currentPrice > 0) {
@@ -42,7 +40,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 		}
 	}
 
-	// Map sets to SetWithPrice, using the calculated totals
 	const setsWithPrices = setsFromParent.map(set => {
 		const totalPrice = set.ptcgoCode ? setPriceTotals.get(set.ptcgoCode) || 0 : 0;
 		return {
@@ -52,15 +49,19 @@ export const load: PageServerLoad = async ({ parent }) => {
 	});
 
 	const pageSeoData = {
-		title: 'Sets - Pokémon TCG | PokéCards-Collector', // More specific title
-		description: 'Browse all Pokémon Trading Card Game sets. View set information, release dates, card counts, and estimated total set values.'
+		breadcrumbs: breadcrumbs({ name: 'Sets', url: '/sets' }),
+		description: `All ${setsWithPrices.length} Pokémon TCG sets, from Base Set to the latest release, with release dates, card counts and the estimated total value of a complete set in euros.`,
+		keywords: ['Pokémon TCG sets', 'Pokémon set list', 'Pokémon set value', 'Pokémon card sets by release date'],
+		schemas: [setListSchema(setsWithPrices)],
+		title: 'All Pokémon TCG Sets',
+		type: 'CollectionPage' as const,
 	};
 
 	return {
 		...layoutData,
-		setsWithPrices, // This is the main data for this page
-		allCards: cards, // Add allCards back
-		prices: prices,   // Add prices back
+		setsWithPrices,
+		allCards: cards,
+		prices: prices,
 		...pageSeoData
 	};
 };

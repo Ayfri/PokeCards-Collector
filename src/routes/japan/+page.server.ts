@@ -2,52 +2,54 @@ import { getPokemons, getJapaneseSets, getTypes, getJapaneseCards, getJapanesePr
 import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
+import { breadcrumbs, setSchema } from '$helpers/seo';
 
 export const load: PageServerLoad = async ({ parent, url }) => {
-	const parentData = await parent(); // Get the full parent data structure
+	const parentData = await parent();
 
 	// Japanese cards have their own cardmarket prices, keyed by the same card codes.
 	const pricesResolved = await getJapanesePrices();
 
-	// Extract other necessary layout data (e.g., user, profile, default SEO from parent)
 	const layoutDataFromParent = {
 		user: parentData.user,
 		profile: parentData.profile,
-		title: parentData.title, // Parent's default title
-		description: parentData.description, // Parent's default description
-		image: parentData.image, // Parent's default image
+		title: parentData.title,
+		description: parentData.description,
+		image: parentData.image,
 		wishlistItems: parentData.wishlistItems,
 		collectionItems: parentData.collectionItems
-		// parentData.sets are global sets, this page uses getJapaneseSets()
-		// parentData.streamed.allCards are global cards, this page uses getJapaneseCards()
 	};
 
-	// Data specific to this page (Japanese sets, rarities, types, etc.)
 	const [japaneseSetsData, types, pokemons] = await Promise.all([
 		getJapaneseSets(),
 		getTypes(),
 		getPokemons()
 	]);
 
-	const sets = japaneseSetsData; // Rename for clarity, these are Japanese sets
+	const sets = japaneseSetsData;
 	sets.sort((a, b) => a.name.localeCompare(b.name));
 
-	// SEO data determination for this page
 	const setParam = url.searchParams.get('set');
 	let ogImage = null;
-	let ogTitle = 'Japanese Pokémon Cards - Pokécards-collector';
-	let ogDescription = 'Browse all Japanese Pokémon TCG cards. Filter by type, rarity, and more.';
+	let ogTitle = 'Japanese Pokémon Cards';
+	let ogDescription = `Browse Japanese Pokémon TCG cards across ${sets.length} Japanese sets, with Cardmarket prices in euros. Filter by set, type, rarity or artist.`;
+	let ogKeywords = ['Japanese Pokémon cards', 'Japanese Pokémon TCG', 'Japanese Pokémon card prices', 'Japanese Pokémon sets'];
+	let ogCrumbs = breadcrumbs({ name: 'Japanese cards', url: '/japan' });
+	const ogSchemas: Record<string, unknown>[] = [];
 
 	if (setParam) {
 		const set = sets.find(s => s.name.toLowerCase() === setParam.toLowerCase());
 		if (set) {
-			ogImage = { url: set.logo, alt: set.name };
-			ogTitle = `${set.name} - Pokécards-collector`;
-			ogDescription = `Browse all cards from the Japanese set ${set.name}.`;
+			const total = set.totalCards ?? set.printedTotal;
+			ogImage = { url: set.logo, alt: `${set.name} Japanese set logo` };
+			ogTitle = `${set.name} - Japanese Card List`;
+			ogDescription = `Every card in the Japanese Pokémon TCG set ${set.name}${total ? `, ${total} cards in total` : ''}, with Cardmarket prices in euros.`;
+			ogKeywords = [`${set.name} japanese set`, `${set.name} card list`, 'Japanese Pokémon TCG'];
+			ogCrumbs = breadcrumbs({ name: 'Japanese cards', url: '/japan' }, { name: set.name, url: `/japan?set=${encodeURIComponent(set.name)}` });
+			ogSchemas.push(setSchema(set, '/japan'));
 		}
 	}
 
-	// Promise for the large dataset (Japanese cards and their derived stats)
 	const cardDataPromise = (async () => {
 		const allCards: FullCard[] = await getJapaneseCards();
 
@@ -76,18 +78,20 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 	})();
 
 	return {
-		...layoutDataFromParent, // User, profile, SEO defaults from parent
+		...layoutDataFromParent,
 		streamed: {
-			cardData: cardDataPromise // Streamed Japanese card data and stats
+			cardData: cardDataPromise
 		},
-		// Non-streamed data specific to this page or resolved from parent
-		sets, // Japanese sets
+		sets,
 		types,
 		pokemons,
 		prices: pricesResolved,
-		// Page-specific SEO (overrides parent's defaults if set)
 		title: ogTitle,
 		description: ogDescription,
-		image: ogImage ?? layoutDataFromParent.image, // Use page-specific image or fallback to parent's default
+		image: ogImage ?? layoutDataFromParent.image,
+		breadcrumbs: ogCrumbs,
+		keywords: ogKeywords,
+		schemas: ogSchemas,
+		type: 'CollectionPage' as const,
 	};
 };
