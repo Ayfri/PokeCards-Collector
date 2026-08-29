@@ -18,11 +18,9 @@
 
 	let { data }: Props = $props();
 
-	// --- Use Server Data Directly (for non-streamed parts) ---
 	const targetProfile = $derived(data.targetProfile);
 	const isPublic = $derived(data.isPublic);
 	const targetUsername = $derived(data.targetUsername);
-	const description = $derived(data.description);
 	const loggedInUsername = $derived(page.data.profile?.username);
 	const isOwnWishlist = $derived(!targetUsername || (loggedInUsername === targetUsername));
 	const profileNotFound = $derived(!targetProfile && !!targetUsername && !data.streamed?.wishlistData);
@@ -45,10 +43,6 @@
 	})());
 
 </script>
-
-<svelte:head>
-	<meta name="description" content={description} />
-</svelte:head>
 
 {#if profileNotFound || profileIsPrivate}
 	<main 

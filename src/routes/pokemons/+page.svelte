@@ -86,11 +86,6 @@
 
 <svelte:window onscroll={handleScroll} />
 
-<svelte:head>
-	<title>All Pokémons | PokéCards Collector</title>
-	<meta name="description" content="Browse all Pokémons and their cards." />
-</svelte:head>
-
 <div class="container mx-auto px-4 py-8 text-white">
 	<div class="flex justify-between items-center mb-4">
 		<div class="shrink-0">

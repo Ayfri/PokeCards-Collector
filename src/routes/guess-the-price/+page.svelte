@@ -158,8 +158,6 @@
 <svelte:window onkeydown={handleKey} />
 
 <svelte:head>
-	<title>Guess the Price</title>
-	<meta name="description" content="Play a game to guess the price of Pokémon cards." />
 	<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
 </svelte:head>
 

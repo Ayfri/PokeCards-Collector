@@ -1,14 +1,14 @@
 <script lang="ts">
 	import CardGrid from '$lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
-	import { page } from '$app/state'; // Keep page store if needed for URL params, etc.
+	import { page } from '$app/state';
 	import House from '@lucide/svelte/icons/house';
 	import Search from '@lucide/svelte/icons/search';
 	import ShieldAlert from '@lucide/svelte/icons/shield-alert';
 	import UserX from '@lucide/svelte/icons/user-x';
-	import PageTitle from '@components/PageTitle.svelte'; // Import PageTitle
-	import { fade, fly } from 'svelte/transition'; // Import transitions
-	import BouncyLoader from '$lib/components/BouncyLoader.svelte'; // Import BouncyLoader
+	import PageTitle from '@components/PageTitle.svelte';
+	import { fade, fly } from 'svelte/transition';
+	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
 	import { onMount } from 'svelte';
 	import { resetFilters } from '$lib/helpers/filters';
 
@@ -18,16 +18,14 @@
 
 	let { data }: Props = $props();
 
-	// --- Use Server Data Directly (for non-streamed parts) ---
 	const targetProfile = $derived(data.targetProfile);
 	const isPublic = $derived(data.isPublic);
 	const targetUsername = $derived(data.targetUsername);
-	const pageTitleDisplay = $derived(data.title); // Use server title
-	const description = $derived(data.description); // Use server description
-	const loggedInUsername = $derived(page.data.profile?.username); // Get logged-in user from layout data via page store
+	const pageTitleDisplay = $derived(data.title);
+	const loggedInUsername = $derived(page.data.profile?.username);
 	const isOwnCollection = $derived(!targetUsername || (loggedInUsername === targetUsername));
-	const profileNotFound = $derived(!targetProfile && !!targetUsername); // If targetUsername exists but targetProfile doesn't
-	const profileIsPrivate = $derived(!!targetProfile && !isPublic && !isOwnCollection); // If profile exists, not public, and not own
+	const profileNotFound = $derived(!targetProfile && !!targetUsername);
+	const profileIsPrivate = $derived(!!targetProfile && !isPublic && !isOwnCollection);
 
 	onMount(() => {
 		if (typeof window !== 'undefined') {
@@ -38,10 +36,6 @@
 	// Status message logic can be adapted once collectionData is resolved
 	// It might need to be inside the :then block or react to resolvedCollectionData.serverCollectionCards
 </script>
-
-<svelte:head>
-	<meta name="description" content={description} />
-</svelte:head>
 
 {#if profileNotFound || profileIsPrivate}
 	<main 
