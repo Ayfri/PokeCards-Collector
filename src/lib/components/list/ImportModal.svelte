@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Modal from '@components/ui/Modal.svelte';
 	import UploadIcon from '@lucide/svelte/icons/upload';
-	import { detectColumns, MAX_IMPORT_ROWS, toImportRows, type ColumnMapping, type ImportRow } from '$helpers/collection-import';
+	import { detectColumns, MAX_IMPORT_ROWS, toImportRows } from '$helpers/collection-import';
 	import { invalidateAll } from '$app/navigation';
 	import { parseDelimited } from '$helpers/csv';
 	import type { Set as CardSet } from '$lib/types';
@@ -12,7 +12,7 @@
 		failure?: string;
 		matchedCards: number;
 		skipped: number;
-		unmatched: ImportRow[];
+		unmatchedBySet: { count: number; set: string }[];
 		unmatchedCount: number;
 	}
 
@@ -26,26 +26,22 @@
 	let { kind, onClose, open, sets }: Props = $props();
 
 	let busy = $state(false);
-	let columns = $state<ColumnMapping>({ code: -1, name: -1, number: -1, quantity: [], set: -1 });
-	let dataRows = $state<string[][]>([]);
 	let fault = $state('');
 	let fileName = $state('');
-	let headers = $state<string[]>([]);
 	let imported = $state(false);
+	let rows = $state<ReturnType<typeof toImportRows>>([]);
+	let needsSet = $state(false);
 	let setOverride = $state('');
 	let summary = $state<Summary | null>(null);
 
 	const sortedSets = $derived([...sets].sort((a, b) => a.name.localeCompare(b.name)));
-	const rows = $derived(toImportRows(dataRows, columns));
-	const needsSet = $derived(columns.set < 0 && columns.code < 0);
 
 	function reset() {
-		columns = { code: -1, name: -1, number: -1, quantity: [], set: -1 };
-		dataRows = [];
 		fault = '';
 		fileName = '';
-		headers = [];
 		imported = false;
+		needsSet = false;
+		rows = [];
 		summary = null;
 	}
 
@@ -61,10 +57,15 @@
 			return;
 		}
 
-		headers = table[0];
-		dataRows = table.slice(1, MAX_IMPORT_ROWS + 1);
-		columns = detectColumns(headers);
-		if (columns.number < 0 && columns.code < 0) fault = `No card number column found among: ${headers.join(', ')}. Pick one below.`;
+		const columns = detectColumns(table[0]);
+		if (columns.number < 0 && columns.code < 0) {
+			fault = `No card number column in that file. Its columns are: ${table[0].join(', ')}.`;
+			return;
+		}
+
+		needsSet = columns.set < 0 && columns.code < 0;
+		rows = toImportRows(table.slice(1, MAX_IMPORT_ROWS + 1), columns);
+		if (rows.length === 0) fault = 'Every line of that file holds zero copies.';
 	}
 
 	async function send(dryRun: boolean) {
@@ -81,7 +82,7 @@
 				fault = payload?.message ?? `Import failed (${response.status}).`;
 				return;
 			}
-			summary = payload as Summary;
+			summary = payload;
 			if (!dryRun) {
 				imported = true;
 				await invalidateAll();
@@ -99,23 +100,11 @@
 	}
 </script>
 
-{#snippet picker(label: string, value: number, onPick: (index: number) => void)}
-	<label class="flex flex-col gap-1 text-xs text-gray-400">
-		{label}
-		<select class="rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-white" onchange={event => onPick(Number(event.currentTarget.value))} {value}>
-			<option value={-1}>None</option>
-			{#each headers as header, index (index)}
-				<option value={index}>{header || `Column ${index + 1}`}</option>
-			{/each}
-		</select>
-	</label>
-{/snippet}
-
-<Modal containerClass="max-w-2xl" onClose={close} {open} title={`Import ${kind === 'wishlist' ? 'wishlist' : 'collection'}`}>
+<Modal containerClass="max-w-xl" onClose={close} {open} title={`Import ${kind === 'wishlist' ? 'wishlist' : 'collection'}`}>
 	<div class="flex flex-col gap-4 text-sm text-gray-200">
 		<p class="text-gray-400">
-			Takes a CSV, TSV or tab-separated clipboard dump - a Pokécardex export, a Cardmarket list, a spreadsheet of your own.
-			Columns are detected from the header line and can be repointed below. Cards already owned are topped up, never duplicated past 99 copies.
+			Takes the CSV a Pokécardex, Cardmarket or TCGCollector export gives you, in any of the six languages they print set names in.
+			Columns and separator are read from the file. Cards you already own are topped up, never duplicated past 99 copies.
 		</p>
 
 		<label class="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-gray-600 px-4 py-6 text-gold-400 hover:border-gold-400">
@@ -124,43 +113,33 @@
 			<input accept=".csv,.tsv,.txt,text/csv,text/plain" class="hidden" onchange={onFile} type="file" />
 		</label>
 
-		{#if headers.length > 0}
-			<div class="grid gap-3 sm:grid-cols-3">
-				{@render picker('Card number', columns.number, index => (columns = { ...columns, number: index }))}
-				{@render picker('Set', columns.set, index => (columns = { ...columns, set: index }))}
-				{@render picker('Card name', columns.name, index => (columns = { ...columns, name: index }))}
-			</div>
+		{#if rows.length > 0}
+			<p class="text-gray-400">{rows.length} card line{rows.length === 1 ? '' : 's'} read from {fileName}.</p>
+		{/if}
 
-			{#if needsSet}
-				<label class="flex flex-col gap-1 text-xs text-gray-400">
-					The file names no set, so every line is read as one card of:
-					<select bind:value={setOverride} class="rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-white">
-						<option value="">Pick a set</option>
-						{#each sortedSets as set (set.setId ?? set.name)}
-							<option value={set.setId ?? set.name}>{set.name}</option>
-						{/each}
-					</select>
-				</label>
-			{/if}
-
-			<p class="text-gray-400">
-				{rows.length} importable line{rows.length === 1 ? '' : 's'}
-				{#if columns.quantity.length > 0}, counting {columns.quantity.map(index => headers[index]).join(' + ')}{/if}
-			</p>
+		{#if needsSet}
+			<label class="flex flex-col gap-1 text-xs text-gray-400">
+				That file names no set, so every line is read as a card of:
+				<select bind:value={setOverride} class="rounded border border-gray-600 bg-gray-900 px-2 py-1 text-sm text-white">
+					<option value="">Pick a set</option>
+					{#each sortedSets as set (set.setId ?? set.name)}
+						<option value={set.setId ?? set.name}>{set.name}</option>
+					{/each}
+				</select>
+			</label>
 		{/if}
 
 		{#if summary}
 			<div class="rounded-lg bg-gray-900/60 p-3">
 				<p class="text-white">
-					{#if imported}Added {summary.added} card{summary.added === 1 ? '' : 's'}{:else}{summary.added} card{summary.added === 1 ? '' : 's'} would be added{/if}
-					over {summary.matchedCards} matched card{summary.matchedCards === 1 ? '' : 's'}.
+					{summary.added} card{summary.added === 1 ? '' : 's'} {imported ? 'added' : 'to add'}, over {summary.matchedCards} matched card{summary.matchedCards === 1 ? '' : 's'}.
 				</p>
-				{#if summary.skipped > 0}<p class="text-gray-400">{summary.skipped} copies skipped, already owned or over the 99 limit.</p>{/if}
+				{#if summary.skipped > 0}<p class="text-gray-400">{summary.skipped} cop{summary.skipped === 1 ? 'y' : 'ies'} skipped, already owned or over the 99 limit.</p>{/if}
 				{#if summary.unmatchedCount > 0}
-					<p class="mt-2 text-orange-400">{summary.unmatchedCount} line{summary.unmatchedCount === 1 ? '' : 's'} matched no card:</p>
+					<p class="mt-2 text-orange-400">{summary.unmatchedCount} line{summary.unmatchedCount === 1 ? '' : 's'} matched no card in the catalogue:</p>
 					<ul class="mt-1 max-h-32 overflow-y-auto text-xs text-gray-400">
-						{#each summary.unmatched as row, index (index)}
-							<li>{row.set ? `${row.set} ` : ''}{row.number}{row.name ? ` - ${row.name}` : ''}</li>
+						{#each summary.unmatchedBySet as group (group.set)}
+							<li>{group.set || 'no set named'} - {group.count}</li>
 						{/each}
 					</ul>
 				{/if}

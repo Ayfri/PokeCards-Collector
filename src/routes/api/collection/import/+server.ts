@@ -61,11 +61,15 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		for (let copy = 0; copy < toAdd; copy++) inserts.push({ card_code: cardCode, username });
 	}
 
+	// Grouped rather than listed: 200 raw lines say nothing, "Trick or Trade 2023, 23 cards" says the set is missing.
+	const bySet = new Map<string, number>();
+	for (const row of unmatched) bySet.set(row.set || row.number, (bySet.get(row.set || row.number) ?? 0) + 1);
+
 	const summary = {
 		added: inserts.length,
 		matchedCards: matched.length,
 		skipped,
-		unmatched: unmatched.slice(0, 200),
+		unmatchedBySet: [...bySet].sort(([, a], [, b]) => b - a).slice(0, 25).map(([set, count]) => ({ count, set })),
 		unmatchedCount: unmatched.length,
 	};
 
