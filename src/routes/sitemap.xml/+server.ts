@@ -39,7 +39,8 @@ export async function GET() {
 		</urlset>`.trim(),
 		{
 			headers: {
-				'Content-Type': 'application/xml',
+				'cache-control': 'public, max-age=3600, stale-while-revalidate=86400',
+				'content-type': 'application/xml',
 			},
 		},
 	);
