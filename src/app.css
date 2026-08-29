@@ -15,7 +15,17 @@
   --breakpoint-2xs: 350px;
 
   --animate-gradient-x: gradient-x 6s ease infinite;
+  --animate-loading-sweep: loading-sweep 1.5s linear infinite;
   --animate-ripple-wave: ripple-wave 1.5s ease-out infinite;
+
+  @keyframes loading-sweep {
+    0% {
+      background-position: 100% 0;
+    }
+    100% {
+      background-position: -100% 0;
+    }
+  }
 
   @keyframes gradient-x {
     0%, 100% {

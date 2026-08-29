@@ -1,32 +1,17 @@
 <script lang="ts">
 	import { loadingStore, navigationLoadingStore } from '$lib/stores/loading';
 	import { fade } from 'svelte/transition';
-	
-	// Show loading bar if either regular loading or navigation loading is active
+
+	// Either a card mutation or a navigation is in flight.
 	const isLoading = $derived($loadingStore || $navigationLoadingStore);
 </script>
 
 {#if isLoading}
-	<div 
-		class="fixed top-0 left-0 w-full h-2 z-9999" 
-		in:fade={{ duration: 100 }} 
+	<div
+		class="fixed top-0 left-0 w-full h-2 z-9999"
+		in:fade={{ duration: 100 }}
 		out:fade={{ duration: 200 }}
 	>
-		<div class="loading-bar"></div>
+		<div class="h-full w-full bg-linear-to-r from-gray-800 via-gold-400 to-gray-800 bg-[length:200%_100%] animate-loading-sweep"></div>
 	</div>
 {/if}
-
-<style lang="postcss">
-	.loading-bar {
-		height: 100%;
-		background: linear-gradient(90deg, var(--color-gray-800) 0%, var(--color-gold-400) 50%, var(--color-gray-800) 100%);
-		background-size: 200% 100%;
-		animation: loading-animation 1.5s infinite linear;
-		width: 100%;
-	}
-	
-	@keyframes loading-animation {
-		0% { background-position: 100% 0; }
-		100% { background-position: -100% 0; }
-	}
-</style> 
