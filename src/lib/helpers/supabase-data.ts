@@ -226,6 +226,38 @@ export async function getCards(): Promise<FullCard[]> {
 	return data.map(toCard);
 }
 
+/** Sitemap-only read: one column instead of the twelve `getCards` ships. */
+export async function getCardCodes(): Promise<string[]> {
+	const data = await getAllData<{ card_code: string }>('cards', 'card_code', 'card_code');
+	return data.map(row => row.card_code);
+}
+
+/** Picks a card without reading the table: one count, then the single row at that offset. */
+export async function getRandomCardCode(): Promise<string | null> {
+	const { count, error: countError } = await supabase.from('cards').select('*', { count: 'exact', head: true });
+
+	if (countError) {
+		console.error('Error counting cards:', countError);
+		throw new Error(`Failed to count cards: ${countError.message}`);
+	}
+
+	if (!count) return null;
+
+	const offset = Math.floor(Math.random() * count);
+	const { data, error } = await supabase
+		.from('cards')
+		.select('card_code')
+		.order('card_code', { ascending: true })
+		.range(offset, offset);
+
+	if (error) {
+		console.error('Error fetching random card:', error);
+		throw new Error(`Failed to fetch random card: ${error.message}`);
+	}
+
+	return data?.[0]?.card_code ?? null;
+}
+
 export async function getJapaneseCards(): Promise<FullCard[]> {
 	const data = await getAllData<CardRow>('jp_cards', 'card_code', CARD_LIST_COLUMNS, { column: 'name', ascending: true });
 	return data.map(toCard);
@@ -261,47 +293,6 @@ export async function getJapaneseSets(): Promise<Set[]> {
 export async function getTypes(): Promise<string[]> {
 	const data = await getAllData<{ name: string }>('types', 'name', 'name', { column: 'name', ascending: true });
 	return data.map(type => type.name);
-}
-
-export async function getCardsWithFilters(filters: {
-	setName?: string;
-	pokemon?: string;
-	rarity?: string;
-	type?: string;
-	artist?: string;
-	supertype?: string;
-}): Promise<FullCard[]> {
-	let query = supabase.from('cards').select(CARD_COLUMNS);
-
-	if (filters.setName) {
-		query = query.eq('set_name', filters.setName);
-	}
-	if (filters.rarity) {
-		query = query.eq('rarity', filters.rarity);
-	}
-	if (filters.artist) {
-		query = query.eq('artist', filters.artist);
-	}
-	if (filters.supertype) {
-		query = query.eq('supertype', filters.supertype);
-	}
-	if (filters.type) {
-		query = query.ilike('types', `%${filters.type}%`);
-	}
-	if (filters.pokemon) {
-		query = query.ilike('name', `%${filters.pokemon}%`);
-	}
-
-	query = query.order('name', { ascending: true });
-
-	const { data, error } = await query;
-
-	if (error) {
-		console.error('Error fetching filtered cards:', error);
-		throw new Error(`Failed to fetch filtered cards: ${error.message}`);
-	}
-
-	return ((data ?? []) as unknown as CardRow[]).map(toCard);
 }
 
 /** Returns `null` when no card carries this code: a collection row can outlive the card it points at. */

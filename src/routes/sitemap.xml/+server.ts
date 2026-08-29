@@ -1,11 +1,11 @@
-import { getCards } from '$lib/helpers/supabase-data';
+import { getCardCodes } from '$lib/helpers/supabase-data';
 import { BASE_URL } from '~/constants';
 
 export async function GET() {
 	const mainPage = `${BASE_URL}/`;
 
 	const simplePages = ['/artists', '/sets', '/cards-list', '/binder']
-	const cards = await getCards();
+	const cardCodes = await getCardCodes();
 
 	return new Response(
 		`
@@ -30,8 +30,8 @@ export async function GET() {
 				<changefreq>monthly</changefreq>
 				<priority>0.8</priority>
 			</url>`).join('\n')}
-			${cards.map(card => `<url>
-				<loc>${`${BASE_URL}/card/${card.cardCode}/`}</loc>
+			${cardCodes.map(cardCode => `<url>
+				<loc>${`${BASE_URL}/card/${cardCode}/`}</loc>
 				<lastmod>${new Date().toISOString()}</lastmod>
 				<changefreq>weekly</changefreq>
 				<priority>0.6</priority>

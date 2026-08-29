@@ -1,22 +1,20 @@
 import { error } from '@sveltejs/kit';
-import { getCards, getPokemons } from '$helpers/supabase-data';
+import { getPokemons } from '$helpers/supabase-data';
 import type { FullCard, Pokemon } from '$lib/types';
-import type { EntryGenerator, PageServerLoad } from './$types';
-
-export const entries: EntryGenerator = async () => {
-	const cards = await getCards()
-	return cards.map(card => ({
-		cardCode: card.cardCode,
-	}))
-}
+import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
 	const parentData = await parent(); // Get full parent data structure
 
 	// Resolve streamed data from parent first
-	const allCards = await parentData.streamed.allCards || [];
-	const prices = await parentData.streamed.prices || {};
+	const [streamedCards, streamedPrices, allPokemons] = await Promise.all([
+		parentData.streamed.allCards,
+		parentData.streamed.prices,
+		getPokemons(),
+	]);
+	const allCards = streamedCards || [];
+	const prices = streamedPrices || {};
 	const sets = parentData.sets || [];
 
 	// Extract other necessary layout data (e.g., user, profile, default SEO from parent)
@@ -29,9 +27,6 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		wishlistItems: parentData.wishlistItems,
 		collectionItems: parentData.collectionItems
 	};
-
-	// Load allPokemons
-	const allPokemons = await getPokemons();
 
 	// Find the specific card by cardCode from the resolved allCards
 	const targetCard = allCards.find(c => c.cardCode === cardCode);
