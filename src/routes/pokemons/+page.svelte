@@ -1,21 +1,18 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { PokemonListEntry } from './+page.server';
 	import { goto } from '$app/navigation';
 	import { pascalCase } from '$helpers/strings';
-	import { getPokemonImageSrc, handlePokemonImageError, getMostExpensiveCardForPokemon } from '$lib/helpers/pokemon-utils';
+	import { getPokemonImageSrc, handlePokemonImageError } from '$helpers/pokemon-utils';
 	import { NO_IMAGES } from '$lib/images';
 	import PageTitle from '@components/PageTitle.svelte';
-	import type { Pokemon, FullCard } from '$lib/types';
 	import { setNavigationLoading } from '$lib/stores/loading';
 	import ScrollToTop from '$lib/components/list/ScrollToTop.svelte';
 	import ScrollToBottom from '$lib/components/list/ScrollToBottom.svelte';
-	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import SortControl from '@components/filters/SortControl.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import LayersIcon from "@lucide/svelte/icons/layers";
-
-	type PokemonWithCardCount = Pokemon & { cardCount: number };
 
 	interface Props {
 		data: PageData;
@@ -23,65 +20,36 @@
 
 	let { data }: Props = $props();
 
-	const initialPokemons = $derived(data.pokemons);
-	const allCards = $derived(data.allCards);
-	const prices = $derived(data.prices);
-
-	// Sorting state
-	let sortBy = $state('pokedex'); // Default sort by Pokedex number
-	let sortOrder: 'asc' | 'desc' = $state('asc'); // Default sort order ascending
-
+	let sortBy = $state('pokedex');
+	let sortOrder: 'asc' | 'desc' = $state('asc');
 	let searchTerm = $state('');
 
-	// Reactive statement to filter and sort pokemons
 	const sortedPokemons = $derived.by(() => {
-		const tempPokemons = [...initialPokemons]
-			.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+		const term = searchTerm.toLowerCase();
+		const pokemons = data.pokemons.filter(pokemon => pokemon.name.toLowerCase().includes(term));
+		const direction = sortOrder === 'asc' ? 1 : -1;
 
-		if (sortBy === 'pokedex') {
-			tempPokemons.sort((a, b) => {
-				return sortOrder === 'asc' ? a.id - b.id : b.id - a.id;
-			});
-		} else if (sortBy === 'name') {
-			tempPokemons.sort((a, b) => {
-				const nameA = a.name.toLowerCase();
-				const nameB = b.name.toLowerCase();
-				if (nameA < nameB) return sortOrder === 'asc' ? -1 : 1;
-				if (nameA > nameB) return sortOrder === 'asc' ? 1 : -1;
-				return 0;
-			});
-		} else if (sortBy === 'cardCount') {
-			tempPokemons.sort((a, b) => {
-				const countA = (a as PokemonWithCardCount).cardCount;
-				const countB = (b as PokemonWithCardCount).cardCount;
-				return sortOrder === 'asc' ? countA - countB : countB - countA;
-			});
-		}
-		return tempPokemons as PokemonWithCardCount[];
+		const compare: Record<string, (a: PokemonListEntry, b: PokemonListEntry) => number> = {
+			cardCount: (a, b) => a.cardCount - b.cardCount,
+			name: (a, b) => a.name.localeCompare(b.name),
+			pokedex: (a, b) => a.id - b.id,
+		};
+
+		return pokemons.sort((a, b) => direction * (compare[sortBy] ?? compare.pokedex)(a, b));
 	});
 
 	let hasScrolled = $state(false);
-	const scrollThreshold = 100; // Pixels to scroll before showing ScrollToTop
-	const scrollDuration = 500; // Milliseconds for smooth scroll
+	const scrollThreshold = 100;
+	const scrollDuration = 500;
 
-	function navigateToPokemonCard(pokemon: PokemonWithCardCount) {
+	function navigateToPokemonCard(pokemon: PokemonListEntry) {
+		if (!pokemon.cardCode) return;
 		setNavigationLoading(true);
-		const mostExpensiveCard = getMostExpensiveCardForPokemon(pokemon.id, allCards, prices);
-		if (mostExpensiveCard) {
-			goto(`/card/${mostExpensiveCard.cardCode}`);
-		} else {
-			const anyCard = allCards.find(card => card.pokemonNumber === pokemon.id);
-			if (anyCard) {
-				goto(`/card/${anyCard.cardCode}`);
-			} else {
-				console.error(`No card found for ${pokemon.name}`);
-				setNavigationLoading(false);
-			}
-		}
+		goto(`/card/${pokemon.cardCode}`);
 	}
 
 	function smoothScroll(targetPosition: number, duration: number) {
-		const startPosition = window.pageYOffset;
+		const startPosition = window.scrollY;
 		const distance = targetPosition - startPosition;
 		let startTime: number | null = null;
 
@@ -104,30 +72,19 @@
 
 	function scrollToTopPage() {
 		smoothScroll(0, scrollDuration);
-		setTimeout(() => { hasScrolled = false; }, scrollDuration); // Hide button after scroll
+		setTimeout(() => { hasScrolled = false; }, scrollDuration);
 	}
 
 	function scrollToBottomPage() {
-		const targetPosition = document.body.scrollHeight - window.innerHeight;
-		smoothScroll(targetPosition, scrollDuration);
+		smoothScroll(document.body.scrollHeight - window.innerHeight, scrollDuration);
 	}
 
 	function handleScroll() {
-		if (window.pageYOffset > scrollThreshold) {
-			hasScrolled = true;
-		} else {
-			hasScrolled = false;
-		}
+		hasScrolled = window.scrollY > scrollThreshold;
 	}
-
-	onMount(() => {
-		window.addEventListener('scroll', handleScroll, { passive: true });
-		return () => {
-			window.removeEventListener('scroll', handleScroll);
-		};
-	});
-
 </script>
+
+<svelte:window onscroll={handleScroll} />
 
 <svelte:head>
 	<title>All Pokémons | PokéCards Collector</title>
@@ -164,17 +121,20 @@
 		{#each sortedPokemons as pokemon (pokemon.id)}
 			<button
 				onclick={() => navigateToPokemonCard(pokemon)}
-				class="pokemon-card-item group bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-hidden focus:ring-2 focus:ring-gold-400/75 p-3 flex flex-col items-center text-center"
+				class="group bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-hidden focus:ring-2 focus:ring-gold-400/75 p-3 flex flex-col items-center text-center border border-transparent hover:border-gold-400 [content-visibility:auto] [contain-intrinsic-size:auto_11rem]"
 				title={`View the most valuable ${pascalCase(pokemon.name)} card`}
 			>
-				<div class="image-container relative w-24 h-24 md:w-28 md:h-28 mb-2">
+				<div class="relative w-24 h-24 md:w-28 md:h-28 mb-2">
 					{#if !NO_IMAGES}
 						<img
 							src={getPokemonImageSrc(pokemon.id)}
 							alt={pascalCase(pokemon.name)}
 							class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300 ease-in-out"
-							onerror={(e) => handlePokemonImageError(e, pokemon.id, allCards)} 
+							onerror={(e) => handlePokemonImageError(e, pokemon.id, pokemon.fallbackImage)}
+							decoding="async"
+							height="112"
 							loading="lazy"
+							width="112"
 						/>
 					{:else}
 						<div class="w-full h-full flex items-center justify-center text-white text-sm bg-gray-700 rounded-md">
@@ -185,7 +145,7 @@
 						{pokemon.id}
 					</div>
 				</div>
-				<span class="pokemon-name text-sm md:text-base font-semibold group-hover:text-gold-400 transition-colors duration-200">
+				<span class="text-sm md:text-base font-semibold group-hover:text-gold-400 transition-colors duration-200">
 					{pascalCase(pokemon.name)}
 				</span>
 				<span class="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-1" title="Cards featuring this Pokémon">
@@ -203,12 +163,3 @@
 	</div>
 {/if}
 <ScrollToBottom onclick={scrollToBottomPage} />
-
-<style lang="postcss">
-	.pokemon-card-item {
-		border: 1px solid transparent;
-	}
-	.pokemon-card-item:hover {
-		border-color: var(--color-gold-400);
-	}
-</style> 
