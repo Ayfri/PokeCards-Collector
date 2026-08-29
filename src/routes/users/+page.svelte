@@ -94,11 +94,6 @@
 	});
 </script>
 
-<svelte:head>
-	<title>{data.title}</title>
-	<meta name="description" content={data.description} />
-</svelte:head>
-
 <div class="container mx-auto px-4 py-6 space-y-6 md:space-y-10 text-white">
 	<div class="flex flex-col items-center text-center space-y-2">
 		<PageTitle title="Users & Collectors" />
