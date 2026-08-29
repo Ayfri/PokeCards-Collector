@@ -75,13 +75,6 @@
 		return () => observer.disconnect();
 	});
 
-	/** Keeps `recalculateLayout()` working for callers that force a re-measure after a filter or URL change. */
-	export function recalculateLayout() {
-		if (!container) return;
-		containerWidth = container.clientWidth;
-		containerHeight = container.clientHeight;
-	}
-
 	let scrollFrame = 0;
 	function handleScroll() {
 		if (scrollFrame || !container) return;

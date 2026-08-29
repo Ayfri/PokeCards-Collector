@@ -1,4 +1,4 @@
-import { error, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { getCards, getPokemons, getPrices, getTypes } from '$helpers/supabase-data';
 import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import { getProfileByUsername } from '$lib/services/profiles';
@@ -24,7 +24,7 @@ async function getStreamedCollectionData(
 	const [pokemons, types] = await Promise.all([
 		getPokemons(),
 		getTypes()
-	]).catch(e => {
+	]).catch(() => {
 		throw new Error('Failed to load necessary card data for page');
 	});
 

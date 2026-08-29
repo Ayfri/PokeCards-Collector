@@ -109,15 +109,6 @@
 			url.searchParams.delete('name');
 		}
 
-		// Keep existing parameters
-		const preserveParams = ['set', 'artist', 'type', 'user'];
-		preserveParams.forEach(param => {
-			const paramValue = page.url.searchParams.get(param);
-			if (paramValue) {
-				url.searchParams.set(param, paramValue);
-			}
-		});
-
 		// Save current active element to restore focus later
 		const activeElement = document.activeElement as HTMLElement;
 		const activeElementId = activeElement?.id;

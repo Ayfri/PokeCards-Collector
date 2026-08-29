@@ -1,7 +1,7 @@
 import { getCards, getPrices } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, gameSchema } from '$helpers/seo';
-import type { FullCard, PriceData } from '$lib/types';
+import type { FullCard } from '$lib/types';
 
 interface CardSuggestion extends FullCard {
 	pokemonName: string;

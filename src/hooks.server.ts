@@ -1,5 +1,5 @@
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
-import { createServerClient, type CookieOptions, serialize } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { Handle } from '@sveltejs/kit';
 import { getProfileByAuthId } from '$lib/services/profiles';
 import type { UserProfile } from '$lib/types';

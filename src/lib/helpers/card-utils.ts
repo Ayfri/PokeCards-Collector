@@ -92,29 +92,6 @@ export function isCardCode(item: string): boolean {
 }
 
 /**
- * Parse a card code from a card image URL
- */
-export function parseCardCodeFromImage(imageUrl: string): { setCode?: string, cardNumber?: string } {
-	if (!imageUrl) return { setCode: undefined, cardNumber: undefined };
-
-	const parts = imageUrl.split('/');
-
-	// Try to extract set code from second-to-last part of URL
-	const setCode = parts.length >= 2 ? parts.at(-2) : undefined;
-
-	// Try to extract card number from filename
-	let cardNumber: string | undefined = undefined;
-	const filename = parts.at(-1);
-	if (filename) {
-		// Extract the first part before underscore and remove any letters
-		const match = filename.split('_')[0].match(/[a-z]*(\d+)[a-z]*/i);
-		cardNumber = match ? match[1] : undefined;
-	}
-
-	return { setCode, cardNumber };
-}
-
-/**
  * Helper function to get a representative card for a Pokemon
  * @param pokemonId The ID of the Pokemon
  * @param allCards Array of all cards to search within

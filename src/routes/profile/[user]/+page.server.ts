@@ -1,10 +1,10 @@
 import { getCards, getPrices } from '$helpers/supabase-data';
-import { error, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { getCollectionStats } from '$lib/services/collections';
 import { getProfileByUsername } from '$lib/services/profiles';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, profileSchema } from '$helpers/seo';
-import type { UserProfile, CollectionStats, ServiceResponse } from '$lib/types';
+import type { UserProfile, CollectionStats } from '$lib/types';
 
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const { profile: loggedInUserProfile, sets: parentSets, ...layoutData } = await parent();

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import Avatar from '@components/auth/Avatar.svelte';
 	import AlertTriangleIcon from '@lucide/svelte/icons/triangle-alert';
 	import CrownIcon from '@lucide/svelte/icons/crown';
 	import SearchIcon from '@lucide/svelte/icons/search';

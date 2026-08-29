@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { toggleProfileVisibility } from '$lib/services/profiles';
 	import PageTitle from '@components/PageTitle.svelte';
 	import type { Set } from '$lib/types';

@@ -67,31 +67,6 @@ export async function removeCardFromWishlist(username: string, cardCode: string,
 	}
 }
 
-// Get if a card is in user's wishlist
-export async function isCardInWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
-	try {
-		const { data, error } = await client
-			.from('wishlists')
-			.select('*')
-			.eq('username', username)
-			.eq('card_code', cardCode)
-			.maybeSingle();
-
-		return {
-			exists: !!data,
-			data,
-			error
-		};
-	} catch (error) {
-		console.error('Error checking wishlist:', error);
-		return {
-			exists: false,
-			data: null,
-			error
-		};
-	}
-}
-
 // Get user's wishlist
 export async function getUserWishlist(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {

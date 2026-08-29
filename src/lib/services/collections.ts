@@ -116,22 +116,6 @@ export async function getUserCollection(username: string, client: SupabaseClient
 	}
 }
 
-// Get *all instances* for a specific card (might be useful later)
-export async function getCardInstancesInCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
-	try {
-		const { data, error } = await client
-			.from('collections')
-			.select('*') // Select all columns for potential future use
-			.eq('username', username)
-			.eq('card_code', cardCode);
-
-		return { data, error };
-	} catch (error) {
-		console.error('Error getting card instances in collection:', error);
-		return { data: null, error };
-	}
-}
-
 interface SetTotals {
 	collected: number;
 	collectedValue: number;

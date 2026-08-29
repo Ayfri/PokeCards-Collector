@@ -251,12 +251,6 @@ export async function getCards(): Promise<FullCard[]> {
 	return cachedTable('cards', TABLE_TTL, () => cardListRows('cards'), rows => rows.map(toCard));
 }
 
-/** Sitemap-only read: the codes come off the cached card list instead of paging the table again. */
-export async function getCardCodes(): Promise<string[]> {
-	const cards = await getCards();
-	return cards.map(card => card.cardCode);
-}
-
 /** Picks a card without reading the table: one count, then the single row at that offset. */
 export async function getRandomCardCode(): Promise<string | null> {
 	const { count } = await readWithRetry('count cards', () => supabase.from('cards').select('*', { count: 'exact', head: true }));
@@ -315,41 +309,3 @@ export async function getTypes(): Promise<string[]> {
 	return cachedTable('types', STATIC_TTL, () => getAllData<{ name: string }>('types', 'name', 'name', { column: 'name', ascending: true }), rows => rows.map(type => type.name));
 }
 
-/** Returns `null` when no card carries this code: a collection row can outlive the card it points at. */
-export async function getCardByCode(cardCode: string): Promise<FullCard | null> {
-	for (const table of ['cards', 'jp_cards']) {
-		const { data, error } = await supabase
-			.from(table)
-			.select(CARD_COLUMNS)
-			.eq('card_code', cardCode)
-			.maybeSingle();
-
-		if (error) {
-			console.error(`Error fetching card by code from ${table}:`, error);
-			throw new Error(`Failed to fetch card: ${error.message}`);
-		}
-
-		if (data) return toCard(data as unknown as CardRow);
-	}
-
-	return null;
-}
-
-export async function getCardPrice(cardCode: string): Promise<PriceData | null> {
-	for (const table of ['prices', 'jp_prices']) {
-		const { data, error } = await supabase
-			.from(table)
-			.select('*')
-			.eq('card_code', cardCode)
-			.maybeSingle();
-
-		if (error) {
-			console.error(`Error fetching card price from ${table}:`, error);
-			throw new Error(`Failed to fetch card price: ${error.message}`);
-		}
-
-		if (data) return toPrice(data as PriceRow);
-	}
-
-	return null;
-}
