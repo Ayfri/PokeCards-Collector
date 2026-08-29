@@ -22,7 +22,9 @@
 </script>
 
 <button
-	class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 rounded text-sm py-1 px-3 h-8 transition-all duration-300 z-0 hover:text-black
+	class="relative overflow-hidden flex items-center justify-center bg-transparent border-2 rounded text-sm py-1 px-3 h-8 transition-all duration-300 z-0 enabled:hover:text-black enabled:active:text-black
+		   before:content-[''] before:absolute before:bottom-0 before:left-0 before:z-0 before:h-0 before:w-full before:bg-[#FFB700] before:transition-[height] before:duration-300 before:ease-in-out
+		   enabled:hover:before:h-full enabled:active:before:h-full disabled:before:hidden
 		   {isActive
 			? 'border-[#FFB700] text-[#FFB700]'
 			: 'border-white text-white hover:border-[#FFB700]'}
@@ -34,26 +36,4 @@
 	aria-label={title || undefined}
 >
 	<span class="relative z-10 flex items-center gap-2">{@render children?.()}</span>
-</button>
-
-<style>
-	.animated-hover-button::before {
-		background-color: #FFB700;
-		bottom: 0;
-		content: '';
-		height: 0;
-		left: 0;
-		position: absolute;
-		transition: height 0.3s ease-in-out;
-		width: 100%;
-		z-index: 0;
-	}
-
-	.animated-hover-button:not(:disabled):hover::before {
-		height: 100%;
-	}
-	
-	.animated-hover-button:disabled::before {
-		display: none;
-	}
-</style>
+</button>

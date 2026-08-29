@@ -146,7 +146,7 @@
 				<p class="mb-4 text-gray-300">{description}</p>
 				<a
 					href="/"
-					class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded-sm flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
+					class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded-sm flex items-center transition-all duration-300 h-8 mt-4"
 				>
 					<span class="relative z-10 flex items-center gap-2">
 						<House size={16} />
@@ -163,7 +163,7 @@
 				<p class="mb-4 text-gray-300">{description}</p>
 				<a
 					href="/"
-					class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded-sm flex items-center transition-all duration-300 h-8 mt-4 hover:bg-gold-400 hover:text-black"
+					class="home-button animated-hover-button relative overflow-hidden border-2 border-gold-400 text-gold-400 text-sm font-medium py-1.5 px-4 rounded-sm flex items-center transition-all duration-300 h-8 mt-4"
 				>
 					<span class="relative z-10 flex items-center gap-2">
 						<House size={16} />
@@ -230,7 +230,7 @@
 
 								<button
 									type="button"
-									class="animated-hover-button relative overflow-hidden w-full py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:text-black"
+									class="animated-hover-button relative overflow-hidden w-full py-2 px-4 border-2 border-gold-400 rounded-md text-sm font-medium text-gold-400 bg-transparent flex items-center justify-center transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
 									onclick={handleToggleVisibility}
 									disabled={isLoading}
 									title={currentVisibility ? 'Hide your collection and wishlist from other users' : 'Let other users browse your collection and wishlist'}
@@ -473,29 +473,5 @@
 	.loader-spin {
 		animation: spin 2s linear infinite;
 		display: inline-flex;
-	}
-
-	:global(html) {
-		--gold-400: #fbc54a;
-	}
-
-	.animated-hover-button::before {
-		background-color: var(--gold-400);
-		bottom: 0;
-		content: '';
-		height: 0;
-		left: 0;
-		position: absolute;
-		transition: height 0.3s ease-in-out;
-		width: 100%;
-		z-index: 0;
-	}
-
-	.animated-hover-button:not(:disabled):hover::before {
-		height: 100%;
-	}
-
-	.animated-hover-button:disabled::before {
-		display: none;
 	}
 </style>

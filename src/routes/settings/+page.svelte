@@ -195,7 +195,7 @@
 							{/if}
 
 							<button
-								class="animated-hover-button relative inline-flex w-fit items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+								class="animated-hover-button relative inline-flex w-fit items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
 								disabled={saving}
 								title="Save this color to your profile"
 								type="submit"
@@ -217,7 +217,7 @@
 							Visibility is toggled from your profile page.
 						</p>
 						<a
-							class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 hover:text-black"
+							class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300"
 							href="/profile"
 							title="Open your profile page to change visibility"
 						>
@@ -233,7 +233,7 @@
 							<span>We send a reset link to <span class="font-medium text-white">{user?.email}</span>, and it opens the page where you pick a new password.</span>
 						</div>
 						<button
-							class="animated-hover-button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+							class="animated-hover-button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
 							disabled={resetPasswordLoading}
 							onclick={handlePasswordReset}
 							title="Email yourself a password reset link"
@@ -256,21 +256,3 @@
 		</div>
 	{/if}
 </main>
-
-<style>
-	.animated-hover-button::before {
-		background-color: #fbc54a;
-		bottom: 0;
-		content: '';
-		height: 0;
-		left: 0;
-		position: absolute;
-		transition: height 0.3s ease-in-out;
-		width: 100%;
-		z-index: 0;
-	}
-
-	.animated-hover-button:not(:disabled):hover::before {
-		height: 100%;
-	}
-</style>

@@ -121,7 +121,7 @@
 					<label for="sort" class="text-xs text-gray-300">Sort by</label>
 					<div class="flex items-center gap-2">
 						<Button
-							class="animated-hover-button relative overflow-hidden flex items-center justify-center bg-transparent border-2 border-white text-white rounded-sm text-sm h-8 w-10 min-w-10 transition-all duration-300 z-0"
+							class="relative overflow-hidden flex items-center justify-center bg-transparent border-2 border-white text-white rounded-sm text-sm h-8 w-10 min-w-10 transition-all duration-300 z-0"
 							onClick={toggleSortDirection}
 						>
 							<span class="relative z-10">

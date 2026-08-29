@@ -44,7 +44,7 @@
 
 		<a
 			href="/"
-			class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 hover:bg-gold-400 hover:text-black focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+			class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-sm border-2 border-gold-400 px-6 py-2.5 text-sm font-medium text-gold-400 transition-all duration-300 focus:outline-hidden focus:ring-2 focus:ring-gold-400 focus:ring-offset-2 focus:ring-offset-gray-900"
 			in:fly={{ y: 20, duration: 400, delay: 500 }}
 			title="Back to the home page"
 		>
@@ -53,28 +53,3 @@
 		</a>
 	</main>
 {/if}
-
-<style>
-	/* Ensuring global styles like body background are implicitly handled by layout or app.css */
-	/* Styles from profile page for buttons, could be centralized if used often */
-	.animated-hover-button::before {
-		content: "";
-		position: absolute;
-		top: 0;
-		left: -100%;
-		width: 100%;
-		height: 100%;
-		background: linear-gradient(
-			90deg,
-			transparent,
-			rgba(255, 215, 0, 0.3),
-			transparent
-		);
-		transition: left 0.5s ease-in-out;
-		z-index: 0;
-	}
-
-	.animated-hover-button:hover::before {
-		left: 100%;
-	}
-</style>

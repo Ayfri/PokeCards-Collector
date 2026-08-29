@@ -79,6 +79,34 @@
   scrollbar-width: none;
 }
 
+/* Gold fill rising from the bottom, paired with :active because Tailwind's hover variant is media-gated and touch devices would otherwise keep gold text on the gold fill. */
+@utility animated-hover-button {
+	overflow: hidden;
+	position: relative;
+
+	&::before {
+		background-color: var(--color-gold-400);
+		bottom: 0;
+		content: '';
+		height: 0;
+		left: 0;
+		position: absolute;
+		transition: height 0.3s ease-in-out;
+		width: 100%;
+		z-index: 0;
+	}
+
+	&:not(:disabled):hover,
+	&:not(:disabled):active {
+		color: var(--color-black);
+	}
+
+	&:not(:disabled):hover::before,
+	&:not(:disabled):active::before {
+		height: 100%;
+	}
+}
+
 html {
 	@apply scrollbar-hide;
 }
