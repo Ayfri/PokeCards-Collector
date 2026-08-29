@@ -155,7 +155,7 @@
 		max-height: 80vh;
 		overflow-y: auto;
 		scrollbar-width: thin;
-		scrollbar-color: var(--gold-400) transparent;
+		scrollbar-color: var(--color-gold-400) transparent;
 		font-size: 0.95rem;
 		display: flex;
 		flex-direction: column;
@@ -165,7 +165,7 @@
 		max-height: 56vh;
 		overflow-y: auto;
 		scrollbar-width: thin;
-		scrollbar-color: var(--gold-400) transparent;
+		scrollbar-color: var(--color-gold-400) transparent;
 	}
 
 	.detailed-prices h4 {
@@ -184,7 +184,7 @@
 
 	.detailed-prices::-webkit-scrollbar-thumb,
 	.price-details-container::-webkit-scrollbar-thumb {
-		background-color: var(--gold-400);
+		background-color: var(--color-gold-400);
 		border-radius: 20px;
 	}
 	
