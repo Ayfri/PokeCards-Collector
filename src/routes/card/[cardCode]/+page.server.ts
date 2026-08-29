@@ -5,9 +5,8 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
-	const parentData = await parent(); // Get full parent data structure
+	const parentData = await parent();
 
-	// Resolve streamed data from parent first
 	const [streamedCards, streamedPrices, allPokemons] = await Promise.all([
 		parentData.streamed.allCards,
 		parentData.streamed.prices,
@@ -17,30 +16,27 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	const prices = streamedPrices || {};
 	const sets = parentData.sets || [];
 
-	// Extract other necessary layout data (e.g., user, profile, default SEO from parent)
 	const layoutPropertiesFromParent = {
 		user: parentData.user,
 		profile: parentData.profile,
-		title: parentData.title, // Parent's default title for fallback
-		description: parentData.description, // Parent's default description for fallback
-		image: parentData.image, // Parent's default image for fallback
+		title: parentData.title,
+		description: parentData.description,
+		image: parentData.image,
 		wishlistItems: parentData.wishlistItems,
 		collectionItems: parentData.collectionItems
 	};
 
-	// Find the specific card by cardCode from the resolved allCards
 	const targetCard = allCards.find(c => c.cardCode === cardCode);
 	if (!targetCard) {
 		throw error(404, `Card with code ${cardCode} not found`);
 	}
 
-	// Find the associated Pokémon if it's a Pokémon card
 	let associatedPokemon: Pokemon | undefined;
 	if (targetCard.supertype?.toLowerCase() === 'pokémon' && targetCard.pokemonNumber) {
 		associatedPokemon = allPokemons.find(p => p.id === targetCard.pokemonNumber);
 	}
 
-	// Find relevant cards (same Pokémon or same trainer/energy type)
+	/** Sibling cards: every print of the same Pokémon, or of the same trainer/energy name when the card has no dex number. */
 	let relevantCards: FullCard[] = [];
 
 	if (associatedPokemon) {
@@ -52,15 +48,13 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		);
 	}
 
-	if (relevantCards.length === 0 && targetCard) { // Ensure targetCard exists
+	if (relevantCards.length === 0 && targetCard) {
 		relevantCards = [targetCard];
 	}
 
-	// Sort cards by price (highest first)
 	relevantCards.sort((a, b) => (prices[b.cardCode]?.simple ?? prices[b.cardCode]?.trend ?? 0) -
 	                           (prices[a.cardCode]?.simple ?? prices[a.cardCode]?.trend ?? 0));
 
-	// Make sure the target card is the first in the array if it exists
 	if (targetCard && relevantCards.length > 0 && relevantCards[0].cardCode !== cardCode) {
 		const targetIndex = relevantCards.findIndex(c => c.cardCode === cardCode);
 		if (targetIndex > 0) {
@@ -69,7 +63,6 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		}
 	}
 
-	// Generate page metadata
 	const pageTitle = associatedPokemon
 		? associatedPokemon.name.charAt(0).toUpperCase() + associatedPokemon.name.slice(1)
 		: targetCard.name;
@@ -85,12 +78,12 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 
 	return {
 		...layoutPropertiesFromParent,
-		allCards, // Pass resolved global data
+		allCards,
 		sets,
 		prices,
 		pokemon: associatedPokemon,
-		pokemonCards: relevantCards, // Renamed from relevantCards for clarity on page
-		targetCard: targetCard,     // Pass the target card explicitly
+		pokemonCards: relevantCards,
+		targetCard,
 		title: pageTitle,
 		description: pageDescription,
 		image: pageImage,
