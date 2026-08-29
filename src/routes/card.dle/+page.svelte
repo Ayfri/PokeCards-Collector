@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import type { CardDleFeedback, CardDleGuessResponse } from '$lib/types';
 	import { readJson } from '$helpers/http';
@@ -38,7 +39,7 @@
 
 	let { data }: Props = $props();
 
-	type CardSuggestion = PageData['cardSuggestions'][number];
+	type CardSuggestion = Awaited<PageData['suggestions']>[number];
 
 	interface PendingGuess {
 		cardImage: string;
@@ -54,6 +55,8 @@
 
 	let searchInput = $state('');
 	let activeSuggestions = $state<CardSuggestion[]>([]);
+	/** The guessable cards, fetched from `/api/card-dle/suggestions` rather than serialized into the document. */
+	let suggestions = $state<CardSuggestion[]>([]);
 	let historicGuesses = $state<HistoricGuess[]>([]);
 	let loadingGuess = $state<PendingGuess | null>(null);
 	let showRulesModal = $state(false);
@@ -64,7 +67,7 @@
 		const term = searchTerm || searchInput.trim();
 		if (term.length > 0) {
 			const searchTermLower = term.toLowerCase();
-			const filteredCards = (data.cardSuggestions || []).filter(card =>
+			const filteredCards = suggestions.filter(card =>
 				card.pokemonName.toLowerCase().includes(searchTermLower) ||
 				card.name.toLowerCase().includes(searchTermLower)
 			);
@@ -80,6 +83,12 @@
 			activeSuggestions = [];
 		}
 	}
+
+	onMount(async () => {
+		suggestions = await data.suggestions;
+		// A player who typed before the list landed gets their results as soon as it does.
+		if (searchInput.trim()) displayMatchingCards();
+	});
 
 	function handleDebouncedSearch(value: string) {
 		displayMatchingCards(value);
