@@ -220,9 +220,9 @@
 	></div>
 	<!-- Drawer -->
 	<div
-		class="fixed top-0 h-screen w-full md:w-[450px] bg-gray-800 z-60 shadow-lg flex flex-col {showFilters
+		class="fixed top-0 h-screen w-full md:w-112.5 bg-gray-800 z-60 shadow-lg flex flex-col {showFilters
 			? 'right-0'
-			: 'right-[-380px]'} transition-all duration-300 z-50"
+			: '-right-95'} transition-all duration-300 z-50"
 		transition:fly={{ x: 380, duration: 300 }}
 	>
 		<div

@@ -170,7 +170,7 @@
 		{/if}
 	{:else if featuredUsers.length > 0 || featuredUsersError}
 	    <!-- Separator, only show if there are featured users or an error for them, and no search is active -->
-	    <div class="w-full max-w-[700px] mx-auto h-px bg-linear-to-r from-transparent via-gold-400/50 to-transparent my-6"></div>
+	    <div class="w-full max-w-175 mx-auto h-px bg-linear-to-r from-transparent via-gold-400/50 to-transparent my-6"></div>
 	{/if}
 
 

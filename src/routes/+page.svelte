@@ -125,7 +125,7 @@
 			<div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-10">
 				<a
 					href="/cards-list"
-					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-hidden"
+					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25 overflow-hidden"
 					title="Browse every English card"
 				>
 					{#if !NO_IMAGES}
@@ -156,7 +156,7 @@
 				</a>
 				<a
 					href="/japan"
-					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px] overflow-hidden"
+					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25 overflow-hidden"
 					title="Browse the Japanese catalogue"
 				>
 					{#if !NO_IMAGES}
@@ -187,7 +187,7 @@
 				</a>
 				<a
 					href="/cards-list?type=pokemon"
-					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25"
 					title="Browse the Pokemon cards"
 				>
 					{#if !NO_IMAGES}
@@ -221,7 +221,7 @@
 				</a>
 				<a
 					href="/sets"
-					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25"
 					title="Browse every set"
 				>
 					{#if !NO_IMAGES}
@@ -252,7 +252,7 @@
 				</a>
 				<a
 					href="/artists"
-					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25"
 					title="Browse every illustrator"
 				>
 					{#if !NO_IMAGES}
@@ -336,7 +336,7 @@
 	</section>
 
 	<div
-		class="w-full max-w-[800px] mx-auto my-16 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
+		class="w-full max-w-200 mx-auto my-16 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
 	<!-- Latest set section -->
@@ -374,7 +374,7 @@
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
 				<a
 					href="/cards-list?set={encodeURIComponent(latestSet.name)}"
-					class="block bg-gray-800 p-6 rounded-lg shadow-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:translate-y-[-5px]"
+					class="block bg-gray-800 p-6 rounded-lg shadow-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25"
 				>
 					<div class="flex flex-col sm:flex-row gap-6 items-center">
 						{#if !NO_IMAGES}
@@ -477,7 +477,7 @@
 	{/if}
 
 	<div
-		class="w-full max-w-[200px] mx-auto my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
+		class="w-full max-w-50 mx-auto my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
 	<!-- Most expensive cards latest set section -->
@@ -613,7 +613,7 @@
 	{/if}
 
 	<div
-		class="w-full max-w-[800px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
+		class="w-full max-w-200 mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
 	<!-- Feature Highlights Section -->
@@ -839,7 +839,7 @@
 		</section>
 
 	<div
-		class="w-full max-w-[200px] mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
+		class="w-full max-w-50 mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
 	<!-- Call to Action Section -->

@@ -95,7 +95,7 @@
 		<div class="mx-4 flex items-center justify-between lg:mx-28">
 			<PageTitle title="Settings" />
 		</div>
-		<div class="mx-auto my-2 h-1 w-full max-w-[800px] bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
+		<div class="mx-auto my-2 h-1 w-full max-w-200 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
 	</div>
 
 	{#if !profile}
