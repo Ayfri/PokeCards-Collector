@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getPokemons } from '$helpers/supabase-data';
+import { getCards, getPokemons, getPrices } from '$helpers/supabase-data';
 import { processCardImage } from '$helpers/card-images';
 import { article, breadcrumbs, cardPrice, cardSchema } from '$helpers/seo';
 import type { FullCard, Pokemon } from '$lib/types';
@@ -9,13 +9,11 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
 	const parentData = await parent();
 
-	const [streamedCards, streamedPrices, allPokemons] = await Promise.all([
-		parentData.streamed.allCards,
-		parentData.streamed.prices,
+	const [allCards, prices, allPokemons] = await Promise.all([
+		getCards(),
+		getPrices(),
 		getPokemons(),
 	]);
-	const allCards = streamedCards || [];
-	const prices = streamedPrices || {};
 	const sets = parentData.sets || [];
 
 	const layoutPropertiesFromParent = {

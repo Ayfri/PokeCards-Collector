@@ -1,3 +1,4 @@
+import { getCards, getPrices } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs } from '$helpers/seo';
 import { supabase } from '$lib/supabase';
@@ -10,9 +11,8 @@ interface FeaturedUser extends UserProfile {
 }
 
 export const load: PageServerLoad = async ({ locals, parent }) => {
-	const { sets, streamed } = await parent();
-	// Cards and prices are streamed by the root layout, the collection stats need them resolved.
-	const [allCards, prices] = await Promise.all([streamed.allCards, streamed.prices]);
+	const { sets } = await parent();
+	const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
 	let featuredUsers: FeaturedUser[] = [];
 	let featuredUsersError: string | null = null;
 

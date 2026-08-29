@@ -1,3 +1,4 @@
+import { getCards, getPrices } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, gameSchema } from '$helpers/seo';
 import type { Card, PriceData, Set } from '$lib/types';
@@ -31,8 +32,7 @@ function gamePrice(price: PriceData | undefined): number | null {
 
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
-	const allCards: Card[] = (await parentData.streamed.allCards) || [];
-	const prices: Record<string, PriceData> = (await parentData.streamed.prices) || {};
+	const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
 	const sets: Set[] = parentData.sets || [];
 
 	// The whole game is guessing from the picture, so a card TCGdex has no art for is unplayable.

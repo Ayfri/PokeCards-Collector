@@ -1,3 +1,4 @@
+import { getCards, getPrices } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, gameSchema } from '$helpers/seo';
 import type { FullCard, PriceData } from '$lib/types';
@@ -10,10 +11,9 @@ interface CardSuggestion extends FullCard {
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
 
-	// Wait for the layout streamed data to resolve
 	const [allCards, prices] = await Promise.all([
-		parentData.streamed.allCards,
-		parentData.streamed.prices
+		getCards(),
+		getPrices()
 	]);
 
 	if (!allCards || !prices) {

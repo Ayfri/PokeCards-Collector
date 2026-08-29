@@ -7,9 +7,9 @@ import { breadcrumbs, cardPrice, cardSchema } from '$helpers/seo';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
-	const { sets, streamed, ...layoutData } = await parent();
+	const { sets, ...layoutData } = await parent();
 
-	// Japanese cards carry their own prices, the layout only streams the English ones.
+	// Japanese cards carry their own prices, only the English catalogue is read by `getCards` / `getPrices`.
 	const [allJpCards, prices] = await Promise.all([getJapaneseCards(), getJapanesePrices()]);
 	
 	// Find the specific card

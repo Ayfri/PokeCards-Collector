@@ -1,3 +1,4 @@
+import { getCards, getPrices } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs } from '$helpers/seo';
 import type { FullCard } from '$lib/types';
@@ -5,8 +6,7 @@ import type { FullCard } from '$lib/types';
 export const load: PageServerLoad = async ({ locals, parent }) => {
 	const parentData = await parent();
 
-	const allCards = await parentData.streamed.allCards || [];
-	const prices = await parentData.streamed.prices || {};
+	const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
 	
 	const sets = parentData.sets || [];
 	const layoutCollectionItems = parentData.collectionItems || [];

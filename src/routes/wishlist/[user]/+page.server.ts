@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import { getPokemons, getTypes } from '$helpers/supabase-data';
+import { getCards, getPokemons, getPrices, getTypes } from '$helpers/supabase-data';
 import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserWishlist } from '$lib/services/wishlists';
@@ -64,8 +64,7 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const parentData = await parent();
 	const { profile: loggedInUserProfile, wishlistItems: layoutWishlistItems, sets: parentSets, ...layoutData } = parentData;
 
-	const allCardsResolved = await parentData.streamed.allCards || [];
-	const pricesResolved = await parentData.streamed.prices || {}; // Keep resolving prices for CardGrid
+	const [allCardsResolved, pricesResolved] = await Promise.all([getCards(), getPrices()]);
 	const setsResolved = parentSets || [];
 
 	const requestedUsername = params.user;

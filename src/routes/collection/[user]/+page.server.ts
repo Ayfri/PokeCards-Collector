@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import { getPokemons, getTypes } from '$helpers/supabase-data';
+import { getCards, getPokemons, getPrices, getTypes } from '$helpers/supabase-data';
 import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserCollection } from '$lib/services/collections';
@@ -78,10 +78,7 @@ export const load: PageServerLoad = async ({ locals, params, parent, url }) => {
 	const parentData = await parent();
 	const { profile: loggedInUserProfile, collectionItems: layoutCollectionItems, sets: parentSets, ...layoutData } = parentData;
 
-	// Resolve allCards and prices from parent first
-	const allCardsResolved = await parentData.streamed.allCards || [];
-	const pricesResolved = await parentData.streamed.prices || {};
-	// sets from parentData should already be resolved as per its definition in layout.server.ts
+	const [allCardsResolved, pricesResolved] = await Promise.all([getCards(), getPrices()]);
 	const setsResolved = parentSets || [];
 	const selectedSet = url.searchParams.get('set');
 

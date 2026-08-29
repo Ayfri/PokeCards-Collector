@@ -1,3 +1,4 @@
+import { getCards, getPrices } from '$helpers/supabase-data';
 import { error, redirect } from '@sveltejs/kit';
 import { getCollectionStats } from '$lib/services/collections';
 import { getProfileByUsername } from '$lib/services/profiles';
@@ -6,15 +7,10 @@ import { breadcrumbs, profileSchema } from '$helpers/seo';
 import type { UserProfile, CollectionStats, ServiceResponse } from '$lib/types';
 
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
-	const parentData = await parent(); // Await parent data first
+	const { profile: loggedInUserProfile, sets: parentSets, ...layoutData } = await parent();
 
-	// Destructure non-streamed properties and the streamed object
-	const { profile: loggedInUserProfile, sets: parentSets, ...layoutData } = parentData;
-
-	// Await streamed properties
-	const allCards = await parentData.streamed.allCards || [];
-	const prices = await parentData.streamed.prices || {};
-	const sets = parentSets || []; // Use parentSets, assuming it's already resolved
+	const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
+	const sets = parentSets || [];
 
 	const requestedUsername = params.user;
 	const loggedInUsername = loggedInUserProfile?.username ?? null;
