@@ -59,7 +59,6 @@
 			const responseData = await readJson<SearchUsersResponse>(response, { error: 'Invalid server response' });
 
 			if (responseData.success) {
-				console.log('responseData.users', responseData.users);
 				searchResults = responseData.users;
 				updateUrlWithoutNavigating(searchQuery);
 			} else {

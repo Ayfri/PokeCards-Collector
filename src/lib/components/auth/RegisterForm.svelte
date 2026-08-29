@@ -142,8 +142,6 @@
 					return;
 				}
 
-				// Signup successful, now attempt automatic login via API
-				console.log('Signup successful, attempting automatic sign in via API...');
 				const loginResponse = await fetch('/api/auth/login', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -157,18 +155,14 @@
 					const errorData = await readJson<ApiError>(loginResponse, {});
 					errorMessage = `Registration successful, but automatic login failed. ${errorData.message || 'Please log in manually.'}`;
 					loading = false;
-					onSwitch?.('login'); // Switch to login tab
+					onSwitch?.('login');
 					return;
 				}
 
-				// Automatic login successful via API (cookies are set)
-				console.log('Automatic sign in successful via API!');
 				loading = false;
 
-				// Dispatch success event
 				onSuccess?.();
 
-				// Navigate to current page or home after invalidating
 				await invalidateAll();
 				const currentPath = $page.url.pathname;
 				if (currentPath.includes('/login') || currentPath.includes('/auth') || currentPath.includes('/register') || currentPath.includes('/reset-password')) {
