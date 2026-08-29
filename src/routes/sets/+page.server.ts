@@ -1,3 +1,4 @@
+import { getCards, getPrices } from '$helpers/supabase-data';
 import { findSetByCardCode } from '$helpers/set-utils';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, setListSchema } from '$helpers/seo';
@@ -6,8 +7,7 @@ import type { SetWithPrice } from '$lib/types';
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
 
-	const cards = await parentData.streamed.allCards || [];
-	const prices = await parentData.streamed.prices || {};
+	const [cards, prices] = await Promise.all([getCards(), getPrices()]);
 	const setsFromParent = parentData.sets || [];
 
 	const layoutData = {
@@ -57,11 +57,11 @@ export const load: PageServerLoad = async ({ parent }) => {
 		type: 'CollectionPage' as const,
 	};
 
+	// `cards` and `prices` stay on the server: the page renders `setsWithPrices` alone, and shipping the
+	// catalogue alongside it turned this route into a 24 MB document.
 	return {
 		...layoutData,
 		setsWithPrices,
-		allCards: cards,
-		prices: prices,
 		...pageSeoData
 	};
 };

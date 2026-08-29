@@ -1,13 +1,12 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import type { ArtistWithCards } from './+page.server';
 	import { NO_IMAGES } from '$lib/images';
 	import SortControl from '@components/filters/SortControl.svelte';
 	import PageTitle from '@components/PageTitle.svelte';
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
-	import type { Card, Set } from '$lib/types';
 	import { artistsSortDirection, artistsSortValue, type ArtistsSortValue } from '$stores/artistsSort';
-	import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 	import { fade, fly } from 'svelte/transition';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
@@ -19,219 +18,35 @@
 
 	let { data }: Props = $props();
 
-	interface ArtistWithCards {
-		firstReleaseDate: Date;
-		lastReleaseDate: Date;
-		name: string;
-		showcaseCards: Card[];
-		totalCards: number;
-		/** Cardmarket value of every card the artist drew, in EUR. */
-		totalValue: number;
-		/** `totalValue` spread over the artist's cards, in EUR. */
-		averageValue: number;
-	}
-
 	/** Totals reach five figures, so cents are noise: they are dropped past 100 EUR. */
 	function formatEuros(value: number): string {
 		return `${value.toLocaleString('en-US', { maximumFractionDigits: value >= 100 ? 0 : 2 })} €`;
 	}
 
-    // Search state
-    let searchTerm = $state('');
+	let searchTerm = $state('');
 
-    function setSearchTerm(value: string) {
-        searchTerm = value;
-    }
-
-	/** Cards drawn on the preview stack of an artist card. */
-	const SHOWCASE_SIZE = 3;
-
-	// --- Data Processing Functions ---
-
-	// Groups cards by artist.
-	// Assumes FullCard, PokemonSet, PriceData types are imported from '$lib/types'.
-	function groupCardsByArtist(allCards: PageData['allCards']): Map<string, NonNullable<PageData['allCards']>[number][]> {
-		const map = new Map<string, NonNullable<PageData['allCards']>[number][]>();
-		if (allCards) {
-			for (const card of allCards) {
-				if (card.artist) {
-					if (!map.has(card.artist)) {
-						map.set(card.artist, []);
-					}
-					map.get(card.artist)!.push(card);
-				}
-			}
-		}
-		return map;
+	function setSearchTerm(value: string) {
+		searchTerm = value;
 	}
 
-	// Calculates release dates for all cards.
-	function calculateCardReleaseDates(
-		allCards: PageData['allCards'],
-		sets: PageData['sets']
-	): Map<string, Date> {
-		const dates = new Map<string, Date>();
-		if (!allCards || !sets) {
-			return dates;
-		}
+	function sortArtistList(artists: ArtistWithCards[], value: ArtistsSortValue, direction: 'asc' | 'desc'): ArtistWithCards[] {
+		const sortKey = value === 'firstReleaseDate' ? 'firstReleaseYear' : value === 'lastReleaseDate' ? 'lastReleaseYear' : value;
 
-		const setLookup = buildSetLookupMap(sets); // Build this once
-
-		for (const card of allCards) {
-			if (!card || !card.cardCode) {
-				// Ensure card.cardCode exists before setting a default date for it
-				if (card && card.cardCode) {
-					dates.set(card.cardCode, new Date('0000-01-01'));
-				}
-				continue;
-			}
-
-			const foundSet = findSetInLookup(card.cardCode, setLookup);
-
-			dates.set(card.cardCode, foundSet ? new Date(foundSet.releaseDate) : new Date('0000-01-01'));
-		}
-		return dates;
-	}
-
-	// Processes details for a single artist.
-	function processArtistDetails(
-		artistName: string,
-		artistCardsList: NonNullable<PageData['allCards']>[number][], // Represents FullCard[]
-		cardReleaseDatesMap: Map<string, Date>,
-		prices: PageData['prices']
-	): ArtistWithCards {
-		// One pass instead of a full sort per artist: the total and the three priciest cards come out together.
-		let totalValue = 0;
-		const showcase: { card: Card, price: number }[] = [];
-		for (const card of artistCardsList) {
-			// Use trend price as a fallback if simple price is not available or zero
-			const price = prices?.[card.cardCode]?.simple || prices?.[card.cardCode]?.trend || 0;
-			totalValue += price;
-			if (!card.image) continue; // A card with no art cannot be shown in the preview stack.
-			const slot = showcase.findIndex(entry => price > entry.price);
-			if (slot !== -1) showcase.splice(slot, 0, { card, price });
-			else if (showcase.length < SHOWCASE_SIZE) showcase.push({ card, price });
-			if (showcase.length > SHOWCASE_SIZE) showcase.pop();
-		}
-
-		const showcaseCards: Card[] = showcase.map(entry => entry.card);
-
-		const totalCards = artistCardsList.length;
-
-		let firstReleaseDate = new Date('9999-01-01');
-		let lastReleaseDate = new Date('0000-01-01'); // This can result in an Invalid Date
-
-		if (artistCardsList.length > 0) {
-			for (const card of artistCardsList) {
-				const cardDate = cardReleaseDatesMap.get(card.cardCode);
-				if (cardDate) { // Ensure cardDate was found
-					// For firstReleaseDate:
-					if (cardDate < firstReleaseDate) {
-						firstReleaseDate = cardDate;
-					}
-					// For lastReleaseDate:
-					if (cardDate > lastReleaseDate || isNaN(lastReleaseDate.getTime())) {
-						if (!isNaN(cardDate.getTime())) { // Only update if cardDate itself is valid
-							lastReleaseDate = cardDate;
-						}
-					}
-				}
-			}
-		}
-
-		return {
-			averageValue: totalCards ? totalValue / totalCards : 0,
-			name: artistName,
-			showcaseCards,
-			totalCards,
-			totalValue,
-			firstReleaseDate,
-			lastReleaseDate
-		};
-	}
-
-	// Creates a list of artists with their processed card details.
-	function createArtistsWithCardsList(
-		artistNames: PageData['artists'], // This is string[] based on +page.server.ts
-		cardsByArtist: Map<string, NonNullable<PageData['allCards']>[number][]>,
-		cardReleaseDatesMap: Map<string, Date>,
-		prices: PageData['prices']
-	): ArtistWithCards[] {
-		// data.artists from +page.server.ts is string[], so artistNames should always be defined.
-		// However, (data.artists || []) was used before, suggesting caution.
-		// If artistNames can truly be undefined from PageData, this check is useful.
-		if (!artistNames) {
-			return [];
-		}
-		return artistNames.map(name => {
-			const currentArtistCards = cardsByArtist.get(name) || [];
-			return processArtistDetails(name, currentArtistCards, cardReleaseDatesMap, prices);
-		});
-	}
-
-	// Sorts the list of artists.
-	function sortArtistList(
-		artists: ArtistWithCards[],
-		value: ArtistsSortValue,
-		direction: 'asc' | 'desc'
-	): ArtistWithCards[] {
 		return [...artists].sort((a, b) => {
-			let comparison = 0;
-			switch (value) {
-				case 'name':
-					comparison = a.name.localeCompare(b.name);
-					break;
-				case 'totalCards':
-					comparison = a.totalCards - b.totalCards;
-					break;
-				case 'totalValue':
-					comparison = a.totalValue - b.totalValue;
-					break;
-				case 'averageValue':
-					comparison = a.averageValue - b.averageValue;
-					break;
-				case 'firstReleaseDate':
-				case 'lastReleaseDate': {
-					const timeA = a[value].getTime();
-					const timeB = b[value].getTime();
-					const aIsNaN = isNaN(timeA);
-					const bIsNaN = isNaN(timeB);
-
-					if (aIsNaN && bIsNaN) comparison = 0;
-					else if (aIsNaN) comparison = 1; // NaNs go "last"
-					else if (bIsNaN) comparison = -1; // NaNs go "last"
-					else comparison = timeA - timeB;
-					break;
-				}
-				// No default needed as `value` is a constrained type
-			}
-			return direction === 'desc' ? comparison * -1 : comparison;
+			const comparison = sortKey === 'name'
+				? a.name.localeCompare(b.name)
+				: a[sortKey] - b[sortKey];
+			return direction === 'desc' ? -comparison : comparison;
 		});
 	}
 
-	// Filters the list of artists by search term.
 	function filterArtistList(artists: ArtistWithCards[], term: string): ArtistWithCards[] {
-		if (!term.trim()) { // Return all artists if search term is empty or whitespace
-			return artists;
-		}
+		if (!term.trim()) return artists;
 		const lowerCaseTerm = term.toLowerCase();
-		return artists.filter(artist =>
-			artist.name.toLowerCase().includes(lowerCaseTerm)
-		);
+		return artists.filter(artist => artist.name.toLowerCase().includes(lowerCaseTerm));
 	}
 
-	// --- Reactive Data Derivations ---
-	const cardsByArtistMap = $derived(groupCardsByArtist(data.allCards));
-	const cardReleaseDates = $derived(calculateCardReleaseDates(data.allCards, data.sets));
-
-	const artistsWithCards = $derived(createArtistsWithCardsList(
-		data.artists,
-		cardsByArtistMap,
-		cardReleaseDates,
-		data.prices
-	));
-
-	const sortedArtists = $derived(sortArtistList(artistsWithCards, $artistsSortValue, $artistsSortDirection));
+	const sortedArtists = $derived(sortArtistList(data.artists, $artistsSortValue, $artistsSortDirection));
 	const filteredArtists = $derived(filterArtistList(sortedArtists, searchTerm));
 </script>
 
@@ -279,9 +94,9 @@
 					<a href="/cards-list?artist={encodeURIComponent(artist.name.toLowerCase())}" class="block h-full" title={`Browse every card illustrated by ${artist.name}`}>
 					<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
 						<div class="bg-gray-900 p-2 {NO_IMAGES ? 'hidden' : ''}">
-							<div class="flex justify-center items-center gap-1 h-40 overflow-hidden perspective-500">
+							<div class="flex justify-center items-center gap-1 h-40 overflow-hidden perspective-[500px]">
 								{#if artist.showcaseCards.length > 0}
-									{#each artist.showcaseCards as card, index}
+									{#each artist.showcaseCards as card, index (card.cardCode)}
 										<div
 											class="h-full flex-1 relative {index > 0 ? '-ml-16' : ''}"
 											style="z-index: {3 - index}"
@@ -308,7 +123,7 @@
 							<h2 class="text-lg font-semibold text-white">{artist.name}</h2>
 							<div class="mt-2 text-sm text-gray-400 flex justify-between">
 								<span class="flex items-center gap-1.5 text-gold-400" title="Cards illustrated by this artist"><LayersIcon size={14} /> {artist.totalCards} {artist.totalCards === 1 ? "card" : "cards"}</span>
-								<span class="flex items-center gap-1.5" title="First and last year this artist was printed"><CalendarDaysIcon size={14} /> {artist.firstReleaseDate.getFullYear()} - {artist.lastReleaseDate.getFullYear()}</span>
+								<span class="flex items-center gap-1.5" title="First and last year this artist was printed"><CalendarDaysIcon size={14} /> {artist.firstReleaseYear} - {artist.lastReleaseYear}</span>
 							</div>
 							<div class="mt-1 text-sm text-gray-400 flex justify-between">
 								<span class="flex items-center gap-1.5 text-green-400 font-semibold" title="Cardmarket value of every card by this artist"><CircleEuroIcon size={14} /> {formatEuros(artist.totalValue)}</span>
@@ -321,9 +136,3 @@
 		{/each}
 	</div>
 </div>
-
-<style>
-	.perspective-500 {
-		perspective: 500px;
-	}
-</style>
