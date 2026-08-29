@@ -6,7 +6,7 @@
 		},
 		"supabase": {
 			"type": "http",
-			"url": "https://mcp.supabase.com/mcp?project_ref=ptbwuqaqkqntmgmaqboq&read_only=true"
+			"url": "https://mcp.supabase.com/mcp?project_ref=ptbwuqaqkqntmgmaqboq&features=docs%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions"
 		},
 		"cloudflare-docs": {
 			"type": "http",
