@@ -6,7 +6,7 @@
 	import Heart from '@lucide/svelte/icons/heart';
 	import Library from '@lucide/svelte/icons/library';
 	import Settings from '@lucide/svelte/icons/settings';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import AuthModal from './AuthModal.svelte';
 	import { browser } from '$app/environment';
 	import Avatar from './Avatar.svelte';
@@ -19,8 +19,8 @@
 	let isAuthModalOpen = $state(false);
 	let menuElement = $state<HTMLElement>();
 
-	const user = $derived($page.data.user as AuthUser | null);
-	const profile = $derived($page.data.profile as UserProfile | null);
+	const user = $derived(page.data.user as AuthUser | null);
+	const profile = $derived(page.data.profile as UserProfile | null);
 
 	function toggleMenu() {
 		isMenuOpen = !isMenuOpen;
@@ -68,16 +68,16 @@
 			}
 
 			await invalidateAll();
-			const currentPath = $page.url.pathname;
-			const currentSearch = $page.url.search;
+			const currentPath = page.url.pathname;
+			const currentSearch = page.url.search;
 			goto(currentPath + currentSearch);
 
 		} catch (error) {
 			console.error('An error occurred during sign out:', error);
 			setNavigationLoading(false);
 			await invalidateAll();
-			const currentPath = $page.url.pathname;
-			const currentSearch = $page.url.search;
+			const currentPath = page.url.pathname;
+			const currentSearch = page.url.search;
 			goto(currentPath + currentSearch);
 		}
 	}

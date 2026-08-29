@@ -2,7 +2,7 @@
 	import '~/app.css';
 	import "~/fonts/stylesheet.css";
 	import {onNavigate} from '$app/navigation';
-	import {page} from '$app/stores';
+	import {page} from '$app/state';
 	import {NO_IMAGES} from '$lib/images';
 	import Header from '@components/Header.svelte';
 	import LoadingBar from '$lib/components/ui/LoadingBar.svelte';
@@ -20,19 +20,16 @@
 
 	let { children }: Props = $props();
 
-	// Reactive statement to update stores when server data changes
 	$effect(() => {
-		// Update wishlist store
 		const wishlistSet = new Set<string>();
-		if ($page.data.wishlistItems && Array.isArray($page.data.wishlistItems)) {
-			($page.data.wishlistItems as UserWishlist[]).forEach(item => wishlistSet.add(item.card_code));
+		if (page.data.wishlistItems && Array.isArray(page.data.wishlistItems)) {
+			(page.data.wishlistItems as UserWishlist[]).forEach(item => wishlistSet.add(item.card_code));
 		}
 		wishlistStore.set(wishlistSet);
 
-		// Update collection store
 		const collectionMap = new Map<string, number>();
-		if ($page.data.collectionItems && Array.isArray($page.data.collectionItems)) {
-			($page.data.collectionItems as UserCollection[]).forEach(item => {
+		if (page.data.collectionItems && Array.isArray(page.data.collectionItems)) {
+			(page.data.collectionItems as UserCollection[]).forEach(item => {
 				const currentCount = collectionMap.get(item.card_code) || 0;
 				collectionMap.set(item.card_code, currentCount + 1);
 			});
@@ -46,7 +43,6 @@
 			const target = e.target as HTMLElement;
 			const link = target.closest('a');
 
-			// Check if it's an internal link
 			if (
 				link &&
 				link.href &&
@@ -73,11 +69,8 @@
 	});
 
 	onNavigate((navigation) => {
-		// Loading already started on link click
-		// Just make sure it's set to true
 		setNavigationLoading(true);
 
-		// Set up to turn loading off after navigation completes
 		navigation.complete.then(() => {
 			setTimeout(() => setNavigationLoading(false), 100); // Small delay to ensure smoother transitions
 		});
@@ -131,9 +124,8 @@
 		src="https://static.cloudflareinsights.com/beacon.min.js"
 	></script>
 	<!-- End Cloudflare Web Analytics -->
-	<!-- <ViewTransitions fallback="animate"/> -->
 </svelte:head>
-<Seo title={$page.data.title} description={$page.data.description} image={$page.data.image} type={$page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
+<Seo title={page.data.title} description={page.data.description} image={page.data.image} type={page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
 
 <div class="flex flex-col min-h-screen">
 	<LoadingBar />

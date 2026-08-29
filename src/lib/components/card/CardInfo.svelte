@@ -3,7 +3,7 @@
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import CardPrice from '@components/card/CardPrice.svelte';
 	import { parseCardCode } from '$helpers/card-utils';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { collectionStore } from '$lib/stores/collection';
 	import { wishlistStore } from '$lib/stores/wishlist';
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
@@ -35,32 +35,26 @@
 
 	const cardNumber = $derived(parseCardCode(card.cardCode).cardNumber);
 
-	// Compute the display name: Pokemon name if available, otherwise card name
 	const displayName = $derived(pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name);
-	// Compute description: Pokemon description if available, otherwise card rules/basic info
 	const displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card?.name}`);
 
 	function formatDate(date: Date) {
 		return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 	}
 
-	// --- User/Profile State ---
-	const user = $derived($page.data.user);
-	const profile = $derived($page.data.profile);
+	const user = $derived(page.data.user);
+	const profile = $derived(page.data.profile);
 
-	// --- Collection/Wishlist State ---
 	const MAX_CARD_QUANTITY = 99;
 
-	// Reactive declarations for template
 	const collectionCount = $derived(card ? ($collectionStore.get(card.cardCode) || 0) : 0);
 	const cardIsWishlisted = $derived(card ? $wishlistStore.has(card.cardCode) : false);
 
-	// --- Actions ---
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
 		if (!user || !profile || !card) return;
-		if (cardIsWishlisted) { // Use reactive variable
+		if (cardIsWishlisted) {
 			await removeCardFromWishlist(profile.username, card.cardCode);
 		} else {
 			await addCardToWishlist(profile.username, card.cardCode);
@@ -70,7 +64,6 @@
 		event.preventDefault();
 		event.stopPropagation();
 		if (!user || !profile || !card) return;
-		// const count = collectionCount; // Use reactive variable directly in template guard
 		if (collectionCount >= MAX_CARD_QUANTITY) return;
 		await addCardToCollection(profile.username, card.cardCode);
 	}
@@ -78,14 +71,9 @@
 		event.preventDefault();
 		event.stopPropagation();
 		if (!user || !profile || !card) return;
-		// const count = collectionCount; // Use reactive variable directly in template guard
 		if (collectionCount === 0) return;
 		await removeCardFromCollection(profile.username, card.cardCode);
 	}
-
-	// --- Force reactivity for stores ---
-	const _collection = $derived($collectionStore);
-	const _wishlist = $derived($wishlistStore);
 </script>
 
 <div class="pokemon-info-container flex flex-col items-center gap-4 mt-6 lg:mt-12 max-lg:gap-0">

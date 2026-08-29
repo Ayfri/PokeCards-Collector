@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { supabase } from '../../supabase';
 	import BouncyLoader from '../BouncyLoader.svelte';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { goto, invalidateAll } from '$app/navigation';
 	import { readJson, type ApiError } from '$helpers/http';
 	import EyeIcon from '@lucide/svelte/icons/eye';
@@ -34,13 +34,12 @@
 		loading = true;
 		errorMessage = '';
 		
-		// Timeout for user feedback remains useful
 		const loginTimeout = setTimeout(() => {
 			if (loading) {
 				errorMessage = 'Login is taking longer than expected. Please check your internet connection or try again later.';
 				loading = false;
 			}
-		}, 15000); // 15 seconds
+		}, 15000);
 
 		try {
 			const response = await fetch('/api/auth/login', {
@@ -56,26 +55,23 @@
 			if (!response.ok) {
 				const errorData = await readJson<ApiError>(response, { message: 'Invalid login credentials' });
 				console.error('Error during login:', response.status, errorData.message);
-				errorMessage = errorData.message || 'Incorrect email or password'; // Use server message or default
+				errorMessage = errorData.message || 'Incorrect email or password';
 				loading = false;
 				return;
 			}
 
-			// Login successful - API handles session, cookies are set.
 			loading = false;
 
-			// Notify the parent component (AuthModal) of success
 			onSuccess?.();
 
 			// Invalidate all load functions to ensure session changes are picked up
 			await invalidateAll();
 
-			// Redirect to current page or home
-			const currentPath = $page.url.pathname;
+			const currentPath = page.url.pathname;
 			if (currentPath.includes('/login') || currentPath.includes('/auth') || currentPath.includes('/reset-password')) {
 				goto('/');
 			} else {
-				goto(currentPath + $page.url.search);
+				goto(currentPath + page.url.search);
 			}
 
 		} catch (error: any) {

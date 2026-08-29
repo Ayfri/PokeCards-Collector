@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto, invalidateAll } from '$app/navigation';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import { readJson, type ApiError } from '$helpers/http';
 	import EyeIcon from '@lucide/svelte/icons/eye';
@@ -79,7 +79,6 @@
 	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
 		try {
-			// Basic validation
 			if (!email || !username || !password || !confirmPassword) {
 				errorMessage = 'Please fill in all fields';
 				return;
@@ -95,14 +94,12 @@
 				return;
 			}
 			
-			// Username validation
 			const isUsernameValid = await validateUsername();
 			
 			if (!isUsernameValid) {
 				return;
 			}
 			
-			// Everything is validated, continue
 			loading = true;
 			errorMessage = '';
 			
@@ -121,7 +118,6 @@
 					return;
 				}
 				
-				// 1. Attempt Signup via API
 				const signupResponse = await fetch('/api/auth/signup', {
 					method: 'POST',
 					headers: { 'Content-Type': 'application/json' },
@@ -164,11 +160,11 @@
 				onSuccess?.();
 
 				await invalidateAll();
-				const currentPath = $page.url.pathname;
+				const currentPath = page.url.pathname;
 				if (currentPath.includes('/login') || currentPath.includes('/auth') || currentPath.includes('/register') || currentPath.includes('/reset-password')) {
 					goto('/');
 				} else {
-					goto(currentPath + $page.url.search);
+					goto(currentPath + page.url.search);
 				}
 
 			} catch (fetchError) {
@@ -179,11 +175,8 @@
 			}
 		} catch (error: unknown) {
 			console.error('Unexpected error during form submission:', error);
-			loading = false; // Ensure loading is stopped
-			// Use a generic error message for unexpected errors
+			loading = false;
 			errorMessage = `An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`;
-			// alert is generally discouraged, using the errorMessage div is better UX
-			// alert(`Error during submission: ${error instanceof Error ? error.message : 'Unknown error'}`);
 		}
 	}
 

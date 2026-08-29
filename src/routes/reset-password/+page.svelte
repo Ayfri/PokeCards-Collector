@@ -1,7 +1,6 @@
 <script lang="ts">
 import { onMount } from 'svelte';
 import { supabase } from '../../lib/supabase';
-import { page } from '$app/stores';
 import { goto } from '$app/navigation';
 import BouncyLoader from '$lib/components/BouncyLoader.svelte';
 
