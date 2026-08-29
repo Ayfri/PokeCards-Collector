@@ -1,4 +1,5 @@
 import { parseCardCode } from '$helpers/card-utils';
+import setNames from '$lib/data/set-names.json' with { type: 'json' };
 import type { Card, Set } from '$lib/types';
 
 /** One line of an imported file, already reduced to the three things a card can be found by. */
@@ -26,6 +27,16 @@ export interface ColumnMapping {
 export const MAX_IMPORT_ROWS = 20000;
 
 const normalize = (value: string) => value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+
+/**
+ * A set name as its sorted, depluralized words, so word order and plurals stop mattering: Pokecardex writes
+ * `Énergies Écarlate et Violet` where TCGdex writes `Écarlate et Violet Énergie`. Prefixed, so it cannot collide
+ * with a plain normalized name.
+ */
+const tokenKey = (value: string) => {
+	const tokens = value.split(/[^\p{L}\p{N}]+/u).map(word => normalize(word).replace(/s$/, '')).filter(Boolean).sort();
+	return tokens.length > 1 ? `t:${tokens.join('-')}` : '';
+};
 
 const HEADER_ALIASES = {
 	code: ['cardcode', 'code', 'uniquecode'],
@@ -82,16 +93,21 @@ export function toImportRows(rows: string[][], columns: ColumnMapping): ImportRo
  */
 export function buildSetKeys(sets: Set[], cards: Card[]): Map<string, string> {
 	const keys = new Map<string, string>();
+	const byTcgdexId = new Map<string, string>();
 	const add = (alias: string, key: string) => {
-		const normalized = normalize(alias);
-		if (normalized && !keys.has(normalized)) keys.set(normalized, key);
+		for (const form of [normalize(alias), tokenKey(alias)]) {
+			if (form && !keys.has(form)) keys.set(form, key);
+		}
 	};
 
 	for (const card of cards) {
 		const legacy = parseCardCode(card.cardCode).setCode;
 		if (!legacy) continue;
 		add(legacy, legacy);
-		if (card.setId) add(card.setId, legacy);
+		if (card.setId) {
+			add(card.setId, legacy);
+			byTcgdexId.set(normalize(card.setId), legacy);
+		}
 		if (card.setName) add(card.setName, legacy);
 		if (card.ptcgoCode) add(card.ptcgoCode, legacy);
 	}
@@ -102,12 +118,39 @@ export function buildSetKeys(sets: Set[], cards: Card[]): Map<string, string> {
 		if (set.name && set.setId) add(set.name, normalize(set.setId));
 	}
 
+	// A French, German, Spanish, Italian or Portuguese export names its sets in that language: a Pokecardex CSV
+	// says `Foudre Noire` where the catalogue says `Black Bolt`. The keys are already normalized by the generator.
+	for (const langNames of Object.values(setNames)) {
+		for (const [name, tcgdexId] of Object.entries(langNames)) {
+			const key = byTcgdexId.get(normalize(tcgdexId));
+			if (key) add(name, key);
+		}
+	}
+
 	return keys;
 }
 
-/** `setKey|number` -> `card_code`, both the printed number and its zero-stripped form, so `004` and `4` both land. */
+/** `004` is stored as `4`, so both forms are indexed and both are looked up. */
+const numberForms = (value: string) => {
+	const stripped = value.replace(/^0+(?=.)/, '');
+	return stripped === value ? [value] : [value, stripped];
+};
+
+/**
+ * `setKey|number` -> `card_code`. A card is also filed under its parent set when its number carries a letter prefix:
+ * TCGdex splits the Trainer Gallery of a set into its own `swsh10tg`, while an export lists `TG05` under the parent.
+ */
 export function buildCardIndex(cards: Card[]): Map<string, string> {
 	const index = new Map<string, string>();
+	const parents = new Map<string, string>();
+
+	// The longest other set id this one extends, which is the set an export would have named instead.
+	const setIds = [...new Set(cards.map(card => card.setId).filter((id): id is string => !!id))].sort();
+	for (const setId of setIds) {
+		const parent = setIds.filter(other => other !== setId && setId.startsWith(other)).sort((a, b) => b.length - a.length)[0];
+		if (parent) parents.set(setId, parent);
+	}
+	const setKeyOf = new Map(cards.filter(card => card.setId).map(card => [card.setId!, parseCardCode(card.cardCode).setCode ?? '']));
 
 	for (const card of cards) {
 		const { cardNumber, setCode } = parseCardCode(card.cardCode);
@@ -116,16 +159,33 @@ export function buildCardIndex(cards: Card[]): Map<string, string> {
 		// Keyed on the code itself too, so a code column is validated against the catalogue instead of trusted.
 		index.set(`|${card.cardCode.toLowerCase()}`, card.cardCode);
 
+		const parentKey = card.setId ? setKeyOf.get(parents.get(card.setId) ?? '') : undefined;
+
 		for (const raw of [cardNumber, card.localId ? normalizeNumber(card.localId) : '']) {
 			if (!raw) continue;
-			for (const number of [raw, raw.replace(/^0+(?=.)/, '')]) {
+			for (const number of numberForms(raw)) {
 				const key = `${setCode}|${number}`;
 				if (!index.has(key)) index.set(key, card.cardCode);
+				// Only a lettered number goes up to the parent: a bare `01` would shadow the parent's own card 1.
+				if (parentKey && /[a-z]/.test(number) && !index.has(`${parentKey}|${number}`)) index.set(`${parentKey}|${number}`, card.cardCode);
 			}
 		}
 	}
 
 	return index;
+}
+
+/**
+ * The forms a set name can be written in. Pokecardex prefixes a set with its block (`HS : Triomphe` for `Triomphe`)
+ * and suffixes a trainer kit with its mascot, neither of which TCGdex carries in the name.
+ */
+function setNameForms(value: string): string[] {
+	const forms = [value];
+	const afterColon = value.split(':').pop()!;
+	if (afterColon !== value) forms.push(afterColon);
+	const beforeParen = value.split('(')[0];
+	if (beforeParen !== value) forms.push(beforeParen);
+	return forms;
 }
 
 export interface ImportMatch {
@@ -150,8 +210,8 @@ export function resolveRows(rows: ImportRow[], index: Map<string, string>, setKe
 	for (const row of rows) {
 		// A full card code needs no set at all, which is what makes this site's own export round-trip.
 		const direct = row.number.includes('_') ? index.get(`|${row.number.toLowerCase()}`) : undefined;
-		const setKey = row.set ? setKeys.get(normalize(row.set)) : pinned;
-		const cardCode = direct || (setKey ? index.get(`${setKey}|${normalizeNumber(row.number)}`) : undefined);
+		const setKey = row.set ? setNameForms(row.set).flatMap(form => [setKeys.get(normalize(form)), setKeys.get(tokenKey(form))]).find(Boolean) : pinned;
+		const cardCode = direct ?? (setKey ? numberForms(normalizeNumber(row.number)).map(number => index.get(`${setKey}|${number}`)).find(Boolean) : undefined);
 
 		if (!cardCode) {
 			unmatched.push(row);
