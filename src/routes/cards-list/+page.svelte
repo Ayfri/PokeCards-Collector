@@ -70,12 +70,9 @@
 				filterName.set(decodedNameParam);
 			}
 
+			// The type list now streams with the grid, so the value is trusted lowercased like the artist and rarity ones.
 			if (pokemonTypeParam) {
-				const decodedPokemonTypeParam = decodeURIComponent(pokemonTypeParam);
-				const typeExists = data.types.some(type => type.toLowerCase() === decodedPokemonTypeParam.toLowerCase());
-				if (typeExists) {
-					filterType.set(decodedPokemonTypeParam.toLowerCase());
-				}
+				filterType.set(decodeURIComponent(pokemonTypeParam).toLowerCase());
 			}
 
 			// Apply sort settings from URL
@@ -122,9 +119,9 @@
 			cards={grid.cards}
 			sets={data.sets}
 			rarities={grid.rarities}
-			types={data.types}
+			types={grid.types}
 			artists={grid.artists}
-			pokemons={data.pokemons}
+			pokemons={grid.pokemons}
 			prices={grid.prices}
 			pageTitle={null}
 			selectedSetName={selectedSetName}
