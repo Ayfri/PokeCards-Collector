@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type { FullAutoFill } from 'svelte/elements';
+	import { debounce } from '$helpers/debounce';
+	import type { FullAutoFill, HTMLInputAttributes } from 'svelte/elements';
 
-	interface Props {
+	interface Props extends HTMLInputAttributes {
 		id: string;
 		label: string;
 		labelClass?: string;
@@ -9,12 +10,11 @@
 		placeholder?: string;
 		autocomplete?: FullAutoFill | undefined;
 		debounceFunction?: (value: string) => void;
-		debounceDelay?: number; // Debounce delay in milliseconds
+		debounceDelay?: number;
 		type?: "email" | "password" | "text" | "url";
 		onInput?: (event: Event) => void;
 		onKeydown?: (event: KeyboardEvent) => void;
 		class?: string;
-		[key: string]: any
 	}
 
 	let {
@@ -34,21 +34,11 @@
 	}: Props = $props();
 	
 
-	let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+	const debouncedChange = $derived(debounce((newValue: string) => debounceFunction(newValue), debounceDelay));
 
 	function handleInput(event: Event) {
-		const target = event.target as HTMLInputElement;
 		onInput(event);
-
-		// Clear existing timer
-		if (debounceTimer) {
-			clearTimeout(debounceTimer);
-		}
-
-		// Set new timer for debounced function
-		debounceTimer = setTimeout(() => {
-			debounceFunction(target.value);
-		}, debounceDelay);
+		debouncedChange((event.target as HTMLInputElement).value);
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
