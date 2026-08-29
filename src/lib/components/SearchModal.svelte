@@ -2,17 +2,9 @@
 	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import SearchBar from './SearchBar.svelte';
-	import type { FullCard, Set, PriceData } from '~/lib/types';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
 
-	interface Props {
-		allCards?: FullCard[];
-		prices?: Record<string, PriceData>;
-		sets?: Set[];
-	}
-
-	let { allCards = [], prices = {}, sets = [] }: Props = $props();
 	let isOpen = $state(false);
 	let modalContent = $state<HTMLDivElement>();
 	let searchButton = $state<HTMLButtonElement>();
@@ -28,14 +20,12 @@
 	function handleClickOutside(event: MouseEvent) {
 		if (isOpen && modalContent && searchButton) {
 			const targetEl = event.target as Node;
-			// Check if click was outside the modal content and not on the search button
 			if (!modalContent.contains(targetEl) && !searchButton.contains(targetEl)) {
 				closeModal();
 			}
 		}
 	}
 
-	// Handle escape key and click outside
 	onMount(() => {
 		const handleKeydown = (event: KeyboardEvent) => {
 			if (event.key === 'Escape' && isOpen) {
@@ -79,9 +69,6 @@
 			</div>
 			<div class="w-full">
 				<SearchBar
-					{allCards}
-					{prices}
-					{sets}
 					autoFocus={true}
 					mobileMode={true}
 					onToggleModal={closeModal}

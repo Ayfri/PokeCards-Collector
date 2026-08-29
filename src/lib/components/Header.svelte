@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { NO_IMAGES } from '$lib/images';
-	import type { FullCard, Set, PriceData } from '$lib/types';
 	import UserMenu from '@components/auth/UserMenu.svelte';
 	import SearchBar from '@components/SearchBar.svelte';
 	import SearchModal from '@components/SearchModal.svelte';
 	import pokecardsCollector from '~/assets/pokecards-collector.png';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
-	// Import icons
 	import type { LucideIcon } from '@lucide/svelte';
 	import CardStackIcon from '@lucide/svelte/icons/layers';
 	import LibraryIcon from '@lucide/svelte/icons/library';
@@ -27,7 +25,6 @@
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import { slide } from 'svelte/transition';
 
-	// New interface for navigation groups with dropdowns
 	interface NavLink {
 		href?: string;
 		name: string;
@@ -67,20 +64,14 @@
 		{ href: '/users', name: 'Users', icon: SearchUsersIcon, description: 'Find other collectors' },
 	];
 
-	// State for mobile menu and dropdowns
 	let isMobileMenuOpen = $state(false);
 	let mobileMenuButton = $state<HTMLButtonElement>();
 	let mobileMenuNav = $state<HTMLDivElement>();
 	let openDropdown: string | null = $state(null); // Track which dropdown is open
 
-	// Use data from page state directly
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
-	const prices = $derived(page.data.prices as Record<string, PriceData> || {});
-	const allCards = $derived(page.data.allCards as FullCard[] || []);
-	const sets = $derived(page.data.sets as Set[] || []);
 
-	// Use afterNavigate instead of reactive statement
 	afterNavigate(() => {
 		isMobileMenuOpen = false;
 		openDropdown = null; // Close dropdowns on navigation
@@ -88,13 +79,11 @@
 
 	function handleClickOutside(event: MouseEvent) {
 		if (isMobileMenuOpen && mobileMenuNav && mobileMenuButton) {
-			// Check if click was outside the mobile menu and not on the menu button
 			const targetEl = event.target as Node;
 			if (!mobileMenuNav.contains(targetEl) && !mobileMenuButton.contains(targetEl)) {
 				isMobileMenuOpen = false;
 			}
 		}
-		// Close dropdowns when clicking outside
 		openDropdown = null;
 	}
 
@@ -103,11 +92,9 @@
 	}
 
 	onMount(() => {
-		// Add event listener to handle clicks outside the menu
 		window.addEventListener('click', handleClickOutside);
 
 		return () => {
-			// Clean up the event listener when component is destroyed
 			window.removeEventListener('click', handleClickOutside);
 		};
 	});
@@ -218,11 +205,11 @@
 			</a>
 			<!-- Search on desktop: visible on sm screens and up -->
 			<div class="w-48 sm:w-60 md:w-72 lg:w-80 max-sm:hidden">
-				<SearchBar {allCards} {prices} {sets} />
+				<SearchBar />
 			</div>
 
 			<!-- Mobile search using the Svelte component -->
-			<SearchModal {allCards} {prices} {sets} />
+			<SearchModal />
 			<!-- Discord Icon (mobile, left of search modal) -->
 			<a
 				href={discordInviteUrl}

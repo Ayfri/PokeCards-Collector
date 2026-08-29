@@ -6,34 +6,28 @@
 	import PlusCircle from '@lucide/svelte/icons/circle-plus';
 	import Check from '@lucide/svelte/icons/check';
 	import { processCardImage } from '$helpers/card-images';
-	import type { FullCard, Set, PriceData } from '$lib/types';
-	import { buildSetLookupMap, findSetByCardCode, findSetInLookup } from '$helpers/set-utils';
+	import type { FullCard } from '$lib/types';
+	import type { CardSearchResult } from '$helpers/card-search';
 	import { page } from '$app/state';
 	import { getBinderStorage, hasBinderStorage } from '$stores/binderContext';
 	import { debounce } from '$helpers/debounce';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {
-		prices: Record<string, PriceData>;
-		allCards: FullCard[];
 		autoFocus?: boolean;
 		mobileMode?: boolean;
 		onToggleModal?: (() => void) | undefined;
-		sets: Set[];
 	}
 
 	let {
-		prices,
-		allCards,
 		autoFocus = false,
 		mobileMode = false,
-		onToggleModal = undefined,
-		sets
+		onToggleModal = undefined
 	}: Props = $props();
 
 	let inputElement = $state<HTMLInputElement>();
 	let searchQuery = $state('');
-	let searchResults: FullCard[] = $state([]);
+	let searchResults: CardSearchResult[] = $state([]);
 	let showResults = $state(false);
 	const addedCards = new SvelteSet<string>(); // Card codes flashing the "added" state
 	let platformModifierKey = $state('');
@@ -68,79 +62,11 @@
 	}
 
 
-	function extractCardNumberFromCode(cardCode: string): string {
-		return cardCode?.split('_')[3] || '';
-	}
+	/** Keystrokes race: only the answer to the most recent query is allowed to land. */
+	let latestRequest = 0;
 
-	interface SearchEntry {
-		card: FullCard;
-		name: string;
-		number: string;
-		printedTotal: string;
-		setCode: string;
-		setName: string;
-	}
-
-	/**
-	 * Resolving the set and lowercasing the fields per keystroke cost ~1 s over the 23k cards, because
-	 * `findSetByCardCode` rescans every set. The index pays that once and each search is then a plain loop.
-	 */
-	let searchIndex: SearchEntry[] = [];
-	let indexedCards: FullCard[] | null = null;
-
-	function buildSearchIndex(): SearchEntry[] {
-		if (indexedCards === allCards) return searchIndex;
-		const lookup = buildSetLookupMap(sets);
-		searchIndex = allCards.map(card => {
-			const set = findSetInLookup(card.cardCode, lookup);
-			return {
-				card,
-				name: card.name.toLowerCase(),
-				number: extractCardNumberFromCode(card.cardCode).toLowerCase(),
-				printedTotal: set?.printedTotal?.toString() ?? '',
-				setCode: set?.ptcgoCode?.toLowerCase() ?? '',
-				setName: set?.name.toLowerCase() ?? '',
-			};
-		});
-		indexedCards = allCards;
-		return searchIndex;
-	}
-
-	/** Higher is more relevant; 0 drops the card. Without it "pikachu" surfaced the Detective Pikachu set before any Pikachu. */
-	function scoreEntry(entry: SearchEntry, query: string): number {
-		const { name, number, printedTotal, setCode, setName } = entry;
-
-		// Explicit combined forms win: they name a single printing.
-		if (query.includes('/')) {
-			const [queryNumber, queryTotal] = query.split('/');
-			if (number === queryNumber && (queryTotal ? printedTotal === queryTotal : query.endsWith('/'))) return 130;
-		}
-
-		if (query.includes(' ')) {
-			const parts = query.split(' ');
-			const last = parts[parts.length - 1];
-			if (/^\d+$/.test(last) && number === last) {
-				const head = parts.slice(0, -1).join(' ');
-				if (setCode === head) return 125;
-				if (name.includes(head)) return 120;
-			}
-			// Card name + set name, trying every split point ("pikachu base set").
-			for (let i = 1; i < parts.length; i++) {
-				if (name.includes(parts.slice(0, i).join(' ')) && setName.includes(parts.slice(i).join(' '))) return 115;
-			}
-		}
-
-		if (name === query) return 110;
-		if (name.startsWith(query)) return 100;
-		if (number === query) return 90;
-		if (name.includes(query)) return 80;
-		if (setCode === query) return 50;
-		if (setName.includes(query)) return 40;
-		return 0;
-	}
-
-	const performSearch = () => {
-		const query = searchQuery.toLowerCase().trim();
+	const performSearch = async () => {
+		const query = searchQuery.trim();
 
 		if (!query) {
 			searchResults = [];
@@ -148,21 +74,37 @@
 			return;
 		}
 
-		const matches: { entry: SearchEntry; score: number }[] = [];
-		for (const entry of buildSearchIndex()) {
-			const score = scoreEntry(entry, query);
-			if (score > 0) matches.push({ entry, score });
+		const request = ++latestRequest;
+
+		try {
+			const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+			if (!response.ok) throw new Error(`Search request failed with ${response.status}`);
+
+			const { results } = await response.json() as { results: CardSearchResult[] };
+			if (request !== latestRequest) return;
+
+			searchResults = results;
+			showResults = results.length > 0;
+		} catch (error) {
+			if (request !== latestRequest) return;
+			console.error('Search failed:', error);
+			searchResults = [];
+			showResults = false;
 		}
-
-		searchResults = matches
-			.sort((a, b) => b.score - a.score || a.entry.name.length - b.entry.name.length)
-			.slice(0, 10)
-			.map(match => match.entry.card);
-
-		showResults = searchResults.length > 0;
 	};
 
 	const debouncedSearch = debounce(performSearch, 300);
+
+	const handleInput = (value: string) => {
+		searchQuery = value;
+
+		if (value.trim()) {
+			debouncedSearch();
+		} else {
+			searchResults = [];
+			showResults = false;
+		}
+	};
 
 	const handleClickOutside = (event: MouseEvent) => {
 		if (mobileMode) return;
@@ -210,14 +152,6 @@
 		}
 	};
 
-	$effect(() => {
-		if (searchQuery.trim()) {
-			debouncedSearch();
-		} else {
-			searchResults = [];
-			showResults = false;
-		}
-	});
 </script>
 
 <svelte:document onclick={handleClickOutside} onkeydown={handleGlobalKeydown} />
@@ -229,8 +163,9 @@
 		</div>
 		<input
 			bind:this={inputElement}
-			bind:value={searchQuery}
+			value={searchQuery}
 			class="bg-black border text-white px-4 py-2 rounded-full w-full outline-hidden pl-10 pr-10 {mobileMode ? '' : 'pr-24'} transition-all duration-300 ease-in-out {inputFocused ? 'ring-2 ring-gold-400 shadow-lg shadow-gold-400/20 border-transparent' : 'border border-gray-700 hover:border-gray-500'}"
+			oninput={event => handleInput(event.currentTarget.value)}
 			onfocus={handleInputFocus}
 			onblur={() => inputFocused = false}
 			placeholder="Search cards..."
@@ -259,9 +194,8 @@
 			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg overflow-y-auto max-h-96 z-100 border border-gray-700"
 			transition:fade={{ duration: 150 }}
 		>
-			{#each searchResults as card (card.cardCode)}
-				{@const set = findSetByCardCode(card.cardCode, sets)}
-				{@const cardNumber = extractCardNumberFromCode(card.cardCode)}
+			{#each searchResults as result (result.card.cardCode)}
+				{@const card = result.card}
 				{@const cardImage = processCardImage(card.image)}
 				{@const cardLink = `/card/${card.cardCode}/`}
 				{@const isAdded = addedCards.has(card.cardCode)}
@@ -284,9 +218,9 @@
 							
 							<div class="flex justify-between items-center mt-1">
 								<div class="grow min-w-0 flex items-center">
-									<p class="text-sm text-gray-400 truncate max-w-[70%]">{set?.name || 'Unknown Set'}</p>
+									<p class="text-sm text-gray-400 truncate max-w-[70%]">{result.setName || 'Unknown Set'}</p>
 									<div class="text-xs text-gray-500 text-right ml-1 shrink-0">
-										#{cardNumber || '?'}{#if set?.printedTotal}/{set.printedTotal}{/if}
+										#{result.cardNumber || '?'}{#if result.printedTotal}/{result.printedTotal}{/if}
 									</div>
 								</div>
 								
@@ -316,14 +250,8 @@
 								{/if}
 							</div>
 							
-							{#if prices[card.cardCode]?.simple}
-								<p class="text-gold-400 font-medium mt-1 text-sm">
-									{#if prices[card.cardCode]?.simple}
-										{prices[card.cardCode]?.simple?.toFixed(2)} €
-									{:else}
-										Priceless
-									{/if}
-								</p>
+							{#if result.price}
+								<p class="text-gold-400 font-medium mt-1 text-sm">{result.price.toFixed(2)} €</p>
 							{/if}
 						</div>
 					</div>
