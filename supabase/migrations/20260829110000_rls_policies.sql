@@ -21,9 +21,13 @@ create policy "Catalogue is readable by everyone" on types for select using (tru
 -- Internal bookkeeping, nothing in the app reads it and it has no policy, so it stays invisible once RLS is on.
 revoke all on cron_restore_project from anon, authenticated;
 
--- Users own their rows, nobody rewrites a collection or wishlist entry in place.
+-- Users own their rows, nobody rewrites a collection or wishlist entry in place. Anonymous callers keep read
+-- access only: the policies already match zero rows for them, `auth.uid()` being null, and dropping the grant
+-- means the request never reaches the policy at all.
 revoke update, truncate on collections, wishlists from anon, authenticated;
+revoke insert, delete on collections, wishlists from anon;
 revoke insert, delete, truncate on profiles from anon, authenticated;
+revoke update on profiles from anon;
 
 -- `auth.uid()` is rewritten as a scalar subquery so the planner evaluates it once per statement instead of
 -- once per row, and the two SELECT policies per table are merged: permissive policies are OR'd anyway, and

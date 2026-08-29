@@ -7,8 +7,9 @@
 create index if not exists idx_collections_username_card_code on collections (username, card_code);
 create index if not exists idx_profiles_auth_id on profiles (auth_id);
 
--- `profiles_pkey` already indexes `username`, `profiles_username_key` is the same index twice.
-drop index if exists profiles_username_key;
+-- `profiles_username_key` duplicates `profiles_pkey` but stays: `collections_username_fkey` and
+-- `wishlists_username_fkey` both point at that index, so dropping it means recreating both foreign keys
+-- against the primary key, which is not worth it to save one index on a 15 row table.
 
 -- An empty search_path forces every reference inside the body to be schema qualified, so a table planted
 -- in a schema earlier on the caller's search_path cannot hijack the function.
@@ -18,10 +19,12 @@ alter function public.process_profiles_webhook() set search_path = '';
 alter function public.process_collections_webhook() set search_path = '';
 alter function public.process_wishlists_webhook() set search_path = '';
 
--- The three webhook functions are triggers, PostgREST still published them under /rest/v1/rpc.
-revoke execute on function public.process_profiles_webhook() from anon, authenticated;
-revoke execute on function public.process_collections_webhook() from anon, authenticated;
-revoke execute on function public.process_wishlists_webhook() from anon, authenticated;
+-- The three webhook functions are triggers, PostgREST still published them under /rest/v1/rpc. Their EXECUTE
+-- was granted to PUBLIC, which `anon` and `authenticated` inherit, so revoking from those two roles alone
+-- leaves the functions reachable.
+revoke execute on function public.process_profiles_webhook() from public;
+revoke execute on function public.process_collections_webhook() from public;
+revoke execute on function public.process_wishlists_webhook() from public;
 
 analyze profiles;
 analyze collections;
