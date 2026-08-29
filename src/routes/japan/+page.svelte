@@ -98,7 +98,7 @@
 
 <GridHeading
 	description={data.description}
-	note="Some features may be missing: the Japanese catalogue is not yet complete."
+	note="Japanese catalogue still incomplete."
 	title={data.title}
 />
 
