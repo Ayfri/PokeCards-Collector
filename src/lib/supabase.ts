@@ -1,36 +1,27 @@
-import { createClient as createBasicClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
 import { browser } from '$app/environment';
-// Removed browser import as standard module caching should handle singleton
-
-const supabaseUrl = PUBLIC_SUPABASE_URL;
-const supabasePublishableKey = PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-if (!supabaseUrl || !supabasePublishableKey) {
-	console.error('Supabase URL or publishable key is missing. Check your environment variables.');
-	// Throw an error or handle appropriately if keys are missing
-	// For now, let createClient handle potential errors if called with undefined
-}
-
-// Create the Supabase client - This ensures it runs only once when the module is first imported.
-export const supabase = createBasicClient(supabaseUrl, supabasePublishableKey);
-
-// --- Browser Client Setup (Used by stores/components for SSR compatibility) ---
-
-let browserClient: ReturnType<typeof createBrowserClient> | null = null;
 
 /**
- * Returns a singleton instance of the Supabase browser client.
- * Ensures it's only created in the browser environment.
+ * Anonymous client, no session attached. Reserved for the public catalogue (`cards`, `prices`, `sets`, ...)
+ * and for the auth endpoints that take their token from the URL, never for a row whose policy gates on
+ * `auth.uid()`.
  */
-export function getSupabaseBrowserClient() {
-  if (browser && !browserClient) {
-    browserClient = createBrowserClient(
-      PUBLIC_SUPABASE_URL,
-      PUBLIC_SUPABASE_PUBLISHABLE_KEY
-    );
-  }
-  // On the server, or if already created, return the instance (or null if server)
-  return browserClient;
+export const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+
+let browserClient: SupabaseClient | null = null;
+
+/**
+ * The session-carrying client. It reads the same auth cookies `hooks.server.ts` writes, so `auth.uid()`
+ * resolves inside Postgres and the `collections` / `wishlists` / `profiles` policies apply to the right user.
+ * Server code has no ambient session and must pass `locals.supabase` explicitly instead.
+ */
+export function getSupabaseBrowserClient(): SupabaseClient {
+	if (!browser) {
+		throw new Error('getSupabaseBrowserClient() is browser-only, server code must pass locals.supabase.');
+	}
+
+	browserClient ??= createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+	return browserClient;
 }

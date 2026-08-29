@@ -8,7 +8,7 @@ interface FeaturedUser extends UserProfile {
 	unique_card_count: number;
 }
 
-export const load: PageServerLoad = async ({ parent }) => {
+export const load: PageServerLoad = async ({ locals, parent }) => {
 	const { sets, streamed } = await parent();
 	// Cards and prices are streamed by the root layout, the collection stats need them resolved.
 	const [allCards, prices] = await Promise.all([streamed.allCards, streamed.prices]);
@@ -33,7 +33,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 					profile.username,
 					allCards,
 					sets,
-					prices
+					prices,
+					locals.supabase
 				);
 
 				let cardCount = 0;

@@ -1,29 +1,10 @@
-import { supabase } from '../supabase';
+import { getSupabaseBrowserClient, supabase } from '../supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { UserProfile, ServiceResponse, UsernameCheckResult } from '../types';
 
-export async function createProfile(username: string, authId: string) {
+export async function getProfileByAuthId(authId: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		const normalizedUsername = username.toLowerCase();
-		const { data, error } = await supabase
-			.from('profiles')
-			.insert({
-				username: normalizedUsername,
-				auth_id: authId,
-				is_public: true
-			})
-			.select()
-			.single();
-
-		return { data, error };
-	} catch (error) {
-		console.error('Error creating profile:', error);
-		return { data: null, error };
-	}
-}
-
-export async function getProfileByAuthId(authId: string) {
-	try {
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('profiles')
 			.select('*')
 			.eq('auth_id', authId)
@@ -36,9 +17,9 @@ export async function getProfileByAuthId(authId: string) {
 	}
 }
 
-export async function getProfileByUsername(username: string): Promise<ServiceResponse<UserProfile>> {
+export async function getProfileByUsername(username: string, client: SupabaseClient = getSupabaseBrowserClient()): Promise<ServiceResponse<UserProfile>> {
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('profiles')
 			.select('*')
 			.ilike('username', username)
@@ -51,9 +32,9 @@ export async function getProfileByUsername(username: string): Promise<ServiceRes
 	}
 }
 
-export async function updateProfile(username: string, profileData: Partial<UserProfile>) {
+export async function updateProfile(username: string, profileData: Partial<UserProfile>, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('profiles')
 			.update(profileData)
 			.eq('username', username)
@@ -67,9 +48,9 @@ export async function updateProfile(username: string, profileData: Partial<UserP
 	}
 }
 
-export async function toggleProfileVisibility(username: string, isPublic: boolean) {
+export async function toggleProfileVisibility(username: string, isPublic: boolean, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('profiles')
 			.update({ is_public: isPublic })
 			.eq('username', username)
@@ -86,10 +67,13 @@ export async function toggleProfileVisibility(username: string, isPublic: boolea
 	}
 }
 
-/** Bounded at 5 s: a hanging lookup would leave the registration form waiting forever. */
-export async function isUsernameTaken(username: string): Promise<UsernameCheckResult> {
+/**
+ * Bounded at 5 s: a hanging lookup would leave the registration form waiting forever. The caller must pass a
+ * service-role client, a taken username may belong to a private profile that no anonymous read can see.
+ */
+export async function isUsernameTaken(username: string, client: SupabaseClient): Promise<UsernameCheckResult> {
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('profiles')
 			.select('username')
 			.eq('username', username.toLowerCase())

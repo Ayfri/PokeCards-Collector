@@ -30,7 +30,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	if (user) {
 		// If user is authenticated, fetch their profile
-		const { data: userProfile, error: profileError } = await getProfileByAuthId(user.id);
+		const { data: userProfile, error: profileError } = await getProfileByAuthId(user.id, event.locals.supabase);
 
 		if (profileError) {
 			console.error(`Error fetching profile for user ${user.id} in hook:`, profileError);

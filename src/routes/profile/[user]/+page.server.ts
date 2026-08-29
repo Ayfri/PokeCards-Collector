@@ -4,7 +4,7 @@ import { getProfileByUsername } from '$lib/services/profiles';
 import type { PageServerLoad } from './$types';
 import type { UserProfile, CollectionStats, ServiceResponse } from '$lib/types';
 
-export const load: PageServerLoad = async ({ params, parent }) => {
+export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const parentData = await parent(); // Await parent data first
 
 	// Destructure non-streamed properties and the streamed object
@@ -53,7 +53,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 
 	isOwnProfile = loggedInUsername === requestedUsername;
 
-	const { data: fetchedProfile, error: profileError } = await getProfileByUsername(requestedUsername);
+	const { data: fetchedProfile, error: profileError } = await getProfileByUsername(requestedUsername, locals.supabase);
 	targetProfile = fetchedProfile;
 
 	if (profileError || !targetProfile) {
@@ -71,7 +71,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 
 	if ((isPublic || isOwnProfile) && targetProfile.username) {
 		// Ensure allCards, sets, prices are correctly passed to getCollectionStats
-		const { data: stats, error: statsError } = await getCollectionStats(targetProfile.username, allCards, sets, prices);
+		const { data: stats, error: statsError } = await getCollectionStats(targetProfile.username, allCards, sets, prices, locals.supabase);
 		if (statsError) {
 			console.error(`Error fetching collection stats for ${targetProfile.username}:`, statsError);
 		} else {

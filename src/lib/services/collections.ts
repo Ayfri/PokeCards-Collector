@@ -1,4 +1,5 @@
-import { supabase } from '../supabase';
+import { getSupabaseBrowserClient } from '../supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { updateCollectionStoreCount } from '$lib/stores/collection';
 import type { Card, PriceData, Set } from '../types';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
@@ -9,11 +10,11 @@ import { getUserWishlist } from './wishlists';
 const MAX_CARD_QUANTITY = 99; // Define the maximum allowed quantity per card
 
 // Add a new instance of a card to user's collection
-export async function addCardToCollection(username: string, cardCode: string) {
+export async function addCardToCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		setLoading(true);
 		// --- Check current count against the limit ---
-		const { count, error: countError } = await supabase
+		const { count, error: countError } = await client
 			.from('collections')
 			.select('*', { count: 'exact', head: true }) // Use head: true for efficiency
 			.eq('username', username)
@@ -32,7 +33,7 @@ export async function addCardToCollection(username: string, cardCode: string) {
 		// --- End Check ---
 
 		// Insert a new row for this card instance
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('collections')
 			.insert({
 				username,
@@ -57,11 +58,11 @@ export async function addCardToCollection(username: string, cardCode: string) {
 }
 
 // Remove one instance of a card from user's collection
-export async function removeCardFromCollection(username: string, cardCode: string) {
+export async function removeCardFromCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		setLoading(true);
 		// Find *one* specific row ID for this card to delete
-		const { data: rowToDelete, error: fetchError } = await supabase
+		const { data: rowToDelete, error: fetchError } = await client
 			.from('collections')
 			.select('id') // Select only the id
 			.eq('username', username)
@@ -79,7 +80,7 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 		}
 
 		// Delete the specific row found
-		const { error: deleteError } = await supabase
+		const { error: deleteError } = await client
 			.from('collections')
 			.delete()
 			.eq('id', rowToDelete.id);
@@ -101,9 +102,9 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 }
 
 // Get user's collection (only card codes needed for counting)
-export async function getUserCollection(username: string) {
+export async function getUserCollection(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('collections')
 			.select('card_code') // Select ONLY card_code
 			.eq('username', username);
@@ -116,9 +117,9 @@ export async function getUserCollection(username: string) {
 }
 
 // Get *all instances* for a specific card (might be useful later)
-export async function getCardInstancesInCollection(username: string, cardCode: string) {
+export async function getCardInstancesInCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('collections')
 			.select('*') // Select all columns for potential future use
 			.eq('username', username)
@@ -139,16 +140,16 @@ interface SetTotals {
 }
 
 // Get collection stats (count by rarity, set, total value, etc. - BASED ON UNIQUE CARDS)
-export async function getCollectionStats(username: string, allCards: Card[], allSets: Set[], prices: Record<string, PriceData>) {
+export async function getCollectionStats(username: string, allCards: Card[], allSets: Set[], prices: Record<string, PriceData>, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		// Get user's collection
-		const { data: collection, error } = await getUserCollection(username);
+		const { data: collection, error } = await getUserCollection(username, client);
 
 		if (error || !collection) {
 			return { data: null, error };
 		}
 		
-		const { data: wishlistItems, error: wishlistError } = await getUserWishlist(username);
+		const { data: wishlistItems, error: wishlistError } = await getUserWishlist(username, client);
 		
 		// Default wishlist count to 0 if there's an error
 		const wishlistCount = wishlistError || !wishlistItems ? 0 : wishlistItems.length;

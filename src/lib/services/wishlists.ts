@@ -1,13 +1,14 @@
-import { supabase } from '../supabase';
+import { getSupabaseBrowserClient } from '../supabase';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { addToWishlistStore, removeFromWishlistStore } from '$lib/stores/wishlist';
 import { setLoading } from '$lib/stores/loading';
 
 // Add a card to user's wishlist
-export async function addCardToWishlist(username: string, cardCode: string) {
+export async function addCardToWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		setLoading(true);
 		// Check if card already exists in wishlist
-		const { data: existingCard } = await supabase
+		const { data: existingCard } = await client
 			.from('wishlists')
 			.select('*')
 			.eq('username', username)
@@ -20,7 +21,7 @@ export async function addCardToWishlist(username: string, cardCode: string) {
 			return { data: existingCard, error: null };
 		} else {
 			// Insert new card if it doesn't exist
-			const { data, error } = await supabase
+			const { data, error } = await client
 				.from('wishlists')
 				.insert({
 					username,
@@ -43,10 +44,10 @@ export async function addCardToWishlist(username: string, cardCode: string) {
 }
 
 // Remove a card from user's wishlist
-export async function removeCardFromWishlist(username: string, cardCode: string) {
+export async function removeCardFromWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		setLoading(true);
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('wishlists')
 			.delete()
 			.eq('username', username)
@@ -67,9 +68,9 @@ export async function removeCardFromWishlist(username: string, cardCode: string)
 }
 
 // Get if a card is in user's wishlist
-export async function isCardInWishlist(username: string, cardCode: string) {
+export async function isCardInWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('wishlists')
 			.select('*')
 			.eq('username', username)
@@ -92,9 +93,9 @@ export async function isCardInWishlist(username: string, cardCode: string) {
 }
 
 // Get user's wishlist
-export async function getUserWishlist(username: string) {
+export async function getUserWishlist(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		const { data, error } = await supabase
+		const { data, error } = await client
 			.from('wishlists')
 			.select('*')
 			.eq('username', username);

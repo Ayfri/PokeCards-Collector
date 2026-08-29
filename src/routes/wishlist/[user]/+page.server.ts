@@ -5,6 +5,7 @@ import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserWishlist } from '$lib/services/wishlists';
 import type { PageServerLoad } from './$types';
 import type { FullCard, ServiceResponse, Set as TSet, UserProfile } from '$lib/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 async function getStreamedWishlistData(
 	allCards: FullCard[],
@@ -12,7 +13,8 @@ async function getStreamedWishlistData(
 	wishlistItemsSource: Array<{ card_code: string }> | undefined | null,
 	targetProfileForWishlist: UserProfile | null,
 	isPublicForWishlist: boolean,
-	loggedInUsernameForWishlist: string | null
+	loggedInUsernameForWishlist: string | null,
+	client: SupabaseClient
 ) {
 	const [pokemons, types] = await Promise.all([
 		getPokemons(),
@@ -30,7 +32,7 @@ async function getStreamedWishlistData(
 	let itemsToProcess = wishlistItemsSource;
 
 	if (targetProfileForWishlist && isPublicForWishlist && loggedInUsernameForWishlist !== targetProfileForWishlist.username) {
-		const { data: targetUserWishlistItems, error: wishlistError } = await getUserWishlist(targetProfileForWishlist.username);
+		const { data: targetUserWishlistItems, error: wishlistError } = await getUserWishlist(targetProfileForWishlist.username, client);
 		if (wishlistError) {
 			console.error(`Error fetching wishlist for ${targetProfileForWishlist.username}:`, wishlistError);
 			itemsToProcess = [];
@@ -57,7 +59,7 @@ async function getStreamedWishlistData(
 	};
 }
 
-export const load: PageServerLoad = async ({ params, parent }) => {
+export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const parentData = await parent();
 	const { profile: loggedInUserProfile, wishlistItems: layoutWishlistItems, sets: parentSets, ...layoutData } = parentData;
 
@@ -82,7 +84,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	let profileError: ServiceResponse<UserProfile>['error'] = null;
 
 	if (targetUsername) {
-		({ data: targetProfile, error: profileError } = await getProfileByUsername(targetUsername));
+		({ data: targetProfile, error: profileError } = await getProfileByUsername(targetUsername, locals.supabase));
 
 		if (profileError || !targetProfile) {
 			console.error(`Error fetching profile or profile not found for ${targetUsername}:`, profileError);
@@ -148,7 +150,8 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 				wishlistSourceItems,
 				targetProfile,
 				isPublic,
-				loggedInUserProfile?.username || null
+				loggedInUserProfile?.username || null,
+				locals.supabase
 			)
 		}
 	};

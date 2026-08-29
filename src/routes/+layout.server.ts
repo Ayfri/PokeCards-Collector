@@ -37,8 +37,8 @@ export const load: LayoutServerLoad = async ({ locals, route }) => {
 		const username = locals.profile.username;
 		// Use Promise.allSettled to fetch both concurrently and handle potential errors individually
 		const [wishlistResult, collectionResult] = await Promise.allSettled([
-			getUserWishlist(username),
-			getUserCollection(username)
+			getUserWishlist(username, locals.supabase),
+			getUserCollection(username, locals.supabase)
 		]);
 
 		if (wishlistResult.status === 'fulfilled' && !wishlistResult.value.error) {

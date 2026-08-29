@@ -5,6 +5,7 @@ import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserCollection } from '$lib/services/collections';
 import type { PageServerLoad } from './$types';
 import type { FullCard, PriceData, ServiceResponse, Set as TSet, UserProfile } from '$lib/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { findSetByCardCode } from '$helpers/set-utils';
 
 async function getStreamedCollectionData(
@@ -15,6 +16,7 @@ async function getStreamedCollectionData(
 	targetProfileForCollection: UserProfile | null,
 	isPublicForCollection: boolean,
 	loggedInUsernameForCollection: string | null,
+	client: SupabaseClient,
 	selectedSetName?: string | null
 ) {
 	// Base data for cards (pokemons, rarities, types, artists)
@@ -35,7 +37,7 @@ async function getStreamedCollectionData(
 	// If viewing another user's public profile, fetch their collection items afresh
 	// This logic needs to be robust against targetProfileForCollection being null if profile wasn't found
 	if (targetProfileForCollection && isPublicForCollection && loggedInUsernameForCollection !== targetProfileForCollection.username) {
-		const { data: targetUserCollectionItems, error: collectionError } = await getUserCollection(targetProfileForCollection.username);
+		const { data: targetUserCollectionItems, error: collectionError } = await getUserCollection(targetProfileForCollection.username, client);
 		if (collectionError) {
 			itemsToProcess = []; // Default to empty on error
 		} else {
@@ -71,7 +73,7 @@ async function getStreamedCollectionData(
 	};
 }
 
-export const load: PageServerLoad = async ({ params, parent, url }) => {
+export const load: PageServerLoad = async ({ locals, params, parent, url }) => {
 	const parentData = await parent();
 	const { profile: loggedInUserProfile, collectionItems: layoutCollectionItems, sets: parentSets, ...layoutData } = parentData;
 
@@ -90,7 +92,7 @@ export const load: PageServerLoad = async ({ params, parent, url }) => {
 	let description = 'User collection';
 	let profileError: ServiceResponse<UserProfile>['error'] = null;
 
-	({ data: targetProfile, error: profileError } = await getProfileByUsername(targetUsername));
+	({ data: targetProfile, error: profileError } = await getProfileByUsername(targetUsername, locals.supabase));
 
 	if (profileError || !targetProfile) {
 		targetProfile = null;
@@ -154,6 +156,7 @@ export const load: PageServerLoad = async ({ params, parent, url }) => {
 				targetProfile,
 				isPublic,
 				loggedInUserProfile?.username || null,
+				locals.supabase,
 				selectedSet
 			)
 		}
