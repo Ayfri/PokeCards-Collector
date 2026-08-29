@@ -5,7 +5,6 @@
 name = "pokecards-scraper"
 main = "src/workers/scraper.ts"
 compatibility_date = "2026-08-28"
-compatibility_flags = ["nodejs_compat"]
 
 # The scraper shares the app's module aliases; wrangler bundles it without SvelteKit.
 [alias]
@@ -19,20 +18,12 @@ PUBLIC_SUPABASE_URL = "https://ptbwuqaqkqntmgmaqboq.supabase.co"
 [limits]
 subrequests = 1_000_000
 
+# `enabled` is the logs toggle; traces stay opt-in until Cloudflare ties them to it behind a compatibility date.
 [observability]
-enabled = false
-head_sampling_rate = 1
-
-[observability.logs]
 enabled = true
-head_sampling_rate = 1
-persist = true
-invocation_logs = true
 
 [observability.traces]
 enabled = true
-persist = true
-head_sampling_rate = 1
 
 # `schedules` creates one Workflow instance per firing, so no `[triggers] crons` and no `scheduled` handler.
 [[workflows]]

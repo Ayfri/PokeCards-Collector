@@ -1,13 +1,13 @@
 name = "pokecards-collector"
-compatibility_date = "2026-08-28"
-compatibility_flags = ["nodejs_compat"]
 main = ".svelte-kit/cloudflare/_worker.js"
+compatibility_date = "2026-08-28"
 
 # Deploying overwrites the dashboard settings with this file, so what was set there lives here now.
 workers_dev = true
 preview_urls = true
 
-# Wrangler owns the DNS record for this hostname since the Pages project released it.
+# Wrangler owns the DNS record for this hostname since the Pages project released it. `zone_name` is forwarded to the
+# custom-domain API even though wrangler's bundled JSON schema rejects it next to `custom_domain`.
 [[routes]]
 pattern = "pokecards-collector.ayfri.com"
 custom_domain = true
@@ -17,20 +17,12 @@ zone_name = "ayfri.com"
 directory = ".svelte-kit/cloudflare"
 binding = "ASSETS"
 
+# `enabled` is the logs toggle; traces stay opt-in until Cloudflare ties them to it behind a compatibility date.
 [observability]
-enabled = false
-head_sampling_rate = 1
-
-[observability.logs]
 enabled = true
-head_sampling_rate = 1
-persist = true
-invocation_logs = true
 
 [observability.traces]
 enabled = true
-persist = true
-head_sampling_rate = 1
 
 [placement]
 mode = "smart"
