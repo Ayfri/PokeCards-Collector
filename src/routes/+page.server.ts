@@ -1,4 +1,4 @@
-import { getPokemons, getCards, getJapaneseCards } from '$helpers/supabase-data';
+import { countJapaneseCards, getPokemons } from '$helpers/supabase-data';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -33,10 +33,9 @@ export const load: PageServerLoad = async ({ parent }) => {
 	processedAllCards = processedAllCards.filter(card => Boolean(card.setName));
 
 	// Get real data counts from Supabase for statistics
-	const [pokemons, allCardsFromDb, japaneseCards] = await Promise.all([
+	const [pokemons, japaneseCardCount] = await Promise.all([
 		getPokemons(),
-		allCardsResolved,
-		getJapaneseCards() // Get Japanese cards count
+		countJapaneseCards()
 	]);
 
 	// Get latest set based on release date
@@ -85,12 +84,12 @@ export const load: PageServerLoad = async ({ parent }) => {
 		pokemons,
 		prices: pricesResolved, // Send the resolved prices
 		stats: {
-			totalCards: allCardsFromDb.length, // Real count from database
-			totalJapaneseCards: japaneseCards.length, // Real count from database
-			uniquePokemon: pokemons.length, // Real count from pokemons table
-			pokemonCards: allCardsFromDb.filter(card => card.supertype === 'Pokémon').length,
-			trainerCards: allCardsFromDb.filter(card => card.supertype === 'Trainer').length,
-			energyCards: allCardsFromDb.filter(card => card.supertype === 'Energy').length,
+			totalCards: allCardsResolved.length,
+			totalJapaneseCards: japaneseCardCount,
+			uniquePokemon: pokemons.length,
+			pokemonCards: allCardsResolved.filter(card => card.supertype === 'Pokémon').length,
+			trainerCards: allCardsResolved.filter(card => card.supertype === 'Trainer').length,
+			energyCards: allCardsResolved.filter(card => card.supertype === 'Energy').length,
 		},
 		...pageSeoData
 	};
