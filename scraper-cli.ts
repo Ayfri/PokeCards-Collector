@@ -3,7 +3,9 @@
 import { select } from '@inquirer/prompts';
 import { parseArgs } from 'node:util';
 import { styleText } from 'node:util';
+import { checkDatabase } from './src/scrapers/db-check.js';
 import { fetchPokemons } from './src/scrapers/pokemon_scraper.js';
+import { purgeExcludedSeries } from './src/scrapers/purge.js';
 import { auditTcgdex } from './src/scrapers/tcgdex/audit.js';
 import type { Language } from './src/scrapers/tcgdex/mappers.js';
 import { verifyFiles } from './src/scrapers/tcgdex/verify.js';
@@ -91,6 +93,43 @@ const commands: Command[] = [
 				const status = report.missing.length === 0 ? styleText('green', 'all resolve') : styleText('yellow', `${report.missing.length} unresolved`);
 				row('owned codes', `${report.owned} ${dim('|')} ${status}`);
 				for (const code of report.missing) console.log(`    ${styleText('yellow', '·')} ${code}`);
+			}
+			return report;
+		},
+	},
+	{
+		name: 'check',
+		description: 'Read-only sanity pass over the live Supabase catalogue',
+		flags: '--json',
+		run: async () => {
+			const report = await checkDatabase();
+			heading('check');
+			for (const check of report.checks) {
+				if (check.severity === 'info' && check.count === 0) continue;
+				const colour = check.count === 0 ? 'green' : check.severity === 'error' ? 'red' : check.severity === 'warn' ? 'yellow' : 'cyan';
+				row(check.name.padEnd(44), styleText(colour, String(check.count)));
+				for (const value of check.sample) console.log(`      ${dim(value)}`);
+			}
+			row('result', report.errors === 0 ? styleText('green', `no error, ${report.warnings} warnings`) : styleText('red', `${report.errors} failing checks, ${report.warnings} warnings`));
+			if (report.errors > 0) process.exitCode = 1;
+			return report;
+		},
+	},
+	{
+		name: 'purge',
+		description: 'Delete every card, price and set of an excluded serie (Pokémon TCG Pocket) from Supabase',
+		flags: '--dry-run  --json',
+		run: async ({ dryRun }) => {
+			const report = await purgeExcludedSeries(dryRun);
+			heading(dryRun ? 'purge (dry run)' : 'purge');
+			for (const lang of report.langs) {
+				row(`${lang.lang} sets`, lang.sets.length ? `${lang.sets.length} ${dim(lang.sets.join(', '))}` : dim('none'));
+				row(`${lang.lang} cards`, `${lang.cards} ${dim(dryRun ? 'would be deleted' : 'deleted')}`);
+				row(`${lang.lang} prices`, `${lang.prices} ${dim(dryRun ? 'would be deleted' : 'deleted')}`);
+				if (lang.orphanedOwned.length) {
+					row(`${lang.lang} owned`, styleText('yellow', `${lang.orphanedOwned.length} collection/wishlist rows keep pointing at a purged card`));
+					for (const code of lang.orphanedOwned.slice(0, 10)) console.log(`      ${dim(code)}`);
+				}
 			}
 			return report;
 		},
