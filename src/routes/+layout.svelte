@@ -87,22 +87,21 @@
 </script>
 
 <svelte:head>
-	<meta charset="UTF-8"/>
-
 	<meta content="#000" name="theme-color"/>
 	<meta content="dark light" name="color-scheme"/>
-	<meta content="en" name="language"/>
 	<meta content="Ayfri;Anta;Bahsiik" name="author"/>
-	<meta content="Pokemon, Pokémon, TCG, Card Game, Trading Card Game, Pokemon Cards, Card List, PokéCards-Collector" name="keywords"/>
 
-	<meta content="width=device-width" name="viewport"/>
-
-	<link href="/sitemap-index.xml" rel="sitemap"/>
+	<link href="/sitemap.xml" rel="sitemap"/>
 	{#if !NO_IMAGES}
 	<link href="/favicon.png" rel="icon" type="image/png"/>
 	{/if}
 	<link href={BASE_URL} hreflang="en" rel="alternate"/>
 	<link href={BASE_URL} hreflang="x-default" rel="alternate"/>
+
+	<!-- Card art, sprites and the analytics beacons all sit on third-party origins the first paint needs. -->
+	<link href="https://assets.tcgdex.net" rel="preconnect" crossorigin="anonymous"/>
+	<link href="https://cdn.jsdelivr.net" rel="preconnect" crossorigin="anonymous"/>
+	<link href="https://www.googletagmanager.com" rel="dns-prefetch"/>
 
 	<!-- Google tag (gtag.js) -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-PS0GZ8MEB8"></script>
@@ -125,7 +124,16 @@
 	></script>
 	<!-- End Cloudflare Web Analytics -->
 </svelte:head>
-<Seo title={page.data.title} description={page.data.description} image={page.data.image} type={page.url.pathname === '/' ? 'WebSite' : 'WebPage'} />
+<Seo
+	breadcrumbs={page.data.breadcrumbs}
+	description={page.data.description}
+	image={page.data.image}
+	keywords={page.data.keywords}
+	noindex={page.data.noindex}
+	schemas={page.data.schemas}
+	title={page.data.title}
+	type={page.data.type ?? (page.url.pathname === '/' ? 'WebSite' : 'WebPage')}
+/>
 
 <div class="flex flex-col min-h-screen">
 	<LoadingBar />

@@ -70,9 +70,10 @@ export const load: LayoutServerLoad = async ({ locals, route }) => {
 		// Pass fetched user-specific data (or empty arrays)
 		wishlistItems,
 		collectionItems,
-		// Default SEO values (can be overridden by page loads)
-		title: "PokéCards-Collector",
-		description: "Explore the Pokémon TCG universe. Discover the latest set, check out the prices of the rarest cards, and manage your collection.",
-		image: { url: "/images/og-image.png", alt: "PokéCards-Collector" },
+		// SEO defaults every page load overrides. `page.data` merges layout and page data, so a page only restates
+		// the fields it changes, and the ones it leaves out fall back to these.
+		title: 'PokéCards-Collector',
+		description: 'Explore the Pokémon TCG universe. Discover the latest set, check out the prices of the rarest cards, and manage your collection.',
+		image: { alt: 'PokéCards-Collector, a Pokémon TCG catalogue and collection tracker', height: 630, url: '/og-image.png', width: 1200 },
 	};
 };

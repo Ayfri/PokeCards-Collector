@@ -130,7 +130,30 @@ export interface CollectionStats {
 export interface Image {
 	url: string;
 	alt: string;
+	/** Declared to the crawlers as `og:image:width` / `og:image:height`, so a scraper can lay the preview out without downloading it. */
+	height?: number;
+	width?: number;
 }
+
+/** One step of the `BreadcrumbList` a page publishes, ordered from the site root to the page itself. */
+export interface Breadcrumb {
+	name: string;
+	url: string;
+}
+
+/** Everything a page load may hand the `Seo` component through `page.data`. */
+export interface SeoData {
+	breadcrumbs?: Breadcrumb[];
+	description: string;
+	image: Image;
+	keywords?: string[];
+	noindex?: boolean;
+	schemas?: Record<string, unknown>[];
+	title: string;
+	type?: SeoType;
+}
+
+export type SeoType = 'Article' | 'CollectionPage' | 'ItemPage' | 'ProfilePage' | 'Product' | 'WebPage' | 'WebSite';
 
 export interface SetLogoUrls {
 	logo: string | null;
