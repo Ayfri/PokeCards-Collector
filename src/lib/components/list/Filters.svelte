@@ -5,21 +5,17 @@
 	import { filterStates } from '$stores/filterStates';
 	import Button from '@components/filters/Button.svelte';
 	import Section from '@components/filters/Section.svelte';
-	import Select from '@components/filters/Select.svelte';
-	import SortControl from '@components/filters/SortControl.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import ArrowUp from '@lucide/svelte/icons/arrow-up';
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
-	import { debounce } from '$helpers/debounce';
 
 	interface Props {
 		artists?: string[];
 		rarities: string[];
 		sets: Set[];
 		types: string[];
-		onUpdate?: () => void;
 	}
 
 	let {
@@ -27,11 +23,9 @@
 		rarities,
 		sets,
 		types,
-		onUpdate = () => {}
 	}: Props = $props();
 
 	// Inputs text variables
-	let debounceTimeout: number;
 	let searchNumero = $state('');
 	let searchName = $state('');
 	let supertypeValue = $state('all');
@@ -67,12 +61,6 @@
 		}
 	});
 
-	/** Notifies the parent whenever any filter value changes, so it can relayout. */
-	$effect(() => {
-		[artistValue, pokemonTypeValue, rarityValue, searchName, searchNumero, setValue, sortDirectionValue, sortValueValue, supertypeValue];
-		onUpdate();
-	});
-
 	function setFilterNumero(value: string) {
 		$filterNumero = value;
 	}
@@ -80,10 +68,6 @@
 	function setFilterName(value: string) {
 		$filterName = value;
 	}
-
-	const debouncedSetMostExpensiveOnly = debounce((value: boolean) => {
-		$mostExpensiveOnly = value;
-	}, 300);
 
 	/**
 	 * Writes one filter param to the URL and navigates without a reload, keeping the focused control focused.
@@ -101,7 +85,6 @@
 
 		goto(url.toString(), { replaceState: true }).then(() => {
 			if (focusedId) document.querySelector<HTMLElement>(`#${focusedId}`)?.focus();
-			onUpdate();
 		});
 	}
 
@@ -255,9 +238,9 @@
 			<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
 				<TextInput
 					id="numero"
-					label="ID"
+					label="Pokémon ID"
 					bind:value={searchNumero}
-					placeholder="Enter card ID..."
+					placeholder="Enter Pokémon ID..."
 					debounceFunction={setFilterNumero}
 				/>
 			</div>
