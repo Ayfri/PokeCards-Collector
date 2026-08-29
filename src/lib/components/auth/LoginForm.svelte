@@ -95,7 +95,7 @@
 		resetLoading = true;
 		try {
 			const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-				redirectTo: 'https://pokecards-collector.pages.dev/reset-password',
+				redirectTo: 'https://pokecards-collector.ayfri.com/reset-password',
 			});
 			if (error) {
 				resetMessage = error.message || 'Failed to send reset email.';
