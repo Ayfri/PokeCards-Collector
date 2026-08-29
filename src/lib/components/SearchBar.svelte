@@ -9,7 +9,7 @@
 	import type { FullCard } from '$lib/types';
 	import type { CardSearchResult } from '$helpers/card-search';
 	import { page } from '$app/state';
-	import { getBinderStorage, hasBinderStorage } from '$stores/binderContext';
+	import { binderStorage } from '$stores/binder.svelte';
 	import { debounce } from '$helpers/debounce';
 	import { SvelteSet } from 'svelte/reactivity';
 
@@ -35,25 +35,9 @@
 
 	const isBinderPage = $derived(page.url.pathname === '/binder');
 
-	// Context reads only work during component initialization, so the binder store is grabbed here rather than when a card is added
-	const binderStoredCards = hasBinderStorage() ? getBinderStorage() : null;
-
+	/** Drops a searched card into the binder page's storage row and flashes the button for a moment. */
 	function addToBinderStorage(card: FullCard) {
-		if (!binderStoredCards) {
-			const event = new CustomEvent('add-to-binder', { 
-				detail: { cardCode: card.cardCode },
-				bubbles: true 
-			});
-			document.dispatchEvent(event);
-		} else {
-			binderStoredCards.update((cards: string[]) => {
-				if (!cards.includes(card.cardCode)) {
-					return [...cards, card.cardCode];
-				}
-				return cards;
-			});
-		}
-		
+		binderStorage.add([card.cardCode]);
 		addedCards.add(card.cardCode);
 		
 		setTimeout(() => {

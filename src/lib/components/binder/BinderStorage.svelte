@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { type Writable } from 'svelte/store';
-	import { onMount } from 'svelte';
+	import { binderStorage } from '$stores/binder.svelte';
+	import { persistedRecord } from '$stores/persisted.svelte';
 	import Button from '@components/filters/Button.svelte';
 	import CardImage from '@components/card/CardImage.svelte';
 	import Select from '@components/filters/Select.svelte';
@@ -17,7 +17,6 @@
 
 	interface Props {
 		allCards: FullCard[];
-		cards: Writable<string[]>;
 		onAutoFill: () => void;
 		onSelect: (item: string | null) => void;
 		/** Dropping a binder card back here pulls it out of its slot. */
@@ -36,7 +35,6 @@
 
 	let {
 		allCards,
-		cards,
 		onAutoFill,
 		onDropFromBinder,
 		onSelect,
@@ -51,22 +49,14 @@
 	const cardDataMap = $derived(new Map(allCards.map(card => [card.cardCode, card])));
 
 	let searchTerm = $state('');
-	let sortBy = $state('type');
-	let sortOrder = $state('asc');
-	let hidePlaced = $state(false);
 
-	onMount(() => {
-		const savedSortBy = localStorage.getItem('binderStorageSortBy');
-		const savedSortOrder = localStorage.getItem('binderStorageSortOrder');
-		if (savedSortBy) sortBy = savedSortBy;
-		if (savedSortOrder) sortOrder = savedSortOrder;
-		hidePlaced = localStorage.getItem('binderStorageHidePlaced') === 'true';
-	});
+	/** How the storage is displayed, kept across visits since the binder is built over several sessions. */
+	const view = persistedRecord('binder-storage-view', { hidePlaced: false, sortBy: 'type', sortOrder: 'asc' });
 
 	const filteredCardCodes = $derived.by(() => {
-		let filtered = [...$cards];
+		let filtered = [...binderStorage.cards];
 
-		if (hidePlaced) filtered = filtered.filter(item => !placedItems.has(item));
+		if (view.hidePlaced) filtered = filtered.filter(item => !placedItems.has(item));
 
 		if (searchTerm.trim()) {
 			const term = searchTerm.toLowerCase();
@@ -93,22 +83,22 @@
 			if (isCodeA && isCodeB) {
 				const {cardNumber: cardNumberA = '0', pokemonNumber: pokemonNumberA = 0, setCode: setCodeA = ''} = parseCardCode(itemA);
 				const {cardNumber: cardNumberB = '0', pokemonNumber: pokemonNumberB = 0, setCode: setCodeB = ''} = parseCardCode(itemB);
-				if (sortBy === 'number') {
+				if (view.sortBy === 'number') {
 					comparison = parseInt(cardNumberA) - parseInt(cardNumberB);
 					if (comparison === 0) comparison = pokemonNumberA - pokemonNumberB;
-				} else if (sortBy === 'set') {
+				} else if (view.sortBy === 'set') {
 					comparison = setCodeA.localeCompare(setCodeB);
 					if (comparison === 0) comparison = parseInt(cardNumberA) - parseInt(cardNumberB);
-				} else if (sortBy === 'name') {
+				} else if (view.sortBy === 'name') {
 					comparison = (cardDataMap.get(itemA)?.name ?? '').localeCompare(cardDataMap.get(itemB)?.name ?? '');
-				} else if (sortBy === 'price') {
+				} else if (view.sortBy === 'price') {
 					comparison = (prices[itemA]?.simple ?? 0) - (prices[itemB]?.simple ?? 0);
 				}
 			} else if (!isCodeA && !isCodeB) {
 				comparison = itemA.localeCompare(itemB);
 			}
 
-			return sortOrder === 'asc' ? comparison : -comparison;
+			return view.sortOrder === 'asc' ? comparison : -comparison;
 		});
 
 		return filtered;
@@ -116,7 +106,7 @@
 
 	$effect(() => { visibleItems = filteredCardCodes; });
 
-	const placedCount = $derived($cards.filter(item => placedItems.has(item)).length);
+	const placedCount = $derived(binderStorage.cards.filter(item => placedItems.has(item)).length);
 
 	function onDragStart(e: DragEvent, item: string) {
 		if (!e.dataTransfer) return;
@@ -142,7 +132,7 @@
 
 	function removeItem(itemToRemove: string) {
 		if (selected === itemToRemove) onSelect(null);
-		$cards = $cards.filter(item => item !== itemToRemove);
+		binderStorage.remove(itemToRemove);
 	}
 
 	function toggleSelect(item: string) {
@@ -157,11 +147,8 @@
 		{ label: 'Price', value: 'price' }
 	];
 
-	$effect(() => { localStorage.setItem('binderStorageSortBy', sortBy); });
-
 	function toggleSortOrder() {
-		sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-		localStorage.setItem('binderStorageSortOrder', sortOrder);
+		view.sortOrder = view.sortOrder === 'asc' ? 'desc' : 'asc';
 	}
 
 	let dropActive = $state(false);
@@ -180,8 +167,7 @@
 	}
 
 	function toggleHidePlaced() {
-		hidePlaced = !hidePlaced;
-		localStorage.setItem('binderStorageHidePlaced', hidePlaced.toString());
+		view.hidePlaced = !view.hidePlaced;
 	}
 </script>
 
@@ -194,8 +180,8 @@
 	aria-label="Card storage"
 >
 	<div class="mb-1 flex items-center justify-between">
-		<h3 class="text-lg text-gold-400">Storage ({$cards.length})</h3>
-		{#if $cards.length > 0}
+		<h3 class="text-lg text-gold-400">Storage ({binderStorage.cards.length})</h3>
+		{#if binderStorage.cards.length > 0}
 			<div class="flex items-center gap-1">
 				<Button class="border-gold-400 px-2 text-xs text-gold-400" onClick={onAutoFill} title="Pour the storage into the empty slots, in the order it is sorted">
 					<WandSparklesIcon size={14} /> Auto-fill
@@ -209,29 +195,29 @@
 		{#if placedCount > 0}<span class="text-gray-300">{placedCount} already placed.</span>{/if}
 	</p>
 
-	{#if $cards.length > 0}
+	{#if binderStorage.cards.length > 0}
 		<div class="mb-2 flex items-end gap-1">
 			<TextInput id="search-storage" label="Search storage:" bind:value={searchTerm} placeholder="Name, set, code..." />
 			<div class="w-32 shrink-0">
 				<Select
 					id="sort-storage"
-					activeCondition={sortBy !== 'type'}
-					bind:value={sortBy}
+					activeCondition={view.sortBy !== 'type'}
+					bind:value={view.sortBy}
 					label="Sort by:"
 					options={SORT_OPTIONS}
 				/>
 			</div>
-			<Button class="px-2" onClick={toggleSortOrder} title={sortOrder === 'asc' ? 'Sorted ascending, click for descending' : 'Sorted descending, click for ascending'}>
-				{#if sortOrder === 'asc'}<ArrowUp size={14} />{:else}<ArrowDown size={14} />{/if}
+			<Button class="px-2" onClick={toggleSortOrder} title={view.sortOrder === 'asc' ? 'Sorted ascending, click for descending' : 'Sorted descending, click for ascending'}>
+				{#if view.sortOrder === 'asc'}<ArrowUp size={14} />{:else}<ArrowDown size={14} />{/if}
 			</Button>
-			<Button class="px-2" isActive={hidePlaced} onClick={toggleHidePlaced} title={hidePlaced ? 'Showing only the cards left to place' : 'Hide the cards already placed'}>
+			<Button class="px-2" isActive={view.hidePlaced} onClick={toggleHidePlaced} title={view.hidePlaced ? 'Showing only the cards left to place' : 'Hide the cards already placed'}>
 				<EyeOffIcon size={14} />
 			</Button>
 		</div>
 	{/if}
 
 	<div class="-mr-1 min-h-0 flex-1 overflow-y-auto pr-1">
-		{#if $cards.length === 0}
+		{#if binderStorage.cards.length === 0}
 			<p class="py-4 text-center text-sm text-gray-500">No cards in storage yet - add a set, your collection, or search from the header.</p>
 		{:else if filteredCardCodes.length === 0}
 			<p class="py-4 text-center text-sm text-gray-500">No items match your search/filters.</p>
