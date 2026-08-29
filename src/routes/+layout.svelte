@@ -113,7 +113,7 @@
 <div class="flex flex-col min-h-screen">
 	<LoadingBar />
 	<Header />
-	<main class="grow pt-24 lg:pt-32">
+	<main class="flex min-h-0 grow flex-col pt-24 lg:pt-32">
 		{@render children?.()}
 	</main>
 	<div class="fixed top-[15%] [filter:grayscale(100%)_opacity(0.05)_contrast(3)_brightness(0.5)] -z-50 flex place-content-center h-lvh w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">

@@ -121,7 +121,7 @@
 	}
 </script>
 
-<div bind:this={container} class="virtual-grid-container top-2 relative flex-1 w-full overflow-y-scroll scrollbar-hide" onscroll={handleScroll}>
+<div bind:this={container} class="virtual-grid-container relative min-h-0 flex-1 w-full overflow-y-scroll scrollbar-hide" onscroll={handleScroll}>
 	{#if items.length === 0 && isInitialized}
 		{@render empty?.()}
 	{:else}

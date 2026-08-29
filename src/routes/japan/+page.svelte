@@ -30,7 +30,7 @@
 	</div>
 {:then cardDataResolved}
 	{@const allCards = cardDataResolved.allCards}
-	<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
+	<main class="max-lg:px-0 text-white text-lg flex min-h-0 flex-col flex-1 lg:-mt-8">
 		<CardGrid cards={allCards} {sets} rarities={cardDataResolved.rarities} types={cardDataResolved.types} artists={cardDataResolved.artists} pokemons={cardDataResolved.pokemons} prices={cardDataResolved.prices} pageTitle={null} selectedSetName={selectedSetName} selectedArtistName={artistName(cardDataResolved.artists)} />
 	</main>
 {:catch error}

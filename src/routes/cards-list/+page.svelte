@@ -21,7 +21,7 @@
 
 </script>
 
-<main class="max-lg:px-0 text-white text-lg flex flex-col flex-1 lg:-mt-8">
+<main class="max-lg:px-0 text-white text-lg flex min-h-0 flex-col flex-1 lg:-mt-8">
 	<GridHeading description={data.description} title={data.title} />
 
 	{#await data.streamed.grid}

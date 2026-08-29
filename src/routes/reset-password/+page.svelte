@@ -61,7 +61,7 @@ async function handleReset(event: SubmitEvent) {
 }
 </script>
 
-<div class="max-w-md mx-auto mt-16 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
+<div class="w-full max-w-md mx-auto mt-16 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
 	<h1 class="text-2xl font-bold mb-4 text-center">Reset your password</h1>
 	{#if errorMessage}
 		<div class="mb-4 p-3 bg-red-100 text-red-800 rounded-sm">{errorMessage}</div>

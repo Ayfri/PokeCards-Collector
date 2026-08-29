@@ -39,12 +39,12 @@
 	</PageNotice>
 {:else}
 	{#await data.streamed.payload}
-		<div class="flex min-h-[calc(100svh-200px)] grow flex-col items-center justify-center py-8 text-center">
+		<div class="flex min-h-0 grow flex-col items-center justify-center py-8 text-center">
 			<BouncyLoader size={40} />
 			<p class="mt-3 text-xl text-white">Loading {kind}...</p>
 		</div>
 	{:then payload}
-		<div class="flex min-h-[calc(100svh-200px)] grow flex-col py-8">
+		<div class="flex min-h-0 grow flex-col py-8">
 			<CardGrid
 				artists={payload.artists}
 				cards={payload.cards}
