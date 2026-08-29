@@ -215,9 +215,3 @@
 		{/if}
 	</button>
 </form>
-
-<style>
-	/* @keyframes spin Removed as it's no longer used */
-
-	/* .loader-spin Removed as it's no longer used */
-</style>
