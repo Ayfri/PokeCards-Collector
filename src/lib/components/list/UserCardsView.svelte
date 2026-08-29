@@ -1,6 +1,8 @@
 <script lang="ts">
 	import BouncyLoader from '@components/BouncyLoader.svelte';
 	import CardGrid from '@components/list/CardGrid.svelte';
+	import ImportModal from '@components/list/ImportModal.svelte';
+	import UploadIcon from '@lucide/svelte/icons/upload';
 	import PageNotice from '@components/PageNotice.svelte';
 	import ShieldAlert from '@lucide/svelte/icons/shield-alert';
 	import UserX from '@lucide/svelte/icons/user-x';
@@ -20,6 +22,8 @@
 	const copy = $derived(USER_CARDS_COPY[kind]);
 	const isMissing = $derived(!data.targetProfile);
 	const isPrivate = $derived(!!data.targetProfile && !data.isPublic && !data.isOwner);
+
+	let importing = $state(false);
 
 	// The grid is shared with /cards-list, so a visit starts from a clean slate, then takes the filters the URL names.
 	// Re-applied here rather than left to CardGrid alone, which mounts inside the await block and so runs in either order.
@@ -45,6 +49,16 @@
 		</div>
 	{:then payload}
 		<div class="flex min-h-0 grow flex-col py-8">
+			{#if data.isOwner}
+				<div class="mb-4 flex justify-end">
+					<button class="flex items-center gap-2 rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-300 hover:border-gold-400 hover:text-gold-400" onclick={() => (importing = true)} type="button">
+						<UploadIcon size={16} />
+						Import from a file
+					</button>
+				</div>
+				<ImportModal {kind} onClose={() => (importing = false)} open={importing} sets={data.sets} />
+			{/if}
+
 			<CardGrid
 				artists={payload.artists}
 				cards={payload.cards}
