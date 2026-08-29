@@ -1,4 +1,4 @@
-import { countJapaneseCards, getPokemons } from '$helpers/supabase-data';
+import { countJapaneseCards, getCards, getPokemons, getPrices } from '$helpers/supabase-data';
 import { cardListSchema, faqSchema } from '$helpers/seo';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
@@ -6,8 +6,7 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ parent }) => {
 	const parentData = await parent();
 
-	const allCardsResolved: FullCard[] = await parentData.streamed.allCards || [];
-	const pricesResolved = await parentData.streamed.prices || {};
+	const [allCardsResolved, pricesResolved] = await Promise.all([getCards(), getPrices()]);
 
 	const sets = parentData.sets || [];
 
@@ -43,21 +42,22 @@ export const load: PageServerLoad = async ({ parent }) => {
 		return cardSetName === latestSet.name.toLowerCase();
 	}) : [];
 
-	const mostExpensiveLatestSetCards = [...latestSetCards]
-		.sort((a, b) => {
-			const priceA = pricesResolved[a.cardCode]?.simple || pricesResolved[a.cardCode]?.trend || 0;
-			const priceB = pricesResolved[b.cardCode]?.simple || pricesResolved[b.cardCode]?.trend || 0;
-			return priceB - priceA;
-		})
-		.slice(0, 5);
+	const priceOf = (card: FullCard) => pricesResolved[card.cardCode]?.simple || pricesResolved[card.cardCode]?.trend || 0;
+	const topFive = (cards: FullCard[]) => [...cards]
+		.sort((a, b) => priceOf(b) - priceOf(a))
+		.slice(0, 5)
+		// The showcase rows print a price, and the catalogue no longer travels with the page for them to look it up.
+		.map(card => ({ ...card, price: priceOf(card) }));
 
-	const mostExpensiveCards = [...processedAllCards]
-		.sort((a, b) => {
-			const priceA = pricesResolved[a.cardCode]?.simple || pricesResolved[a.cardCode]?.trend || 0;
-			const priceB = pricesResolved[b.cardCode]?.simple || pricesResolved[b.cardCode]?.trend || 0;
-			return priceB - priceA;
-		})
-		.slice(0, 5);
+	const mostExpensiveLatestSetCards = topFive(latestSetCards);
+	const mostExpensiveCards = topFive(processedAllCards);
+
+	const latestSetStats = {
+		energyCards: latestSetCards.filter(card => card.supertype === 'Energy').length,
+		pokemonCards: latestSetCards.filter(card => card.supertype === 'Pokémon').length,
+		totalValue: latestSetCards.reduce((sum, card) => sum + (pricesResolved[card.cardCode]?.simple || 0), 0),
+		trainerCards: latestSetCards.filter(card => card.supertype === 'Trainer').length,
+	};
 
 	// The counts are read back into the copy so the description states real numbers rather than a vague claim,
 	// which is what an answer engine can actually quote.
@@ -91,16 +91,18 @@ export const load: PageServerLoad = async ({ parent }) => {
 		title: 'PokéCards-Collector - Your Pokémon TCG Collection Manager',
 	};
 
+	// Neither the catalogue nor the prices reach the browser: everything the page prints is counted here, and
+	// shipping them made the homepage a 24 MB document.
 	return {
 		...layoutData,
-		allCards: processedAllCards,
 		latestSet,
+		latestSetStats,
 		mostExpensiveLatestSetCards,
 		mostExpensiveCards,
 		sets,
 		pokemons,
-		prices: pricesResolved,
 		stats: {
+			artists: new Set(allCardsResolved.map(card => card.artist).filter(Boolean)).size,
 			totalCards: allCardsResolved.length,
 			totalJapaneseCards: japaneseCardCount,
 			uniquePokemon: pokemons.length,

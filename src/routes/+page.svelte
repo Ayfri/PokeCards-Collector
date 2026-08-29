@@ -1,14 +1,11 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
-	import type { FullCard } from "$lib/types";
 	import CardImage from "@components/card/CardImage.svelte";
 	import CountUp from "@components/ui/CountUp.svelte";
 	import { page } from "$app/state";
-	import { onMount } from "svelte";
 	import { NO_IMAGES } from "$lib/images";
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	// Import icons
 	import GiftIcon from "@lucide/svelte/icons/gift";
 	import Tag from "@lucide/svelte/icons/tag";
 	import ArrowRight from "@lucide/svelte/icons/arrow-right";
@@ -37,47 +34,9 @@
 	const mostExpensiveCards = $derived(data.mostExpensiveCards);
 	const stats = $derived(data.stats);
 	const sets = $derived(data.sets);
-	const prices = $derived(data.prices);
+	const latestSetStats = $derived(data.latestSetStats);
 	const session = $derived(page.data.session);
 
-	const allCards = $derived(data.allCards || []);
-
-	const latestSetCards = $derived(latestSet
-		? allCards.filter(
-				(card: FullCard) =>
-					card.setName?.toLowerCase() ===
-					latestSet.name.toLowerCase(),
-			)
-		: []);
-
-	const latestSetPokemonCards = $derived(latestSetCards.filter(
-		(card: FullCard) => card.supertype === "Pokémon",
-	));
-	const latestSetTrainerCards = $derived(latestSetCards.filter(
-		(card: FullCard) => card.supertype === "Trainer",
-	));
-	const latestSetEnergyCards = $derived(latestSetCards.filter(
-		(card: FullCard) => card.supertype === "Energy",
-	));
-
-	const totalSetValue = $derived(latestSetCards.reduce(
-		(sum: number, card: FullCard) =>
-			sum + (prices[card.cardCode]?.simple || 0),
-		0,
-	));
-
-	// Artists count
-	let artistsCount = $state(0);
-	onMount(async () => {
-		try {
-			const artists = [...new Set(allCards.map(card => card.artist))];
-			artistsCount = artists.length;
-		} catch (error) {
-			console.error("Failed to load artists count:", error);
-		}
-	});
-
-	// Format date
 	const formatDate = (date: Date) => {
 		return new Date(date).toLocaleDateString("en-US", {
 			year: "numeric",
@@ -86,13 +45,11 @@
 		});
 	};
 
-	// Format price
 	const formatPrice = (price?: number) => {
 		if (!price) return "N/A";
 		return `$${price.toFixed(2)}`;
 	};
 
-	// Animation for chevrons
 	const bounceAnimation = {
 		duration: 1000,
 		iterationCount: "infinite",
@@ -274,7 +231,7 @@
 						<span
 							class="text-xl md:text-2xl font-bold text-gold-400"
 						>
-							<CountUp end={artistsCount} duration={2.5} />
+							<CountUp end={stats.artists} duration={2.5} />
 						</span>
 						<ChevronLeft
 							size={12}
@@ -433,7 +390,7 @@
 						<div class="bg-gray-700 p-3 rounded-sm text-center">
 							<p class="text-lg font-bold text-gold-400">
 								<CountUp
-									end={latestSetPokemonCards.length}
+									end={latestSetStats.pokemonCards}
 									duration={3}
 								/>
 							</p>
@@ -442,7 +399,7 @@
 						<div class="bg-gray-700 p-3 rounded-sm text-center">
 							<p class="text-lg font-bold text-gold-400">
 								<CountUp
-									end={latestSetTrainerCards.length}
+									end={latestSetStats.trainerCards}
 									duration={2}
 								/>
 							</p>
@@ -451,7 +408,7 @@
 						<div class="bg-gray-700 p-3 rounded-sm text-center">
 							<p class="text-lg font-bold text-gold-400">
 								<CountUp
-									end={latestSetEnergyCards.length}
+									end={latestSetStats.energyCards}
 									duration={2}
 								/>
 							</p>
@@ -464,7 +421,7 @@
 							<span class="text-gray-400">Completion value:</span>
 							<span class="text-gold-400">
 								<CountUp
-									end={totalSetValue}
+									end={latestSetStats.totalValue}
 									duration={2}
 									options={{ decimalPlaces: 2, prefix: "$" }}
 								/>
@@ -508,7 +465,7 @@
 			</div>
 
 			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-				{#each mostExpensiveLatestSetCards as card, i}
+				{#each mostExpensiveLatestSetCards as card, i (card.cardCode)}
 					<div
 						class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-transparent hover:border-gold-400 flex flex-col"
 					>
@@ -533,10 +490,7 @@
 									</p>
 								{/if}
 								<p class="text-gold-400 font-bold text-sm">
-									{formatPrice(
-										prices[card.cardCode]?.simple ||
-											prices[card.cardCode]?.trend,
-									)}
+									{formatPrice(card.price)}
 								</p>
 							</div>
 						</a>
@@ -574,7 +528,7 @@
 			</div>
 
 			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-				{#each mostExpensiveCards as card, i}
+				{#each mostExpensiveCards as card, i (card.cardCode)}
 					<div
 						class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-transparent hover:border-gold-400 flex flex-col"
 					>
@@ -599,10 +553,7 @@
 									</p>
 								{/if}
 								<p class="text-gold-400 font-bold text-sm">
-									{formatPrice(
-										prices[card.cardCode]?.simple ||
-											prices[card.cardCode]?.trend,
-									)}
+									{formatPrice(card.price)}
 								</p>
 							</div>
 						</a>
