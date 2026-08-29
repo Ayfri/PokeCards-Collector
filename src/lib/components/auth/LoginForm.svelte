@@ -6,6 +6,7 @@
 	import { readJson, type ApiError } from '$helpers/http';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+    import { BASE_URL } from '~/constants';
 
 	interface Props {
 		onSuccess?: (() => void) | undefined;
@@ -33,7 +34,7 @@
 
 		loading = true;
 		errorMessage = '';
-		
+
 		const loginTimeout = setTimeout(() => {
 			if (loading) {
 				errorMessage = 'Login is taking longer than expected. Please check your internet connection or try again later.';
@@ -95,7 +96,7 @@
 		resetLoading = true;
 		try {
 			const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-				redirectTo: 'https://pokecards-collector.ayfri.com/reset-password',
+				redirectTo: `${BASE_URL}/reset-password`,
 			});
 			if (error) {
 				resetMessage = error.message || 'Failed to send reset email.';
@@ -119,7 +120,7 @@
 			{errorMessage}
 		</div>
 	{/if}
-	
+
 	<div>
 		<label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 			Email
@@ -133,7 +134,7 @@
 			required
 		/>
 	</div>
-	
+
 	<div>
 		<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
 			Password
@@ -176,7 +177,7 @@
 			</button>
 		</div>
 	</div>
-	
+
 	{#if showReset}
 		<div class="mt-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
 			<label for="reset-email" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Enter your email to reset password</label>
@@ -200,7 +201,7 @@
 			{/if}
 		</div>
 	{/if}
-	
+
 	<button
 		type="submit"
 		disabled={loading}
@@ -217,6 +218,6 @@
 
 <style>
 	/* @keyframes spin Removed as it's no longer used */
-	
+
 	/* .loader-spin Removed as it's no longer used */
-</style> 
+</style>
