@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, setContext } from 'svelte';
+	import { onMount } from 'svelte';
 	import { writable } from 'svelte/store';
 	import { browser } from '$app/environment';
 	import PageTitle from '@components/PageTitle.svelte';
@@ -16,6 +16,7 @@
 	import HelpCircleIcon from '@lucide/svelte/icons/circle-question-mark';
 	import { downloadDataUrl, renderBinderImage } from '$helpers/binder-export';
 	import type { BinderCards, FullCard } from '$lib/types';
+	import { setBinderStorage } from '$stores/binderContext';
 	import type { PageData } from './$types';
 
 	interface Props {
@@ -52,7 +53,7 @@
 	const includeWishlist = writable(true);
 
 	// Exposed to SearchBar, which drops searched cards straight into the storage.
-	setContext('storedCards', storedCards);
+	setBinderStorage(storedCards);
 
 	const slotsPerPage = $derived($rows * $columns);
 	const totalSlots = $derived($pages.length * slotsPerPage);

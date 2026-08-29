@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
-	import { getContext, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
 	import PlusCircle from '@lucide/svelte/icons/circle-plus';
@@ -9,7 +9,7 @@
 	import type { FullCard, Set, PriceData } from '$lib/types';
 	import { buildSetLookupMap, findSetByCardCode, findSetInLookup } from '$helpers/set-utils';
 	import { page } from '$app/state';
-	import type { Writable } from 'svelte/store';
+	import { getBinderStorage, hasBinderStorage } from '$stores/binderContext';
 	import { debounce } from '$helpers/debounce';
 	import { SvelteSet } from 'svelte/reactivity';
 
@@ -41,11 +41,8 @@
 
 	const isBinderPage = $derived(page.url.pathname === '/binder');
 
-	// getContext only works during component initialization, so the binder store is grabbed here rather than when a card is added
-	let binderStoredCards: Writable<string[]> | null = null;
-	if (page.url.pathname === '/binder') {
-		binderStoredCards = getContext('storedCards') ?? null;
-	}
+	// Context reads only work during component initialization, so the binder store is grabbed here rather than when a card is added
+	const binderStoredCards = hasBinderStorage() ? getBinderStorage() : null;
 
 	function addToBinderStorage(card: FullCard) {
 		if (!binderStoredCards) {
