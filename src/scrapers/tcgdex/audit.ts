@@ -1,6 +1,7 @@
 import * as fs from 'node:fs';
 import {createClient} from '@supabase/supabase-js';
 import {mapAll} from './client';
+import {excludedSetIds, withoutExcluded} from './excluded';
 import {Http2Pool} from './http2-pool';
 import type {TcgdexCard, TcgdexSet} from './types';
 
@@ -73,7 +74,7 @@ export async function auditTcgdex(write = true) {
 	const legacyCodes = new Set<string>();
 
 	for (const lang of LANGS) {
-		const sets = (await pool.json<TcgdexSet[]>(`/v2/${lang}/sets`))!;
+		const sets = withoutExcluded((await pool.json<TcgdexSet[]>(`/v2/${lang}/sets`))!, await excludedSetIds(pool, lang));
 		const rows = (await legacyRows(TABLES[lang])).filter(row => !row.card_code.startsWith('unknown_'));
 		const distinct = [...new Set(rows.map(row => row.card_code))];
 		const legacyNames = new Map(rows.map(row => [row.card_code, row.name ?? '']));
