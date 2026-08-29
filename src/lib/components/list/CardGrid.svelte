@@ -13,6 +13,7 @@
 		sortOrder,
 		resetFilters,
 		resetSort,
+		hasActiveFilters,
 	} from "$lib/helpers/filters";
 	import CardComponent from "@components/list/Card.svelte";
 	import Filters from "@components/list/Filters.svelte";
@@ -29,8 +30,7 @@
 	import Button from "$lib/components/filters/Button.svelte";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
-	import { findSetByCardCode } from "$helpers/set-utils";
-	import { filterCards, keepMostExpensivePerGroup, sortCards } from "$helpers/card-grid";
+	import { filterCards, keepMostExpensivePerGroup, sortBySupertype, sortCards } from "$helpers/card-grid";
 	import Loader from "$lib/components/Loader.svelte";
 	import { cardSize, getCardDimensions } from "$lib/stores/gridStore";
 	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
@@ -166,22 +166,34 @@
 
 	const pokemonMap = $derived(new Map(pokemons.map(pokemon => [pokemon.id, pokemon])));
 
-	// Step 1: keep only the priciest card of each group when the filter is on.
-	const baseCards = $derived($mostExpensiveOnly ? keepMostExpensivePerGroup(cards, prices) : cards);
+	// Every filter is read here through the `$` prefix so `filteredCards` actually depends on all of them. Pulling
+	// them inside `filterCards` with `get()` registered no dependency, which is why picking an artist or a rarity on
+	// top of a set changed nothing until an unrelated filter forced the pass to rerun.
+	const activeFilters = $derived({
+		artist: $filterArtist.toLowerCase(),
+		name: $filterName.toLowerCase(),
+		numero: $filterNumero.toLowerCase(),
+		rarity: $filterRarity.toLowerCase(),
+		set: $filterSet.toLowerCase(),
+		supertype: $filterSupertype.toLowerCase(),
+		type: $filterType.toLowerCase(),
+	});
+	const anyFilterActive = $derived(hasActiveFilters(activeFilters));
 
-	// Step 2: sort, then filter. Both are expensive, so they stay separate $derived so each only reruns on its own inputs.
-	const displayedCards = $derived(sortCards(baseCards, $sortBy, $sortOrder, prices, pokemons, sets));
+	// The store holds the set *name*, so the set is looked up by name; `findSetByCardCode` parsed it as a card code,
+	// found no `_` separators and always returned undefined, leaving the set branch of `isVisible` unreachable.
+	const selectedSet = $derived(activeFilters.set !== "all"
+		? (sets.find(set => set.name.toLowerCase() === activeFilters.set) ?? null)
+		: null);
 
-	// Check if any filters are actually active
-	const hasActiveFilters = $derived($filterName || $filterNumero || $filterRarity !== 'all' || $filterSet !== 'all' ||
-		$filterType !== 'all' || $filterSupertype !== 'all' || $filterArtist !== 'all');
-	// Find the selected set based on the filter and determine the correct total count to display
-	const selectedSet = $derived($filterSet && $filterSet !== "all" ? findSetByCardCode($filterSet, sets) : null);
-
-	const filteredCards = $derived(filterCards(displayedCards, sets, selectedSet ?? null, {
-		applyFilters: Boolean(hasActiveFilters),
-		groupBySupertype: $filterSupertype === "all",
-	}));
+	// Filter first, then narrow, then sort: "Most Expensive Only" used to pick the priciest printing of each Pokémon
+	// across the whole catalogue before the set filter ran, so Base Set showed the 4 Pokémon whose best card happens to
+	// live there instead of its 69. Sorting last also means a picked set sorts ~100 cards rather than all 23546.
+	const matchingCards = $derived(anyFilterActive ? filterCards(cards, sets, selectedSet, activeFilters) : cards);
+	const narrowedCards = $derived($mostExpensiveOnly ? keepMostExpensivePerGroup(matchingCards, prices) : matchingCards);
+	const sortedCards = $derived(sortCards(narrowedCards, $sortBy, $sortOrder, prices, pokemons, sets));
+	// Pokémon before Trainer before Energy, unless the user is already looking at a single supertype.
+	const filteredCards = $derived(activeFilters.supertype === "all" ? sortBySupertype(sortedCards) : sortedCards);
 
 	const visibleCardsCount = $derived(filteredCards.length);
 	// 66 Pokémon cards carry no dex id; without the guard they all collapse into one extra entry in the count.
@@ -201,9 +213,6 @@
 		$mostExpensiveOnly,
 		$sortBy !== "sort-pokedex",
 	].filter(Boolean).length);
-	const displayTotalCards = $derived(selectedSet
-		? (selectedSet.printedTotal ?? 0)
-		: visibleCardsCount); // Use ?? 0 as fallback
 </script>
 
 <svelte:window bind:innerWidth={clientWidth} onkeydown={handleKeydown} />
@@ -255,7 +264,7 @@
 
 			<!-- Counts (on same line for desktop, below for mobile) -->
 			<span class="text-gold-400 text-xs md:text-sm mt-1 md:mt-0 md:ml-3">
-				({uniquePokemonCount} Pokémon, {displayTotalCards} cards)
+				({uniquePokemonCount} Pokémon, {visibleCardsCount} cards)
 			</span>
 			{#if selectedSetName || selectedArtistName}
 				<div class="flex flex-wrap gap-2 items-center ml-3">

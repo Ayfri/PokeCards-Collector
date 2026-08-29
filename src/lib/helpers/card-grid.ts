@@ -2,7 +2,7 @@ import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
 import { getRarityLevel } from '$helpers/rarity';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import { parseCardCode } from '$helpers/card-utils';
-import { isVisible, readActiveFilters } from '$helpers/filters';
+import { isVisible, type ActiveFilters } from '$helpers/filters';
 
 /** Set lookups are the hot path of the grid: a per-card `sets.find` rescans and renormalises all 218 sets. */
 const setLookupCache = new Map<string, Set | null>();
@@ -120,27 +120,9 @@ export function sortCards(
 	});
 }
 
-export interface FilterCardsOptions {
-	/** Skips the (expensive) visibility pass when no filter is active. */
-	applyFilters: boolean;
-	/** Reorders Pokémon before Trainer before Energy, used when no supertype filter is set. */
-	groupBySupertype: boolean;
-}
-
-/** Applies the active store filters, then reorders by supertype when no supertype filter is set. */
-export function filterCards(
-	cards: FullCard[],
-	sets: Set[],
-	selectedSet: Set | null,
-	{ applyFilters, groupBySupertype }: FilterCardsOptions,
-): FullCard[] {
-	if (!applyFilters) {
-		return groupBySupertype ? sortBySupertype([...cards]) : cards;
-	}
-
-	const filters = readActiveFilters();
-
-	const filtered = cards.filter(card => {
+/** Keeps the cards `filters` lets through. Runs before the sort, so everything downstream works on the smaller list. */
+export function filterCards(cards: FullCard[], sets: Set[], selectedSet: Set | null, filters: ActiveFilters): FullCard[] {
+	return cards.filter(card => {
 		const cardSet = getCardSet(card.cardCode, sets) ?? {
 			logo: card.image?.replace(/\/[^\/]*$/, '/logo.png') ?? '',
 			name: card.setName,
@@ -149,13 +131,11 @@ export function filterCards(
 		};
 		return isVisible(card, cardSet, selectedSet, filters);
 	});
-
-	return groupBySupertype ? sortBySupertype(filtered) : filtered;
 }
 
-/** Stable in-place reorder: Pokémon, then Trainer, then Energy, keeping the incoming order within a supertype. */
-function sortBySupertype(cards: FullCard[]): FullCard[] {
-	return cards.sort((a, b) => (SUPERTYPE_ORDER[a.supertype] || 99) - (SUPERTYPE_ORDER[b.supertype] || 99));
+/** Stable reorder: Pokémon, then Trainer, then Energy, keeping the incoming order within a supertype. */
+export function sortBySupertype(cards: FullCard[]): FullCard[] {
+	return [...cards].sort((a, b) => (SUPERTYPE_ORDER[a.supertype] || 99) - (SUPERTYPE_ORDER[b.supertype] || 99));
 }
 
 /** Distinct rarities of a card list. Reading them from Postgres meant a full scan of `cards` for ~30 values. */

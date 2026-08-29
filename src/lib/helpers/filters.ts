@@ -1,4 +1,3 @@
-import { get } from 'svelte/store';
 import type { FullCard, Set } from '$lib/types';
 import { persistentWritable } from '$lib/stores/persistentStore';
 
@@ -40,17 +39,20 @@ export interface ActiveFilters {
 	type: string;
 }
 
-/** Read once per filter pass: `isVisible` runs for all 23k cards, and `get()` subscribes and unsubscribes on every call. */
-export function readActiveFilters(): ActiveFilters {
-	return {
-		artist: get(filterArtist).toLowerCase(),
-		name: get(filterName).toLowerCase(),
-		numero: get(filterNumero).toLowerCase(),
-		rarity: get(filterRarity).toLowerCase(),
-		set: get(filterSet).toLowerCase(),
-		supertype: get(filterSupertype).toLowerCase(),
-		type: get(filterType).toLowerCase(),
-	};
+/**
+ * The caller builds this from the stores through the `$` prefix. Reading them here with `get()` was the bug behind
+ * every "the filter does nothing" report: `get()` registers no dependency, so the `$derived` that filters the grid
+ * never reran when an artist or a rarity changed, and it kept whatever values were current the last time a set or a
+ * supertype happened to change it.
+ */
+export function hasActiveFilters(filters: ActiveFilters): boolean {
+	return filters.name !== ''
+		|| filters.numero !== ''
+		|| filters.artist !== 'all'
+		|| filters.rarity !== 'all'
+		|| filters.set !== 'all'
+		|| filters.supertype !== 'all'
+		|| filters.type !== 'all';
 }
 
 export function isVisible(card: FullCard, cardSet: Set, mainSelectedSet: Set | null, filters: ActiveFilters) {
