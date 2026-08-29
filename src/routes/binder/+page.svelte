@@ -15,7 +15,7 @@
 	import HelpCircleIcon from '@lucide/svelte/icons/circle-question-mark';
 	import { downloadDataUrl, renderBinderImage } from '$helpers/binder-export';
 	import { setCardCount } from '$helpers/set-utils';
-	import type { BinderCards, FullCard } from '$lib/types';
+	import type { BinderCards, BinderCatalogueCard } from '$lib/types';
 	import { binderStorage } from '$stores/binder.svelte';
 	import type { PageData } from './$types';
 
@@ -27,6 +27,12 @@
 	let { data }: Props = $props();
 
 	const sets = $derived(data.sets);
+
+	/** Fetched from `/api/binder` instead of riding in the document, so the page paints before the catalogue lands. */
+	let catalogue = $state<BinderCatalogueCard[]>([]);
+	const cardsByCode = $derived(new Map(catalogue.map(card => [card.cardCode, card])));
+	const loggedIn = $derived(Boolean(data.profile));
+	const catalogueReady = $derived(catalogue.length > 0);
 
 	// Binder configuration
 	let rows = $state(3);
@@ -80,6 +86,9 @@
 		} catch (e) { console.error('Failed to save the binder:', e); }
 	}
 
+	/** Image URLs from the pre-cardCode storage format, resolved once the catalogue is in. */
+	let legacyUrls: string[] = [];
+
 	function loadFromLocalStorage() {
 		if (!browser) return;
 		try {
@@ -88,15 +97,8 @@
 				const parsed = JSON.parse(storedDataString);
 				if (Array.isArray(parsed)) {
 					if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0] !== null && 'url' in parsed[0]) {
-						// Pre-cardCode storage kept raw image URLs, so they are matched back onto the catalogue once.
-						const migratedCardCodes: string[] = [];
-						for (const oldCard of parsed) {
-							if (typeof oldCard.url !== 'string') continue;
-							const foundCard = data.allCards.find(card => card.image === oldCard.url);
-							if (foundCard) migratedCardCodes.push(foundCard.cardCode);
-						}
-						binderStorage.cards = [...new Set(migratedCardCodes)];
-						saveToLocalStorage();
+						// Pre-cardCode storage kept raw image URLs; matching them back onto the catalogue waits for it to arrive.
+						legacyUrls = parsed.map(oldCard => oldCard.url).filter((url: unknown): url is string => typeof url === 'string');
 					} else if (parsed.every(item => typeof item === 'string')) {
 						binderStorage.cards = parsed;
 					} else {
@@ -136,7 +138,18 @@
 
 	onMount(() => {
 		loadFromLocalStorage();
-		loaded = true;
+		// Saving is held back while a migration is pending, so an empty storage never overwrites the legacy entry.
+		if (!legacyUrls.length) loaded = true;
+
+		data.catalogue.then(cards => {
+			catalogue = cards;
+			if (!legacyUrls.length) return;
+
+			const codesByImage = new Map(cards.map(card => [card.image, card.cardCode]));
+			binderStorage.cards = [...new Set(legacyUrls.map(url => codesByImage.get(url)).filter((code): code is string => Boolean(code)))];
+			legacyUrls = [];
+			loaded = true;
+		}).catch(error => console.error('Failed to load the card catalogue:', error));
 	});
 
 	$effect(() => {
@@ -197,7 +210,7 @@
 	function handleSlotClick(pageIndex: number, position: number) {
 		if (!selectedItem) return;
 		const item = selectedItem;
-		const fullCard = data.allCards.find((card: FullCard) => card.cardCode === item);
+		const fullCard = cardsByCode.get(item);
 		updatePage(pageIndex, page => {
 			page[position] = makeSlot(fullCard?.image ?? item, fullCard?.cardCode, position);
 			return page;
@@ -254,7 +267,7 @@
 		const nextPages = pages.map(page => [...page]);
 		let pageIndex = 0;
 		for (const item of queue) {
-			const fullCard = data.allCards.find((card: FullCard) => card.cardCode === item);
+			const fullCard = cardsByCode.get(item);
 			let position = -1;
 			while (position === -1) {
 				if (pageIndex >= nextPages.length) nextPages.push(emptyPage());
@@ -289,14 +302,14 @@
 
 	function addSetToStorage() {
 		if (!selectedSet) return;
-		binderStorage.add(data.allCards.filter((card: FullCard) => card.setName === selectedSet).map((card: FullCard) => card.cardCode));
+		binderStorage.add(catalogue.filter(card => card.setName === selectedSet).map(card => card.cardCode));
 		toggleSetModal();
 	}
 
 	function addMyCardsToStorage() {
 		const codes: string[] = [];
-		if (includeCollection && data.serverCollectionCards) codes.push(...data.serverCollectionCards.map((card: FullCard) => card.cardCode));
-		if (includeWishlist && data.serverWishlistCards) codes.push(...data.serverWishlistCards.map((card: FullCard) => card.cardCode));
+		if (includeCollection) codes.push(...data.collectionItems.map(item => item.card_code));
+		if (includeWishlist) codes.push(...data.wishlistItems.map(item => item.card_code));
 		binderStorage.add(codes);
 		toggleMyCardsModal();
 	}
@@ -378,13 +391,13 @@
 
 		<div class="h-[calc(100dvh-19rem)] min-h-[26rem] lg:col-span-4">
 			<BinderStorage
-				allCards={data.allCards}
+				cards={cardsByCode}
 				bind:visibleItems={storageOrder}
 				onAutoFill={autoFill}
 				onDropFromBinder={handleStorageDrop}
 				onSelect={item => (selectedItem = item)}
 				{placedItems}
-				prices={data.prices}
+				ready={catalogueReady}
 				selected={selectedItem}
 				{sets}
 				{toggleClearStorageModal}
@@ -415,7 +428,7 @@
 
 	{#snippet footer()}
 		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleSetModal}>Cancel</Button>
-		<Button class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600 disabled:opacity-50" disabled={!selectedSet} onClick={addSetToStorage}>Add set</Button>
+		<Button class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600 disabled:opacity-50" disabled={!selectedSet || !catalogueReady} onClick={addSetToStorage}>{catalogueReady ? 'Add set' : 'Loading cards...'}</Button>
 	{/snippet}
 </Modal>
 
@@ -424,14 +437,14 @@
 	<p class="mb-4 text-sm text-gray-300">Choose which cards to send to the storage.</p>
 
 	<div class="mb-4 flex flex-col gap-4">
-		<Checkbox id="include-collection" bind:checked={includeCollection} disabled={!data.serverCollectionCards} label="Include my collection" />
+		<Checkbox id="include-collection" bind:checked={includeCollection} disabled={!loggedIn} label="Include my collection" />
 		<p class="-mt-3 ml-6 text-xs text-gray-400">
-			{#if data.serverCollectionCards}{data.serverCollectionCards.length} cards in your collection{:else}You need to be logged in to access your collection{/if}
+			{#if loggedIn}{data.collectionItems.length} cards in your collection{:else}You need to be logged in to access your collection{/if}
 		</p>
 
-		<Checkbox id="include-wishlist" bind:checked={includeWishlist} disabled={!data.serverWishlistCards} label="Include my wishlist" />
+		<Checkbox id="include-wishlist" bind:checked={includeWishlist} disabled={!loggedIn} label="Include my wishlist" />
 		<p class="-mt-3 ml-6 text-xs text-gray-400">
-			{#if data.serverWishlistCards}{data.serverWishlistCards.length} cards in your wishlist{:else}You need to be logged in to access your wishlist{/if}
+			{#if loggedIn}{data.wishlistItems.length} cards in your wishlist{:else}You need to be logged in to access your wishlist{/if}
 		</p>
 	</div>
 
@@ -439,7 +452,7 @@
 		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleMyCardsModal}>Cancel</Button>
 		<Button
 			class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600 disabled:opacity-50"
-			disabled={(!includeCollection || !data.serverCollectionCards) && (!includeWishlist || !data.serverWishlistCards)}
+			disabled={!loggedIn || (!includeCollection && !includeWishlist)}
 			onClick={addMyCardsToStorage}
 		>
 			Add to storage

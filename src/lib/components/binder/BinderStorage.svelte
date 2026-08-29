@@ -13,18 +13,19 @@
 	import TrashIcon from '@lucide/svelte/icons/trash';
 	import X from '@lucide/svelte/icons/x';
 	import { isCardCode, parseCardCode } from '$helpers/card-utils';
-	import type { FullCard, PriceData, Set } from '$lib/types';
+	import type { BinderCatalogueCard, Set } from '$lib/types';
 
 	interface Props {
-		allCards: FullCard[];
+		/** The catalogue keyed by card code, so a tile resolves its card without scanning 21066 of them. */
+		cards: Map<string, BinderCatalogueCard>;
 		onAutoFill: () => void;
 		onSelect: (item: string | null) => void;
 		/** Dropping a binder card back here pulls it out of its slot. */
 		onDropFromBinder: (event: DragEvent) => void;
 		/** Codes and URLs already sitting in a binder slot, so the tile can flag them. */
 		placedItems: globalThis.Set<string>;
-		/** Cardmarket values in EUR, keyed by card code. */
-		prices: Record<string, PriceData>;
+		/** False until `/api/binder` lands, so a tile waiting on its card shows a placeholder rather than an error. */
+		ready: boolean;
 		/** Item armed for click-to-place, `null` when none. */
 		selected: string | null;
 		sets: Set[];
@@ -34,19 +35,17 @@
 	}
 
 	let {
-		allCards,
+		cards,
 		onAutoFill,
 		onDropFromBinder,
 		onSelect,
 		placedItems,
-		prices,
+		ready,
 		selected,
 		sets,
 		toggleClearStorageModal,
 		visibleItems = $bindable([])
 	}: Props = $props();
-
-	const cardDataMap = $derived(new Map(allCards.map(card => [card.cardCode, card])));
 
 	let searchTerm = $state('');
 
@@ -62,7 +61,7 @@
 			const term = searchTerm.toLowerCase();
 			filtered = filtered.filter(item => {
 				if (isCardCode(item)) {
-					const fullCard = cardDataMap.get(item);
+					const fullCard = cards.get(item);
 					return item.toLowerCase().includes(term) ||
 						fullCard?.name.toLowerCase().includes(term) ||
 						fullCard?.setName.toLowerCase().includes(term);
@@ -90,9 +89,9 @@
 					comparison = setCodeA.localeCompare(setCodeB);
 					if (comparison === 0) comparison = parseInt(cardNumberA) - parseInt(cardNumberB);
 				} else if (view.sortBy === 'name') {
-					comparison = (cardDataMap.get(itemA)?.name ?? '').localeCompare(cardDataMap.get(itemB)?.name ?? '');
+					comparison = (cards.get(itemA)?.name ?? '').localeCompare(cards.get(itemB)?.name ?? '');
 				} else if (view.sortBy === 'price') {
-					comparison = (prices[itemA]?.simple ?? 0) - (prices[itemB]?.simple ?? 0);
+					comparison = (cards.get(itemA)?.price ?? 0) - (cards.get(itemB)?.price ?? 0);
 				}
 			} else if (!isCodeA && !isCodeB) {
 				comparison = itemA.localeCompare(itemB);
@@ -112,7 +111,7 @@
 		if (!e.dataTransfer) return;
 
 		if (isCardCode(item)) {
-			const fullCard = cardDataMap.get(item);
+			const fullCard = cards.get(item);
 			if (!fullCard) {
 				console.error(`Cannot start drag, card details not found for code: ${item}`);
 				e.preventDefault();
@@ -183,7 +182,7 @@
 		<h3 class="text-lg text-gold-400">Storage ({binderStorage.cards.length})</h3>
 		{#if binderStorage.cards.length > 0}
 			<div class="flex items-center gap-1">
-				<Button class="border-gold-400 px-2 text-xs text-gold-400" onClick={onAutoFill} title="Pour the storage into the empty slots, in the order it is sorted">
+				<Button class="border-gold-400 px-2 text-xs text-gold-400 disabled:opacity-50" disabled={!ready} onClick={onAutoFill} title="Pour the storage into the empty slots, in the order it is sorted">
 					<WandSparklesIcon size={14} /> Auto-fill
 				</Button>
 				<Button class="p-1" onClick={toggleClearStorageModal} title="Clear the whole storage"><TrashIcon size={14} /></Button>
@@ -224,9 +223,11 @@
 		{:else}
 			<div class="grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-2" role="list">
 				{#each filteredCardCodes as item (item)}
-					{@const fullCard = isCardCode(item) ? cardDataMap.get(item) : undefined}
+					{@const fullCard = isCardCode(item) ? cards.get(item) : undefined}
 					{@const isPlaced = placedItems.has(item)}
-					{#if isCardCode(item) && !fullCard}
+					{#if isCardCode(item) && !fullCard && !ready}
+						<div class="aspect-2/3 animate-pulse rounded-sm border-2 border-gray-700 bg-gray-700/40"></div>
+					{:else if isCardCode(item) && !fullCard}
 						<div class="relative flex aspect-2/3 items-center justify-center rounded-sm border-2 border-dashed border-red-700 p-1 text-center">
 							<span class="text-xs text-red-400">Data missing for {item}</span>
 							<button class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white" onclick={() => removeItem(item)} aria-label="Remove from storage" title="Remove from storage"><X size={14} /></button>
@@ -261,7 +262,7 @@
 									<div class="truncate font-semibold">{fullCard.name}</div>
 									<div class="truncate">#{parseCardCode(item).cardNumber}/{set?.printedTotal}</div>
 									<div class="truncate text-gray-300">{fullCard.rarity}</div>
-									<div class="truncate text-gold-400">{prices[item]?.simple ? `${prices[item].simple.toFixed(2)} €` : 'No price'}</div>
+									<div class="truncate text-gold-400">{fullCard.price ? `${fullCard.price.toFixed(2)} €` : 'No price'}</div>
 								{:else}
 									<div class="truncate font-semibold">Imported from URL</div>
 								{/if}

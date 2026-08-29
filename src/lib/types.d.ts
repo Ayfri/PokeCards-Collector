@@ -164,6 +164,21 @@ export type CardFilter = {
 	set?: string[];
 }
 
+/**
+ * One catalogue card as the binder needs it: the seven fields the storage panel draws and searches on.
+ * Serving whole cards plus the price table put 11.4 MB into the binder document.
+ */
+export interface BinderCatalogueCard {
+	cardCode: string;
+	image: string;
+	name: string;
+	price: number | null;
+	rarity: string;
+	setName: string;
+	types: string;
+}
+
+/** One slot of a binder page. */
 export interface BinderCards {
 	id: string;
 	url: string;
