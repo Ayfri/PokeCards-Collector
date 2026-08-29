@@ -157,6 +157,35 @@ function toSet(set: SetRow): Set {
 	};
 }
 
+interface QueryResult {
+	error: { message: string } | null;
+}
+
+const READ_ATTEMPTS = 3;
+
+/**
+ * Runs a Supabase read until it succeeds, up to `READ_ATTEMPTS` times with a linear backoff.
+ *
+ * Paging a card table fires ~5 subrequests at once, and one of them occasionally dies with
+ * `Error: Network connection lost.` - a Workers-side transient the query itself is fine on the next try.
+ * Without this, that single dropped batch propagated all the way up as a 500 on the page.
+ */
+async function readWithRetry<T extends QueryResult>(label: string, run: () => PromiseLike<T>): Promise<T> {
+	for (let attempt = 1; ; attempt++) {
+		try {
+			const result = await run();
+			if (!result.error) return result;
+			if (attempt === READ_ATTEMPTS) throw new Error(`Failed to ${label}: ${result.error.message}`);
+			console.warn(`Retrying ${label} after error (attempt ${attempt}):`, result.error.message);
+		} catch (cause) {
+			if (attempt === READ_ATTEMPTS) throw cause;
+			console.warn(`Retrying ${label} after throw (attempt ${attempt}):`, cause);
+		}
+
+		await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+	}
+}
+
 /**
  * Fetches a whole table. The card tables exceed Supabase's per-select row cap, so the rows are counted
  * first and every 5000-row page is then requested in parallel.
@@ -172,16 +201,11 @@ async function getAllData<T>(
 	orderBy?: { column: string; ascending: boolean }
 ): Promise<T[]> {
 	const batchSize = 5000;
-	let allData: T[] = [];
+	const allData: T[] = [];
 
-	const { count, error: countError } = await supabase
+	const { count } = await readWithRetry(`count ${tableName}`, () => supabase
 		.from(tableName)
-		.select('*', { count: 'exact', head: true });
-
-	if (countError) {
-		console.error(`Error counting ${tableName}:`, countError);
-		throw new Error(`Failed to count ${tableName}: ${countError.message}`);
-	}
+		.select('*', { count: 'exact', head: true }));
 
 	const totalCount = count || 0;
 	const numberOfBatches = Math.ceil(totalCount / batchSize);
@@ -189,23 +213,20 @@ async function getAllData<T>(
 	const batchPromises = Array.from({ length: numberOfBatches }, (_, index) => {
 		const from = index * batchSize;
 
-		let query = supabase.from(tableName).select(selectQuery);
+		return readWithRetry(`fetch ${tableName} rows ${from}-${from + batchSize - 1}`, () => {
+			let query = supabase.from(tableName).select(selectQuery);
 
-		if (orderBy) {
-			query = query.order(orderBy.column, { ascending: orderBy.ascending });
-		}
+			if (orderBy) {
+				query = query.order(orderBy.column, { ascending: orderBy.ascending });
+			}
 
-		return query.order(keyColumn, { ascending: true }).range(from, from + batchSize - 1);
+			return query.order(keyColumn, { ascending: true }).range(from, from + batchSize - 1);
+		});
 	});
 
 	const results = await Promise.all(batchPromises);
 
-	for (const { data, error } of results) {
-		if (error) {
-			console.error(`Error fetching ${tableName}:`, error);
-			throw new Error(`Failed to fetch ${tableName}: ${error.message}`);
-		}
-
+	for (const { data } of results) {
 		if (data && data.length > 0) {
 			allData.push(...(data as T[]));
 		}
@@ -238,26 +259,16 @@ export async function getCardCodes(): Promise<string[]> {
 
 /** Picks a card without reading the table: one count, then the single row at that offset. */
 export async function getRandomCardCode(): Promise<string | null> {
-	const { count, error: countError } = await supabase.from('cards').select('*', { count: 'exact', head: true });
-
-	if (countError) {
-		console.error('Error counting cards:', countError);
-		throw new Error(`Failed to count cards: ${countError.message}`);
-	}
+	const { count } = await readWithRetry('count cards', () => supabase.from('cards').select('*', { count: 'exact', head: true }));
 
 	if (!count) return null;
 
 	const offset = Math.floor(Math.random() * count);
-	const { data, error } = await supabase
+	const { data } = await readWithRetry('fetch random card', () => supabase
 		.from('cards')
 		.select('card_code')
 		.order('card_code', { ascending: true })
-		.range(offset, offset);
-
-	if (error) {
-		console.error('Error fetching random card:', error);
-		throw new Error(`Failed to fetch random card: ${error.message}`);
-	}
+		.range(offset, offset));
 
 	return data?.[0]?.card_code ?? null;
 }
