@@ -49,18 +49,8 @@
 				return false;
 			}
 			
-			// Utiliser directement fetch pour vérifier le nom d'utilisateur
 			try {
-				const response = await fetch('/api/auth/test', {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json'
-					},
-					body: JSON.stringify({
-						action: 'check_username',
-						username
-					})
-				});
+				const response = await fetch(`/api/auth/username-available?username=${encodeURIComponent(username)}`);
 				
 				const data = await readJson<{ success?: boolean; exists?: boolean }>(response, {});
 				

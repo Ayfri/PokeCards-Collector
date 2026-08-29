@@ -159,7 +159,7 @@ export interface SearchedUser {
 // Represents the result of the isUsernameTaken service function
 export interface UsernameCheckResult {
 	exists: boolean;
-	error: Error | Record<string, any> | string | null; // Adjusted for more specific error types
+	error: Error | string | null;
 }
 
 // Generic type for responses from service functions (e.g., Supabase calls)

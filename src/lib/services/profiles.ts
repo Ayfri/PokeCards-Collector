@@ -1,14 +1,13 @@
 import { supabase } from '../supabase';
-import type { UserProfile, ServiceResponse } from '../types';
+import type { UserProfile, ServiceResponse, UsernameCheckResult } from '../types';
 
-// Créer un nouveau profil (à utiliser par l'API d'inscription)
 export async function createProfile(username: string, authId: string) {
 	try {
-		const normalizedUsername = username.toLowerCase(); // Normalize username
+		const normalizedUsername = username.toLowerCase();
 		const { data, error } = await supabase
 			.from('profiles')
 			.insert({
-				username: normalizedUsername, // Store normalized username
+				username: normalizedUsername,
 				auth_id: authId,
 				is_public: true
 			})
@@ -22,7 +21,6 @@ export async function createProfile(username: string, authId: string) {
 	}
 }
 
-// Get user profile by auth ID
 export async function getProfileByAuthId(authId: string) {
 	try {
 		const { data, error } = await supabase
@@ -38,13 +36,12 @@ export async function getProfileByAuthId(authId: string) {
 	}
 }
 
-// Get user profile by username (case-insensitive)
 export async function getProfileByUsername(username: string) {
 	try {
 		const { data, error } = await supabase
 			.from('profiles')
 			.select('*')
-			.ilike('username', username) // Use ilike for case-insensitive match
+			.ilike('username', username)
 			.single();
 
 		return { data, error } as ServiceResponse<UserProfile>;
@@ -54,7 +51,6 @@ export async function getProfileByUsername(username: string) {
 	}
 }
 
-// Update user profile
 export async function updateProfile(username: string, profileData: Partial<UserProfile>) {
 	try {
 		const { data, error } = await supabase
@@ -71,10 +67,8 @@ export async function updateProfile(username: string, profileData: Partial<UserP
 	}
 }
 
-// Toggle profile visibility (public/private)
 export async function toggleProfileVisibility(username: string, isPublic: boolean) {
 	try {
-		// Utiliser directement le client supabase
 		const { data, error } = await supabase
 			.from('profiles')
 			.update({ is_public: isPublic })
@@ -92,49 +86,24 @@ export async function toggleProfileVisibility(username: string, isPublic: boolea
 	}
 }
 
-// Check if username is already taken (case-insensitive)
-export async function isUsernameTaken(username: string) {
+/** Bounded at 5 s: a hanging lookup would leave the registration form waiting forever. */
+export async function isUsernameTaken(username: string): Promise<UsernameCheckResult> {
 	try {
-		const checkPromise = new Promise(async (resolve) => {
-			try {
-				const normalizedUsername = username.toLowerCase(); // Normalize to lowercase
-				// Utiliser le client supabase importé plutôt que d'accéder aux variables d'environnement
-				const { data, error: supabaseError } = await supabase
-					.from('profiles')
-					.select('username')
-					.eq('username', normalizedUsername) // Compare with normalized username
-					.limit(1);
+		const { data, error } = await supabase
+			.from('profiles')
+			.select('username')
+			.eq('username', username.toLowerCase())
+			.abortSignal(AbortSignal.timeout(5000))
+			.limit(1);
 
-				if (supabaseError) {
-					resolve({
-						exists: false,
-						error: supabaseError
-					});
-					return;
-				}
+		if (error) return { exists: false, error: error.message };
 
-				const exists = Array.isArray(data) && data.length > 0;
-
-				resolve({ exists, error: null });
-			} catch (error) {
-				resolve({ exists: false, error });
-			}
-		});
-
-		// Ajouter un timeout pour éviter les attentes infinies
-		const timeoutPromise = new Promise((_, reject) => {
-			setTimeout(() => {
-				reject(new Error('Timeout checking username'));
-			}, 5000);
-		});
-
-		return Promise.race([checkPromise, timeoutPromise]);
+		return { exists: (data?.length ?? 0) > 0, error: null };
 	} catch (error) {
-		return { exists: false, error };
+		return { exists: false, error: error instanceof Error ? error : String(error) };
 	}
 }
 
-// Search for users with fuzzy matching (case-insensitive)
 export async function searchUsers(query: string, limit: number = 10) {
 	try {
 		if (!query || query.trim() === '') {
@@ -143,10 +112,9 @@ export async function searchUsers(query: string, limit: number = 10) {
 
 		const normalizedQuery = query.toLowerCase().trim();
 
-		// Call the PostgreSQL function search_public_users_with_stats
 		const { data, error } = await supabase.rpc('search_public_users_with_stats', {
-			p_query: normalizedQuery, // Parameter name from SQL function
-			p_limit: limit          // Parameter name from SQL function
+			p_query: normalizedQuery,
+			p_limit: limit
 		});
 
 		if (error) {
@@ -154,7 +122,6 @@ export async function searchUsers(query: string, limit: number = 10) {
 			return { data: null, error };
 		}
 
-		// The RPC function returns data in the shape defined by its RETURNS TABLE clause
 		return { data, error: null };
 
 	} catch (error) {
