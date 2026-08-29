@@ -6,18 +6,10 @@ export type ImageExtension = 'webp' | 'png';
 
 const PLACEHOLDER = 'https://placehold.co/300x450/transparent/transparent';
 
-/**
- * Gets the image URL for a Pokémon
- * If CDN_URL environment variable is set, it will use that as the base URL
- * Otherwise it will use the original API URL
- *
- * @param pokemonId The ID of the Pokémon
- * @param cards The list of cards to search through
- * @returns The image URL to use
- */
+/** The scan of the first card depicting `pokemonId`, or an empty string when the list holds none. */
 export function getCardImageForPokemon(pokemonId: number, cards: FullCard[]): string {
 	const pokemonCard = cards.find(c => c.pokemonNumber === pokemonId);
-	return pokemonCard ? processCardImage(pokemonCard.image) : '/loading-spinner.svg';
+	return pokemonCard ? processCardImage(pokemonCard.image) : '';
 }
 
 /**

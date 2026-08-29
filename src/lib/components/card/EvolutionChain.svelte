@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { pascalCase } from '$helpers/strings.js';
 	import { getPokemonImageSrc, handlePokemonImageError } from '$lib/helpers/pokemon-utils';
+	import { getCardImageForPokemon } from '$helpers/card-images';
 	import { NO_IMAGES } from '$lib/images';
 	import type { FullCard, Pokemon, PriceData } from '~/lib/types';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
@@ -110,7 +111,7 @@
 						alt={pokemon.name}
 						class="evolution-image w-16 h-16 object-contain"
 						title={pascalCase(pokemon.name)}
-						onerror={(e) => handlePokemonImageError(e, pokemon.id, pokemonCards)}
+						onerror={(e) => handlePokemonImageError(e, pokemon.id, getCardImageForPokemon(pokemon.id, pokemonCards))}
 						data-pokemon-id={pokemon.id}
 					/>
 					{:else}

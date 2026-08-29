@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import type { CardDleFeedback, CardDleGuessResponse } from '$lib/types';
 	import { readJson } from '$helpers/http';
+	import { getPokemonSpriteSrc } from '$helpers/pokemon-utils';
 	import Modal from '@components/ui/Modal.svelte';
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
@@ -290,7 +291,7 @@
 							guess.feedback.supertypeValue === 'Pokémon' ? guess.feedback.pokemonCorrect : undefined
 						)}`} title={getFeedbackHint('Pokémon', guess.feedback.supertypeValue === 'Pokémon' ? guess.feedback.pokemonCorrect : undefined)}>
 							{#if guess.pokemonNumber && guess.feedback.supertypeValue === 'Pokémon'}
-								<img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${guess.pokemonNumber}.png`} alt="Sprite for {guess.feedback.pokemonValue}" class="h-10 w-10 sm:h-12 sm:w-12 object-contain"/>
+								<img src={getPokemonSpriteSrc(guess.pokemonNumber)} alt="Sprite for {guess.feedback.pokemonValue}" class="h-10 w-10 sm:h-12 sm:w-12 object-contain"/>
 							{:else if guess.feedback.supertypeValue === 'Trainer' || guess.feedback.supertypeValue === 'Energy'}
 								<span class="text-sm p-2">{guess.feedback.supertypeValue}</span>
 							{:else}
@@ -349,7 +350,7 @@
 						<!-- Pokémon Sprite & Name Cell -->
 						<div class="p-1 flex flex-col items-center justify-center text-center bg-gray-800 text-gray-300">
 							{#if loadingGuess.pokemonNumber}
-								<img src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${loadingGuess.pokemonNumber}.png`} alt="Sprite" class="h-10 w-10 sm:h-12 sm:w-12 object-contain opacity-75"/>
+								<img src={getPokemonSpriteSrc(loadingGuess.pokemonNumber)} alt="Sprite" class="h-10 w-10 sm:h-12 sm:w-12 object-contain opacity-75"/>
 							{:else}
 								<div class="h-10 w-10 sm:h-12 sm:w-12 bg-gray-700 rounded-sm animate-pulse"></div>
 							{/if}

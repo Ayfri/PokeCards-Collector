@@ -4,6 +4,7 @@
 	import {cardTypeTint} from '$helpers/card-images';
 	import {parseCardCode} from '$helpers/card-utils';
 	import {NO_IMAGES} from '$lib/images';
+	import {getPokemonImageSrc} from '$helpers/pokemon-utils';
 
 	interface Props {
 		/** The card TCGdex has no scan for. */
@@ -17,7 +18,7 @@
 	const cardNumber = $derived(card.localId ?? parseCardCode(card.cardCode).cardNumber);
 	/** PokéAPI ships an artwork for every species, so a Pokemon card with no scan still shows what it depicts. */
 	const artworkUrl = $derived(!NO_IMAGES && card.pokemonNumber
-		? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${card.pokemonNumber}.png`
+		? getPokemonImageSrc(card.pokemonNumber)
 		: '');
 
 	let artworkFailed = $state(false);

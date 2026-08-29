@@ -11,6 +11,7 @@
 	import { afterNavigate, goto, replaceState } from '$app/navigation';
 	import { findSetByCardCode } from '$helpers/set-utils';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
+	import { getPokemonImageSrc, getPokemonSpriteSrc } from '$helpers/pokemon-utils';
 	import { setNavigationLoading } from '$lib/stores/loading';
 
 	
@@ -70,7 +71,7 @@
 		}
 
 		if (img.src.includes('official-artwork')) {
-			img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${pokemonId}.png`;
+			img.src = getPokemonSpriteSrc(Number(pokemonId));
 		} else {
 			img.src = '/loading-spinner.svg';
 			img.onerror = null;
@@ -170,7 +171,7 @@
 				>
 					{#if !NO_IMAGES}
 					<img
-						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
+						src={getPokemonImageSrc(previousPokemon.id)}
 						alt={pascalCase(previousPokemon.name)}
 						class="w-16 h-16 object-contain nav-pokemon-image"
 						title={pascalCase(previousPokemon.name)}
@@ -198,7 +199,7 @@
 				>
 					{#if !NO_IMAGES}
 					<img
-						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
+						src={getPokemonImageSrc(nextPokemon.id)}
 						alt={pascalCase(nextPokemon.name)}
 						class="w-16 h-16 object-contain nav-pokemon-image"
 						title={pascalCase(nextPokemon.name)}
@@ -228,7 +229,7 @@
 			>
 				{#if !NO_IMAGES}
 					<img
-						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${previousPokemon.id}.png`}
+						src={getPokemonImageSrc(previousPokemon.id)}
 						alt={pascalCase(previousPokemon.name)}
 						class="w-24 h-24 object-contain nav-pokemon-image"
 						title={pascalCase(previousPokemon.name)}
@@ -256,7 +257,7 @@
 			>
 				{#if !NO_IMAGES}
 					<img
-						src={`https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${nextPokemon.id}.png`}
+						src={getPokemonImageSrc(nextPokemon.id)}
 						alt={pascalCase(nextPokemon.name)}
 						class="w-24 h-24 object-contain nav-pokemon-image"
 						title={pascalCase(nextPokemon.name)}
