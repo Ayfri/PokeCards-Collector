@@ -6,7 +6,12 @@
   --font-*: initial;
   --font-clash: Clash Display, sans-serif;
 
+  /* `gold` is not a Tailwind palette, so every shade the markup names has to be declared here or the class emits nothing. */
+  --color-gold-200: #fee7af;
+  --color-gold-300: #fcd67d;
   --color-gold-400: #fbc54a;
+  --color-gold-500: #f6ae1e;
+  --color-gold-600: #d8870e;
 
   --color-gray-400: #aeaeae;
   --color-gray-800: #232323;
