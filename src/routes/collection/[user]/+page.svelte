@@ -10,7 +10,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
 	import { onMount } from 'svelte';
-	import { resetFilters } from '$lib/helpers/filters';
+	import { filters } from '$stores/filters.svelte';
 
 	interface Props {
 		data: PageData;
@@ -27,11 +27,8 @@
 	const profileNotFound = $derived(!targetProfile && !!targetUsername);
 	const profileIsPrivate = $derived(!!targetProfile && !isPublic && !isOwnCollection);
 
-	onMount(() => {
-		if (typeof window !== 'undefined') {
-			resetFilters();
-		}
-	});
+	// The grid is shared with /cards-list, so a visit here starts from a clean slate rather than the last search.
+	onMount(() => filters.reset());
 
 	// Status message logic can be adapted once collectionData is resolved
 	// It might need to be inside the :then block or react to resolvedCollectionData.serverCollectionCards

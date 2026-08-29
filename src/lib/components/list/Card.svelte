@@ -2,8 +2,8 @@
 	import {NO_IMAGES} from '$lib/images';
 	import {addCardToWishlist, removeCardFromWishlist} from '$lib/services/wishlists';
 	import {addCardToCollection, removeCardFromCollection} from '$lib/services/collections';
-	import {wishlistStore} from '$lib/stores/wishlist';
-	import {collectionStore} from '$lib/stores/collection';
+	import {wishlist} from '$stores/wishlist.svelte';
+	import {collection} from '$stores/collection.svelte';
 	import { page } from '$app/state';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import { parseCardCode } from '$lib/helpers/card-utils';
@@ -61,10 +61,10 @@
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
 
-	const isInWishlist = $derived($wishlistStore.has(cardCode));
+	const isInWishlist = $derived(wishlist.has(cardCode));
 	let isUpdatingWishlist = $state(false);
 
-	const collectionCount = $derived($collectionStore.get(cardCode) || 0);
+	const collectionCount = $derived(collection.count(cardCode));
 	let isUpdatingCollection = $state(false);
 
 	const isCollectionLimitReached = $derived(collectionCount >= MAX_CARD_QUANTITY);

@@ -6,7 +6,7 @@
 	import { getPokemonImageSrc, handlePokemonImageError } from '$helpers/pokemon-utils';
 	import { NO_IMAGES } from '$lib/images';
 	import PageTitle from '@components/PageTitle.svelte';
-	import { setNavigationLoading } from '$lib/stores/loading';
+	import { loading } from '$stores/loading.svelte';
 	import ScrollToTop from '$lib/components/list/ScrollToTop.svelte';
 	import ScrollToBottom from '$lib/components/list/ScrollToBottom.svelte';
 	import { fade } from 'svelte/transition';
@@ -44,7 +44,7 @@
 
 	function navigateToPokemonCard(pokemon: PokemonListEntry) {
 		if (!pokemon.cardCode) return;
-		setNavigationLoading(true);
+		loading.navigation = true;
 		goto(`/card/${pokemon.cardCode}`);
 	}
 

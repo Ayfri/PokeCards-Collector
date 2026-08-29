@@ -7,7 +7,7 @@
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 	import { onMount } from 'svelte';
 	import { afterNavigate, goto } from '$app/navigation';
-	import { setNavigationLoading } from '$lib/stores/loading';
+	import { loading } from '$stores/loading.svelte';
 
 	interface Props {
 		allCards: FullCard[];
@@ -30,7 +30,7 @@
 	const baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
 	
 	function navigateToPokemon(cardCode: string) {
-		setNavigationLoading(true);
+		loading.navigation = true;
 		goto(`${baseCardUrl}${cardCode}/`);
 	}
 	

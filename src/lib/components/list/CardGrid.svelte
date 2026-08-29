@@ -1,20 +1,6 @@
 <script lang="ts">
 	import "~/styles/colors.css";
-	import {
-		filterName,
-		filterNumero,
-		filterRarity,
-		filterSet,
-		filterSupertype,
-		filterType,
-		filterArtist,
-		mostExpensiveOnly,
-		sortBy,
-		sortOrder,
-		resetFilters,
-		resetSort,
-		hasActiveFilters,
-	} from "$lib/helpers/filters";
+	import { filters } from "$stores/filters.svelte";
 	import CardComponent from "@components/list/Card.svelte";
 	import Filters from "@components/list/Filters.svelte";
 	import VirtualGrid from "@components/list/VirtualGrid.svelte";
@@ -30,9 +16,9 @@
 	import Button from "$lib/components/filters/Button.svelte";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
-	import { filterCards, keepMostExpensivePerGroup, sortBySupertype, sortCards } from "$helpers/card-grid";
+	import { filterCards, getCardDimensions, keepMostExpensivePerGroup, sortBySupertype, sortCards } from "$helpers/card-grid";
 	import Loader from "$lib/components/Loader.svelte";
-	import { cardSize, getCardDimensions } from "$lib/stores/gridStore";
+	import { cardSize } from "$stores/grid.svelte";
 	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
 
 	interface Props {
@@ -75,31 +61,14 @@
 	// Fixed height for the info container in Card.svelte
 	const infoContainerHeight = 70;
 
+	// A link into the grid names the filters it wants, so the URL wins over whatever the visitor last picked.
 	onMount(() => {
-		// Initialize searchName from URL parameter or from store
-		const nameParam = page.url.searchParams.get('name');
-		if (nameParam) {
-			searchName = decodeURIComponent(nameParam);
-		} else {
-			searchName = $filterName;
-		}
-
-		// Initialize set filter from URL parameter
-		const setParam = page.url.searchParams.get('set');
-		if (setParam) {
-			const decodedSetName = decodeURIComponent(setParam);
-			// Find the set in our list of sets - use case-insensitive comparison for matching
-			const matchingSet = sets.find(set => set.name.toLowerCase() === decodedSetName.toLowerCase());
-			if (matchingSet) {
-				$filterSet = matchingSet.name.toLowerCase(); // Use the correct case from set options format
-			} else {
-				$filterSet = decodedSetName.toLowerCase(); // Ensure lowercase to match the option format
-			}
-		}
+		filters.applyFromUrl(page.url, sets);
+		searchName = filters.name;
 	});
 
 	function setFilterName(value: string) {
-		$filterName = value;
+		filters.name = value;
 
 		// Update URL with name parameter when search is used
 		const url = new URL(page.url);
@@ -125,25 +94,16 @@
 		});
 	}
 
-	// Local reset function to clear both store and local state
+	/** Clears the filters, the search box and every filter parameter, keeping only the `user` the page was opened for. */
 	function localResetFilters() {
-		resetFilters(); // Call the imported helper to reset stores
-		resetSort();
-		searchName = ""; // Reset the local searchName bound to the TextInput
+		filters.reset();
+		searchName = "";
 
-		// Create URL that preserves the user parameter if present
 		const url = new URL(page.url);
 		const userParam = url.searchParams.get('user');
-
-		// Clear all search parameters
 		url.search = '';
+		if (userParam) url.searchParams.set('user', userParam);
 
-		// But preserve the user parameter if it exists
-		if (userParam) {
-			url.searchParams.set('user', userParam);
-		}
-
-		// Navigate to the cleaned URL
 		goto(url.toString(), { replaceState: true });
 	}
 
@@ -152,39 +112,24 @@
 			showFilters = false;
 		}
 	}
-	// Use the store value directly; mobile logic is now in getCardDimensions
-	const cardDimensions = $derived(getCardDimensions($cardSize, clientWidth));
+	const cardDimensions = $derived(getCardDimensions(cardSize.current, clientWidth));
 
 	const pokemonMap = $derived(new Map(pokemons.map(pokemon => [pokemon.id, pokemon])));
 
-	// Every filter is read here through the `$` prefix so `filteredCards` actually depends on all of them. Pulling
-	// them inside `filterCards` with `get()` registered no dependency, which is why picking an artist or a rarity on
-	// top of a set changed nothing until an unrelated filter forced the pass to rerun.
-	const activeFilters = $derived({
-		artist: $filterArtist.toLowerCase(),
-		name: $filterName.toLowerCase(),
-		numero: $filterNumero.toLowerCase(),
-		rarity: $filterRarity.toLowerCase(),
-		set: $filterSet.toLowerCase(),
-		supertype: $filterSupertype.toLowerCase(),
-		type: $filterType.toLowerCase(),
-	});
-	const anyFilterActive = $derived(hasActiveFilters(activeFilters));
-
-	// The store holds the set *name*, so the set is looked up by name; `findSetByCardCode` parsed it as a card code,
+	// The filter holds the set *name*, so the set is looked up by name; `findSetByCardCode` parsed it as a card code,
 	// found no `_` separators and always returned undefined, leaving the set branch of `isVisible` unreachable.
-	const selectedSet = $derived(activeFilters.set !== "all"
-		? (sets.find(set => set.name.toLowerCase() === activeFilters.set) ?? null)
+	const selectedSet = $derived(filters.set !== "all"
+		? (sets.find(set => set.name.toLowerCase() === filters.set) ?? null)
 		: null);
 
 	// Filter first, then narrow, then sort: "Most Expensive Only" used to pick the priciest printing of each Pokémon
 	// across the whole catalogue before the set filter ran, so Base Set showed the 4 Pokémon whose best card happens to
 	// live there instead of its 69. Sorting last also means a picked set sorts ~100 cards rather than all 23546.
-	const matchingCards = $derived(anyFilterActive ? filterCards(cards, sets, selectedSet, activeFilters) : cards);
-	const narrowedCards = $derived($mostExpensiveOnly ? keepMostExpensivePerGroup(matchingCards, prices) : matchingCards);
-	const sortedCards = $derived(sortCards(narrowedCards, $sortBy, $sortOrder, prices, pokemons, sets));
+	const matchingCards = $derived(filters.hasActive ? filterCards(cards, sets, selectedSet, filters.active) : cards);
+	const narrowedCards = $derived(filters.mostExpensiveOnly ? keepMostExpensivePerGroup(matchingCards, prices) : matchingCards);
+	const sortedCards = $derived(sortCards(narrowedCards, filters.sortBy, filters.sortOrder, prices, pokemons, sets));
 	// Pokémon before Trainer before Energy, unless the user is already looking at a single supertype.
-	const filteredCards = $derived(activeFilters.supertype === "all" ? sortBySupertype(sortedCards) : sortedCards);
+	const filteredCards = $derived(filters.supertype === "all" ? sortBySupertype(sortedCards) : sortedCards);
 
 	const visibleCardsCount = $derived(filteredCards.length);
 	// 66 Pokémon cards carry no dex id; without the guard they all collapse into one extra entry in the count.
@@ -192,18 +137,6 @@
 		filteredCards.filter(card => card.supertype === "Pokémon" && card.pokemonNumber != null).map(card => card.pokemonNumber),
 	).size);
 
-	// Count active filters
-	const activeFiltersCount = $derived([
-		$filterName,
-		$filterNumero,
-		$filterRarity !== "all",
-		$filterSet !== "all",
-		$filterType !== "all",
-		$filterSupertype !== "all",
-		$filterArtist !== "all",
-		$mostExpensiveOnly,
-		$sortBy !== "sort-pokedex",
-	].filter(Boolean).length);
 </script>
 
 <svelte:window bind:innerWidth={clientWidth} onkeydown={handleKeydown} />
@@ -290,18 +223,18 @@
 			<div class="relative">
 				<Button
 					onClick={() => (showFilters = true)}
-					isActive={activeFiltersCount > 0}
+					isActive={filters.count > 0}
 					class="px-4"
-					title={activeFiltersCount > 0 ? `Open filters (${activeFiltersCount} active)` : 'Open filters'}
+					title={filters.count > 0 ? `Open filters (${filters.count} active)` : 'Open filters'}
 				>
 					<SlidersHorizontalIcon size={16} /> Filters
 				</Button>
-				{#if activeFiltersCount > 0}
+				{#if filters.count > 0}
 					<span
 						class="absolute -bottom-1 -right-1 bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full pointer-events-none z-20"
 						in:fade={{ delay: 400, duration: 200 }}
 					>
-						{activeFiltersCount}
+						{filters.count}
 					</span>
 				{/if}
 			</div>
@@ -309,7 +242,7 @@
 			<!-- Reset Button (Should be always visible) -->
 			<Button
 				onClick={localResetFilters}
-				disabled={activeFiltersCount === 0}
+				disabled={filters.count === 0}
 				class="p-1.5"
 				title="Reset every filter and the sort order"
 			>

@@ -10,7 +10,7 @@
 	import AuthModal from './AuthModal.svelte';
 	import { browser } from '$app/environment';
 	import Avatar from './Avatar.svelte';
-	import { setNavigationLoading } from '$lib/stores/loading';
+	import { loading } from '$stores/loading.svelte';
 	import type { UserProfile } from '$lib/types';
 	import type { User as AuthUser } from '@supabase/supabase-js';
 	import { goto, invalidateAll } from '$app/navigation';
@@ -32,7 +32,7 @@
 
 	function handleNavigation() {
 		closeMenu();
-		setNavigationLoading(true);
+		loading.navigation = true;
 	}
 
 	function openAuthModal() {
@@ -55,7 +55,7 @@
 
 	async function handleSignOut() {
 		closeMenu();
-		setNavigationLoading(true);
+		loading.navigation = true;
 		try {
 			const response = await fetch('/api/auth/logout', {
 				method: 'POST',
@@ -63,7 +63,7 @@
 
 			if (!response.ok) {
 				console.error('Logout failed:', response.statusText);
-				setNavigationLoading(false);
+				loading.navigation = false;
 				return;
 			}
 
@@ -74,7 +74,7 @@
 
 		} catch (error) {
 			console.error('An error occurred during sign out:', error);
-			setNavigationLoading(false);
+			loading.navigation = false;
 			await invalidateAll();
 			const currentPath = page.url.pathname;
 			const currentSearch = page.url.search;

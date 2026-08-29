@@ -8,10 +8,9 @@
 	import LoadingBar from '$lib/components/ui/LoadingBar.svelte';
 	import {BASE_URL} from '~/constants';
 	import Seo from '$lib/components/seo/Seo.svelte';
-	import { setNavigationLoading } from '$lib/stores/loading';
-	import { onMount } from 'svelte';
-	import { wishlistStore } from '$lib/stores/wishlist';
-	import { collectionStore } from '$lib/stores/collection';
+	import { loading } from '$stores/loading.svelte';
+	import { wishlist } from '$stores/wishlist.svelte';
+	import { collection } from '$stores/collection.svelte';
 	import type { UserWishlist, UserCollection } from '$lib/types';
 	import pokestore from '~/assets/pokecards-collector.png';
 	interface Props {
@@ -20,59 +19,33 @@
 
 	let { children }: Props = $props();
 
+	/** The layout load hands both lists down on every navigation, so the client mirrors stay in step with the session. */
 	$effect(() => {
-		const wishlistSet = new Set<string>();
-		if (page.data.wishlistItems && Array.isArray(page.data.wishlistItems)) {
-			(page.data.wishlistItems as UserWishlist[]).forEach(item => wishlistSet.add(item.card_code));
-		}
-		wishlistStore.set(wishlistSet);
-
-		const collectionMap = new Map<string, number>();
-		if (page.data.collectionItems && Array.isArray(page.data.collectionItems)) {
-			(page.data.collectionItems as UserCollection[]).forEach(item => {
-				const currentCount = collectionMap.get(item.card_code) || 0;
-				collectionMap.set(item.card_code, currentCount + 1);
-			});
-		}
-		collectionStore.set(collectionMap);
+		wishlist.replaceAll(((page.data.wishlistItems ?? []) as UserWishlist[]).map(item => item.card_code));
+		collection.replaceAll(((page.data.collectionItems ?? []) as UserCollection[]).map(item => item.card_code));
 	});
 
-	// Capture clicks on links before navigation starts
-	onMount(() => {
-		const handleLinkClick = (e: MouseEvent) => {
-			const target = e.target as HTMLElement;
-			const link = target.closest('a');
+	/** Arms the loading bar as soon as an internal link is clicked, before SvelteKit starts the navigation. */
+	function handleLinkClick(event: MouseEvent) {
+		const link = (event.target as HTMLElement).closest('a');
+		if (
+			!link?.href
+			|| link.origin !== window.location.origin
+			|| link.hasAttribute('target')
+			|| link.hasAttribute('download')
+			|| event.ctrlKey || event.metaKey || event.shiftKey
+			// A hash on the current page scrolls, it does not navigate.
+			|| (link.pathname === window.location.pathname && link.hash)
+		) return;
 
-			if (
-				link &&
-				link.href &&
-				link.origin === window.location.origin &&
-				!link.hasAttribute('target') &&
-				!link.hasAttribute('download') &&
-				!e.ctrlKey &&
-				!e.metaKey &&
-				!e.shiftKey
-			) {
-				// Prevent loading bar for hash-only navigation (same path, any hash)
-				if (link.pathname === window.location.pathname && link.hash) {
-					return;
-				}
-				setNavigationLoading(true);
-			}
-		};
-
-		document.addEventListener('click', handleLinkClick);
-
-		return () => {
-			document.removeEventListener('click', handleLinkClick);
-		};
-	});
+		loading.navigation = true;
+	}
 
 	onNavigate((navigation) => {
-		setNavigationLoading(true);
+		loading.navigation = true;
 
 		navigation.complete.then(() => {
-			setTimeout(() => setNavigationLoading(false), 100); // Small delay to ensure smoother transitions
+			setTimeout(() => (loading.navigation = false), 100); // Small delay to ensure smoother transitions
 		});
 
 		if (!document.startViewTransition) return;
@@ -85,6 +58,8 @@
 		});
 	});
 </script>
+
+<svelte:document onclick={handleLinkClick} />
 
 <svelte:head>
 	<meta content="#000" name="theme-color"/>
@@ -141,13 +116,7 @@
 	<main class="grow pt-24 lg:pt-32">
 		{@render children?.()}
 	</main>
-	<div class="background fixed top-[15%] -z-50 flex place-content-center h-lvh w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
+	<div class="fixed top-[15%] [filter:grayscale(100%)_opacity(0.05)_contrast(3)_brightness(0.5)] -z-50 flex place-content-center h-lvh w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
 		<img src={pokestore} alt="Background" class="absolute w-1/2" />
 	</div>
 </div>
-
-<style>
-	.background {
-		filter: grayscale(100%) opacity(0.05) contrast(3) brightness(0.5);
-	}
-</style>

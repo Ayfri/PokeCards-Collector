@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ScrollToBottom from '@components/list/ScrollToBottom.svelte';
 	import ScrollToTop from '@components/list/ScrollToTop.svelte';
-	import { setScrollProgress } from '$stores/scrollStore';
+	import { gridScroll } from '$stores/grid.svelte';
 	import { fade } from 'svelte/transition';
 	import type { FullCard } from '$lib/types';
 
@@ -58,7 +58,7 @@
 	/** Progress is derived from the sizes we already track, so scrolling never reads scrollHeight and never forces a reflow. */
 	$effect(() => {
 		const scrollable = totalHeight - containerHeight;
-		setScrollProgress(scrollable > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollable) * 100)) : 0);
+		gridScroll.progress = scrollable > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollable) * 100)) : 0;
 	});
 
 	$effect(() => {

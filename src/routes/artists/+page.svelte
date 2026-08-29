@@ -6,7 +6,7 @@
 	import PageTitle from '@components/PageTitle.svelte';
 	import CardImage from '@components/card/CardImage.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
-	import { artistsSortDirection, artistsSortValue, type ArtistsSortValue } from '$stores/artistsSort';
+	import { artistsSort, type ArtistsSortValue } from '$stores/artistsSort.svelte';
 	import { fade, fly } from 'svelte/transition';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
@@ -46,7 +46,7 @@
 		return artists.filter(artist => artist.name.toLowerCase().includes(lowerCaseTerm));
 	}
 
-	const sortedArtists = $derived(sortArtistList(data.artists, $artistsSortValue, $artistsSortDirection));
+	const sortedArtists = $derived(sortArtistList(data.artists, artistsSort.value, artistsSort.direction));
 	const filteredArtists = $derived(filterArtistList(sortedArtists, searchTerm));
 </script>
 
@@ -67,8 +67,8 @@
                 />
             </div>
 			<SortControl
-				bind:sortDirection={$artistsSortDirection}
-				bind:sortValue={$artistsSortValue}
+				bind:sortDirection={artistsSort.direction}
+				bind:sortValue={artistsSort.value}
 				options={[
 					{ value: 'name', label: 'Name' },
 					{ value: 'totalCards', label: 'Total Cards' },

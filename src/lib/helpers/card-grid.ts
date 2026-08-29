@@ -2,7 +2,8 @@ import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
 import { getRarityLevel } from '$helpers/rarity';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import { parseCardCode } from '$helpers/card-utils';
-import { isVisible, type ActiveFilters } from '$helpers/filters';
+import type { ActiveFilters } from '$stores/filters.svelte';
+import { CARD_SIZES, DEFAULT_CARD_SIZE } from '$stores/grid.svelte';
 
 /** Set lookups are the hot path of the grid: a per-card `sets.find` rescans and renormalises all 218 sets. */
 const setLookupCache = new Map<string, Set | null>();
@@ -120,6 +121,22 @@ export function sortCards(
 	});
 }
 
+/** Each test short-circuits on the inactive filter value, so an unused filter costs no string work per card. */
+function isVisible(card: FullCard, cardSet: Set, selectedSet: Set | null, filters: ActiveFilters): boolean {
+	if (filters.numero && !(card.pokemonNumber?.toString().includes(filters.numero) ?? true)) return false;
+	if (filters.name && !card.name.toLowerCase().includes(filters.name)) return false;
+	if (filters.type !== 'all' && !card.types.toLowerCase().includes(filters.type)) return false;
+	if (filters.rarity !== 'all' && card.rarity.toLowerCase() !== filters.rarity) return false;
+	if (filters.supertype !== 'all' && card.supertype.toLowerCase() !== filters.supertype) return false;
+	if (filters.artist !== 'all' && card.artist.toLowerCase() !== filters.artist) return false;
+
+	if (filters.set === 'all') return true;
+	if (selectedSet) {
+		return cardSet.name.toLowerCase() === selectedSet.name.toLowerCase() || (!!cardSet.setId && cardSet.setId === selectedSet.setId);
+	}
+	return cardSet.name.toLowerCase() === filters.set;
+}
+
 /** Keeps the cards `filters` lets through. Runs before the sort, so everything downstream works on the smaller list. */
 export function filterCards(cards: FullCard[], sets: Set[], selectedSet: Set | null, filters: ActiveFilters): FullCard[] {
 	return cards.filter(card => {
@@ -147,4 +164,25 @@ export function distinctRarities(cards: FullCard[]): string[] {
 export function distinctArtists(cards: FullCard[]): string[] {
 	return [...new Set(cards.map(card => card.artist).filter(Boolean))]
 		.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+}
+
+/** Pokémon cards keep the 2.5/3.5 ratio; below 768px the width is split in two so a phone always shows two per row. */
+export function getCardDimensions(size: number, clientWidth: number) {
+	const gapX = 15;
+	const gapY = 20;
+	const availableWidth = clientWidth * 0.96;
+
+	if (clientWidth < 768) {
+		const width = Math.max(100, Math.floor((availableWidth - gapX) / 2));
+		return { cardsPerRow: 2, gapX, gapY, height: Math.floor(width / (2.5 / 3.5)), width };
+	}
+
+	const width = CARD_SIZES[size]?.width ?? CARD_SIZES[DEFAULT_CARD_SIZE].width;
+	return {
+		cardsPerRow: Math.max(1, Math.floor(availableWidth / (width + gapX))),
+		gapX,
+		gapY,
+		height: Math.floor(width / (2.5 / 3.5)),
+		width,
+	};
 }

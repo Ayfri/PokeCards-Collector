@@ -1,9 +1,9 @@
 import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { updateCollectionStoreCount } from '$lib/stores/collection';
+import { collection } from '$stores/collection.svelte';
 import type { Card, PriceData, Set } from '../types';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
-import { setLoading } from '$lib/stores/loading';
+import { loading } from '$stores/loading.svelte';
 import { getUserWishlist } from './wishlists';
 
 // --- Constants ---
@@ -12,7 +12,7 @@ const MAX_CARD_QUANTITY = 99; // Define the maximum allowed quantity per card
 // Add a new instance of a card to user's collection
 export async function addCardToCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		setLoading(true);
+		loading.mutation = true;
 		// --- Check current count against the limit ---
 		const { count, error: countError } = await client
 			.from('collections')
@@ -42,10 +42,7 @@ export async function addCardToCollection(username: string, cardCode: string, cl
 			.select('card_code') // Select to confirm insertion
 			.single();
 
-		if (!error && data) {
-			// Increment the count in the local store
-			updateCollectionStoreCount(data.card_code, 1);
-		}
+		if (!error && data) collection.add(data.card_code, 1);
 
 		// Return minimal data, error handling happens in component
 		return { data: data ? { card_code: data.card_code } : null, error };
@@ -53,14 +50,14 @@ export async function addCardToCollection(username: string, cardCode: string, cl
 		console.error('Error adding card instance to collection:', error);
 		return { data: null, error };
 	} finally {
-		setLoading(false);
+		loading.mutation = false;
 	}
 }
 
 // Remove one instance of a card from user's collection
 export async function removeCardFromCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		setLoading(true);
+		loading.mutation = true;
 		// Find *one* specific row ID for this card to delete
 		const { data: rowToDelete, error: fetchError } = await client
 			.from('collections')
@@ -75,7 +72,7 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 		if (!rowToDelete) {
 			// Card not found, maybe store count was out of sync
 			console.warn('Attempted to remove a card instance not found in DB:', cardCode);
-			updateCollectionStoreCount(cardCode, 0); // Reset store count if needed
+			collection.remove(cardCode);
 			return { data: null, error: { message: 'Card instance not found in collection' } };
 		}
 
@@ -85,10 +82,7 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 			.delete()
 			.eq('id', rowToDelete.id);
 
-		if (!deleteError) {
-			// Decrement the count in the local store
-			updateCollectionStoreCount(cardCode, -1);
-		}
+		if (!deleteError) collection.add(cardCode, -1);
 
 		// Return minimal data, error handling happens in component
 		return { data: !deleteError ? { card_code: cardCode } : null, error: deleteError }; 
@@ -97,7 +91,7 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 		console.error('Error removing card instance from collection:', error);
 		return { data: null, error };
 	} finally {
-		setLoading(false);
+		loading.mutation = false;
 	}
 }
 
@@ -127,9 +121,9 @@ interface SetTotals {
 export async function getCollectionStats(username: string, allCards: Card[], allSets: Set[], prices: Record<string, PriceData>, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		// Get user's collection
-		const { data: collection, error } = await getUserCollection(username, client);
+		const { data: collectionRows, error } = await getUserCollection(username, client);
 
-		if (error || !collection) {
+		if (error || !collectionRows) {
 			return { data: null, error };
 		}
 		
@@ -150,15 +144,15 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 		}
 
 		// Create a set of cardCodes for quick lookup
-		const collectionCardCodes = new Set(collection.map(item => item.card_code));
+		const collectionCardCodes = new Set(collectionRows.map(item => item.card_code));
 		
 		// Calculate basic stats
 		const uniqueCards = collectionCardCodes.size; // Unique card count
-		const totalInstances = collection.length; // Total instances including duplicates
+		const totalInstances = collectionRows.length; // Total instances including duplicates
 		
 		// Calculate total value based on ALL instances
 		let totalValue = 0;
-		collection.forEach(item => { // Iterate over the original collection array (with duplicates)
+		collectionRows.forEach(item => { // Iterate over the original collection array (with duplicates)
 			const cardPrice = prices[item.card_code];
 			if (cardPrice && cardPrice.simple) {
 				totalValue += cardPrice.simple;

@@ -12,7 +12,7 @@
 	import { findSetByCardCode } from '$helpers/set-utils';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 	import { getPokemonImageSrc, getPokemonSpriteSrc } from '$helpers/pokemon-utils';
-	import { setNavigationLoading } from '$lib/stores/loading';
+	import { loading } from '$stores/loading.svelte';
 
 	
 	interface Props {
@@ -95,7 +95,7 @@
 
 	function handlePokemonNavigation(cardCode: string | undefined) {
 		if (cardCode) {
-			setNavigationLoading(true);
+			loading.navigation = true;
 			goto(`${baseCardUrl}${cardCode}`);
 		}
 	}

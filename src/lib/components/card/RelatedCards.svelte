@@ -3,18 +3,18 @@
 	import CardImage from '@components/card/CardImage.svelte';
 	import {fade} from 'svelte/transition';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
-	import { persistentWritable } from '$lib/stores/persistentStore';
+	import { persistedRecord } from '$stores/persisted.svelte';
 	import SortControl from '@components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '$lib/images';
 	import { findSetByCardCode } from '$helpers/set-utils';
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
 	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
-	import { collectionStore } from '$lib/stores/collection';
+	import { collection } from '$stores/collection.svelte';
 	import Heart from '@lucide/svelte/icons/heart';
 	import Minus from '@lucide/svelte/icons/minus';
 	import Plus from '@lucide/svelte/icons/plus';
 	import { page } from '$app/state';
-	import { wishlistStore } from '$lib/stores/wishlist';
+	import { wishlist } from '$stores/wishlist.svelte';
 
 	
 	interface Props {
@@ -38,21 +38,11 @@
 		lowRes = false
 	}: Props = $props();
 
-	// --- Persistent Sorting State ---
-	const relatedSortBy = persistentWritable('related-cards-sort-by', 'sort-set');
-	const relatedSortOrder = persistentWritable<'asc' | 'desc'>('related-cards-sort-order', 'asc');
+	const relatedSort = persistedRecord('related-cards-sort', { direction: 'asc' as 'asc' | 'desc', value: 'sort-set' });
 
 	// --- User/Profile State ---
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
-
-	// --- Collection/Wishlist State ---
-	function getCollectionCount(cardCode: string) {
-		return $collectionStore.get(cardCode) || 0;
-	}
-	function isInWishlist(cardCode: string) {
-		return $wishlistStore.has(cardCode);
-	}
 
 	const MAX_CARD_QUANTITY = 99;
 
@@ -114,7 +104,7 @@
 	}
 
 	// Sort the cards based on the current sort settings (use the passed 'cards' directly)
-	const sortedCards = $derived(sortCards(cards, $relatedSortBy, $relatedSortOrder));
+	const sortedCards = $derived(sortCards(cards, relatedSort.value, relatedSort.direction));
 
 	// Determine the title based on whether a specific Pokémon context is provided
 	const titleName = $derived(pokemon
@@ -126,7 +116,7 @@
 		event.preventDefault();
 		event.stopPropagation();
 		if (!user || !profile) return;
-		if (isInWishlist(cardCode)) {
+		if (wishlist.has(cardCode)) {
 			await removeCardFromWishlist(profile.username, cardCode);
 		} else {
 			await addCardToWishlist(profile.username, cardCode);
@@ -136,7 +126,7 @@
 		event.preventDefault();
 		event.stopPropagation();
 		if (!user || !profile) return;
-		const count = getCollectionCount(cardCode);
+		const count = collection.count(cardCode);
 		if (count >= MAX_CARD_QUANTITY) return;
 		await addCardToCollection(profile.username, cardCode);
 	}
@@ -144,7 +134,7 @@
 		event.preventDefault();
 		event.stopPropagation();
 		if (!user || !profile) return;
-		const count = getCollectionCount(cardCode);
+		const count = collection.count(cardCode);
 		if (count === 0) return;
 		await removeCardFromCollection(profile.username, cardCode);
 	}
@@ -159,8 +149,8 @@
 
 		<div class="flex items-center gap-4">
 			<SortControl
-				bind:sortDirection={$relatedSortOrder}
-				bind:sortValue={$relatedSortBy}
+				bind:sortDirection={relatedSort.direction}
+				bind:sortValue={relatedSort.value}
 				options={[
 					{ value: 'sort-set', label: 'Set Name' },
 					{ value: 'sort-date', label: 'Release Date' },
@@ -217,40 +207,40 @@
 						{#if user && profile}
 							<!-- Collection/Wishlist Actions -->
 							<div class="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/50 p-1">
-								{#if getCollectionCount(card.cardCode) > 0}
+								{#if collection.count(card.cardCode) > 0}
 									<button
 										aria-label="Remove one copy from collection"
 										class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 										onclick={(e) => handleRemoveCard(card.cardCode, e)}
-										disabled={getCollectionCount(card.cardCode) === 0}
+										disabled={collection.count(card.cardCode) === 0}
 										title="Remove one copy from collection"
 									>
 										<Minus size={16} class="text-white" />
 									</button>
 									<span
 										class="text-sm font-semibold text-green-400 px-1 min-w-[1.5ch] text-center select-none"
-										title={`You have ${getCollectionCount(card.cardCode)} cop${getCollectionCount(card.cardCode) > 1 ? 'ies' : 'y'}`}
+										title={`You have ${collection.count(card.cardCode)} cop${collection.count(card.cardCode) > 1 ? 'ies' : 'y'}`}
 									>
-										{getCollectionCount(card.cardCode)}
+										{collection.count(card.cardCode)}
 									</span>
 								{/if}
 								<button
 									aria-label="Add one copy to collection"
 									class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 									onclick={(e) => handleAddCard(card.cardCode, e)}
-									disabled={getCollectionCount(card.cardCode) >= MAX_CARD_QUANTITY}
-									title={getCollectionCount(card.cardCode) >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
+									disabled={collection.count(card.cardCode) >= MAX_CARD_QUANTITY}
+									title={collection.count(card.cardCode) >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 								>
-									<Plus size={16} class={getCollectionCount(card.cardCode) > 0 ? 'text-green-400' : 'text-white'} />
+									<Plus size={16} class={collection.count(card.cardCode) > 0 ? 'text-green-400' : 'text-white'} />
 								</button>
 								<div class="w-px h-5 bg-white/30 mx-1"></div>
 								<button
-									aria-label={isInWishlist(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
+									aria-label={wishlist.has(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
 									class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 									onclick={(e) => toggleWishlist(card.cardCode, e)}
-									title={isInWishlist(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
+									title={wishlist.has(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
 								>
-									<Heart size={16} class={isInWishlist(card.cardCode) ? 'text-red-500 fill-red-500' : 'text-white'} />
+									<Heart size={16} class={wishlist.has(card.cardCode) ? 'text-red-500 fill-red-500' : 'text-white'} />
 								</button>
 							</div>
 						{/if}

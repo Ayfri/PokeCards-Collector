@@ -4,8 +4,8 @@
 	import CardPrice from '@components/card/CardPrice.svelte';
 	import { parseCardCode } from '$helpers/card-utils';
 	import { page } from '$app/state';
-	import { collectionStore } from '$lib/stores/collection';
-	import { wishlistStore } from '$lib/stores/wishlist';
+	import { collection } from '$stores/collection.svelte';
+	import { wishlist } from '$stores/wishlist.svelte';
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
 	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
@@ -47,8 +47,8 @@
 
 	const MAX_CARD_QUANTITY = 99;
 
-	const collectionCount = $derived(card ? ($collectionStore.get(card.cardCode) || 0) : 0);
-	const cardIsWishlisted = $derived(card ? $wishlistStore.has(card.cardCode) : false);
+	const collectionCount = $derived(collection.count(card.cardCode));
+	const cardIsWishlisted = $derived(wishlist.has(card.cardCode));
 
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();

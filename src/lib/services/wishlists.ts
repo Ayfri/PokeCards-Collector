@@ -1,12 +1,12 @@
 import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { addToWishlistStore, removeFromWishlistStore } from '$lib/stores/wishlist';
-import { setLoading } from '$lib/stores/loading';
+import { wishlist } from '$stores/wishlist.svelte';
+import { loading } from '$stores/loading.svelte';
 
 // Add a card to user's wishlist
 export async function addCardToWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		setLoading(true);
+		loading.mutation = true;
 		// Check if card already exists in wishlist
 		const { data: existingCard } = await client
 			.from('wishlists')
@@ -16,8 +16,7 @@ export async function addCardToWishlist(username: string, cardCode: string, clie
 			.maybeSingle();
 
 		if (existingCard) {
-			// Card already in wishlist, return it
-			addToWishlistStore(cardCode); // Ajoute au store local
+			wishlist.add(cardCode);
 			return { data: existingCard, error: null };
 		} else {
 			// Insert new card if it doesn't exist
@@ -29,9 +28,7 @@ export async function addCardToWishlist(username: string, cardCode: string, clie
 				})
 				.select();
 
-			if (!error) {
-				addToWishlistStore(cardCode); // Ajoute au store local
-			}
+			if (!error) wishlist.add(cardCode);
 
 			return { data, error };
 		}
@@ -39,14 +36,14 @@ export async function addCardToWishlist(username: string, cardCode: string, clie
 		console.error('Error adding card to wishlist:', error);
 		return { data: null, error };
 	} finally {
-		setLoading(false);
+		loading.mutation = false;
 	}
 }
 
 // Remove a card from user's wishlist
 export async function removeCardFromWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		setLoading(true);
+		loading.mutation = true;
 		const { data, error } = await client
 			.from('wishlists')
 			.delete()
@@ -54,16 +51,14 @@ export async function removeCardFromWishlist(username: string, cardCode: string,
 			.eq('card_code', cardCode)
 			.select();
 
-		if (!error) {
-			removeFromWishlistStore(cardCode); // Retire du store local
-		}
+		if (!error) wishlist.remove(cardCode);
 
 		return { data, error };
 	} catch (error) {
 		console.error('Error removing card from wishlist:', error);
 		return { data: null, error };
 	} finally {
-		setLoading(false);
+		loading.mutation = false;
 	}
 }
 

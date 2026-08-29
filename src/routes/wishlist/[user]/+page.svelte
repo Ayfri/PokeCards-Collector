@@ -10,7 +10,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
 	import { onMount } from 'svelte';
-	import { resetFilters } from '$lib/helpers/filters';
+	import { filters } from '$stores/filters.svelte';
 
 	interface Props {
 		data: PageData;
@@ -26,11 +26,8 @@
 	const profileNotFound = $derived(!targetProfile && !!targetUsername && !data.streamed?.wishlistData);
 	const profileIsPrivate = $derived(!!targetProfile && !isPublic && !isOwnWishlist && !data.streamed?.wishlistData);
 
-	onMount(() => {
-		if (typeof window !== 'undefined') {
-			resetFilters();
-		}
-	});
+	// The grid is shared with /cards-list, so a visit here starts from a clean slate rather than the last search.
+	onMount(() => filters.reset());
 
 	// pageTitleDisplay will be reactive to targetProfile and isOwnWishlist, considering data.title as fallback
 	const pageTitleDisplay = $derived((() => {

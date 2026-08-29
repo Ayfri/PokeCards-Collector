@@ -5,7 +5,7 @@
 	import SortControl from '@components/filters/SortControl.svelte';
 	import PageTitle from '@components/PageTitle.svelte';
 	import TextInput from '@components/filters/TextInput.svelte';
-	import { persistentWritable } from '$stores/persistentStore';
+	import { persistedRecord } from '$stores/persisted.svelte';
 	import type { SetWithPrice } from '$lib/types';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
@@ -17,51 +17,32 @@
 
 	let { data }: Props = $props();
 
-	const sortDirection = persistentWritable<'desc' | 'asc'>('sortDirection', 'desc');
-	const sortValue = persistentWritable<'code' | 'name' | 'printedTotal' | 'releaseDate' | 'totalPrice'>('sortValue', 'releaseDate');
+	type SetSortValue = 'code' | 'name' | 'printedTotal' | 'releaseDate' | 'totalPrice';
+
+	/** Every comparator sorts ascending; the direction flips the result rather than duplicating each branch. */
+	const COMPARATORS: Record<SetSortValue, (a: SetWithPrice, b: SetWithPrice) => number> = {
+		code: (a, b) => (a.ptcgoCode || '').localeCompare(b.ptcgoCode || ''),
+		name: (a, b) => a.name.localeCompare(b.name),
+		printedTotal: (a, b) => a.printedTotal - b.printedTotal,
+		releaseDate: (a, b) => new Date(a.releaseDate).getTime() - new Date(b.releaseDate).getTime(),
+		totalPrice: (a, b) => a.totalPrice - b.totalPrice,
+	};
+
+	const setsSort = persistedRecord('sets-sort', {
+		direction: 'desc' as 'asc' | 'desc',
+		value: 'releaseDate' as SetSortValue,
+	});
 
 	let searchTerm = $state('');
 
-	// Reactive declaration for typedSets using data.sets
 	const typedSets = $derived(data.setsWithPrices);
 
 	function setSearchTerm(value: string) {
 		searchTerm = value;
 	}
 
-	// Reactive effect to update sortedSets when dependencies change
-	const sortedSets = $derived.by(() => {
-		if (typedSets) {
-			const tempSortedSets = [...typedSets]; // Work with a copy
-			if ($sortValue === 'code') {
-				tempSortedSets.sort((a, b) => {
-					const codeA = a.ptcgoCode || '';
-					const codeB = b.ptcgoCode || '';
-					return $sortDirection === 'desc' ? codeB.localeCompare(codeA) : codeA.localeCompare(codeB);
-				});
-			} else if ($sortValue === 'name') {
-				tempSortedSets.sort((a, b) => {
-					return $sortDirection === 'desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name);
-				});
-			} else if ($sortValue === 'printedTotal') {
-				tempSortedSets.sort((a, b) => {
-					return $sortDirection === 'desc' ? b.printedTotal - a.printedTotal : a.printedTotal - b.printedTotal;
-				});
-			} else if ($sortValue === 'releaseDate') {
-				tempSortedSets.sort((a, b) => {
-					const aTime = new Date(a.releaseDate).getTime();
-					const bTime = new Date(b.releaseDate).getTime();
-					return $sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
-				});
-			} else if ($sortValue === 'totalPrice') {
-				tempSortedSets.sort((a, b) => {
-					return $sortDirection === 'desc' ? b.totalPrice - a.totalPrice : a.totalPrice - b.totalPrice;
-				});
-			}
-			return tempSortedSets;
-		}
-		return [];
-	});
+	const sortDirection = $derived(setsSort.direction === 'desc' ? -1 : 1);
+	const sortedSets = $derived([...(typedSets ?? [])].sort((a, b) => COMPARATORS[setsSort.value](a, b) * sortDirection));
 
 	const filteredSets = $derived(searchTerm
 		? sortedSets.filter(set =>
@@ -77,28 +58,14 @@
 		return acc;
 	}, {} as Record<string, SetWithPrice[]>));
 
+	// Series are ordered by their first set, except by name where the series name is what the user reads.
 	const seriesKeys = $derived(Object.keys(groupedSets).sort((a, b) => {
-		const firstSetA = groupedSets[a][0];
-		const firstSetB = groupedSets[b][0];
+		if (setsSort.value === 'name') return a.localeCompare(b) * sortDirection;
 
-		if (!firstSetA || !firstSetB) return 0; // Add guard for safety
-
-		if ($sortValue === 'code') {
-			const codeA = firstSetA.ptcgoCode || '';
-			const codeB = firstSetB.ptcgoCode || '';
-			return $sortDirection === 'desc' ? codeB.localeCompare(codeA) : codeA.localeCompare(codeB);
-		} else if ($sortValue === 'name') {
-			return $sortDirection === 'desc' ? b.localeCompare(a) : a.localeCompare(b);
-		} else if ($sortValue === 'printedTotal') {
-			return $sortDirection === 'desc' ? firstSetB.printedTotal - firstSetA.printedTotal : firstSetA.printedTotal - firstSetB.printedTotal;
-		} else if ($sortValue === 'releaseDate') {
-			const aTime = new Date(firstSetA.releaseDate).getTime();
-			const bTime = new Date(firstSetB.releaseDate).getTime();
-			return $sortDirection === 'desc' ? bTime - aTime : aTime - bTime;
-		} else if ($sortValue === 'totalPrice') {
-			return $sortDirection === 'desc' ? firstSetB.totalPrice - firstSetA.totalPrice : firstSetA.totalPrice - firstSetB.totalPrice;
-		}
-		return 0;
+		const [firstSetA] = groupedSets[a];
+		const [firstSetB] = groupedSets[b];
+		if (!firstSetA || !firstSetB) return 0;
+		return COMPARATORS[setsSort.value](firstSetA, firstSetB) * sortDirection;
 	}));
 
 	function formatCurrency(value: number): string {
@@ -123,8 +90,8 @@
 				/>
 			</div>
 			<SortControl
-				bind:sortDirection={$sortDirection}
-				bind:sortValue={$sortValue}
+				bind:sortDirection={setsSort.direction}
+				bind:sortValue={setsSort.value}
 				options={[
 					{ value: 'code', label: 'Code' },
 					{ value: 'name', label: 'Name' },
