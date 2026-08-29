@@ -5,11 +5,12 @@ import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserWishlist } from '$lib/services/wishlists';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, profileSchema } from '$helpers/seo';
-import type { FullCard, ServiceResponse, Set as TSet, UserProfile } from '$lib/types';
+import type { FullCard, PriceData, ServiceResponse, Set as TSet, UserProfile } from '$lib/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 async function getStreamedWishlistData(
 	allCards: FullCard[],
+	prices: Record<string, PriceData>,
 	sets: TSet[],
 	wishlistItemsSource: Array<{ card_code: string }> | undefined | null,
 	targetProfileForWishlist: UserProfile | null,
@@ -54,9 +55,10 @@ async function getStreamedWishlistData(
 		sets,
 		rarities,
 		types,
-		// prices, // Not returning prices from here as it's top-level now
 		artists,
 		serverWishlistCards: wishlistCards,
+		// Only the prices of the cards this page draws: the whole record is 19819 entries the document never reads.
+		prices: Object.fromEntries(wishlistCards.map(card => [card.cardCode, prices[card.cardCode]]).filter(([, price]) => price)),
 	};
 }
 
@@ -147,13 +149,11 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		noindex,
 		schemas: !noindex && targetProfile ? [profileSchema(targetProfile, `/wishlist/${targetProfile.username}`)] : [],
 		type: 'CollectionPage' as const,
-		allCards: allCardsResolved,
-		prices: pricesResolved,
 		sets: setsResolved,
 		streamed: {
 			wishlistData: getStreamedWishlistData(
 				allCardsResolved,
-				// pricesResolved, // Not needed by getStreamedWishlistData itself
+				pricesResolved,
 				setsResolved,
 				wishlistSourceItems,
 				targetProfile,

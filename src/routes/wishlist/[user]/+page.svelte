@@ -101,9 +101,7 @@
     {@const rarities = resolvedWishlistData.rarities || []}
     {@const types = resolvedWishlistData.types || []}
     {@const artists = resolvedWishlistData.artists || []}
-    
-    <!-- Prices are top-level from data, not from resolvedWishlistData -->
-    {@const prices = data.prices || {}}
+    {@const prices = resolvedWishlistData.prices || {}}
 
     {@const statusMessage = (() => {
       if (displayCards.length === 0 && targetProfile) return isOwnWishlist ? 'Your wishlist is empty.' : `"${targetUsername}" wishlist is empty.`;

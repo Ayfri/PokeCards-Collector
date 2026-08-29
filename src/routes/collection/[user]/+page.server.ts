@@ -70,7 +70,8 @@ async function getStreamedCollectionData(
 		types,
 		artists,
 		serverCollectionCards: collectionCards,
-		prices: prices,
+		// Only the prices of the cards this page draws: the whole record is 19819 entries the document never reads.
+		prices: Object.fromEntries(collectionCards.map(card => [card.cardCode, prices[card.cardCode]]).filter(([, price]) => price)),
 	};
 }
 
@@ -150,8 +151,6 @@ export const load: PageServerLoad = async ({ locals, params, parent, url }) => {
 		noindex,
 		schemas: !noindex && targetProfile ? [profileSchema(targetProfile, `/collection/${targetProfile.username}`)] : [],
 		type: 'CollectionPage' as const,
-		allCards: allCardsResolved,
-		prices: pricesResolved,
 		sets: setsResolved,
 		streamed: {
 			collectionData: getStreamedCollectionData(
