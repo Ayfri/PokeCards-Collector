@@ -26,7 +26,7 @@ Cloudflare Workers.
 
 Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
 
-![Demo Screenshot](./pokestore.png)
+![Demo Screenshot](./pokecards-collector.png)
 
 ## ✨ Features
 
