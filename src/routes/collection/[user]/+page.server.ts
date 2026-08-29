@@ -4,7 +4,7 @@ import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserCollection } from '$lib/services/collections';
 import type { PageServerLoad } from './$types';
-import type { FullCard, UserProfile, Set as TSet, PriceData } from '$lib/types';
+import type { FullCard, PriceData, ServiceResponse, Set as TSet, UserProfile } from '$lib/types';
 import { findSetByCardCode } from '$helpers/set-utils';
 
 async function getStreamedCollectionData(
@@ -88,7 +88,7 @@ export const load: PageServerLoad = async ({ params, parent, url }) => {
 	let isPublic = false;
 	let title = 'Collection';
 	let description = 'User collection';
-	let profileError: any = null;
+	let profileError: ServiceResponse<UserProfile>['error'] = null;
 
 	({ data: targetProfile, error: profileError } = await getProfileByUsername(targetUsername));
 

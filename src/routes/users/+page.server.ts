@@ -64,9 +64,9 @@ export const load: PageServerLoad = async ({ parent }) => {
 				.sort((a, b) => b.unique_card_count - a.unique_card_count)
 				.slice(0, 5);
 		}
-	} catch (error: any) {
+	} catch (error) {
 		console.error('Error preparing featured users:', error);
-		featuredUsersError = error.message || 'An unexpected error occurred while fetching featured users.';
+		featuredUsersError = error instanceof Error ? error.message : 'An unexpected error occurred while fetching featured users.';
 	}
 
 	return {

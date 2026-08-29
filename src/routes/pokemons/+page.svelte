@@ -70,7 +70,7 @@
 		if (mostExpensiveCard) {
 			goto(`/card/${mostExpensiveCard.cardCode}`);
 		} else {
-			const anyCard = allCards.find(card => (<any>card).pokemonNumber === pokemon.id);
+			const anyCard = allCards.find(card => card.pokemonNumber === pokemon.id);
 			if (anyCard) {
 				goto(`/card/${anyCard.cardCode}`);
 			} else {

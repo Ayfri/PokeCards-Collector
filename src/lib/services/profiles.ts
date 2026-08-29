@@ -36,7 +36,7 @@ export async function getProfileByAuthId(authId: string) {
 	}
 }
 
-export async function getProfileByUsername(username: string) {
+export async function getProfileByUsername(username: string): Promise<ServiceResponse<UserProfile>> {
 	try {
 		const { data, error } = await supabase
 			.from('profiles')
@@ -47,7 +47,7 @@ export async function getProfileByUsername(username: string) {
 		return { data, error } as ServiceResponse<UserProfile>;
 	} catch (error) {
 		console.error('Error getting profile by username:', error);
-		return { data: null, error };
+		return { data: null, error: error instanceof Error ? error : String(error) };
 	}
 }
 

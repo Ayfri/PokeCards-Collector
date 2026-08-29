@@ -53,13 +53,10 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 
 	isOwnProfile = loggedInUsername === requestedUsername;
 
-	// The getProfileByUsername function returns Promise<{ data: UserProfile | null, error: any }>
-	const { data: fetchedProfile, error: fetchError } = await getProfileByUsername(requestedUsername);
+	const { data: fetchedProfile, error: profileError } = await getProfileByUsername(requestedUsername);
 	targetProfile = fetchedProfile;
-	const profileError: any = fetchError; // Type as any since the service function declares it as such
 
 	if (profileError || !targetProfile) {
-		// Redirect to home page
 		throw redirect(307, '/');
 	}
 

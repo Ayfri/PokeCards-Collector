@@ -4,11 +4,10 @@ import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserWishlist } from '$lib/services/wishlists';
 import type { PageServerLoad } from './$types';
-import type { FullCard, UserProfile, Set as TSet, PriceData } from '$lib/types';
+import type { FullCard, ServiceResponse, Set as TSet, UserProfile } from '$lib/types';
 
 async function getStreamedWishlistData(
 	allCards: FullCard[],
-	// prices: Record<string, PriceData>, // Prices not directly used for wishlist cards filtering, but kept for consistency if CardGrid expects it
 	sets: TSet[],
 	wishlistItemsSource: Array<{ card_code: string }> | undefined | null,
 	targetProfileForWishlist: UserProfile | null,
@@ -76,13 +75,13 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	// If no requestedUsername and not logged in, it will proceed to show a generic state (handled by targetProfile being null)
 
 	let targetProfile: UserProfile | null = null;
-	let targetUsername: string | null = requestedUsername; // Can be null if /wishlist is accessed directly without user param and not logged in
+	let targetUsername: string | null = requestedUsername;
 	let isPublic = false;
 	let title = 'Wishlist';
 	let description = 'User wishlist';
-	let profileError: any = null;
+	let profileError: ServiceResponse<UserProfile>['error'] = null;
 
-	if (targetUsername) { // Only try to fetch profile if a username is present
+	if (targetUsername) {
 		({ data: targetProfile, error: profileError } = await getProfileByUsername(targetUsername));
 
 		if (profileError || !targetProfile) {

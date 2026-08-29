@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { fade, fly, type FlyParams, type TransitionConfig } from 'svelte/transition';
 	import XIcon from '@lucide/svelte/icons/x';
 	import { browser } from '$app/environment';
 
 	interface Props {
 		open?: boolean;
 		title?: string;
-		transitionFn?: any; // Default transition
-		transitionParams?: any; // Default params
+		transitionFn?: (node: Element, params: FlyParams) => TransitionConfig;
+		transitionParams?: FlyParams;
 		containerClass?: string;
-		fullscreen?: boolean; // Add fullscreen prop
+		fullscreen?: boolean;
 		onClose?: () => void;
 		header?: import('svelte').Snippet;
 		children?: import('svelte').Snippet;

@@ -1,4 +1,4 @@
-import { json, error as svelteKitError, type RequestHandler } from '@sveltejs/kit';
+import { isHttpError, json, error as svelteKitError, type RequestHandler } from '@sveltejs/kit';
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
@@ -15,7 +15,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 		if (supabaseError) {
 			console.error('Sign in error:', supabaseError.message);
-			// Provide a generic error message for security
 			throw svelteKitError(401, 'Invalid login credentials');
 		}
 
@@ -24,19 +23,13 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			throw svelteKitError(500, 'Login failed unexpectedly');
 		}
 
-		// Do NOT return the session or user details directly in the response
-		// The Supabase SSR helper handles setting the necessary cookies based on the successful sign-in
-		// The client will get the user session info via the updated cookies on subsequent requests/page loads
+		/** The session stays out of the body on purpose: the SSR helper already set the cookies the client reads it from. */
 		return json({ success: true, message: 'Login successful' });
 
-	} catch (err: any) {
-		// Handle errors thrown by svelteKitError or other unexpected errors
-		if (err.status) {
-			// Re-throw SvelteKit errors
-			throw err;
-		} else {
-			console.error('Unexpected error during sign in:', err);
-			throw svelteKitError(500, 'An unexpected error occurred during login.');
-		}
+	} catch (err) {
+		if (isHttpError(err)) throw err;
+
+		console.error('Unexpected error during sign in:', err);
+		throw svelteKitError(500, 'An unexpected error occurred during login.');
 	}
 }; 
