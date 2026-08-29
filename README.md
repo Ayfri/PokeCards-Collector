@@ -4,251 +4,207 @@
   # PokéCards-Collector
 
   [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%203.0-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-  [![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?style=flat&logo=svelte&logoColor=white)](https://kit.svelte.dev/)
-  [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.io/)
+  [![SvelteKit](https://img.shields.io/badge/SvelteKit-FF3E00?style=flat&logo=svelte&logoColor=white)](https://svelte.dev/docs/kit)
+  [![Svelte 5](https://img.shields.io/badge/Svelte_5-FF3E00?style=flat&logo=svelte&logoColor=white)](https://svelte.dev/docs/svelte/what-are-runes)
+  [![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white)](https://supabase.com/)
   [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-  [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
-  [![Cloudflare Pages](https://img.shields.io/badge/Cloudflare_Pages-F38020?style=flat&logo=cloudflare&logoColor=white)](https://pages.cloudflare.com/)
+  [![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=flat&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+  [![Cloudflare Workers](https://img.shields.io/badge/Cloudflare_Workers-F38020?style=flat&logo=cloudflare&logoColor=white)](https://workers.cloudflare.com/)
   [![Bun](https://img.shields.io/badge/Bun-000000?style=flat&logo=bun&logoColor=white)](https://bun.sh/)
 
-  <p>A modern web application for managing your Pokémon Trading Card Game collection</p>
+  <p>A web application for browsing the Pokémon TCG catalogue and managing your collection</p>
 </div>
 
 ## 📋 Overview
 
-PokéCards-Collector is a comprehensive web application built with SvelteKit and Supabase that allows you to browse and manage your Pokémon Trading Card Game (TCG) collection with ease.
+PokéCards-Collector browses the full Pokémon Trading Card Game catalogue - English and Japanese - and tracks what
+you own and what you want. Cards, prices and sets come from [TCGdex](https://tcgdex.dev/), Pokédex entries from
+[PokéAPI](https://pokeapi.co/), and everything is served from Supabase Postgres by a SvelteKit app running on
+Cloudflare Workers.
 
 ### 📸 Website
 
-Check out the live website [here](https://pokecards-collector.pages.dev).
+Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
 
-![Demo Screenshot](./pokecards-collector.png)
+![Demo Screenshot](./pokestore.png)
 
 ## ✨ Features
 
 <table>
   <tr>
-    <td>🔐</td>
-    <td><b>User Authentication</b></td>
-    <td>Sign up and log in to manage your personal collection.</td>
-  </tr>
-  <tr>
     <td>🔍</td>
     <td><b>Card Browser</b></td>
-    <td>Search and view Pokémon TCG cards with advanced filtering options.</td>
+    <td>Every card at <code>/cards-list</code>, with filters on set, type, rarity, artist, dex number and price.</td>
+  </tr>
+  <tr>
+    <td>🇯🇵</td>
+    <td><b>Japanese Catalogue</b></td>
+    <td><code>/japan</code> is a parallel data set with its own cards, sets and prices.</td>
   </tr>
   <tr>
     <td>📚</td>
-    <td><b>Collection Management</b></td>
-    <td>Keep track of the cards you own with quantity and condition tracking.</td>
+    <td><b>Collection & Wishlist</b></td>
+    <td>Track owned cards with quantities, keep a wishlist, and browse the public ones of other collectors.</td>
   </tr>
   <tr>
-    <td>⭐</td>
-    <td><b>Wishlist</b></td>
-    <td>Maintain a list of cards you want to acquire.</td>
+    <td>🗂️</td>
+    <td><b>Binder</b></td>
+    <td>Lay out digital binder pages and export them as an image, from card art or your own URLs.</td>
   </tr>
   <tr>
-    <td>👤</td>
-    <td><b>Profile & Settings</b></td>
-    <td>Manage your user profile and application settings.</td>
+    <td>🧩</td>
+    <td><b>Daily Games</b></td>
+    <td><code>/card.dle</code> guesses the mystery card of the day, <code>/guess-the-price</code> its market value.</td>
+  </tr>
+  <tr>
+    <td>🎨</td>
+    <td><b>Artists, Sets, Pokédex</b></td>
+    <td>Browse by illustrator, by set and series, or by Pokémon with its dex entry.</td>
+  </tr>
+  <tr>
+    <td>🔐</td>
+    <td><b>Accounts</b></td>
+    <td>Supabase auth, public or private profiles, user search.</td>
   </tr>
   <tr>
     <td>🤖</td>
-    <td><b>Data Scraping</b></td>
-    <td>Built-in CLI tool to fetch the latest Pokémon TCG data.</td>
+    <td><b>Data Pipeline</b></td>
+    <td>A scraper CLI for full refreshes, plus a Cloudflare Workflow that refreshes Supabase every Monday.</td>
   </tr>
 </table>
 
 ## 🛠️ Tech Stack
 
-<table>
-  <tr>
-    <th>Category</th>
-    <th>Technologies</th>
-  </tr>
-  <tr>
-    <td>Frontend</td>
-    <td>
-      <a href="https://kit.svelte.dev/"><img src="https://img.shields.io/badge/SvelteKit-FF3E00?style=flat&logo=svelte&logoColor=white" alt="SvelteKit"/></a>
-      <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript"/></a>
-      <a href="https://tailwindcss.com/"><img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat&logo=tailwind-css&logoColor=white" alt="Tailwind CSS"/></a>
-      <a href="https://lucide.dev/"><img src="https://img.shields.io/badge/Lucide_Icons-5468FF?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3ggMCAwIDI0IDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPg0KICA8cmVjdCB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIGZpbGw9IndoaXRlIi8+DQogIDxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTIgMTkuNUg4QzcuMTcxNTcgMTkuNSA2LjUgMTguODI4NCA2LjUgMThWMTNDNi41IDEyLjE3MTYgNy4xNzE1NyAxMS41IDggMTEuNUgxMkMxMi44Mjg0IDExLjUgMTMuNSAxMi4xNzE2IDEzLjUgMTNWMThDMTMuNSAxOC44Mjg0IDEyLjgyODQgMTkuNSAxMiAxOS41WiIgZmlsbD0iIzU0NjhGRiIvPg0KICA8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTQgNy41VjE2QzIuMzQzMTUgMTYgMSAxNC42NTY5IDEgMTNWMTAuNUMxIDguODQzMTUgMi4zNDMxNSA3LjUgNCA3LjVaIiBmaWxsPSIjNTQ2OEZGIi8+DQogIDxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMjAgNy41VjE2QzIxLjY1NjkgMTYgMjMgMTQuNjU2OSAyMyAxM1YxMC41QzIzIDguODQzMTUgMjEuNjU2OSA3LjUgMjAgNy41WiIgZmlsbD0iIzU0NjhGRiIvPg0KICA8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTExLjUgNkMxMS41IDYuODI4NDMgMTIuMTcxNiA3LjUgMTMgNy41SDE3QzE3LjgyODQgNy41IDE4LjUgNi44Mjg0MyAxOC41IDZDMTGUNTE1LjE3MTYgMTcuNSAxNC41IDE3IDE0LjVDMTcgMTQuNSAxNi41IDEzLjgyODQgMTYuNSAxM0MxNi41IDEyLjE3MTYgMTYuMTU2OSAxMS41IDE1LjUgMTEuNUMxNC44NDMxIDExLjUgMTQuNSAxMi4xNzE2IDE0LjUgMTNDMTQuNSAxMy44Mjg0IDEzLjgyODQgMTQuNSAxMyAxNC41QzEyLjE3MTYgMTQuNSAxMS41IDEzLjgyODQgMTEuNSAxM0MxMS41IDEyLjE3MTYgMTEuMTU2OSAxMS41IDEwLjUgMTEuNUM5Ljg0MzE1IDExLjUgOS41IDEyLjE3MTYgOS41IDEzQzkuNSAxMy44Mjg0IDguODI4NDMgMTQuNSA4IDE0LjVDNy4xNzE1NyAxNC41IDYuNSAxMy44Mjg0IDYuNSAxM0M2LjUgMTIuMTcxNiA1Ljg0MzE1IDExLjUgNSAxMS41QzQuMTU2ODUgMTEuNSAzLjUgMTIuMTcxNiAzLjUgMTNDMy41IDEzLjgyODQgNC4xNzE1NyAxNC41IDUgMTQuNUM0IDE0LjUgMy41IDE1LjE3MTYgMy41IDE2QzMuNSAxNi44Mjg0IDQuMTcxNTcgMTcuNSA1IDE3LjVDNS44Mjg0MyAxNy41IDYuNSAxNi44Mjg0IDYuNSAxNkM2LjUgMTUuMTcxNiA3LjE3MTU3IDE0LjUgOCAxNC41QzguODI4NDMgMTQuNSA5LjUgMTUuMTcxNiA5LjUgMTZDOS41IDE2LjgyODQgMTAuMTcxNiAxNy41IDExIDE3LjVIMTJDMTEgMTcuNSAxMC41IDE2LjgyODQgMTAuNSAxNkMxMC41IDE1LjE3MTYgOS44Mjg0MyAxNC41IDkgMTQuNUM4LjE3MTU3IDE0LjUgNy41IDE1LjE3MTYgNy41IDE2QzcuNSAxNi44Mjg0IDYuODI4NDMgMTcuNSA2IDE3LjVDNS4xNzE1NyAxNy41IDQuNSAxNi44Mjg0IDQuNSAxNkM0LjUgMTUuMTcxNiA0LjE1Njg1IDE0LjUgMy41IDE0LjVDMi44NDMxNSAxNC41IDIuNSAxNS4xNzE2IDIuNSAxNkMyLjUgMTYuODI4NCAzLjE3MTU3IDE3LjUgNCAxNy41QzMgMTcuNSAyLjUgMTguMTcxNiAyLjUgMTlDMi41IDE5LjgyODQgMy4xNzE1NyAyMC41IDQgMjAuNUM0LjgyODQzIDIwLjUgNS41IDE5LjgyODQgNS41IDE5QzUuNSAxOC4xNzE2IDYuMTcxNTcgMTcuNSA3IDE3LjVDNy44Mjg0MyAxNy41IDguNSAxOC4xNzE2IDguNSAxOUM4LjUgMTkuODI4NCA5LjE3MTU3IDIwLjUgMTAgMjAuNUgxNEMxNC44Mjg0IDIwLjUgMTUuNSAxOS44Mjg0IDE1LjUgMTlDMTUuNSAxOC4xNzE2IDE2LjE3MTYgMTcuNSAxNyAxNy41QzE3LjgyODQgMTcuNSAxOC41IDE4LjE3MTYgMTguNSAxOUMxOC41IDE5LjgyODQgMTkuMTcxNiAyMC41IDIwIDIwLjVDMjAuODI4NCAyMC41IDIxLjUgMTkuODI4NCAyMS41IDE5QzIxLjUgMTguMTcxNiAyMC44Mjg0IDE3LjUgMjAgMTcuNUMyMSAxNy41IDIxLjUgMTYuODI4NCAyMS41IDE2QzIxLjUgMTUuMTcxNiAyMC44Mjg0IDE0LjUgMjAgMTQuNUMxOS4xNzE2IDE0LjUgMTguNSAxNS4xNzE2IDE4LjUgMTZDMTguNSAxNi44Mjg0IDE3LjgyODQgMTcuNSAxNyAxNy41QzE2LjE3MTYgMTcuNSAxNS41IDE2LjgyODQgMTUuNSAxNkMxNS41IDE1LjE3MTYgMTQuODI4NCAxNC41IDE0IDE0LjVDMTMuMTcxNiAxNC41IDEyLjUgMTUuMTcxNiAxMi41IDE2QzEyLjUgMTYuODI4NCAxMy4xNzE2IDE3LjUgMTQgMTcuNUgxM0MxNCAxNy41IDE0LjUgMTYuODI4NCAxNC41IDE2QzE0LjUgMTUuMTcxNiAxNS4xNzE2IDE0LjUgMTYgMTQuNUMxNi44Mjg0IDE0LjUgMTcuNSAxNS4xNzE2IDE3LjUgMTZDMTcuNSAxNi44Mjg0IDE4LjE3MTYgMTcuNSAxOSAxNy41QzE5LjgyODQgMTcuNSAyMC41IDE2LjgyODQgMjAuNSAxNkMyMC41IDE1LjE3MTYgMjEuMTcxNiAxNC41IDIyIDE0LjVDMjIuODI4NCAxNC41IDIzLjUgMTMuODI4NCAyMy41IDEzQzIzLjUgMTIuMTcxNiAyMi44Mjg0IDExLjUgMjIgMTEuNUMyMS4xNzE2IDExLjUgMjAuNSAxMi4xNzE2IDIwLjUgMTNDMjAuNSAxMy44Mjg0IDE5LjgyODQgMTQuNSAxOSAxNC41QzE4LjE3MTYgMTQuNSAxNy41IDEzLjgyODQgMTcuNSAxM0MxNy41IDEyLjE3MTYgMTYuODI4NCAxMS41IDE2IDExLjVDMTUuMTcxNiAxMS41IDE0LjUgMTAuODI4NCAxNC41IDEwQzE0LjUgOS4xNzE1NyAxMy44Mjg0IDguNSAxMyA4LjVDMTIuMTcxNiA4LjUgMTEuNSA3LjgyODQzIDExLjUgN1Y2WiIgZmlsbD0iIzU0NjhGRiIvPg0KPC9zdmc+" alt="Lucide Icons"/></a>
-    </td>
-  </tr>
-  <tr>
-    <td>Backend</td>
-    <td>
-      <a href="https://supabase.io/"><img src="https://img.shields.io/badge/Supabase-3ECF8E?style=flat&logo=supabase&logoColor=white" alt="Supabase"/></a>
-      <a href="https://pokemontcg.io/"><img src="https://img.shields.io/badge/Pokémon_TCG_API-FFCB05?style=flat&logo=pokemon&logoColor=black" alt="Pokémon TCG API"/></a>
-    </td>
-  </tr>
-  <tr>
-    <td>Deployment</td>
-    <td>
-      <a href="https://pages.cloudflare.com/"><img src="https://img.shields.io/badge/Cloudflare_Pages-F38020?style=flat&logo=cloudflare&logoColor=white" alt="Cloudflare Pages"/></a>
-    </td>
-  </tr>
-  <tr>
-    <td>Tools</td>
-    <td>
-      <a href="https://bun.sh/"><img src="https://img.shields.io/badge/Bun-000000?style=flat&logo=bun&logoColor=white" alt="Bun"/></a>
-      <a href="https://github.com/SBoudrias/Inquirer.js/tree/master/packages/prompts"><img src="https://img.shields.io/badge/Inquirer-FFCF00?style=flat&logo=javascript&logoColor=black" alt="Inquirer"/></a>
-    </td>
-  </tr>
-</table>
+| Layer | What |
+| --- | --- |
+| Frontend | SvelteKit 2 + [Svelte 5 runes](https://svelte.dev/docs/svelte/what-are-runes), TypeScript, Tailwind CSS 4 (CSS-first, no config file), [Lucide icons](https://lucide.dev/) |
+| Data | Supabase Postgres with row level security, [TCGdex](https://tcgdex.dev/) for cards/prices/sets, [PokéAPI](https://pokeapi.co/) for Pokédex entries |
+| Hosting | Cloudflare Workers with static assets, via `@sveltejs/adapter-cloudflare` |
+| Jobs | A second Worker holding a Cloudflare Workflow, scheduled weekly |
+| Tooling | Bun (runtime, package manager and lockfile), Wrangler, Vite, `svelte-check` |
 
 ## 🚀 Getting Started
 
 <details>
 <summary><b>Prerequisites</b></summary>
 
-- [Node.js](https://nodejs.org/) (v18 or higher)
-- [Bun](https://bun.sh/docs/installation) package manager
-- A [Supabase](https://supabase.io/) account
-- A [Pokémon TCG API](https://pokemontcg.io/) key
+- [Bun](https://bun.sh/docs/installation) 1.4 or later
+- A [Supabase](https://supabase.com/) project
+
+TCGdex needs no API key, so there is nothing else to sign up for.
 </details>
 
 <details open>
 <summary><b>Installation</b></summary>
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/Ayfri/PokeCards-Collector.git
-    cd PokeCards-Collector
-    ```
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/Ayfri/PokeCards-Collector.git
+   cd PokeCards-Collector
+   ```
 
-2.  **Install dependencies:**
-    ```bash
-    bun install
-    ```
+2. **Install dependencies:**
+   ```bash
+   bun install
+   ```
 
-3.  **Set up Supabase:**
-    - Create a new project on [Supabase](https://supabase.io/)
-    - In your Supabase project dashboard, go to the SQL Editor
-    - Copy the contents of `supabase-schema.sql` from this repository and run it to create the initial database tables
-    - (Optional) If needed, run the contents of `supabase-schema-update.sql` for subsequent updates
-    - Navigate to Project Settings > API
-    - Find your Project URL and `anon` public key
+3. **Set up the database:**
+   - Create a project on [Supabase](https://supabase.com/)
+   - Run the files in `supabase/migrations/` in filename order from the SQL Editor. Run the last two together:
+     `20260829110000_rls_policies.sql` is what keeps the catalogue readable once
+     `20260829120000_enable_rls.sql` turns row level security on.
+   - Grab the project URL and the keys from Project Settings > API Keys
 
-4.  **Set up Pokémon TCG API Key:**
-    - Get an API key from the [Pokemon TCG API](https://pokemontcg.io/)
+4. **Configure environment variables:**
+   Copy `.env.example` to `.env` and fill it in:
+   ```dotenv
+   PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+   PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+   SUPABASE_SECRET_KEY=sb_secret_...
+   SCRAPER_TRIGGER_TOKEN=
+   PUBLIC_NO_IMAGES=false
+   ```
+   `SUPABASE_SECRET_KEY` bypasses row level security and must never carry the `PUBLIC_` prefix: SvelteKit
+   serialises every `PUBLIC_` variable into the SSR HTML. In production it is a Wrangler secret.
 
-5.  **Configure Environment Variables:**
-    - Create a `.env` file in the root of the project by copying `.env.example`
-    - Fill in the required variables:
-      ```dotenv
-      # Supabase Configuration
-      PUBLIC_SUPABASE_URL=YOUR_SUPABASE_PROJECT_URL
-      PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
-      SUPABASE_SECRET_KEY=sb_secret_...
+5. **Fill the database:**
+   ```bash
+   bun run scrapers all
+   ```
 
-      # Render placeholders instead of card art, to develop without bandwidth
-      PUBLIC_NO_IMAGES=false
-      ```
-
-6.  **Run the development server:**
-    ```bash
-    bun run dev
-    ```
-    The application should now be running on `http://localhost:5173` (or the next available port).
+6. **Run the development server:**
+   ```bash
+   bun run dev
+   ```
+   The app runs on `http://localhost:5173`.
 </details>
 
 ## 📊 Data Scraping
 
-The project includes an interactive CLI tool to fetch and update various Pokémon TCG data required for the application.
+`bun run scrapers` opens an interactive menu, `bun run scrapers <command>` runs one command directly, and
+`bun run scrapers --help` lists everything.
 
 <details>
-<summary><b>Running the Scraper CLI</b></summary>
+<summary><b>Commands</b></summary>
 
-```bash
-bun run scrapers
-```
-
-This command will present a menu allowing you to choose which scraper to run. Available options include:
-
-<table>
-  <tr>
-    <th>Option</th>
-    <th>Description</th>
-    <th>Dependencies</th>
-  </tr>
-  <tr>
-    <td><code>all</code></td>
-    <td>Run <code>scrape</code>, <code>pokemons</code>, then push everything to Supabase.</td>
-    <td>None</td>
-  </tr>
-  <tr>
-    <td><code>scrape</code></td>
-    <td>Fetch every card, price and set from TCGdex into <code>src/assets/</code>. <code>--lang en,ja</code> picks the languages.</td>
-    <td>None</td>
-  </tr>
-  <tr>
-    <td><code>audit</code></td>
-    <td>Rebuild the set-alias and card-code mapping files, and report the codes that stop resolving.</td>
-    <td>Supabase credentials</td>
-  </tr>
-  <tr>
-    <td><code>verify</code></td>
-    <td>Check the scraped JSON for <code>card_code</code> collisions and owned cards that no longer resolve. <code>--offline</code> skips Supabase.</td>
-    <td>Requires <code>scrape</code></td>
-  </tr>
-  <tr>
-    <td><code>pokemons</code></td>
-    <td>Fetch Pokédex names and descriptions from PokéAPI.</td>
-    <td>None</td>
-  </tr>
-  <tr>
-    <td><code>supabase &lt;target&gt;</code></td>
-    <td>Upload one JSON file into its table (<code>all</code>, <code>cards</code>, <code>jp-cards</code>, <code>prices</code>, <code>jp-prices</code>, <code>sets</code>, <code>jp-sets</code>, <code>types</code>, <code>pokemons</code>).</td>
-    <td>Requires <code>scrape</code></td>
-  </tr>
-</table>
+| Command | Description | Needs |
+| --- | --- | --- |
+| `all` | `scrape`, then `pokemons`, then `supabase all`, in dependency order. | Supabase credentials |
+| `scrape` | Fetch every card, price and set from TCGdex into `src/assets/`. `--lang en,ja` picks the languages. | Nothing |
+| `pokemons` | Fetch Pokédex names and descriptions from PokéAPI. | Nothing |
+| `audit` | Rebuild `set-aliases.json` and `card-code-overrides.json`, and report the codes that stop resolving. | Supabase credentials |
+| `verify` | Check the scraped JSON for `card_code` collisions and owned cards that no longer resolve. `--offline` skips Supabase. | `scrape` |
+| `supabase <target>` | Push one JSON file into its table: `all`, `cards`, `jp-cards`, `prices`, `jp-prices`, `sets`, `jp-sets`, `types`, `pokemons`. | `scrape` |
 
 Every command takes `--dry-run` (run without writing), `--json` (raw report), `-q` (summary only) and `--help`.
 
-**Recommended Scraper Order:**
-
-A full refresh is `bun run scrapers all`, which runs the steps in dependency order:
-
-1. `scrape` - TCGdex into `src/assets/` (about 15 s for 36 000 cards)
-2. `pokemons` - PokéAPI Pokédex entries
-3. `supabase all` - sets, then cards, then prices
-
-Run `verify` between `scrape` and the upload to check the output.
+A full pass takes about 15 s for ~36 000 cards, the CLI going through an HTTP/2 connection pool. `supabase` needs
+the sets uploaded before the cards, and the cards before the prices; `all` already orders them. Run `verify`
+between `scrape` and the upload to check the output.
 </details>
 
 <details>
-<summary><b>Card Images</b></summary>
+<summary><b>Scheduled refresh</b></summary>
 
-Card art is served straight from `assets.tcgdex.net`, which is CDN-fronted, CORS-open and speaks HTTP/3. A card's `image` field is an extensionless base such as `https://assets.tcgdex.net/en/swsh/swsh3/136`, and `processCardImage` appends `/{quality}.{extension}` - `high.webp` by default, about 89 KB against 344 KB for the same card as a PNG.
+`src/workers/scraper.ts` is a second Worker holding the `ScrapeWorkflow` Cloudflare Workflow. It fires every
+Monday at 04:00 UTC, one Workflow step per batch of 4 sets so a failing batch retries alone, and writes TCGdex
+straight into Supabase with no staged JSON. It never deletes rows: a half-finished pass would drop the cards it
+had not reached yet.
+
+```bash
+bun run deploy:scraper
+bunx wrangler secret put SUPABASE_SECRET_KEY -c wrangler.scraper.toml
+bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
+```
+
+`SCRAPER_TRIGGER_TOKEN` is the bearer token for the manual `POST /run` on the scraper Worker.
+</details>
+
+<details>
+<summary><b>Card images</b></summary>
+
+Card art is served straight from `assets.tcgdex.net`, which is CDN-fronted, CORS-open and speaks HTTP/3, so there
+is no mirror and no proxy. A card's `image` field is an extensionless base such as
+`https://assets.tcgdex.net/en/swsh/swsh3/136`, and `processCardImage` appends `/{quality}.{extension}` -
+`high.webp` by default, about 89 KB against 344 KB for the same card as a PNG.
 
 Set `PUBLIC_NO_IMAGES=true` to render placeholders instead and develop without bandwidth.
 </details>
 
 ## 📜 Available Scripts
 
-<table>
-  <tr>
-    <th>Command</th>
-    <th>Description</th>
-  </tr>
-  <tr>
-    <td><code>bun run dev</code></td>
-    <td>Starts the development server</td>
-  </tr>
-  <tr>
-    <td><code>bun run build</code></td>
-    <td>Builds the application for production (outputs to <code>.svelte-kit/cloudflare</code>)</td>
-  </tr>
-  <tr>
-    <td><code>bun run preview</code></td>
-    <td>Runs a local preview of the production build</td>
-  </tr>
-  <tr>
-    <td><code>bun run scrapers</code></td>
-    <td>Runs the data scraping CLI - a command as argument, the interactive menu without</td>
-  </tr>
-</table>
+| Command | Description |
+| --- | --- |
+| `bun run dev` | Vite dev server on `localhost:5173` |
+| `bun run build` | Production build through `adapter-cloudflare`, into `.svelte-kit/cloudflare` |
+| `bun run preview` | Preview the built output with Vite |
+| `bun run preview:worker` | Build, then serve the real Worker locally with `wrangler dev` |
+| `bun run deploy` | Build, then `wrangler deploy` (site Worker, `wrangler.toml`) |
+| `bun run deploy:scraper` | Deploy the weekly scraper Worker (`wrangler.scraper.toml`) |
+| `bun run scrapers` | Scraper CLI - a command as argument, the interactive menu without |
+
+There is no test suite and no lint script. `svelte-check` is installed but not wired to a script; run it with
+`bunx svelte-check`.
 
 ## 📁 Project Structure
 
@@ -257,51 +213,61 @@ Set `PUBLIC_NO_IMAGES=true` to render placeholders instead and develop without b
 
 ```
 .
-├── .svelte-kit/        # Build output and internal SvelteKit files
-├── node_modules/       # Project dependencies
 ├── src/
-│   ├── assets/         # Static assets (e.g., scraped JSON data)
-│   ├── lib/            # Svelte components, utilities, Supabase client, etc.
-│   │   ├── components/ # Reusable Svelte components
-│   │   ├── helpers/    # Utility functions
-│   │   ├── services/   # Data fetching or business logic services
-│   │   ├── stores/     # Svelte stores
-│   │   └── supabase.ts # Supabase client initialization
-│   ├── routes/         # Application pages and API endpoints
-│   ├── scrapers/      # Data scraping scripts
-│   ├── styles/         # Global styles
-│   ├── app.css         # Main CSS file (often imports Tailwind)
-│   ├── app.d.ts        # Ambient TypeScript declarations for SvelteKit
-│   ├── app.html        # Main HTML template
-│   └── constants.ts    # Application constants
-├── static/             # Static files (favicon, etc.)
-├── .env                # Local environment variables (ignored by Git)
-├── .env.example        # Example environment variables
-├── .gitignore          # Git ignore rules
-├── package.json        # Project metadata and dependencies
-├── bun.lock            # Bun lock file
-├── svelte.config.js    # SvelteKit configuration
-├── supabase-schema.sql # Initial Supabase database schema
-├── supabase-schema-update.sql # Database schema updates (if any)
-├── tailwind.config.mjs # Tailwind CSS configuration
-├── tsconfig.json       # TypeScript configuration
-├── scraper-cli.ts     # Entry point for the data scraper CLI
-└── vite.config.ts      # Vite configuration
+│   ├── assets/              # Scraper output staged for upload, not the app's runtime source
+│   ├── lib/
+│   │   ├── components/      # Svelte components, grouped by feature (card, binder, filters, ...)
+│   │   ├── data/            # set-aliases.json, generated by `scrapers audit`
+│   │   ├── helpers/         # Pure-ish utilities: supabase-data, card-utils, card-images, filters, ...
+│   │   ├── services/        # Supabase CRUD for user-owned data, returns { data, error }
+│   │   ├── stores/          # Cross-component state, incl. localStorage-backed stores
+│   │   └── supabase.ts      # Browser Supabase client
+│   ├── routes/              # Pages and API endpoints
+│   ├── scrapers/            # TCGdex + PokéAPI scrapers and the Supabase uploaders
+│   ├── workers/scraper.ts   # The weekly ScrapeWorkflow Worker
+│   ├── app.css              # Tailwind entry, holds the @theme block
+│   ├── hooks.server.ts      # Per-request Supabase client, user and profile on event.locals
+│   └── constants.ts
+├── supabase/migrations/     # SQL migrations: schema, indexes, grants, policies, RLS
+├── static/                  # Favicon and static files
+├── scraper-cli.ts           # Scraper CLI entry point
+├── svelte.config.js         # Adapter and path aliases
+├── vite.config.ts           # Vite + @tailwindcss/vite
+├── wrangler.toml            # Site Worker
+└── wrangler.scraper.toml    # Scraper Worker
 ```
+
+There is no `tailwind.config.mjs`: Tailwind 4 is configured CSS-first from the `@theme` block in `src/app.css`.
 </details>
+
+## 🔑 Card Identity
+
+Cards are keyed by a synthetic `cardCode` of the form `supertype_pokemonId_setCode_cardNumber`, for example
+`pokemon_25_swsh3_136`. It is the join key everywhere: routes (`/card/[cardCode]`), price lookups, collection and
+wishlist rows.
+
+The `setCode` inside a code is the legacy pokemontcg.io / tcgcollector code rather than the TCGdex set id
+(`sv3` against `sv03`), so codes minted before the TCGdex migration keep matching.
+`src/lib/data/set-aliases.json` maps one onto the other, and `src/scrapers/tcgdex/card-code-overrides.json` pins
+the ~4300 cards whose natural code would differ from the stored one. Both files are regenerated by
+`bun run scrapers audit`.
 
 ## 👥 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome.
 
 <details>
 <summary><b>How to Contribute</b></summary>
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Commit your changes (`git commit -m 'feat: add some amazing feature'`)
+4. Check the types with `bunx svelte-check` - it reports 0 errors and 0 warnings, keep it that way
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+`CLAUDE.md` documents the stack constraints and conventions the codebase follows; it is worth reading before a
+first change.
 </details>
 
 ## 📄 License
@@ -311,9 +277,11 @@ This project is licensed under the GNU GPLv3 License - see the [LICENSE](LICENSE
 <div align="center">
   <br>
   <p>
-    <a href="https://github.com/Ayfri/pokecards-collector/issues">Report Bug</a>
+    <a href="https://github.com/Ayfri/PokeCards-Collector/issues">Report Bug</a>
     ·
-    <a href="https://github.com/Ayfri/pokecards-collector/issues">Request Feature</a>
+    <a href="https://github.com/Ayfri/PokeCards-Collector/issues">Request Feature</a>
+    ·
+    <a href="https://discord.com/invite/7c7nzHqxJx">Discord</a>
   </p>
   <p>
     Made with ❤️ by <a href="https://github.com/Ayfri">Ayfri</a>,
