@@ -1,0 +1,34 @@
+# PokéCards-Collector
+
+> A free Pokémon Trading Card Game catalogue and collection tracker. Every English and Japanese card, each with its
+> Cardmarket price in euros, plus collection tracking, wishlists, a binder builder and two daily card games.
+
+The catalogue is refreshed from [TCGdex](https://api.tcgdex.net) every Monday. Prices are Cardmarket values in EUR,
+covering both the standard and the reverse-holo print of a card. Browsing needs no account; tracking a collection,
+a wishlist or a binder needs a free one.
+
+A card is addressed by a code of the form `supertype_pokemonId_setCode_cardNumber`, for example
+`pokemon_6_base1_4`. English cards live at `/card/<code>`, Japanese cards at `/jp-card/<code>`.
+
+## Browse
+
+- [All cards](https://pokecards-collector.ayfri.com/cards-list): every English card, filterable by set, artist, rarity, type and Pokémon, sortable by price, name or Pokédex number. Filters are URL parameters: `?set=`, `?artist=`, `?rarity=`, `?type=`, `?name=`, `?sortby=`, `?sortorder=`.
+- [Sets](https://pokecards-collector.ayfri.com/sets): every set with its release date, card count and the estimated euro value of a complete set.
+- [Pokémon](https://pokecards-collector.ayfri.com/pokemons): all 1025 Pokémon and the cards depicting them.
+- [Artists](https://pokecards-collector.ayfri.com/artists): the illustrators behind the cards, with their full card list.
+- [Japanese cards](https://pokecards-collector.ayfri.com/japan): the Japanese catalogue, with its own sets and prices.
+
+## Collect
+
+- [Collectors](https://pokecards-collector.ayfri.com/users): public collections, ranked by unique cards owned.
+- [Binder builder](https://pokecards-collector.ayfri.com/binder): lay out a digital binder page and export it as an image.
+
+## Play
+
+- [Card.dle](https://pokecards-collector.ayfri.com/card.dle): guess the mystery card of the day; the same card for every player, seeded from the date.
+- [Guess the Price](https://pokecards-collector.ayfri.com/guess-the-price): estimate what a real card is worth on Cardmarket.
+
+## Optional
+
+- [Sitemap index](https://pokecards-collector.ayfri.com/sitemap.xml): every indexable URL, split into a pages sitemap and chunked card sitemaps.
+- [Source code](https://github.com/Ayfri/PokeCards-Collector): SvelteKit 2 + Svelte 5 on Cloudflare Workers, data in Supabase Postgres.

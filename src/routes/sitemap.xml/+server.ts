@@ -1,47 +1,23 @@
-import { getCardCodes } from '$lib/helpers/supabase-data';
-import { BASE_URL } from '~/constants';
+import { getCards, getJapaneseCards } from '$lib/helpers/supabase-data';
+import { SITEMAP_CHUNK, sitemapIndex, sitemapResponse } from '$helpers/sitemap';
 
+/**
+ * The catalogue is far past the point where one file is reasonable, so this is the index and the card lists are
+ * chunked children. `robots.txt` and the `rel="sitemap"` link both point here, and Search Console only needs this URL.
+ */
 export async function GET() {
-	const mainPage = `${BASE_URL}/`;
+	const [cards, jpCards] = await Promise.all([getCards(), getJapaneseCards()]);
+	const lastmod = new Date().toISOString();
 
-	const simplePages = ['/artists', '/sets', '/cards-list', '/binder']
-	const cardCodes = await getCardCodes();
+	const chunks = (total: number, path: string) =>
+		Array.from({ length: Math.max(1, Math.ceil(total / SITEMAP_CHUNK)) }, (_, index) => ({
+			lastmod,
+			loc: `${path}/${index + 1}`,
+		}));
 
-	return new Response(
-		`
-		<?xml version="1.0" encoding="UTF-8" ?>
-		<urlset
-			xmlns="https://www.sitemaps.org/schemas/sitemap/0.9"
-			xmlns:xhtml="https://www.w3.org/1999/xhtml"
-			xmlns:mobile="https://www.google.com/schemas/sitemap-mobile/1.0"
-			xmlns:news="https://www.google.com/schemas/sitemap-news/0.9"
-			xmlns:image="https://www.google.com/schemas/sitemap-image/1.1"
-			xmlns:video="https://www.google.com/schemas/sitemap-video/1.1"
-		>
-			<url>
-				<loc>${mainPage}</loc>
-				<lastmod>${new Date().toISOString()}</lastmod>
-				<changefreq>weekly</changefreq>
-				<priority>1</priority>
-			</url>
-			${simplePages.map(page => `<url>
-				<loc>${`${BASE_URL}${page}`}</loc>
-				<lastmod>${new Date().toISOString()}</lastmod>
-				<changefreq>monthly</changefreq>
-				<priority>0.8</priority>
-			</url>`).join('\n')}
-			${cardCodes.map(cardCode => `<url>
-				<loc>${`${BASE_URL}/card/${cardCode}/`}</loc>
-				<lastmod>${new Date().toISOString()}</lastmod>
-				<changefreq>weekly</changefreq>
-				<priority>0.6</priority>
-			</url>`).join('\n')}
-		</urlset>`.trim(),
-		{
-			headers: {
-				'cache-control': 'public, max-age=3600, stale-while-revalidate=86400',
-				'content-type': 'application/xml',
-			},
-		},
-	);
+	return sitemapResponse(sitemapIndex([
+		{ lastmod, loc: '/sitemap-pages.xml' },
+		...chunks(cards.length, '/sitemap-cards'),
+		...chunks(jpCards.length, '/sitemap-jp-cards'),
+	]));
 }
