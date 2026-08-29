@@ -29,7 +29,7 @@ const read = <T>(path: string): T => JSON.parse(fs.readFileSync(path, 'utf8')) a
 
 /** Card codes users actually own. The binder lives in localStorage, so Postgres only knows these two tables. */
 async function ownedCardCodes(): Promise<Set<string>> {
-	const supabase = createClient(process.env.PUBLIC_SUPABASE_URL!, process.env.PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? process.env.PUBLIC_SUPABASE_ANON_KEY!);
+	const supabase = createClient(process.env.PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
 	const codes = new Set<string>();
 	for (const table of ['collections', 'wishlists']) {
 		const {data, error} = await supabase.from(table).select('card_code');

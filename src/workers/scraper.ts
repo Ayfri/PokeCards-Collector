@@ -7,7 +7,7 @@ interface Env {
 	PUBLIC_SUPABASE_URL: string;
 	SCRAPER: Workflow;
 	SCRAPER_TRIGGER_TOKEN?: string;
-	SUPABASE_SERVICE_ROLE_KEY: string;
+	SUPABASE_SECRET_KEY: string;
 }
 
 const LANGUAGES: readonly Language[] = ['en', 'ja'];
@@ -22,7 +22,7 @@ const SETS_PER_STEP = 4;
  */
 export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 	async run(_event: WorkflowEvent<unknown>, step: WorkflowStep): Promise<void> {
-		const supabase = createSyncClient(this.env.PUBLIC_SUPABASE_URL, this.env.SUPABASE_SERVICE_ROLE_KEY);
+		const supabase = createSyncClient(this.env.PUBLIC_SUPABASE_URL, this.env.SUPABASE_SECRET_KEY);
 		const client = new FetchClient();
 
 		for (const lang of LANGUAGES) {

@@ -17,9 +17,9 @@ export const TABLES: Record<Language, Tables> = {
 	ja: {cards: 'jp_cards', prices: 'jp_prices', sets: 'jp_sets'},
 };
 
-export function createSyncClient(url: string, serviceRoleKey: string): SupabaseClient {
-	if (!url || !serviceRoleKey) throw new Error('Missing PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
-	return createClient(url, serviceRoleKey, {auth: {persistSession: false}});
+export function createSyncClient(url: string, secretKey: string): SupabaseClient {
+	if (!url || !secretKey) throw new Error('Missing PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY');
+	return createClient(url, secretKey, {auth: {persistSession: false}});
 }
 
 /** Upserts in batches; Supabase rejects a single statement carrying tens of thousands of rows. */

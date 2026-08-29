@@ -1,20 +1,20 @@
 import { createClient as createBasicClient } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
 import { browser } from '$app/environment';
 // Removed browser import as standard module caching should handle singleton
 
 const supabaseUrl = PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = PUBLIC_SUPABASE_ANON_KEY;
+const supabasePublishableKey = PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-	console.error('Supabase URL or Anon Key is missing. Check your environment variables.');
+if (!supabaseUrl || !supabasePublishableKey) {
+	console.error('Supabase URL or publishable key is missing. Check your environment variables.');
 	// Throw an error or handle appropriately if keys are missing
 	// For now, let createClient handle potential errors if called with undefined
 }
 
 // Create the Supabase client - This ensures it runs only once when the module is first imported.
-export const supabase = createBasicClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createBasicClient(supabaseUrl, supabasePublishableKey);
 
 // --- Browser Client Setup (Used by stores/components for SSR compatibility) ---
 
@@ -28,7 +28,7 @@ export function getSupabaseBrowserClient() {
   if (browser && !browserClient) {
     browserClient = createBrowserClient(
       PUBLIC_SUPABASE_URL,
-      PUBLIC_SUPABASE_ANON_KEY
+      PUBLIC_SUPABASE_PUBLISHABLE_KEY
     );
   }
   // On the server, or if already created, return the instance (or null if server)

@@ -35,7 +35,7 @@ interface LegacyRow {
 }
 
 async function legacyRows(table: string): Promise<LegacyRow[]> {
-	const supabase = createClient(process.env.PUBLIC_SUPABASE_URL!, process.env.PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? process.env.PUBLIC_SUPABASE_ANON_KEY!);
+	const supabase = createClient(process.env.PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
 	const rows: LegacyRow[] = [];
 	for (let from = 0; ; from += 5000) {
 		const {data, error} = await supabase.from(table).select('card_code,name,set_name').range(from, from + 4999);
@@ -47,7 +47,7 @@ async function legacyRows(table: string): Promise<LegacyRow[]> {
 
 /** Card codes users actually own; these are the rows that must keep resolving. The binder lives in localStorage, not in Postgres. */
 async function ownedCardCodes(): Promise<Set<string>> {
-	const supabase = createClient(process.env.PUBLIC_SUPABASE_URL!, process.env.PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? process.env.PUBLIC_SUPABASE_ANON_KEY!);
+	const supabase = createClient(process.env.PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY!);
 	const codes = new Set<string>();
 	for (const table of ['collections', 'wishlists']) {
 		const {data, error} = await supabase.from(table).select('card_code');

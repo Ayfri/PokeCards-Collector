@@ -138,8 +138,9 @@ Check out the live website [here](https://pokecards-collector.pages.dev).
     - Fill in the required variables:
       ```dotenv
       # Supabase Configuration
-      VITE_SUPABASE_URL=YOUR_SUPABASE_PROJECT_URL
-      VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_PUBLIC_KEY
+      PUBLIC_SUPABASE_URL=YOUR_SUPABASE_PROJECT_URL
+      PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
+      SUPABASE_SECRET_KEY=sb_secret_...
 
       # Render placeholders instead of card art, to develop without bandwidth
       PUBLIC_NO_IMAGES=false

@@ -1,6 +1,6 @@
 # Weekly TCGdex -> Supabase refresh, deployed apart from the site Worker:
 #   bun run deploy:scraper
-#   bunx wrangler secret put SUPABASE_SERVICE_ROLE_KEY -c wrangler.scraper.toml
+#   bunx wrangler secret put SUPABASE_SECRET_KEY -c wrangler.scraper.toml
 #   bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
 name = "pokecards-scraper"
 main = "src/workers/scraper.ts"

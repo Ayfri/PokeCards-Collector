@@ -5,7 +5,7 @@ import { cardRow, priceRow, setRow } from './rows';
 import { type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
 
 const supabaseUrl = process.env.PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.PUBLIC_SUPABASE_SERVICE_ROLE_KEY ?? process.env.PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseKey = process.env.SUPABASE_SECRET_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
 if (!supabaseUrl || !supabaseKey) {
 	throw new Error('Supabase URL or key is missing. Check your environment variables.');

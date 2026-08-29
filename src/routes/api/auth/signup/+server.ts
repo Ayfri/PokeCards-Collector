@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import type { RequestHandler } from './$types';
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_SERVICE_ROLE_KEY } from '$env/static/public';
+import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+import { env } from '$env/dynamic/private';
 import { readJson, type ApiError } from '$helpers/http';
 
 interface SignupBody {
@@ -18,7 +19,6 @@ interface AdminUser {
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		// 1. Récupérer et valider les données
 		let userData: SignupBody;
 		try {
 			userData = await request.json() as SignupBody;
@@ -31,7 +31,6 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const { email, password, username } = userData;
 
-		// Validation de base
 		if (!email || !password || !username) {
 			return json({
 				success: false,
@@ -48,7 +47,6 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const normalizedUsername = username.toLowerCase();
 
-		// Password strength validation
 		if (typeof password !== 'string' || password.length < 8 || !/[0-9]/.test(password) || !/[^a-zA-Z0-9]/.test(password)) {
 			return json({
 				success: false,
@@ -56,11 +54,10 @@ export const POST: RequestHandler = async ({ request }) => {
 			}, { status: 400 });
 		}
 
-		// 2. Initialiser le client Supabase admin
 		const supabaseUrl = PUBLIC_SUPABASE_URL;
-		const supabaseServiceKey = PUBLIC_SUPABASE_SERVICE_ROLE_KEY;
+		const supabaseSecretKey = env.SUPABASE_SECRET_KEY;
 
-		if (!supabaseUrl || !supabaseServiceKey) {
+		if (!supabaseUrl || !supabaseSecretKey) {
 			return json({
 				success: false,
 				error: 'Server configuration error'
@@ -69,7 +66,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		let supabaseAdmin;
 		try {
-			supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+			supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey);
 		} catch (clientError) {
 			return json({
 				success: false,
@@ -77,7 +74,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			}, { status: 500 });
 		}
 
-		// 3. Vérification si le nom d'utilisateur existe déjà (case-insensitive)
+		// Username check is case-insensitive: the column stores the lowercased form.
 		let existingUser;
 		let usernameCheckError;
 
@@ -110,18 +107,17 @@ export const POST: RequestHandler = async ({ request }) => {
 			}, { status: 400 });
 		}
 
-		// 4. Créer l'utilisateur
 		let authData: { user: AdminUser | null };
 		let authError;
 
 		try {
-			// 1. Créer l'utilisateur directement via l'API REST de Supabase
+			// The admin REST endpoint is called directly; the JS client wraps it in a session flow this route does not want.
 			const createUserResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'apikey': supabaseServiceKey,
-					'Authorization': `Bearer ${supabaseServiceKey}`
+					'apikey': supabaseSecretKey,
+					'Authorization': `Bearer ${supabaseSecretKey}`
 				},
 				body: JSON.stringify({
 					email,
@@ -131,32 +127,29 @@ export const POST: RequestHandler = async ({ request }) => {
 			});
 
 			if (!createUserResponse.ok) {
-				// En cas d'erreur, essayer de lire le corps pour plus de détails
 				const errorBody = await readJson<ApiError>(createUserResponse, {});
 				let errorMessage = errorBody.message || createUserResponse.statusText || 'Unknown error during user creation';
-				// Check for Supabase specific error messages or codes if available in the body
 				if (errorBody.message?.toLowerCase().includes('email address already registered')) {
 					errorMessage = 'This email address is already registered.';
 				}
 
 				// Check specifically for the 422 status which often indicates email exists
 				if (createUserResponse.status === 422 && errorMessage.includes('email')) {
-						 errorMessage = 'This email address is already registered.'; // More specific message for 422
+						 errorMessage = 'This email address is already registered.';
 				}
 
 				return json({
 					success: false,
-					error: `Failed to create user: ${errorMessage}` // Use the refined error message
+					error: `Failed to create user: ${errorMessage}`
 				}, { status: createUserResponse.status });
 			}
 
-			// Lire les données de l'utilisateur créé
 			authData = {
 				user: await createUserResponse.json() as AdminUser
 			};
 			authError = null;
 		} catch (createError) {
-			// Essayer en fallback avec le client Supabase standard
+			// Fallback to the standard client when the admin endpoint is unreachable.
 			try {
 				const result = await supabaseAdmin.auth.signUp({
 					email,
@@ -192,9 +185,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			}, { status: 500 });
 		}
 
-		// 5. Créer le profil pour l'utilisateur
 
-		// Vérifier que authData et authData.user existent
 		if (!authData || !authData.user || !authData.user.id) {
 			return json({
 				success: false,
@@ -203,7 +194,6 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		try {
-			// Utiliser fetch direct au lieu du client Supabase
 			const profileData = {
 				username: normalizedUsername,
 				auth_id: authData.user.id,
@@ -216,28 +206,27 @@ export const POST: RequestHandler = async ({ request }) => {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
-					'apikey': supabaseServiceKey,
-					'Authorization': `Bearer ${supabaseServiceKey}`,
+					'apikey': supabaseSecretKey,
+					'Authorization': `Bearer ${supabaseSecretKey}`,
 					'Prefer': 'return=representation'
 				},
 				body: JSON.stringify(profileData)
 			});
 
 			if (!profileResponse.ok) {
-				// En cas d'erreur, essayer de lire le corps pour plus de détails
 				const errorBody = await readJson<ApiError>(profileResponse, {});
 
-				// Si la création du profil échoue, essayer de supprimer l'utilisateur
+				// A user with no profile row is unusable, so roll the auth user back.
 				try {
 					await fetch(`${supabaseUrl}/auth/v1/admin/users/${authData.user.id}`, {
 						method: 'DELETE',
 						headers: {
-							'apikey': supabaseServiceKey,
-							'Authorization': `Bearer ${supabaseServiceKey}`
+							'apikey': supabaseSecretKey,
+							'Authorization': `Bearer ${supabaseSecretKey}`
 						}
 					});
 				} catch (deleteError) {
-					// Ignorer les erreurs de suppression
+					// Rollback is best effort; the original failure is what gets reported.
 				}
 
 				return json({
@@ -246,17 +235,17 @@ export const POST: RequestHandler = async ({ request }) => {
 				}, { status: 500 });
 			}
 		} catch (insertError) {
-			// En cas d'erreur, essayer de supprimer l'utilisateur
+			// A user with no profile row is unusable, so roll the auth user back.
 			try {
 				await fetch(`${supabaseUrl}/auth/v1/admin/users/${authData.user.id}`, {
 					method: 'DELETE',
 					headers: {
-						'apikey': supabaseServiceKey,
-						'Authorization': `Bearer ${supabaseServiceKey}`
+						'apikey': supabaseSecretKey,
+						'Authorization': `Bearer ${supabaseSecretKey}`
 					}
 				});
 			} catch (deleteError) {
-				// Ignorer les erreurs de suppression
+				// Rollback is best effort; the original failure is what gets reported.
 			}
 
 			return json({
@@ -265,7 +254,6 @@ export const POST: RequestHandler = async ({ request }) => {
 			}, { status: 500 });
 		}
 
-		// Tout s'est bien passé
 		return json({
 			success: true,
 			user: {
