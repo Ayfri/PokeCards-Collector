@@ -2,6 +2,7 @@ import { error, redirect } from '@sveltejs/kit';
 import { getCollectionStats } from '$lib/services/collections';
 import { getProfileByUsername } from '$lib/services/profiles';
 import type { PageServerLoad } from './$types';
+import { breadcrumbs, profileSchema } from '$helpers/seo';
 import type { UserProfile, CollectionStats, ServiceResponse } from '$lib/types';
 
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
@@ -47,7 +48,8 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 			isOwnProfile: false,
 			loggedInUsername,
 			title,
-			description
+			description,
+			noindex: true
 		};
 	}
 
@@ -77,14 +79,25 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		} else {
 			collectionStats = stats;
 		}
-		title = isOwnProfile ? 'My Profile' : `${targetProfile.username}'s Profile`;
-		description = `Pokémon TCG profile for user ${targetProfile.username}.`;
+		title = isOwnProfile ? 'My Profile' : `${targetProfile.username}'s Pokémon Card Collection`;
+		description = collectionStats
+			? `${targetProfile.username} owns ${collectionStats.unique_cards} unique Pokémon cards (${collectionStats.total_instances} in total) worth around €${collectionStats.total_value.toFixed(2)} on Cardmarket. Browse the collection, the wishlist and the set completion.`
+			: `Pokémon TCG collector profile for ${targetProfile.username}: collection, wishlist and set completion.`;
 	} else if (!isPublic && !isOwnProfile) {
 		title = 'Private Profile';
 		description = `This user's profile is private.`;
 	}
 
-	const ogImage = { url: '/favicon.png', alt: 'PokéCards-Collector logo' };
+	const ogImage = { url: '/favicon.png', alt: 'PokéCards-Collector logo', width: 485, height: 436 };
+
+	// A private profile, and a page only its owner can read, must never reach an index: the content is not public
+	// and the crawler would otherwise store the "private profile" shell under a real username.
+	const noindex = !isPublic;
+	const schemas = isPublic && targetProfile
+		? [profileSchema(targetProfile, `/profile/${targetProfile.username}`, collectionStats
+			? { cards: collectionStats.total_instances, uniqueCards: collectionStats.unique_cards }
+			: undefined)]
+		: [];
 
 	return {
 		...layoutData,
@@ -99,5 +112,9 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		title,
 		description,
 		image: ogImage,
+		breadcrumbs: breadcrumbs({ name: 'Collectors', url: '/users' }, { name: targetProfile.username, url: `/profile/${targetProfile.username}` }),
+		noindex,
+		schemas,
+		type: 'ProfilePage' as const,
 	};
 };

@@ -4,6 +4,7 @@ import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserCollection } from '$lib/services/collections';
 import type { PageServerLoad } from './$types';
+import { breadcrumbs, profileSchema } from '$helpers/seo';
 import type { FullCard, PriceData, ServiceResponse, Set as TSet, UserProfile } from '$lib/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { findSetByCardCode } from '$helpers/set-utils';
@@ -107,8 +108,8 @@ export const load: PageServerLoad = async ({ locals, params, parent, url }) => {
 		isPublic = targetProfile.is_public;
 
 		if (isPublic || (loggedInUserProfile && loggedInUserProfile.username === targetProfile.username)) {
-			title = `${targetProfile.username}'s Collection`;
-			description = `Pokémon TCG collection for user ${targetProfile.username}.`;
+			title = `${targetProfile.username}'s Pokémon Card Collection`;
+			description = `Every Pokémon TCG card ${targetProfile.username} owns, with Cardmarket prices in euros, set completion and filtering by set, rarity and type.`;
 		} else {
 			title = 'Private Collection';
 			description = `This user's collection is private.`;
@@ -120,7 +121,9 @@ export const load: PageServerLoad = async ({ locals, params, parent, url }) => {
 		description = 'Your Pokémon TCG card collection.';
 	}
 
-	const ogImage = { url: '/favicon.png', alt: 'PokéCards-Collector logo' };
+	const ogImage = { url: '/favicon.png', alt: 'PokéCards-Collector logo', width: 485, height: 436 };
+	// Only a public profile's collection is public content; everything else is a shell the crawler must not keep.
+	const noindex = !isPublic || !targetProfile;
 
 	// Determine the source of collection items for getStreamedCollectionData
 	// This logic needs to be here because targetProfile is resolved here.
@@ -144,6 +147,12 @@ export const load: PageServerLoad = async ({ locals, params, parent, url }) => {
 		title,
 		description,
 		image: ogImage,
+		breadcrumbs: targetProfile
+			? breadcrumbs({ name: 'Collectors', url: '/users' }, { name: targetProfile.username, url: `/profile/${targetProfile.username}` }, { name: 'Collection', url: `/collection/${targetProfile.username}` })
+			: breadcrumbs({ name: 'Collectors', url: '/users' }),
+		noindex,
+		schemas: !noindex && targetProfile ? [profileSchema(targetProfile, `/collection/${targetProfile.username}`)] : [],
+		type: 'CollectionPage' as const,
 		allCards: allCardsResolved,
 		prices: pricesResolved,
 		sets: setsResolved,

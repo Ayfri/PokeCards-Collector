@@ -16,11 +16,15 @@ export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 		console.error('Error fetching profile:', error);
 		return {
 			user,
-			profile: null
+			profile: null,
+			noindex: true
 		};
 	}
 
 	return {
+		description: 'Manage your PokéCards-Collector account: username, profile colour and collection visibility.',
+		noindex: true,
+		title: 'Settings',
 		user,
 		profile: profileData
 	};

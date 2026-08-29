@@ -4,6 +4,7 @@ import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserWishlist } from '$lib/services/wishlists';
 import type { PageServerLoad } from './$types';
+import { breadcrumbs, profileSchema } from '$helpers/seo';
 import type { FullCard, ServiceResponse, Set as TSet, UserProfile } from '$lib/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -96,12 +97,12 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 				const correctUrl = `/wishlist/${encodeURIComponent(targetProfile.username)}`;
 				throw redirect(307, correctUrl);
 			}
-			targetUsername = targetProfile.username; // Use canonical username
+			targetUsername = targetProfile.username;
 			isPublic = targetProfile.is_public;
 
 			if (isPublic || (loggedInUserProfile && loggedInUserProfile.username === targetProfile.username)) {
-				title = `${targetProfile.username}'s Wishlist`;
-				description = `Pokémon TCG wishlist for user ${targetProfile.username}.`;
+				title = `${targetProfile.username}'s Pokémon Card Wishlist`;
+				description = `The Pokémon TCG cards ${targetProfile.username} is still hunting for, with Cardmarket prices in euros and the set each card belongs to.`;
 			} else {
 				title = 'Private Wishlist';
 				description = `This user's wishlist is private.`;
@@ -120,7 +121,9 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		description = 'Your Pokémon TCG card wishlist.';
 	}
 
-	const ogImage = { url: '/favicon.png', alt: 'PokéCards-Collector logo' };
+	const ogImage = { url: '/favicon.png', alt: 'PokéCards-Collector logo', width: 485, height: 436 };
+	// Only a public profile's wishlist is public content; everything else is a shell the crawler must not keep.
+	const noindex = !isPublic || !targetProfile;
 
 	let wishlistSourceItems = null;
 	if (targetProfile && loggedInUserProfile && loggedInUserProfile.username === targetProfile.username) {
@@ -139,6 +142,12 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		title,
 		description,
 		image: ogImage,
+		breadcrumbs: targetProfile
+			? breadcrumbs({ name: 'Collectors', url: '/users' }, { name: targetProfile.username, url: `/profile/${targetProfile.username}` }, { name: 'Wishlist', url: `/wishlist/${targetProfile.username}` })
+			: breadcrumbs({ name: 'Collectors', url: '/users' }),
+		noindex,
+		schemas: !noindex && targetProfile ? [profileSchema(targetProfile, `/wishlist/${targetProfile.username}`)] : [],
+		type: 'CollectionPage' as const,
 		allCards: allCardsResolved,
 		prices: pricesResolved,
 		sets: setsResolved,

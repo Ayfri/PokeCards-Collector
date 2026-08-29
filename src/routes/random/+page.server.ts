@@ -6,5 +6,5 @@ export const load: PageServerLoad = async () => {
 	const cardCode = await getRandomCardCode();
 	if (!cardCode) error(404, 'No card to pick from');
 
-	redirect(301, `/card/${cardCode}/`);
+	redirect(302, `/card/${cardCode}/`);
 }
