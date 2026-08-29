@@ -1,5 +1,8 @@
 <script lang="ts">
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import CircleCheckIcon from '@lucide/svelte/icons/circle-check';
 	import Modal from '@components/ui/Modal.svelte';
+	import SearchXIcon from '@lucide/svelte/icons/search-x';
 	import UploadIcon from '@lucide/svelte/icons/upload';
 	import { detectColumns, MAX_IMPORT_ROWS, toImportRows } from '$helpers/collection-import';
 	import { invalidateAll } from '$app/navigation';
@@ -130,20 +133,46 @@
 		{/if}
 
 		{#if summary}
-			<div class="rounded-lg bg-gray-900/60 p-3">
-				<p class="text-white">
-					{summary.added} card{summary.added === 1 ? '' : 's'} {imported ? 'added' : 'to add'}, over {summary.matchedCards} matched card{summary.matchedCards === 1 ? '' : 's'}.
-				</p>
-				{#if summary.skipped > 0}<p class="text-gray-400">{summary.skipped} cop{summary.skipped === 1 ? 'y' : 'ies'} skipped, already owned or over the 99 limit.</p>{/if}
+			<div class="rounded-xl border border-gray-700 bg-gray-900/60 p-4">
+				<div class="flex items-center gap-3">
+					<span class={['flex size-10 shrink-0 items-center justify-center rounded-full', summary.added > 0 ? 'bg-gold-400/15 text-gold-400' : 'bg-gray-700/60 text-gray-400']}>
+						{#if summary.added > 0}<CircleCheckIcon size={20} />{:else}<SearchXIcon size={20} />{/if}
+					</span>
+					<div class="min-w-0">
+						<p class="text-base text-white">
+							{#if summary.added > 0}
+								{summary.added} card{summary.added === 1 ? '' : 's'} {imported ? `added to your ${kind}` : 'ready to import'}
+							{:else}
+								Nothing new to add
+							{/if}
+						</p>
+						<p class="text-xs text-gray-400">
+							{summary.matchedCards} card{summary.matchedCards === 1 ? '' : 's'} recognised{#if summary.skipped > 0}, {summary.skipped} cop{summary.skipped === 1 ? 'y' : 'ies'} you already had{/if}
+						</p>
+					</div>
+				</div>
+
 				{#if summary.unmatchedCount > 0}
-					<p class="mt-2 text-orange-400">{summary.unmatchedCount} line{summary.unmatchedCount === 1 ? '' : 's'} matched no card in the catalogue:</p>
-					<ul class="mt-1 max-h-32 overflow-y-auto text-xs text-gray-400">
-						{#each summary.unmatchedBySet as group (group.set)}
-							<li>{group.set || 'no set named'} - {group.count}</li>
-						{/each}
-					</ul>
+					<details class="mt-4 border-t border-gray-700 pt-3">
+						<summary class="flex cursor-pointer list-none items-center gap-2 text-gray-300 hover:text-white">
+							<span class="grow">{summary.unmatchedCount} card{summary.unmatchedCount === 1 ? '' : 's'} we could not place</span>
+							<ChevronDownIcon class="chevron shrink-0" size={16} />
+						</summary>
+						<p class="mt-2 text-xs text-gray-400">
+							Their sets are not in our catalogue yet, or your file spells them differently. Everything else imports normally.
+						</p>
+						<ul class="mt-2 flex max-h-40 flex-col gap-1 overflow-y-auto">
+							{#each summary.unmatchedBySet as group (group.set)}
+								<li class="flex items-center justify-between gap-3 rounded-lg bg-gray-800/70 px-3 py-1.5">
+									<span class="truncate text-gray-200">{group.set || 'Set not named'}</span>
+									<span class="shrink-0 rounded-full bg-gray-700 px-2 py-0.5 text-xs text-gray-300">{group.count}</span>
+								</li>
+							{/each}
+						</ul>
+					</details>
 				{/if}
-				{#if summary.failure}<p class="mt-2 text-red-400">Stopped early: {summary.failure}</p>{/if}
+
+				{#if summary.failure}<p class="mt-3 text-red-400">Stopped early: {summary.failure}</p>{/if}
 			</div>
 		{/if}
 
@@ -161,7 +190,7 @@
 			Preview
 		</button>
 		<button
-			class="rounded-lg bg-gold-500 px-4 py-2 font-medium text-gray-900 disabled:opacity-40"
+			class="rounded-lg bg-gold-400 px-4 py-2 font-medium text-gray-900 disabled:opacity-40"
 			disabled={busy || !summary || imported || summary.added === 0}
 			onclick={() => send(false)}
 			type="button"
@@ -170,3 +199,18 @@
 		</button>
 	{/snippet}
 </Modal>
+
+<style>
+	/* The disclosure arrow is drawn by the icon, and it points up once the list is open. */
+	summary::-webkit-details-marker {
+		display: none;
+	}
+
+	summary :global(.chevron) {
+		transition: transform 150ms ease;
+	}
+
+	details[open] :global(.chevron) {
+		transform: rotate(180deg);
+	}
+</style>
