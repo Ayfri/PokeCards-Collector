@@ -14,6 +14,9 @@ import type {TcgdexCard, TcgdexSet} from './types';
 const LANGS = ['en', 'ja'] as const;
 type Lang = (typeof LANGS)[number];
 
+/** The languages a collection export can name its sets in. TCGdex carries fewer sets in each than in English, and none at all past these. */
+const NAME_LANGS = ['fr', 'de', 'es', 'it', 'pt'] as const;
+
 const TABLES: Record<Lang, string> = {en: 'cards', ja: 'jp_cards'};
 const HERE = new URL('.', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
@@ -163,11 +166,41 @@ export async function auditTcgdex(write = true) {
 	console.log(`collections + wishlists: ${owned.size} distinct card codes | ${alreadyBroken.length} already point at no card today, ${newlyBroken.length} become temporarily invisible`);
 	if (newlyBroken.length) console.log(`  newly invisible: ${newlyBroken.join(', ')}`);
 
+	const setNames = await localizedSetNames(pool);
+
 	if (write) {
 		fs.writeFileSync(`${HERE}../../lib/data/set-aliases.json`, `${JSON.stringify(aliases, null, '\t')}\n`);
+		fs.writeFileSync(`${HERE}../../lib/data/set-names.json`, `${JSON.stringify(setNames, null, '\t')}\n`);
 		fs.writeFileSync(`${HERE}card-code-overrides.json`, `${JSON.stringify(overrides, null, '\t')}\n`);
 	}
 	pool.close();
+}
+
+/**
+ * Set names in every language a user's export can be written in, keyed on the normalized name and pointing at the
+ * TCGdex set id the catalogue already resolves. Without it a Pokecardex CSV names `Foudre Noire` and nothing matches.
+ */
+async function localizedSetNames(pool: Http2Pool): Promise<Record<string, Record<string, string>>> {
+	const names: Record<string, Record<string, string>> = {};
+
+	for (const lang of NAME_LANGS) {
+		const sets = (await pool.json<TcgdexSet[]>(`/v2/${lang}/sets`)) ?? [];
+		const langNames: Record<string, string> = {};
+		let collisions = 0;
+
+		for (const set of sets) {
+			// Kept as printed, not normalized: the importer also matches on the words a name is made of.
+			const key = set.name?.trim();
+			if (!key || !norm(key)) continue;
+			if (langNames[key] && langNames[key] !== set.id) collisions++;
+			else langNames[key] = set.id;
+		}
+
+		console.log(`${lang}: ${Object.keys(langNames).length} set names${collisions ? `, ${collisions} ambiguous` : ''}`);
+		names[lang] = Object.fromEntries(Object.entries(langNames).sort(([a], [b]) => a.localeCompare(b)));
+	}
+
+	return names;
 }
 
 function naturalCardCode(card: TcgdexCard, setCode: string): string {
