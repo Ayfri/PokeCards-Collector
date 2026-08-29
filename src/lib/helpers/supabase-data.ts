@@ -1,5 +1,6 @@
 import type { FullCard, Pokemon, PriceData, Set } from "$lib/types";
 import { supabase } from '$lib/supabase';
+import { cachedTable, STATIC_TTL, TABLE_TTL } from '$helpers/data-cache';
 
 /** Columns every card read shares; keep it in sync with the `cards` / `jp_cards` schema. */
 const CARD_COLUMNS = `
@@ -218,18 +219,21 @@ async function getAllData<T>(
 }
 
 export async function getPokemons(): Promise<Pokemon[]> {
-	return await getAllData<Pokemon>('pokemons', 'id', '*', { column: 'id', ascending: true });
+	return cachedTable('pokemons', STATIC_TTL, () => getAllData<Pokemon>('pokemons', 'id', '*', { column: 'id', ascending: true }), rows => rows);
+}
+
+function cardListRows(table: 'cards' | 'jp_cards'): Promise<CardRow[]> {
+	return getAllData<CardRow>(table, 'card_code', CARD_LIST_COLUMNS, { column: 'name', ascending: true });
 }
 
 export async function getCards(): Promise<FullCard[]> {
-	const data = await getAllData<CardRow>('cards', 'card_code', CARD_LIST_COLUMNS, { column: 'name', ascending: true });
-	return data.map(toCard);
+	return cachedTable('cards', TABLE_TTL, () => cardListRows('cards'), rows => rows.map(toCard));
 }
 
-/** Sitemap-only read: one column instead of the twelve `getCards` ships. */
+/** Sitemap-only read: the codes come off the cached card list instead of paging the table again. */
 export async function getCardCodes(): Promise<string[]> {
-	const data = await getAllData<{ card_code: string }>('cards', 'card_code', 'card_code');
-	return data.map(row => row.card_code);
+	const cards = await getCards();
+	return cards.map(card => card.cardCode);
 }
 
 /** Picks a card without reading the table: one count, then the single row at that offset. */
@@ -259,17 +263,25 @@ export async function getRandomCardCode(): Promise<string | null> {
 }
 
 export async function getJapaneseCards(): Promise<FullCard[]> {
-	const data = await getAllData<CardRow>('jp_cards', 'card_code', CARD_LIST_COLUMNS, { column: 'name', ascending: true });
-	return data.map(toCard);
+	return cachedTable('jp_cards', TABLE_TTL, () => cardListRows('jp_cards'), rows => rows.map(toCard));
+}
+
+/** `select(count)` with `head: true`: the homepage only prints this number, it has no use for the 12781 rows behind it. */
+export async function countJapaneseCards(): Promise<number> {
+	return cachedTable('jp_cards:count', TABLE_TTL, async () => {
+		const { count, error } = await supabase.from('jp_cards').select('*', { count: 'exact', head: true });
+		if (error) throw new Error(`Failed to count jp_cards: ${error.message}`);
+		return count ?? 0;
+	}, count => count);
 }
 
 export async function getPrices(): Promise<Record<string, PriceData>> {
-	return pricesByCardCode(await getAllData<PriceRow>('prices', 'card_code'));
+	return cachedTable('prices', TABLE_TTL, () => getAllData<PriceRow>('prices', 'card_code'), pricesByCardCode);
 }
 
 /** Japanese cards carry cardmarket pricing too, in their own table. */
 export async function getJapanesePrices(): Promise<Record<string, PriceData>> {
-	return pricesByCardCode(await getAllData<PriceRow>('jp_prices', 'card_code'));
+	return cachedTable('jp_prices', TABLE_TTL, () => getAllData<PriceRow>('jp_prices', 'card_code'), pricesByCardCode);
 }
 
 function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
@@ -281,18 +293,15 @@ function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
 }
 
 export async function getSets(): Promise<Set[]> {
-	const data = await getAllData<SetRow>('sets', 'set_id', '*', { column: 'name', ascending: true });
-	return data.map(toSet);
+	return cachedTable('sets', TABLE_TTL, () => getAllData<SetRow>('sets', 'set_id', '*', { column: 'name', ascending: true }), rows => rows.map(toSet));
 }
 
 export async function getJapaneseSets(): Promise<Set[]> {
-	const data = await getAllData<SetRow>('jp_sets', 'set_id', '*', { column: 'name', ascending: true });
-	return data.map(toSet);
+	return cachedTable('jp_sets', TABLE_TTL, () => getAllData<SetRow>('jp_sets', 'set_id', '*', { column: 'name', ascending: true }), rows => rows.map(toSet));
 }
 
 export async function getTypes(): Promise<string[]> {
-	const data = await getAllData<{ name: string }>('types', 'name', 'name', { column: 'name', ascending: true });
-	return data.map(type => type.name);
+	return cachedTable('types', STATIC_TTL, () => getAllData<{ name: string }>('types', 'name', 'name', { column: 'name', ascending: true }), rows => rows.map(type => type.name));
 }
 
 /** Returns `null` when no card carries this code: a collection row can outlive the card it points at. */
