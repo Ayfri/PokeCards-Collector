@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import { readJson, type ApiError } from '$helpers/http';
+	import { isStrongPassword, PASSWORD_CRITERIA, PASSWORD_REQUIREMENTS } from '$helpers/password';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 
@@ -19,12 +20,8 @@
 	let confirmPassword = $state('');
 	let loading = $state(false);
 	let errorMessage = $state('');
-	const passwordCriteria = $derived({
-		digit: /[0-9]/.test(password),
-		length: password.length >= 8,
-		special: /[^a-zA-Z0-9]/.test(password)
-	});
-	const passwordStrength = $derived(Object.values(passwordCriteria).filter(Boolean).length);
+	const passwordCriteria = $derived(PASSWORD_CRITERIA.map(criterion => criterion.test(password)));
+	const passwordStrength = $derived(passwordCriteria.filter(Boolean).length);
 	let showPassword = $state(false);
 	let showConfirmPassword = $state(false);
 
@@ -89,8 +86,8 @@
 				return;
 			}
 
-			if (password.length < 8 || !/[0-9]/.test(password) || !/[^a-zA-Z0-9]/.test(password)) {
-				errorMessage = 'Password must be at least 8 characters long and include at least one number and one special character';
+			if (!isStrongPassword(password)) {
+				errorMessage = PASSWORD_REQUIREMENTS;
 				return;
 			}
 			
@@ -269,9 +266,9 @@
 			</div>
 		</div>
 		<ul class="mt-1 text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
-			<li class={passwordCriteria.length ? 'text-green-600 dark:text-green-400' : ''}>• At least 8 characters</li>
-			<li class={passwordCriteria.digit ? 'text-green-600 dark:text-green-400' : ''}>• At least one number</li>
-			<li class={passwordCriteria.special ? 'text-green-600 dark:text-green-400' : ''}>• At least one special character</li>
+			{#each PASSWORD_CRITERIA as criterion, index (criterion.id)}
+				<li class={passwordCriteria[index] ? 'text-green-600 dark:text-green-400' : ''}>• {criterion.label}</li>
+			{/each}
 		</ul>
 	</div>
 	
