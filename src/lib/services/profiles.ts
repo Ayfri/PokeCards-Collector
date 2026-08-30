@@ -32,22 +32,6 @@ export async function getProfileByUsername(username: string, client: SupabaseCli
 	}
 }
 
-export async function updateProfile(username: string, profileData: Partial<UserProfile>, client: SupabaseClient = getSupabaseBrowserClient()) {
-	try {
-		const { data, error } = await client
-			.from('profiles')
-			.update(profileData)
-			.eq('username', username)
-			.select()
-			.single();
-
-		return { data, error };
-	} catch (error) {
-		console.error('Error updating profile:', error);
-		return { data: null, error };
-	}
-}
-
 export async function toggleProfileVisibility(username: string, isPublic: boolean, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		const { data, error } = await client
