@@ -63,9 +63,8 @@
 		resetPasswordMessage = '';
 		resetPasswordError = '';
 
-		const {error} = await supabase.auth.resetPasswordForEmail(user.email, {
-			redirectTo: `${window.location.origin}/reset-password`
-		});
+		/** No `redirectTo`: the Recovery email template points at `{{ .SiteURL }}/auth/confirm`, which is not gated on the redirect allow list. */
+		const {error} = await supabase.auth.resetPasswordForEmail(user.email);
 
 		resetPasswordLoading = false;
 		if (error) {

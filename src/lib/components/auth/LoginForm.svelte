@@ -6,7 +6,6 @@
 	import { readJson, type ApiError } from '$helpers/http';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
-    import { BASE_URL } from '~/constants';
 
 	interface Props {
 		onSuccess?: (() => void) | undefined;
@@ -95,9 +94,8 @@
 		}
 		resetLoading = true;
 		try {
-			const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-				redirectTo: `${BASE_URL}/reset-password`,
-			});
+			/** No `redirectTo`: the Recovery email template points at `{{ .SiteURL }}/auth/confirm`, which is not gated on the redirect allow list. */
+			const { error } = await supabase.auth.resetPasswordForEmail(resetEmail);
 			if (error) {
 				resetMessage = error.message || 'Failed to send reset email.';
 			} else {
