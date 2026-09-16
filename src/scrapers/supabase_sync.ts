@@ -54,12 +54,29 @@ export interface SyncCardsResult {
 	sets: number;
 }
 
+/** `tcgdex_id` -> stored `card_code` for the given sets, one query per set to stay under Supabase's 1000-row select cap. */
+async function storedCardCodes(supabase: SupabaseClient, table: string, setIds: readonly string[]): Promise<Map<string, string>> {
+	const codes = new Map<string, string>();
+	await Promise.all(setIds.map(async setId => {
+		const {data, error} = await supabase.from(table).select('card_code,tcgdex_id').eq('set_id', setId);
+		if (error) throw new Error(`Error reading ${table} codes of ${setId}: ${error.message}`);
+		for (const row of data) if (row.tcgdex_id) codes.set(row.tcgdex_id, row.card_code);
+	}));
+	return codes;
+}
+
 /**
  * Fetches every card of the given sets and upserts cards then prices, in that order:
  * the price table carries a foreign key on `card_code`.
+ * A card already stored keeps its `card_code`: TCGdex filling in a missing dex id changes the natural code,
+ * which would break `cards_tcgdex_id_key` and strand the collection rows pointing at the old one.
  */
 export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClient, lang: Language, setIds: readonly string[]): Promise<SyncCardsResult> {
-	const details = await mapAll(setIds, id => client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(id)}`));
+	const tables = TABLES[lang];
+	const [details, stored] = await Promise.all([
+		mapAll(setIds, id => client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(id)}`)),
+		storedCardCodes(supabase, tables.cards, setIds),
+	]);
 	const ids = details.flatMap(set => set?.cards?.map(card => card.id) ?? []);
 	const fetched = await mapAll(ids, id => client.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`));
 
@@ -67,13 +84,13 @@ export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClien
 	const prices: Record<string, unknown>[] = [];
 	for (const card of fetched) {
 		if (!card) continue;
-		const mapped = mapCard(lang, card);
+		const natural = mapCard(lang, card);
+		const mapped = {...natural, cardCode: stored.get(card.id) ?? natural.cardCode};
 		cards.push(cardRow(mapped));
 		const price = mapPrice(card.pricing);
 		if (price) prices.push(priceRow(mapped.cardCode, price));
 	}
 
-	const tables = TABLES[lang];
 	await upsertRows(supabase, tables.cards, deduplicate(cards, 'card_code'), 'card_code');
 	await upsertRows(supabase, tables.prices, deduplicate(prices, 'card_code'), 'card_code');
 	return {cards: cards.length, prices: prices.length, sets: setIds.length};
