@@ -1,5 +1,5 @@
 import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
-import { getRarityLevel } from '$helpers/rarity';
+import { compareRarities, getRarityLevel } from '$helpers/rarity';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import { parseCardCode } from '$helpers/card-utils';
 import type { ActiveFilters } from '$stores/filters.svelte';
@@ -155,9 +155,9 @@ export function sortBySupertype(cards: FullCard[]): FullCard[] {
 	return [...cards].sort((a, b) => (SUPERTYPE_ORDER[a.supertype] || 99) - (SUPERTYPE_ORDER[b.supertype] || 99));
 }
 
-/** Distinct rarities of a card list. Reading them from Postgres meant a full scan of `cards` for ~30 values. */
+/** Distinct rarities of a card list, most common first. Reading them from Postgres meant a full scan of `cards` for ~30 values. */
 export function distinctRarities(cards: FullCard[]): string[] {
-	return [...new Set(cards.map(card => card.rarity).filter(Boolean))].sort();
+	return [...new Set(cards.map(card => card.rarity).filter(Boolean))].sort(compareRarities);
 }
 
 /** Distinct artists of a card list, sorted case-insensitively like the filter dropdown expects. */

@@ -154,7 +154,7 @@ export async function auditTcgdex(write = true) {
 	for (const lang of LANGS) for (const rarity of (await pool.json<string[]>(`/v2/${lang}/rarities`))!) rarities.add(rarity);
 	const {RARITY_MAPPING} = await import('$helpers/rarity');
 	const missing = [...rarities].filter(rarity => !(rarity.toLowerCase() in RARITY_MAPPING));
-	console.log(missing.length ? `rarities missing from RARITY_MAPPING: ${missing.join(', ')}` : 'rarities: RARITY_MAPPING covers every TCGdex value');
+	console.log(missing.length ? `rarities missing from RARITY_MAPPING: ${missing.join(', ')}` : 'rarities: every TCGdex value has a tier');
 
 	// Orphans are kept, never deleted: they render again the day TCGdex fills the set in.
 	const orphans = [...owned].filter(code => !resolvedCodes.has(code));
