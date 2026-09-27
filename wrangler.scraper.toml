@@ -1,4 +1,4 @@
-# Weekly TCGdex -> Supabase refresh, deployed apart from the site Worker:
+# Daily TCGdex -> Supabase refresh, deployed apart from the site Worker:
 #   bun run deploy:scraper
 #   bunx wrangler secret put SUPABASE_SECRET_KEY -c wrangler.scraper.toml
 #   bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
@@ -30,4 +30,4 @@ enabled = true
 name = "pokecards-scrape"
 binding = "SCRAPER"
 class_name = "ScrapeWorkflow"
-schedules = ["0 4 * * 1"] # Mondays, 04:00 UTC
+schedules = ["0 4 * * *"] # Every day, 04:00 UTC

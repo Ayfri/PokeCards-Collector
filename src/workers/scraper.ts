@@ -16,7 +16,7 @@ const LANGUAGES: readonly Language[] = ['en', 'ja'];
 const SETS_PER_STEP = 4;
 
 /**
- * Weekly TCGdex -> Supabase refresh. One step per set batch, so a failure retries that batch alone
+ * Daily TCGdex -> Supabase refresh. One step per set batch, so a failure retries that batch alone
  * instead of the whole catalogue. Unlike the CLI it never deletes rows: a half-finished pass would
  * otherwise drop cards the run had not reached yet.
  */

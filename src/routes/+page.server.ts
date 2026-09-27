@@ -76,7 +76,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 				},
 				{
 					question: 'Where do the Pokémon card prices come from?',
-					answer: 'Every price is the Cardmarket value in euros, pulled from TCGdex and refreshed weekly. Both the standard and the reverse-holo values are stored for each card.',
+					answer: 'Every price is the Cardmarket value in euros, pulled from TCGdex and refreshed daily. Both the standard and the reverse-holo values are stored for each card.',
 				},
 				{
 					question: 'Is PokéCards-Collector free?',

@@ -69,7 +69,7 @@ Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
   <tr>
     <td>🤖</td>
     <td><b>Data Pipeline</b></td>
-    <td>A scraper CLI for full refreshes, plus a Cloudflare Workflow that refreshes Supabase every Monday.</td>
+    <td>A scraper CLI for full refreshes, plus a Cloudflare Workflow that refreshes Supabase every day.</td>
   </tr>
 </table>
 
@@ -80,7 +80,7 @@ Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
 | Frontend | SvelteKit 2 + [Svelte 5 runes](https://svelte.dev/docs/svelte/what-are-runes), TypeScript, Tailwind CSS 4 (CSS-first, no config file), [Lucide icons](https://lucide.dev/) |
 | Data | Supabase Postgres with row level security, [TCGdex](https://tcgdex.dev/) for cards/prices/sets, [PokéAPI](https://pokeapi.co/) for Pokédex entries |
 | Hosting | Cloudflare Workers with static assets, via `@sveltejs/adapter-cloudflare` |
-| Jobs | A second Worker holding a Cloudflare Workflow, scheduled weekly |
+| Jobs | A second Worker holding a Cloudflare Workflow, scheduled daily |
 | Tooling | Bun (runtime, package manager and lockfile), Wrangler, Vite, `svelte-check` |
 
 ## 🚀 Getting Started
@@ -167,7 +167,7 @@ between `scrape` and the upload to check the output.
 <summary><b>Scheduled refresh</b></summary>
 
 `src/workers/scraper.ts` is a second Worker holding the `ScrapeWorkflow` Cloudflare Workflow. It fires every
-Monday at 04:00 UTC, one Workflow step per batch of 4 sets so a failing batch retries alone, and writes TCGdex
+day at 04:00 UTC, one Workflow step per batch of 4 sets so a failing batch retries alone, and writes TCGdex
 straight into Supabase with no staged JSON. It never deletes rows: a half-finished pass would drop the cards it
 had not reached yet.
 
@@ -200,7 +200,7 @@ Set `PUBLIC_NO_IMAGES=true` to render placeholders instead and develop without b
 | `bun run preview` | Preview the built output with Vite |
 | `bun run preview:worker` | Build, then serve the real Worker locally with `wrangler dev` |
 | `bun run deploy` | Build, then `wrangler deploy` (site Worker, `wrangler.toml`) |
-| `bun run deploy:scraper` | Deploy the weekly scraper Worker (`wrangler.scraper.toml`) |
+| `bun run deploy:scraper` | Deploy the daily scraper Worker (`wrangler.scraper.toml`) |
 | `bun run scrapers` | Scraper CLI - a command as argument, the interactive menu without |
 
 There is no test suite and no lint script. `svelte-check` is installed but not wired to a script; run it with
@@ -224,7 +224,7 @@ There is no test suite and no lint script. `svelte-check` is installed but not w
 │   │   └── supabase.ts      # Browser Supabase client
 │   ├── routes/              # Pages and API endpoints
 │   ├── scrapers/            # TCGdex + PokéAPI scrapers and the Supabase uploaders
-│   ├── workers/scraper.ts   # The weekly ScrapeWorkflow Worker
+│   ├── workers/scraper.ts   # The daily ScrapeWorkflow Worker
 │   ├── app.css              # Tailwind entry, holds the @theme block
 │   ├── hooks.server.ts      # Per-request Supabase client, user and profile on event.locals
 │   └── constants.ts
