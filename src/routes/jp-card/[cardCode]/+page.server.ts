@@ -3,24 +3,23 @@ import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { processCardImage } from '$helpers/card-images';
+import { cardPageCatalogue } from '$helpers/card-utils';
 import { breadcrumbs, cardPrice, cardSchema } from '$helpers/seo';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
-	const { sets, ...layoutData } = await parent();
-
 	// Japanese cards carry their own prices, only the English catalogue is read by `getCards` / `getPrices`.
-	const [allJpCards, prices] = await Promise.all([getJapaneseCards(), getJapanesePrices()]);
-	
-	// Find the specific card
+	// Started before `parent()` so the reads overlap the layout's auth and collection queries.
+	const catalogue = Promise.all([getJapaneseCards(), getJapanesePrices(), getPokemons()]);
+	const { sets } = await parent();
+	const [allJpCards, prices, pokemons] = await catalogue;
+
 	const card = allJpCards.find(c => c.cardCode === cardCode);
-	
+
 	if (!card) {
 		throw error(404, 'Card not found');
 	}
-	
-	// Get Pokémon data
-	const pokemons = await getPokemons();
+
 	const pokemon = pokemons.find(p => p.id === card.pokemonNumber);
 	
 	// Get all cards for this Pokémon (if it's a Pokémon card)
@@ -55,15 +54,12 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		type: 'Product' as const,
 	};
 	
+	// The layout already ships `sets`, and the page only reads the cards, Pokémon and prices around this one.
 	return {
-		...layoutData,
+		...cardPageCatalogue(card.pokemonNumber, pokemonCards.length ? pokemonCards : [card], allJpCards, pokemons, prices),
 		card,
 		pokemon,
-		allCards: allJpCards, // Pass the fetched Japanese cards
 		pokemonCards,
-		pokemons,
-		sets,    
-		prices,
 		...pageSeoData
 	};
 }; 

@@ -1,4 +1,4 @@
-import type { FullCard, PriceData } from '$lib/types';
+import type { FullCard, Pokemon, PriceData } from '$lib/types';
 
 /**
  * Utilities for card manipulation and identification
@@ -104,4 +104,36 @@ export function getRepresentativeCardForPokemon(pokemonId: number, allCards: Ful
 
 	// Sort by price (highest first) and return the first one
 	return [...filteredCards].sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
+}
+
+/**
+ * The slice of the catalogue a card page reads: the cards, Pokédex rows and prices of the card's Pokémon, its dex
+ * neighbours and two evolution stages either way, plus the page's sibling cards. Whole tables made it an 11.5 MB document.
+ */
+export function cardPageCatalogue(pokemonNumber: number | undefined, siblings: FullCard[], allCards: FullCard[], pokemons: Pokemon[], prices: Record<string, PriceData>) {
+	const ids = new Set<number>();
+	if (pokemonNumber) {
+		const byId = new Map(pokemons.map(pokemon => [pokemon.id, pokemon]));
+		const current = byId.get(pokemonNumber);
+		ids.add(pokemonNumber - 1).add(pokemonNumber).add(pokemonNumber + 1);
+
+		const pre = current?.evolves_from;
+		if (pre) ids.add(pre);
+		const prePre = pre ? byId.get(pre)?.evolves_from : undefined;
+		if (prePre) ids.add(prePre);
+
+		for (const evolution of current?.evolves_to ?? []) {
+			ids.add(evolution);
+			for (const further of byId.get(evolution)?.evolves_to ?? []) ids.add(further);
+		}
+	}
+
+	const siblingCodes = new Set(siblings.map(card => card.cardCode));
+	const cards = allCards.filter(card => siblingCodes.has(card.cardCode) || (card.pokemonNumber !== undefined && ids.has(card.pokemonNumber)));
+
+	return {
+		allCards: cards,
+		pokemons: pokemons.filter(pokemon => ids.has(pokemon.id)),
+		prices: Object.fromEntries(cards.flatMap(card => prices[card.cardCode] ? [[card.cardCode, prices[card.cardCode]]] : [])) as Record<string, PriceData>,
+	};
 }
