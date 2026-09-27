@@ -1,43 +1,24 @@
 import { getCards, getPrices } from '$helpers/supabase-data';
-import { findSetByCardCode } from '$helpers/set-utils';
+import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, setListSchema } from '$helpers/seo';
 import type { SetWithPrice } from '$lib/types';
 
 export const load: PageServerLoad = async ({ parent }) => {
-	const parentData = await parent();
+	const catalogue = Promise.all([getCards(), getPrices()]);
+	const { sets: setsFromParent = [] } = await parent();
+	const [cards, prices] = await catalogue;
 
-	const [cards, prices] = await Promise.all([getCards(), getPrices()]);
-	const setsFromParent = parentData.sets || [];
-
-	const layoutData = {
-		user: parentData.user,
-		profile: parentData.profile,
-		title: parentData.title,
-		description: parentData.description,
-		image: parentData.image,
-		wishlistItems: parentData.wishlistItems,
-		collectionItems: parentData.collectionItems
-	};
-
+	// One map lookup per card instead of a scan over every set, which normalized ~5M set ids a render.
+	const setLookup = buildSetLookupMap(setsFromParent);
 	const setPriceTotals = new Map<string, number>();
 
 	for (const card of cards) {
+		const foundSet = findSetInLookup(card.cardCode, setLookup);
+		if (!foundSet?.ptcgoCode) continue;
 
-		const foundSet = findSetByCardCode(card.cardCode, setsFromParent);
-
-		if (!foundSet || !foundSet.ptcgoCode) {
-			continue;
-		}
-
-		const setIdentifierForTotals = foundSet.ptcgoCode;
-
-		const priceData = prices[card.cardCode];
-		const currentPrice = priceData?.simple ?? 0;
-
-		if (currentPrice > 0) {
-			setPriceTotals.set(setIdentifierForTotals, (setPriceTotals.get(setIdentifierForTotals) || 0) + currentPrice);
-		}
+		const currentPrice = prices[card.cardCode]?.simple ?? 0;
+		if (currentPrice > 0) setPriceTotals.set(foundSet.ptcgoCode, (setPriceTotals.get(foundSet.ptcgoCode) || 0) + currentPrice);
 	}
 
 	const setsWithPrices = setsFromParent.map(set => {
@@ -60,7 +41,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// `cards` and `prices` stay on the server: the page renders `setsWithPrices` alone, and shipping the
 	// catalogue alongside it turned this route into a 24 MB document.
 	return {
-		...layoutData,
 		setsWithPrices,
 		...pageSeoData
 	};
