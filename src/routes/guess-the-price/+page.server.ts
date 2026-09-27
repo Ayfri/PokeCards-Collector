@@ -31,9 +31,9 @@ function gamePrice(price: PriceData | undefined): number | null {
 }
 
 export const load: PageServerLoad = async ({ parent }) => {
-	const parentData = await parent();
-	const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
-	const sets: Set[] = parentData.sets || [];
+	const catalogue = Promise.all([getCards(), getPrices()]);
+	const sets: Set[] = (await parent()).sets || [];
+	const [allCards, prices] = await catalogue;
 
 	// The whole game is guessing from the picture, so a card TCGdex has no art for is unplayable.
 	const playable: { card: Card; price: number }[] = [];

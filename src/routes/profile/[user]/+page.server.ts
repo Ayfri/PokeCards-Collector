@@ -7,12 +7,13 @@ import { breadcrumbs, profileSchema } from '$helpers/seo';
 import type { CollectionStats } from '$lib/types';
 
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
-	const { profile: loggedInUserProfile, sets } = await parent();
-
 	const requestedUsername = params.user;
+	// The profile lookup overlaps the layout load instead of queueing behind it.
+	const profilePromise = getProfileByUsername(requestedUsername, locals.supabase);
+	const { profile: loggedInUserProfile, sets } = await parent();
 	const isOwnProfile = loggedInUserProfile?.username === requestedUsername;
 
-	const { data: targetProfile, error: profileError } = await getProfileByUsername(requestedUsername, locals.supabase);
+	const { data: targetProfile, error: profileError } = await profilePromise;
 	if (profileError || !targetProfile) redirect(307, '/');
 
 	// Usernames resolve case-insensitively, so send both the browser and the crawler to the stored casing.

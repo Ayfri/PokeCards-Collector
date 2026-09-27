@@ -28,20 +28,9 @@ export interface ArtistWithCards {
 }
 
 export const load: PageServerLoad = async ({ parent }) => {
-	const parentData = await parent();
-
-	const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
-	const sets = parentData.sets || [];
-
-	const layoutData = {
-		user: parentData.user,
-		profile: parentData.profile,
-		title: parentData.title,
-		description: parentData.description,
-		image: parentData.image,
-		wishlistItems: parentData.wishlistItems,
-		collectionItems: parentData.collectionItems
-	};
+	const catalogue = Promise.all([getCards(), getPrices()]);
+	const { sets = [] } = await parent();
+	const [allCards, prices] = await catalogue;
 
 	const setLookup = buildSetLookupMap(sets);
 	const byArtist = new Map<string, FullCard[]>();
@@ -116,7 +105,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 	};
 
 	return {
-		...layoutData,
 		artists,
 		...pageSeoData
 	};
