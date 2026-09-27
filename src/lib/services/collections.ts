@@ -120,14 +120,14 @@ interface SetTotals {
 // Get collection stats (count by rarity, set, total value, etc. - BASED ON UNIQUE CARDS)
 export async function getCollectionStats(username: string, allCards: Card[], allSets: Set[], prices: Record<string, PriceData>, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		// Get user's collection
-		const { data: collectionRows, error } = await getUserCollection(username, client);
+		const [{ data: collectionRows, error }, { data: wishlistItems, error: wishlistError }] = await Promise.all([
+			getUserCollection(username, client),
+			getUserWishlist(username, client),
+		]);
 
 		if (error || !collectionRows) {
 			return { data: null, error };
 		}
-		
-		const { data: wishlistItems, error: wishlistError } = await getUserWishlist(username, client);
 		
 		// Default wishlist count to 0 if there's an error
 		const wishlistCount = wishlistError || !wishlistItems ? 0 : wishlistItems.length;

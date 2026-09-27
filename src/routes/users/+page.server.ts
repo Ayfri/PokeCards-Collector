@@ -1,8 +1,7 @@
-import { getCards, getPrices } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs } from '$helpers/seo';
 import { supabase } from '$lib/supabase';
-import { getCollectionStats } from '$lib/services/collections';
+import { getUserCollection } from '$lib/services/collections';
 import type { UserProfile } from '$lib/types';
 
 interface FeaturedUser extends UserProfile {
@@ -10,9 +9,7 @@ interface FeaturedUser extends UserProfile {
 	unique_card_count: number;
 }
 
-export const load: PageServerLoad = async ({ locals, parent }) => {
-	const { sets } = await parent();
-	const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
+export const load: PageServerLoad = async ({ locals }) => {
 	let featuredUsers: FeaturedUser[] = [];
 	let featuredUsersError: string | null = null;
 
@@ -29,34 +26,16 @@ export const load: PageServerLoad = async ({ locals, parent }) => {
 		}
 
 		if (publicProfiles) {
+			// The tiles print two counts, so each profile costs one collection read instead of the full stats pass over the catalogue.
 			const profilesWithStatsPromises = publicProfiles.map(async (profile) => {
-				const { data: stats, error: statsServiceError } = await getCollectionStats(
-					profile.username,
-					allCards,
-					sets,
-					prices,
-					locals.supabase
-				);
+				const { data: rows, error: collectionError } = await getUserCollection(profile.username, locals.supabase);
+				if (collectionError) console.warn(`Error fetching collection for ${profile.username}:`, collectionError);
 
-				let cardCount = 0;
-				let uniqueCardCount = 0;
-				if (statsServiceError) {
-					let errorMessage = 'Unknown error fetching stats';
-					if (typeof statsServiceError === 'string') {
-						errorMessage = statsServiceError;
-					} else if (statsServiceError && typeof statsServiceError === 'object' && 'message' in statsServiceError) {
-						errorMessage = (statsServiceError as { message: string }).message;
-					}
-					console.warn(`Error fetching stats for ${profile.username}:`, errorMessage);
-				} else if (stats) {
-					cardCount = stats.total_instances || 0;
-					uniqueCardCount = stats.unique_cards || 0;
-				}
 				return {
 					...profile,
 					profile_color: profile.profile_color ?? null,
-					card_count: cardCount,
-					unique_card_count: uniqueCardCount
+					card_count: rows?.length ?? 0,
+					unique_card_count: new Set(rows?.map(row => row.card_code)).size
 				} as FeaturedUser;
 			});
 
