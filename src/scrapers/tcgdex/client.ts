@@ -1,4 +1,18 @@
+import type {TcgdexSet} from './types';
+
 export const TCGDEX_ORIGIN = 'https://api.tcgdex.net';
+const TCGDEX_ASSETS = 'https://assets.tcgdex.net';
+
+/** TCGdex uploads some set logos and symbols to its CDN before its API links them, so a missing one is probed at the path the API would give. */
+export async function withProbedAssets(set: TcgdexSet, lang: string): Promise<TcgdexSet> {
+	if ((set.logo && set.symbol) || !set.serie) return set;
+	const probe = async (url: string) => (await fetch(`${url}.png`, {method: 'HEAD'}).catch(() => null))?.ok ? url : undefined;
+	const [logo, symbol] = await Promise.all([
+		set.logo ?? probe(`${TCGDEX_ASSETS}/${lang}/${set.serie.id}/${set.id}/logo`),
+		set.symbol ?? probe(`${TCGDEX_ASSETS}/univ/${set.serie.id}/${set.id}/symbol`),
+	]);
+	return {...set, logo, symbol};
+}
 
 /** Anything the scraper can pull TCGdex JSON through. `null` means the entity does not exist (404). */
 export interface TcgdexClient {
