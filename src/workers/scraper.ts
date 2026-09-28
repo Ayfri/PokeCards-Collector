@@ -1,5 +1,5 @@
 import {WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep} from 'cloudflare:workers';
-import {createSyncClient, syncSetCards, syncSets} from '$scrapers/supabase_sync';
+import {createSyncClient, dropSharedProducts, syncSetCards, syncSets} from '$scrapers/supabase_sync';
 import {FetchClient} from '$scrapers/tcgdex/client';
 import type {Language} from '$scrapers/tcgdex/mappers';
 
@@ -17,8 +17,8 @@ const SETS_PER_STEP = 4;
 
 /**
  * Daily TCGdex -> Supabase refresh. One step per set batch, so a failure retries that batch alone
- * instead of the whole catalogue. Unlike the CLI it never deletes rows: a half-finished pass would
- * otherwise drop cards the run had not reached yet.
+ * instead of the whole catalogue. Every delete is scoped to a set TCGdex just answered for (a card it dropped, a price
+ * it lost, a set it holds no card for), so a half-finished pass never removes rows it has not reached yet.
  */
 export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 	async run(_event: WorkflowEvent<unknown>, step: WorkflowStep): Promise<void> {
@@ -36,6 +36,8 @@ export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 					() => syncSetCards(supabase, client, lang, batch),
 				);
 			}
+
+			await step.do(`${lang}: shared products`, () => dropSharedProducts(supabase, lang));
 		}
 	}
 }

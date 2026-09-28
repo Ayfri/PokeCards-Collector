@@ -55,24 +55,14 @@ export interface MappedPrice {
 	reverseAvg30?: number;
 }
 
-/** Pokemon cards whose species TCGdex does not know keep the legacy 99999 sentinel; non-Pokemon cards use 0. The `pokemons` table has no such row, so the column stores null. */
+/** Pokémon cards whose species is unknown carry 99999 in their code; the `pokemons` table has no such row, so `pokemon_id` stores null. */
 export const UNKNOWN_POKEMON = 99999;
 
-const reverseAliases: Record<Language, Map<string, string>> = {
-	en: buildReverse('en'),
-	ja: buildReverse('ja'),
+/** `set-aliases.json` maps a card code's set part to the TCGdex set id when the two differ (`sv3` for `sv03`). */
+const codeSetOf: Record<Language, Map<string, string>> = {
+	en: new Map(Object.entries(setAliases.en).map(([code, setId]) => [setId, code])),
+	ja: new Map(Object.entries(setAliases.ja).map(([code, setId]) => [setId, code])),
 };
-
-function buildReverse(lang: Language): Map<string, string> {
-	const map = new Map<string, string>();
-	for (const [legacy, tcgdexId] of Object.entries(setAliases[lang])) map.set(tcgdexId, legacy);
-	return map;
-}
-
-/** The set code baked into `card_code`: the legacy pokemontcg.io / tcgcollector code when the set existed before, else the TCGdex id. */
-export function legacySetCode(lang: Language, tcgdexSetId: string): string {
-	return reverseAliases[lang].get(tcgdexSetId) ?? tcgdexSetId;
-}
 
 /** TCGdex numbers a few delta species with a fractional dex id (Rayquaza delta is `384.1`), which is still that species. */
 function dexId(card: TcgdexCard): number | undefined {
@@ -80,7 +70,6 @@ function dexId(card: TcgdexCard): number | undefined {
 	return dex === undefined ? undefined : Math.trunc(dex);
 }
 
-/** Pokédex species keyed by their PokéAPI name as words ("mr mime", "nidoran f", "iron valiant"). */
 const SPECIES = new Map(pokedex.map(pokemon => [pokemon.name.replaceAll('-', ' '), pokemon.id]));
 
 /** Species an English card name spells out, in reading order: "Cynthia's Garchomp ex" gives [445], "Greninja & Zoroark GX" [658, 571]. */
@@ -100,12 +89,14 @@ export function speciesInName(name: string): number[] {
 	return found;
 }
 
-const overrideCode = (lang: Language, card: TcgdexCard): string | undefined => (cardCodeOverrides[lang] as Record<string, string>)[card.id];
+const overrideCode = (lang: Language, tcgdexId: string): string | undefined => (cardCodeOverrides[lang] as Record<string, string>)[tcgdexId];
+
+/** A card's code never changes on its own: TCGdex filling in a dex id would change the built one, so a stored code wins over it, and only an override moves a card. */
+export const resolveCardCode = (lang: Language, tcgdexId: string, stored: string | undefined, built: string): string => overrideCode(lang, tcgdexId) ?? stored ?? built;
 
 /**
- * The species a Pokémon card shows. TCGdex's dex id is trusted unless the English name spells out other species
- * (it files the Tapu promos one species off and swsh8-1 Caterpie as Celebi), and when it has none, the dex id
- * the preserved legacy code carries fills in: 399 Japanese cards have one there and none upstream.
+ * TCGdex's dex id is trusted unless the English name spells out other species (it files the Tapu promos one species
+ * off and swsh8-1 Caterpie as Celebi). With no dex id, the one in the card's override code fills in.
  */
 function pokemonNumber(lang: Language, card: TcgdexCard): number | undefined {
 	if (card.category !== 'Pokemon') return undefined;
@@ -113,17 +104,17 @@ function pokemonNumber(lang: Language, card: TcgdexCard): number | undefined {
 	const named = lang === 'en' ? speciesInName(card.name) : [];
 	if (named.length && !named.some(id => dex.includes(id))) return named[0];
 	if (dex.length) return dex[0];
-	const legacy = Number(overrideCode(lang, card)?.split('_')[1]);
-	return legacy > 0 && legacy !== UNKNOWN_POKEMON ? legacy : UNKNOWN_POKEMON;
+	const fromCode = Number(overrideCode(lang, card.id)?.split('_')[1]);
+	return fromCode > 0 ? fromCode : UNKNOWN_POKEMON;
 }
 
 export function buildCardCode(lang: Language, card: TcgdexCard): string {
-	const override = overrideCode(lang, card);
+	const override = overrideCode(lang, card.id);
 	if (override) return override;
 
-	const isPokemon = card.category === 'Pokemon';
-	const pokemonNumber = dexId(card) ?? (isPokemon ? UNKNOWN_POKEMON : 0);
-	return generateUniqueCardCode(pokemonNumber, legacySetCode(lang, card.set?.id ?? ''), card.localId, card.category ?? 'Pokemon');
+	const setId = card.set?.id ?? '';
+	const pokemonNumber = dexId(card) ?? (card.category === 'Pokemon' ? UNKNOWN_POKEMON : 0);
+	return generateUniqueCardCode(pokemonNumber, codeSetOf[lang].get(setId) ?? setId, card.localId, card.category ?? 'Pokemon');
 }
 
 /** The DB and the filter UI expect the accented `Pokémon`, TCGdex says `Pokemon`. */
@@ -179,7 +170,7 @@ export function mapSet(set: TcgdexSet): MappedSet {
 export function mapPrice(pricing: TcgdexPricing | null | undefined): MappedPrice | null {
 	const cardmarket = pricing?.cardmarket;
 	if (!cardmarket) return null;
-	return {
+	const price: MappedPrice = {
 		simple: cardmarket.avg,
 		low: cardmarket.low,
 		trend: cardmarket.trend,
@@ -193,4 +184,25 @@ export function mapPrice(pricing: TcgdexPricing | null | undefined): MappedPrice
 		reverseAvg7: cardmarket['avg7-holo'],
 		reverseAvg30: cardmarket['avg30-holo'],
 	};
+	/** A Cardmarket block with no figure at all (37 of them) would be stored as a row of nulls. */
+	return Object.values(price).some(value => value !== undefined) ? price : null;
+}
+
+interface ProductCard {
+	cardCode: string;
+	cardMarketUrl: string;
+	name: string;
+}
+
+/**
+ * Card codes whose Cardmarket product TCGdex also gives a differently named card: ex2-94 Aerodactyl ex and ex4-94
+ * Suicune ex share one, so one of them shows the other's price and neither can be trusted. Same-name groups are
+ * kept, they are prints of one card that Cardmarket may well sell as a single product.
+ */
+export function sharedProductCodes(cards: Iterable<ProductCard>): Set<string> {
+	const byProduct = new Map<string, ProductCard[]>();
+	for (const card of cards) if (card.cardMarketUrl) (byProduct.get(card.cardMarketUrl) ?? byProduct.set(card.cardMarketUrl, []).get(card.cardMarketUrl)!).push(card);
+	const codes = new Set<string>();
+	for (const group of byProduct.values()) if (new Set(group.map(card => card.name)).size > 1) for (const card of group) codes.add(card.cardCode);
+	return codes;
 }

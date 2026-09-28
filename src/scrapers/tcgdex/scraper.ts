@@ -1,6 +1,6 @@
 import {mapAll, withProbedAssets, type TcgdexClient} from './client';
 import {excludedSetIds, withoutExcluded} from './excluded';
-import {mapCard, mapPrice, mapSet, type Language, type MappedCard, type MappedPrice, type MappedSet} from './mappers';
+import {mapCard, mapPrice, mapSet, sharedProductCodes, type Language, type MappedCard, type MappedPrice, type MappedSet} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
 
 export interface ScrapeResult {
@@ -24,7 +24,8 @@ export async function scrapeLanguage(client: TcgdexClient, lang: Language): Prom
 		const detail = await client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`);
 		return detail && withProbedAssets(detail, lang);
 	});
-	const sets = details.filter((set): set is TcgdexSet => set !== null).map(mapSet).sort((a, b) => a.name.localeCompare(b.name));
+	// TCGdex lists sets it holds no card for yet (the 15 Japanese CS sets, all named トリプレットビート), which would show as empty pages.
+	const sets = details.filter((set): set is TcgdexSet => !!set?.cards?.length).map(mapSet).sort((a, b) => a.name.localeCompare(b.name));
 
 	const ids = details.flatMap(set => set?.cards?.map(card => card.id) ?? []);
 	console.log(`[${lang}] ${ids.length} cards to fetch`);
@@ -38,6 +39,12 @@ export async function scrapeLanguage(client: TcgdexClient, lang: Language): Prom
 		cards.push(mapped);
 		const price = mapPrice(card.pricing);
 		if (price) prices[mapped.cardCode] = price;
+	}
+	const sharedProducts = sharedProductCodes(cards);
+	for (const card of cards) {
+		if (!sharedProducts.has(card.cardCode)) continue;
+		card.cardMarketUrl = '';
+		delete prices[card.cardCode];
 	}
 	cards.sort((a, b) => a.name.localeCompare(b.name));
 

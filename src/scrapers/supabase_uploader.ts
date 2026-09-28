@@ -1,17 +1,10 @@
 import * as fs from 'node:fs';
-import { createClient } from '@supabase/supabase-js';
 import { CARDS, JP_CARDS, JP_PRICES, JP_SETS, POKEMONS, PRICES, SETS, TYPES } from './files';
 import { cardRow, priceRow, setRow } from './rows';
-import { type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
+import { deduplicate, deleteIn, envClient, readAll, upsertRows } from './supabase_sync';
+import { resolveCardCode, type Language, type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
 
-const supabaseUrl = process.env.PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SECRET_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-
-if (!supabaseUrl || !supabaseKey) {
-	throw new Error('Supabase URL or key is missing. Check your environment variables.');
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = envClient();
 
 interface PokemonData {
 	id: number;
@@ -26,22 +19,14 @@ const read = <T>(path: string): T => {
 	return JSON.parse(fs.readFileSync(path, 'utf-8')) as T;
 };
 
-/** Upserts in batches; Supabase rejects a single statement carrying tens of thousands of rows. */
-async function upsertAll(table: string, rows: Record<string, unknown>[], onConflict: string, batchSize = 500): Promise<void> {
-	for (let index = 0; index < rows.length; index += batchSize) {
-		const { error } = await supabase.from(table).upsert(rows.slice(index, index + batchSize), { onConflict });
-		if (error) throw new Error(`Error upserting ${table} at ${index}: ${error.message}`);
-		if (index % (batchSize * 10) === 0 && index > 0) console.log(`  ${table}: ${index}/${rows.length}`);
-	}
-	console.log(`✅ Upserted ${rows.length} rows into ${table}`);
+async function upsertAll(table: string, rows: Record<string, unknown>[], onConflict: string, batchSize?: number): Promise<void> {
+	const unique = deduplicate(rows, onConflict);
+	if (unique.length !== rows.length) console.log(`  ${table}: ${rows.length - unique.length} duplicate ${onConflict} dropped`);
+	console.log(`✅ Upserted ${await upsertRows(supabase, table, unique, onConflict, batchSize)} rows into ${table}`);
 }
 
-/** Deduplicates on the primary key, keeping the last occurrence, and reports what it dropped. */
-function deduplicate(rows: Record<string, unknown>[], key: string, label: string): Record<string, unknown>[] {
-	const byKey = new Map<unknown, Record<string, unknown>>();
-	for (const row of rows) byKey.set(row[key], row);
-	if (byKey.size !== rows.length) console.log(`  ${label}: ${rows.length} → ${byKey.size} (${rows.length - byKey.size} duplicates)`);
-	return [...byKey.values()];
+async function deleteAll(table: string, column: string, values: readonly string[], label: string): Promise<void> {
+	console.log(`🧹 Dropped ${await deleteIn(supabase, table, column, values)} ${table} ${label}`);
 }
 
 export async function uploadTypes(): Promise<void> {
@@ -69,48 +54,77 @@ export async function uploadPokemons(): Promise<void> {
 	})), 'id');
 }
 
+interface StoredRow {
+	card_code: string;
+	set_id: string | null;
+	tcgdex_id: string | null;
+}
+
+const storedRows = (table: string) => readAll<StoredRow>(supabase, table, 'card_code,set_id,tcgdex_id', 'card_code');
+
+/** Scraped `card_code` -> the code the card is stored under, resolved like the Worker sync does. */
+function storedCodes(lang: Language, cards: readonly MappedCard[], rows: readonly StoredRow[]): Map<string, string> {
+	const byTcgdexId = new Map(rows.flatMap(row => row.tcgdex_id ? [[row.tcgdex_id, row.card_code] as const] : []));
+	return new Map(cards.map(card => [card.cardCode, resolveCardCode(lang, card.tcgdexId, byTcgdexId.get(card.tcgdexId), card.cardCode)]));
+}
+
+/** The scrape only keeps sets holding a card, so a stored set it no longer has is an emptied or dropped one. */
 async function uploadSetsTo(table: string, path: string): Promise<void> {
 	console.log(`📤 Uploading ${table}...`);
 	const sets = read<MappedSet[]>(path);
 
 	await upsertAll(table, sets.map(setRow), 'set_id', 100);
+
+	const scraped = new Set(sets.map(set => set.setId));
+	const stored = await readAll<{set_id: string}>(supabase, table, 'set_id', 'set_id');
+	await deleteAll(table, 'set_id', stored.map(row => row.set_id).filter(setId => !scraped.has(setId)), 'sets the scrape no longer has');
 }
 
 export const uploadSets = () => uploadSetsTo('sets', SETS);
 export const uploadJapaneseSets = () => uploadSetsTo('jp_sets', JP_SETS);
 
 /**
- * Replaces a card table wholesale with the TCGdex content: everything is upserted, then the rows no
- * TCGdex card claimed are deleted. `collections` and `wishlists` are never touched - a row pointing at a
- * card TCGdex does not have yet is kept and renders again once the upstream database fills the set in.
+ * Replaces a card table with the TCGdex content, deleting first the rows of a scraped set TCGdex no longer lists and
+ * the old row of every card changing code (their prices go with them), then upserting. `collections` and `wishlists`
+ * are never touched: a code no card holds renders again once TCGdex fills the set in.
  */
-async function uploadCardsTo(table: string, path: string): Promise<void> {
+async function uploadCardsTo(lang: Language, table: string, path: string): Promise<void> {
 	console.log(`📤 Uploading ${table}...`);
 	const cards = read<MappedCard[]>(path);
+	const stored = await storedRows(table);
+	const codes = storedCodes(lang, cards, stored);
 
-	const rows = cards.map(cardRow);
+	const scrapedSets = new Set(cards.map(card => card.setId));
+	const target = new Map(cards.map(card => [card.tcgdexId, codes.get(card.cardCode)!]));
+	const stale = stored.filter(row => {
+		if (!row.tcgdex_id) return true;
+		const code = target.get(row.tcgdex_id);
+		return code ? code !== row.card_code : scrapedSets.has(row.set_id ?? '');
+	}).map(row => row.card_code);
+	await deleteAll(table, 'card_code', stale, 'rows TCGdex no longer has or that change code');
 
-	await upsertAll(table, deduplicate(rows, 'card_code', table), 'card_code');
-
-	const { error, count } = await supabase.from(table).delete({ count: 'exact' }).is('tcgdex_id', null);
-	if (error) throw new Error(`Error dropping legacy ${table} rows: ${error.message}`);
-	console.log(`🧹 Dropped ${count ?? 0} ${table} rows TCGdex no longer has`);
-}
-
-export const uploadCards = () => uploadCardsTo('cards', CARDS);
-export const uploadJapaneseCards = () => uploadCardsTo('jp_cards', JP_CARDS);
-
-async function uploadPricesTo(table: string, path: string): Promise<void> {
-	console.log(`📤 Uploading ${table}...`);
-	const prices = read<Record<string, MappedPrice>>(path);
-
-	const rows = Object.entries(prices).map(([cardCode, price]) => priceRow(cardCode, price));
-
+	const rows = cards.map(card => cardRow({ ...card, cardCode: codes.get(card.cardCode)! }));
 	await upsertAll(table, rows, 'card_code');
 }
 
-export const uploadPrices = () => uploadPricesTo('prices', PRICES);
-export const uploadJapanesePrices = () => uploadPricesTo('jp_prices', JP_PRICES);
+export const uploadCards = () => uploadCardsTo('en', 'cards', CARDS);
+export const uploadJapaneseCards = () => uploadCardsTo('ja', 'jp_cards', JP_CARDS);
+
+/** Upserts the scraped prices under the stored card codes, and drops the price of a scraped card that has none anymore. */
+async function uploadPricesTo(lang: Language, table: string, cardsTable: string, path: string, cardsPath: string): Promise<void> {
+	console.log(`📤 Uploading ${table}...`);
+	const prices = read<Record<string, MappedPrice>>(path);
+	const cards = read<MappedCard[]>(cardsPath);
+	const codes = storedCodes(lang, cards, await storedRows(cardsTable));
+
+	const rows = Object.entries(prices).map(([cardCode, price]) => priceRow(codes.get(cardCode) ?? cardCode, price));
+	await upsertAll(table, rows, 'card_code');
+
+	await deleteAll(table, 'card_code', cards.filter(card => !prices[card.cardCode]).map(card => codes.get(card.cardCode)!), 'prices a card lost');
+}
+
+export const uploadPrices = () => uploadPricesTo('en', 'prices', 'cards', PRICES, CARDS);
+export const uploadJapanesePrices = () => uploadPricesTo('ja', 'jp_prices', 'jp_cards', JP_PRICES, JP_CARDS);
 
 /** Dependency order: cards before prices, which carry a foreign key on `card_code`. */
 export async function uploadAllData(): Promise<void> {
