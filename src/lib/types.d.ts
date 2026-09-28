@@ -97,7 +97,6 @@ export interface UserCollection {
 	username: string;
 	card_code: string;
 	created_at: string;
-	updated_at: string;
 }
 
 export interface UserWishlist {
@@ -105,7 +104,6 @@ export interface UserWishlist {
 	username: string;
 	card_code: string;
 	created_at: string;
-	updated_at: string;
 }
 
 export interface CollectionStats {
