@@ -118,6 +118,8 @@ export interface CollectionStats {
 			totalValue: number;
 		}
 	>;
+	/** The most valuable owned cards, priced ones only. */
+	top_cards: { card: Card; copies: number; price: number }[];
 	total_instances: number;
 	total_value: number;
 	unique_cards: number;
