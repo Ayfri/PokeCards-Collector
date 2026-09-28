@@ -1,6 +1,5 @@
 import { redirect } from '@sveltejs/kit';
 import { distinctArtists, distinctRarities } from '$helpers/card-grid';
-import { parseCardCode } from '$helpers/card-utils';
 import { breadcrumbs, profileSchema } from '$helpers/seo';
 import { getCards, getPokemons, getPrices, getTypes } from '$helpers/supabase-data';
 import { getProfileByUsername } from '$lib/services/profiles';
@@ -75,8 +74,7 @@ async function buildPayload(itemCodes: string[]): Promise<UserCardsPayload> {
 
 	const wanted = new Set(itemCodes);
 	const userCards = cards.filter(card => wanted.has(card.cardCode));
-	// The grid reads the dex number back out of the card code, so the map is keyed on the same value the tile looks up.
-	const dexIds = new Set(userCards.map(card => parseCardCode(card.cardCode).pokemonNumber ?? card.pokemonNumber));
+	const dexIds = new Set(userCards.map(card => card.pokemonNumber));
 
 	return {
 		// The filter lists describe these cards rather than the whole catalogue: a 200-card collection got 1700 artists to pick from.

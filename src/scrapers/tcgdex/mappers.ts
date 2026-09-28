@@ -2,6 +2,7 @@ import {generateUniqueCardCode} from '$lib/helpers/card-utils';
 import type {TcgdexCard, TcgdexPricing, TcgdexSet} from './types';
 import setAliases from '$lib/data/set-aliases.json' with {type: 'json'};
 import cardCodeOverrides from './card-code-overrides.json' with {type: 'json'};
+import pokedex from '../../assets/pokemons-full.json' with {type: 'json'};
 
 export type Language = keyof typeof setAliases;
 
@@ -79,8 +80,45 @@ function dexId(card: TcgdexCard): number | undefined {
 	return dex === undefined ? undefined : Math.trunc(dex);
 }
 
+/** Pokédex species keyed by their PokéAPI name as words ("mr mime", "nidoran f", "iron valiant"). */
+const SPECIES = new Map(pokedex.map(pokemon => [pokemon.name.replaceAll('-', ' '), pokemon.id]));
+
+/** Species an English card name spells out, in reading order: "Cynthia's Garchomp ex" gives [445], "Greninja & Zoroark GX" [658, 571]. */
+export function speciesInName(name: string): number[] {
+	const words = name.toLowerCase().replaceAll('♀', ' f').replaceAll('♂', ' m').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/['’.:]/g, '').split(/[^a-z0-9]+/).filter(Boolean);
+	const found: number[] = [];
+	for (let index = 0; index < words.length; index++) {
+		const pair = SPECIES.get(`${words[index]} ${words[index + 1]}`);
+		if (pair) {
+			found.push(pair);
+			index++;
+			continue;
+		}
+		const single = SPECIES.get(words[index]);
+		if (single) found.push(single);
+	}
+	return found;
+}
+
+const overrideCode = (lang: Language, card: TcgdexCard): string | undefined => (cardCodeOverrides[lang] as Record<string, string>)[card.id];
+
+/**
+ * The species a Pokémon card shows. TCGdex's dex id is trusted unless the English name spells out other species
+ * (it files the Tapu promos one species off and swsh8-1 Caterpie as Celebi), and when it has none, the dex id
+ * the preserved legacy code carries fills in: 399 Japanese cards have one there and none upstream.
+ */
+function pokemonNumber(lang: Language, card: TcgdexCard): number | undefined {
+	if (card.category !== 'Pokemon') return undefined;
+	const dex = card.dexId?.map(Math.trunc) ?? [];
+	const named = lang === 'en' ? speciesInName(card.name) : [];
+	if (named.length && !named.some(id => dex.includes(id))) return named[0];
+	if (dex.length) return dex[0];
+	const legacy = Number(overrideCode(lang, card)?.split('_')[1]);
+	return legacy > 0 && legacy !== UNKNOWN_POKEMON ? legacy : UNKNOWN_POKEMON;
+}
+
 export function buildCardCode(lang: Language, card: TcgdexCard): string {
-	const override = (cardCodeOverrides[lang] as Record<string, string>)[card.id];
+	const override = overrideCode(lang, card);
 	if (override) return override;
 
 	const isPokemon = card.category === 'Pokemon';
@@ -94,7 +132,6 @@ export function toSupertype(category: string | undefined): string {
 }
 
 export function mapCard(lang: Language, card: TcgdexCard): MappedCard {
-	const isPokemon = card.category === 'Pokemon';
 	const cardmarket = card.pricing?.cardmarket;
 	return {
 		artist: card.illustrator ?? 'Unknown',
@@ -106,7 +143,7 @@ export function mapCard(lang: Language, card: TcgdexCard): MappedCard {
 		legalStandard: card.legal?.standard ?? false,
 		localId: card.localId,
 		name: card.name,
-		pokemonNumber: dexId(card) ?? (isPokemon ? UNKNOWN_POKEMON : undefined),
+		pokemonNumber: pokemonNumber(lang, card),
 		rarity: card.rarity ?? 'Common',
 		regulationMark: card.regulationMark ?? '',
 		setId: card.set?.id ?? '',
