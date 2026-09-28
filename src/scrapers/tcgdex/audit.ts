@@ -2,6 +2,7 @@ import * as fs from 'node:fs';
 import {createClient} from '@supabase/supabase-js';
 import {mapAll} from './client';
 import {excludedSetIds, withoutExcluded} from './excluded';
+import {speciesInName} from './mappers';
 import {Http2Pool} from './http2-pool';
 import type {TcgdexCard, TcgdexSet} from './types';
 
@@ -104,36 +105,56 @@ export async function auditTcgdex(write = true) {
 		const reverse = new Map<string, string>();
 		for (const [legacyCode, tcgdexId] of Object.entries(langAliases)) reverse.set(tcgdexId, legacyCode);
 
-		const byNumber = new Map<string, TcgdexCard>();
-		const byCardName = new Map<string, TcgdexCard[]>();
+		const bySet = new Map<string, TcgdexCard[]>();
 		for (const card of cards) {
 			const setCode = norm(reverse.get(card.set?.id ?? '') ?? card.set?.id ?? '');
-			const numberKey = `${setCode}|${numKey(card.localId)}`;
-			if (!byNumber.has(numberKey)) byNumber.set(numberKey, card);
-			const nameKey = `${setCode}|${norm(card.name)}`;
-			(byCardName.get(nameKey) ?? byCardName.set(nameKey, []).get(nameKey)!).push(card);
+			(bySet.get(setCode) ?? bySet.set(setCode, []).get(setCode)!).push(card);
 		}
 
-		// Pass 1 matches on the printed number, pass 2 on the card name for the reprints TCGdex numbers differently.
+		/** The legacy dex id is one of the card's species, by TCGdex or by the species its English name spells out. */
+		const sameSpecies = (legacyDex: number, card: TcgdexCard) => card.dexId?.some(dex => Math.trunc(dex) === legacyDex) || (lang === 'en' && speciesInName(card.name).includes(legacyDex));
+		/** Nothing rules the pairing out: same supertype, and the dex ids agree unless one side does not know it. */
+		const agrees = (parts: string[], card: TcgdexCard) => {
+			if (parts[0] !== supertypeOf(card)) return false;
+			const legacyDex = Number(parts[1]);
+			return legacyDex === 0 || legacyDex === 99999 || !card.dexId?.length || sameSpecies(legacyDex, card);
+		};
+		/** A number as printed, zero padding aside: "001" is "1", "H01" stays "h01". */
+		const exact = (value: string) => { const key = norm(value); return /^\d+$/.test(key) ? String(Number(key)) : key; };
+		/** Only the digits, so a legacy "1" also meets "H01". */
+		const digits = (value: string) => numKey(value.replace(/\D/g, ''));
+
+		/**
+		 * The legacy generator dropped uppercase letters, so "H1" and "1" both became "1": a number alone once handed
+		 * Skyridge's Alakazam H1 code to Aerodactyl 1 and chained the whole set one card off. Each pass is weaker than
+		 * the last, and every code gets its chance at a pass before any code moves to the next, so a strong match is
+		 * never taken by a weak one. The last pass keeps what the stored row already says, for the legacy dex slips (Klinklang saved as 599).
+		 */
+		const passes: ((parts: string[], card: TcgdexCard, name: string) => boolean)[] = [
+			(parts, card) => exact(card.localId) === exact(parts[3]) && agrees(parts, card),
+			(parts, card) => digits(card.localId) === numKey(parts[3]) && agrees(parts, card),
+			(parts, card, name) => norm(card.name) === norm(name) && agrees(parts, card),
+			(parts, card) => parts[0] === supertypeOf(card) && sameSpecies(Number(parts[1]), card),
+			(parts, card, name) => norm(card.name) === norm(name) && digits(card.localId) === numKey(parts[3]),
+		];
+
 		const langOverrides: Record<string, string> = {};
 		const claimed = new Set<string>();
-		const unresolved: string[] = [];
-		const pending: {code: string; setCode: string}[] = [];
-		for (const code of distinct) {
-			const parts = code.split('_');
-			const hit = byNumber.get(`${parts[2]}|${numKey(parts[3])}`);
-			// A legacy number could collapse two prints onto one key ("H11" and "11"), so never claim a card twice.
-			if (!hit || claimed.has(hit.id)) { pending.push({code, setCode: parts[2]}); continue; }
-			claimed.add(hit.id);
-			if (naturalCardCode(hit, parts[2]) !== code) langOverrides[hit.id] = code;
+		let pending = distinct;
+		for (const [index, pass] of passes.entries()) {
+			const next: string[] = [];
+			for (const code of pending) {
+				const parts = code.split('_');
+				const candidates = (bySet.get(parts[2]) ?? []).filter(card => !claimed.has(card.id) && pass(parts, card, legacyNames.get(code) ?? ''));
+				// The species pass only trusts a single candidate: two unclaimed prints of one species cannot be told apart.
+				const hit = index === 3 && candidates.length > 1 ? undefined : candidates[0];
+				if (!hit) { next.push(code); continue; }
+				claimed.add(hit.id);
+				if (naturalCardCode(hit, parts[2]) !== code) langOverrides[hit.id] = code;
+			}
+			pending = next;
 		}
-		for (const {code, setCode} of pending) {
-			const legacyName = legacyNames.get(code);
-			const candidate = legacyName && byCardName.get(`${setCode}|${norm(legacyName)}`)?.find(card => !claimed.has(card.id));
-			if (!candidate) { unresolved.push(code); continue; }
-			claimed.add(candidate.id);
-			if (naturalCardCode(candidate, setCode) !== code) langOverrides[candidate.id] = code;
-		}
+		const unresolved = pending;
 
 		const rate = ((distinct.length - unresolved.length) / distinct.length) * 100;
 		console.log(`${lang}: ${cards.length} TCGdex cards, ${sets.length} sets | legacy ${distinct.length} codes in ${legacySetNames.size} sets (${unmatchedSets.length} sets TCGdex has not), resolved ${rate.toFixed(2)}%, overrides ${Object.keys(langOverrides).length}, unresolved ${unresolved.length}`);
@@ -170,10 +191,12 @@ export async function auditTcgdex(write = true) {
 	pool.close();
 }
 
+function supertypeOf(card: TcgdexCard): string {
+	const supertype = norm(card.category ?? 'pokemon');
+	return supertype === 'pokmon' ? 'pokemon' : supertype;
+}
+
 function naturalCardCode(card: TcgdexCard, setCode: string): string {
-	const isPokemon = card.category === 'Pokemon';
-	const dex = card.dexId?.[0] ?? (isPokemon ? 99999 : 0);
-	let supertype = norm(card.category ?? 'pokemon');
-	if (supertype === 'pokmon') supertype = 'pokemon';
-	return `${supertype}_${dex}_${norm(setCode)}_${norm(card.localId)}`;
+	const dex = card.dexId?.[0] ?? (card.category === 'Pokemon' ? 99999 : 0);
+	return `${supertypeOf(card)}_${Math.trunc(dex)}_${norm(setCode)}_${norm(card.localId)}`;
 }
