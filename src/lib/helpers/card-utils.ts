@@ -39,56 +39,10 @@ export function generateUniqueCardCode(
 	return `${finalSupertype}_${pokemonId}_${normalizedUrlCode}_${normalizedCardNumber}`;
 }
 
-export function parseCardCode(cardCode: string): { supertype?: string, setCode?: string, pokemonNumber?: number, cardNumber?: string } {
-	if (!cardCode || typeof cardCode !== 'string') {
-		return {
-			cardNumber: undefined,
-			pokemonNumber: undefined,
-			setCode: undefined,
-			supertype: undefined,
-		};
-	}
-
-	try {
-		const parts = cardCode.split('_');
-		
-		// Handle case where we don't have enough parts
-		if (parts.length < 4) {
-			return {
-				cardNumber: parts[3] || undefined,
-				pokemonNumber: parts[1] ? parseInt(parts[1]) : undefined,
-				setCode: parts[2] || undefined,
-				supertype: parts[0] || undefined,
-			};
-		}
-		
-		// Normal case
-		return {
-			cardNumber: parts[3],
-			pokemonNumber: isNaN(parseInt(parts[1])) ? undefined : parseInt(parts[1]),
-			setCode: parts[2],
-			supertype: parts[0],
-		};
-	} catch (error) {
-		console.error('Error parsing card code:', error, cardCode);
-		return {
-			cardNumber: undefined,
-			pokemonNumber: undefined,
-			setCode: undefined,
-			supertype: undefined,
-		};
-	}
-}
-
 /** A card's price in EUR: the Cardmarket average, else its trend, 30-day average or lowest listing. `null` when none is above 0. */
 export function cardPrice(price: PriceData | undefined): number | null {
 	const value = price?.simple ?? price?.trend ?? price?.avg30 ?? price?.low ?? null;
 	return value && value > 0 ? value : null;
-}
-
-/** The printed number. Older `card_code`s carry a legacy number stripped of its letters ("TG01" became "01"), so the code is only the fallback. */
-export function cardNumberOf(card: { cardCode: string; localId?: string }): string {
-	return card.localId || parseCardCode(card.cardCode).cardNumber || '';
 }
 
 /**

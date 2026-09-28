@@ -1,6 +1,6 @@
 import {generateUniqueCardCode} from '$lib/helpers/card-utils';
 import type {TcgdexCard, TcgdexPricing, TcgdexSet} from './types';
-import setAliases from '$lib/data/set-aliases.json' with {type: 'json'};
+import setAliases from './set-aliases.json' with {type: 'json'};
 import cardCodeOverrides from './card-code-overrides.json' with {type: 'json'};
 import pokedex from '../../assets/pokemons-full.json' with {type: 'json'};
 

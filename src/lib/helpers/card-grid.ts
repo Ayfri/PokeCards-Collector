@@ -1,28 +1,19 @@
 import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
 import { compareRarities, getRarityLevel } from '$helpers/rarity';
-import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
-import { cardNumberOf, cardPrice } from '$helpers/card-utils';
+import { cardPrice } from '$helpers/card-utils';
 import type { ActiveFilters } from '$stores/filters.svelte';
 import { CARD_SIZES, DEFAULT_CARD_SIZE } from '$stores/grid.svelte';
 
-/** Set lookups are the hot path of the grid: a per-card `sets.find` rescans and renormalises all 218 sets. */
-const setLookupCache = new Map<string, Set | null>();
+/** Set lookups are the hot path of the grid, so the map is rebuilt only when the set list changes. */
 let cachedSets: Set[] | null = null;
-let setLookup = new Map<string, Set>();
+let setsById = new Map<string, Set>();
 
-export function getCardSet(cardCode: string, sets: Set[]): Set | null {
+export function getCardSet(card: Pick<FullCard, 'setId'>, sets: Set[]): Set | null {
 	if (cachedSets !== sets) {
-		setLookupCache.clear();
-		setLookup = buildSetLookupMap(sets);
+		setsById = new Map(sets.map(set => [set.setId, set]));
 		cachedSets = sets;
 	}
-
-	let cardSet = setLookupCache.get(cardCode);
-	if (cardSet === undefined) {
-		cardSet = findSetInLookup(cardCode, setLookup) ?? null;
-		setLookupCache.set(cardCode, cardSet);
-	}
-	return cardSet;
+	return setsById.get(card.setId) ?? null;
 }
 
 /** Groups Pokémon by dex number and other supertypes by name, keeping only the priciest card of each group. */
@@ -72,7 +63,7 @@ export function sortCards(
 
 	for (const card of cards) {
 		const pokemon = pokemonMap.get(card.pokemonNumber ?? 0);
-		const cardNumber = cardNumberOf(card);
+		const cardNumber = card.localId;
 		const cardNumberInt = parseInt(cardNumber);
 
 		sortValues.set(card.cardCode, {
@@ -84,7 +75,7 @@ export function sortCards(
 			pokemonNumber: card.pokemonNumber ?? 0,
 			price: cardPrice(prices[card.cardCode]) ?? 0,
 			rarityLevel: getRarityLevel(card.rarity),
-			releaseDate: getCardSet(card.cardCode, sets)?.releaseDate?.getTime() ?? 0,
+			releaseDate: getCardSet(card, sets)?.releaseDate?.getTime() ?? 0,
 			supertype: card.supertype,
 		});
 	}
@@ -121,33 +112,16 @@ export function sortCards(
 	});
 }
 
-/** Each test short-circuits on the inactive filter value, so an unused filter costs no string work per card. */
-function isVisible(card: FullCard, cardSet: Set, selectedSet: Set | null, filters: ActiveFilters): boolean {
-	if (filters.numero && !(card.pokemonNumber?.toString().includes(filters.numero) ?? true)) return false;
-	if (filters.name && !card.name.toLowerCase().includes(filters.name)) return false;
-	if (filters.type !== 'all' && !card.types.toLowerCase().includes(filters.type)) return false;
-	if (filters.rarity !== 'all' && card.rarity.toLowerCase() !== filters.rarity) return false;
-	if (filters.supertype !== 'all' && card.supertype.toLowerCase() !== filters.supertype) return false;
-	if (filters.artist !== 'all' && card.artist.toLowerCase() !== filters.artist) return false;
-
-	if (filters.set === 'all') return true;
-	if (selectedSet) {
-		return cardSet.name.toLowerCase() === selectedSet.name.toLowerCase() || (!!cardSet.setId && cardSet.setId === selectedSet.setId);
-	}
-	return cardSet.name.toLowerCase() === filters.set;
-}
-
-/** Keeps the cards `filters` lets through. Runs before the sort, so everything downstream works on the smaller list. */
-export function filterCards(cards: FullCard[], sets: Set[], selectedSet: Set | null, filters: ActiveFilters): FullCard[] {
-	return cards.filter(card => {
-		const cardSet = getCardSet(card.cardCode, sets) ?? {
-			logo: card.image?.replace(/\/[^\/]*$/, '/logo.png') ?? '',
-			name: card.setName,
-			printedTotal: 0,
-			releaseDate: new Date(),
-		};
-		return isVisible(card, cardSet, selectedSet, filters);
-	});
+/** Keeps the cards `filters` lets through, each test short-circuiting on an inactive filter. Runs before the sort, so everything downstream works on the smaller list. */
+export function filterCards(cards: FullCard[], filters: ActiveFilters): FullCard[] {
+	return cards.filter(card =>
+		(!filters.numero || (card.pokemonNumber?.toString().includes(filters.numero) ?? true))
+		&& (!filters.name || card.name.toLowerCase().includes(filters.name))
+		&& (filters.type === 'all' || card.types.toLowerCase().includes(filters.type))
+		&& (filters.rarity === 'all' || card.rarity.toLowerCase() === filters.rarity)
+		&& (filters.supertype === 'all' || card.supertype.toLowerCase() === filters.supertype)
+		&& (filters.artist === 'all' || card.artist.toLowerCase() === filters.artist)
+		&& (filters.set === 'all' || card.setName.toLowerCase() === filters.set));
 }
 
 /** Stable reorder: Pokémon, then Trainer, then Energy, keeping the incoming order within a supertype. */

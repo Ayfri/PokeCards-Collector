@@ -6,7 +6,7 @@
 	import {collection} from '$stores/collection.svelte';
 	import { page } from '$app/state';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
-	import { cardNumberOf, cardPrice, formatCardNumber } from '$lib/helpers/card-utils';
+	import { cardPrice, formatCardNumber } from '$lib/helpers/card-utils';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
@@ -53,10 +53,10 @@
 	/** Insets the overlay controls proportionally, so they do not sit in the very corner of a small card. */
 	const controlInset = $derived(Math.round(Math.max(10, width * 0.045)));
 
-	const cardNumber = $derived(cardNumberOf(card));
+	const cardNumber = $derived(card.localId);
 	const price = $derived(cardPrice(prices));
 	const pokemon = $derived(card.pokemonNumber ? pokemonMap.get(card.pokemonNumber) : null);
-	const set = $derived(getCardSet(cardCode, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null });
+	const set = $derived(getCardSet(card, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null });
 
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);

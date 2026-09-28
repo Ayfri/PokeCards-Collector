@@ -1,6 +1,5 @@
 import type { FullCard, PriceData, Set } from '$lib/types';
-import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
-import { cardNumberOf, cardPrice } from '$helpers/card-utils';
+import { cardPrice } from '$helpers/card-utils';
 
 /** One search hit, carrying everything the result row renders so the client needs neither the sets nor the prices. */
 export interface CardSearchResult {
@@ -23,10 +22,7 @@ interface SearchEntry {
 	setNameLower: string;
 }
 
-/**
- * Resolving the set and lowercasing the fields per keystroke cost ~1 s over the 23k cards, because
- * `findSetByCardCode` rescans every set. The index pays that once and each search is then a plain loop.
- */
+/** Resolving the set and lowercasing the fields once per catalogue, so each search is a plain loop over the index. */
 let searchIndex: SearchEntry[] = [];
 
 /** TCGdex zero-pads numbers ("043"), people type "43". */
@@ -36,10 +32,10 @@ let indexedCards: FullCard[] | null = null;
 function buildSearchIndex(cards: FullCard[], sets: Set[]): SearchEntry[] {
 	if (indexedCards === cards) return searchIndex;
 
-	const lookup = buildSetLookupMap(sets);
+	const setsById = new Map(sets.map(set => [set.setId, set]));
 	searchIndex = cards.map(card => {
-		const set = findSetInLookup(card.cardCode, lookup);
-		const cardNumber = cardNumberOf(card);
+		const set = setsById.get(card.setId);
+		const cardNumber = card.localId;
 		return {
 			card,
 			cardNumber,

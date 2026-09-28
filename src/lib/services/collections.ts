@@ -2,7 +2,6 @@ import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { collection } from '$stores/collection.svelte';
 import type { Card, PriceData, Set } from '../types';
-import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import { loading } from '$stores/loading.svelte';
 import { getUserWishlist } from './wishlists';
 import { cardPrice } from '$helpers/card-utils';
@@ -176,10 +175,10 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 		});
 		
 		// One pass over the cards instead of one filter per set: the catalogue is 23k cards for 218 sets.
-		const setLookup = buildSetLookupMap(allSets);
+		const setsById = new Map(allSets.map(set => [set.setId, set]));
 		const cardsBySet = new Map<string, SetTotals>();
 		for (const card of allCards) {
-			const set = findSetInLookup(card.cardCode, setLookup);
+			const set = setsById.get(card.setId);
 			if (!set || !setsWithCards.has(set.name)) continue;
 
 			const totals = cardsBySet.get(set.name) ?? { collected: 0, collectedValue: 0, total: 0, totalValue: 0 };

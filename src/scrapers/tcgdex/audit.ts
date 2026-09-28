@@ -142,7 +142,7 @@ export async function auditTcgdex(write = true) {
 	console.log(`collections + wishlists: ${owned.size} distinct card codes, ${orphans.length} point at no card${orphans.length ? `: ${orphans.join(', ')}` : ''}`);
 
 	if (write) {
-		fs.writeFileSync(`${HERE}../../lib/data/set-aliases.json`, `${JSON.stringify(aliases, null, '\t')}\n`);
+		fs.writeFileSync(`${HERE}set-aliases.json`, `${JSON.stringify(aliases, null, '\t')}\n`);
 		fs.writeFileSync(`${HERE}card-code-overrides.json`, `${JSON.stringify(overrides, null, '\t')}\n`);
 	}
 	pool.close();

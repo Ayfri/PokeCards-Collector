@@ -2,7 +2,6 @@
 	import ImageOff from '@lucide/svelte/icons/image-off';
 	import type {FullCard} from '$lib/types';
 	import {cardTypeTint} from '$helpers/card-images';
-	import {parseCardCode} from '$helpers/card-utils';
 	import {NO_IMAGES} from '$lib/images';
 	import {getPokemonImageSrc} from '$helpers/pokemon-utils';
 
@@ -15,7 +14,7 @@
 
 	const tintStyle = $derived(cardTypeTint(card.types));
 	const types = $derived((card.types ?? '').split(',').map(type => type.trim()).filter(Boolean));
-	const cardNumber = $derived(card.localId ?? parseCardCode(card.cardCode).cardNumber);
+	const cardNumber = $derived(card.localId);
 	/** PokéAPI ships an artwork for every species, so a Pokemon card with no scan still shows what it depicts. */
 	const artworkUrl = $derived(!NO_IMAGES && card.pokemonNumber
 		? getPokemonImageSrc(card.pokemonNumber)

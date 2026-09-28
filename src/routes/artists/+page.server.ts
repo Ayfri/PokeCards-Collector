@@ -2,7 +2,6 @@ import { getCards, getPrices } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 import type { FullCard } from '$lib/types';
 import { breadcrumbs } from '$helpers/seo';
-import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import { cardPrice } from '$helpers/card-utils';
 
 /** Cards drawn on the preview stack of an artist card. */
@@ -33,7 +32,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const { sets = [] } = await parent();
 	const [allCards, prices] = await catalogue;
 
-	const setLookup = buildSetLookupMap(sets);
+	const setsById = new Map(sets.map(set => [set.setId, set]));
 	const byArtist = new Map<string, FullCard[]>();
 
 	for (const card of allCards) {
@@ -57,7 +56,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 				const price = cardPrice(prices[card.cardCode]) ?? 0;
 				totalValue += price;
 
-				const year = findSetInLookup(card.cardCode, setLookup)?.releaseDate.getFullYear();
+				const year = setsById.get(card.setId)?.releaseDate.getFullYear();
 				if (year && !Number.isNaN(year)) {
 					if (year < firstReleaseYear) firstReleaseYear = year;
 					if (year > lastReleaseYear) lastReleaseYear = year;

@@ -14,13 +14,13 @@ export interface Card {
 	hp?: number;
 	image: string;
 	legalStandard?: boolean;
-	localId?: string;
+	localId: string;
 	name: string;
 	pokemonNumber?: number;
 	ptcgoCode?: string;
 	rarity: string;
 	regulationMark?: string;
-	setId?: string;
+	setId: string;
 	setName: string;
 	stage?: string;
 	supertype: string;
@@ -61,7 +61,7 @@ export interface Set {
 	ptcgoCode?: string;
 	releaseDate: Date;
 	series?: string;
-	setId?: string;
+	setId: string;
 	symbol?: string;
 	totalCards?: number;
 }

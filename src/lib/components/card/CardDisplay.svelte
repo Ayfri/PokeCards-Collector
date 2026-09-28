@@ -9,7 +9,6 @@
 	import InteractiveCard from '@components/card/InteractiveCard.svelte';
 	import { onMount } from 'svelte';
 	import { afterNavigate, goto, replaceState } from '$app/navigation';
-	import { findSetByCardCode } from '$helpers/set-utils';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 	import { getPokemonImageSrc, getPokemonSpriteSrc } from '$helpers/pokemon-utils';
 	import { loading } from '$stores/loading.svelte';
@@ -44,7 +43,7 @@
 	// --- Reactive Computations ---
 	const baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
 	const cardPrices = $derived(currentCard ? prices[currentCard.cardCode] : undefined);
-	const currentSet = $derived(currentCard ? findSetByCardCode(currentCard.cardCode, sets) : undefined);
+	const currentSet = $derived(currentCard ? sets.find(set => set.setId === currentCard?.setId) : undefined);
 	const currentType = $derived(currentCard?.types?.toLowerCase().split(',')[0] || 'unknown');
 	const currentPokemonId = $derived(currentCard?.pokemonNumber);
 

@@ -116,16 +116,10 @@
 
 	const pokemonMap = $derived(new Map(pokemons.map(pokemon => [pokemon.id, pokemon])));
 
-	// The filter holds the set *name*, so the set is looked up by name; `findSetByCardCode` parsed it as a card code,
-	// found no `_` separators and always returned undefined, leaving the set branch of `isVisible` unreachable.
-	const selectedSet = $derived(filters.set !== "all"
-		? (sets.find(set => set.name.toLowerCase() === filters.set) ?? null)
-		: null);
-
 	// Filter first, then narrow, then sort: "Most Expensive Only" used to pick the priciest printing of each Pokémon
 	// across the whole catalogue before the set filter ran, so Base Set showed the 4 Pokémon whose best card happens to
 	// live there instead of its 69. Sorting last also means a picked set sorts ~100 cards rather than all 23546.
-	const matchingCards = $derived(filters.hasActive ? filterCards(cards, sets, selectedSet, filters.active) : cards);
+	const matchingCards = $derived(filters.hasActive ? filterCards(cards, filters.active) : cards);
 	const narrowedCards = $derived(filters.mostExpensiveOnly ? keepMostExpensivePerGroup(matchingCards, prices) : matchingCards);
 	const sortedCards = $derived(sortCards(narrowedCards, filters.sortBy, filters.sortOrder, prices, pokemons, sets));
 	// Pokémon before Trainer before Energy, unless the user is already looking at a single supertype.

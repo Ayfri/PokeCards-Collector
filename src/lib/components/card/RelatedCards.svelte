@@ -7,7 +7,6 @@
 	import SortControl from '@components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '$lib/images';
 	import { cardPrice } from '$helpers/card-utils';
-	import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
 	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
 	import { collection } from '$stores/collection.svelte';
@@ -48,7 +47,7 @@
 	const MAX_CARD_QUANTITY = 99;
 
 	/** Built once per `sets`, so the sort comparators do a map lookup instead of scanning every set twice per comparison. */
-	const setLookup = $derived(buildSetLookupMap(sets));
+	const setsById = $derived(new Map(sets.map(set => [set.setId, set])));
 
 	// --- Helper Functions ---
 	function getPokemon(pokemonNumber: number | undefined): Pokemon | undefined {
@@ -86,8 +85,8 @@
 				break;
 			case 'sort-date':
 				sorted = sorted.sort((a, b) => {
-					const aSet = findSetInLookup(a.cardCode, setLookup);
-					const bSet = findSetInLookup(b.cardCode, setLookup);
+					const aSet = setsById.get(a.setId);
+					const bSet = setsById.get(b.setId);
 					const aTime = aSet?.releaseDate?.getTime() ?? 0; // Handle null/undefined date
 					const bTime = bSet?.releaseDate?.getTime() ?? 0;
 					return order === 'asc' ? aTime - bTime : bTime - aTime;
@@ -95,8 +94,8 @@
 				break;
 			default: // sort-set (default)
 				sorted = sorted.sort((a, b) => {
-					const aSet = findSetInLookup(a.cardCode, setLookup);
-					const bSet = findSetInLookup(b.cardCode, setLookup);
+					const aSet = setsById.get(a.setId);
+					const bSet = setsById.get(b.setId);
 					const aName = aSet?.name ?? '';
 					const bName = bSet?.name ?? '';
 					return order === 'asc' ? aName.localeCompare(bName) : bName.localeCompare(aName);
@@ -170,7 +169,7 @@
 		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-4">
 			{#each sortedCards as card (card.cardCode)}
 				{@const cardPokemon = getPokemon(card.pokemonNumber)}
-				{@const cardSet = findSetInLookup(card.cardCode, setLookup)}
+				{@const cardSet = setsById.get(card.setId)}
 				{@const price = cardPrice(prices[card.cardCode])}
 				<div
 					class="relative flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5"
