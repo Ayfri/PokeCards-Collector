@@ -26,8 +26,8 @@ const CARD_COLUMNS = `
 `;
 
 /**
- * The columns a card list reads. `getCards` returns every card in the table, so the seven columns nothing
- * renders (`hp`, `legal_standard`, `local_id`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`) are dead
+ * The columns a card list reads. `getCards` returns every card in the table, so the six columns nothing
+ * renders (`hp`, `legal_standard`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`) are dead
  * weight in a payload the browser has to parse before the grid can paint.
  */
 const CARD_LIST_COLUMNS = `
@@ -36,6 +36,7 @@ const CARD_LIST_COLUMNS = `
 	card_market_updated_at,
 	card_market_url,
 	image,
+	local_id,
 	name,
 	pokemon_id,
 	rarity,
@@ -102,6 +103,7 @@ function toCard(card: CardRow): FullCard {
 		cardMarketUpdatedAt: card.card_market_updated_at || '',
 		cardMarketUrl: card.card_market_url || '',
 		image: card.image || '',
+		localId: card.local_id || '',
 		name: card.name,
 		pokemonNumber: card.pokemon_id ?? undefined,
 		rarity: card.rarity || '',
@@ -118,7 +120,6 @@ function toCard(card: CardRow): FullCard {
 		...listCard,
 		hp: card.hp ?? undefined,
 		legalStandard: card.legal_standard ?? false,
-		localId: card.local_id || '',
 		regulationMark: card.regulation_mark || '',
 		stage: card.stage || '',
 		tcgdexId: card.tcgdex_id || '',

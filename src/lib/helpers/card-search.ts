@@ -1,5 +1,6 @@
 import type { FullCard, PriceData, Set } from '$lib/types';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
+import { cardNumberOf } from '$helpers/card-utils';
 
 /** One search hit, carrying everything the result row renders so the client needs neither the sets nor the prices. */
 export interface CardSearchResult {
@@ -22,15 +23,14 @@ interface SearchEntry {
 	setNameLower: string;
 }
 
-function extractCardNumberFromCode(cardCode: string): string {
-	return cardCode?.split('_')[3] || '';
-}
-
 /**
  * Resolving the set and lowercasing the fields per keystroke cost ~1 s over the 23k cards, because
  * `findSetByCardCode` rescans every set. The index pays that once and each search is then a plain loop.
  */
 let searchIndex: SearchEntry[] = [];
+
+/** TCGdex zero-pads numbers ("043"), people type "43". */
+const numberKey = (value: string) => value.replace(/^0+(?=\d)/, '');
 let indexedCards: FullCard[] | null = null;
 
 function buildSearchIndex(cards: FullCard[], sets: Set[]): SearchEntry[] {
@@ -39,12 +39,12 @@ function buildSearchIndex(cards: FullCard[], sets: Set[]): SearchEntry[] {
 	const lookup = buildSetLookupMap(sets);
 	searchIndex = cards.map(card => {
 		const set = findSetInLookup(card.cardCode, lookup);
-		const cardNumber = extractCardNumberFromCode(card.cardCode);
+		const cardNumber = cardNumberOf(card);
 		return {
 			card,
 			cardNumber,
 			name: card.name.toLowerCase(),
-			number: cardNumber.toLowerCase(),
+			number: numberKey(cardNumber.toLowerCase()),
 			printedTotal: set?.printedTotal?.toString() ?? '',
 			setCode: set?.ptcgoCode?.toLowerCase() ?? '',
 			setName: set?.name ?? '',
@@ -59,6 +59,7 @@ function buildSearchIndex(cards: FullCard[], sets: Set[]): SearchEntry[] {
 interface CompiledQuery {
 	/** Every `name` / `setName` split point of a multi-word query ("pikachu base set" -> [["pikachu", "base set"], ...]). */
 	nameSetSplits: [string, string][] | null;
+	numberText: string;
 	numberTotal: string | null;
 	slashNumber: string | null;
 	slashOpen: boolean;
@@ -70,6 +71,7 @@ interface CompiledQuery {
 function compileQuery(text: string): CompiledQuery {
 	const query: CompiledQuery = {
 		nameSetSplits: null,
+		numberText: numberKey(text),
 		numberTotal: null,
 		slashNumber: null,
 		slashOpen: text.endsWith('/'),
@@ -80,7 +82,7 @@ function compileQuery(text: string): CompiledQuery {
 
 	if (text.includes('/')) {
 		const [number, total] = text.split('/');
-		query.slashNumber = number;
+		query.slashNumber = numberKey(number);
 		query.numberTotal = total || null;
 	}
 
@@ -88,7 +90,7 @@ function compileQuery(text: string): CompiledQuery {
 		const parts = text.split(' ');
 		const last = parts[parts.length - 1];
 		if (/^\d+$/.test(last)) {
-			query.tailNumber = last;
+			query.tailNumber = numberKey(last);
 			query.tailHead = parts.slice(0, -1).join(' ');
 		}
 		query.nameSetSplits = [];
@@ -123,7 +125,7 @@ function scoreEntry(entry: SearchEntry, query: CompiledQuery): number {
 
 	if (name === text) return 110;
 	if (name.startsWith(text)) return 100;
-	if (number === text) return 90;
+	if (number === query.numberText) return 90;
 	if (name.includes(text)) return 80;
 	if (setCode === text) return 50;
 	if (setName.includes(text)) return 40;

@@ -1,7 +1,7 @@
 import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
 import { compareRarities, getRarityLevel } from '$helpers/rarity';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
-import { parseCardCode } from '$helpers/card-utils';
+import { cardNumberOf } from '$helpers/card-utils';
 import type { ActiveFilters } from '$stores/filters.svelte';
 import { CARD_SIZES, DEFAULT_CARD_SIZE } from '$stores/grid.svelte';
 
@@ -72,7 +72,7 @@ export function sortCards(
 
 	for (const card of cards) {
 		const pokemon = pokemonMap.get(card.pokemonNumber ?? 0);
-		const cardNumber = parseCardCode(card.cardCode).cardNumber || '';
+		const cardNumber = cardNumberOf(card);
 		const cardNumberInt = parseInt(cardNumber);
 
 		sortValues.set(card.cardCode, {

@@ -12,7 +12,7 @@
 	import WandSparklesIcon from '@lucide/svelte/icons/wand-sparkles';
 	import TrashIcon from '@lucide/svelte/icons/trash';
 	import X from '@lucide/svelte/icons/x';
-	import { formatCardNumber, isCardCode, parseCardCode } from '$helpers/card-utils';
+	import { formatCardNumber, isCardCode } from '$helpers/card-utils';
 	import type { BinderCatalogueCard, Set } from '$lib/types';
 
 	interface Props {
@@ -80,18 +80,19 @@
 
 			let comparison = 0;
 			if (isCodeA && isCodeB) {
-				const {cardNumber: cardNumberA = '0', pokemonNumber: pokemonNumberA = 0, setCode: setCodeA = ''} = parseCardCode(itemA);
-				const {cardNumber: cardNumberB = '0', pokemonNumber: pokemonNumberB = 0, setCode: setCodeB = ''} = parseCardCode(itemB);
+				const cardA = cards.get(itemA);
+				const cardB = cards.get(itemB);
+				const byNumber = () => (cardA?.localId ?? '').localeCompare(cardB?.localId ?? '', undefined, {numeric: true});
 				if (view.sortBy === 'number') {
-					comparison = parseInt(cardNumberA) - parseInt(cardNumberB);
-					if (comparison === 0) comparison = pokemonNumberA - pokemonNumberB;
+					comparison = byNumber();
+					if (comparison === 0) comparison = (cardA?.name ?? '').localeCompare(cardB?.name ?? '');
 				} else if (view.sortBy === 'set') {
-					comparison = setCodeA.localeCompare(setCodeB);
-					if (comparison === 0) comparison = parseInt(cardNumberA) - parseInt(cardNumberB);
+					comparison = (cardA?.setId ?? '').localeCompare(cardB?.setId ?? '');
+					if (comparison === 0) comparison = byNumber();
 				} else if (view.sortBy === 'name') {
-					comparison = (cards.get(itemA)?.name ?? '').localeCompare(cards.get(itemB)?.name ?? '');
+					comparison = (cardA?.name ?? '').localeCompare(cardB?.name ?? '');
 				} else if (view.sortBy === 'price') {
-					comparison = (cards.get(itemA)?.price ?? 0) - (cards.get(itemB)?.price ?? 0);
+					comparison = (cardA?.price ?? 0) - (cardB?.price ?? 0);
 				}
 			} else if (!isCodeA && !isCodeB) {
 				comparison = itemA.localeCompare(itemB);
@@ -233,7 +234,7 @@
 							<button class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white" onclick={() => removeItem(item)} aria-label="Remove from storage" title="Remove from storage"><X size={14} /></button>
 						</div>
 					{:else}
-						{@const set = fullCard ? sets.find(s => s.name === fullCard.setName) : undefined}
+						{@const set = fullCard ? sets.find(s => s.setId === fullCard.setId) : undefined}
 						<div
 							class="group relative aspect-2/3 rounded-sm border-2 transition-all duration-200 {selected === item ? 'border-gold-400 ring-2 ring-gold-400/50' : 'border-gray-700 hover:border-gold-400'} {isPlaced ? 'opacity-60' : ''}"
 							draggable="true"
@@ -260,7 +261,7 @@
 							<div class="pointer-events-none absolute right-0 bottom-0 left-0 bg-black/75 p-1 text-center text-[0.6rem] leading-tight text-white transition-opacity group-hover:opacity-100 {selected === item ? 'opacity-100' : 'opacity-0'}">
 								{#if fullCard}
 									<div class="truncate font-semibold">{fullCard.name}</div>
-									<div class="truncate">#{formatCardNumber(parseCardCode(item).cardNumber ?? '?', set?.printedTotal)}</div>
+									<div class="truncate">#{formatCardNumber(fullCard.localId || '?', set?.printedTotal)}</div>
 									<div class="truncate text-gray-300">{fullCard.rarity}</div>
 									<div class="truncate text-gold-400">{fullCard.price ? `${fullCard.price.toFixed(2)} €` : 'No price'}</div>
 								{:else}

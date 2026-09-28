@@ -2,7 +2,7 @@
 	import PageTitle from '@components/PageTitle.svelte';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import CardPrice from '@components/card/CardPrice.svelte';
-	import { formatCardNumber, parseCardCode } from '$helpers/card-utils';
+	import { cardNumberOf, formatCardNumber } from '$helpers/card-utils';
 	import { page } from '$app/state';
 	import { collection } from '$stores/collection.svelte';
 	import { wishlist } from '$stores/wishlist.svelte';
@@ -33,7 +33,7 @@
 		pokemon = undefined
 	}: Props = $props();
 
-	const cardNumber = $derived(parseCardCode(card.cardCode).cardNumber);
+	const cardNumber = $derived(cardNumberOf(card));
 
 	const displayName = $derived(pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name);
 	const displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card?.name}`);

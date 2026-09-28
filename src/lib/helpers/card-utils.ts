@@ -80,6 +80,11 @@ export function parseCardCode(cardCode: string): { supertype?: string, setCode?:
 	}
 }
 
+/** The printed number. Older `card_code`s carry a legacy number stripped of its letters ("TG01" became "01"), so the code is only the fallback. */
+export function cardNumberOf(card: { cardCode: string; localId?: string }): string {
+	return card.localId || parseCardCode(card.cardCode).cardNumber || '';
+}
+
 /**
  * The number as printed: uppercase like the card ("TG01", "R"), over the set total only when it is a plain number.
  * A lettered one sits outside that count: the 30th Celebration Mews read "R/RGB", never "R/128".
