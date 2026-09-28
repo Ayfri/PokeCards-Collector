@@ -1,5 +1,4 @@
 import { getCards, getPrices } from '$helpers/supabase-data';
-import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, setListSchema } from '$helpers/seo';
 import type { SetWithPrice } from '$lib/types';
@@ -10,25 +9,13 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const { sets: setsFromParent = [] } = await parent();
 	const [cards, prices] = await catalogue;
 
-	// One map lookup per card instead of a scan over every set, which normalized ~5M set ids a render.
-	const setLookup = buildSetLookupMap(setsFromParent);
 	const setPriceTotals = new Map<string, number>();
-
 	for (const card of cards) {
-		const foundSet = findSetInLookup(card.cardCode, setLookup);
-		if (!foundSet?.ptcgoCode) continue;
-
-		const currentPrice = cardPrice(prices[card.cardCode]) ?? 0;
-		if (currentPrice > 0) setPriceTotals.set(foundSet.ptcgoCode, (setPriceTotals.get(foundSet.ptcgoCode) || 0) + currentPrice);
+		const price = cardPrice(prices[card.cardCode]);
+		if (price && card.setId) setPriceTotals.set(card.setId, (setPriceTotals.get(card.setId) ?? 0) + price);
 	}
 
-	const setsWithPrices = setsFromParent.map(set => {
-		const totalPrice = set.ptcgoCode ? setPriceTotals.get(set.ptcgoCode) || 0 : 0;
-		return {
-			...set,
-			totalPrice,
-		} as SetWithPrice;
-	});
+	const setsWithPrices: SetWithPrice[] = setsFromParent.map(set => ({ ...set, totalPrice: setPriceTotals.get(set.setId ?? '') ?? 0 }));
 
 	const pageSeoData = {
 		breadcrumbs: breadcrumbs({ name: 'Sets', url: '/sets' }),

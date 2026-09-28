@@ -132,10 +132,12 @@ export function mapCard(lang: Language, card: TcgdexCard): MappedCard {
 		hp: card.hp ?? null,
 		image: card.image ?? '',
 		legalStandard: card.legal?.standard ?? false,
-		localId: card.localId,
+		// TCGdex stores the "?" Unown's number URL-encoded, as %3F.
+		localId: /%[0-9A-F]{2}/i.test(card.localId) ? decodeURIComponent(card.localId) : card.localId,
 		name: card.name,
 		pokemonNumber: pokemonNumber(lang, card),
-		rarity: card.rarity ?? 'Common',
+		// TCGdex spells some tiers "Illustration rare" next to "Ultra Rare".
+		rarity: (card.rarity ?? 'Common').replace(/\b[a-z]/g, letter => letter.toUpperCase()),
 		regulationMark: card.regulationMark ?? '',
 		setId: card.set?.id ?? '',
 		setName: card.set?.name ?? '',
