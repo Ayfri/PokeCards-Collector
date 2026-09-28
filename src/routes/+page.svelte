@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
 	import CardImage from "@components/card/CardImage.svelte";
+	import SetLogo from "@components/SetLogo.svelte";
 	import CountUp from "@components/ui/CountUp.svelte";
 	import { page } from "$app/state";
 	import { NO_IMAGES } from "$lib/images";
@@ -266,13 +267,13 @@
 					)}"
 					class="relative w-full max-w-lg transform transition-all duration-300 hover:scale-105 block"
 				>
-					{#if !NO_IMAGES}
-						<img
-							src={latestSet.logo}
-							alt="{latestSet.name} logo"
-							class="w-[95%] mb-2 object-contain mx-auto rounded-lg shadow-md"
-						/>
-					{/if}
+					<SetLogo class="w-[95%] mb-2 object-contain mx-auto rounded-lg shadow-md" set={latestSet}>
+						{#snippet fallback()}
+							<div class="w-[95%] aspect-3/1 mb-2 mx-auto rounded-lg bg-gray-800 flex items-start justify-center pt-6">
+								<SetIcon class="text-gray-600" size={56} />
+							</div>
+						{/snippet}
+					</SetLogo>
 					<div
 						class="absolute bottom-0 left-0 right-0 bg-linear-to-t from-gray-900/90 via-gray-900/50 to-transparent p-4 rounded-b-2xl"
 					>
@@ -334,13 +335,13 @@
 					class="block bg-gray-800 p-6 rounded-lg shadow-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25"
 				>
 					<div class="flex flex-col sm:flex-row gap-6 items-center">
-						{#if !NO_IMAGES}
-							<img
-								src={latestSet.logo}
-								alt="{latestSet.name} logo"
-								class="w-32 h-32 object-contain"
-							/>
-						{/if}
+						<SetLogo class="w-32 h-32 object-contain" set={latestSet}>
+							{#snippet fallback()}
+								<div class="w-32 h-32 shrink-0 rounded-lg bg-gray-900 flex items-center justify-center">
+									<SetIcon class="text-gray-600" size={48} />
+								</div>
+							{/snippet}
+						</SetLogo>
 
 						<div>
 							<h3 class="text-xl font-bold mb-2">

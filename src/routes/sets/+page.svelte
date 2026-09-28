@@ -10,6 +10,7 @@
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import LayersIcon from '@lucide/svelte/icons/layers';
+	import SetLogo from '@components/SetLogo.svelte';
 	import { setCardCount } from '$helpers/set-utils';
 
 	interface Props {
@@ -130,11 +131,9 @@
 							<a href="/cards-list?set={encodeURIComponent(set.name)}" class="block h-full" title={`Browse every card in ${set.name}`}>
 								<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
 									<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
-										{#if set.logo}
-											<img src={set.logo} alt="{set.name} logo" class="max-h-full object-contain" loading="lazy" />
-										{:else}
-											<div class="text-gray-500 text-center">No image available</div>
-										{/if}
+										<SetLogo class="max-h-full object-contain" {set}>
+											{#snippet fallback()}<LayersIcon class="text-gray-600" size={56} />{/snippet}
+										</SetLogo>
 									</div>
 									<div class="p-4 flex-1 flex flex-col">
 										<h2 class="text-lg font-semibold text-white">{set.name}</h2>

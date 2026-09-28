@@ -13,6 +13,7 @@
 	import Heart from '@lucide/svelte/icons/heart';
 	import Minus from '@lucide/svelte/icons/minus';
 	import Plus from '@lucide/svelte/icons/plus';
+	import SetBadge from '@components/SetBadge.svelte';
 	import { page } from '$app/state';
 	import { wishlist } from '$stores/wishlist.svelte';
 
@@ -196,17 +197,7 @@
 							<div class="w-full h-full"></div>
 						{/if}
 						{#if cardSet}
-							<div class="absolute bottom-1 right-1 bg-black/70 rounded-full p-0.5 border border-gold-400">
-								{#if !NO_IMAGES}
-									<img
-										src={cardSet.logo}
-										alt={cardSet.name}
-										class="w-[30px] h-[30px] md:w-[24px] md:h-[24px] object-contain"
-										title={cardSet.name}
-										loading="lazy"
-									/>
-								{/if}
-							</div>
+							<SetBadge class="bottom-2 left-2" set={cardSet} />
 						{/if}
 						{#if user && profile}
 							<!-- Collection/Wishlist Actions -->

@@ -13,7 +13,7 @@
 	import { getCardSet } from '$helpers/card-grid';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Minus from '@lucide/svelte/icons/minus';
-	import CardStackIcon from '@lucide/svelte/icons/layers';
+	import SetBadge from '@components/SetBadge.svelte';
 
 	interface Props {
 		card: FullCard;
@@ -56,7 +56,7 @@
 	const cardNumber = $derived(card.localId);
 	const price = $derived(cardPrice(prices));
 	const pokemon = $derived(card.pokemonNumber ? pokemonMap.get(card.pokemonNumber) : null);
-	const set = $derived(getCardSet(card, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null });
+	const set = $derived(getCardSet(card, sets));
 
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
@@ -214,21 +214,8 @@
 			height={height}
 		/>
 
-		{#if set && set.name && set.name !== 'Unknown Set'}
-			<a
-				href={`/cards-list?set=${encodeURIComponent(set.name)}`}
-				class="absolute z-10 p-1 bg-black/50 border border-white/70 rounded-full hover:bg-white/20 transition-colors w-8 h-8 flex items-center justify-center"
-				style="bottom: {controlInset}px; left: {controlInset}px;"
-				aria-label={`View all cards from set ${set.name}`}
-				title={`View all cards from set ${set.name}`}
-				tabindex="-1"
-			>
-				{#if 'logo' in set && set.logo}
-					<img src={set.logo} alt={set.name} class="w-6 h-6 object-contain" width="24" height="24" loading="lazy" decoding="async" />
-				{:else}
-					<CardStackIcon size={20} />
-				{/if}
-			</a>
+		{#if set}
+			<SetBadge {set} style="bottom: {controlInset}px; left: {controlInset}px;" />
 		{/if}
 	</div>
 	<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-xs rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">

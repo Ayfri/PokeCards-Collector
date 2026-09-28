@@ -16,6 +16,7 @@
 	import Minus from '@lucide/svelte/icons/minus';
 	import Paintbrush from '@lucide/svelte/icons/paintbrush';
 	import Plus from '@lucide/svelte/icons/plus';
+	import SetLogo from '@components/SetLogo.svelte';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import { fly } from 'svelte/transition';
 
@@ -198,16 +199,9 @@
 								{set.name}
 								<span class="text-xs opacity-80 italic ml-1 text-gray-400 group-hover:text-gold-300 transition-colors">(view all)</span>
 							</a>
-							{#if set.logo}
-								<a href="/cards-list?set={encodeURIComponent(set.name)}" title="View all cards in this set">
-									<img
-										src={set.logo}
-										alt={`${set.name} logo`}
-										class="inline-block max-w-[60px] max-h-[25px] object-contain hover:opacity-80 transition-opacity"
-										loading="lazy"
-									/>
-								</a>
-							{/if}
+							<a href="/cards-list?set={encodeURIComponent(set.name)}" title="View all cards in this set">
+								<SetLogo class="inline-block max-w-[60px] max-h-[25px] object-contain hover:opacity-80 transition-opacity" {set} />
+							</a>
 						</dd>
 					</div>
 

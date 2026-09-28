@@ -2,8 +2,8 @@
 	import { invalidateAll } from '$app/navigation';
 	import { toggleProfileVisibility } from '$lib/services/profiles';
 	import PageTitle from '@components/PageTitle.svelte';
+	import SetLogo from '@components/SetLogo.svelte';
 	import Avatar from '@components/auth/Avatar.svelte';
-	import { NO_IMAGES } from '$lib/images';
 	import BookOpen from '@lucide/svelte/icons/book-open';
 	import ChartColumn from '@lucide/svelte/icons/chart-column';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -247,8 +247,8 @@
 											<div class="cursor-pointer rounded-lg border border-transparent bg-gray-800/60 p-4 transition-all duration-300 hover:border-gold-400 hover:bg-gray-700/40" in:fly={{ y: 20, duration: 300, delay: 50 + Math.min(i, 12) * 30 }}>
 												<div class="mb-2 flex items-center justify-between">
 													<div class="flex items-center gap-2">
-														{#if !NO_IMAGES && set?.logo}
-															<img alt={setName} class="h-6 w-auto" src={set.logo} />
+														{#if set}
+															<SetLogo class="h-6 w-auto" {set} />
 														{/if}
 														<h4 class="font-medium text-white transition-colors duration-200 group-hover:text-gold-400">{setName}</h4>
 													</div>
