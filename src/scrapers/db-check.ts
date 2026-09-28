@@ -1,15 +1,13 @@
-import {createClient, type SupabaseClient} from '@supabase/supabase-js';
-import {TABLES} from './supabase_sync';
+import {RARITY_MAPPING} from '$helpers/rarity';
+import {envClient, ownedCardCodes, readAll, TABLES} from './supabase_sync';
 import {EXCLUDED_SERIES} from './tcgdex/excluded';
-import type {Language} from './tcgdex/mappers';
-import {UNKNOWN_POKEMON} from './tcgdex/mappers';
+import {sharedProductCodes, speciesInName, type Language} from './tcgdex/mappers';
 
 /**
  * Read-only sanity pass over the live Supabase catalogue. It never writes: every check reports counts
  * and a short sample, so a bad upload is visible before anyone browses into it.
  */
 
-const PAGE = 5000;
 /** A single card worth more than this is a scraping accident, not a price: the most expensive graded singles trade below it. */
 const ABSURD_PRICE = 100_000;
 const SAMPLE = 5;
@@ -31,11 +29,13 @@ export interface CheckReport {
 
 interface CardRow {
 	card_code: string;
+	card_market_url: string | null;
 	image: string | null;
-	name: string | null;
+	name: string;
 	pokemon_id: number | null;
 	rarity: string | null;
 	set_id: string | null;
+	supertype: string | null;
 	tcgdex_id: string | null;
 }
 
@@ -51,24 +51,6 @@ interface SetRow {
 	total_cards: number | null;
 }
 
-function client(): SupabaseClient {
-	const url = process.env.PUBLIC_SUPABASE_URL;
-	const key = process.env.SUPABASE_SECRET_KEY ?? process.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-	if (!url || !key) throw new Error('Missing PUBLIC_SUPABASE_URL or a Supabase key');
-	return createClient(url, key, {auth: {persistSession: false}});
-}
-
-/** Pages a whole table on an ordered key; the catalogue tables sit far above Supabase's single-select row cap. */
-async function readAll<T>(supabase: SupabaseClient, table: string, columns: string, orderBy: string): Promise<T[]> {
-	const rows: T[] = [];
-	for (let from = 0; ; from += PAGE) {
-		const {data, error} = await supabase.from(table).select(columns).order(orderBy).range(from, from + PAGE - 1);
-		if (error) throw new Error(`${table}: ${error.message}`);
-		rows.push(...(data as T[]));
-		if (data.length < PAGE) return rows;
-	}
-}
-
 const duplicates = <T>(rows: readonly T[], key: (row: T) => string): string[] => {
 	const seen = new Set<string>();
 	const twice = new Set<string>();
@@ -82,7 +64,7 @@ const duplicates = <T>(rows: readonly T[], key: (row: T) => string): string[] =>
 const priceColumns = (row: PriceRow) => Object.entries(row).filter(([column]) => column !== 'card_code');
 
 export async function checkDatabase(): Promise<CheckReport> {
-	const supabase = client();
+	const supabase = envClient();
 	const checks: Check[] = [];
 	const add = (name: string, severity: Severity, values: readonly string[], count = values.length) => {
 		checks.push({count, name, sample: values.slice(0, SAMPLE), severity});
@@ -90,11 +72,12 @@ export async function checkDatabase(): Promise<CheckReport> {
 
 	const excluded = new Set<string>(EXCLUDED_SERIES);
 	const excludedNames = new Set(['Pokémon TCG Pocket']);
+	const known = new Set<string>();
 
 	for (const lang of Object.keys(TABLES) as Language[]) {
 		const tables = TABLES[lang];
 		const [cards, prices, sets] = await Promise.all([
-			readAll<CardRow>(supabase, tables.cards, 'card_code,image,name,pokemon_id,rarity,set_id,tcgdex_id', 'card_code'),
+			readAll<CardRow>(supabase, tables.cards, 'card_code,card_market_url,image,name,pokemon_id,rarity,set_id,supertype,tcgdex_id', 'card_code'),
 			readAll<PriceRow>(supabase, tables.prices, '*', 'card_code'),
 			readAll<SetRow>(supabase, tables.sets, 'release_date,series,set_id,total_cards', 'set_id'),
 		]);
@@ -104,7 +87,10 @@ export async function checkDatabase(): Promise<CheckReport> {
 		const cardCodes = new Set(cards.map(card => card.card_code));
 		const pricedCodes = new Set(prices.map(price => price.card_code));
 		const heldPerSet = new Map<string, number>();
-		for (const card of cards) if (card.set_id) heldPerSet.set(card.set_id, (heldPerSet.get(card.set_id) ?? 0) + 1);
+		for (const card of cards) {
+			known.add(card.card_code);
+			if (card.set_id) heldPerSet.set(card.set_id, (heldPerSet.get(card.set_id) ?? 0) + 1);
+		}
 
 		add(tag('rows'), 'info', [`${cards.length} cards, ${prices.length} prices, ${sets.length} sets`], cards.length);
 		add(tag('duplicate card_code'), 'error', duplicates(cards, card => card.card_code));
@@ -113,13 +99,22 @@ export async function checkDatabase(): Promise<CheckReport> {
 		add(tag('cards in an unknown set'), 'error', cards.filter(card => !card.set_id || !setIds.has(card.set_id)).map(card => card.card_code));
 		add(tag('cards from an excluded serie'), 'error', cards.filter(card => card.set_id && excluded.has(card.set_id)).map(card => card.card_code));
 		add(tag('sets from an excluded serie'), 'error', sets.filter(set => set.series && excludedNames.has(set.series)).map(set => set.set_id));
+		add(tag('sets holding no card'), 'error', sets.filter(set => !heldPerSet.has(set.set_id)).map(set => set.set_id));
 
 		add(tag('cards with no tcgdex_id'), 'warn', cards.filter(card => !card.tcgdex_id).map(card => card.card_code));
 		add(tag('cards with no image'), 'warn', cards.filter(card => !card.image).map(card => card.card_code));
 		add(tag('cards with no name'), 'error', cards.filter(card => !card.name).map(card => card.card_code));
 		add(tag('cards with no rarity'), 'warn', cards.filter(card => !card.rarity).map(card => card.card_code));
-		add(tag(`card_code holding the ${UNKNOWN_POKEMON} sentinel`), 'warn', cards.filter(card => card.card_code.includes(`_${UNKNOWN_POKEMON}_`)).map(card => card.card_code));
+		add(tag('rarities with no tier in RARITY_TIERS'), 'error', [...new Set(cards.flatMap(card => card.rarity && !(card.rarity.toLowerCase() in RARITY_MAPPING) ? [card.rarity] : []))]);
+		add(tag('Pokémon cards with no species'), 'warn', cards.filter(card => card.supertype === 'Pokémon' && card.pokemon_id === null).map(card => `${card.card_code} ${card.name}`));
 		add(tag('pokemon_id out of the dex range'), 'error', cards.filter(card => card.pokemon_id !== null && (card.pokemon_id < 1 || card.pokemon_id > 1100)).map(card => `${card.card_code} (${card.pokemon_id})`));
+		if (lang === 'en') {
+			add(tag('pokemon_id the card name does not spell'), 'warn', cards.filter(card => {
+				const named = card.pokemon_id !== null ? speciesInName(card.name) : [];
+				return named.length > 0 && !named.includes(card.pokemon_id!);
+			}).map(card => `${card.card_code} ${card.name} (${card.pokemon_id})`));
+		}
+		add(tag('Cardmarket products shared by differently named cards'), 'error', [...sharedProductCodes(cards.map(card => ({cardCode: card.card_code, cardMarketUrl: card.card_market_url ?? '', name: card.name})))]);
 
 		add(tag('negative prices'), 'error', prices.filter(price => priceColumns(price).some(([, value]) => typeof value === 'number' && value < 0)).map(price => price.card_code));
 		add(tag(`prices above ${ABSURD_PRICE} €`), 'error', prices.filter(price => priceColumns(price).some(([, value]) => typeof value === 'number' && value > ABSURD_PRICE)).map(price => price.card_code));
@@ -130,17 +125,8 @@ export async function checkDatabase(): Promise<CheckReport> {
 		add(tag('sets holding more cards than total_cards'), 'warn', sets.filter(set => set.total_cards !== null && (heldPerSet.get(set.set_id) ?? 0) > set.total_cards).map(set => set.set_id));
 	}
 
-	const owned = new Map<string, number>();
-	for (const table of ['collections', 'wishlists']) {
-		const rows = await readAll<{card_code: string}>(supabase, table, 'card_code', 'card_code');
-		for (const row of rows) owned.set(row.card_code, (owned.get(row.card_code) ?? 0) + 1);
-	}
-	const known = new Set<string>();
-	for (const lang of Object.keys(TABLES) as Language[]) {
-		for (const row of await readAll<{card_code: string}>(supabase, TABLES[lang].cards, 'card_code', 'card_code')) known.add(row.card_code);
-	}
 	// Kept on purpose: an owned code no table carries renders again once TCGdex fills the set in.
-	add('owned codes resolving to no card', 'warn', [...owned.keys()].filter(code => !known.has(code)));
+	add('owned codes resolving to no card', 'warn', [...await ownedCardCodes(supabase)].filter(code => !known.has(code)));
 
 	return {
 		checks,

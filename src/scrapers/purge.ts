@@ -1,5 +1,5 @@
-import {createClient, type SupabaseClient} from '@supabase/supabase-js';
-import {TABLES} from './supabase_sync';
+import type {SupabaseClient} from '@supabase/supabase-js';
+import {deleteIn, envClient, ownedCardCodes, TABLES} from './supabase_sync';
 import {Http2Pool} from './tcgdex/http2-pool';
 import {EXCLUDED_SERIES, excludedSetIds} from './tcgdex/excluded';
 import type {Language} from './tcgdex/mappers';
@@ -25,24 +25,6 @@ export interface PurgeReport {
 	langs: PurgeLangReport[];
 }
 
-function client(): SupabaseClient {
-	const url = process.env.PUBLIC_SUPABASE_URL;
-	const key = process.env.SUPABASE_SECRET_KEY;
-	if (!url || !key) throw new Error('Missing PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY');
-	return createClient(url, key, {auth: {persistSession: false}});
-}
-
-/** Card codes a user owns, so the purge can report what it would strand instead of deleting it. */
-async function ownedCardCodes(supabase: SupabaseClient): Promise<Set<string>> {
-	const codes = new Set<string>();
-	for (const table of ['collections', 'wishlists']) {
-		const {data, error} = await supabase.from(table).select('card_code');
-		if (error) throw new Error(`${table}: ${error.message}`);
-		for (const row of data) codes.add(row.card_code as string);
-	}
-	return codes;
-}
-
 async function countIn(supabase: SupabaseClient, table: string, column: string, values: readonly string[]): Promise<number> {
 	let total = 0;
 	for (let index = 0; index < values.length; index += CHUNK) {
@@ -51,16 +33,6 @@ async function countIn(supabase: SupabaseClient, table: string, column: string, 
 		total += count ?? 0;
 	}
 	return total;
-}
-
-async function deleteIn(supabase: SupabaseClient, table: string, column: string, values: readonly string[]): Promise<number> {
-	let deleted = 0;
-	for (let index = 0; index < values.length; index += CHUNK) {
-		const {count, error} = await supabase.from(table).delete({count: 'exact'}).in(column, values.slice(index, index + CHUNK));
-		if (error) throw new Error(`Error deleting from ${table}: ${error.message}`);
-		deleted += count ?? 0;
-	}
-	return deleted;
 }
 
 /**
@@ -76,7 +48,7 @@ async function targetSetIds(supabase: SupabaseClient, pool: Http2Pool, lang: Lan
 }
 
 export async function purgeExcludedSeries(dryRun = false): Promise<PurgeReport> {
-	const supabase = client();
+	const supabase = envClient();
 	const pool = new Http2Pool();
 	try {
 		const serieNames = (await Promise.all(EXCLUDED_SERIES.map(id => pool.json<{name: string}>(`/v2/en/series/${id}`)))).flatMap(serie => serie?.name ?? []);
