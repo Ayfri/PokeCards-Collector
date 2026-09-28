@@ -1,7 +1,8 @@
 /**
  * TCGdex rarities from most common to rarest, names sharing a tier rank the same.
- * The modern tiers follow the official Japanese scale Scarlet & Violet adopted (C < U < R < RR < ACE < AR < S < SR < SSR < SAR < UR < BWR < MUR),
- * which is also the order English sets number their secret cards in. Older tiers sit next to their Japanese equivalent (V = RR, VMAX/VSTAR = RRR).
+ * The modern tiers follow collector pull-rate consensus (double < ACE SPEC < shiny < ultra < illustration < mega attack
+ * < shiny ultra < special illustration < futuristic < hyper < black white < mega hyper < RGB), which only differs from the Japanese scale and English numbering
+ * by ranking illustration above ultra. Older tiers sit next to their Japanese equivalent (V = RR, VMAX/VSTAR = RRR).
  * The Pocket tiers (diamonds, stars, shiny, crown) only keep `bun run scrapers audit` quiet, since the catalogue excludes that serie.
  */
 const RARITY_TIERS: string[][] = [
@@ -22,21 +23,21 @@ const RARITY_TIERS: string[][] = [
 	['holo rare vmax', 'holo rare vstar', 'triple rare'],
 	['ace spec rare'],
 	['character rare'],
-	['illustration rare', 'one star'],
 	['shiny rare', 'one shiny'],
 	['shiny rare v', 'shiny rare vmax'],
 	['full art trainer'],
 	['ultra rare'],
+	['illustration rare', 'one star'],
 	['mega attack rare'],
 	['character super rare'],
 	['shiny ultra rare', 'two shiny'],
 	['secret rare'],
 	['special illustration rare', 'two star'],
 	['futuristic rare'],
-	['rgb rare'],
 	['hyper rare', 'three star'],
 	['black white rare'],
 	['mega hyper rare'],
+	['rgb rare'],
 	['crown'],
 ];
 
