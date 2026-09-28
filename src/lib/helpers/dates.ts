@@ -38,5 +38,5 @@ export function timeAgo(dateString: string | Date): string {
 	if (months < 18) {
 		return 'a year ago';
 	}
-	return `${years} years ago`;
+	return `${Math.max(2, years)} years ago`;
 }
