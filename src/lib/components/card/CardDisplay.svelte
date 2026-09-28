@@ -38,7 +38,6 @@
 	// --- Internal State ---
 	let currentCard = $state<FullCard | undefined>(undefined);
 	let isInitialRenderComplete = $state(false);
-	let shouldRenderAllCards = $state(false);
 
 	// --- Reactive Computations ---
 	const baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
@@ -103,7 +102,6 @@
 	onMount(() => {
 		currentCard = pokemonCards[0];
 		isInitialRenderComplete = true;
-		setTimeout(() => shouldRenderAllCards = true, 800);
 	});
 
 	afterNavigate(() => {
@@ -119,9 +117,6 @@
 		}
 
 		isInitialRenderComplete = true;
-		if (!shouldRenderAllCards) {
-			setTimeout(() => shouldRenderAllCards = true, 800);
-		}
 	});
 </script>
 
@@ -286,7 +281,7 @@
 	<div class="separator w-full max-w-200 my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent" in:fade={{ duration: 600, delay: 600 }}></div>
 
 	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
-	{#if currentPokemonCards.length > 1 && shouldRenderAllCards}
+	{#if currentPokemonCards.length > 1}
 		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 700 }}>
 			<RelatedCards cards={currentPokemonCards} {pokemons} {sets} {prices} pokemon={currentPokemon} onCardSelect={handleCardSelect} {lowRes} />
 		</div>

@@ -16,6 +16,7 @@
 	import SetBadge from '@components/SetBadge.svelte';
 	import { page } from '$app/state';
 	import { wishlist } from '$stores/wishlist.svelte';
+	import { onMount } from 'svelte';
 
 	
 	interface Props {
@@ -46,6 +47,13 @@
 	const profile = $derived(page.data.profile);
 
 	const MAX_CARD_QUANTITY = 99;
+
+	/** Hundreds of tiles block the main thread, so they replace same-sized placeholders once the card intro has played. */
+	let showTiles = $state(false);
+	onMount(() => {
+		const timeout = setTimeout(() => showTiles = true, 800);
+		return () => clearTimeout(timeout);
+	});
 
 	/** Built once per `sets`, so the sort comparators do a map lookup instead of scanning every set twice per comparison. */
 	const setsById = $derived(new Map(sets.map(set => [set.setId, set])));
@@ -168,6 +176,17 @@
 
 	{#if sortedCards.length > 0}
 		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-4">
+			{#if !showTiles}
+				{#each { length: sortedCards.length }}
+					<div class="flex flex-col items-center" aria-hidden="true">
+						<div class="w-full animate-pulse rounded-lg bg-gray-700/50" style="aspect-ratio: 63/88;"></div>
+						<div class="mt-0.5 flex flex-col items-center">
+							<div class="flex h-5 items-center"><div class="h-3 w-24 animate-pulse rounded bg-gray-700/50"></div></div>
+							<div class="flex h-5 items-center"><div class="h-3 w-16 animate-pulse rounded bg-gray-700/50"></div></div>
+						</div>
+					</div>
+				{/each}
+			{:else}
 			{#each sortedCards as card (card.cardCode)}
 				{@const cardPokemon = getPokemon(card.pokemonNumber)}
 				{@const cardSet = setsById.get(card.setId)}
@@ -273,6 +292,7 @@
 					</div>
 				</div>
 			{/each}
+			{/if}
 		</div>
 	{:else}
 		<p class="text-center text-gray-400">No other related cards found.</p>
