@@ -48,7 +48,7 @@
 	class="text-gray-400 hover:text-white rounded-full sm:hidden"
 	onclick={event => { event.stopPropagation(); toggleModal(); }}
 	aria-label="Open search"
-	title="Search cards"
+	title="Search cards and Pokémon"
 	bind:this={searchButton}
 >
 	<Search />
@@ -62,7 +62,7 @@
 	>
 		<div class="w-full px-4" bind:this={modalContent}>
 			<div class="flex items-center justify-between mb-4">
-				<span class="text-white text-lg font-semibold">Search Cards</span>
+				<span class="text-white text-lg font-semibold">Search</span>
 				<button class="text-gray-400 hover:text-white p-2" onclick={closeModal} aria-label="Close search" title="Close search (Esc)">
 					<X />
 				</button>

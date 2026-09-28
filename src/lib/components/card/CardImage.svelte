@@ -139,6 +139,7 @@
 		color: rgba(255, 255, 255, 0.45);
 		font-size: clamp(0.55rem, 9cqw, 0.85rem);
 		letter-spacing: 0.05em;
+		text-align: center;
 		text-transform: uppercase;
 	}
 </style>

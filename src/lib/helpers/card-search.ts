@@ -1,4 +1,4 @@
-import type { FullCard, PriceData, Set } from '$lib/types';
+import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
 import { cardPrice } from '$helpers/card-utils';
 
 /** One search hit, carrying everything the result row renders so the client needs neither the sets nor the prices. */
@@ -170,4 +170,49 @@ export function searchCards(
 		printedTotal: entry.printedTotal ? Number(entry.printedTotal) : null,
 		setName: entry.setName,
 	}));
+}
+
+/** A species hit, linking to the card list narrowed to its Pokédex number. */
+export interface PokemonSearchResult {
+	cardCount: number;
+	id: number;
+	name: string;
+}
+
+/** PokeAPI slugs ("mr-mime", "farfetchd", "flabebe") against what people type ("Mr. Mime", "Farfetch'd", "Flabébé"). */
+const pokemonKey = (value: string) => value.normalize('NFD').replace(/[̀-ͯ'’]/g, '').replace(/[-.\s]+/g, ' ').trim();
+
+let indexedPokemons: { cardCount: number; key: string; pokemon: Pokemon }[] = [];
+let indexedPokemonSources: [Pokemon[], FullCard[]] | null = null;
+
+/** Species with at least one card, keyed for matching; rebuilt only when either cached table changes. */
+function buildPokemonIndex(pokemons: Pokemon[], cards: FullCard[]) {
+	if (indexedPokemonSources?.[0] === pokemons && indexedPokemonSources[1] === cards) return indexedPokemons;
+
+	const counts = new Map<number, number>();
+	for (const card of cards) {
+		if (card.pokemonNumber) counts.set(card.pokemonNumber, (counts.get(card.pokemonNumber) ?? 0) + 1);
+	}
+	indexedPokemons = pokemons
+		.filter(pokemon => counts.has(pokemon.id))
+		.map(pokemon => ({ cardCount: counts.get(pokemon.id)!, key: pokemonKey(pokemon.name), pokemon }));
+	indexedPokemonSources = [pokemons, cards];
+	return indexedPokemons;
+}
+
+/** Species whose name matches `query` (exact, then prefix, then substring) or whose Pokédex number it is. */
+export function searchPokemons(query: string, pokemons: Pokemon[], cards: FullCard[], limit = 3): PokemonSearchResult[] {
+	const key = pokemonKey(query.toLowerCase());
+	if (!key) return [];
+
+	const dexNumber = /^#?\d+$/.test(key) ? Number(key.replace('#', '')) : null;
+	const score = (entry: { key: string; pokemon: Pokemon }) =>
+		entry.pokemon.id === dexNumber || entry.key === key ? 3 : entry.key.startsWith(key) ? 2 : entry.key.includes(key) ? 1 : 0;
+
+	return buildPokemonIndex(pokemons, cards)
+		.map(entry => ({ entry, score: score(entry) }))
+		.filter(({ score }) => score > 0)
+		.sort((a, b) => b.score - a.score || a.entry.key.length - b.entry.key.length)
+		.slice(0, limit)
+		.map(({ entry }) => ({ cardCount: entry.cardCount, id: entry.pokemon.id, name: entry.pokemon.name }));
 }
