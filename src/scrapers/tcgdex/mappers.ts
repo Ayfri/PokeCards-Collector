@@ -41,18 +41,18 @@ export interface MappedSet {
 }
 
 export interface MappedPrice {
-	simple?: number;
-	low?: number;
-	trend?: number;
-	avg1?: number;
-	avg7?: number;
-	avg30?: number;
-	reverseSimple?: number;
-	reverseLow?: number;
-	reverseTrend?: number;
-	reverseAvg1?: number;
-	reverseAvg7?: number;
-	reverseAvg30?: number;
+	simple?: number | null;
+	low?: number | null;
+	trend?: number | null;
+	avg1?: number | null;
+	avg7?: number | null;
+	avg30?: number | null;
+	reverseSimple?: number | null;
+	reverseLow?: number | null;
+	reverseTrend?: number | null;
+	reverseAvg1?: number | null;
+	reverseAvg7?: number | null;
+	reverseAvg30?: number | null;
 }
 
 /** Pokémon cards whose species is unknown carry 99999 in their code; the `pokemons` table has no such row, so `pokemon_id` stores null. */
@@ -187,7 +187,7 @@ export function mapPrice(pricing: TcgdexPricing | null | undefined): MappedPrice
 		reverseAvg30: cardmarket['avg30-holo'],
 	};
 	/** A Cardmarket block with no figure at all (37 of them) would be stored as a row of nulls. */
-	return Object.values(price).some(value => value !== undefined) ? price : null;
+	return Object.values(price).some(value => value != null) ? price : null;
 }
 
 interface ProductCard {
