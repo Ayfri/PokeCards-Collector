@@ -156,7 +156,6 @@
 				pokemon={currentPokemon}
 				currentType={currentType}
 				currentSet={currentSet}
-				handlePokemonImageError={handlePokemonImageError}
 			/>
 		</div>
 

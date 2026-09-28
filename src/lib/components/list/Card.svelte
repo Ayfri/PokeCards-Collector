@@ -206,6 +206,7 @@
 			class="rounded-lg absolute top-0 left-0"
 			style="width: {width}px; height: {height}px; max-width: 100%;"
 			imageUrl={card.image}
+			{card}
 			{types}
 			{lowRes}
 			lazy={!eager}

@@ -187,6 +187,7 @@
 						{#if !NO_IMAGES}
 							<CardImage
 								imageUrl={card.image}
+								{card}
 								types={card.types}
 								alt={cardPokemon ? cardPokemon.name : card.name}
 								class="card-image"

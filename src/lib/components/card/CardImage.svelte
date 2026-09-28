@@ -1,11 +1,15 @@
 <script lang="ts">
-	import { cardTypeTint, processCardImage } from '$helpers/card-images';
+	import { processCardImage } from '$helpers/card-images';
+	import CardPlate from '@components/card/CardPlate.svelte';
 	import { NO_IMAGES } from '$lib/images';
+	import type { FullCard } from '$lib/types';
 	import { untrack } from 'svelte';
 
 	interface Props {
 		/** Alt text for the image. */
 		alt?: string;
+		/** The depicted card: the plate drawn in place of a missing scan shows its details. */
+		card?: FullCard | undefined;
 		/** CSS classes to apply to the image. */
 		class?: string;
 		/** Height of the image, optional if width is specified. */
@@ -24,7 +28,7 @@
 		sizes?: string | undefined;
 		/** Inline style of the image. */
 		style?: string | undefined;
-		/** Comma-separated energy types, e.g. `"Fire, Water"`: tints the skeleton when the card has no art. */
+		/** Comma-separated energy types, e.g. `"Fire, Water"`: tints the plate when the card has no art and no `card` is given. */
 		types?: string | undefined;
 		/** Width of the image, optional if height is specified. */
 		width?: number | undefined;
@@ -32,6 +36,7 @@
 
 	let {
 		alt = 'Pokemon card',
+		card = undefined,
 		class: classNames = '',
 		height = undefined,
 		imageUrl,
@@ -71,9 +76,6 @@
 		[style, width && `width: ${width}px`, height && `height: ${height}px`, !(width && height) && 'aspect-ratio: 245 / 337'].filter(Boolean).join('; ')
 	);
 
-	/** 70% of the japanese cards carry no art, so the plate borrows the card's energy colors and mixes them into the gray. */
-	const tintStyle = $derived(cardTypeTint(types));
-
 	function handleError(event: Event) {
 		error = true;
 		onerror?.(event);
@@ -95,9 +97,7 @@
 
 {#if error || !imageUrl}
 	<!-- No art, or a URL TCGdex lists before uploading the scan (404): the plate stays still rather than pretending to load. -->
-	<div class="card-plate rounded-lg {classNames}" style="{boxStyle}; {tintStyle}">
-		<span class="card-plate-label">No artwork</span>
-	</div>
+	<CardPlate {alt} {card} class="rounded-lg {classNames}" style={boxStyle} {types} />
 {:else}
 	<img
 		bind:this={img}
@@ -117,29 +117,3 @@
 		{width}
 	/>
 {/if}
-
-<style>
-	/* No art exists for these cards, so the plate is built from their energy colors mixed into gray. */
-	.card-plate {
-		--tint-a: #5a5a5a;
-		--tint-b: #2f2f2f;
-		align-items: center;
-		background-color: color-mix(in oklab, var(--tint-a) 18%, #191919);
-		background-image:
-			radial-gradient(120% 90% at 20% 0%, color-mix(in oklab, var(--tint-a) 45%, transparent) 0%, transparent 60%),
-			radial-gradient(120% 90% at 85% 100%, color-mix(in oklab, var(--tint-b) 55%, transparent) 0%, transparent 65%);
-		box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--tint-a) 35%, transparent);
-		/* The label scales with the tile, so `cqw` needs the plate itself as the query container. */
-		container-type: inline-size;
-		display: flex;
-		justify-content: center;
-	}
-
-	.card-plate-label {
-		color: rgba(255, 255, 255, 0.45);
-		font-size: clamp(0.55rem, 9cqw, 0.85rem);
-		letter-spacing: 0.05em;
-		text-align: center;
-		text-transform: uppercase;
-	}
-</style>

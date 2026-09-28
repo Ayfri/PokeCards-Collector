@@ -474,6 +474,7 @@
 							<div class="relative pt-[140%]">
 								<CardImage
 									imageUrl={card.image}
+									{card}
 									types={card.types}
 									alt={card.name}
 									class="absolute inset-0 w-full h-full object-cover"
@@ -537,6 +538,7 @@
 							<div class="relative pt-[140%]">
 								<CardImage
 									imageUrl={card.image}
+									{card}
 									types={card.types}
 									alt={card.name}
 									class="absolute inset-0 w-full h-full object-cover"
