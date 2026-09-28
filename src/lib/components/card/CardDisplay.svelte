@@ -324,6 +324,8 @@
 	/* Fixed background filter that covers the entire page */
 	.filter {
 		background-image: url(/particles.png);
+		/* 234 KB instead of 608 KB for the PNG, which only browsers without AVIF still fetch. */
+		background-image: image-set(url(/particles.avif) type('image/avif'), url(/particles.png) type('image/png'));
 		background-size: cover;
 		content: "";
 		filter: var(--filter);
