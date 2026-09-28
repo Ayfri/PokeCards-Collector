@@ -81,6 +81,15 @@ export function parseCardCode(cardCode: string): { supertype?: string, setCode?:
 }
 
 /**
+ * The number as printed: uppercase like the card ("TG01", "R"), over the set total only when it is a plain number.
+ * A lettered one sits outside that count: the 30th Celebration Mews read "R/RGB", never "R/128".
+ */
+export function formatCardNumber(cardNumber: string, printedTotal?: number | null): string {
+	const number = cardNumber.toUpperCase();
+	return printedTotal && /^\d+$/.test(number) ? `${number}/${printedTotal}` : number;
+}
+
+/**
  * Checks if a given string matches the expected cardCode format.
  * Assumes card codes contain underscores and URLs generally don't in relevant parts.
  */

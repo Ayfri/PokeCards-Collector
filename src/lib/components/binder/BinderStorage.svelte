@@ -12,7 +12,7 @@
 	import WandSparklesIcon from '@lucide/svelte/icons/wand-sparkles';
 	import TrashIcon from '@lucide/svelte/icons/trash';
 	import X from '@lucide/svelte/icons/x';
-	import { isCardCode, parseCardCode } from '$helpers/card-utils';
+	import { formatCardNumber, isCardCode, parseCardCode } from '$helpers/card-utils';
 	import type { BinderCatalogueCard, Set } from '$lib/types';
 
 	interface Props {
@@ -260,7 +260,7 @@
 							<div class="pointer-events-none absolute right-0 bottom-0 left-0 bg-black/75 p-1 text-center text-[0.6rem] leading-tight text-white transition-opacity group-hover:opacity-100 {selected === item ? 'opacity-100' : 'opacity-0'}">
 								{#if fullCard}
 									<div class="truncate font-semibold">{fullCard.name}</div>
-									<div class="truncate">#{parseCardCode(item).cardNumber}/{set?.printedTotal}</div>
+									<div class="truncate">#{formatCardNumber(parseCardCode(item).cardNumber ?? '?', set?.printedTotal)}</div>
 									<div class="truncate text-gray-300">{fullCard.rarity}</div>
 									<div class="truncate text-gold-400">{fullCard.price ? `${fullCard.price.toFixed(2)} €` : 'No price'}</div>
 								{:else}

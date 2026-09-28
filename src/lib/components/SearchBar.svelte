@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
+	import { formatCardNumber } from '$helpers/card-utils';
 	import { onMount } from 'svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
@@ -204,7 +205,7 @@
 								<div class="grow min-w-0 flex items-center">
 									<p class="text-sm text-gray-400 truncate max-w-[70%]">{result.setName || 'Unknown Set'}</p>
 									<div class="text-xs text-gray-500 text-right ml-1 shrink-0">
-										#{result.cardNumber || '?'}{#if result.printedTotal}/{result.printedTotal}{/if}
+										#{result.cardNumber ? formatCardNumber(result.cardNumber, result.printedTotal) : '?'}
 									</div>
 								</div>
 								

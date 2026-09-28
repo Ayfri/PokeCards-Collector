@@ -6,7 +6,7 @@
 	import {collection} from '$stores/collection.svelte';
 	import { page } from '$app/state';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
-	import { parseCardCode } from '$lib/helpers/card-utils';
+	import { formatCardNumber, parseCardCode } from '$lib/helpers/card-utils';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
@@ -237,7 +237,7 @@
 			{#if set?.ptcgoCode}
 				<span class="uppercase text-sm opacity-85">{set.ptcgoCode}</span>
 			{/if}
-			<span class="text-sm opacity-85"> #{cardNumber}/{set?.printedTotal || '?'}</span>
+			<span class="text-sm opacity-85"> #{formatCardNumber(cardNumber, set?.printedTotal)}</span>
 		</h2>
 		<div class="flex items-center justify-center gap-2 mt-1">
 			{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== '' && prices?.simple}

@@ -2,7 +2,7 @@
 	import PageTitle from '@components/PageTitle.svelte';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import CardPrice from '@components/card/CardPrice.svelte';
-	import { parseCardCode } from '$helpers/card-utils';
+	import { formatCardNumber, parseCardCode } from '$helpers/card-utils';
 	import { page } from '$app/state';
 	import { collection } from '$stores/collection.svelte';
 	import { wishlist } from '$stores/wishlist.svelte';
@@ -178,7 +178,7 @@
 					{#if cardNumber && set.printedTotal}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
 							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Position of this card inside its set"><Hash size={14} /> Number:</dt>
-							<dd class="text-white text-right">{cardNumber} / {set.printedTotal}</dd>
+							<dd class="text-white text-right">{formatCardNumber(cardNumber, set.printedTotal)}</dd>
 						</div>
 					{/if}
 
