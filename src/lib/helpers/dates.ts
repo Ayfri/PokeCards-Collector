@@ -1,42 +1,22 @@
-export function timeAgo(dateString: string | Date): string {
-	const date = new Date(dateString);
-	const now = new Date();
-	const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
-	const minutes = Math.round(seconds / 60);
-	const hours = Math.round(minutes / 60);
-	const days = Math.round(hours / 24);
-	const months = Math.round(days / 30.4375); // Average days in a month
-	const years = Math.round(days / 365.25); // Account for leap years
+const relativeTimeFormatter = new Intl.RelativeTimeFormat('en-US', { numeric: 'always' });
 
-	if (seconds < 45) {
-		return 'a few seconds ago';
-	}
-	if (seconds < 90) {
-		return 'a minute ago';
-	}
-	if (minutes < 45) {
-		return `${minutes} minutes ago`;
-	}
-	if (minutes < 90) {
-		return 'an hour ago';
-	}
-	if (hours < 22) {
-		return `${hours} hours ago`;
-	}
-	if (hours < 36) {
-		return 'a day ago';
-	}
-	if (days < 25) {
-		return `${days} days ago`;
-	}
-	if (days < 45) {
-		return 'a month ago';
-	}
-	if (months < 11) {
-		return `${months} months ago`;
-	}
-	if (months < 18) {
-		return 'a year ago';
-	}
-	return `${Math.max(2, years)} years ago`;
+/** Largest unit first, with its length in seconds; months and years use their average length. */
+const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
+	['year', 31_557_600],
+	['month', 2_629_800],
+	['week', 604_800],
+	['day', 86_400],
+	['hour', 3_600],
+	['minute', 60],
+	['second', 1],
+];
+
+/**
+ * The elapsed time in its largest whole unit, floored so it never overstates.
+ * @example timeAgo('2024-03-01') // "2 years ago" on 2026-09-28
+ */
+export function timeAgo(date: string | Date): string {
+	const seconds = Math.max(0, (Date.now() - new Date(date).getTime()) / 1000);
+	const [unit, length] = UNITS.find(([, length]) => seconds >= length) ?? UNITS.at(-1)!;
+	return relativeTimeFormatter.format(-Math.floor(seconds / length), unit);
 }
