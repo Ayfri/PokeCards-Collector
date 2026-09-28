@@ -265,9 +265,6 @@ Contributions are welcome.
 4. Check the types with `bunx svelte-check` - it reports 0 errors and 0 warnings, keep it that way
 5. Push to the branch (`git push origin feature/amazing-feature`)
 6. Open a Pull Request
-
-`CLAUDE.md` documents the stack constraints and conventions the codebase follows; it is worth reading before a
-first change.
 </details>
 
 ## 📄 License

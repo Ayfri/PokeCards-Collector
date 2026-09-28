@@ -6,8 +6,8 @@ import type {Language} from './tcgdex/mappers';
 
 /**
  * Drops every catalogue row belonging to an excluded serie (see `EXCLUDED_SERIES`).
- * `collections` and `wishlists` are never touched - the report lists the rows that would be left
- * pointing at nothing, and CLAUDE.md forbids garbage-collecting them.
+ * `collections` and `wishlists` are never touched: the report lists the rows left pointing at nothing,
+ * which render again if the serie comes back.
  */
 
 const CHUNK = 200;
