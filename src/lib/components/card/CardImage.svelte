@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { cardTypeTint, processCardImage } from '$helpers/card-images';
 	import { NO_IMAGES } from '$lib/images';
+	import { untrack } from 'svelte';
 
 	interface Props {
 		/** Alt text for the image. */
@@ -78,20 +79,22 @@
 		onerror?.(event);
 	}
 
-	/** A recycled tile keeps its <img> element, so a cached src is already complete: skip the fade instead of flashing. */
+	/**
+	 * A recycled tile keeps its <img> element, so a cached src is already complete: skip the fade instead of flashing.
+	 * `img` is read untracked: a failed load swaps it for the plate, and re-running on that reset `error` and looped forever.
+	 */
 	$effect(() => {
 		lowResImageUrl;
-		error = false;
-		loaded = img?.complete ?? false;
+		untrack(() => {
+			const settled = img?.complete ?? false;
+			error = settled && img?.naturalWidth === 0;
+			loaded = settled && !error;
+		});
 	});
 </script>
 
-{#if error}
-	<div class="flex items-center justify-center bg-red-900 text-white rounded-lg {classNames}" style={boxStyle}>
-		<span>Image not available</span>
-	</div>
-{:else if !imageUrl}
-	<!-- TCGdex has no art for this card, so nothing will ever replace the plate: it stays still rather than pretending to load. -->
+{#if error || !imageUrl}
+	<!-- No art, or a URL TCGdex lists before uploading the scan (404): the plate stays still rather than pretending to load. -->
 	<div class="card-plate rounded-lg {classNames}" style="{boxStyle}; {tintStyle}">
 		<span class="card-plate-label">No artwork</span>
 	</div>
