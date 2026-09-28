@@ -187,10 +187,10 @@
 			{#if selectedSetName || selectedArtistName}
 				<div class="flex flex-wrap gap-2 items-center ml-3">
 					{#if selectedSetName}
-						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-white font-normal text-xs">Set: {selectedSetName}</span>
+						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-black font-normal text-xs">Set: {selectedSetName}</span>
 					{/if}
 					{#if selectedArtistName}
-						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-white font-normal text-xs">Artist: {selectedArtistName}</span>
+						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-black font-normal text-xs">Artist: {selectedArtistName}</span>
 					{/if}
 				</div>
 			{/if}
