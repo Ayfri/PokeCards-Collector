@@ -20,8 +20,8 @@
 		lazy?: boolean;
 		/** Caps the candidates at the 245px variant, whatever the layout asks for. */
 		lowRes?: boolean;
-		/** Called when the image fails to load. */
-		onerror?: (event: Event) => void;
+		/** Called when the image fails to load, including a failure that happened before hydration. */
+		onerror?: () => void;
 		/** Marks the image as above the fold: eager + `fetchpriority="high"`, for the LCP candidate. */
 		priority?: boolean;
 		/** `sizes` value; defaults to the pixel width when one is given. */
@@ -76,21 +76,23 @@
 		[style, width && `width: ${width}px`, height && `height: ${height}px`, !(width && height) && 'aspect-ratio: 245 / 337'].filter(Boolean).join('; ')
 	);
 
-	function handleError(event: Event) {
+	function handleError() {
 		error = true;
-		onerror?.(event);
+		onerror?.();
 	}
 
 	/**
 	 * A recycled tile keeps its <img> element, so a cached src is already complete: skip the fade instead of flashing.
+	 * A server-rendered <img> can also fail before hydration attaches `onerror`, which only this check catches.
 	 * `img` is read untracked: a failed load swaps it for the plate, and re-running on that reset `error` and looped forever.
 	 */
 	$effect(() => {
 		lowResImageUrl;
 		untrack(() => {
 			const settled = img?.complete ?? false;
-			error = settled && img?.naturalWidth === 0;
-			loaded = settled && !error;
+			loaded = settled && img?.naturalWidth !== 0;
+			if (settled && !loaded) handleError();
+			else error = false;
 		});
 	});
 </script>
