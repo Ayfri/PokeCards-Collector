@@ -60,6 +60,17 @@
 	const setEntries = $derived(Object.entries(collectionStats?.set_completion ?? {}).map(([name, completion]): SetEntry => ({ ...completion, name, set: setsByName.get(name) })));
 	const sortedSets = $derived(setEntries.toSorted(SET_SORTS[setSort].compare));
 	const completedSets = $derived(setEntries.filter(entry => entry.count === entry.total).length);
+	/** Started sets summed card by card and euro by euro, so a 300-card set weighs more than a 17-card one, unlike the average. */
+	const totalCompletion = $derived.by(() => {
+		const sum = (key: 'collectedValue' | 'count' | 'total' | 'totalValue') => setEntries.reduce((total, entry) => total + entry[key], 0);
+		const [count, total, collectedValue, totalValue] = [sum('count'), sum('total'), sum('collectedValue'), sum('totalValue')];
+		const unique = collectionStats?.unique_cards ?? 0;
+		return [
+			{ detail: `${numberFormatter.format(count)} / ${numberFormatter.format(total)} cards`, label: 'Started sets', percentage: total ? (count / total) * 100 : 0 },
+			{ detail: `${currencyFormatter.format(collectedValue)} / ${currencyFormatter.format(totalValue)}`, label: 'Value of the started sets', percentage: totalValue ? (collectedValue / totalValue) * 100 : 0 },
+			{ detail: `${numberFormatter.format(unique)} / ${numberFormatter.format(totalCards)} cards`, label: 'Whole catalogue', percentage: totalCards ? (unique / totalCards) * 100 : 0 },
+		];
+	});
 	const averageCompletion = $derived(setEntries.length ? setEntries.reduce((sum, entry) => sum + entry.percentage, 0) / setEntries.length : 0);
 
 	/** Rarest first, the bar widths are relative to the most collected rarity. */
@@ -319,6 +330,23 @@
 					</div>
 				{/if}
 			</div>
+
+			{#if setEntries.length}
+				<div class="mb-5 grid grid-cols-1 gap-4 rounded-xl border border-gold-400/20 bg-gold-400/5 p-4 md:grid-cols-3">
+					{#each totalCompletion as progress (progress.label)}
+						<div class="min-w-0">
+							<div class="flex items-baseline justify-between gap-2">
+								<p class="truncate text-xs font-medium tracking-wider text-gray-400 uppercase">{progress.label}</p>
+								<p class="text-xl font-bold text-gold-400 tabular-nums">{progress.percentage.toFixed(progress.percentage < 10 ? 2 : 1)}%</p>
+							</div>
+							<div class="my-1.5 h-2 overflow-hidden rounded-full bg-white/10">
+								<div class="h-full rounded-full bg-linear-to-r from-gold-600 to-gold-300" style="width: {progress.percentage}%"></div>
+							</div>
+							<p class="truncate text-xs text-gray-400 tabular-nums">{progress.detail}</p>
+						</div>
+					{/each}
+				</div>
+			{/if}
 
 			{#if sortedSets.length}
 				<div class="grid max-h-160 grid-cols-1 gap-3 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
