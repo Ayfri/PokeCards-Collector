@@ -24,9 +24,11 @@
 		types,
 	}: Props = $props();
 
-	/** The text inputs debounce, so they hold their own value until the filter catches up. */
+	/** The text inputs debounce, so they hold their own value until the filter catches up, and follow URL seeding and resets. */
 	let searchNumero = $state(filters.numero);
 	let searchName = $state(filters.name);
+	$effect.pre(() => { searchNumero = filters.numero; });
+	$effect.pre(() => { searchName = filters.name; });
 
 	/**
 	 * Writes one filter param to the URL and navigates without a reload, keeping the focused control focused.
@@ -160,7 +162,10 @@
 					label="Pokémon ID"
 					bind:value={searchNumero}
 					placeholder="Enter Pokémon ID..."
-					debounceFunction={value => (filters.numero = value)}
+					debounceFunction={value => {
+						filters.numero = value.trim();
+						applyFilterParam('pokemon', filters.numero || null);
+					}}
 				/>
 			</div>
 

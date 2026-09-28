@@ -115,7 +115,7 @@ export function sortCards(
 /** Keeps the cards `filters` lets through, each test short-circuiting on an inactive filter. Runs before the sort, so everything downstream works on the smaller list. */
 export function filterCards(cards: FullCard[], filters: ActiveFilters): FullCard[] {
 	return cards.filter(card =>
-		(!filters.numero || (card.pokemonNumber?.toString().includes(filters.numero) ?? true))
+		(!filters.numero || card.pokemonNumber?.toString() === filters.numero)
 		&& (!filters.name || card.name.toLowerCase().includes(filters.name))
 		&& (filters.type === 'all' || card.types.toLowerCase().includes(filters.type))
 		&& (filters.rarity === 'all' || card.rarity.toLowerCase() === filters.rarity)
