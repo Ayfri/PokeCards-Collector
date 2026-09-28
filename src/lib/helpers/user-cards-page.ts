@@ -91,13 +91,18 @@ async function buildPayload(itemCodes: string[]): Promise<UserCardsPayload> {
 	};
 }
 
+/** The root layout's data this load reads: the viewer's profile and their own rows, so their own page costs no extra query. */
+interface ViewerData {
+	collectionItems: CardItem[];
+	profile: UserProfile | null;
+	wishlistItems: CardItem[];
+}
+
 interface UserCardsPageOptions {
 	client: SupabaseClient;
-	/** The viewer's own rows, already loaded by the root layout, so their own page costs no extra query. */
-	ownItems: CardItem[] | null | undefined;
 	fetchItems: (username: string, client: SupabaseClient) => Promise<{ data: CardItem[] | null; error: unknown }>;
 	kind: UserCardsKind;
-	loggedInUsername: string | null;
+	parent: () => Promise<ViewerData>;
 	requestedUsername: string;
 }
 
@@ -105,9 +110,10 @@ interface UserCardsPageOptions {
  * Shared load for `/collection/[user]` and `/wishlist/[user]`: they differ only in the table they read and the words
  * they print. The card payload is streamed, and the catalogue is never touched for a page the visitor cannot see.
  */
-export async function loadUserCardsPage({ client, fetchItems, kind, loggedInUsername, ownItems, requestedUsername }: UserCardsPageOptions) {
+export async function loadUserCardsPage({ client, fetchItems, kind, parent, requestedUsername }: UserCardsPageOptions) {
 	const copy = USER_CARDS_COPY[kind];
-	const { data: targetProfile, error: profileError } = await getProfileByUsername(requestedUsername, client);
+	// The profile lookup overlaps the layout load instead of queueing behind it.
+	const [{ data: targetProfile, error: profileError }, viewer] = await Promise.all([getProfileByUsername(requestedUsername, client), parent()]);
 
 	if (profileError || !targetProfile) {
 		return {
@@ -130,13 +136,13 @@ export async function loadUserCardsPage({ client, fetchItems, kind, loggedInUser
 	if (targetProfile.username !== requestedUsername) redirect(307, `/${kind}/${encodeURIComponent(targetProfile.username)}`);
 
 	const username = targetProfile.username;
-	const isOwner = loggedInUsername === username;
+	const isOwner = viewer.profile?.username === username;
 	const isPublic = targetProfile.is_public;
 	const canRead = isPublic || isOwner;
 
 	const items = canRead
 		? isOwner
-			? ownItems ?? []
+			? viewer[`${kind}Items`]
 			: (await fetchItems(username, client)).data ?? []
 		: [];
 
