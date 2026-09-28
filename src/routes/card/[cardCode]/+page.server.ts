@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getCards, getPokemons, getPrices } from '$helpers/supabase-data';
+import { getCardDetails, getCards, getPokemons, getPrices } from '$helpers/supabase-data';
 import { processCardImage } from '$helpers/card-images';
 import { cardPageCatalogue, cardPrice } from '$helpers/card-utils';
 import { article, breadcrumbs, cardSchema } from '$helpers/seo';
@@ -9,12 +9,11 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
 	// Started before `parent()` so the catalogue reads overlap the layout's auth and collection queries.
-	const catalogue = Promise.all([getCards(), getPrices(), getPokemons()]);
+	const catalogue = Promise.all([getCardDetails('cards', cardCode), getCards(), getPrices(), getPokemons()]);
 	const parentData = await parent();
-	const [allCards, prices, allPokemons] = await catalogue;
+	const [targetCard, allCards, prices, allPokemons] = await catalogue;
 	const sets = parentData.sets || [];
 
-	const targetCard = allCards.find(c => c.cardCode === cardCode);
 	if (!targetCard) {
 		throw error(404, `Card with code ${cardCode} not found`);
 	}
@@ -36,21 +35,10 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		);
 	}
 
-	if (relevantCards.length === 0 && targetCard) {
-		relevantCards = [targetCard];
-	}
-
 	relevantCards.sort((a, b) => (cardPrice(prices[b.cardCode]) ?? 0) - (cardPrice(prices[a.cardCode]) ?? 0));
+	relevantCards = [targetCard, ...relevantCards.filter(c => c.cardCode !== cardCode)];
 
-	if (targetCard && relevantCards.length > 0 && relevantCards[0].cardCode !== cardCode) {
-		const targetIndex = relevantCards.findIndex(c => c.cardCode === cardCode);
-		if (targetIndex > 0) {
-			const cardToMove = relevantCards.splice(targetIndex, 1)[0];
-			relevantCards.unshift(cardToMove);
-		}
-	}
-
-	const set = sets.find(s => s.name === targetCard.setName);
+	const set = sets.find(s => s.setId === targetCard.setId);
 	const price = prices[targetCard.cardCode];
 	const value = cardPrice(price);
 

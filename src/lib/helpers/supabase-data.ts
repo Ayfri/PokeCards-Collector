@@ -268,6 +268,12 @@ export async function getRandomCardCode(): Promise<string | null> {
 	return data?.[0]?.card_code ?? null;
 }
 
+/** One card with every column, for its own page: the catalogue reads leave out `hp`, `stage`, `variants` and the like. */
+export async function getCardDetails(table: 'cards' | 'jp_cards', cardCode: string): Promise<FullCard | null> {
+	const { data } = await readWithRetry(`fetch ${table} ${cardCode}`, () => supabase.from(table).select(CARD_COLUMNS).eq('card_code', cardCode).maybeSingle<CardRow>());
+	return data ? toCard(data) : null;
+}
+
 export async function getJapaneseCards(): Promise<FullCard[]> {
 	return cachedTable('jp_cards', TABLE_TTL, () => cardListRows('jp_cards'), rows => rows.map(toCard));
 }

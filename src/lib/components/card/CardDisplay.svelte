@@ -110,7 +110,8 @@
 	afterNavigate(() => {
 		const urlParts = window.location.pathname.split('/');
 		const cardCodeFromUrl = urlParts[urlParts.length - 2];
-		const matchingCard = allCards.find(card => card.cardCode === cardCodeFromUrl);
+		// `pokemonCards` holds the viewed card with every column, `allCards` only its list fields.
+		const matchingCard = pokemonCards.find(card => card.cardCode === cardCodeFromUrl) ?? allCards.find(card => card.cardCode === cardCodeFromUrl);
 
 		if (matchingCard && matchingCard !== currentCard) {
 			currentCard = matchingCard;
