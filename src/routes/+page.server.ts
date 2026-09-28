@@ -2,6 +2,7 @@ import { countJapaneseCards, getCards, getPokemons, getPrices } from '$helpers/s
 import { cardListSchema, faqSchema } from '$helpers/seo';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
+import { cardPrice } from '$helpers/card-utils';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	// Started before `parent()` so the catalogue reads overlap the layout's auth and collection queries.
@@ -24,7 +25,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		return cardSetName === latestSet.name.toLowerCase();
 	}) : [];
 
-	const priceOf = (card: FullCard) => pricesResolved[card.cardCode]?.simple || pricesResolved[card.cardCode]?.trend || 0;
+	const priceOf = (card: FullCard) => cardPrice(pricesResolved[card.cardCode]) ?? 0;
 	/** One pass keeping the five priciest in order, since sorting the whole catalogue for them cost ~26 ms a render. */
 	const topFive = (cards: FullCard[]) => {
 		const top: { card: FullCard; price: number }[] = [];
@@ -45,7 +46,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const latestSetStats = {
 		energyCards: latestSetCards.filter(card => card.supertype === 'Energy').length,
 		pokemonCards: latestSetCards.filter(card => card.supertype === 'Pokémon').length,
-		totalValue: latestSetCards.reduce((sum, card) => sum + (pricesResolved[card.cardCode]?.simple || 0), 0),
+		totalValue: latestSetCards.reduce((sum, card) => sum + priceOf(card), 0),
 		trainerCards: latestSetCards.filter(card => card.supertype === 'Trainer').length,
 	};
 

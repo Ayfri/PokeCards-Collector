@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { cardPrice } from '$helpers/card-utils';
 import { getCards, getPrices } from '$helpers/supabase-data';
 import type { RequestHandler } from './$types';
 
@@ -20,8 +21,8 @@ export const GET: RequestHandler = async () => {
 
 	const suggestions: CardDleSuggestion[] = [];
 	for (const card of cards) {
-		const price = prices[card.cardCode]?.simple;
-		if (!price || price < MIN_PRICE || card.pokemonNumber === 9999) continue;
+		const price = cardPrice(prices[card.cardCode]);
+		if (!price || price < MIN_PRICE) continue;
 
 		suggestions.push({
 			cardCode: card.cardCode,

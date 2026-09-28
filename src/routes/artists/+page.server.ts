@@ -3,6 +3,7 @@ import type { PageServerLoad } from './$types';
 import type { FullCard } from '$lib/types';
 import { breadcrumbs } from '$helpers/seo';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
+import { cardPrice } from '$helpers/card-utils';
 
 /** Cards drawn on the preview stack of an artist card. */
 const SHOWCASE_SIZE = 3;
@@ -53,7 +54,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 			// One pass instead of a full sort per artist: the total, the years and the three priciest cards come out together.
 			for (const card of artistCards) {
-				const price = prices[card.cardCode]?.simple || prices[card.cardCode]?.trend || 0;
+				const price = cardPrice(prices[card.cardCode]) ?? 0;
 				totalValue += price;
 
 				const year = findSetInLookup(card.cardCode, setLookup)?.releaseDate.getFullYear();

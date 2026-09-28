@@ -6,7 +6,7 @@
 	import {collection} from '$stores/collection.svelte';
 	import { page } from '$app/state';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
-	import { cardNumberOf, formatCardNumber } from '$lib/helpers/card-utils';
+	import { cardNumberOf, cardPrice, formatCardNumber } from '$lib/helpers/card-utils';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
@@ -54,6 +54,7 @@
 	const controlInset = $derived(Math.round(Math.max(10, width * 0.045)));
 
 	const cardNumber = $derived(cardNumberOf(card));
+	const price = $derived(cardPrice(prices));
 	const pokemon = $derived(card.pokemonNumber ? pokemonMap.get(card.pokemonNumber) : null);
 	const set = $derived(getCardSet(cardCode, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null });
 
@@ -239,7 +240,7 @@
 			<span class="text-sm opacity-85"> #{formatCardNumber(cardNumber, set?.printedTotal)}</span>
 		</h2>
 		<div class="flex items-center justify-center gap-2 mt-1">
-			{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== '' && prices?.simple}
+			{#if card.cardMarketUrl && price}
 				<a
 					href={card.cardMarketUrl}
 					target="_blank"
@@ -248,7 +249,7 @@
 					aria-label="View on Cardmarket"
 				>
 					<div class="flex items-center justify-center whitespace-nowrap">
-						<span>{prices?.simple ? `${prices.simple} €` : 'Priceless'}</span>
+						<span>{price ? `${price} €` : 'Priceless'}</span>
 						<span class="mx-1">-</span>
 						<span class="text-gold-400 font-bold underline flex items-center">
 							Cardmarket
@@ -257,7 +258,7 @@
 					</div>
 				</a>
 			{:else}
-				<h3 class="text-center text-sm lg:text-base">{prices?.simple ? `${prices.simple} €` : 'Priceless'}</h3>
+				<h3 class="text-center text-sm lg:text-base">{price ? `${price} €` : 'Priceless'}</h3>
 			{/if}
 		</div>
 	</div>

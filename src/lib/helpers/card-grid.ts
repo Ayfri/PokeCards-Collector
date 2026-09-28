@@ -1,7 +1,7 @@
 import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
 import { compareRarities, getRarityLevel } from '$helpers/rarity';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
-import { cardNumberOf } from '$helpers/card-utils';
+import { cardNumberOf, cardPrice } from '$helpers/card-utils';
 import type { ActiveFilters } from '$stores/filters.svelte';
 import { CARD_SIZES, DEFAULT_CARD_SIZE } from '$stores/grid.svelte';
 
@@ -35,7 +35,7 @@ export function keepMostExpensivePerGroup(cards: FullCard[], prices: Record<stri
 			: `${card.supertype.toLowerCase()}_${card.name.toLowerCase()}`;
 
 		const existing = groups.get(groupKey);
-		if (!existing || (prices[card.cardCode]?.simple ?? 0) > (prices[existing.cardCode]?.simple ?? 0)) {
+		if (!existing || (cardPrice(prices[card.cardCode]) ?? 0) > (cardPrice(prices[existing.cardCode]) ?? 0)) {
 			groups.set(groupKey, card);
 		}
 	}
@@ -82,7 +82,7 @@ export function sortCards(
 			isPokemon: card.supertype === 'Pokémon' && card.pokemonNumber != null,
 			name: pokemon?.name ?? card.name,
 			pokemonNumber: card.pokemonNumber ?? 0,
-			price: prices[card.cardCode]?.simple ?? 0,
+			price: cardPrice(prices[card.cardCode]) ?? 0,
 			rarityLevel: getRarityLevel(card.rarity),
 			releaseDate: getCardSet(card.cardCode, sets)?.releaseDate?.getTime() ?? 0,
 			supertype: card.supertype,

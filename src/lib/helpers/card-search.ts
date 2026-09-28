@@ -1,6 +1,6 @@
 import type { FullCard, PriceData, Set } from '$lib/types';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
-import { cardNumberOf } from '$helpers/card-utils';
+import { cardNumberOf, cardPrice } from '$helpers/card-utils';
 
 /** One search hit, carrying everything the result row renders so the client needs neither the sets nor the prices. */
 export interface CardSearchResult {
@@ -170,7 +170,7 @@ export function searchCards(
 	return best.map(({ entry }) => ({
 		card: entry.card,
 		cardNumber: entry.cardNumber,
-		price: prices[entry.card.cardCode]?.simple ?? null,
+		price: cardPrice(prices[entry.card.cardCode]),
 		printedTotal: entry.printedTotal ? Number(entry.printedTotal) : null,
 		setName: entry.setName,
 	}));

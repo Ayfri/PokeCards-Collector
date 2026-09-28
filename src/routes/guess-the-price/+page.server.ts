@@ -1,7 +1,8 @@
 import { getCards, getPrices } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, gameSchema } from '$helpers/seo';
-import type { Card, PriceData, Set } from '$lib/types';
+import type { Card, Set } from '$lib/types';
+import { cardPrice } from '$helpers/card-utils';
 
 /** One playable card: the art to show, the price to guess and the set date shown as a hint. */
 export interface Round {
@@ -25,11 +26,6 @@ const MIN_PRICE = 3;
 /** Rounds handed over per load. Re-running this load re-reads every card and price, so one batch buys ~20 instant turns. */
 const BATCH_SIZE = 20;
 
-/** Cardmarket's `simple` value is the one the card page shows, so the game asks for that and falls back to the trend. */
-function gamePrice(price: PriceData | undefined): number | null {
-	return price?.simple ?? price?.trend ?? null;
-}
-
 export const load: PageServerLoad = async ({ parent }) => {
 	const catalogue = Promise.all([getCards(), getPrices()]);
 	const sets: Set[] = (await parent()).sets || [];
@@ -39,7 +35,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const playable: { card: Card; price: number }[] = [];
 	for (const card of allCards) {
 		if (!card.image) continue;
-		const price = gamePrice(prices[card.cardCode]);
+		const price = cardPrice(prices[card.cardCode]);
 		if (price === null || price < MIN_PRICE) continue;
 		playable.push({ card, price });
 	}

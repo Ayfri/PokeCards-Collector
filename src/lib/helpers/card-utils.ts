@@ -80,6 +80,12 @@ export function parseCardCode(cardCode: string): { supertype?: string, setCode?:
 	}
 }
 
+/** A card's price in EUR: the Cardmarket average, else its trend, 30-day average or lowest listing. `null` when none is above 0. */
+export function cardPrice(price: PriceData | undefined): number | null {
+	const value = price?.simple ?? price?.trend ?? price?.avg30 ?? price?.low ?? null;
+	return value && value > 0 ? value : null;
+}
+
 /** The printed number. Older `card_code`s carry a legacy number stripped of its letters ("TG01" became "01"), so the code is only the fallback. */
 export function cardNumberOf(card: { cardCode: string; localId?: string }): string {
 	return card.localId || parseCardCode(card.cardCode).cardNumber || '';
@@ -117,7 +123,7 @@ export function getRepresentativeCardForPokemon(pokemonId: number, allCards: Ful
 	if (filteredCards.length === 0) return undefined;
 
 	// Sort by price (highest first) and return the first one
-	return [...filteredCards].sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
+	return [...filteredCards].sort((a, b) => (cardPrice(prices[b.cardCode]) ?? 0) - (cardPrice(prices[a.cardCode]) ?? 0))[0];
 }
 
 /**

@@ -3,8 +3,8 @@ import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { processCardImage } from '$helpers/card-images';
-import { cardPageCatalogue } from '$helpers/card-utils';
-import { breadcrumbs, cardPrice, cardSchema } from '$helpers/seo';
+import { cardPageCatalogue, cardPrice } from '$helpers/card-utils';
+import { breadcrumbs, cardSchema } from '$helpers/seo';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;

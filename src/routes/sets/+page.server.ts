@@ -3,6 +3,7 @@ import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, setListSchema } from '$helpers/seo';
 import type { SetWithPrice } from '$lib/types';
+import { cardPrice } from '$helpers/card-utils';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	const catalogue = Promise.all([getCards(), getPrices()]);
@@ -17,7 +18,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		const foundSet = findSetInLookup(card.cardCode, setLookup);
 		if (!foundSet?.ptcgoCode) continue;
 
-		const currentPrice = prices[card.cardCode]?.simple ?? 0;
+		const currentPrice = cardPrice(prices[card.cardCode]) ?? 0;
 		if (currentPrice > 0) setPriceTotals.set(foundSet.ptcgoCode, (setPriceTotals.get(foundSet.ptcgoCode) || 0) + currentPrice);
 	}
 

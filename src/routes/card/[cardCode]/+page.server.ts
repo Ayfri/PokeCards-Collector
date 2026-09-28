@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
 import { getCards, getPokemons, getPrices } from '$helpers/supabase-data';
 import { processCardImage } from '$helpers/card-images';
-import { cardPageCatalogue } from '$helpers/card-utils';
-import { article, breadcrumbs, cardPrice, cardSchema } from '$helpers/seo';
+import { cardPageCatalogue, cardPrice } from '$helpers/card-utils';
+import { article, breadcrumbs, cardSchema } from '$helpers/seo';
 import type { FullCard, Pokemon } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -40,8 +40,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		relevantCards = [targetCard];
 	}
 
-	relevantCards.sort((a, b) => (prices[b.cardCode]?.simple ?? prices[b.cardCode]?.trend ?? 0) -
-	                           (prices[a.cardCode]?.simple ?? prices[a.cardCode]?.trend ?? 0));
+	relevantCards.sort((a, b) => (cardPrice(prices[b.cardCode]) ?? 0) - (cardPrice(prices[a.cardCode]) ?? 0));
 
 	if (targetCard && relevantCards.length > 0 && relevantCards[0].cardCode !== cardCode) {
 		const targetIndex = relevantCards.findIndex(c => c.cardCode === cardCode);

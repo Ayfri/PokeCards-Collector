@@ -6,6 +6,7 @@
 	import { persistedRecord } from '$stores/persisted.svelte';
 	import SortControl from '@components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '$lib/images';
+	import { cardPrice } from '$helpers/card-utils';
 	import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
 	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
@@ -64,8 +65,8 @@
 		switch (sortType) {
 			case 'sort-price':
 				sorted = sorted.sort((a, b) => {
-					const priceA = prices[a.cardCode]?.simple ?? 0; // Handle null/undefined price
-					const priceB = prices[b.cardCode]?.simple ?? 0;
+					const priceA = cardPrice(prices[a.cardCode]) ?? 0;
+					const priceB = cardPrice(prices[b.cardCode]) ?? 0;
 					return order === 'asc' ? priceA - priceB : priceB - priceA;
 				});
 				break;
@@ -170,6 +171,7 @@
 			{#each sortedCards as card (card.cardCode)}
 				{@const cardPokemon = getPokemon(card.pokemonNumber)}
 				{@const cardSet = findSetInLookup(card.cardCode, setLookup)}
+				{@const price = cardPrice(prices[card.cardCode])}
 				<div
 					class="relative flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5"
 					transition:fade={{ duration: 200 }}
@@ -251,7 +253,7 @@
 					<div class="mt-0.5 w-full text-center flex flex-col">
 						<h3 class="text-center font-bold text-sm">{cardSet?.name || 'Unknown Set'}</h3>
 						<div class="flex items-center justify-center">
-							{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== '' && prices[card.cardCode]?.simple}
+							{#if card.cardMarketUrl && price}
 								<a
 									href={card.cardMarketUrl}
 									target="_blank"
@@ -262,7 +264,7 @@
 								>
 									<div class="flex items-center justify-center whitespace-nowrap">
 										<span class="text-sm">
-											{prices[card.cardCode]?.simple?.toFixed(2)} €
+											{price.toFixed(2)} €
 										</span>
 										<span class="mx-1 text-sm">-</span>
 										<span class="text-gold-400 font-bold underline text-sm flex items-center">
@@ -273,7 +275,7 @@
 								</a>
 							{:else}
 								<div class="text-sm">
-									{prices[card.cardCode]?.simple ? `${prices[card.cardCode]?.simple?.toFixed(2)} €` : 'Priceless'}
+									{price ? `${price.toFixed(2)} €` : 'Priceless'}
 								</div>
 							{/if}
 						</div>

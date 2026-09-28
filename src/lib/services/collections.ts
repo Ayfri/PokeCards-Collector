@@ -5,6 +5,7 @@ import type { Card, PriceData, Set } from '../types';
 import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import { loading } from '$stores/loading.svelte';
 import { getUserWishlist } from './wishlists';
+import { cardPrice } from '$helpers/card-utils';
 
 // --- Constants ---
 const MAX_CARD_QUANTITY = 99; // Define the maximum allowed quantity per card
@@ -135,12 +136,7 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 		// Calculate wishlist total value
 		let wishlistTotalValue = 0;
 		if (wishlistItems && !wishlistError) {
-			wishlistItems.forEach(item => {
-				const cardPrice = prices[item.card_code];
-				if (cardPrice && cardPrice.simple) {
-					wishlistTotalValue += cardPrice.simple;
-				}
-			});
+			for (const item of wishlistItems) wishlistTotalValue += cardPrice(prices[item.card_code]) ?? 0;
 		}
 
 		// Create a set of cardCodes for quick lookup
@@ -152,12 +148,7 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 		
 		// Calculate total value based on ALL instances
 		let totalValue = 0;
-		collectionRows.forEach(item => { // Iterate over the original collection array (with duplicates)
-			const cardPrice = prices[item.card_code];
-			if (cardPrice && cardPrice.simple) {
-				totalValue += cardPrice.simple;
-			}
-		});
+		for (const item of collectionRows) totalValue += cardPrice(prices[item.card_code]) ?? 0;
 		
 		// Filter unique cards for rarity and set calculations (keep this)
 		const cardsInCollection = allCards.filter(card => collectionCardCodes.has(card.cardCode));
@@ -192,7 +183,7 @@ export async function getCollectionStats(username: string, allCards: Card[], all
 			if (!set || !setsWithCards.has(set.name)) continue;
 
 			const totals = cardsBySet.get(set.name) ?? { collected: 0, collectedValue: 0, total: 0, totalValue: 0 };
-			const price = prices[card.cardCode]?.simple ?? 0;
+			const price = cardPrice(prices[card.cardCode]) ?? 0;
 			totals.total++;
 			totals.totalValue += price;
 			if (collectionCardCodes.has(card.cardCode)) {

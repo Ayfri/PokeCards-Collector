@@ -3,6 +3,7 @@ import { getCards, getPokemons, getPrices } from '$helpers/supabase-data';
 import { processCardImage } from '$helpers/card-images';
 import { breadcrumbs } from '$helpers/seo';
 import { POKEMONS_COUNT } from '~/constants';
+import { cardPrice } from '$helpers/card-utils';
 
 /**
  * What one grid tile needs. The page used to ship `cards` and `prices` whole - ~14 MB of JSON for 1025 tiles
@@ -25,7 +26,7 @@ export const load: PageServerLoad = async () => {
 		const pokemonId = card.pokemonNumber;
 		if (pokemonId === undefined) continue;
 
-		const price = prices[card.cardCode]?.simple ?? prices[card.cardCode]?.trend ?? 0;
+		const price = cardPrice(prices[card.cardCode]) ?? 0;
 		const current = best.get(pokemonId);
 
 		if (!current) {
