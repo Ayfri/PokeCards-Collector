@@ -151,7 +151,7 @@
 	{/if}
 	<div class="relative" style="width: {width}px; height: {height}px; max-width: 100%;">
 		{#if user && profile}
-			<div class="absolute z-10 flex items-center gap-1 rounded-full bg-black/50 p-1" style="bottom: {controlInset}px; right: {controlInset}px;">
+			<div class="absolute z-10 flex items-center gap-1 rounded-full bg-black/60 p-1 shadow-[0_2px_10px_rgb(0_0_0/0.6)] ring-1 ring-white/10 backdrop-blur-xs" style="bottom: {controlInset}px; right: {controlInset}px;">
 				{#if collectionCount > 0}
 					<button
 						aria-label="Remove one copy from collection"
