@@ -15,8 +15,6 @@
 		itemWidth: number;
 		items: FullCard[];
 		marginTop?: number;
-		/** Fired once the grid has measured itself and rendered its first tiles. */
-		onready?: () => void;
 	}
 
 	let {
@@ -28,8 +26,7 @@
 		itemHeight,
 		itemWidth,
 		items,
-		marginTop = 0,
-		onready
+		marginTop = 0
 	}: Props = $props();
 
 	/** Rows rendered above and below the viewport so a fast scroll never shows a hole. */
@@ -66,10 +63,7 @@
 		const observer = new ResizeObserver(([entry]) => {
 			containerWidth = entry.contentRect.width;
 			containerHeight = entry.contentRect.height;
-			if (!isInitialized && containerWidth > 0) {
-				isInitialized = true;
-				onready?.();
-			}
+			if (containerWidth > 0) isInitialized = true;
 		});
 		observer.observe(container);
 		return () => observer.disconnect();

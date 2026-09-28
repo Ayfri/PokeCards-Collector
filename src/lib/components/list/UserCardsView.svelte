@@ -48,7 +48,6 @@
 			<CardGrid
 				artists={payload.artists}
 				cards={payload.cards}
-				disableLoader
 				pageTitle={data.heading}
 				pokemons={payload.pokemons}
 				prices={payload.prices}

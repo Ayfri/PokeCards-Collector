@@ -17,7 +17,6 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import { filterCards, getCardDimensions, keepMostExpensivePerGroup, sortBySupertype, sortCards } from "$helpers/card-grid";
-	import Loader from "$lib/components/Loader.svelte";
 	import { cardSize } from "$stores/grid.svelte";
 	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
 
@@ -30,7 +29,6 @@
 		types: string[];
 		artists?: string[];
 		pageTitle?: string | null;
-		disableLoader?: boolean;
 		selectedSetName?: string | null;
 		selectedArtistName?: string | null;
 		lowRes?: boolean;
@@ -45,7 +43,6 @@
 		types,
 		artists = [],
 		pageTitle = "Card List",
-		disableLoader = false,
 		selectedSetName = null,
 		selectedArtistName = null,
 		lowRes = true
@@ -54,7 +51,6 @@
 	let clientWidth: number = $state(0);
 	let showFilters = $state(false);
 	let searchName = $state("");
-	let showLoader = $state(true);
 	/** Cards above the fold skip lazy loading so the LCP candidate is requested with the document, not after layout. */
 	const eagerCards = 12;
 
@@ -250,12 +246,6 @@
 	</div>
 
 	<div class="relative flex flex-1 flex-col">
-		{#if showLoader && !disableLoader}
-			<div class="absolute inset-x-0 top-16 z-10 flex justify-center">
-				<Loader message="Loading cards..." />
-			</div>
-		{/if}
-
 		<VirtualGrid
 			gapX={cardDimensions.gapX}
 			gapY={cardDimensions.gapY}
@@ -264,7 +254,6 @@
 			forcedItemsPerRow={cardDimensions.cardsPerRow}
 			items={filteredCards}
 			marginTop={clientWidth ? 20 : 50}
-			onready={() => (showLoader = false)}
 		>
 			{#snippet children({ item, index })}
 				<CardComponent
