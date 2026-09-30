@@ -154,16 +154,17 @@ export function cardMarketUrl(idProduct: number | undefined): string {
 	return idProduct ? `https://www.cardmarket.com/en/Pokemon/Products/Singles?idProduct=${idProduct}` : '';
 }
 
+/** Expects a set from `withProbedAssets`, whose logo and symbol are already full URLs of files that exist. */
 export function mapSet(set: TcgdexSet): MappedSet {
 	return {
-		logo: set.logo ? `${set.logo}.png` : '',
+		logo: set.logo ?? '',
 		name: set.name,
 		printedTotal: set.cardCount?.official ?? 0,
 		ptcgoCode: set.abbreviation?.official ?? '',
 		releaseDate: set.releaseDate ?? '',
 		series: set.serie?.name ?? '',
 		setId: set.id,
-		symbol: set.symbol ? `${set.symbol}.png` : '',
+		symbol: set.symbol ?? '',
 		totalCards: set.cardCount?.total ?? 0,
 	};
 }

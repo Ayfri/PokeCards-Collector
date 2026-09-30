@@ -3,13 +3,26 @@ import type {TcgdexSet} from './types';
 export const TCGDEX_ORIGIN = 'https://api.tcgdex.net';
 const TCGDEX_ASSETS = 'https://assets.tcgdex.net';
 
-/** TCGdex uploads some set logos and symbols to its CDN before its API links them, so a missing one is probed at the path the API would give. */
+const exists = async (url: string) => (await fetch(url, {method: 'HEAD'}).catch(() => null))?.ok ?? false;
+
+/** The first extensionless base the CDN holds, as a full URL: PNG first, since the stored logo also feeds Open Graph and the sitemap. */
+async function firstAsset(bases: (string | undefined)[]): Promise<string | undefined> {
+	for (const base of new Set(bases.filter(base => base !== undefined))) {
+		for (const url of [`${base}.png`, `${base}.webp`]) if (await exists(url)) return url;
+	}
+}
+
+/**
+ * Resolves the set logo and symbol to files the CDN actually holds, so the app never requests a missing one.
+ * The API links every symbol under `univ/`, which the CDN answers 400 for (InvalidBucketName) while the same file sits under
+ * each language, and English covers a language that lacks one. It also links logos it never uploaded and leaves out some it did.
+ * `logo` and `symbol` come back as full URLs with their extension, or undefined when neither format exists.
+ */
 export async function withProbedAssets(set: TcgdexSet, lang: string): Promise<TcgdexSet> {
-	if ((set.logo && set.symbol) || !set.serie) return set;
-	const probe = async (url: string) => (await fetch(`${url}.png`, {method: 'HEAD'}).catch(() => null))?.ok ? url : undefined;
+	const at = (language: string, file: string) => set.serie && `${TCGDEX_ASSETS}/${language}/${set.serie.id}/${set.id}/${file}`;
 	const [logo, symbol] = await Promise.all([
-		set.logo ?? probe(`${TCGDEX_ASSETS}/${lang}/${set.serie.id}/${set.id}/logo`),
-		set.symbol ?? probe(`${TCGDEX_ASSETS}/univ/${set.serie.id}/${set.id}/symbol`),
+		firstAsset([set.logo, at(lang, 'logo')]),
+		firstAsset([set.symbol?.replace('/univ/', `/${lang}/`), at(lang, 'symbol'), at('en', 'symbol')]),
 	]);
 	return {...set, logo, symbol};
 }
