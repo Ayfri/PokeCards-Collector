@@ -105,6 +105,7 @@
 		bind:this={img}
 		{alt}
 		class="transition-opacity duration-300 ease-in-out {classNames} {loaded ? '' : 'opacity-0'} {NO_IMAGES ? 'border border-gold-400/50' : ''}"
+		data-card-code={card?.cardCode}
 		decoding="async"
 		draggable="false"
 		fetchpriority={priority ? 'high' : 'auto'}

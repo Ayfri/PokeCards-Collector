@@ -31,7 +31,7 @@
 
 <!-- Everything scales with the tile through `cqw`, and the `@max-*` variants drop details once they would shrink below reading size.
      The bottom padding leaves room for the set badge and collection controls grids lay over the tile. -->
-<div aria-label={alt} class="card-plate @container overflow-hidden text-white select-none {classNames}" role="img" style="{style}; {tintStyle}">
+<div aria-label={alt} class="card-plate @container overflow-hidden text-white select-none {classNames}" data-card-code={card?.cardCode} role="img" style="{style}; {tintStyle}">
 	<div class="card-plate-body flex h-full flex-col gap-[3.5cqw] p-[6cqw] pb-[16cqw] @max-[200px]:pb-[22cqw] @max-[120px]:justify-center @max-[120px]:pb-[6cqw]">
 		{#if card}
 			<header class="flex items-start justify-between gap-[3cqw] @max-[120px]:hidden">

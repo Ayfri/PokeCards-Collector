@@ -7,11 +7,13 @@
 	import type {FullCard, Pokemon, Set, PriceData} from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
 	import InteractiveCard from '@components/card/InteractiveCard.svelte';
-	import { onMount } from 'svelte';
+	import { flushSync, onMount } from 'svelte';
 	import { afterNavigate, goto, replaceState } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 	import { getPokemonImageSrc, getPokemonSpriteSrc } from '$helpers/pokemon-utils';
 	import { loading } from '$stores/loading.svelte';
+	import { morphCards } from '$helpers/view-transitions';
 
 	
 	interface Props {
@@ -40,7 +42,6 @@
 	let isInitialRenderComplete = $state(false);
 
 	// --- Reactive Computations ---
-	const baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
 	const cardPrices = $derived(currentCard ? prices[currentCard.cardCode] : undefined);
 	const currentSet = $derived(currentCard ? sets.find(set => set.setId === currentCard?.setId) : undefined);
 	const currentType = $derived(currentCard?.types?.toLowerCase().split(',')[0] || 'unknown');
@@ -76,25 +77,21 @@
 		}
 	}
 
+	/** Swaps the displayed card without a navigation: the picked tile flies up into the big card while the page jumps back to the top. */
 	function handleCardSelect(selectedCard: FullCard) {
-		// Simply update the current card without navigation
-		currentCard = selectedCard;
-
-		// Optionally update the URL in the browser without reload
-		if (typeof window !== 'undefined') {
-			const newUrl = `${baseCardUrl}${selectedCard.cardCode}/`;
-			replaceState(newUrl, { replaceUrl: true });
-			window.scrollTo({
-				top: 0,
-				behavior: 'smooth'
-			});
-		}
+		const { cardCode } = selectedCard;
+		replaceState(resolve(isJapaneseContext ? '/jp-card/[cardCode]' : '/card/[cardCode]', { cardCode }), { replaceUrl: true });
+		morphCards([selectedCard.cardCode], () => {
+			currentCard = selectedCard;
+			flushSync();
+			window.scrollTo({ behavior: 'instant', top: 0 });
+		});
 	}
 
 	function handlePokemonNavigation(cardCode: string | undefined) {
 		if (cardCode) {
 			loading.navigation = true;
-			goto(`${baseCardUrl}${cardCode}`);
+			goto(resolve(isJapaneseContext ? '/jp-card/[cardCode]' : '/card/[cardCode]', { cardCode }));
 		}
 	}
 
@@ -140,8 +137,8 @@
 	<!-- Main card display container -->
 	<div class="card-display-area w-full px-4 md:px-12 max-w-8xl mx-auto perspective-container flex flex-col items-center">
 
-		<!-- Center Card -->
-		<div class="center-card-wrapper relative shrink-0 order-1 lg:order-2 perspective-container" in:fly={{ y: 50, duration: 500, delay: 300 }}>
+		<!-- Center Card, with no intro of its own: the page transition flies the opened card into it. -->
+		<div class="center-card-wrapper relative shrink-0 order-1 lg:order-2 perspective-container">
 			<!-- Conditional Aura for Pokemon Types -->
 			{#if currentPokemon && !NO_IMAGES}
 				<div class="card-aura {currentType}" id="card-aura"></div>

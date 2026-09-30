@@ -60,6 +60,7 @@
 <div
 	class="w-84 h-116 sm:w-[20rem] sm:h-112 lg:w-92 lg:h-128 max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {pokemon ? '' : 'non-pokemon'}"
 	bind:this={centerCard}
+	data-card-hero={card?.cardCode}
 	data-card-id={currentSet?.name}
 	data-card-type={currentType}
 >

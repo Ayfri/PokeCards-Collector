@@ -4,6 +4,7 @@
 	import {onNavigate} from '$app/navigation';
 	import {page} from '$app/state';
 	import {NO_IMAGES} from '$lib/images';
+	import {transitionNavigation} from '$helpers/view-transitions';
 	import Header from '@components/Header.svelte';
 	import LoadingBar from '$lib/components/ui/LoadingBar.svelte';
 	import {BASE_URL} from '~/constants';
@@ -48,14 +49,7 @@
 			setTimeout(() => (loading.navigation = false), 100); // Small delay to ensure smoother transitions
 		});
 
-		if (!document.startViewTransition) return;
-
-		return new Promise((resolve) => {
-			document.startViewTransition(async () => {
-				resolve();
-				await navigation.complete;
-			});
-		});
+		return transitionNavigation(navigation);
 	});
 </script>
 
