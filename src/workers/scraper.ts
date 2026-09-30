@@ -1,5 +1,5 @@
-import {WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep} from 'cloudflare:workers';
-import {createSyncClient, dropSharedProducts, syncSetCards, syncSets} from '$scrapers/supabase_sync';
+import {DurableObject, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep} from 'cloudflare:workers';
+import {createSyncClient, dropSharedProducts, syncSetCards, syncSets, type SyncCardsResult} from '$scrapers/supabase_sync';
 import {FetchClient} from '$scrapers/tcgdex/client';
 import type {Language} from '$scrapers/tcgdex/mappers';
 
@@ -8,12 +8,31 @@ interface Env {
 	SCRAPER: Workflow;
 	SCRAPER_TRIGGER_TOKEN?: string;
 	SUPABASE_SECRET_KEY: string;
+	TCGDEX_READER: DurableObjectNamespace<TcgdexReader>;
 }
 
 const LANGUAGES: readonly Language[] = ['en', 'ja'];
 
 /** Sets fetched per step: a step is one Worker invocation, so its subrequests must stay well under the per-invocation cap. */
 const SETS_PER_STEP = 4;
+
+/**
+ * Runs every TCGdex read from Western Europe. `api.tcgdex.net` is geo-DNS: Europe gets the French origin, North America
+ * two Canadian mirrors frozen on the 2026-09-17 build, which list 158 of the 161 30th Celebration cards with no price.
+ * Cron-created Workflow instances ran there, and the sync deleted the prices those mirrors no longer had.
+ */
+export class TcgdexReader extends DurableObject<Env> {
+	private readonly supabase = createSyncClient(this.env.PUBLIC_SUPABASE_URL, this.env.SUPABASE_SECRET_KEY);
+	private readonly client = new FetchClient();
+
+	syncSets(lang: Language): Promise<string[]> {
+		return syncSets(this.supabase, this.client, lang);
+	}
+
+	syncSetCards(lang: Language, setIds: string[]): Promise<SyncCardsResult> {
+		return syncSetCards(this.supabase, this.client, lang, setIds);
+	}
+}
 
 /**
  * Daily TCGdex -> Supabase refresh. One step per set batch, so a failure retries that batch alone
@@ -23,17 +42,18 @@ const SETS_PER_STEP = 4;
 export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 	async run(_event: WorkflowEvent<unknown>, step: WorkflowStep): Promise<void> {
 		const supabase = createSyncClient(this.env.PUBLIC_SUPABASE_URL, this.env.SUPABASE_SECRET_KEY);
-		const client = new FetchClient();
+		/** A location hint only applies when the object is first created, so the fixed name keeps it in Western Europe for good. */
+		const reader = this.env.TCGDEX_READER.get(this.env.TCGDEX_READER.idFromName('weur'), {locationHint: 'weur'});
 
 		for (const lang of LANGUAGES) {
-			const setIds = await step.do(`${lang}: sets`, () => syncSets(supabase, client, lang));
+			const setIds = await step.do(`${lang}: sets`, () => reader.syncSets(lang));
 
 			for (let index = 0; index < setIds.length; index += SETS_PER_STEP) {
 				const batch = setIds.slice(index, index + SETS_PER_STEP);
 				await step.do(
 					`${lang}: cards ${index / SETS_PER_STEP + 1} (${batch.join(', ')})`,
 					{retries: {limit: 5, delay: '30 seconds', backoff: 'exponential'}, timeout: '10 minutes'},
-					() => syncSetCards(supabase, client, lang, batch),
+					async (): Promise<SyncCardsResult> => reader.syncSetCards(lang, batch),
 				);
 			}
 

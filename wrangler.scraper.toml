@@ -25,6 +25,15 @@ enabled = true
 [observability.traces]
 enabled = true
 
+# Pins the TCGdex reads to Western Europe, see `TcgdexReader` in src/workers/scraper.ts.
+[[durable_objects.bindings]]
+name = "TCGDEX_READER"
+class_name = "TcgdexReader"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TcgdexReader"]
+
 # `schedules` creates one Workflow instance per firing, so no `[triggers] crons` and no `scheduled` handler.
 [[workflows]]
 name = "pokecards-scrape"

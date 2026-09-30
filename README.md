@@ -173,7 +173,9 @@ day at 04:00 UTC, one Workflow step per batch of 4 sets so a failing batch retri
 straight into Supabase with no staged JSON. A batch moves a card whose override gives it another code, deletes the
 cards and prices TCGdex dropped from its sets, and skips the sets TCGdex holds no card for; a last step per language
 clears the prices of cards sharing a Cardmarket product with a differently named card. Every delete is scoped to a
-set TCGdex answered for, so a half-finished pass never removes rows it has not reached.
+set TCGdex answered for, so a half-finished pass never removes rows it has not reached. The TCGdex reads run in a
+Durable Object pinned to Western Europe, since `api.tcgdex.net` is geo-DNS and its North American mirrors serve a
+stale build.
 
 ```bash
 bun run deploy:scraper
