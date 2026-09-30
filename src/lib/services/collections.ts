@@ -2,6 +2,7 @@ import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { collection } from '$stores/collection.svelte';
 import { loading } from '$stores/loading.svelte';
+import { selectAll } from './select-all';
 
 // --- Constants ---
 const MAX_CARD_QUANTITY = 99; // Define the maximum allowed quantity per card
@@ -92,15 +93,14 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 	}
 }
 
-// Get user's collection (only card codes needed for counting)
+/** Every copy the user owns, one row per copy and only its card code, paged past the row cap. */
 export async function getUserCollection(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		const { data, error } = await client
+		return await selectAll(() => client
 			.from('collections')
-			.select('card_code') // Select ONLY card_code
-			.eq('username', username);
-
-		return { data, error };
+			.select('card_code', { count: 'exact' })
+			.eq('username', username)
+			.order('id'));
 	} catch (error) {
 		console.error('Error getting user collection card codes:', error);
 		return { data: null, error };
