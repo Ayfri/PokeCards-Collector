@@ -1,28 +1,37 @@
+import {COMMUNITY_SET_IMAGES} from './community-images';
 import type {TcgdexSet} from './types';
 
 export const TCGDEX_ORIGIN = 'https://api.tcgdex.net';
 const TCGDEX_ASSETS = 'https://assets.tcgdex.net';
 
-const exists = async (url: string) => (await fetch(url, {method: 'HEAD'}).catch(() => null))?.ok ?? false;
+/** Every set is probed at once, so an image host may reset a connection: that is retried, only an answered non-2xx means missing. */
+const exists = (url: string) => withRetry(async () => (await fetch(url, {method: 'HEAD'})).ok, 3, 200).catch(() => false);
 
-/** The first extensionless base the CDN holds, as a full URL: PNG first, since the stored logo also feeds Open Graph and the sitemap. */
-async function firstAsset(bases: (string | undefined)[]): Promise<string | undefined> {
-	for (const base of new Set(bases.filter(base => base !== undefined))) {
-		for (const url of [`${base}.png`, `${base}.webp`]) if (await exists(url)) return url;
-	}
+/** A TCGdex base in both formats, PNG first since the stored logo also feeds Open Graph and the sitemap. */
+const formats = (base: string | undefined) => base ? [`${base}.png`, `${base}.webp`] : [];
+
+async function firstExisting(urls: (string | undefined)[]): Promise<string | undefined> {
+	for (const url of new Set(urls.filter(url => url !== undefined))) if (await exists(url)) return url;
 }
 
 /**
  * Resolves the set logo and symbol to files the CDN actually holds, so the app never requests a missing one.
  * The API links every symbol under `univ/`, which the CDN answers 400 for (InvalidBucketName) while the same file sits under
  * each language, and English covers a language that lacks one. It also links logos it never uploaded and leaves out some it did.
- * `logo` and `symbol` come back as full URLs with their extension, or undefined when neither format exists.
+ * An English set TCGdex has nothing for falls back to its community image from `community-images.ts`.
+ * `logo` and `symbol` come back as full URLs of files that exist, or undefined.
  */
 export async function withProbedAssets(set: TcgdexSet, lang: string): Promise<TcgdexSet> {
 	const at = (language: string, file: string) => set.serie && `${TCGDEX_ASSETS}/${language}/${set.serie.id}/${set.id}/${file}`;
+	const community = lang === 'en' ? COMMUNITY_SET_IMAGES[set.id] : undefined;
 	const [logo, symbol] = await Promise.all([
-		firstAsset([set.logo, at(lang, 'logo')]),
-		firstAsset([set.symbol?.replace('/univ/', `/${lang}/`), at(lang, 'symbol'), at('en', 'symbol')]),
+		firstExisting([...formats(set.logo), ...formats(at(lang, 'logo')), community?.logo]),
+		firstExisting([
+			...formats(set.symbol?.replace('/univ/', `/${lang}/`)),
+			...formats(at(lang, 'symbol')),
+			...formats(at('en', 'symbol')),
+			community?.symbol,
+		]),
 	]);
 	return {...set, logo, symbol};
 }
