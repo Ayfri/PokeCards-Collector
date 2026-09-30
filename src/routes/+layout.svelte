@@ -62,14 +62,9 @@
 <svelte:document onclick={handleLinkClick} />
 
 <svelte:head>
-	<meta content="#000" name="theme-color"/>
-	<meta content="dark light" name="color-scheme"/>
 	<meta content="Ayfri;Anta;Bahsiik" name="author"/>
 
 	<link href="/sitemap.xml" rel="sitemap"/>
-	{#if !NO_IMAGES}
-	<link href="/favicon.png" rel="icon" type="image/png"/>
-	{/if}
 	<link href={BASE_URL} hreflang="en" rel="alternate"/>
 	<link href={BASE_URL} hreflang="x-default" rel="alternate"/>
 

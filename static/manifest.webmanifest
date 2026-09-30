@@ -1,0 +1,28 @@
+{
+	"id": "/",
+	"name": "PokéCards-Collector",
+	"short_name": "PokéCards",
+	"description": "Explore the Pokémon TCG universe. Discover the latest set, check out the prices of the rarest cards, and manage your collection.",
+	"lang": "en",
+	"dir": "ltr",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"display_override": ["window-controls-overlay", "standalone"],
+	"orientation": "any",
+	"background_color": "#000000",
+	"theme_color": "#000000",
+	"categories": ["entertainment", "games", "shopping"],
+	"prefer_related_applications": false,
+	"icons": [
+		{"src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+		{"src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+		{"src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+	],
+	"shortcuts": [
+		{"name": "All cards", "url": "/cards-list", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]},
+		{"name": "Sets", "url": "/sets", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]},
+		{"name": "Card.dle", "short_name": "Card.dle", "description": "Guess the card of the day", "url": "/card.dle", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]},
+		{"name": "Binder", "url": "/binder", "icons": [{"src": "/icons/icon-192.png", "sizes": "192x192"}]}
+	]
+}

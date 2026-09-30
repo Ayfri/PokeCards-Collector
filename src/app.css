@@ -2,6 +2,9 @@
 
 @import 'tailwindcss';
 
+/** The site is dark only: `dark:` follows the `dark` class `app.html` sets on `<html>`, not the OS preference that turned the auth modal white. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-*: initial;
   --font-clash: Clash Display, sans-serif;

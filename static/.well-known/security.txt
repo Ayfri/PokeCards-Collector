@@ -1,0 +1,4 @@
+Contact: https://github.com/Ayfri/PokeCards-Collector/security/advisories/new
+Expires: 2027-09-30T00:00:00.000Z
+Preferred-Languages: en, fr
+Canonical: https://pokecards-collector.ayfri.com/.well-known/security.txt

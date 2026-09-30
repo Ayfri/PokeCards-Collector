@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+	<ShortName>PokéCards</ShortName>
+	<Description>Search Pokémon TCG cards by name on PokéCards-Collector</Description>
+	<InputEncoding>UTF-8</InputEncoding>
+	<Image width="48" height="48" type="image/png">https://pokecards-collector.ayfri.com/icons/favicon-48.png</Image>
+	<Url type="text/html" method="get" template="https://pokecards-collector.ayfri.com/cards-list?name={searchTerms}"/>
+	<Url type="application/opensearchdescription+xml" rel="self" template="https://pokecards-collector.ayfri.com/opensearch.xml"/>
+</OpenSearchDescription>
