@@ -1,7 +1,9 @@
 import { getCards, getPrices } from '$helpers/supabase-data';
 import { redirect } from '@sveltejs/kit';
-import { getCollectionStats } from '$lib/services/collections';
+import { computeCollectionStats } from '$helpers/collection-stats';
+import { getUserCollection } from '$lib/services/collections';
 import { getProfileByUsername } from '$lib/services/profiles';
+import { getUserWishlist } from '$lib/services/wishlists';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, profileSchema } from '$helpers/seo';
 import type { CollectionStats } from '$lib/types';
@@ -10,6 +12,8 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const requestedUsername = params.user;
 	// The profile lookup overlaps the layout load instead of queueing behind it.
 	const profilePromise = getProfileByUsername(requestedUsername, locals.supabase);
+	/** Read alongside the profile rather than after it: row level security already hides a private collection, so reading early leaks nothing. */
+	const rowsPromise = Promise.all([getUserCollection(requestedUsername, locals.supabase), getUserWishlist(requestedUsername, locals.supabase)]);
 	const { profile: loggedInUserProfile, sets } = await parent();
 	const isOwnProfile = loggedInUserProfile?.username === requestedUsername;
 
@@ -27,12 +31,11 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 
 	if (isPublic || isOwnProfile) {
 		// The catalogue only feeds the stats computation, it is never returned: 23546 cards in the document for a card count.
-		const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
+		const [allCards, prices, [{ data: collectionRows, error: collectionError }, { data: wishlistRows, error: wishlistError }]] = await Promise.all([getCards(), getPrices(), rowsPromise]);
 		totalCards = allCards.length;
 
-		const { data: stats, error: statsError } = await getCollectionStats(targetProfile.username, allCards, sets, prices, locals.supabase);
-		if (statsError) console.error(`Error fetching collection stats for ${targetProfile.username}:`, statsError);
-		else collectionStats = stats;
+		if (collectionError || !collectionRows) console.error(`Error fetching collection stats for ${targetProfile.username}:`, collectionError);
+		else collectionStats = computeCollectionStats(collectionRows, wishlistError ? [] : wishlistRows ?? [], allCards, sets, prices);
 
 		title = isOwnProfile ? 'My Profile' : `${targetProfile.username}'s Pokémon Card Collection`;
 		description = collectionStats
