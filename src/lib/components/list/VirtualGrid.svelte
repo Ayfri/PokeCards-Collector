@@ -58,16 +58,21 @@
 		gridScroll.progress = scrollable > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollable) * 100)) : 0;
 	});
 
-	$effect(() => {
-		if (!container) return;
-		const observer = new ResizeObserver(([entry]) => {
-			containerWidth = entry.contentRect.width;
-			containerHeight = entry.contentRect.height;
-			if (containerWidth > 0) isInitialized = true;
-		});
-		observer.observe(container);
+	/**
+	 * Also measured synchronously on mount: a ResizeObserver only reports on the next rendering step, which a page transition holds back,
+	 * so the tile a card flies back to would not exist yet when the new page is captured.
+	 */
+	function trackSize(element: HTMLDivElement) {
+		const measure = (width: number, height: number) => {
+			containerWidth = width;
+			containerHeight = height;
+			if (width > 0) isInitialized = true;
+		};
+		measure(element.clientWidth, element.clientHeight);
+		const observer = new ResizeObserver(([entry]) => measure(entry.contentRect.width, entry.contentRect.height));
+		observer.observe(element);
 		return () => observer.disconnect();
-	});
+	}
 
 	let scrollFrame = 0;
 	function handleScroll() {
@@ -115,7 +120,7 @@
 	}
 </script>
 
-<div bind:this={container} class="virtual-grid-container relative min-h-0 flex-1 w-full overflow-y-scroll scrollbar-hide" onscroll={handleScroll}>
+<div bind:this={container} {@attach trackSize} class="virtual-grid-container relative min-h-0 flex-1 w-full overflow-y-scroll scrollbar-hide" onscroll={handleScroll}>
 	{#if items.length === 0 && isInitialized}
 		{@render empty?.()}
 	{:else}
