@@ -25,6 +25,15 @@
   --animate-gradient-x: gradient-x 6s ease infinite;
   --animate-loading-sweep: loading-sweep 1.5s linear infinite;
   --animate-ripple-wave: ripple-wave 1.5s ease-out infinite;
+  /* Entrance for server-rendered content: a CSS animation starts on first paint and survives hydration, a Svelte intro would replay after it. */
+  --animate-reveal: reveal 0.4s cubic-bezier(0.33, 1, 0.68, 1) both;
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      translate: 0 2rem;
+    }
+  }
 
   @keyframes loading-sweep {
     0% {
