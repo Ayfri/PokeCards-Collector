@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
+	import { navigating } from '$app/state';
 	import { timeAgo } from '$helpers/dates';
 	import { compareRarities } from '$helpers/rarity';
 	import { toggleProfileVisibility } from '$lib/services/profiles';
@@ -23,7 +24,7 @@
 	import Settings from '@lucide/svelte/icons/settings';
 	import Trophy from '@lucide/svelte/icons/trophy';
 	import Wallet from '@lucide/svelte/icons/wallet';
-	import { fly } from 'svelte/transition';
+	import { fly, type FlyParams } from 'svelte/transition';
 	import type { CollectionStats, Set } from '$lib/types';
 	import type { PageData } from './$types';
 
@@ -44,6 +45,9 @@
 
 	type SetSort = keyof typeof SET_SORTS;
 	type SetEntry = CollectionStats['set_completion'][string] & { name: string; set: Set | undefined };
+
+	/** SvelteKit hydrates asynchronously, so global intros would replay over the server-rendered page: they only run on client navigations. */
+	const reveal = (node: Element, params: FlyParams) => navigating.to ? fly(node, params) : {};
 
 	let isLoading = $state(false);
 	let errorMessage = $state('');
@@ -138,7 +142,7 @@
 <main class="container mx-auto flex flex-col gap-8 overflow-x-hidden px-4 pt-4 pb-12 text-white" style="--accent: {accent}">
 	<section
 		class="relative overflow-hidden rounded-2xl border border-white/10 bg-gray-900 shadow-2xl"
-		in:fly|global={{ y: 40, duration: 400, delay: 100 }}
+		in:reveal|global={{ y: 40, duration: 400, delay: 100 }}
 	>
 		<div
 			class="pointer-events-none absolute inset-0"
@@ -232,7 +236,7 @@
 	{/if}
 
 	{#if !isPublic && !isOwnProfile}
-		<section class="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-gray-900/60 p-10 text-center" in:fly|global={{ y: 40, duration: 400, delay: 200 }}>
+		<section class="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-gray-900/60 p-10 text-center" in:reveal|global={{ y: 40, duration: 400, delay: 200 }}>
 			<div class="rounded-full bg-white/5 p-4 text-gold-400"><Lock size={28} /></div>
 			<h2 class="text-2xl font-bold">This collection is private</h2>
 			<p class="max-w-md text-gray-400">{username} keeps their collection and wishlist to themselves.</p>
@@ -246,7 +250,7 @@
 			{#each tiles as tile, i (tile.label)}
 				<div
 					class="group relative overflow-hidden rounded-xl border border-white/10 bg-linear-to-br from-gray-800 to-gray-900 p-5 transition-colors hover:border-gold-400/50"
-					in:fly|global={{ y: 30, duration: 350, delay: 200 + i * 60 }}
+					in:reveal|global={{ y: 30, duration: 350, delay: 200 + i * 60 }}
 					title={tile.hint}
 				>
 					<tile.icon class="absolute -right-3 -bottom-3 text-white/5 transition-colors group-hover:text-gold-400/10" size={88} />
@@ -261,7 +265,7 @@
 		</section>
 
 		{#if collectionStats.top_cards.length || rarities.length}
-			<div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-3" in:fly|global={{ y: 30, duration: 400, delay: 400 }}>
+			<div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-3" in:reveal|global={{ y: 30, duration: 400, delay: 400 }}>
 				{#if collectionStats.top_cards.length}
 					<section class="rounded-2xl border border-white/10 bg-gray-900/60 p-6 lg:col-span-2">
 						<h2 class="mb-5 flex items-center gap-2 text-xl font-semibold"><Gem class="text-gold-400" size={20} /> Most valuable cards</h2>
@@ -308,7 +312,7 @@
 			</div>
 		{/if}
 
-		<section class="rounded-2xl border border-white/10 bg-gray-900/60 p-6" in:fly|global={{ y: 30, duration: 400, delay: 500 }}>
+		<section class="rounded-2xl border border-white/10 bg-gray-900/60 p-6" in:reveal|global={{ y: 30, duration: 400, delay: 500 }}>
 			<div class="mb-5 flex flex-wrap items-center justify-between gap-3">
 				<h2 class="flex items-center gap-2 text-xl font-semibold">
 					<LibraryIcon class="text-gold-400" size={20} />
