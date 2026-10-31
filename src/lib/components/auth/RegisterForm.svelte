@@ -4,6 +4,7 @@
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import { readJson, type ApiError } from '$helpers/http';
 	import { isStrongPassword, PASSWORD_CRITERIA, PASSWORD_REQUIREMENTS } from '$helpers/password';
+	import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '$helpers/username';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 
@@ -31,21 +32,11 @@
 				return true;
 			}
 			
-			if (username.length < 3) {
-				errorMessage = 'Username must contain at least 3 characters';
+			if (!USERNAME_PATTERN.test(normalizeUsername(username))) {
+				errorMessage = USERNAME_REQUIREMENTS;
 				return false;
 			}
-			
-			if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-				errorMessage = 'Username can only contain letters, numbers and underscores';
-				return false;
-			}
-			
-			if (username.length > 20) {
-				errorMessage = 'Username cannot exceed 20 characters';
-				return false;
-			}
-			
+
 			try {
 				const response = await fetch(`/api/auth/username-available?username=${encodeURIComponent(username)}`);
 				

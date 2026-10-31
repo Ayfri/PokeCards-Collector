@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import { env } from '$env/dynamic/private';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
+import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '$helpers/username';
 import { isUsernameTaken } from '$lib/services/profiles';
 import type { RequestHandler } from './$types';
 
@@ -11,10 +12,14 @@ import type { RequestHandler } from './$types';
  * service key and only ever leaks the boolean the signup endpoint would return anyway.
  */
 export const GET: RequestHandler = async ({ url }) => {
-	const username = url.searchParams.get('username')?.trim() ?? '';
+	const username = normalizeUsername(url.searchParams.get('username') ?? '');
 
 	if (!username) {
 		return json({ success: false, error: 'Missing username' }, { status: 400 });
+	}
+
+	if (!USERNAME_PATTERN.test(username)) {
+		return json({ success: false, error: USERNAME_REQUIREMENTS }, { status: 400 });
 	}
 
 	if (!env.SUPABASE_SECRET_KEY) {

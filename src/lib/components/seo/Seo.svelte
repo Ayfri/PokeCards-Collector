@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { BASE_URL, SITE_NAME, SITE_TWITTER } from '~/constants';
-	import { organizationSchema } from '$helpers/seo';
+	import { inlineJson, organizationSchema } from '$helpers/seo';
 	import type { Breadcrumb, Image, SeoType } from '$lib/types';
 
 	const SITE_DESCRIPTION = 'Explore and manage your Pokémon TCG collection. Browse, search, and filter through a comprehensive list of Pokémon TCG cards.';
@@ -106,12 +106,10 @@
 		...(breadcrumbNode && { breadcrumb: breadcrumbNode }),
 	});
 
-	// A closing script tag inside a card or artist name would end the tag this JSON is inlined into, so every `<` is
-	// re-encoded. Both sides are written as escapes because a literal `<` in a Svelte script block is a parse error.
-	const jsonLdString = $derived(JSON.stringify({
+	const jsonLdString = $derived(inlineJson({
 		'@context': 'https://schema.org',
 		'@graph': [organizationSchema(), websiteNode, pageNode, ...schemas],
-	}).replaceAll('\u003c', '\u003c'));
+	}));
 </script>
 
 <svelte:head>

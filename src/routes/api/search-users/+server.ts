@@ -7,6 +7,8 @@ const MAX_LIMIT = 24;
 
 export const GET: RequestHandler = async ({ url }) => {
 	const query = url.searchParams.get('q') ?? '';
+	if (!query.trim()) return json({ success: true, users: [] });
+
 	const requested = Number(url.searchParams.get('limit'));
 	const limit = Number.isFinite(requested) && requested > 0 ? Math.min(Math.trunc(requested), MAX_LIMIT) : 10;
 

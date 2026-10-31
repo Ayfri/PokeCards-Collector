@@ -2,12 +2,15 @@ import { BASE_URL, SITE_NAME, SITE_TWITTER } from '~/constants';
 import { processCardImage } from '$helpers/card-images';
 import { CATALOGUES, type Catalogue } from '$helpers/catalogues';
 import { cardPrice } from '$helpers/card-utils';
-import type { Breadcrumb, Card, Pokemon, PriceData, Set, UserProfile } from '$lib/types';
+import type { Breadcrumb, Card, Pokemon, PriceData, PublicProfile, Set } from '$lib/types';
 
 /** Schema.org nodes are free-form JSON, so every builder returns the same opaque shape the `Seo` component inlines. */
 export type Schema = Record<string, unknown>;
 
 export const HOME_CRUMB: Breadcrumb = { name: 'Home', url: '/' };
+
+/** JSON safe to inline in a `<script>`: a `</script>` inside a username or card name would otherwise close the tag. */
+export const inlineJson = (value: unknown): string => JSON.stringify(value).replaceAll('<', `${String.fromCharCode(92)}u003c`);
 
 /** Prepends the home crumb so a page only declares the trail below the root. */
 export function breadcrumbs(...trail: Breadcrumb[]): Breadcrumb[] {
@@ -112,7 +115,7 @@ export function setListSchema(sets: Set[], limit = 50): Schema {
 }
 
 /** A collector's public page as a `ProfilePage` with its owner, which is the shape Google reads for profile results. */
-export function profileSchema(profile: UserProfile, path: string, stats?: { cards: number; uniqueCards: number }): Schema {
+export function profileSchema(profile: PublicProfile, path: string, stats?: { cards: number; uniqueCards: number }): Schema {
 	return {
 		'@type': 'ProfilePage',
 		dateCreated: profile.created_at,

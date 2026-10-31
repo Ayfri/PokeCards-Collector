@@ -5,6 +5,7 @@ import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { env } from '$env/dynamic/private';
 import { readJson, type ApiError } from '$helpers/http';
 import { isStrongPassword, PASSWORD_REQUIREMENTS } from '$helpers/password';
+import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '$helpers/username';
 
 interface SignupBody {
 	email?: string;
@@ -39,14 +40,14 @@ export const POST: RequestHandler = async ({ request }) => {
 			}, { status: 400 });
 		}
 
-		if (username.length > 20) {
+		const normalizedUsername = normalizeUsername(username);
+
+		if (!USERNAME_PATTERN.test(normalizedUsername)) {
 			return json({
 				success: false,
-				error: 'Username cannot exceed 20 characters'
+				error: USERNAME_REQUIREMENTS
 			}, { status: 400 });
 		}
-
-		const normalizedUsername = username.toLowerCase();
 
 		if (!isStrongPassword(password)) {
 			return json({

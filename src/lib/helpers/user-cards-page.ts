@@ -4,7 +4,7 @@ import { breadcrumbs, profileSchema } from '$helpers/seo';
 import { readOwnedCatalogues } from '$helpers/owned-cards';
 import { getCatalogue, getPokemons, getTypes } from '$helpers/supabase-data';
 import { getProfileByUsername } from '$lib/services/profiles';
-import type { FullCard, Pokemon, PriceData, Set, UserProfile } from '$lib/types';
+import type { FullCard, Pokemon, PriceData, PublicProfile, Set, UserProfile } from '$lib/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Everything the grid draws for one user's cards. Streamed, so the profile lookup answers before the catalogue is read. */
@@ -131,7 +131,7 @@ export async function loadUserCardsPage({ client, fetchItems, kind, parent, requ
 			noindex: true,
 			schemas: [],
 			streamed: { payload: buildPayload([]) },
-			targetProfile: null as UserProfile | null,
+			targetProfile: null as PublicProfile | null,
 			targetUsername: requestedUsername,
 			title: 'User Not Found',
 			type: 'CollectionPage' as const,

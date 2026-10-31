@@ -98,6 +98,9 @@ export interface UserProfile {
 	username: string;
 }
 
+/** A profile as shown to other visitors: the account id stays server side. */
+export type PublicProfile = Omit<UserProfile, 'auth_id'>;
+
 export interface UserCollection {
 	id: string;
 	username: string;
@@ -200,7 +203,6 @@ export interface BinderCards {
 
 // Represents the structure of a user object returned by the searchUsers service function
 export interface SearchedUser {
-	auth_id: string;
 	is_public: boolean;
 	profile_color?: string; // Consistent with UserProfile
 	username: string;

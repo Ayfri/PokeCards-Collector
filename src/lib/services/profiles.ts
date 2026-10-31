@@ -1,6 +1,6 @@
 import { getSupabaseBrowserClient, supabase } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { UserProfile, ServiceResponse, UsernameCheckResult } from '../types';
+import type { PublicProfile, SearchedUserWithStats, ServiceResponse, UsernameCheckResult } from '../types';
 
 export async function getProfileByAuthId(authId: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
@@ -17,15 +17,16 @@ export async function getProfileByAuthId(authId: string, client: SupabaseClient 
 	}
 }
 
-export async function getProfileByUsername(username: string, client: SupabaseClient = getSupabaseBrowserClient()): Promise<ServiceResponse<UserProfile>> {
+/** Every column but `auth_id`, so a profile read for another visitor never carries the owner's account id. */
+export async function getProfileByUsername(username: string, client: SupabaseClient = getSupabaseBrowserClient()): Promise<ServiceResponse<PublicProfile>> {
 	try {
 		const { data, error } = await client
 			.from('profiles')
-			.select('*')
-			.ilike('username', username)
+			.select('username, is_public, profile_color, created_at, updated_at')
+			.eq('username', username.toLowerCase())
 			.single();
 
-		return { data, error } as ServiceResponse<UserProfile>;
+		return { data, error } as ServiceResponse<PublicProfile>;
 	} catch (error) {
 		console.error('Error getting profile by username:', error);
 		return { data: null, error: error instanceof Error ? error : String(error) };
@@ -72,16 +73,14 @@ export async function isUsernameTaken(username: string, client: SupabaseClient):
 	}
 }
 
-export async function searchUsers(query: string, limit: number = 10) {
+/**
+ * Public collectors whose name contains `query`, most unique cards first; an empty query lists the top collectors.
+ * The RPC returns every profile column including `auth_id`, which is dropped here so no caller can forward it.
+ */
+export async function searchUsers(query: string, limit: number): Promise<ServiceResponse<SearchedUserWithStats[]>> {
 	try {
-		if (!query || query.trim() === '') {
-			return { data: [], error: null };
-		}
-
-		const normalizedQuery = query.toLowerCase().trim();
-
 		const { data, error } = await supabase.rpc('search_public_users_with_stats', {
-			p_query: normalizedQuery,
+			p_query: query.toLowerCase().trim(),
 			p_limit: limit
 		});
 
@@ -90,7 +89,7 @@ export async function searchUsers(query: string, limit: number = 10) {
 			return { data: null, error };
 		}
 
-		return { data, error: null };
+		return { data: (data as (SearchedUserWithStats & { auth_id: string })[]).map(({ auth_id, ...user }) => user), error: null };
 
 	} catch (error) {
 		console.error('Exception in searchUsers function:', error);

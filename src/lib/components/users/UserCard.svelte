@@ -6,7 +6,6 @@
 
 	interface Props {
 		user: {
-		auth_id: string;
 		username: string;
 		profile_color?: string | null;
 		created_at: string;

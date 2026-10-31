@@ -150,7 +150,7 @@
 			<div class="space-y-4">
 				<h3 class="text-xl font-semibold text-white mb-3">Search Results ({searchResults.length})</h3>
 				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-					{#each searchResults as user (user.auth_id)}
+					{#each searchResults as user (user.username)}
 						<UserCard 
 							{user} 
 							highlightClass="text-gold-400 group-hover:text-gold-300"
@@ -187,7 +187,7 @@
 			</div>
 		{:else if featuredUsers.length > 0}
 			<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
-				{#each featuredUsers as user (user.auth_id)}
+				{#each featuredUsers as user (user.username)}
 					<UserCard
 						{user}
 						highlightClass="text-gold-400 group-hover:text-gold-300"
