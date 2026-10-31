@@ -26,8 +26,8 @@ const CARD_COLUMNS = `
 `;
 
 /**
- * The columns a card list reads. `getCards` returns every card in the table, so the seven columns nothing
- * renders (`hp`, `legal_standard`, `local_id`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`) are dead
+ * The columns a card list reads. `getCards` returns every card in the table, so the six columns nothing
+ * renders (`hp`, `legal_standard`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`) are dead
  * weight in a payload the browser has to parse before the grid can paint.
  */
 const CARD_LIST_COLUMNS = `
@@ -36,6 +36,7 @@ const CARD_LIST_COLUMNS = `
 	card_market_updated_at,
 	card_market_url,
 	image,
+	local_id,
 	name,
 	pokemon_id,
 	rarity,
@@ -102,6 +103,7 @@ function toCard(card: CardRow): FullCard {
 		cardMarketUpdatedAt: card.card_market_updated_at || '',
 		cardMarketUrl: card.card_market_url || '',
 		image: card.image || '',
+		localId: card.local_id || '',
 		name: card.name,
 		pokemonNumber: card.pokemon_id ?? undefined,
 		rarity: card.rarity || '',
@@ -118,7 +120,6 @@ function toCard(card: CardRow): FullCard {
 		...listCard,
 		hp: card.hp ?? undefined,
 		legalStandard: card.legal_standard ?? false,
-		localId: card.local_id || '',
 		regulationMark: card.regulation_mark || '',
 		stage: card.stage || '',
 		tcgdexId: card.tcgdex_id || '',
@@ -265,6 +266,12 @@ export async function getRandomCardCode(): Promise<string | null> {
 		.range(offset, offset));
 
 	return data?.[0]?.card_code ?? null;
+}
+
+/** One card with every column, for its own page: the catalogue reads leave out `hp`, `stage`, `variants` and the like. */
+export async function getCardDetails(table: 'cards' | 'jp_cards', cardCode: string): Promise<FullCard | null> {
+	const { data } = await readWithRetry(`fetch ${table} ${cardCode}`, () => supabase.from(table).select(CARD_COLUMNS).eq('card_code', cardCode).maybeSingle<CardRow>());
+	return data ? toCard(data) : null;
 }
 
 export async function getJapaneseCards(): Promise<FullCard[]> {

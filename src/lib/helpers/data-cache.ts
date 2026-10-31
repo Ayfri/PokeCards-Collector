@@ -15,7 +15,7 @@
 
 const CACHE_ORIGIN = 'https://supabase-data.internal';
 
-/** Cards, prices and sets only move on the Monday 04:00 UTC scrape, so an hour is already short enough to never show stale data for long. */
+/** Cards, prices and sets only move on the daily 04:00 UTC scrape, so an hour is already short enough to never show stale data for long. */
 export const TABLE_TTL = 60 * 60;
 
 /** The Pokédex and the type list are effectively frozen. */

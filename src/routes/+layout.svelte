@@ -4,6 +4,7 @@
 	import {onNavigate} from '$app/navigation';
 	import {page} from '$app/state';
 	import {NO_IMAGES} from '$lib/images';
+	import {transitionNavigation} from '$helpers/view-transitions';
 	import Header from '@components/Header.svelte';
 	import LoadingBar from '$lib/components/ui/LoadingBar.svelte';
 	import {BASE_URL} from '~/constants';
@@ -48,28 +49,16 @@
 			setTimeout(() => (loading.navigation = false), 100); // Small delay to ensure smoother transitions
 		});
 
-		if (!document.startViewTransition) return;
-
-		return new Promise((resolve) => {
-			document.startViewTransition(async () => {
-				resolve();
-				await navigation.complete;
-			});
-		});
+		return transitionNavigation(navigation);
 	});
 </script>
 
 <svelte:document onclick={handleLinkClick} />
 
 <svelte:head>
-	<meta content="#000" name="theme-color"/>
-	<meta content="dark light" name="color-scheme"/>
 	<meta content="Ayfri;Anta;Bahsiik" name="author"/>
 
 	<link href="/sitemap.xml" rel="sitemap"/>
-	{#if !NO_IMAGES}
-	<link href="/favicon.png" rel="icon" type="image/png"/>
-	{/if}
 	<link href={BASE_URL} hreflang="en" rel="alternate"/>
 	<link href={BASE_URL} hreflang="x-default" rel="alternate"/>
 

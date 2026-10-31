@@ -6,14 +6,14 @@
 	import {collection} from '$stores/collection.svelte';
 	import { page } from '$app/state';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
-	import { parseCardCode } from '$lib/helpers/card-utils';
+	import { cardPrice, formatCardNumber } from '$lib/helpers/card-utils';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
 	import { getCardSet } from '$helpers/card-grid';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Minus from '@lucide/svelte/icons/minus';
-	import CardStackIcon from '@lucide/svelte/icons/layers';
+	import SetBadge from '@components/SetBadge.svelte';
 
 	interface Props {
 		card: FullCard;
@@ -53,10 +53,10 @@
 	/** Insets the overlay controls proportionally, so they do not sit in the very corner of a small card. */
 	const controlInset = $derived(Math.round(Math.max(10, width * 0.045)));
 
-	const parsedCardCode = $derived(parseCardCode(cardCode));
-	const cardNumber = $derived(parsedCardCode.cardNumber ?? '0');
-	const pokemon = $derived(parsedCardCode.pokemonNumber ? pokemonMap.get(parsedCardCode.pokemonNumber) : null);
-	const set = $derived(getCardSet(cardCode, sets) || { name: 'Unknown Set', printedTotal: 0, ptcgoCode: null });
+	const cardNumber = $derived(card.localId);
+	const price = $derived(cardPrice(prices));
+	const pokemon = $derived(card.pokemonNumber ? pokemonMap.get(card.pokemonNumber) : null);
+	const set = $derived(getCardSet(card, sets));
 
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
@@ -151,7 +151,7 @@
 	{/if}
 	<div class="relative" style="width: {width}px; height: {height}px; max-width: 100%;">
 		{#if user && profile}
-			<div class="absolute z-10 flex items-center gap-1 rounded-full bg-black/50 p-1" style="bottom: {controlInset}px; right: {controlInset}px;">
+			<div class="absolute z-10 flex items-center gap-1 rounded-full bg-black/60 p-1 shadow-[0_2px_10px_rgb(0_0_0/0.6)] ring-1 ring-white/10 backdrop-blur-xs" style="bottom: {controlInset}px; right: {controlInset}px;">
 				{#if collectionCount > 0}
 					<button
 						aria-label="Remove one copy from collection"
@@ -206,6 +206,7 @@
 			class="rounded-lg absolute top-0 left-0"
 			style="width: {width}px; height: {height}px; max-width: 100%;"
 			imageUrl={card.image}
+			{card}
 			{types}
 			{lowRes}
 			lazy={!eager}
@@ -214,21 +215,8 @@
 			height={height}
 		/>
 
-		{#if set && set.name && set.name !== 'Unknown Set'}
-			<a
-				href={`/cards-list?set=${encodeURIComponent(set.name)}`}
-				class="absolute z-10 p-1 bg-black/50 border border-white/70 rounded-full hover:bg-white/20 transition-colors w-8 h-8 flex items-center justify-center"
-				style="bottom: {controlInset}px; left: {controlInset}px;"
-				aria-label={`View all cards from set ${set.name}`}
-				title={`View all cards from set ${set.name}`}
-				tabindex="-1"
-			>
-				{#if 'logo' in set && set.logo}
-					<img src={set.logo} alt={set.name} class="w-6 h-6 object-contain" width="24" height="24" loading="lazy" decoding="async" />
-				{:else}
-					<CardStackIcon size={20} />
-				{/if}
-			</a>
+		{#if set}
+			<SetBadge {set} style="bottom: {controlInset}px; left: {controlInset}px;" />
 		{/if}
 	</div>
 	<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-xs rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
@@ -237,10 +225,10 @@
 			{#if set?.ptcgoCode}
 				<span class="uppercase text-sm opacity-85">{set.ptcgoCode}</span>
 			{/if}
-			<span class="text-sm opacity-85"> #{cardNumber}/{set?.printedTotal || '?'}</span>
+			<span class="text-sm opacity-85"> #{formatCardNumber(cardNumber, set?.printedTotal)}</span>
 		</h2>
 		<div class="flex items-center justify-center gap-2 mt-1">
-			{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== '' && prices?.simple}
+			{#if card.cardMarketUrl && price}
 				<a
 					href={card.cardMarketUrl}
 					target="_blank"
@@ -249,7 +237,7 @@
 					aria-label="View on Cardmarket"
 				>
 					<div class="flex items-center justify-center whitespace-nowrap">
-						<span>{prices?.simple ? `${prices.simple} €` : 'Priceless'}</span>
+						<span>{price ? `${price} €` : 'Priceless'}</span>
 						<span class="mx-1">-</span>
 						<span class="text-gold-400 font-bold underline flex items-center">
 							Cardmarket
@@ -258,7 +246,7 @@
 					</div>
 				</a>
 			{:else}
-				<h3 class="text-center text-sm lg:text-base">{prices?.simple ? `${prices.simple} €` : 'Priceless'}</h3>
+				<h3 class="text-center text-sm lg:text-base">{price ? `${price} €` : 'Priceless'}</h3>
 			{/if}
 		</div>
 	</div>

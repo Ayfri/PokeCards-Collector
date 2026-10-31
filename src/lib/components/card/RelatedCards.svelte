@@ -6,15 +6,17 @@
 	import { persistedRecord } from '$stores/persisted.svelte';
 	import SortControl from '@components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '$lib/images';
-	import { findSetByCardCode } from '$helpers/set-utils';
+	import { cardPrice } from '$helpers/card-utils';
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
 	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
 	import { collection } from '$stores/collection.svelte';
 	import Heart from '@lucide/svelte/icons/heart';
 	import Minus from '@lucide/svelte/icons/minus';
 	import Plus from '@lucide/svelte/icons/plus';
+	import SetBadge from '@components/SetBadge.svelte';
 	import { page } from '$app/state';
 	import { wishlist } from '$stores/wishlist.svelte';
+	import { onMount } from 'svelte';
 
 	
 	interface Props {
@@ -46,6 +48,16 @@
 
 	const MAX_CARD_QUANTITY = 99;
 
+	/** Hundreds of tiles block the main thread, so they replace same-sized placeholders once the card intro has played. */
+	let showTiles = $state(false);
+	onMount(() => {
+		const timeout = setTimeout(() => showTiles = true, 800);
+		return () => clearTimeout(timeout);
+	});
+
+	/** Built once per `sets`, so the sort comparators do a map lookup instead of scanning every set twice per comparison. */
+	const setsById = $derived(new Map(sets.map(set => [set.setId, set])));
+
 	// --- Helper Functions ---
 	function getPokemon(pokemonNumber: number | undefined): Pokemon | undefined {
 		if (!pokemonNumber) return undefined;
@@ -61,8 +73,8 @@
 		switch (sortType) {
 			case 'sort-price':
 				sorted = sorted.sort((a, b) => {
-					const priceA = prices[a.cardCode]?.simple ?? 0; // Handle null/undefined price
-					const priceB = prices[b.cardCode]?.simple ?? 0;
+					const priceA = cardPrice(prices[a.cardCode]) ?? 0;
+					const priceB = cardPrice(prices[b.cardCode]) ?? 0;
 					return order === 'asc' ? priceA - priceB : priceB - priceA;
 				});
 				break;
@@ -82,8 +94,8 @@
 				break;
 			case 'sort-date':
 				sorted = sorted.sort((a, b) => {
-					const aSet = findSetByCardCode(a.cardCode, sets);
-					const bSet = findSetByCardCode(b.cardCode, sets);
+					const aSet = setsById.get(a.setId);
+					const bSet = setsById.get(b.setId);
 					const aTime = aSet?.releaseDate?.getTime() ?? 0; // Handle null/undefined date
 					const bTime = bSet?.releaseDate?.getTime() ?? 0;
 					return order === 'asc' ? aTime - bTime : bTime - aTime;
@@ -91,8 +103,8 @@
 				break;
 			default: // sort-set (default)
 				sorted = sorted.sort((a, b) => {
-					const aSet = findSetByCardCode(a.cardCode, sets);
-					const bSet = findSetByCardCode(b.cardCode, sets);
+					const aSet = setsById.get(a.setId);
+					const bSet = setsById.get(b.setId);
 					const aName = aSet?.name ?? '';
 					const bName = bSet?.name ?? '';
 					return order === 'asc' ? aName.localeCompare(bName) : bName.localeCompare(aName);
@@ -164,9 +176,21 @@
 
 	{#if sortedCards.length > 0}
 		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-4">
+			{#if !showTiles}
+				{#each { length: sortedCards.length }}
+					<div class="flex flex-col items-center" aria-hidden="true">
+						<div class="w-full animate-pulse rounded-lg bg-gray-700/50" style="aspect-ratio: 63/88;"></div>
+						<div class="mt-0.5 flex flex-col items-center">
+							<div class="flex h-5 items-center"><div class="h-3 w-24 animate-pulse rounded bg-gray-700/50"></div></div>
+							<div class="flex h-5 items-center"><div class="h-3 w-16 animate-pulse rounded bg-gray-700/50"></div></div>
+						</div>
+					</div>
+				{/each}
+			{:else}
 			{#each sortedCards as card (card.cardCode)}
 				{@const cardPokemon = getPokemon(card.pokemonNumber)}
-				{@const cardSet = findSetByCardCode(card.cardCode, sets)}
+				{@const cardSet = setsById.get(card.setId)}
+				{@const price = cardPrice(prices[card.cardCode])}
 				<div
 					class="relative flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5"
 					transition:fade={{ duration: 200 }}
@@ -182,6 +206,7 @@
 						{#if !NO_IMAGES}
 							<CardImage
 								imageUrl={card.image}
+								{card}
 								types={card.types}
 								alt={cardPokemon ? cardPokemon.name : card.name}
 								class="card-image"
@@ -192,17 +217,7 @@
 							<div class="w-full h-full"></div>
 						{/if}
 						{#if cardSet}
-							<div class="absolute bottom-1 right-1 bg-black/70 rounded-full p-0.5 border border-gold-400">
-								{#if !NO_IMAGES}
-									<img
-										src={cardSet.logo}
-										alt={cardSet.name}
-										class="w-[30px] h-[30px] md:w-[24px] md:h-[24px] object-contain"
-										title={cardSet.name}
-										loading="lazy"
-									/>
-								{/if}
-							</div>
+							<SetBadge class="bottom-2 left-2" set={cardSet} />
 						{/if}
 						{#if user && profile}
 							<!-- Collection/Wishlist Actions -->
@@ -248,7 +263,7 @@
 					<div class="mt-0.5 w-full text-center flex flex-col">
 						<h3 class="text-center font-bold text-sm">{cardSet?.name || 'Unknown Set'}</h3>
 						<div class="flex items-center justify-center">
-							{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== '' && prices[card.cardCode]?.simple}
+							{#if card.cardMarketUrl && price}
 								<a
 									href={card.cardMarketUrl}
 									target="_blank"
@@ -259,7 +274,7 @@
 								>
 									<div class="flex items-center justify-center whitespace-nowrap">
 										<span class="text-sm">
-											{prices[card.cardCode]?.simple?.toFixed(2)} €
+											{price.toFixed(2)} €
 										</span>
 										<span class="mx-1 text-sm">-</span>
 										<span class="text-gold-400 font-bold underline text-sm flex items-center">
@@ -270,13 +285,14 @@
 								</a>
 							{:else}
 								<div class="text-sm">
-									{prices[card.cardCode]?.simple ? `${prices[card.cardCode]?.simple?.toFixed(2)} €` : 'Priceless'}
+									{price ? `${price.toFixed(2)} €` : 'Priceless'}
 								</div>
 							{/if}
 						</div>
 					</div>
 				</div>
 			{/each}
+			{/if}
 		</div>
 	{:else}
 		<p class="text-center text-gray-400">No other related cards found.</p>

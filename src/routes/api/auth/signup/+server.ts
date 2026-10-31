@@ -4,6 +4,7 @@ import type { RequestHandler } from './$types';
 import { PUBLIC_SUPABASE_URL } from '$env/static/public';
 import { env } from '$env/dynamic/private';
 import { readJson, type ApiError } from '$helpers/http';
+import { isStrongPassword, PASSWORD_REQUIREMENTS } from '$helpers/password';
 
 interface SignupBody {
 	email?: string;
@@ -47,10 +48,10 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		const normalizedUsername = username.toLowerCase();
 
-		if (typeof password !== 'string' || password.length < 8 || !/[0-9]/.test(password) || !/[^a-zA-Z0-9]/.test(password)) {
+		if (!isStrongPassword(password)) {
 			return json({
 				success: false,
-				error: 'Password must be at least 8 characters long and include at least one number and one special character'
+				error: PASSWORD_REQUIREMENTS
 			}, { status: 400 });
 		}
 

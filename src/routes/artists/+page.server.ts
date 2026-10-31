@@ -2,12 +2,12 @@ import { getCards, getPrices } from '$helpers/supabase-data';
 import type { PageServerLoad } from './$types';
 import type { FullCard } from '$lib/types';
 import { breadcrumbs } from '$helpers/seo';
-import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
+import { cardPrice } from '$helpers/card-utils';
 
-/** Cards drawn on the preview stack of an artist card. */
-const SHOWCASE_SIZE = 3;
+/** Candidates sent per artist: the preview stack draws three, the spares replace a scan that fails to load in the browser. */
+const SHOWCASE_CANDIDATES = 5;
 
-/** The card fields the preview stack renders. A showcase card carries nothing else, 411 artists ship 1233 of them. */
+/** The card fields the preview stack renders. A showcase card carries nothing else, 411 artists ship ~2000 of them. */
 interface ShowcaseCard {
 	cardCode: string;
 	image: string;
@@ -21,6 +21,7 @@ export interface ArtistWithCards {
 	firstReleaseYear: number;
 	lastReleaseYear: number;
 	name: string;
+	/** Cards with art first, then by price. An artist with no art at all gets cards with an empty `image`, drawn as plates. */
 	showcaseCards: ShowcaseCard[];
 	totalCards: number;
 	/** Cardmarket value of every card the artist drew, in EUR. */
@@ -28,22 +29,11 @@ export interface ArtistWithCards {
 }
 
 export const load: PageServerLoad = async ({ parent }) => {
-	const parentData = await parent();
+	const catalogue = Promise.all([getCards(), getPrices()]);
+	const { sets = [] } = await parent();
+	const [allCards, prices] = await catalogue;
 
-	const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
-	const sets = parentData.sets || [];
-
-	const layoutData = {
-		user: parentData.user,
-		profile: parentData.profile,
-		title: parentData.title,
-		description: parentData.description,
-		image: parentData.image,
-		wishlistItems: parentData.wishlistItems,
-		collectionItems: parentData.collectionItems
-	};
-
-	const setLookup = buildSetLookupMap(sets);
+	const setsById = new Map(sets.map(set => [set.setId, set]));
 	const byArtist = new Map<string, FullCard[]>();
 
 	for (const card of allCards) {
@@ -62,22 +52,22 @@ export const load: PageServerLoad = async ({ parent }) => {
 			let lastReleaseYear = Number.NEGATIVE_INFINITY;
 			const showcase: { card: FullCard; price: number }[] = [];
 
-			// One pass instead of a full sort per artist: the total, the years and the three priciest cards come out together.
+			// One pass instead of a full sort per artist: the total, the years and the showcase candidates come out together.
 			for (const card of artistCards) {
-				const price = prices[card.cardCode]?.simple || prices[card.cardCode]?.trend || 0;
+				const price = cardPrice(prices[card.cardCode]) ?? 0;
 				totalValue += price;
 
-				const year = findSetInLookup(card.cardCode, setLookup)?.releaseDate.getFullYear();
+				const year = setsById.get(card.setId)?.releaseDate.getFullYear();
 				if (year && !Number.isNaN(year)) {
 					if (year < firstReleaseYear) firstReleaseYear = year;
 					if (year > lastReleaseYear) lastReleaseYear = year;
 				}
 
-				if (!card.image) continue; // A card with no art cannot be shown in the preview stack.
-				const slot = showcase.findIndex(entry => price > entry.price);
+				const hasArt = Boolean(card.image);
+				const slot = showcase.findIndex(entry => hasArt !== Boolean(entry.card.image) ? hasArt : price > entry.price);
 				if (slot !== -1) showcase.splice(slot, 0, { card, price });
-				else if (showcase.length < SHOWCASE_SIZE) showcase.push({ card, price });
-				if (showcase.length > SHOWCASE_SIZE) showcase.pop();
+				else if (showcase.length < SHOWCASE_CANDIDATES) showcase.push({ card, price });
+				if (showcase.length > SHOWCASE_CANDIDATES) showcase.pop();
 			}
 
 			return {
@@ -116,7 +106,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 	};
 
 	return {
-		...layoutData,
 		artists,
 		...pageSeoData
 	};

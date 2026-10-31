@@ -1,4 +1,4 @@
-import type { FullCard, PriceData } from '$lib/types';
+import type { FullCard, Pokemon, PriceData } from '$lib/types';
 
 /**
  * Utilities for card manipulation and identification
@@ -39,45 +39,19 @@ export function generateUniqueCardCode(
 	return `${finalSupertype}_${pokemonId}_${normalizedUrlCode}_${normalizedCardNumber}`;
 }
 
-export function parseCardCode(cardCode: string): { supertype?: string, setCode?: string, pokemonNumber?: number, cardNumber?: string } {
-	if (!cardCode || typeof cardCode !== 'string') {
-		return {
-			cardNumber: undefined,
-			pokemonNumber: undefined,
-			setCode: undefined,
-			supertype: undefined,
-		};
-	}
+/** A card's price in EUR: the Cardmarket average, else its trend, 30-day average or lowest listing. `null` when none is above 0. */
+export function cardPrice(price: PriceData | undefined): number | null {
+	const value = price?.simple ?? price?.trend ?? price?.avg30 ?? price?.low ?? null;
+	return value && value > 0 ? value : null;
+}
 
-	try {
-		const parts = cardCode.split('_');
-		
-		// Handle case where we don't have enough parts
-		if (parts.length < 4) {
-			return {
-				cardNumber: parts[3] || undefined,
-				pokemonNumber: parts[1] ? parseInt(parts[1]) : undefined,
-				setCode: parts[2] || undefined,
-				supertype: parts[0] || undefined,
-			};
-		}
-		
-		// Normal case
-		return {
-			cardNumber: parts[3],
-			pokemonNumber: isNaN(parseInt(parts[1])) ? undefined : parseInt(parts[1]),
-			setCode: parts[2],
-			supertype: parts[0],
-		};
-	} catch (error) {
-		console.error('Error parsing card code:', error, cardCode);
-		return {
-			cardNumber: undefined,
-			pokemonNumber: undefined,
-			setCode: undefined,
-			supertype: undefined,
-		};
-	}
+/**
+ * The number as printed: uppercase like the card ("TG01", "R"), over the set total only when it is a plain number.
+ * A lettered one sits outside that count: the 30th Celebration Mews read "R/RGB", never "R/128".
+ */
+export function formatCardNumber(cardNumber: string, printedTotal?: number | null): string {
+	const number = cardNumber.toUpperCase();
+	return printedTotal && /^\d+$/.test(number) ? `${number}/${printedTotal}` : number;
 }
 
 /**
@@ -103,5 +77,37 @@ export function getRepresentativeCardForPokemon(pokemonId: number, allCards: Ful
 	if (filteredCards.length === 0) return undefined;
 
 	// Sort by price (highest first) and return the first one
-	return [...filteredCards].sort((a, b) => (prices[b.cardCode]?.simple ?? 0) - (prices[a.cardCode]?.simple ?? 0))[0];
+	return [...filteredCards].sort((a, b) => (cardPrice(prices[b.cardCode]) ?? 0) - (cardPrice(prices[a.cardCode]) ?? 0))[0];
+}
+
+/**
+ * The slice of the catalogue a card page reads: the cards, Pokédex rows and prices of the card's Pokémon, its dex
+ * neighbours and two evolution stages either way, plus the page's sibling cards. Whole tables made it an 11.5 MB document.
+ */
+export function cardPageCatalogue(pokemonNumber: number | undefined, siblings: FullCard[], allCards: FullCard[], pokemons: Pokemon[], prices: Record<string, PriceData>) {
+	const ids = new Set<number>();
+	if (pokemonNumber) {
+		const byId = new Map(pokemons.map(pokemon => [pokemon.id, pokemon]));
+		const current = byId.get(pokemonNumber);
+		ids.add(pokemonNumber - 1).add(pokemonNumber).add(pokemonNumber + 1);
+
+		const pre = current?.evolves_from;
+		if (pre) ids.add(pre);
+		const prePre = pre ? byId.get(pre)?.evolves_from : undefined;
+		if (prePre) ids.add(prePre);
+
+		for (const evolution of current?.evolves_to ?? []) {
+			ids.add(evolution);
+			for (const further of byId.get(evolution)?.evolves_to ?? []) ids.add(further);
+		}
+	}
+
+	const siblingCodes = new Set(siblings.map(card => card.cardCode));
+	const cards = allCards.filter(card => siblingCodes.has(card.cardCode) || (card.pokemonNumber !== undefined && ids.has(card.pokemonNumber)));
+
+	return {
+		allCards: cards,
+		pokemons: pokemons.filter(pokemon => ids.has(pokemon.id)),
+		prices: Object.fromEntries(cards.flatMap(card => prices[card.cardCode] ? [[card.cardCode, prices[card.cardCode]]] : [])) as Record<string, PriceData>,
+	};
 }

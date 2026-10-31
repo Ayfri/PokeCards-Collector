@@ -7,12 +7,13 @@
 	import type {FullCard, Pokemon, Set, PriceData} from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
 	import InteractiveCard from '@components/card/InteractiveCard.svelte';
-	import { onMount } from 'svelte';
+	import { flushSync, onMount } from 'svelte';
 	import { afterNavigate, goto, replaceState } from '$app/navigation';
-	import { findSetByCardCode } from '$helpers/set-utils';
+	import { resolve } from '$app/paths';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 	import { getPokemonImageSrc, getPokemonSpriteSrc } from '$helpers/pokemon-utils';
 	import { loading } from '$stores/loading.svelte';
+	import { morphCards } from '$helpers/view-transitions';
 
 	
 	interface Props {
@@ -39,12 +40,10 @@
 	// --- Internal State ---
 	let currentCard = $state<FullCard | undefined>(undefined);
 	let isInitialRenderComplete = $state(false);
-	let shouldRenderAllCards = $state(false);
 
 	// --- Reactive Computations ---
-	const baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
 	const cardPrices = $derived(currentCard ? prices[currentCard.cardCode] : undefined);
-	const currentSet = $derived(currentCard ? findSetByCardCode(currentCard.cardCode, sets) : undefined);
+	const currentSet = $derived(currentCard ? sets.find(set => set.setId === currentCard?.setId) : undefined);
 	const currentType = $derived(currentCard?.types?.toLowerCase().split(',')[0] || 'unknown');
 	const currentPokemonId = $derived(currentCard?.pokemonNumber);
 
@@ -78,25 +77,21 @@
 		}
 	}
 
+	/** Swaps the displayed card without a navigation: the picked tile flies up into the big card while the page jumps back to the top. */
 	function handleCardSelect(selectedCard: FullCard) {
-		// Simply update the current card without navigation
-		currentCard = selectedCard;
-
-		// Optionally update the URL in the browser without reload
-		if (typeof window !== 'undefined') {
-			const newUrl = `${baseCardUrl}${selectedCard.cardCode}/`;
-			replaceState(newUrl, { replaceUrl: true });
-			window.scrollTo({
-				top: 0,
-				behavior: 'smooth'
-			});
-		}
+		const { cardCode } = selectedCard;
+		replaceState(resolve(isJapaneseContext ? '/jp-card/[cardCode]' : '/card/[cardCode]', { cardCode }), { replaceUrl: true });
+		morphCards([selectedCard.cardCode], () => {
+			currentCard = selectedCard;
+			flushSync();
+			window.scrollTo({ behavior: 'instant', top: 0 });
+		});
 	}
 
 	function handlePokemonNavigation(cardCode: string | undefined) {
 		if (cardCode) {
 			loading.navigation = true;
-			goto(`${baseCardUrl}${cardCode}`);
+			goto(resolve(isJapaneseContext ? '/jp-card/[cardCode]' : '/card/[cardCode]', { cardCode }));
 		}
 	}
 
@@ -104,13 +99,13 @@
 	onMount(() => {
 		currentCard = pokemonCards[0];
 		isInitialRenderComplete = true;
-		setTimeout(() => shouldRenderAllCards = true, 800);
 	});
 
 	afterNavigate(() => {
 		const urlParts = window.location.pathname.split('/');
 		const cardCodeFromUrl = urlParts[urlParts.length - 2];
-		const matchingCard = allCards.find(card => card.cardCode === cardCodeFromUrl);
+		// `pokemonCards` holds the viewed card with every column, `allCards` only its list fields.
+		const matchingCard = pokemonCards.find(card => card.cardCode === cardCodeFromUrl) ?? allCards.find(card => card.cardCode === cardCodeFromUrl);
 
 		if (matchingCard && matchingCard !== currentCard) {
 			currentCard = matchingCard;
@@ -119,9 +114,6 @@
 		}
 
 		isInitialRenderComplete = true;
-		if (!shouldRenderAllCards) {
-			setTimeout(() => shouldRenderAllCards = true, 800);
-		}
 	});
 </script>
 
@@ -145,8 +137,8 @@
 	<!-- Main card display container -->
 	<div class="card-display-area w-full px-4 md:px-12 max-w-8xl mx-auto perspective-container flex flex-col items-center">
 
-		<!-- Center Card -->
-		<div class="center-card-wrapper relative shrink-0 order-1 lg:order-2 perspective-container" in:fly={{ y: 50, duration: 500, delay: 300 }}>
+		<!-- Center Card, with no intro of its own: the page transition flies the opened card into it. -->
+		<div class="center-card-wrapper relative shrink-0 order-1 lg:order-2 perspective-container">
 			<!-- Conditional Aura for Pokemon Types -->
 			{#if currentPokemon && !NO_IMAGES}
 				<div class="card-aura {currentType}" id="card-aura"></div>
@@ -156,7 +148,6 @@
 				pokemon={currentPokemon}
 				currentType={currentType}
 				currentSet={currentSet}
-				handlePokemonImageError={handlePokemonImageError}
 			/>
 		</div>
 
@@ -287,7 +278,7 @@
 	<div class="separator w-full max-w-200 my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent" in:fade={{ duration: 600, delay: 600 }}></div>
 
 	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
-	{#if currentPokemonCards.length > 1 && shouldRenderAllCards}
+	{#if currentPokemonCards.length > 1}
 		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 700 }}>
 			<RelatedCards cards={currentPokemonCards} {pokemons} {sets} {prices} pokemon={currentPokemon} onCardSelect={handleCardSelect} {lowRes} />
 		</div>
@@ -324,6 +315,8 @@
 	/* Fixed background filter that covers the entire page */
 	.filter {
 		background-image: url(/particles.png);
+		/* 234 KB instead of 608 KB for the PNG, which only browsers without AVIF still fetch. */
+		background-image: image-set(url(/particles.avif) type('image/avif'), url(/particles.png) type('image/png'));
 		background-size: cover;
 		content: "";
 		filter: var(--filter);

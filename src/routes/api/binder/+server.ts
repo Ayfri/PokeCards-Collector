@@ -1,4 +1,5 @@
 import { json } from '@sveltejs/kit';
+import { cardPrice } from '$helpers/card-utils';
 import { getCards, getPrices } from '$helpers/supabase-data';
 import type { BinderCatalogueCard } from '$lib/types';
 import type { RequestHandler } from './$types';
@@ -10,9 +11,11 @@ export const GET: RequestHandler = async () => {
 	const payload: BinderCatalogueCard[] = cards.map(card => ({
 		cardCode: card.cardCode,
 		image: card.image,
+		localId: card.localId,
 		name: card.name,
-		price: prices[card.cardCode]?.simple ?? null,
+		price: cardPrice(prices[card.cardCode]),
 		rarity: card.rarity,
+		setId: card.setId,
 		setName: card.setName,
 		types: card.types,
 	}));

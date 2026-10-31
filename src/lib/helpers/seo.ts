@@ -1,5 +1,6 @@
 import { BASE_URL, SITE_NAME, SITE_TWITTER } from '~/constants';
 import { processCardImage } from '$helpers/card-images';
+import { cardPrice } from '$helpers/card-utils';
 import type { Breadcrumb, Card, Pokemon, PriceData, Set, UserProfile } from '$lib/types';
 
 /** Schema.org nodes are free-form JSON, so every builder returns the same opaque shape the `Seo` component inlines. */
@@ -15,12 +16,6 @@ export function breadcrumbs(...trail: Breadcrumb[]): Breadcrumb[] {
 /** `a`/`an` for a rarity or a type name, so a generated description does not read "a Uncommon card". */
 export function article(word: string): string {
 	return /^[aeiou]/i.test(word) ? 'an' : 'a';
-}
-
-/** The lowest sensible cardmarket value for a card, in EUR, or `null` when no price row carries one. */
-export function cardPrice(price: PriceData | undefined): number | null {
-	const value = price?.simple ?? price?.trend ?? price?.avg30 ?? price?.low ?? null;
-	return value && value > 0 ? value : null;
 }
 
 /**

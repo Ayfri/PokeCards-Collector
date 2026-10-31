@@ -2,7 +2,7 @@
 	import PageTitle from '@components/PageTitle.svelte';
 	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
 	import CardPrice from '@components/card/CardPrice.svelte';
-	import { parseCardCode } from '$helpers/card-utils';
+	import { formatCardNumber } from '$helpers/card-utils';
 	import { page } from '$app/state';
 	import { collection } from '$stores/collection.svelte';
 	import { wishlist } from '$stores/wishlist.svelte';
@@ -16,6 +16,7 @@
 	import Minus from '@lucide/svelte/icons/minus';
 	import Paintbrush from '@lucide/svelte/icons/paintbrush';
 	import Plus from '@lucide/svelte/icons/plus';
+	import SetLogo from '@components/SetLogo.svelte';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import { fly } from 'svelte/transition';
 
@@ -33,7 +34,7 @@
 		pokemon = undefined
 	}: Props = $props();
 
-	const cardNumber = $derived(parseCardCode(card.cardCode).cardNumber);
+	const cardNumber = $derived(card.localId);
 
 	const displayName = $derived(pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name);
 	const displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card?.name}`);
@@ -178,7 +179,7 @@
 					{#if cardNumber && set.printedTotal}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
 							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Position of this card inside its set"><Hash size={14} /> Number:</dt>
-							<dd class="text-white text-right">{cardNumber} / {set.printedTotal}</dd>
+							<dd class="text-white text-right">{formatCardNumber(cardNumber, set.printedTotal)}</dd>
 						</div>
 					{/if}
 
@@ -198,16 +199,9 @@
 								{set.name}
 								<span class="text-xs opacity-80 italic ml-1 text-gray-400 group-hover:text-gold-300 transition-colors">(view all)</span>
 							</a>
-							{#if set.logo}
-								<a href="/cards-list?set={encodeURIComponent(set.name)}" title="View all cards in this set">
-									<img
-										src={set.logo}
-										alt={`${set.name} logo`}
-										class="inline-block max-w-[60px] max-h-[25px] object-contain hover:opacity-80 transition-opacity"
-										loading="lazy"
-									/>
-								</a>
-							{/if}
+							<a href="/cards-list?set={encodeURIComponent(set.name)}" title="View all cards in this set">
+								<SetLogo class="inline-block max-w-[60px] max-h-[25px] object-contain hover:opacity-80 transition-opacity" {set} />
+							</a>
 						</dd>
 					</div>
 

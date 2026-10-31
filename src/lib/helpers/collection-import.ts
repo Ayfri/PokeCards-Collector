@@ -1,5 +1,4 @@
-import { parseCardCode } from '$helpers/card-utils';
-import setNames from '$lib/data/set-names.json' with { type: 'json' };
+import setNames from '$scrapers/tcgdex/set-names.json' with { type: 'json' };
 import type { Card, Set } from '$lib/types';
 
 /** One line of an imported file, already reduced to the three things a card can be found by. */
@@ -27,6 +26,12 @@ export interface ColumnMapping {
 export const MAX_IMPORT_ROWS = 20000;
 
 const normalize = (value: string) => value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+
+/** The legacy set code and number baked into a `supertype_pokemonId_setCode_cardNumber` card code. */
+const parseCardCode = (cardCode: string) => {
+	const [, , setCode, cardNumber] = cardCode.split('_');
+	return { cardNumber, setCode };
+};
 
 /**
  * A set name as its sorted, depluralized words, so word order and plurals stop mattering: Pokecardex writes

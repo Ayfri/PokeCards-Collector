@@ -9,6 +9,7 @@
 	import TextInput from '@components/filters/TextInput.svelte';
 	import Button from '@components/filters/Button.svelte';
 	import BouncyLoader from '@components/BouncyLoader.svelte';
+	import PageTitle from '@components/PageTitle.svelte';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ChevronsDownIcon from '@lucide/svelte/icons/chevrons-down';
 	import ChevronsUpIcon from '@lucide/svelte/icons/chevrons-up';
@@ -220,9 +221,9 @@
 <div class="container mx-auto p-4 text-white">
 	<!-- Hero Section -->
 	<div class="text-center mb-8">
-		<h1 class="text-5xl font-bold mb-4 bg-linear-to-r from-gold-400 via-yellow-400 to-gold-400 bg-[length:200%_200%] bg-clip-text text-transparent animate-gradient-x">
-			Card.dle
-		</h1>
+		<div class="flex justify-center pt-4 mb-4 md:pt-7">
+			<PageTitle title="Card.dle" />
+		</div>
 		<p class="text-xl text-gray-300 mb-6 max-w-2xl mx-auto">
 			The daily Pokémon TCG guessing game! Can you identify today's mystery card?
 		</p>
@@ -366,7 +367,7 @@
 							<span class="mt-1 text-center block leading-tight text-xs sm:text-sm opacity-75">{loadingGuess.name}</span>
 						</div>
 						<!-- Loading cells for attributes -->
-						{#each Array(5) as _}
+						{#each { length: 5 }, index (index)}
 							<div class="p-2 flex items-center justify-center text-center bg-gray-800 text-gray-400">
 								<div class="w-12 h-4 bg-gray-700 rounded-sm animate-pulse"></div>
 							</div>

@@ -1,33 +1,26 @@
-import { getJapaneseCards, getJapanesePrices, getPokemons } from '$helpers/supabase-data';
+import { getCardDetails, getJapaneseCards, getJapanesePrices, getJapaneseSets, getPokemons } from '$helpers/supabase-data';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { processCardImage } from '$helpers/card-images';
-import { breadcrumbs, cardPrice, cardSchema } from '$helpers/seo';
+import { cardPageCatalogue, cardPrice } from '$helpers/card-utils';
+import { breadcrumbs, cardSchema } from '$helpers/seo';
 
-export const load: PageServerLoad = async ({ params, parent }) => {
+export const load: PageServerLoad = async ({ params }) => {
 	const { cardCode } = params;
-	const { sets, ...layoutData } = await parent();
-
 	// Japanese cards carry their own prices, only the English catalogue is read by `getCards` / `getPrices`.
-	const [allJpCards, prices] = await Promise.all([getJapaneseCards(), getJapanesePrices()]);
-	
-	// Find the specific card
-	const card = allJpCards.find(c => c.cardCode === cardCode);
-	
+	// The layout's `sets` are the English ones; this page swaps in the Japanese list.
+	const [card, allJpCards, prices, pokemons, sets] = await Promise.all([getCardDetails('jp_cards', cardCode), getJapaneseCards(), getJapanesePrices(), getPokemons(), getJapaneseSets()]);
+
 	if (!card) {
 		throw error(404, 'Card not found');
 	}
-	
-	// Get Pokémon data
-	const pokemons = await getPokemons();
+
 	const pokemon = pokemons.find(p => p.id === card.pokemonNumber);
 	
-	// Get all cards for this Pokémon (if it's a Pokémon card)
-	let pokemonCards: FullCard[] = [];
-	if (card.pokemonNumber) {
-		pokemonCards = allJpCards.filter(c => c.pokemonNumber === card.pokemonNumber);
-	}
+	// Every print of the same Pokémon, or of the same name for a Trainer or Energy, with this card first.
+	const siblings = allJpCards.filter(c => c.cardCode !== cardCode && (card.pokemonNumber ? c.pokemonNumber === card.pokemonNumber : c.name === card.name));
+	const pokemonCards: FullCard[] = [card, ...siblings];
 	
 	const price = prices[card.cardCode];
 	const value = cardPrice(price);
@@ -50,20 +43,18 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 			url: card.image ? processCardImage(card.image) : '/favicon.png',
 		},
 		keywords: [card.name, `${card.name} japanese card`, card.setName, 'Japanese Pokémon TCG'].filter(Boolean),
-		schemas: [cardSchema(card, price, pokemon, sets.find(s => s.name === card.setName), '/jp-card')],
+		schemas: [cardSchema(card, price, pokemon, sets.find(s => s.setId === card.setId), '/jp-card')],
 		title: `${card.name}${numbering} - ${card.setName} (Japanese)`,
 		type: 'Product' as const,
 	};
 	
+	// The layout already ships `sets`, and the page only reads the cards, Pokémon and prices around this one.
 	return {
-		...layoutData,
+		...cardPageCatalogue(card.pokemonNumber, pokemonCards, allJpCards, pokemons, prices),
 		card,
 		pokemon,
-		allCards: allJpCards, // Pass the fetched Japanese cards
 		pokemonCards,
-		pokemons,
-		sets,    
-		prices,
+		sets,
 		...pageSeoData
 	};
 }; 

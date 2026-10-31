@@ -1,5 +1,5 @@
-import type { FullCard, PriceData, Set } from '$lib/types';
-import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
+import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
+import { cardPrice } from '$helpers/card-utils';
 
 /** One search hit, carrying everything the result row renders so the client needs neither the sets nor the prices. */
 export interface CardSearchResult {
@@ -22,29 +22,25 @@ interface SearchEntry {
 	setNameLower: string;
 }
 
-function extractCardNumberFromCode(cardCode: string): string {
-	return cardCode?.split('_')[3] || '';
-}
-
-/**
- * Resolving the set and lowercasing the fields per keystroke cost ~1 s over the 23k cards, because
- * `findSetByCardCode` rescans every set. The index pays that once and each search is then a plain loop.
- */
+/** Resolving the set and lowercasing the fields once per catalogue, so each search is a plain loop over the index. */
 let searchIndex: SearchEntry[] = [];
+
+/** TCGdex zero-pads numbers ("043"), people type "43". */
+const numberKey = (value: string) => value.replace(/^0+(?=\d)/, '');
 let indexedCards: FullCard[] | null = null;
 
 function buildSearchIndex(cards: FullCard[], sets: Set[]): SearchEntry[] {
 	if (indexedCards === cards) return searchIndex;
 
-	const lookup = buildSetLookupMap(sets);
+	const setsById = new Map(sets.map(set => [set.setId, set]));
 	searchIndex = cards.map(card => {
-		const set = findSetInLookup(card.cardCode, lookup);
-		const cardNumber = extractCardNumberFromCode(card.cardCode);
+		const set = setsById.get(card.setId);
+		const cardNumber = card.localId;
 		return {
 			card,
 			cardNumber,
 			name: card.name.toLowerCase(),
-			number: cardNumber.toLowerCase(),
+			number: numberKey(cardNumber.toLowerCase()),
 			printedTotal: set?.printedTotal?.toString() ?? '',
 			setCode: set?.ptcgoCode?.toLowerCase() ?? '',
 			setName: set?.name ?? '',
@@ -59,6 +55,7 @@ function buildSearchIndex(cards: FullCard[], sets: Set[]): SearchEntry[] {
 interface CompiledQuery {
 	/** Every `name` / `setName` split point of a multi-word query ("pikachu base set" -> [["pikachu", "base set"], ...]). */
 	nameSetSplits: [string, string][] | null;
+	numberText: string;
 	numberTotal: string | null;
 	slashNumber: string | null;
 	slashOpen: boolean;
@@ -70,6 +67,7 @@ interface CompiledQuery {
 function compileQuery(text: string): CompiledQuery {
 	const query: CompiledQuery = {
 		nameSetSplits: null,
+		numberText: numberKey(text),
 		numberTotal: null,
 		slashNumber: null,
 		slashOpen: text.endsWith('/'),
@@ -80,7 +78,7 @@ function compileQuery(text: string): CompiledQuery {
 
 	if (text.includes('/')) {
 		const [number, total] = text.split('/');
-		query.slashNumber = number;
+		query.slashNumber = numberKey(number);
 		query.numberTotal = total || null;
 	}
 
@@ -88,7 +86,7 @@ function compileQuery(text: string): CompiledQuery {
 		const parts = text.split(' ');
 		const last = parts[parts.length - 1];
 		if (/^\d+$/.test(last)) {
-			query.tailNumber = last;
+			query.tailNumber = numberKey(last);
 			query.tailHead = parts.slice(0, -1).join(' ');
 		}
 		query.nameSetSplits = [];
@@ -123,7 +121,7 @@ function scoreEntry(entry: SearchEntry, query: CompiledQuery): number {
 
 	if (name === text) return 110;
 	if (name.startsWith(text)) return 100;
-	if (number === text) return 90;
+	if (number === query.numberText) return 90;
 	if (name.includes(text)) return 80;
 	if (setCode === text) return 50;
 	if (setName.includes(text)) return 40;
@@ -168,8 +166,53 @@ export function searchCards(
 	return best.map(({ entry }) => ({
 		card: entry.card,
 		cardNumber: entry.cardNumber,
-		price: prices[entry.card.cardCode]?.simple ?? null,
+		price: cardPrice(prices[entry.card.cardCode]),
 		printedTotal: entry.printedTotal ? Number(entry.printedTotal) : null,
 		setName: entry.setName,
 	}));
+}
+
+/** A species hit, linking to the card list narrowed to its Pokédex number. */
+export interface PokemonSearchResult {
+	cardCount: number;
+	id: number;
+	name: string;
+}
+
+/** PokeAPI slugs ("mr-mime", "farfetchd", "flabebe") against what people type ("Mr. Mime", "Farfetch'd", "Flabébé"). */
+const pokemonKey = (value: string) => value.normalize('NFD').replace(/[̀-ͯ'’]/g, '').replace(/[-.\s]+/g, ' ').trim();
+
+let indexedPokemons: { cardCount: number; key: string; pokemon: Pokemon }[] = [];
+let indexedPokemonSources: [Pokemon[], FullCard[]] | null = null;
+
+/** Species with at least one card, keyed for matching; rebuilt only when either cached table changes. */
+function buildPokemonIndex(pokemons: Pokemon[], cards: FullCard[]) {
+	if (indexedPokemonSources?.[0] === pokemons && indexedPokemonSources[1] === cards) return indexedPokemons;
+
+	const counts = new Map<number, number>();
+	for (const card of cards) {
+		if (card.pokemonNumber) counts.set(card.pokemonNumber, (counts.get(card.pokemonNumber) ?? 0) + 1);
+	}
+	indexedPokemons = pokemons
+		.filter(pokemon => counts.has(pokemon.id))
+		.map(pokemon => ({ cardCount: counts.get(pokemon.id)!, key: pokemonKey(pokemon.name), pokemon }));
+	indexedPokemonSources = [pokemons, cards];
+	return indexedPokemons;
+}
+
+/** Species whose name matches `query` (exact, then prefix, then substring) or whose Pokédex number it is. */
+export function searchPokemons(query: string, pokemons: Pokemon[], cards: FullCard[], limit = 3): PokemonSearchResult[] {
+	const key = pokemonKey(query.toLowerCase());
+	if (!key) return [];
+
+	const dexNumber = /^#?\d+$/.test(key) ? Number(key.replace('#', '')) : null;
+	const score = (entry: { key: string; pokemon: Pokemon }) =>
+		entry.pokemon.id === dexNumber || entry.key === key ? 3 : entry.key.startsWith(key) ? 2 : entry.key.includes(key) ? 1 : 0;
+
+	return buildPokemonIndex(pokemons, cards)
+		.map(entry => ({ entry, score: score(entry) }))
+		.filter(({ score }) => score > 0)
+		.sort((a, b) => b.score - a.score || a.entry.key.length - b.entry.key.length)
+		.slice(0, limit)
+		.map(({ entry }) => ({ cardCount: entry.cardCount, id: entry.pokemon.id, name: entry.pokemon.name }));
 }

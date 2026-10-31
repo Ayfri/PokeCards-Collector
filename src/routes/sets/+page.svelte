@@ -10,6 +10,7 @@
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import LayersIcon from '@lucide/svelte/icons/layers';
+	import SetLogo from '@components/SetLogo.svelte';
 	import { setCardCount } from '$helpers/set-utils';
 
 	interface Props {
@@ -71,6 +72,13 @@
 		return comparator(firstSetA, firstSetB) * sortDirection;
 	}));
 
+	/** Release years a group spans, one year when all its sets came out the same year. */
+	function yearSpan(sets: SetWithPrice[]): string {
+		const years = sets.map(set => new Date(set.releaseDate).getFullYear());
+		const [first, last] = [Math.min(...years), Math.max(...years)];
+		return first === last ? `${first}` : `${first} - ${last}`;
+	}
+
 	function formatCurrency(value: number): string {
 		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(value);
 	}
@@ -113,13 +121,14 @@
 	</p>
 
 	<div transition:fly={{ y: 50, duration: 400, delay: 400 }}>
-		{#each seriesKeys as series, index}
+		{#each seriesKeys as series, index (series)}
 			<div class="mb-8">
 				<div class="mb-4">
-					<div class="flex items-center gap-4">
+					<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
 						<h2 class="text-xl font-bold text-gold-400">{series}</h2>
-						<p class="text-sm text-gray-400">{groupedSets[series].length} sets</p>
-						<p class="text-sm text-gold-400 ml-auto">{formatCurrency(groupedSets[series].reduce((acc, set) => acc + set.totalPrice, 0))}</p>
+						<p class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-300" title="Release years"><CalendarDaysIcon size={14} /> {yearSpan(groupedSets[series])}</p>
+						<p class="whitespace-nowrap text-sm text-gray-400">{groupedSets[series].length} sets</p>
+						<p class="ml-auto whitespace-nowrap text-sm text-gold-400">{formatCurrency(groupedSets[series].reduce((acc, set) => acc + set.totalPrice, 0))}</p>
 					</div>
 					<hr class="w-full border-t border-gray-700 my-2" />
 				</div>
@@ -130,11 +139,9 @@
 							<a href="/cards-list?set={encodeURIComponent(set.name)}" class="block h-full" title={`Browse every card in ${set.name}`}>
 								<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
 									<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
-										{#if set.logo}
-											<img src={set.logo} alt="{set.name} logo" class="max-h-full object-contain" loading="lazy" />
-										{:else}
-											<div class="text-gray-500 text-center">No image available</div>
-										{/if}
+										<SetLogo class="max-h-full object-contain" {set}>
+											{#snippet fallback()}<LayersIcon class="text-gray-600" size={56} />{/snippet}
+										</SetLogo>
 									</div>
 									<div class="p-4 flex-1 flex flex-col">
 										<h2 class="text-lg font-semibold text-white">{set.name}</h2>

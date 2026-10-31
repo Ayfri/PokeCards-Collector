@@ -17,7 +17,6 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import { filterCards, getCardDimensions, keepMostExpensivePerGroup, sortBySupertype, sortCards } from "$helpers/card-grid";
-	import Loader from "$lib/components/Loader.svelte";
 	import { cardSize } from "$stores/grid.svelte";
 	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
 
@@ -30,7 +29,6 @@
 		types: string[];
 		artists?: string[];
 		pageTitle?: string | null;
-		disableLoader?: boolean;
 		selectedSetName?: string | null;
 		selectedArtistName?: string | null;
 		lowRes?: boolean;
@@ -45,7 +43,6 @@
 		types,
 		artists = [],
 		pageTitle = "Card List",
-		disableLoader = false,
 		selectedSetName = null,
 		selectedArtistName = null,
 		lowRes = true
@@ -54,7 +51,6 @@
 	let clientWidth: number = $state(0);
 	let showFilters = $state(false);
 	let searchName = $state("");
-	let showLoader = $state(true);
 	/** Cards above the fold skip lazy loading so the LCP candidate is requested with the document, not after layout. */
 	const eagerCards = 12;
 
@@ -116,16 +112,10 @@
 
 	const pokemonMap = $derived(new Map(pokemons.map(pokemon => [pokemon.id, pokemon])));
 
-	// The filter holds the set *name*, so the set is looked up by name; `findSetByCardCode` parsed it as a card code,
-	// found no `_` separators and always returned undefined, leaving the set branch of `isVisible` unreachable.
-	const selectedSet = $derived(filters.set !== "all"
-		? (sets.find(set => set.name.toLowerCase() === filters.set) ?? null)
-		: null);
-
 	// Filter first, then narrow, then sort: "Most Expensive Only" used to pick the priciest printing of each Pokémon
 	// across the whole catalogue before the set filter ran, so Base Set showed the 4 Pokémon whose best card happens to
 	// live there instead of its 69. Sorting last also means a picked set sorts ~100 cards rather than all 23546.
-	const matchingCards = $derived(filters.hasActive ? filterCards(cards, sets, selectedSet, filters.active) : cards);
+	const matchingCards = $derived(filters.hasActive ? filterCards(cards, filters.active) : cards);
 	const narrowedCards = $derived(filters.mostExpensiveOnly ? keepMostExpensivePerGroup(matchingCards, prices) : matchingCards);
 	const sortedCards = $derived(sortCards(narrowedCards, filters.sortBy, filters.sortOrder, prices, pokemons, sets));
 	// Pokémon before Trainer before Energy, unless the user is already looking at a single supertype.
@@ -193,10 +183,10 @@
 			{#if selectedSetName || selectedArtistName}
 				<div class="flex flex-wrap gap-2 items-center ml-3">
 					{#if selectedSetName}
-						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-white font-normal text-xs">Set: {selectedSetName}</span>
+						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-black font-normal text-xs">Set: {selectedSetName}</span>
 					{/if}
 					{#if selectedArtistName}
-						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-white font-normal text-xs">Artist: {selectedArtistName}</span>
+						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-black font-normal text-xs">Artist: {selectedArtistName}</span>
 					{/if}
 				</div>
 			{/if}
@@ -256,12 +246,6 @@
 	</div>
 
 	<div class="relative flex flex-1 flex-col">
-		{#if showLoader && !disableLoader}
-			<div class="absolute inset-x-0 top-16 z-10 flex justify-center">
-				<Loader message="Loading cards..." />
-			</div>
-		{/if}
-
 		<VirtualGrid
 			gapX={cardDimensions.gapX}
 			gapY={cardDimensions.gapY}
@@ -270,7 +254,6 @@
 			forcedItemsPerRow={cardDimensions.cardsPerRow}
 			items={filteredCards}
 			marginTop={clientWidth ? 20 : 50}
-			onready={() => (showLoader = false)}
 		>
 			{#snippet children({ item, index })}
 				<CardComponent

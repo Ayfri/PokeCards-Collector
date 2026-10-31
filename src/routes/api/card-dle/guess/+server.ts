@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { FullCard, PriceData } from '$lib/types';
+import { cardPrice } from '$helpers/card-utils';
 import { getCards, getPrices } from '$helpers/supabase-data';
 
 interface CardOfTheDay extends FullCard {
@@ -14,17 +15,12 @@ let lastLoadDate = '';
 
 /** Picks the card of the day; the date is the only seed, so every player gets the same one. */
 function selectDailyCard(cards: FullCard[], priceData: Record<string, PriceData>): CardOfTheDay | null {
-	// Cheap cards and the 9999 sentinel make for unguessable rounds, so they are excluded.
+	// Cheap cards make for unguessable rounds, so they are excluded.
 	const eligibleCards: CardOfTheDay[] = [];
 
 	for (const card of cards) {
-		const priceEntry = priceData[card.cardCode];
-		if (card.pokemonNumber !== 9999 && priceEntry?.simple && priceEntry.simple >= 3) {
-			eligibleCards.push({
-				...card,
-				price: priceEntry.simple
-			});
-		}
+		const price = cardPrice(priceData[card.cardCode]);
+		if (price && price >= 3) eligibleCards.push({ ...card, price });
 	}
 
 	if (eligibleCards.length === 0) return null;
@@ -75,14 +71,10 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const guessedCard = allCards!.find(card => card.cardCode === guessedCardCode);
-		const guessedPrice = prices![guessedCardCode]?.simple;
+		const guessedPrice = cardPrice(prices![guessedCardCode]);
 
 		if (!guessedCard || !guessedPrice) {
 			return json({ error: 'Carte non trouvée ou sans prix' }, { status: 404 });
-		}
-
-		if (guessedCard.pokemonNumber === 9999) {
-			return json({ error: 'Sélection de carte invalide' }, { status: 400 });
 		}
 
 		const feedback = {

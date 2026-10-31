@@ -2,6 +2,7 @@ import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { wishlist } from '$stores/wishlist.svelte';
 import { loading } from '$stores/loading.svelte';
+import { selectAll } from './select-all';
 
 // Add a card to user's wishlist
 export async function addCardToWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
@@ -62,15 +63,14 @@ export async function removeCardFromWishlist(username: string, cardCode: string,
 	}
 }
 
-// Get user's wishlist
+/** Every wishlist row of the user, paged past the row cap. */
 export async function getUserWishlist(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		const { data, error } = await client
+		return await selectAll(() => client
 			.from('wishlists')
-			.select('*')
-			.eq('username', username);
-
-		return { data, error };
+			.select('*', { count: 'exact' })
+			.eq('username', username)
+			.order('id'));
 	} catch (error) {
 		console.error('Error getting user wishlist:', error);
 		return { data: null, error };

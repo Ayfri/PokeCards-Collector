@@ -35,10 +35,6 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 	}
 
 	return {
-		user: parentLayoutData.user,
-		profile: parentLayoutData.profile,
-		wishlistItems: parentLayoutData.wishlistItems,
-		collectionItems: parentLayoutData.collectionItems,
 		sets,
 		title: ogTitle,
 		description: ogDescription,

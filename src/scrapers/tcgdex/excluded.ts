@@ -20,5 +20,11 @@ export async function excludedSetIds(client: TcgdexClient, lang: string): Promis
 	return new Set(series.flatMap(serie => serie?.sets?.map(set => set.id) ?? []));
 }
 
-/** Convenience for a caller that already holds the set list. */
-export const withoutExcluded = <T extends {id: string}>(sets: readonly T[], excluded: ReadonlySet<string>): T[] => sets.filter(set => !excluded.has(set.id));
+/**
+ * The listed sets the catalogue carries, each id once. TCGdex lists ja `BW8a` twice (Raiden Knuckle and Spiral Force) while
+ * `/sets/BW8a` only ever answers Raiden Knuckle, and a repeated id fails the whole `jp_sets` upsert on its `set_id` conflict.
+ */
+export function catalogueSets<T extends {id: string}>(sets: readonly T[], excluded: ReadonlySet<string>): T[] {
+	const seen = new Set(excluded);
+	return sets.filter(set => !seen.has(set.id) && !!seen.add(set.id));
+}

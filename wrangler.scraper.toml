@@ -1,4 +1,4 @@
-# Weekly TCGdex -> Supabase refresh, deployed apart from the site Worker:
+# Daily TCGdex -> Supabase refresh, deployed apart from the site Worker:
 #   bun run deploy:scraper
 #   bunx wrangler secret put SUPABASE_SECRET_KEY -c wrangler.scraper.toml
 #   bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
@@ -25,9 +25,18 @@ enabled = true
 [observability.traces]
 enabled = true
 
+# Pins the TCGdex reads to Western Europe, see `TcgdexReader` in src/workers/scraper.ts.
+[[durable_objects.bindings]]
+name = "TCGDEX_READER"
+class_name = "TcgdexReader"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["TcgdexReader"]
+
 # `schedules` creates one Workflow instance per firing, so no `[triggers] crons` and no `scheduled` handler.
 [[workflows]]
 name = "pokecards-scrape"
 binding = "SCRAPER"
 class_name = "ScrapeWorkflow"
-schedules = ["0 4 * * 1"] # Mondays, 04:00 UTC
+schedules = ["0 4 * * *"] # Every day, 04:00 UTC

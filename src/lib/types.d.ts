@@ -14,13 +14,13 @@ export interface Card {
 	hp?: number;
 	image: string;
 	legalStandard?: boolean;
-	localId?: string;
+	localId: string;
 	name: string;
 	pokemonNumber?: number;
 	ptcgoCode?: string;
 	rarity: string;
 	regulationMark?: string;
-	setId?: string;
+	setId: string;
 	setName: string;
 	stage?: string;
 	supertype: string;
@@ -61,7 +61,7 @@ export interface Set {
 	ptcgoCode?: string;
 	releaseDate: Date;
 	series?: string;
-	setId?: string;
+	setId: string;
 	symbol?: string;
 	totalCards?: number;
 }
@@ -97,7 +97,6 @@ export interface UserCollection {
 	username: string;
 	card_code: string;
 	created_at: string;
-	updated_at: string;
 }
 
 export interface UserWishlist {
@@ -105,7 +104,6 @@ export interface UserWishlist {
 	username: string;
 	card_code: string;
 	created_at: string;
-	updated_at: string;
 }
 
 export interface CollectionStats {
@@ -120,6 +118,8 @@ export interface CollectionStats {
 			totalValue: number;
 		}
 	>;
+	/** The most valuable owned cards, priced ones only. */
+	top_cards: { card: Card; copies: number; price: number }[];
 	total_instances: number;
 	total_value: number;
 	unique_cards: number;
@@ -165,15 +165,17 @@ export type CardFilter = {
 }
 
 /**
- * One catalogue card as the binder needs it: the seven fields the storage panel draws and searches on.
+ * One catalogue card as the binder needs it: the fields the storage panel draws, sorts and searches on.
  * Serving whole cards plus the price table put 11.4 MB into the binder document.
  */
 export interface BinderCatalogueCard {
 	cardCode: string;
 	image: string;
+	localId: string;
 	name: string;
 	price: number | null;
 	rarity: string;
+	setId: string;
 	setName: string;
 	types: string;
 }

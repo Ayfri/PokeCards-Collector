@@ -1,32 +1,19 @@
 import { error } from '@sveltejs/kit';
-import { getCards, getPokemons, getPrices } from '$helpers/supabase-data';
+import { getCardDetails, getCards, getPokemons, getPrices } from '$helpers/supabase-data';
 import { processCardImage } from '$helpers/card-images';
-import { article, breadcrumbs, cardPrice, cardSchema } from '$helpers/seo';
+import { cardPageCatalogue, cardPrice } from '$helpers/card-utils';
+import { article, breadcrumbs, cardSchema } from '$helpers/seo';
 import type { FullCard, Pokemon } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
+	// Started before `parent()` so the catalogue reads overlap the layout's auth and collection queries.
+	const catalogue = Promise.all([getCardDetails('cards', cardCode), getCards(), getPrices(), getPokemons()]);
 	const parentData = await parent();
-
-	const [allCards, prices, allPokemons] = await Promise.all([
-		getCards(),
-		getPrices(),
-		getPokemons(),
-	]);
+	const [targetCard, allCards, prices, allPokemons] = await catalogue;
 	const sets = parentData.sets || [];
 
-	const layoutPropertiesFromParent = {
-		user: parentData.user,
-		profile: parentData.profile,
-		title: parentData.title,
-		description: parentData.description,
-		image: parentData.image,
-		wishlistItems: parentData.wishlistItems,
-		collectionItems: parentData.collectionItems
-	};
-
-	const targetCard = allCards.find(c => c.cardCode === cardCode);
 	if (!targetCard) {
 		throw error(404, `Card with code ${cardCode} not found`);
 	}
@@ -48,22 +35,10 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		);
 	}
 
-	if (relevantCards.length === 0 && targetCard) {
-		relevantCards = [targetCard];
-	}
+	relevantCards.sort((a, b) => (cardPrice(prices[b.cardCode]) ?? 0) - (cardPrice(prices[a.cardCode]) ?? 0));
+	relevantCards = [targetCard, ...relevantCards.filter(c => c.cardCode !== cardCode)];
 
-	relevantCards.sort((a, b) => (prices[b.cardCode]?.simple ?? prices[b.cardCode]?.trend ?? 0) -
-	                           (prices[a.cardCode]?.simple ?? prices[a.cardCode]?.trend ?? 0));
-
-	if (targetCard && relevantCards.length > 0 && relevantCards[0].cardCode !== cardCode) {
-		const targetIndex = relevantCards.findIndex(c => c.cardCode === cardCode);
-		if (targetIndex > 0) {
-			const cardToMove = relevantCards.splice(targetIndex, 1)[0];
-			relevantCards.unshift(cardToMove);
-		}
-	}
-
-	const set = sets.find(s => s.name === targetCard.setName);
+	const set = sets.find(s => s.setId === targetCard.setId);
 	const price = prices[targetCard.cardCode];
 	const value = cardPrice(price);
 
@@ -84,7 +59,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	// `targetCard.image` is a TCGdex base with no extension, which no crawler can fetch as an `og:image`.
 	const pageImage = {
 		alt: `${targetCard.name} Pokémon card from ${targetCard.setName}`,
-		url: targetCard.image ? processCardImage(targetCard.image) : layoutPropertiesFromParent.image?.url || '',
+		url: targetCard.image ? processCardImage(targetCard.image) : parentData.image?.url || '',
 	};
 
 	const pageBreadcrumbs = breadcrumbs(
@@ -93,11 +68,9 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		{ name: targetCard.name, url: `/card/${targetCard.cardCode}` },
 	);
 
+	// The layout already ships `sets`, and the page only reads the cards, Pokémon and prices around this one.
 	return {
-		...layoutPropertiesFromParent,
-		allCards,
-		sets,
-		prices,
+		...cardPageCatalogue(targetCard.pokemonNumber, relevantCards, allCards, allPokemons, prices),
 		pokemon: associatedPokemon,
 		pokemonCards: relevantCards,
 		targetCard,
@@ -108,6 +81,5 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		keywords: [targetCard.name, `${targetCard.name} price`, targetCard.setName, targetCard.rarity, targetCard.artist, 'Pokémon TCG'].filter(Boolean),
 		schemas: [cardSchema(targetCard, price, associatedPokemon, set)],
 		type: 'Product' as const,
-		pokemons: allPokemons,
 	};
 };

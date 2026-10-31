@@ -4,18 +4,18 @@ export interface TcgdexCardMarketPricing {
 	updated?: string;
 	unit?: string;
 	idProduct?: number;
-	avg?: number;
-	low?: number;
-	trend?: number;
-	avg1?: number;
-	avg7?: number;
-	avg30?: number;
-	'avg-holo'?: number;
-	'low-holo'?: number;
-	'trend-holo'?: number;
-	'avg1-holo'?: number;
-	'avg7-holo'?: number;
-	'avg30-holo'?: number;
+	avg?: number | null;
+	low?: number | null;
+	trend?: number | null;
+	avg1?: number | null;
+	avg7?: number | null;
+	avg30?: number | null;
+	'avg-holo'?: number | null;
+	'low-holo'?: number | null;
+	'trend-holo'?: number | null;
+	'avg1-holo'?: number | null;
+	'avg7-holo'?: number | null;
+	'avg30-holo'?: number | null;
 }
 
 export interface TcgdexTcgPlayerVariantPricing {

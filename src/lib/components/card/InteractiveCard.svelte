@@ -1,6 +1,5 @@
 <script lang="ts">
 	import CardImage from '@components/card/CardImage.svelte';
-	import MissingCardArt from '@components/card/MissingCardArt.svelte';
 	import type { FullCard, Pokemon, Set } from '$lib/types';
 	import { pascalCase } from '$helpers/strings';
 	import { throttle } from '$helpers/throttle';
@@ -10,7 +9,6 @@
 		card: FullCard | undefined;
 		currentSet: Set | undefined;
 		currentType: string;
-		handlePokemonImageError: (event: Event) => void;
 		pokemon: Pokemon | undefined;
 	}
 
@@ -18,7 +16,6 @@
 		card,
 		currentSet,
 		currentType,
-		handlePokemonImageError,
 		pokemon
 	}: Props = $props();
 
@@ -63,24 +60,21 @@
 <div
 	class="w-84 h-116 sm:w-[20rem] sm:h-112 lg:w-92 lg:h-128 max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {pokemon ? '' : 'non-pokemon'}"
 	bind:this={centerCard}
+	data-card-hero={card?.cardCode}
 	data-card-id={currentSet?.name}
 	data-card-type={currentType}
 >
 	{#key card?.image}
-		{#if card?.image}
+		{#if card}
 			<CardImage
-				alt={pokemon ? pascalCase(pokemon.name) : card?.name || 'Card image'}
-				imageUrl={card?.image}
-				types={card?.types}
+				alt={pokemon ? pascalCase(pokemon.name) : card.name}
+				{card}
+				imageUrl={card.image}
 				lowRes={false}
-				height={544}
-				width={384}
-				class="image rounded-xl"
+				sizes="384px"
+				class="image size-full rounded-xl"
 				lazy={false}
-				onerror={handlePokemonImageError}
 			/>
-		{:else if card}
-			<MissingCardArt {card} />
 		{/if}
 	{/key}
 </div>

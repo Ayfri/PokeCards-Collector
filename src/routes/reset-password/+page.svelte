@@ -1,121 +1,135 @@
 <script lang="ts">
-import { onMount } from 'svelte';
-import { supabase } from '../../lib/supabase';
-import { goto } from '$app/navigation';
-import BouncyLoader from '$lib/components/BouncyLoader.svelte';
+	import { enhance } from '$app/forms';
+	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
+	import { PASSWORD_CRITERIA } from '$helpers/password';
+	import EyeIcon from '@lucide/svelte/icons/eye';
+	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+	import LockIcon from '@lucide/svelte/icons/lock';
+	import type { ActionData, PageData } from './$types';
 
-let password = $state('');
-let confirmPassword = $state('');
-let loading = $state(false);
-let errorMessage = $state('');
-let successMessage = $state('');
-let token = '';
-let type = '';
-const passwordCriteria = $derived({
-	digit: /[0-9]/.test(password),
-	length: password.length >= 8,
-	special: /[^a-zA-Z0-9]/.test(password)
-});
-const passwordStrength = $derived(Object.values(passwordCriteria).filter(Boolean).length);
+	interface Props {
+		data: PageData;
+		form: ActionData;
+	}
 
-// Get token from URL or hash
-onMount(() => {
-	const url = new URL(window.location.href);
-	token = url.searchParams.get('token') || '';
-	type = url.searchParams.get('type') || '';
+	let { data, form }: Props = $props();
 
-	// If not found in query params, check hash
-	if (!token || !type) {
-		const hash = window.location.hash.substring(1); // remove '#'
-		const params = new URLSearchParams(hash);
-		token = token || params.get('access_token') || params.get('token') || '';
-		type = type || params.get('type') || '';
-	}
-});
+	let password = $state('');
+	let showPassword = $state(false);
+	let submitting = $state(false);
 
-async function handleReset(event: SubmitEvent) {
-	event.preventDefault();
-	errorMessage = '';
-	successMessage = '';
-	if (!password || !confirmPassword) {
-		errorMessage = 'Please fill in all fields.';
-		return;
-	}
-	if (password !== confirmPassword) {
-		errorMessage = 'Passwords do not match.';
-		return;
-	}
-	if (!passwordCriteria.length || !passwordCriteria.digit || !passwordCriteria.special) {
-		errorMessage = 'Password must be at least 8 characters long and include at least one number and one special character.';
-		return;
-	}
-	loading = true;
-	const { error } = await supabase.auth.updateUser({ password });
-	loading = false;
-	if (error) {
-		errorMessage = error.message || 'Failed to reset password.';
-		return;
-	}
-	successMessage = 'Password updated! You can now log in.';
-	setTimeout(() => goto('/'), 2000);
-}
+	const met = $derived(PASSWORD_CRITERIA.map(criterion => criterion.test(password)));
+	const strength = $derived(met.filter(Boolean).length);
+	const strengthColor = $derived(['bg-gray-700', 'bg-red-500', 'bg-yellow-400', 'bg-green-500'][strength]);
 </script>
 
-<div class="w-full max-w-md mx-auto mt-16 p-6 bg-white dark:bg-gray-800 rounded-lg shadow-sm">
-	<h1 class="text-2xl font-bold mb-4 text-center">Reset your password</h1>
-	{#if errorMessage}
-		<div class="mb-4 p-3 bg-red-100 text-red-800 rounded-sm">{errorMessage}</div>
-	{/if}
-	{#if successMessage}
-		<div class="mb-4 p-3 bg-green-100 text-green-800 rounded-sm">{successMessage}</div>
-	{/if}
-	<form onsubmit={handleReset} class="space-y-4">
-		<div>
-			<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New password</label>
-			<input
-				type="password"
-				id="password"
-				bind:value={password}
-				class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-				placeholder="••••••••"
-				required
-				minlength="8"
-			/>
-			<!-- Password strength bar -->
-			<div class="mt-2 h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-sm">
-				<div class="h-2 rounded-sm transition-all duration-300 {passwordStrength === 1 ? 'bg-red-500' : passwordStrength === 2 ? 'bg-yellow-400' : passwordStrength === 3 ? 'bg-green-500' : 'bg-gray-200'}"
-					style="width: {passwordStrength * 33.33}%">
-				</div>
-			</div>
-			<ul class="mt-1 text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
-				<li class={passwordCriteria.length ? 'text-green-600 dark:text-green-400' : ''}>• At least 8 characters</li>
-				<li class={passwordCriteria.digit ? 'text-green-600 dark:text-green-400' : ''}>• At least one number</li>
-				<li class={passwordCriteria.special ? 'text-green-600 dark:text-green-400' : ''}>• At least one special character</li>
-			</ul>
-		</div>
-		<div>
-			<label for="confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm new password</label>
-			<input
-				type="password"
-				id="confirm-password"
-				bind:value={confirmPassword}
-				class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-				placeholder="••••••••"
-				required
-				minlength="8"
-			/>
-		</div>
-		<button
-			type="submit"
-			disabled={loading}
-			class="w-full py-2 px-4 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+<main class="mx-auto w-full max-w-md px-4 py-16">
+	<h1 class="mb-1 text-2xl font-bold text-gold-400">Reset your password</h1>
+
+	{#if form?.success}
+		<p class="mb-5 text-sm text-gray-400">Your new password is active on every device.</p>
+		<p class="rounded-lg border border-green-500/40 bg-green-500/10 p-4 text-sm text-green-400">{form.message}</p>
+		<a
+			class="animated-hover-button relative mt-5 inline-flex items-center gap-2 overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300"
+			href="/"
+			title="Back to the card catalogue"
 		>
-			{#if loading}
-				<BouncyLoader size={20} gradientColorStart="#FFFFFF" gradientColorEnd="#FFFFFF" />
-				<span class="ml-2">Updating...</span>
-			{:else}
-				Update password
-			{/if}
-		</button>
-	</form>
-</div> 
+			<span class="relative z-10">Back to the catalogue</span>
+		</a>
+	{:else if !data.recovered}
+		<p class="mb-5 text-sm text-gray-400">This page opens from a reset email.</p>
+		<p class="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-400">
+			{data.authError === 'expired_link'
+				? 'That reset link has expired or was already used. Reset links are valid once, and only for a short while.'
+				: 'This page needs a valid reset link. Ask for a new one from the login form.'}
+		</p>
+		<a
+			class="animated-hover-button relative mt-5 inline-flex items-center gap-2 overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300"
+			href="/"
+			title="Back to the card catalogue"
+		>
+			<span class="relative z-10">Back to the catalogue</span>
+		</a>
+	{:else}
+		<p class="mb-5 text-sm text-gray-400">Pick the password you will sign in with from now on.</p>
+
+		{#if form?.message}
+			<p class="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-400">{form.message}</p>
+		{/if}
+
+		<form
+			class="space-y-4"
+			method="POST"
+			use:enhance={() => {
+				submitting = true;
+				return async ({ update }) => {
+					await update({ reset: false });
+					submitting = false;
+				};
+			}}
+		>
+			<div>
+				<label class="mb-1 block text-sm font-medium text-gray-300" for="password">New password</label>
+				<div class="relative">
+					<input
+						autocomplete="new-password"
+						bind:value={password}
+						class="w-full rounded-md border border-gray-700/60 bg-gray-900/50 px-3 py-2 pr-10 text-white placeholder-gray-500 focus:border-gold-400 focus:outline-hidden"
+						id="password"
+						name="password"
+						placeholder="••••••••"
+						required
+						type={showPassword ? 'text' : 'password'}
+					/>
+					<button
+						class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 transition-colors hover:text-gold-400"
+						onclick={() => (showPassword = !showPassword)}
+						title={showPassword ? 'Hide password' : 'Show password'}
+						type="button"
+					>
+						{#if showPassword}<EyeOffIcon size={18} />{:else}<EyeIcon size={18} />{/if}
+					</button>
+				</div>
+
+				<div class="mt-2 h-1.5 w-full rounded-sm bg-gray-800">
+					<div class={['h-1.5 rounded-sm transition-all duration-300', strengthColor]} style="width: {(strength / PASSWORD_CRITERIA.length) * 100}%"></div>
+				</div>
+				<ul class="mt-2 space-y-0.5 text-xs text-gray-500">
+					{#each PASSWORD_CRITERIA as criterion, index (criterion.id)}
+						<li class={met[index] ? 'text-green-400' : ''}>• {criterion.label}</li>
+					{/each}
+				</ul>
+			</div>
+
+			<div>
+				<label class="mb-1 block text-sm font-medium text-gray-300" for="confirm-password">Confirm new password</label>
+				<input
+					autocomplete="new-password"
+					class="w-full rounded-md border border-gray-700/60 bg-gray-900/50 px-3 py-2 text-white placeholder-gray-500 focus:border-gold-400 focus:outline-hidden"
+					id="confirm-password"
+					name="confirmPassword"
+					placeholder="••••••••"
+					required
+					type={showPassword ? 'text' : 'password'}
+				/>
+			</div>
+
+			<button
+				class="animated-hover-button relative flex w-full items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+				disabled={submitting}
+				title="Save this password"
+				type="submit"
+			>
+				<span class="relative z-10 flex items-center gap-2">
+					{#if submitting}
+						<BouncyLoader gradientColorEnd="#fbc54a" gradientColorStart="#fbc54a" size={20} />
+						Updating...
+					{:else}
+						<LockIcon size={16} />
+						Update password
+					{/if}
+				</span>
+			</button>
+		</form>
+	{/if}
+</main>

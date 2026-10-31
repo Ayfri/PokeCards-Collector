@@ -1,52 +1,21 @@
 import { getCards, getPrices } from '$helpers/supabase-data';
-import { findSetByCardCode } from '$helpers/set-utils';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, setListSchema } from '$helpers/seo';
 import type { SetWithPrice } from '$lib/types';
+import { cardPrice } from '$helpers/card-utils';
 
 export const load: PageServerLoad = async ({ parent }) => {
-	const parentData = await parent();
-
-	const [cards, prices] = await Promise.all([getCards(), getPrices()]);
-	const setsFromParent = parentData.sets || [];
-
-	const layoutData = {
-		user: parentData.user,
-		profile: parentData.profile,
-		title: parentData.title,
-		description: parentData.description,
-		image: parentData.image,
-		wishlistItems: parentData.wishlistItems,
-		collectionItems: parentData.collectionItems
-	};
+	const catalogue = Promise.all([getCards(), getPrices()]);
+	const { sets: setsFromParent = [] } = await parent();
+	const [cards, prices] = await catalogue;
 
 	const setPriceTotals = new Map<string, number>();
-
 	for (const card of cards) {
-
-		const foundSet = findSetByCardCode(card.cardCode, setsFromParent);
-
-		if (!foundSet || !foundSet.ptcgoCode) {
-			continue;
-		}
-
-		const setIdentifierForTotals = foundSet.ptcgoCode;
-
-		const priceData = prices[card.cardCode];
-		const currentPrice = priceData?.simple ?? 0;
-
-		if (currentPrice > 0) {
-			setPriceTotals.set(setIdentifierForTotals, (setPriceTotals.get(setIdentifierForTotals) || 0) + currentPrice);
-		}
+		const price = cardPrice(prices[card.cardCode]);
+		if (price && card.setId) setPriceTotals.set(card.setId, (setPriceTotals.get(card.setId) ?? 0) + price);
 	}
 
-	const setsWithPrices = setsFromParent.map(set => {
-		const totalPrice = set.ptcgoCode ? setPriceTotals.get(set.ptcgoCode) || 0 : 0;
-		return {
-			...set,
-			totalPrice,
-		} as SetWithPrice;
-	});
+	const setsWithPrices: SetWithPrice[] = setsFromParent.map(set => ({ ...set, totalPrice: setPriceTotals.get(set.setId ?? '') ?? 0 }));
 
 	const pageSeoData = {
 		breadcrumbs: breadcrumbs({ name: 'Sets', url: '/sets' }),
@@ -60,7 +29,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 	// `cards` and `prices` stay on the server: the page renders `setsWithPrices` alone, and shipping the
 	// catalogue alongside it turned this route into a 24 MB document.
 	return {
-		...layoutData,
 		setsWithPrices,
 		...pageSeoData
 	};

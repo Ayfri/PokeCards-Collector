@@ -1,10 +1,8 @@
 import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { collection } from '$stores/collection.svelte';
-import type { Card, PriceData, Set } from '../types';
-import { buildSetLookupMap, findSetInLookup } from '$helpers/set-utils';
 import { loading } from '$stores/loading.svelte';
-import { getUserWishlist } from './wishlists';
+import { selectAll } from './select-all';
 
 // --- Constants ---
 const MAX_CARD_QUANTITY = 99; // Define the maximum allowed quantity per card
@@ -95,137 +93,16 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 	}
 }
 
-// Get user's collection (only card codes needed for counting)
+/** Every copy the user owns, one row per copy and only its card code, paged past the row cap. */
 export async function getUserCollection(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
-		const { data, error } = await client
+		return await selectAll(() => client
 			.from('collections')
-			.select('card_code') // Select ONLY card_code
-			.eq('username', username);
-
-		return { data, error };
+			.select('card_code', { count: 'exact' })
+			.eq('username', username)
+			.order('id'));
 	} catch (error) {
 		console.error('Error getting user collection card codes:', error);
-		return { data: null, error };
-	}
-}
-
-interface SetTotals {
-	collected: number;
-	collectedValue: number;
-	total: number;
-	totalValue: number;
-}
-
-// Get collection stats (count by rarity, set, total value, etc. - BASED ON UNIQUE CARDS)
-export async function getCollectionStats(username: string, allCards: Card[], allSets: Set[], prices: Record<string, PriceData>, client: SupabaseClient = getSupabaseBrowserClient()) {
-	try {
-		// Get user's collection
-		const { data: collectionRows, error } = await getUserCollection(username, client);
-
-		if (error || !collectionRows) {
-			return { data: null, error };
-		}
-		
-		const { data: wishlistItems, error: wishlistError } = await getUserWishlist(username, client);
-		
-		// Default wishlist count to 0 if there's an error
-		const wishlistCount = wishlistError || !wishlistItems ? 0 : wishlistItems.length;
-		
-		// Calculate wishlist total value
-		let wishlistTotalValue = 0;
-		if (wishlistItems && !wishlistError) {
-			wishlistItems.forEach(item => {
-				const cardPrice = prices[item.card_code];
-				if (cardPrice && cardPrice.simple) {
-					wishlistTotalValue += cardPrice.simple;
-				}
-			});
-		}
-
-		// Create a set of cardCodes for quick lookup
-		const collectionCardCodes = new Set(collectionRows.map(item => item.card_code));
-		
-		// Calculate basic stats
-		const uniqueCards = collectionCardCodes.size; // Unique card count
-		const totalInstances = collectionRows.length; // Total instances including duplicates
-		
-		// Calculate total value based on ALL instances
-		let totalValue = 0;
-		collectionRows.forEach(item => { // Iterate over the original collection array (with duplicates)
-			const cardPrice = prices[item.card_code];
-			if (cardPrice && cardPrice.simple) {
-				totalValue += cardPrice.simple;
-			}
-		});
-		
-		// Filter unique cards for rarity and set calculations (keep this)
-		const cardsInCollection = allCards.filter(card => collectionCardCodes.has(card.cardCode));
-
-		// Calculate cards by rarity (based on unique cards)
-		const cardsByRarity: Record<string, number> = {};
-		cardsInCollection.forEach(card => {
-			cardsByRarity[card.rarity] ??= 0;
-			cardsByRarity[card.rarity]++;
-		});
-		
-		// Calculate cards by set, completion percentages, and values
-		const setStats: Record<string, {
-			count: number;
-			total: number;
-			percentage: number;
-			collectedValue: number;
-			totalValue: number;
-		}> = {};
-		
-		// Initialize sets with cards in collection
-		const setsWithCards = new Set<string>();
-		cardsInCollection.forEach(card => {
-			setsWithCards.add(card.setName);
-		});
-		
-		// One pass over the cards instead of one filter per set: the catalogue is 23k cards for 218 sets.
-		const setLookup = buildSetLookupMap(allSets);
-		const cardsBySet = new Map<string, SetTotals>();
-		for (const card of allCards) {
-			const set = findSetInLookup(card.cardCode, setLookup);
-			if (!set || !setsWithCards.has(set.name)) continue;
-
-			const totals = cardsBySet.get(set.name) ?? { collected: 0, collectedValue: 0, total: 0, totalValue: 0 };
-			const price = prices[card.cardCode]?.simple ?? 0;
-			totals.total++;
-			totals.totalValue += price;
-			if (collectionCardCodes.has(card.cardCode)) {
-				totals.collected++;
-				totals.collectedValue += price;
-			}
-			cardsBySet.set(set.name, totals);
-		}
-
-		for (const [setName, totals] of cardsBySet) {
-			setStats[setName] = {
-				count: totals.collected,
-				total: totals.total,
-				percentage: totals.total > 0 ? (totals.collected / totals.total) * 100 : 0,
-				collectedValue: Math.round(totals.collectedValue * 100) / 100,
-				totalValue: Math.round(totals.totalValue * 100) / 100,
-			};
-		}
-		
-		return {
-			data: {
-				unique_cards: uniqueCards, // Renamed from total_cards
-				total_instances: totalInstances, // Added total count
-				total_value: Math.round(totalValue * 100) / 100,
-				cards_by_rarity: cardsByRarity,
-				set_completion: setStats,
-				wishlist_count: wishlistCount,
-				wishlist_total_value: Math.round(wishlistTotalValue * 100) / 100 // Added wishlist total value
-			},
-			error: null
-		};
-	} catch (error) {
-		console.error('Error getting collection stats:', error);
 		return { data: null, error };
 	}
 }

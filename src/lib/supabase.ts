@@ -4,11 +4,16 @@ import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/stati
 import { browser } from '$app/environment';
 
 /**
- * Anonymous client, no session attached. Reserved for the public catalogue (`cards`, `prices`, `sets`, ...)
- * and for the auth endpoints that take their token from the URL, never for a row whose policy gates on
- * `auth.uid()`.
+ * Anonymous client, no session attached. Reserved for the public catalogue (`cards`, `prices`, `sets`, ...),
+ * never for a row whose policy gates on `auth.uid()`.
+ *
+ * The auth options are what make that true. `detectSessionInUrl` defaults to on, and since this module is
+ * pulled in by `LoginForm`, that had every page in the site silently claim any token left in the URL fragment
+ * and stash it in `localStorage`, out of reach of the cookie session the server reads.
  */
-export const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+export const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
+	auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false },
+});
 
 let browserClient: SupabaseClient | null = null;
 

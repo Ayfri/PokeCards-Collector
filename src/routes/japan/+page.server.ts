@@ -7,19 +7,8 @@ import { breadcrumbs, setSchema } from '$helpers/seo';
  * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends whatever it returns.
  */
 export const load: PageServerLoad = async ({ parent, url }) => {
-	const parentData = await parent();
-
-	const layoutDataFromParent = {
-		user: parentData.user,
-		profile: parentData.profile,
-		title: parentData.title,
-		description: parentData.description,
-		image: parentData.image,
-		wishlistItems: parentData.wishlistItems,
-		collectionItems: parentData.collectionItems
-	};
-
-	const sets = await getJapaneseSets();
+	// `parent()` only supplies the fallback share image, so the Japanese sets are read alongside it rather than after it.
+	const [{ image: parentImage }, sets] = await Promise.all([parent(), getJapaneseSets()]);
 	sets.sort((a, b) => a.name.localeCompare(b.name));
 
 	const setParam = url.searchParams.get('set');
@@ -44,11 +33,10 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 	}
 
 	return {
-		...layoutDataFromParent,
 		sets,
 		title: ogTitle,
 		description: ogDescription,
-		image: ogImage ?? layoutDataFromParent.image,
+		image: ogImage ?? parentImage,
 		breadcrumbs: ogCrumbs,
 		keywords: ogKeywords,
 		schemas: ogSchemas,

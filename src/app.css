@@ -2,11 +2,19 @@
 
 @import 'tailwindcss';
 
+/** The site is dark only: `dark:` follows the `dark` class `app.html` sets on `<html>`, not the OS preference that turned the auth modal white. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-*: initial;
   --font-clash: Clash Display, sans-serif;
 
+  /* `gold` is not a Tailwind palette, so every shade the markup names has to be declared here or the class emits nothing. */
+  --color-gold-200: #fee7af;
+  --color-gold-300: #fcd67d;
   --color-gold-400: #fbc54a;
+  --color-gold-500: #f6ae1e;
+  --color-gold-600: #d8870e;
 
   --color-gray-400: #aeaeae;
   --color-gray-800: #232323;
@@ -17,6 +25,15 @@
   --animate-gradient-x: gradient-x 6s ease infinite;
   --animate-loading-sweep: loading-sweep 1.5s linear infinite;
   --animate-ripple-wave: ripple-wave 1.5s ease-out infinite;
+  /* Entrance for server-rendered content: a CSS animation starts on first paint and survives hydration, a Svelte intro would replay after it. */
+  --animate-reveal: reveal 0.4s cubic-bezier(0.33, 1, 0.68, 1) both;
+
+  @keyframes reveal {
+    from {
+      opacity: 0;
+      translate: 0 2rem;
+    }
+  }
 
   @keyframes loading-sweep {
     0% {
@@ -117,6 +134,74 @@ body {
 
 button {
 	@apply cursor-pointer;
+}
+
+/* Page transitions (`$helpers/view-transitions`): the page sinks away and rises back in under a still header, reversed on history back. */
+html:active-view-transition-type(back) {
+	--vt-direction: -1;
+}
+
+::view-transition-group(*) {
+	animation-duration: 0.5s;
+	animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+::view-transition-old(root) {
+	animation: vt-page-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-new(root) {
+	animation: vt-page-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+/*
+  The flying card stays opaque the whole way: the destination fades in over it, which also hides a high-res scan still loading.
+  The new side needs its own animation list, since Chromium applies `plus-lighter` through a UA animation a plain `mix-blend-mode` loses to.
+*/
+::view-transition-old(card) {
+	animation: none;
+}
+
+::view-transition-new(card) {
+	animation: vt-fade-in 0.3s ease-out both;
+}
+
+/* A card with nowhere to land (its tile is off screen) leaves with the page instead of freezing in place. */
+::view-transition-old(card):only-child {
+	animation: vt-page-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+::view-transition-image-pair(card) {
+	animation: vt-card-lift 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes vt-page-out {
+	to {
+		filter: blur(6px);
+		opacity: 0;
+		scale: 0.98;
+		translate: 0 calc(var(--vt-direction, 1) * -0.75rem);
+	}
+}
+
+@keyframes vt-page-in {
+	from {
+		filter: blur(6px);
+		opacity: 0;
+		translate: 0 calc(var(--vt-direction, 1) * 1.5rem);
+	}
+}
+
+@keyframes vt-fade-in {
+	from {
+		opacity: 0;
+	}
+}
+
+@keyframes vt-card-lift {
+	50% {
+		filter: drop-shadow(0 1.5rem 2.5rem rgb(0 0 0 / 0.6)) drop-shadow(0 0 1.5rem rgb(251 197 74 / 0.35));
+	}
 }
 
 /* Custom animations for the bouncing chevrons */

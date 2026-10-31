@@ -115,8 +115,9 @@ class CardFilters {
 	}
 
 	/**
-	 * Seeds the filters from `?set=…&artist=…` and friends. A single recognised parameter resets everything else first,
-	 * so a link lands on exactly what it names rather than on top of whatever the visitor last picked.
+	 * Seeds the filters from `?set=…&artist=…` and friends. A single recognised parameter resets every other filter first,
+	 * so a link lands on exactly what it names rather than on top of whatever the visitor last picked. The sort is a
+	 * viewing preference, so it survives unless the link names one.
 	 */
 	applyFromUrl(url: URL, sets: CardSet[]) {
 		const params = url.searchParams;
@@ -126,20 +127,24 @@ class CardFilters {
 		const artist = value('artist');
 		const supertype = SUPERTYPES_BY_PARAM.get(value('type') ?? '');
 		const name = params.get('name')?.trim();
+		const pokemon = value('pokemon');
 		const type = value('pokemontype');
 		const sortBy = value('sortby');
 		const sortOrder = value('sortorder');
 		const rarity = value('rarity');
 		const mostExpensiveOnly = value('mostexpensive') === 'true';
 
-		if (!set && !artist && !supertype && !name && !type && !sortBy && !sortOrder && !rarity && !mostExpensiveOnly) return;
+		if (!set && !artist && !supertype && !name && !pokemon && !type && !sortBy && !sortOrder && !rarity && !mostExpensiveOnly) return;
 
+		const { sortBy: keptSortBy, sortOrder: keptSortOrder } = this;
 		this.reset();
+		if (!sortBy && !sortOrder) Object.assign(this, { sortBy: keptSortBy, sortOrder: keptSortOrder });
 
 		if (set) this.set = sets.find(candidate => candidate.name.toLowerCase() === set)?.name.toLowerCase() ?? set;
 		if (artist) this.artist = artist;
 		if (supertype) this.supertype = supertype;
 		if (name) this.name = name;
+		if (pokemon) this.numero = pokemon;
 		if (type) this.type = type;
 		if (sortBy && SORT_OPTIONS.some(option => option.value === sortBy)) this.sortBy = sortBy;
 		if (sortOrder === 'asc' || sortOrder === 'desc') this.sortOrder = sortOrder;

@@ -1,13 +1,17 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
+	import { formatCardNumber } from '$helpers/card-utils';
 	import { onMount } from 'svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
 	import PlusCircle from '@lucide/svelte/icons/circle-plus';
 	import Check from '@lucide/svelte/icons/check';
-	import { processCardImage } from '$helpers/card-images';
+	import CardImage from '@components/card/CardImage.svelte';
+	import { getPokemonImageSrc, handlePokemonImageError } from '$helpers/pokemon-utils';
+	import { pascalCase } from '$helpers/strings';
+	import { NO_IMAGES } from '$lib/images';
 	import type { FullCard } from '$lib/types';
-	import type { CardSearchResult } from '$helpers/card-search';
+	import type { CardSearchResult, PokemonSearchResult } from '$helpers/card-search';
 	import { page } from '$app/state';
 	import { binderStorage } from '$stores/binder.svelte';
 	import { debounce } from '$helpers/debounce';
@@ -28,6 +32,7 @@
 	let inputElement = $state<HTMLInputElement>();
 	let searchQuery = $state('');
 	let searchResults: CardSearchResult[] = $state([]);
+	let pokemonResults: PokemonSearchResult[] = $state([]);
 	let showResults = $state(false);
 	const addedCards = new SvelteSet<string>(); // Card codes flashing the "added" state
 	let platformModifierKey = $state('');
@@ -53,6 +58,7 @@
 		const query = searchQuery.trim();
 
 		if (!query) {
+			pokemonResults = [];
 			searchResults = [];
 			showResults = false;
 			return;
@@ -64,14 +70,16 @@
 			const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
 			if (!response.ok) throw new Error(`Search request failed with ${response.status}`);
 
-			const { results } = await response.json() as { results: CardSearchResult[] };
+			const { pokemons, results } = await response.json() as { pokemons: PokemonSearchResult[]; results: CardSearchResult[] };
 			if (request !== latestRequest) return;
 
+			pokemonResults = pokemons;
 			searchResults = results;
-			showResults = results.length > 0;
+			showResults = pokemons.length + results.length > 0;
 		} catch (error) {
 			if (request !== latestRequest) return;
 			console.error('Search failed:', error);
+			pokemonResults = [];
 			searchResults = [];
 			showResults = false;
 		}
@@ -85,6 +93,7 @@
 		if (value.trim()) {
 			debouncedSearch();
 		} else {
+			pokemonResults = [];
 			searchResults = [];
 			showResults = false;
 		}
@@ -108,6 +117,7 @@
 
 	const handleClearSearch = () => {
 		searchQuery = '';
+		pokemonResults = [];
 		searchResults = [];
 		showResults = false;
 		inputElement?.focus();
@@ -152,7 +162,7 @@
 			oninput={event => handleInput(event.currentTarget.value)}
 			onfocus={handleInputFocus}
 			onblur={() => inputFocused = false}
-			placeholder="Search cards..."
+			placeholder="Search cards or Pokémon..."
 			type="text"
 		/>
 		{#if searchQuery.length > 0}
@@ -173,14 +183,35 @@
 		{/if}
 	</div>
 
-	{#if showResults && searchResults.length > 0}
+	{#if showResults && pokemonResults.length + searchResults.length > 0}
 		<div
 			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg overflow-y-auto max-h-96 z-100 border border-gray-700"
 			transition:fade={{ duration: 150 }}
 		>
+			{#each pokemonResults as pokemon (pokemon.id)}
+				<a
+					href="/cards-list?pokemon={pokemon.id}"
+					class="flex items-center p-3 gap-4 hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700"
+					onclick={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
+					title="Browse every {pascalCase(pokemon.name)} card"
+				>
+					{#if !NO_IMAGES}
+						<img
+							src={getPokemonImageSrc(pokemon.id)}
+							alt={pascalCase(pokemon.name)}
+							class="size-14 object-contain shrink-0"
+							loading="lazy"
+							onerror={event => handlePokemonImageError(event, pokemon.id)}
+						/>
+					{/if}
+					<div class="grow min-w-0">
+						<p class="font-semibold text-white truncate">{pascalCase(pokemon.name)}</p>
+						<p class="text-sm text-gray-400">Pokémon #{pokemon.id} · {pokemon.cardCount} card{pokemon.cardCount === 1 ? '' : 's'}</p>
+					</div>
+				</a>
+			{/each}
 			{#each searchResults as result (result.card.cardCode)}
 				{@const card = result.card}
-				{@const cardImage = processCardImage(card.image)}
 				{@const cardLink = `/card/${card.cardCode}/`}
 				{@const isAdded = addedCards.has(card.cardCode)}
 
@@ -190,11 +221,14 @@
 					onclick={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
 				>
 					<div class="flex items-center p-3 relative">
-						<img
-							src={cardImage}
+						<CardImage
 							alt={card.name}
-							class="h-20 w-14 object-contain rounded-sm mr-4 shrink-0"
-							loading="lazy"
+							class="rounded-sm mr-4 shrink-0 object-contain"
+							height={77}
+							imageUrl={card.image}
+							lowRes
+							types={card.types}
+							width={56}
 						/>
 
 						<div class="grow min-w-0 pr-2 flex flex-col">
@@ -204,7 +238,7 @@
 								<div class="grow min-w-0 flex items-center">
 									<p class="text-sm text-gray-400 truncate max-w-[70%]">{result.setName || 'Unknown Set'}</p>
 									<div class="text-xs text-gray-500 text-right ml-1 shrink-0">
-										#{result.cardNumber || '?'}{#if result.printedTotal}/{result.printedTotal}{/if}
+										#{result.cardNumber ? formatCardNumber(result.cardNumber, result.printedTotal) : '?'}
 									</div>
 								</div>
 								

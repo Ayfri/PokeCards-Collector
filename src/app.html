@@ -1,10 +1,18 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
-		<link rel="apple-touch-icon" href="%sveltekit.assets%/favicon.png" />
+		<!-- Dark only: `color-scheme` darkens the browser's own scrollbars, form controls and autofill before any CSS loads. -->
+		<meta name="color-scheme" content="dark" />
+		<meta name="theme-color" content="#000000" />
+		<meta name="application-name" content="PokéCards" />
+		<meta name="apple-mobile-web-app-title" content="PokéCards" />
+		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
+		<link rel="icon" href="%sveltekit.assets%/favicon.png" type="image/png" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/icons/apple-touch-icon.png" />
+		<link rel="search" href="%sveltekit.assets%/opensearch.xml" type="application/opensearchdescription+xml" title="PokéCards" />
 		<!-- The title, the canonical, every Open Graph tag and the JSON-LD graph come from `Seo.svelte`, never from here:
 		     a second copy in this shell would ship duplicated tags on every page. -->
 		%sveltekit.head%

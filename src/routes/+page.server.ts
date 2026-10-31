@@ -2,34 +2,17 @@ import { countJapaneseCards, getCards, getPokemons, getPrices } from '$helpers/s
 import { cardListSchema, faqSchema } from '$helpers/seo';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
+import { cardPrice } from '$helpers/card-utils';
 
 export const load: PageServerLoad = async ({ parent }) => {
-	const parentData = await parent();
-
-	const [allCardsResolved, pricesResolved] = await Promise.all([getCards(), getPrices()]);
-
-	const sets = parentData.sets || [];
-
-	const layoutData = {
-		user: parentData.user,
-		profile: parentData.profile,
-		title: parentData.title,
-		description: parentData.description,
-		image: parentData.image,
-		wishlistItems: parentData.wishlistItems,
-		collectionItems: parentData.collectionItems
-	};
-
-	let processedAllCards: FullCard[] = [...allCardsResolved];
+	// Started before `parent()` so the catalogue reads overlap the layout's auth and collection queries.
+	const catalogue = Promise.all([getCards(), getPrices(), getPokemons(), countJapaneseCards()]);
+	const { sets = [] } = await parent();
+	const [allCardsResolved, pricesResolved, pokemons, japaneseCardCount] = await catalogue;
 
 	// An artless card is still a real card: deduplicating on `image` silently dropped every one of them.
 	// TCGdex gives every card its own art URL, so this only ever removed the cards it has no art for.
-	processedAllCards = processedAllCards.filter(card => Boolean(card.setName));
-
-	const [pokemons, japaneseCardCount] = await Promise.all([
-		getPokemons(),
-		countJapaneseCards()
-	]);
+	const processedAllCards = allCardsResolved.filter(card => Boolean(card.setName));
 
 	const latestSet = [...sets].sort((a, b) => {
 		const dateA = new Date(a.releaseDate).getTime();
@@ -42,12 +25,20 @@ export const load: PageServerLoad = async ({ parent }) => {
 		return cardSetName === latestSet.name.toLowerCase();
 	}) : [];
 
-	const priceOf = (card: FullCard) => pricesResolved[card.cardCode]?.simple || pricesResolved[card.cardCode]?.trend || 0;
-	const topFive = (cards: FullCard[]) => [...cards]
-		.sort((a, b) => priceOf(b) - priceOf(a))
-		.slice(0, 5)
+	const priceOf = (card: FullCard) => cardPrice(pricesResolved[card.cardCode]) ?? 0;
+	/** One pass keeping the five priciest in order, since sorting the whole catalogue for them cost ~26 ms a render. */
+	const topFive = (cards: FullCard[]) => {
+		const top: { card: FullCard; price: number }[] = [];
+		for (const card of cards) {
+			const price = priceOf(card);
+			const slot = top.findIndex(entry => price > entry.price);
+			if (slot !== -1) top.splice(slot, 0, { card, price });
+			else if (top.length < 5) top.push({ card, price });
+			if (top.length > 5) top.pop();
+		}
 		// The showcase rows print a price, and the catalogue no longer travels with the page for them to look it up.
-		.map(card => ({ ...card, price: priceOf(card) }));
+		return top.map(({ card, price }) => ({ ...card, price }));
+	};
 
 	const mostExpensiveLatestSetCards = topFive(latestSetCards);
 	const mostExpensiveCards = topFive(processedAllCards);
@@ -55,7 +46,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const latestSetStats = {
 		energyCards: latestSetCards.filter(card => card.supertype === 'Energy').length,
 		pokemonCards: latestSetCards.filter(card => card.supertype === 'Pokémon').length,
-		totalValue: latestSetCards.reduce((sum, card) => sum + (pricesResolved[card.cardCode]?.simple || 0), 0),
+		totalValue: latestSetCards.reduce((sum, card) => sum + priceOf(card), 0),
 		trainerCards: latestSetCards.filter(card => card.supertype === 'Trainer').length,
 	};
 
@@ -76,7 +67,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 				},
 				{
 					question: 'Where do the Pokémon card prices come from?',
-					answer: 'Every price is the Cardmarket value in euros, pulled from TCGdex and refreshed weekly. Both the standard and the reverse-holo values are stored for each card.',
+					answer: 'Every price is the Cardmarket value in euros, pulled from TCGdex and refreshed daily. Both the standard and the reverse-holo values are stored for each card.',
 				},
 				{
 					question: 'Is PokéCards-Collector free?',
@@ -91,16 +82,13 @@ export const load: PageServerLoad = async ({ parent }) => {
 		title: 'PokéCards-Collector - Your Pokémon TCG Collection Manager',
 	};
 
-	// Neither the catalogue nor the prices reach the browser: everything the page prints is counted here, and
-	// shipping them made the homepage a 24 MB document.
+	// Neither the catalogue, the prices nor the Pokédex reach the browser: everything the page prints is counted here,
+	// and shipping them made the homepage a 24 MB document. `sets` already comes from the layout.
 	return {
-		...layoutData,
 		latestSet,
 		latestSetStats,
 		mostExpensiveLatestSetCards,
 		mostExpensiveCards,
-		sets,
-		pokemons,
 		stats: {
 			artists: new Set(allCardsResolved.map(card => card.artist).filter(Boolean)).size,
 			totalCards: allCardsResolved.length,

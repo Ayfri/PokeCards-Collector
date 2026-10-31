@@ -30,3 +30,4 @@ vite.config.ts.timestamp-*
 
 # Images
 images/
+supabase/.temp/

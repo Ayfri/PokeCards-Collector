@@ -161,8 +161,9 @@
 	<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
 </svelte:head>
 
-<!-- The board takes the space the layout column has left under the header, so the whole game fits without a scroll. -->
-<div class="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col items-center gap-3 overflow-hidden px-3 pb-3 lg:gap-5">
+<!-- The board is sized to the viewport minus the layout's header offset (`pt-24` / `lg:pt-32`), since the `min-h-screen` layout never caps a child's height.
+     The top padding leaves room for the PageTitle ghost that overflows above it, which `overflow-hidden` would otherwise clip. -->
+<div class="mx-auto flex h-[calc(100dvh-6rem)] w-full max-w-6xl flex-col items-center gap-3 overflow-hidden px-3 pt-4 pb-3 md:pt-7 lg:h-[calc(100dvh-8rem)] lg:gap-5">
 	<PageTitle title="Guess the Price!" />
 	<div class="h-px w-full max-w-md bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
 
