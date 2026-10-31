@@ -1,9 +1,10 @@
 import { redirect } from '@sveltejs/kit';
 import { distinctArtists, distinctRarities } from '$helpers/card-grid';
 import { breadcrumbs, profileSchema } from '$helpers/seo';
-import { getCards, getPokemons, getPrices, getTypes } from '$helpers/supabase-data';
+import { readOwnedCatalogues } from '$helpers/owned-cards';
+import { getCatalogue, getPokemons, getTypes } from '$helpers/supabase-data';
 import { getProfileByUsername } from '$lib/services/profiles';
-import type { FullCard, Pokemon, PriceData, UserProfile } from '$lib/types';
+import type { FullCard, Pokemon, PriceData, Set, UserProfile } from '$lib/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Everything the grid draws for one user's cards. Streamed, so the profile lookup answers before the catalogue is read. */
@@ -13,6 +14,8 @@ export interface UserCardsPayload {
 	pokemons: Pokemon[];
 	prices: Record<string, PriceData>;
 	rarities: string[];
+	/** The Japanese and French sets of the owned cards, to add to the English ones the layout carries. */
+	sets: Set[];
 	types: string[];
 }
 
@@ -68,12 +71,12 @@ export type UserCardsKind = keyof typeof USER_CARDS_COPY;
 
 async function buildPayload(itemCodes: string[]): Promise<UserCardsPayload> {
 	// A missing, private or empty page draws no grid, so it never pays for the four catalogue reads.
-	if (itemCodes.length === 0) return { artists: [], cards: [], pokemons: [], prices: {}, rarities: [], types: [] };
+	if (itemCodes.length === 0) return { artists: [], cards: [], pokemons: [], prices: {}, rarities: [], sets: [], types: [] };
 
-	const [cards, prices, pokemons, types] = await Promise.all([getCards(), getPrices(), getPokemons(), getTypes()]);
+	const [catalogues, pokemons, types] = await Promise.all([readOwnedCatalogues(itemCodes, getCatalogue), getPokemons(), getTypes()]);
 
-	const wanted = new Set(itemCodes);
-	const userCards = cards.filter(card => wanted.has(card.cardCode));
+	/** Each card carries the catalogue that resolved it, so its tile links to the right card page. */
+	const userCards = catalogues.flatMap(({ language, owned }) => owned.map(card => ({ ...card, language })));
 	const dexIds = new Set(userCards.map(card => card.pokemonNumber));
 
 	return {
@@ -82,9 +85,14 @@ async function buildPayload(itemCodes: string[]): Promise<UserCardsPayload> {
 		cards: userCards,
 		// Only the Pokémon these cards name: the full table is 1025 rows carrying their Pokédex entries, for a name lookup.
 		pokemons: pokemons.filter(pokemon => dexIds.has(pokemon.id)),
-		// Only the prices of the cards this page draws: the whole record is 19819 entries the document never reads.
-		prices: Object.fromEntries(userCards.map(card => [card.cardCode, prices[card.cardCode]]).filter(([, price]) => price)),
+		// Only the prices of the cards this page draws, read from their own catalogue: the whole records are tens of thousands of entries the document never reads.
+		prices: Object.fromEntries(catalogues.flatMap(({ owned, prices }) => owned.flatMap(({ cardCode }) => prices[cardCode] ? [[cardCode, prices[cardCode]] as const] : []))),
 		rarities: distinctRarities(userCards),
+		/** The English sets already come with the layout, so only the sets of the other catalogues' owned cards travel. */
+		sets: catalogues.filter(({ language }) => language !== 'en').flatMap(({ language, owned, sets }) => {
+			const ownedSetIds = new Set(owned.map(card => card.setId));
+			return sets.filter(set => ownedSetIds.has(set.setId)).map(set => ({ ...set, language }));
+		}),
 		types,
 	};
 }

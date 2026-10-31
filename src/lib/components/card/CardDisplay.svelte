@@ -10,6 +10,8 @@
 	import { flushSync, onMount } from 'svelte';
 	import { afterNavigate, goto, replaceState } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
+	import { catalogueOfPath } from '$helpers/catalogues';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
 	import { getPokemonImageSrc, getPokemonSpriteSrc } from '$helpers/pokemon-utils';
 	import { loading } from '$stores/loading.svelte';
@@ -23,7 +25,6 @@
 		prices: Record<string, PriceData>;
 		sets: Set[];
 		pokemonCards: FullCard[];
-		isJapaneseContext?: boolean;
 		lowRes?: boolean;
 	}
 
@@ -33,9 +34,14 @@
 		prices,
 		sets,
 		pokemonCards,
-		isJapaneseContext = false,
 		lowRes = false
 	}: Props = $props();
+
+	const catalogue = $derived(catalogueOfPath(page.url.pathname));
+
+	const cardUrl = (cardCode: string) => catalogue.routeCode
+		? resolve('/[catalogue=catalogue]-card/[cardCode]', { catalogue: catalogue.routeCode, cardCode })
+		: resolve('/card/[cardCode]', { cardCode });
 
 	// --- Internal State ---
 	let currentCard = $state<FullCard | undefined>(undefined);
@@ -80,7 +86,7 @@
 	/** Swaps the displayed card without a navigation: the picked tile flies up into the big card while the page jumps back to the top. */
 	function handleCardSelect(selectedCard: FullCard) {
 		const { cardCode } = selectedCard;
-		replaceState(resolve(isJapaneseContext ? '/jp-card/[cardCode]' : '/card/[cardCode]', { cardCode }), { replaceUrl: true });
+		replaceState(cardUrl(cardCode), { replaceUrl: true });
 		morphCards([selectedCard.cardCode], () => {
 			currentCard = selectedCard;
 			flushSync();
@@ -91,7 +97,7 @@
 	function handlePokemonNavigation(cardCode: string | undefined) {
 		if (cardCode) {
 			loading.navigation = true;
-			goto(resolve(isJapaneseContext ? '/jp-card/[cardCode]' : '/card/[cardCode]', { cardCode }));
+			goto(cardUrl(cardCode));
 		}
 	}
 

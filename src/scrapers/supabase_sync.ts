@@ -1,22 +1,12 @@
 import {createClient, type SupabaseClient} from '@supabase/supabase-js';
+import {CATALOGUES} from '$lib/helpers/catalogues';
 import {cardRow, priceRow, setRow} from './rows';
-import {mapAll, withProbedAssets, type TcgdexClient} from './tcgdex/client';
+import {englishImages, fileUnderListingSets, mapAll, withProbedAssets, type TcgdexClient} from './tcgdex/client';
 import {catalogueSets, excludedSetIds} from './tcgdex/excluded';
 import {mapCard, mapPrice, mapSet, resolveCardCode, sharedProductCodes, type Language} from './tcgdex/mappers';
 import type {TcgdexCard, TcgdexSet} from './tcgdex/types';
 
 /** Workers-safe half of the scraper: no `node:fs`, no staged JSON, TCGdex straight into Supabase. */
-
-interface Tables {
-	cards: string;
-	prices: string;
-	sets: string;
-}
-
-export const TABLES: Record<Language, Tables> = {
-	en: {cards: 'cards', prices: 'prices', sets: 'sets'},
-	ja: {cards: 'jp_cards', prices: 'jp_prices', sets: 'jp_sets'},
-};
 
 export function createSyncClient(url: string, secretKey: string): SupabaseClient {
 	if (!url || !secretKey) throw new Error('Missing PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY');
@@ -76,7 +66,7 @@ export function deduplicate(rows: Record<string, unknown>[], key: string): Recor
  * Returns every listed set id, empty ones included, so the card pass also clears the cards a set lost.
  */
 export async function syncSets(supabase: SupabaseClient, client: TcgdexClient, lang: Language): Promise<string[]> {
-	const table = TABLES[lang].sets;
+	const table = CATALOGUES[lang].tables.sets;
 	const [listed, excluded] = await Promise.all([client.json<TcgdexSet[]>(`/v2/${lang}/sets`), excludedSetIds(client, lang)]);
 	const list = catalogueSets(listed ?? [], excluded);
 	const details = (await mapAll(list, async set => {
@@ -118,13 +108,15 @@ async function storedCards(supabase: SupabaseClient, table: string, setIds: read
  * changes, since two codes can swap within a set. Prices follow through `on delete cascade`; collections are never touched.
  */
 export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClient, lang: Language, setIds: readonly string[]): Promise<SyncCardsResult> {
-	const tables = TABLES[lang];
+	const tables = CATALOGUES[lang].tables;
 	const [details, stored] = await Promise.all([
 		mapAll(setIds, id => client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(id)}`)),
 		storedCards(supabase, tables.cards, setIds),
 	]);
+	const fallback = lang === 'fr' ? await englishImages(client, details) : new Map<string, string>();
 	const ids = details.flatMap(set => set?.cards?.map(card => card.id) ?? []);
 	const fetched = await mapAll(ids, id => client.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`));
+	if (lang === 'fr') fileUnderListingSets(fetched, details);
 
 	// A set that failed to load removes nothing.
 	const listed = new Set(ids);
@@ -136,6 +128,7 @@ export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClien
 	const unpriced: string[] = [];
 	for (const card of fetched) {
 		if (!card) continue;
+		card.image ??= fallback.get(card.id);
 		const mapped = mapCard(lang, card);
 		const previous = stored.get(card.id)?.code;
 		mapped.cardCode = resolveCardCode(lang, card.id, previous, mapped.cardCode);
@@ -158,7 +151,7 @@ export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClien
  * (see `sharedProductCodes`). The groups cross sets, so this runs once over the whole table after the card pass.
  */
 export async function dropSharedProducts(supabase: SupabaseClient, lang: Language): Promise<number> {
-	const tables = TABLES[lang];
+	const tables = CATALOGUES[lang].tables;
 	const rows = await readAll<{card_code: string; card_market_url: string | null; name: string}>(supabase, tables.cards, 'card_code,card_market_url,name', 'card_code');
 	const codes = [...sharedProductCodes(rows.map(row => ({cardCode: row.card_code, cardMarketUrl: row.card_market_url ?? '', name: row.name})))];
 	await deleteIn(supabase, tables.prices, 'card_code', codes);

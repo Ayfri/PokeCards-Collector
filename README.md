@@ -17,7 +17,7 @@
 
 ## 📋 Overview
 
-PokéCards-Collector browses the full Pokémon Trading Card Game catalogue - English and Japanese - and tracks what
+PokéCards-Collector browses the full Pokémon Trading Card Game catalogue - English, Japanese and French - and tracks what
 you own and what you want. Cards, prices and sets come from [TCGdex](https://tcgdex.dev/), Pokédex entries from
 [PokéAPI](https://pokeapi.co/), and everything is served from Supabase Postgres by a SvelteKit app running on
 Cloudflare Workers.
@@ -40,6 +40,11 @@ Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
     <td>🇯🇵</td>
     <td><b>Japanese Catalogue</b></td>
     <td><code>/japan</code> is a parallel data set with its own cards, sets and prices.</td>
+  </tr>
+  <tr>
+    <td>🇫🇷</td>
+    <td><b>French Catalogue</b></td>
+    <td><code>/france</code> is another parallel data set. A card with no French scan shows the English one, and prices are the English ones, since TCGdex maps both to the same Cardmarket product.</td>
   </tr>
   <tr>
     <td>📚</td>
@@ -150,13 +155,13 @@ TCGdex needs no API key, so there is nothing else to sign up for.
 | Command | Description | Needs |
 | --- | --- | --- |
 | `all` | `scrape`, then `pokemons`, then `supabase all`, in dependency order. | Supabase credentials |
-| `scrape` | Fetch every card, price and set from TCGdex into `src/assets/`. `--lang en,ja` picks the languages. | Nothing |
+| `scrape` | Fetch every card, price and set from TCGdex into `src/assets/`. `--lang en,ja,fr` picks the languages, all three by default. | Nothing |
 | `pokemons` | Fetch Pokédex names and descriptions from PokéAPI. | Nothing |
-| `audit` | Match every stored `card_code` to its TCGdex card, rebuild `set-aliases.json` and `card-code-overrides.json`, and report the owned codes pointing at no card. | Supabase credentials |
+| `audit` | Match every stored `card_code` to its TCGdex card, rebuild `set-aliases.json` and `card-code-overrides.json` (English and Japanese), report the owned codes pointing at no card and the French vocabulary missing from `french.ts`. | Supabase credentials |
 | `check` | Read-only sanity pass over the live catalogue: duplicates, orphans, unranked rarities, mismatched species, shared Cardmarket products, empty sets. | Supabase credentials |
 | `purge` | Delete the cards, prices and sets of an excluded serie (Pokémon TCG Pocket). | Supabase credentials |
-| `verify` | Check the scraped JSON for `card_code` collisions and owned cards that no longer resolve. `--offline` skips Supabase. | `scrape` |
-| `supabase <target>` | Push one JSON file into its table: `all`, `cards`, `jp-cards`, `prices`, `jp-prices`, `sets`, `jp-sets`, `types`, `pokemons`. | `scrape` |
+| `verify` | Check the scraped JSON for `card_code` collisions (within and across catalogues), unknown values, shared set names and owned cards that no longer resolve. `--offline` skips Supabase. | `scrape` |
+| `supabase <target>` | Push one JSON file into its table: `all`, `cards`, `jp-cards`, `fr-cards`, `prices`, `jp-prices`, `fr-prices`, `sets`, `jp-sets`, `fr-sets`, `types`, `pokemons`. | `scrape` |
 
 Every command takes `--dry-run` (run without writing), `--json` (raw report), `-q` (summary only) and `--help`.
 
@@ -170,7 +175,7 @@ between `scrape` and the upload to check the output.
 
 `src/workers/scraper.ts` is a second Worker holding the `ScrapeWorkflow` Cloudflare Workflow. It fires every
 day at 04:00 UTC, one Workflow step per batch of 4 sets so a failing batch retries alone, and writes TCGdex
-straight into Supabase with no staged JSON. A batch moves a card whose override gives it another code, deletes the
+straight into Supabase with no staged JSON, for English, Japanese and French. A batch moves a card whose override gives it another code, deletes the
 cards and prices TCGdex dropped from its sets, and skips the sets TCGdex holds no card for; a last step per language
 clears the prices of cards sharing a Cardmarket product with a differently named card. Every delete is scoped to a
 set TCGdex answered for, so a half-finished pass never removes rows it has not reached. The TCGdex reads run in a
@@ -254,7 +259,8 @@ wishlist rows.
 A stored card keeps its code: the sync picks the card's entry in `src/scrapers/tcgdex/card-code-overrides.json`,
 else the code Supabase already holds, else the one built from the card. The `setCode` part can differ from the
 TCGdex set id (`sv3` for `sv03`), which `src/scrapers/tcgdex/set-aliases.json` maps. `bun run scrapers audit`
-regenerates both files. The app never parses a code: a card's set comes from `setId` and its number from `localId`.
+regenerates both files for English and Japanese. French codes put `fr` before the TCGdex set id (`pokemon_6_frsv03_125`),
+so they never collide with the others, and keep no alias or override. The app never parses a code: a card's set comes from `setId` and its number from `localId`.
 
 ## 👥 Contributing
 

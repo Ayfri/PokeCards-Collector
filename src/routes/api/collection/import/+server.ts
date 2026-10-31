@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
 import { buildCardIndex, buildSetKeys, CATALOGUE_LANGUAGES, MAX_IMPORT_ROWS, resolveRows, type Catalogue, type CatalogueLanguage, type ImportRow } from '$helpers/collection-import';
-import { getCards, getJapaneseCards, getJapaneseSets, getSets } from '$helpers/supabase-data';
+import { getCards, getSets } from '$helpers/supabase-data';
 import type { Card, Set } from '$lib/types';
 import type { RequestHandler } from './$types';
 
@@ -28,7 +28,7 @@ const SOURCES: Record<CatalogueLanguage, CatalogueSource> = {
 	en: ENGLISH,
 	/** Temporary: French lines resolve against the English print until `fr_cards` exists, then this reads it. */
 	fr: ENGLISH,
-	ja: { cards: getJapaneseCards, sets: getJapaneseSets },
+	ja: { cards: () => getCards('ja'), sets: () => getSets('ja') },
 };
 
 /** Rebuilt only when the daily scrape hands back a different card array, which is once an hour at worst. */

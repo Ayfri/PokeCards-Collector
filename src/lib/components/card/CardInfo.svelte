@@ -4,6 +4,7 @@
 	import CardPrice from '@components/card/CardPrice.svelte';
 	import { formatCardNumber } from '$helpers/card-utils';
 	import { page } from '$app/state';
+	import { catalogueOfPath } from '$helpers/catalogues';
 	import { collection } from '$stores/collection.svelte';
 	import { wishlist } from '$stores/wishlist.svelte';
 	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
@@ -36,7 +37,9 @@
 
 	const cardNumber = $derived(card.localId);
 
-	const displayName = $derived(pokemon ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name);
+	const catalogue = $derived(catalogueOfPath(page.url.pathname));
+
+	const displayName = $derived(pokemon && catalogue.speciesTitles ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name);
 	const displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card?.name}`);
 
 	function formatDate(date: Date) {
@@ -165,7 +168,7 @@
 							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Illustrator of this card"><Paintbrush size={14} /> Artist:</dt>
 							<dd class="text-white text-right">
 								<a 
-									href="/cards-list?artist={encodeURIComponent(card.artist.toLowerCase())}" 
+									href="{catalogue.gridRoute}?artist={encodeURIComponent(card.artist.toLowerCase())}"
 									class="hover:text-gold-400 transition-colors underline group"
 									title="View all cards by this artist"
 								>
@@ -192,14 +195,14 @@
 						<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Set this card was printed in"><Library size={14} /> Set:</dt>
 						<dd class="flex items-center gap-2 justify-end">
 							<a 
-								href="/cards-list?set={encodeURIComponent(set.name)}" 
+								href="{catalogue.gridRoute}?set={encodeURIComponent(set.name)}"
 								class="text-white hover:text-gold-400 transition-colors underline group"
 								title="View all cards in this set"
 							>
 								{set.name}
 								<span class="text-xs opacity-80 italic ml-1 text-gray-400 group-hover:text-gold-300 transition-colors">(view all)</span>
 							</a>
-							<a href="/cards-list?set={encodeURIComponent(set.name)}" title="View all cards in this set">
+							<a href="{catalogue.gridRoute}?set={encodeURIComponent(set.name)}" title="View all cards in this set">
 								<SetLogo class="inline-block max-w-[60px] max-h-[25px] object-contain hover:opacity-80 transition-opacity" {set} />
 							</a>
 						</dd>

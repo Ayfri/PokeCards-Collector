@@ -1,4 +1,4 @@
-import { countJapaneseCards, getCards, getPokemons, getPrices } from '$helpers/supabase-data';
+import { countCards, getCards, getPokemons, getPrices } from '$helpers/supabase-data';
 import { cardListSchema, faqSchema } from '$helpers/seo';
 import type { FullCard } from '$lib/types';
 import type { PageServerLoad } from './$types';
@@ -6,9 +6,9 @@ import { cardPrice } from '$helpers/card-utils';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	// Started before `parent()` so the catalogue reads overlap the layout's auth and collection queries.
-	const catalogue = Promise.all([getCards(), getPrices(), getPokemons(), countJapaneseCards()]);
+	const catalogue = Promise.all([getCards(), getPrices(), getPokemons(), countCards('ja'), countCards('fr')]);
 	const { sets = [] } = await parent();
-	const [allCardsResolved, pricesResolved, pokemons, japaneseCardCount] = await catalogue;
+	const [allCardsResolved, pricesResolved, pokemons, japaneseCardCount, frenchCardCount] = await catalogue;
 
 	// An artless card is still a real card: deduplicating on `image` silently dropped every one of them.
 	// TCGdex gives every card its own art URL, so this only ever removed the cards it has no art for.
@@ -63,7 +63,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 			faqSchema([
 				{
 					question: 'How many Pokémon cards can I browse on PokéCards-Collector?',
-					answer: `The catalogue covers ${cardTotal} English cards across ${setTotal} sets, plus ${japaneseCardCount.toLocaleString('en-US')} Japanese cards, refreshed from TCGdex every week.`,
+					answer: `The catalogue covers ${cardTotal} English cards across ${setTotal} sets, plus ${japaneseCardCount.toLocaleString('en-US')} Japanese and ${frenchCardCount.toLocaleString('en-US')} French cards, refreshed from TCGdex every day.`,
 				},
 				{
 					question: 'Where do the Pokémon card prices come from?',
@@ -76,6 +76,10 @@ export const load: PageServerLoad = async ({ parent }) => {
 				{
 					question: 'Are Japanese Pokémon cards included?',
 					answer: 'Yes. Japanese sets, cards and prices live under the /japan section with their own card pages.',
+				},
+				{
+					question: 'Are French Pokémon cards included?',
+					answer: 'Yes. French sets, cards and prices live under the /france section with their own card pages. A card with no French scan shows the English one.',
 				},
 			]),
 		],
@@ -91,8 +95,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 		mostExpensiveCards,
 		stats: {
 			artists: new Set(allCardsResolved.map(card => card.artist).filter(Boolean)).size,
+			foreignCards: { fr: frenchCardCount, ja: japaneseCardCount },
 			totalCards: allCardsResolved.length,
-			totalJapaneseCards: japaneseCardCount,
 			uniquePokemon: pokemons.length,
 			pokemonCards: allCardsResolved.filter(card => card.supertype === 'Pokémon').length,
 			trainerCards: allCardsResolved.filter(card => card.supertype === 'Trainer').length,

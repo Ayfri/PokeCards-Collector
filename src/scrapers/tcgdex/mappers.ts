@@ -1,10 +1,12 @@
 import {generateUniqueCardCode} from '$lib/helpers/card-utils';
+import type {Language} from '$lib/helpers/catalogues';
+import {toEnglish} from './french';
 import type {TcgdexCard, TcgdexPricing, TcgdexSet} from './types';
 import setAliases from './set-aliases.json' with {type: 'json'};
 import cardCodeOverrides from './card-code-overrides.json' with {type: 'json'};
 import pokedex from '../../assets/pokemons-full.json' with {type: 'json'};
 
-export type Language = keyof typeof setAliases;
+export type {Language} from '$lib/helpers/catalogues';
 
 export interface MappedCard {
 	artist: string;
@@ -59,10 +61,9 @@ export interface MappedPrice {
 export const UNKNOWN_POKEMON = 99999;
 
 /** `set-aliases.json` maps a card code's set part to the TCGdex set id when the two differ (`sv3` for `sv03`). */
-const codeSetOf: Record<Language, Map<string, string>> = {
-	en: new Map(Object.entries(setAliases.en).map(([code, setId]) => [setId, code])),
-	ja: new Map(Object.entries(setAliases.ja).map(([code, setId]) => [setId, code])),
-};
+const codeSetOf: Partial<Record<Language, Map<string, string>>> = Object.fromEntries(
+	Object.entries(setAliases).map(([lang, aliases]) => [lang, new Map(Object.entries(aliases).map(([code, setId]) => [setId, code]))]),
+);
 
 /** TCGdex numbers a few delta species with a fractional dex id (Rayquaza delta is `384.1`), which is still that species. */
 function dexId(card: TcgdexCard): number | undefined {
@@ -89,7 +90,7 @@ export function speciesInName(name: string): number[] {
 	return found;
 }
 
-const overrideCode = (lang: Language, tcgdexId: string): string | undefined => (cardCodeOverrides[lang] as Record<string, string>)[tcgdexId];
+const overrideCode = (lang: Language, tcgdexId: string): string | undefined => (cardCodeOverrides as Partial<Record<Language, Record<string, string>>>)[lang]?.[tcgdexId];
 
 /** A card's code never changes on its own: TCGdex filling in a dex id would change the built one, so a stored code wins over it, and only an override moves a card. */
 export const resolveCardCode = (lang: Language, tcgdexId: string, stored: string | undefined, built: string): string => overrideCode(lang, tcgdexId) ?? stored ?? built;
@@ -104,17 +105,21 @@ function pokemonNumber(lang: Language, card: TcgdexCard): number | undefined {
 	const named = lang === 'en' ? speciesInName(card.name) : [];
 	if (named.length && !named.some(id => dex.includes(id))) return named[0];
 	if (dex.length) return dex[0];
-	const fromCode = Number(overrideCode(lang, card.id)?.split('_')[1]);
+	/** A French card shares its TCGdex id with the English one, so the English override names the species. */
+	const fromCode = Number(overrideCode(lang === 'fr' ? 'en' : lang, card.id)?.split('_')[1]);
 	return fromCode > 0 ? fromCode : UNKNOWN_POKEMON;
 }
 
+/** Expects a card with English enumerations (see `mapCard`). */
 export function buildCardCode(lang: Language, card: TcgdexCard): string {
 	const override = overrideCode(lang, card.id);
 	if (override) return override;
 
 	const setId = card.set?.id ?? '';
-	const pokemonNumber = dexId(card) ?? (card.category === 'Pokemon' ? UNKNOWN_POKEMON : 0);
-	return generateUniqueCardCode(pokemonNumber, codeSetOf[lang].get(setId) ?? setId, card.localId, card.category ?? 'Pokemon');
+	/** The `fr` prefix keeps a French code from ever colliding with an English or Japanese set part. */
+	if (lang === 'fr') return generateUniqueCardCode(pokemonNumber(lang, card) ?? 0, `fr${setId}`, card.localId, card.category ?? 'Pokemon');
+	const species = dexId(card) ?? (card.category === 'Pokemon' ? UNKNOWN_POKEMON : 0);
+	return generateUniqueCardCode(species, codeSetOf[lang]?.get(setId) ?? setId, card.localId, card.category ?? 'Pokemon');
 }
 
 /** The DB and the filter UI expect the accented `Pokémon`, TCGdex says `Pokemon`. */
@@ -122,7 +127,8 @@ export function toSupertype(category: string | undefined): string {
 	return category === 'Pokemon' ? 'Pokémon' : (category ?? 'Pokémon');
 }
 
-export function mapCard(lang: Language, card: TcgdexCard): MappedCard {
+export function mapCard(lang: Language, source: TcgdexCard): MappedCard {
+	const card = lang === 'fr' ? toEnglish(source) : source;
 	const cardmarket = card.pricing?.cardmarket;
 	return {
 		artist: card.illustrator ?? 'Unknown',

@@ -4,6 +4,7 @@
 	import SetLogo from "@components/SetLogo.svelte";
 	import CountUp from "@components/ui/CountUp.svelte";
 	import { page } from "$app/state";
+	import { CATALOGUES } from "$helpers/catalogues";
 	import { NO_IMAGES } from "$lib/images";
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -80,7 +81,7 @@
 				personal collection.
 			</p>
 
-			<div class="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-10">
+			<div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 mb-10">
 				<a
 					href="/cards-list"
 					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25 overflow-hidden"
@@ -112,10 +113,11 @@
 					</div>
 					<p class="text-sm text-gray-400">Cards</p>
 				</a>
+				{#each [CATALOGUES.ja, CATALOGUES.fr] as catalogue (catalogue.language)}
 				<a
-					href="/japan"
+					href={catalogue.gridRoute}
 					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25 overflow-hidden"
-					title="Browse the Japanese catalogue"
+					title="Browse the {catalogue.adjective} catalogue"
 				>
 					{#if !NO_IMAGES}
 						<div class="flex justify-center mb-2">
@@ -133,7 +135,7 @@
 						<span
 							class="text-xl md:text-2xl font-bold text-gold-400"
 						>
-							<CountUp end={stats.totalJapaneseCards} duration={4} />
+							<CountUp end={stats.foreignCards[catalogue.language]} duration={4} />
 						</span>
 						<ChevronLeft
 							size={12}
@@ -141,8 +143,9 @@
 							style="animation: bounceLeft {bounceAnimation.duration}ms {bounceAnimation.easing} {bounceAnimation.iterationCount} {bounceAnimation.direction}"
 						/>
 					</div>
-					<p class="text-sm text-gray-400">JP Cards</p>
+					<p class="text-sm text-gray-400">{catalogue.routeCode.toUpperCase()} Cards</p>
 				</a>
+				{/each}
 				<a
 					href="/cards-list?type=pokemon"
 					class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25"

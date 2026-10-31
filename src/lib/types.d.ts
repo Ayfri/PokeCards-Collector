@@ -1,3 +1,5 @@
+import type { Language } from '$helpers/catalogues';
+
 export interface CardVariants {
 	firstEdition: boolean;
 	holo: boolean;
@@ -13,6 +15,8 @@ export interface Card {
 	cardMarketUrl: string;
 	hp?: number;
 	image: string;
+	/** Set only on pages that mix catalogues (collection, wishlist, profile); absent means the catalogue of the page's path. */
+	language?: Language;
 	legalStandard?: boolean;
 	localId: string;
 	name: string;
@@ -55,6 +59,8 @@ export interface PriceData {
 }
 
 export interface Set {
+	/** Set only on the non-English sets of the pages that mix catalogues: set ids repeat across languages (`base1`, `xy8`), so a lookup keys on both. */
+	language?: Language;
 	name: string;
 	logo: string;
 	printedTotal: number;
@@ -108,12 +114,16 @@ export interface UserWishlist {
 
 export interface CollectionStats {
 	cards_by_rarity: Record<string, number>;
+	/** Keyed by `language:name`: the same set name exists in several languages and each is its own checklist. */
 	set_completion: Record<
 		string,
 		{
 			collectedValue: number;
 			count: number;
+			language: Language;
+			name: string;
 			percentage: number;
+			set: Set;
 			total: number;
 			totalValue: number;
 		}

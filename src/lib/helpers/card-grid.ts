@@ -6,14 +6,17 @@ import { CARD_SIZES, DEFAULT_CARD_SIZE } from '$stores/grid.svelte';
 
 /** Set lookups are the hot path of the grid, so the map is rebuilt only when the set list changes. */
 let cachedSets: Set[] | null = null;
-let setsById = new Map<string, Set>();
+let setsByKey = new Map<string, Set>();
 
-export function getCardSet(card: Pick<FullCard, 'setId'>, sets: Set[]): Set | null {
+/** Set ids repeat across languages, so a mixed list keys on both; an untagged card or set is English. */
+const setKey = ({ language = 'en', setId }: Pick<FullCard, 'language' | 'setId'>) => `${language}:${setId}`;
+
+export function getCardSet(card: Pick<FullCard, 'language' | 'setId'>, sets: Set[]): Set | null {
 	if (cachedSets !== sets) {
-		setsById = new Map(sets.map(set => [set.setId, set]));
+		setsByKey = new Map(sets.map(set => [setKey(set), set]));
 		cachedSets = sets;
 	}
-	return setsById.get(card.setId) ?? null;
+	return setsByKey.get(setKey(card)) ?? null;
 }
 
 /** Groups Pokémon by dex number and other supertypes by name, keeping only the priciest card of each group. */

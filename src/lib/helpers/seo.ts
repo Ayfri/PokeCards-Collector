@@ -1,5 +1,6 @@
 import { BASE_URL, SITE_NAME, SITE_TWITTER } from '~/constants';
 import { processCardImage } from '$helpers/card-images';
+import { CATALOGUES, type Catalogue } from '$helpers/catalogues';
 import { cardPrice } from '$helpers/card-utils';
 import type { Breadcrumb, Card, Pokemon, PriceData, Set, UserProfile } from '$lib/types';
 
@@ -22,9 +23,9 @@ export function article(word: string): string {
  * A card as a `Product` with an `Offer`: this is what makes a card page eligible for the price and availability
  * treatment in search results, and it is the only place the cardmarket value is exposed to a crawler.
  */
-export function cardSchema(card: Card, price: PriceData | undefined, pokemon?: Pokemon, set?: Set, route: '/card' | '/jp-card' = '/card'): Schema {
+export function cardSchema(card: Card, price: PriceData | undefined, pokemon?: Pokemon, set?: Set, catalogue: Catalogue = CATALOGUES.en): Schema {
 	const value = cardPrice(price);
-	const url = `${BASE_URL}${route}/${card.cardCode}`;
+	const url = `${BASE_URL}${catalogue.cardRoute}/${card.cardCode}`;
 
 	return {
 		'@id': `${url}#product`,
@@ -45,7 +46,7 @@ export function cardSchema(card: Card, price: PriceData | undefined, pokemon?: P
 			? `${card.name}, ${article(card.rarity)} ${card.rarity} Pokémon card from ${card.setName}. ${pokemon.description}`
 			: `${card.name}, ${article(card.rarity)} ${card.rarity} card from the ${card.setName} Pokémon TCG set, illustrated by ${card.artist}.`,
 		image: processCardImage(card.image),
-		isPartOf: set ? { '@id': `${BASE_URL}/sets#${slug(set.name)}` } : undefined,
+		isPartOf: set ? { '@id': setNodeId(set, catalogue) } : undefined,
 		name: card.name,
 		...(card.artist && { creator: { '@type': 'Person', name: card.artist } }),
 		...(value && {
@@ -83,15 +84,15 @@ export function cardListSchema(cards: Card[], listUrl: string, name: string, lim
 }
 
 /** A set as a `CreativeWorkSeries` node carrying its release date and card count. */
-export function setSchema(set: Set, route: '/cards-list' | '/japan' = '/cards-list'): Schema {
+export function setSchema(set: Set, catalogue: Catalogue = CATALOGUES.en): Schema {
 	return {
-		'@id': `${BASE_URL}/sets#${slug(set.name)}${route === '/japan' ? '-jp' : ''}`,
+		'@id': setNodeId(set, catalogue),
 		'@type': 'CreativeWorkSeries',
 		datePublished: isoDate(set.releaseDate),
 		image: set.logo || undefined,
 		name: set.name,
 		numberOfItems: set.totalCards ?? set.printedTotal,
-		url: `${BASE_URL}${route}?set=${encodeURIComponent(set.name)}`,
+		url: `${BASE_URL}${catalogue.gridRoute}?set=${encodeURIComponent(set.name)}`,
 	};
 }
 
@@ -169,7 +170,7 @@ export function organizationSchema(): Schema {
 	return {
 		'@id': `${BASE_URL}/#organization`,
 		'@type': 'Organization',
-		description: 'A free Pokémon TCG catalogue and collection tracker covering every English and Japanese set.',
+		description: 'A free Pokémon TCG catalogue and collection tracker covering every English, Japanese and French set.',
 		founder: { '@type': 'Person', name: 'Pierre Roy', url: 'https://ayfri.com' },
 		logo: { '@type': 'ImageObject', url: `${BASE_URL}/favicon.png`, width: 485, height: 436 },
 		name: SITE_NAME,
@@ -181,6 +182,11 @@ export function organizationSchema(): Schema {
 function property(name: string, value: string | number | undefined | null) {
 	if (value === undefined || value === null || value === '') return null;
 	return { '@type': 'PropertyValue', name, value: String(value) };
+}
+
+/** The `@id` of a set node, shared by the set itself and the cards pointing at it; a foreign catalogue's set name can repeat an English one. */
+function setNodeId(set: Set, catalogue: Catalogue): string {
+	return `${BASE_URL}/sets#${slug(set.name)}${catalogue.routeCode ? `-${catalogue.routeCode}` : ''}`;
 }
 
 function slug(value: string): string {

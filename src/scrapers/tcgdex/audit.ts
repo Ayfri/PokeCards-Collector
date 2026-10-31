@@ -1,9 +1,12 @@
 import * as fs from 'node:fs';
 import {generateUniqueCardCode} from '$helpers/card-utils';
 import {RARITY_MAPPING} from '$helpers/rarity';
-import {envClient, ownedCardCodes, readAll, TABLES} from '../supabase_sync';
+import {CATALOGUES} from '$lib/helpers/catalogues';
+import {isFrenchCode} from '$helpers/owned-cards';
+import {envClient, ownedCardCodes, readAll} from '../supabase_sync';
 import {mapAll} from './client';
 import {catalogueSets, excludedSetIds} from './excluded';
+import {FRENCH} from './french';
 import {Http2Pool} from './http2-pool';
 import {speciesInName, UNKNOWN_POKEMON, type Language} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
@@ -14,6 +17,7 @@ import type {TcgdexCard, TcgdexSet} from './types';
  * card whose stored code differs.
  */
 
+/** No `fr`: this pipeline mints the French codes, there is no older stored code to match. */
 const LANGS: readonly Language[] = ['en', 'ja'];
 
 /** The languages a collection export can name its sets in. TCGdex carries fewer sets in each than in English, and none at all past these. */
@@ -52,12 +56,13 @@ export async function auditTcgdex(write = true) {
 	const pool = new Http2Pool();
 	const aliases: Record<string, Record<string, string>> = {};
 	const overrides: Record<string, Record<string, string>> = {};
-	const owned = await ownedCardCodes(supabase);
+	/** French codes are minted by the scrape, so there is no older stored code for the audit to match them against. */
+	const owned = new Set([...await ownedCardCodes(supabase)].filter(code => !isFrenchCode(code)));
 	const resolved = new Set<string>();
 
 	for (const lang of LANGS) {
 		const sets = catalogueSets((await pool.json<TcgdexSet[]>(`/v2/${lang}/sets`))!, await excludedSetIds(pool, lang));
-		const rows = await readAll<StoredRow>(supabase, TABLES[lang].cards, 'card_code,name,set_name', 'card_code');
+		const rows = await readAll<StoredRow>(supabase, CATALOGUES[lang].tables.cards, 'card_code,name,set_name', 'card_code');
 		const names = new Map(rows.map(row => [row.card_code, row.name]));
 
 		const setNames = new Map<string, string>();
@@ -139,6 +144,13 @@ export async function auditTcgdex(write = true) {
 	for (const lang of LANGS) for (const rarity of (await pool.json<string[]>(`/v2/${lang}/rarities`))!) rarities.add(rarity);
 	const missing = [...rarities].filter(rarity => !(rarity.toLowerCase() in RARITY_MAPPING));
 	console.log(missing.length ? `rarities missing from RARITY_MAPPING: ${missing.join(', ')}` : 'rarities: every TCGdex value has a tier');
+
+	/** A French value identical to its English one needs no entry in `FRENCH`. */
+	for (const [kind, endpoint] of [['category', 'categories'], ['rarity', 'rarities'], ['stage', 'stages'], ['type', 'types']] as const) {
+		const [french, english] = await Promise.all([pool.json<string[]>(`/v2/fr/${endpoint}`), pool.json<string[]>(`/v2/en/${endpoint}`)]);
+		const untranslated = (french ?? []).filter(value => !(value in FRENCH[kind]) && !english?.includes(value));
+		console.log(untranslated.length ? `French ${endpoint} missing from FRENCH: ${untranslated.join(', ')}` : `French ${endpoint}: every value is translated`);
+	}
 
 	// Kept, never deleted: an owned code renders again the day TCGdex fills its set in.
 	const orphans = [...owned].filter(code => !resolved.has(code));

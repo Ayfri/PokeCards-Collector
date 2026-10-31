@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
-import { CARDS, JP_CARDS, JP_PRICES, JP_SETS, POKEMONS, PRICES, SETS, TYPES } from './files';
+import { CATALOGUES, LANGUAGES } from '$helpers/catalogues';
+import { FILES, POKEMONS, TYPES } from './files';
 import { cardRow, priceRow, setRow } from './rows';
 import { deduplicate, deleteIn, envClient, readAll, upsertRows } from './supabase_sync';
 import { resolveCardCode, type Language, type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
@@ -69,9 +70,10 @@ function storedCodes(lang: Language, cards: readonly MappedCard[], rows: readonl
 }
 
 /** The scrape only keeps sets holding a card, so a stored set it no longer has is an emptied or dropped one. */
-async function uploadSetsTo(table: string, path: string): Promise<void> {
+export async function uploadSets(lang: Language): Promise<void> {
+	const table = CATALOGUES[lang].tables.sets;
 	console.log(`📤 Uploading ${table}...`);
-	const sets = read<MappedSet[]>(path);
+	const sets = read<MappedSet[]>(FILES[lang].sets);
 
 	await upsertAll(table, sets.map(setRow), 'set_id', 100);
 
@@ -80,17 +82,15 @@ async function uploadSetsTo(table: string, path: string): Promise<void> {
 	await deleteAll(table, 'set_id', stored.map(row => row.set_id).filter(setId => !scraped.has(setId)), 'sets the scrape no longer has');
 }
 
-export const uploadSets = () => uploadSetsTo('sets', SETS);
-export const uploadJapaneseSets = () => uploadSetsTo('jp_sets', JP_SETS);
-
 /**
  * Replaces a card table with the TCGdex content, deleting first the rows of a scraped set TCGdex no longer lists and
  * the old row of every card changing code (their prices go with them), then upserting. `collections` and `wishlists`
  * are never touched: a code no card holds renders again once TCGdex fills the set in.
  */
-async function uploadCardsTo(lang: Language, table: string, path: string): Promise<void> {
+export async function uploadCards(lang: Language): Promise<void> {
+	const table = CATALOGUES[lang].tables.cards;
 	console.log(`📤 Uploading ${table}...`);
-	const cards = read<MappedCard[]>(path);
+	const cards = read<MappedCard[]>(FILES[lang].cards);
 	const stored = await storedRows(table);
 	const codes = storedCodes(lang, cards, stored);
 
@@ -107,14 +107,12 @@ async function uploadCardsTo(lang: Language, table: string, path: string): Promi
 	await upsertAll(table, rows, 'card_code');
 }
 
-export const uploadCards = () => uploadCardsTo('en', 'cards', CARDS);
-export const uploadJapaneseCards = () => uploadCardsTo('ja', 'jp_cards', JP_CARDS);
-
 /** Upserts the scraped prices under the stored card codes, and drops the price of a scraped card that has none anymore. */
-async function uploadPricesTo(lang: Language, table: string, cardsTable: string, path: string, cardsPath: string): Promise<void> {
+export async function uploadPrices(lang: Language): Promise<void> {
+	const { cards: cardsTable, prices: table } = CATALOGUES[lang].tables;
 	console.log(`📤 Uploading ${table}...`);
-	const prices = read<Record<string, MappedPrice>>(path);
-	const cards = read<MappedCard[]>(cardsPath);
+	const prices = read<Record<string, MappedPrice>>(FILES[lang].prices);
+	const cards = read<MappedCard[]>(FILES[lang].cards);
 	const codes = storedCodes(lang, cards, await storedRows(cardsTable));
 
 	const rows = Object.entries(prices).map(([cardCode, price]) => priceRow(codes.get(cardCode) ?? cardCode, price));
@@ -123,19 +121,11 @@ async function uploadPricesTo(lang: Language, table: string, cardsTable: string,
 	await deleteAll(table, 'card_code', cards.filter(card => !prices[card.cardCode]).map(card => codes.get(card.cardCode)!), 'prices a card lost');
 }
 
-export const uploadPrices = () => uploadPricesTo('en', 'prices', 'cards', PRICES, CARDS);
-export const uploadJapanesePrices = () => uploadPricesTo('ja', 'jp_prices', 'jp_cards', JP_PRICES, JP_CARDS);
-
 /** Dependency order: cards before prices, which carry a foreign key on `card_code`. */
 export async function uploadAllData(): Promise<void> {
 	console.log('🚀 Starting full Supabase data upload...');
 	await uploadTypes();
 	await uploadPokemons();
-	await uploadSets();
-	await uploadJapaneseSets();
-	await uploadCards();
-	await uploadJapaneseCards();
-	await uploadPrices();
-	await uploadJapanesePrices();
+	for (const upload of [uploadSets, uploadCards, uploadPrices]) for (const lang of LANGUAGES) await upload(lang);
 	console.log('🎉 All data uploaded successfully to Supabase!');
 }

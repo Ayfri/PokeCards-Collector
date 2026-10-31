@@ -1,6 +1,8 @@
-import { getCards, getPrices } from '$helpers/supabase-data';
+import { LANGUAGES } from '$helpers/catalogues';
+import { countCards, getCatalogue } from '$helpers/supabase-data';
 import { redirect } from '@sveltejs/kit';
 import { computeCollectionStats } from '$helpers/collection-stats';
+import { readOwnedCatalogues } from '$helpers/owned-cards';
 import { getUserCollection } from '$lib/services/collections';
 import { getProfileByUsername } from '$lib/services/profiles';
 import { getUserWishlist } from '$lib/services/wishlists';
@@ -14,7 +16,7 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const profilePromise = getProfileByUsername(requestedUsername, locals.supabase);
 	/** Read alongside the profile rather than after it: row level security already hides a private collection, so reading early leaks nothing. */
 	const rowsPromise = Promise.all([getUserCollection(requestedUsername, locals.supabase), getUserWishlist(requestedUsername, locals.supabase)]);
-	const { profile: loggedInUserProfile, sets } = await parent();
+	const { profile: loggedInUserProfile } = await parent();
 	const isOwnProfile = loggedInUserProfile?.username === requestedUsername;
 
 	const { data: targetProfile, error: profileError } = await profilePromise;
@@ -30,12 +32,16 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	let description = `This user's profile is private.`;
 
 	if (isPublic || isOwnProfile) {
-		// The catalogue only feeds the stats computation, it is never returned: 23546 cards in the document for a card count.
-		const [allCards, prices, [{ data: collectionRows, error: collectionError }, { data: wishlistRows, error: wishlistError }]] = await Promise.all([getCards(), getPrices(), rowsPromise]);
-		totalCards = allCards.length;
+		const [[{ data: collectionRows, error: collectionError }, { data: wishlistRows, error: wishlistError }], counts] = await Promise.all([rowsPromise, Promise.all(LANGUAGES.map(countCards))]);
+		totalCards = counts.reduce((total, count) => total + count, 0);
 
 		if (collectionError || !collectionRows) console.error(`Error fetching collection stats for ${targetProfile.username}:`, collectionError);
-		else collectionStats = computeCollectionStats(collectionRows, wishlistError ? [] : wishlistRows ?? [], allCards, sets, prices);
+		else {
+			const wishlist = wishlistError ? [] : wishlistRows ?? [];
+			/** The catalogues only feed the stats computation, they are never returned: 23546 cards in the document for a card count. */
+			const catalogues = await readOwnedCatalogues([...collectionRows, ...wishlist].map(row => row.card_code), getCatalogue);
+			collectionStats = computeCollectionStats(collectionRows, wishlist, catalogues);
+		}
 
 		title = isOwnProfile ? 'My Profile' : `${targetProfile.username}'s Pokémon Card Collection`;
 		description = collectionStats

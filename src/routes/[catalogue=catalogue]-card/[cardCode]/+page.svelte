@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import CardDisplay from "@components/card/CardDisplay.svelte";
 	import type { FullCard, Pokemon, Set, PriceData } from "$lib/types";
-	import { fade } from 'svelte/transition';	
+	import { fade } from 'svelte/transition';
 
 	interface Props {
 		data: PageData;
@@ -14,10 +14,7 @@
 	const pokemonCards = $derived(data.pokemonCards as FullCard[]);
 	const pokemons = $derived(data.pokemons as Pokemon[]);
 	const sets = $derived(data.sets as Set[]);
-	const pokemon = $derived(data.pokemon as Pokemon);
 	const prices = $derived((data.prices as Record<string, PriceData> | undefined) || {});
-	
-	const isJpContext = true;
 </script>
 
 <main class="max-w-[100vw] p-4 mb-4 text-lg text-white">
@@ -26,15 +23,14 @@
 			<p class="text-center text-lg">Loading...</p>
 		{:else}
 			<div in:fade={{ duration: 300 }}>
-				<CardDisplay 
-					allCards={allCards} 
-					pokemonCards={pokemonCards} 
-					{pokemons} 
-					{sets} 
+				<CardDisplay
+					allCards={allCards}
+					pokemonCards={pokemonCards}
+					{pokemons}
+					{sets}
 					{prices}
-					isJapaneseContext={isJpContext} 
 				/>
 			</div>
 		{/if}
 	</div>
-</main> 
+</main>
