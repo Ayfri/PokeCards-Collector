@@ -1,8 +1,8 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
-import {deleteIn, envClient, ownedCardCodes, TABLES} from './supabase_sync';
+import {CATALOGUES, LANGUAGES, type Language} from '$lib/helpers/catalogues';
+import {deleteIn, envClient, ownedCardCodes} from './supabase_sync';
 import {Http2Pool} from './tcgdex/http2-pool';
 import {EXCLUDED_SERIES, excludedSetIds} from './tcgdex/excluded';
-import type {Language} from './tcgdex/mappers';
 
 /**
  * Drops every catalogue row belonging to an excluded serie (see `EXCLUDED_SERIES`).
@@ -41,8 +41,9 @@ async function countIn(supabase: SupabaseClient, table: string, column: string, 
  */
 async function targetSetIds(supabase: SupabaseClient, pool: Http2Pool, lang: Language, serieNames: readonly string[]): Promise<string[]> {
 	const ids = await excludedSetIds(pool, lang);
-	const {data, error} = await supabase.from(TABLES[lang].sets).select('set_id').in('series', serieNames);
-	if (error) throw new Error(`${TABLES[lang].sets}: ${error.message}`);
+	const table = CATALOGUES[lang].tables.sets;
+	const {data, error} = await supabase.from(table).select('set_id').in('series', serieNames);
+	if (error) throw new Error(`${table}: ${error.message}`);
 	for (const row of data) ids.add(row.set_id as string);
 	return [...ids];
 }
@@ -55,8 +56,8 @@ export async function purgeExcludedSeries(dryRun = false): Promise<PurgeReport> 
 		const owned = await ownedCardCodes(supabase);
 		const langs: PurgeLangReport[] = [];
 
-		for (const lang of Object.keys(TABLES) as Language[]) {
-			const tables = TABLES[lang];
+		for (const lang of LANGUAGES) {
+			const tables = CATALOGUES[lang].tables;
 			const sets = await targetSetIds(supabase, pool, lang, serieNames);
 
 			const codes: string[] = [];

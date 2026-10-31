@@ -1,7 +1,8 @@
 import {RARITY_MAPPING} from '$helpers/rarity';
-import {envClient, ownedCardCodes, readAll, TABLES} from './supabase_sync';
+import {CATALOGUES, LANGUAGES, type Language} from '$lib/helpers/catalogues';
+import {envClient, ownedCardCodes, readAll} from './supabase_sync';
 import {EXCLUDED_SERIES} from './tcgdex/excluded';
-import {sharedProductCodes, speciesInName, type Language} from './tcgdex/mappers';
+import {sharedProductCodes, speciesInName} from './tcgdex/mappers';
 
 /**
  * Read-only sanity pass over the live Supabase catalogue. It never writes: every check reports counts
@@ -72,10 +73,11 @@ export async function checkDatabase(): Promise<CheckReport> {
 
 	const excluded = new Set<string>(EXCLUDED_SERIES);
 	const excludedNames = new Set(['Pokémon TCG Pocket']);
-	const known = new Set<string>();
+	const known = new Map<string, Language>();
+	const shared: string[] = [];
 
-	for (const lang of Object.keys(TABLES) as Language[]) {
-		const tables = TABLES[lang];
+	for (const lang of LANGUAGES) {
+		const tables = CATALOGUES[lang].tables;
 		const [cards, prices, sets] = await Promise.all([
 			readAll<CardRow>(supabase, tables.cards, 'card_code,card_market_url,image,name,pokemon_id,rarity,set_id,supertype,tcgdex_id', 'card_code'),
 			readAll<PriceRow>(supabase, tables.prices, '*', 'card_code'),
@@ -88,7 +90,9 @@ export async function checkDatabase(): Promise<CheckReport> {
 		const pricedCodes = new Set(prices.map(price => price.card_code));
 		const heldPerSet = new Map<string, number>();
 		for (const card of cards) {
-			known.add(card.card_code);
+			const first = known.get(card.card_code);
+			if (first && first !== lang) shared.push(`${card.card_code} (${first}, ${lang})`);
+			known.set(card.card_code, first ?? lang);
 			if (card.set_id) heldPerSet.set(card.set_id, (heldPerSet.get(card.set_id) ?? 0) + 1);
 		}
 
@@ -124,6 +128,9 @@ export async function checkDatabase(): Promise<CheckReport> {
 		add(tag('sets with no release date'), 'warn', sets.filter(set => !set.release_date).map(set => set.set_id));
 		add(tag('sets holding more cards than total_cards'), 'warn', sets.filter(set => set.total_cards !== null && (heldPerSet.get(set.set_id) ?? 0) > set.total_cards).map(set => set.set_id));
 	}
+
+	/** A warning, since 19 legacy Japanese codes (`pokemon_6_sv3_125`) already match English ones and owned rows keep them frozen. */
+	add('card_code in several catalogues', 'warn', shared);
 
 	// Kept on purpose: an owned code no table carries renders again once TCGdex fills the set in.
 	add('owned codes resolving to no card', 'warn', [...await ownedCardCodes(supabase)].filter(code => !known.has(code)));

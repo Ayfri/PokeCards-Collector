@@ -7,7 +7,7 @@ import { checkDatabase } from './src/scrapers/db-check.js';
 import { fetchPokemons } from './src/scrapers/pokemon_scraper.js';
 import { purgeExcludedSeries } from './src/scrapers/purge.js';
 import { auditTcgdex } from './src/scrapers/tcgdex/audit.js';
-import type { Language } from './src/scrapers/tcgdex/mappers.js';
+import { LANGUAGES, type Language } from './src/lib/helpers/catalogues.js';
 import { verifyFiles } from './src/scrapers/tcgdex/verify.js';
 import { scrapeToFiles } from './src/scrapers/tcgdex/write.js';
 
@@ -39,26 +39,30 @@ function row(label: string, value: string | number): void {
 	console.log(`  ${dim(`${label.padEnd(18)}`)} ${value}`);
 }
 
-const SUPABASE_TARGETS = ['all', 'types', 'pokemons', 'sets', 'jp-sets', 'cards', 'jp-cards', 'prices', 'jp-prices'] as const;
+const SUPABASE_TARGETS = ['all', 'types', 'pokemons', 'sets', 'jp-sets', 'fr-sets', 'cards', 'jp-cards', 'fr-cards', 'prices', 'jp-prices', 'fr-prices'] as const;
 type SupabaseTarget = (typeof SUPABASE_TARGETS)[number];
 
-const SUPABASE_UPLOADERS: Record<SupabaseTarget, string> = {
-	'all': 'uploadAllData',
-	'types': 'uploadTypes',
-	'pokemons': 'uploadPokemons',
-	'sets': 'uploadSets',
-	'jp-sets': 'uploadJapaneseSets',
-	'cards': 'uploadCards',
-	'jp-cards': 'uploadJapaneseCards',
-	'prices': 'uploadPrices',
-	'jp-prices': 'uploadJapanesePrices',
+/** The uploader function of each target, and the catalogue it is called for when it is per language. */
+const SUPABASE_UPLOADERS: Record<SupabaseTarget, readonly [uploader: string, language?: Language]> = {
+	'all': ['uploadAllData'],
+	'types': ['uploadTypes'],
+	'pokemons': ['uploadPokemons'],
+	'sets': ['uploadSets', 'en'],
+	'jp-sets': ['uploadSets', 'ja'],
+	'fr-sets': ['uploadSets', 'fr'],
+	'cards': ['uploadCards', 'en'],
+	'jp-cards': ['uploadCards', 'ja'],
+	'fr-cards': ['uploadCards', 'fr'],
+	'prices': ['uploadPrices', 'en'],
+	'jp-prices': ['uploadPrices', 'ja'],
+	'fr-prices': ['uploadPrices', 'fr'],
 };
 
 const commands: Command[] = [
 	{
 		name: 'scrape',
 		description: 'Fetch cards, prices and sets from TCGdex into src/assets/',
-		flags: '--lang en,ja  --dry-run',
+		flags: `--lang ${LANGUAGES.join(',')}  --dry-run`,
 		run: async ({ dryRun, langs }) => {
 			const results = await scrapeToFiles(langs, { write: !dryRun });
 			heading('scrape');
@@ -88,7 +92,10 @@ const commands: Command[] = [
 			for (const file of report.files) {
 				const collisions = file.collisions === 0 ? styleText('green', 'no collisions') : styleText('red', `${file.collisions} collisions`);
 				row(file.lang, `${file.cards} cards, ${file.sets} sets, ${file.priced} priced ${dim('|')} ${collisions}`);
+				if (file.unknownValues.length) row(`${file.lang} unknown`, styleText('red', file.unknownValues.join(', ')));
+				if (file.sharedSetNames.length) row(`${file.lang} shared names`, styleText('yellow', file.sharedSetNames.join(', ')));
 			}
+			row('cross collisions', report.crossCollisions.length === 0 ? styleText('green', 'none') : styleText('red', `${report.crossCollisions.length}: ${report.crossCollisions.slice(0, 10).join(', ')}`));
 			if (!offline) {
 				const status = report.missing.length === 0 ? styleText('green', 'all resolve') : styleText('yellow', `${report.missing.length} unresolved`);
 				row('owned codes', `${report.owned} ${dim('|')} ${status}`);
@@ -149,14 +156,15 @@ const commands: Command[] = [
 			const chosen = (target ?? 'all') as SupabaseTarget;
 			if (!SUPABASE_TARGETS.includes(chosen)) throw new Error(`Unknown supabase target "${chosen}". Expected one of: ${SUPABASE_TARGETS.join(', ')}`);
 			heading(`supabase ${chosen}`);
-			const uploader = await import('./src/scrapers/supabase_uploader.js') as Record<string, () => Promise<void>>;
-			await uploader[SUPABASE_UPLOADERS[chosen]]();
+			const uploaders = await import('./src/scrapers/supabase_uploader.js') as Record<string, (language?: Language) => Promise<void>>;
+			const [uploader, language] = SUPABASE_UPLOADERS[chosen];
+			await uploaders[uploader](language);
 		},
 	},
 	{
 		name: 'all',
 		description: 'scrape, then pokemons, then push everything to Supabase',
-		flags: '--lang en,ja  --dry-run',
+		flags: `--lang ${LANGUAGES.join(',')}  --dry-run`,
 		run: async options => {
 			for (const name of ['scrape', 'pokemons', 'supabase']) {
 				const command = commands.find(entry => entry.name === name)!;
@@ -177,7 +185,7 @@ ${bold('Commands')}
 ${commands.map(command => `  ${accent(command.name.padEnd(10))} ${command.description}${command.flags ? `\n  ${' '.repeat(10)} ${dim(command.flags)}` : ''}`).join('\n')}
 
 ${bold('Options')}
-  ${accent('--lang <list>')}   languages to scrape, comma separated ${dim('(default: en,ja)')}
+  ${accent('--lang <list>')}   languages to scrape, comma separated ${dim(`(default: ${LANGUAGES.join(',')})`)}
   ${accent('--dry-run')}       run everything but write no file
   ${accent('--offline')}       skip the Supabase round-trip in ${accent('verify')}
   ${accent('--json')}          print the raw report instead of the pretty one
@@ -210,7 +218,7 @@ async function main(): Promise<void> {
 			'dry-run': { type: 'boolean', default: false },
 			'help': { type: 'boolean', short: 'h', default: false },
 			'json': { type: 'boolean', default: false },
-			'lang': { type: 'string', default: 'en,ja' },
+			'lang': { type: 'string', default: LANGUAGES.join(',') },
 			'offline': { type: 'boolean', default: false },
 			'quiet': { type: 'boolean', short: 'q', default: false },
 		},
@@ -218,10 +226,14 @@ async function main(): Promise<void> {
 
 	if (values.help) return usage();
 
+	const langs = values.lang.split(',').map(lang => lang.trim()).filter(Boolean);
+	const unknown = langs.find(lang => !LANGUAGES.includes(lang as Language));
+	if (unknown) throw new Error(`Unknown language "${unknown}". Expected one of: ${LANGUAGES.join(', ')}`);
+
 	const options: Options = {
 		dryRun: values['dry-run'],
 		json: values.json,
-		langs: values.lang.split(',').map(lang => lang.trim()).filter(Boolean) as Language[],
+		langs: langs as Language[],
 		offline: values.offline,
 		quiet: values.quiet,
 		target: positionals[1],

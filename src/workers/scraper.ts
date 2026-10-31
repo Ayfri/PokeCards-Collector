@@ -1,7 +1,7 @@
 import {DurableObject, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep} from 'cloudflare:workers';
+import {LANGUAGES, type Language} from '$lib/helpers/catalogues';
 import {createSyncClient, dropSharedProducts, syncSetCards, syncSets, type SyncCardsResult} from '$scrapers/supabase_sync';
 import {FetchClient} from '$scrapers/tcgdex/client';
-import type {Language} from '$scrapers/tcgdex/mappers';
 
 interface Env {
 	PUBLIC_SUPABASE_URL: string;
@@ -10,8 +10,6 @@ interface Env {
 	SUPABASE_SECRET_KEY: string;
 	TCGDEX_READER: DurableObjectNamespace<TcgdexReader>;
 }
-
-const LANGUAGES: readonly Language[] = ['en', 'ja'];
 
 /** Sets fetched per step: a step is one Worker invocation, so its subrequests must stay well under the per-invocation cap. */
 const SETS_PER_STEP = 4;
