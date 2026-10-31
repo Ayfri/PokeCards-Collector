@@ -4,7 +4,6 @@ import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	onwarn: (warning, handler) => {
-		// Ignore a11y warnings
 		if (warning.code.startsWith('a11y_')) {
 			return;
 		}

@@ -146,7 +146,6 @@
 				</div>
 			</div>
 
-			<!-- Name Search (Mobile Only) -->
 			<div class="flex flex-wrap gap-4 sm:flex-row flex-col md:hidden">
 				<TextInput
 					id="name"

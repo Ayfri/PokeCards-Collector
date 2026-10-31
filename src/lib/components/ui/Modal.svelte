@@ -97,7 +97,6 @@
 {/if}
 
 <style>
-	/* Custom scrollbar for modal content */
 	.modal-content::-webkit-scrollbar {
 		width: 6px;
 	}
@@ -107,12 +106,12 @@
 	}
 	
 	.modal-content::-webkit-scrollbar-thumb {
-		background-color: #4a4a4a; /* Slightly darker gray */
+		background-color: #4a4a4a;
 		border-radius: 20px;
-		border: 3px solid transparent; /* Optional: creates padding around thumb */
+		border: 3px solid transparent;
 	}
 	
 	.modal-content::-webkit-scrollbar-thumb:hover {
-		background-color: #FFB700; /* Gold on hover */
+		background-color: #FFB700;
 	}
 </style> 

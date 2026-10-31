@@ -101,7 +101,6 @@
 		</p>
 	</div>
 
-	<!-- Search Users Section (Sticky) -->
 	<section aria-labelledby="search-users-title" class="sticky top-0 z-30 py-4 -mx-4 px-4 shadow-lg rounded-b-xl mb-6">
 		<h2 id="search-users-title" class="text-xl md:text-2xl font-semibold text-white flex items-center gap-2 mb-3 sr-only">
 			<SearchIcon class="text-blue-400" size={28} />
@@ -168,12 +167,9 @@
 			</div>
 		{/if}
 	{:else if featuredUsers.length > 0 || featuredUsersError}
-	    <!-- Separator, only show if there are featured users or an error for them, and no search is active -->
 	    <div class="w-full max-w-175 mx-auto h-px bg-linear-to-r from-transparent via-gold-400/50 to-transparent my-6"></div>
 	{/if}
 
-
-	<!-- Featured Users Section -->
 	<section aria-labelledby="featured-users-title" class="space-y-4">
 		<h2 id="featured-users-title" class="text-2xl md:text-3xl font-semibold text-gold-400 flex items-center gap-3">
 			<CrownIcon size={28} />

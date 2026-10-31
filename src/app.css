@@ -204,7 +204,6 @@ html:active-view-transition-type(back) {
 	}
 }
 
-/* Custom animations for the bouncing chevrons */
 @keyframes bounceLeft {
 	0% {
 		transform: translateX(0);

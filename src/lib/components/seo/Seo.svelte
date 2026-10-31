@@ -120,7 +120,6 @@
 		<meta name="keywords" content={keywords.join(', ')} />
 	{/if}
 
-	<!-- Open Graph -->
 	<meta property="og:title" content={effectiveTitle} />
 	<meta property="og:description" content={description} />
 	<meta property="og:url" content={effectiveCanonicalUrl} />
@@ -136,7 +135,6 @@
 		{/if}
 	{/if}
 
-	<!-- Twitter Card -->
 	<meta name="twitter:card" content={imageUrl ? 'summary_large_image' : 'summary'} />
 	<meta name="twitter:site" content={SITE_TWITTER} />
 	<meta name="twitter:creator" content={SITE_TWITTER} />
@@ -149,6 +147,5 @@
 
 	<meta name="robots" content={robots} />
 
-	<!-- JSON-LD Structured Data -->
 	{@html `<script type="application/ld+json">${jsonLdString}</script>`}
 </svelte:head>

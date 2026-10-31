@@ -24,7 +24,6 @@
   .container {
     display: flex;
     align-items: flex-end;
-    /* padding-bottom: 20%; */ /* Adjusted to avoid excessive bottom padding */
     justify-content: space-between;
     width: var(--uib-size);
     height: calc(var(--uib-size) * 0.6);
@@ -42,7 +41,6 @@
     height: 100%;
     width: 100%;
     border-radius: 25%;
-    /* background-color: var(--uib-color); */
     background: linear-gradient(to bottom, var(--gradient-start), var(--gradient-end));
     transform-origin: center bottom;
     animation: morph var(--uib-speed) ease-in-out infinite;

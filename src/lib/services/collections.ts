@@ -4,14 +4,11 @@ import { collection } from '$stores/collection.svelte';
 import { loading } from '$stores/loading.svelte';
 import { selectAll } from './select-all';
 
-// --- Constants ---
-const MAX_CARD_QUANTITY = 99; // Define the maximum allowed quantity per card
+const MAX_CARD_QUANTITY = 99;
 
-// Add a new instance of a card to user's collection
 export async function addCardToCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		loading.mutation = true;
-		// --- Check current count against the limit ---
 		const { count, error: countError } = await client
 			.from('collections')
 			.select('*', { count: 'exact', head: true }) // Use head: true for efficiency
@@ -25,19 +22,16 @@ export async function addCardToCollection(username: string, cardCode: string, cl
 
 		if (count !== null && count >= MAX_CARD_QUANTITY) {
 			console.warn(`User ${username} reached quantity limit for card ${cardCode}`);
-			// Return a specific error or indicator that limit was reached
 			return { data: null, error: { message: `Maximum quantity (${MAX_CARD_QUANTITY}) reached for this card.` } };
 		}
-		// --- End Check ---
 
-		// Insert a new row for this card instance
 		const { data, error } = await client
 			.from('collections')
 			.insert({
 				username,
 				card_code: cardCode,
 			})
-			.select('card_code') // Select to confirm insertion
+			.select('card_code')
 			.single();
 
 		if (!error && data) collection.add(data.card_code, 1);
@@ -52,17 +46,16 @@ export async function addCardToCollection(username: string, cardCode: string, cl
 	}
 }
 
-// Remove one instance of a card from user's collection
 export async function removeCardFromCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		loading.mutation = true;
 		// Find *one* specific row ID for this card to delete
 		const { data: rowToDelete, error: fetchError } = await client
 			.from('collections')
-			.select('id') // Select only the id
+			.select('id')
 			.eq('username', username)
 			.eq('card_code', cardCode)
-			.limit(1) // Ensure we only get one row
+			.limit(1)
 			.maybeSingle();
 		
 		if (fetchError) throw fetchError;
@@ -74,7 +67,6 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 			return { data: null, error: { message: 'Card instance not found in collection' } };
 		}
 
-		// Delete the specific row found
 		const { error: deleteError } = await client
 			.from('collections')
 			.delete()

@@ -20,7 +20,6 @@
 	import type { PageData } from './$types';
 
 	interface Props {
-		// Page data from server
 		data: PageData;
 	}
 
@@ -34,7 +33,6 @@
 	const loggedIn = $derived(Boolean(data.profile));
 	const catalogueReady = $derived(catalogue.length > 0);
 
-	// Binder configuration
 	let rows = $state(3);
 	let columns = $state(3);
 	let pages = $state<Array<Array<BinderCards | null>>>([[]]);
@@ -406,7 +404,6 @@
 	</div>
 </div>
 
-<!-- Set Selection Modal -->
 <Modal bind:open={showSetModal} onClose={toggleSetModal} title="Add complete set">
 	<p class="mb-4 text-sm text-gray-300">Choose a set to send all of its cards to the storage.</p>
 
@@ -432,7 +429,6 @@
 	{/snippet}
 </Modal>
 
-<!-- My Cards Modal -->
 <Modal bind:open={showMyCardsModal} onClose={toggleMyCardsModal} title="Add my cards">
 	<p class="mb-4 text-sm text-gray-300">Choose which cards to send to the storage.</p>
 
@@ -460,7 +456,6 @@
 	{/snippet}
 </Modal>
 
-<!-- URL Card Modal -->
 <Modal bind:open={showUrlModal} onClose={toggleUrlModal} title="Add card from URL">
 	<p class="mb-4 text-sm text-gray-300">
 		Paste image URLs to add them to the storage. URLs must start with 'http', and several can be separated by line breaks or semicolons.
@@ -484,7 +479,6 @@
 	{/snippet}
 </Modal>
 
-<!-- Export Modal -->
 <Modal bind:open={showExportModal} onClose={toggleExportModal} title="Export as image">
 	<p class="mb-4 text-sm text-gray-300">
 		Pages render at 300px per card, numbered slot by slot so you can follow the sheet while filling the real binder.
@@ -500,7 +494,6 @@
 	{/snippet}
 </Modal>
 
-<!-- Clear Storage Confirmation Modal -->
 <Modal bind:open={showClearStorageModal} onClose={toggleClearStorageModal} title="Clear Storage">
 	<p class="mb-4 text-gray-300">Are you sure you want to remove all stored cards? This cannot be undone.</p>
 

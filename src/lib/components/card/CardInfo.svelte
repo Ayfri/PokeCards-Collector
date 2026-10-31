@@ -83,7 +83,6 @@
 <div class="pokemon-info-container flex flex-col items-center gap-4 mt-6 lg:mt-12 max-lg:gap-0">
 	{#if card && user && profile}
 		<div class="flex items-center justify-center gap-2 mb-3">
-			<!-- Collection Buttons -->
 			<div class="flex items-center gap-1 rounded-full bg-gray-700/60 p-1 border border-gray-600 shadow-md">
 				{#if collectionCount > 0}
 					<button
@@ -116,10 +115,8 @@
 				</button>
 			</div>
 
-			<!-- Separator -->
 			<div class="w-px h-6 bg-gray-600 mx-1"></div>
 
-			<!-- Wishlist Button -->
 			<div class="flex items-center justify-center rounded-full bg-gray-700/60 p-1 border border-gray-600 shadow-md">
 				<button
 					aria-label={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
@@ -137,13 +134,11 @@
 	<PageTitle title={displayName}/>
 
 	<div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 w-full mt-4 lg:mt-0 max-w-[1000px]">
-		<!-- Left Column: Card Details -->
 		<div class="flex flex-col">
 			<div class="bg-gray-800 border-2 border-gold-400 rounded-xl p-4 h-full flex flex-col">
 				<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Details</h3>
 
 				<div class="space-y-2 grow">
-					<!-- Add types as the first item -->
 					{#if card?.types || card?.supertype}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
 							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Energy type, or the card category for Trainer and Energy cards"><Sparkles size={14} /> Type:</dt>
@@ -220,12 +215,10 @@
 			</div>
 		</div>
 
-		<!-- Right Column: Prices -->
 		<div class="flex flex-col items-center">
 			{#if cardPrices}
 				<CardPrice {card} {cardPrices} />
 			{:else}
-				<!-- Fallback display if cardmarket data is not available -->
 				<div class="bg-gray-800 border-2 border-gold-400 rounded-xl p-4 w-full">
 					<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Price</h3>
 					<div class="bg-gray-900 border-2 border-gold-400 rounded-lg p-3 mb-4 text-center">

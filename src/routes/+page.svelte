@@ -69,7 +69,6 @@
 </script>
 
 <main class="container mx-auto px-4 py-8 text-white overflow-x-hidden">
-	<!-- Hero section with welcome message -->
 	<section class="flex flex-col md:flex-row gap-8 mb-20" style="--intro-delay: 100ms">
 		<div class="flex-1">
 			<h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance text-gold-400">
@@ -300,7 +299,6 @@
 		class="w-full max-w-200 mx-auto my-16 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
-	<!-- Latest set section -->
 	{#if latestSet}
 		<section
 			class="mb-20"
@@ -441,7 +439,6 @@
 		class="w-full max-w-50 mx-auto my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
-	<!-- Most expensive cards latest set section -->
 	{#if mostExpensiveLatestSetCards && mostExpensiveLatestSetCards.length > 0}
 		<section
 			class="mb-20"
@@ -505,7 +502,6 @@
 		</section>
 	{/if}
 
-	<!-- Most expensive cards section -->
 	{#if mostExpensiveCards && mostExpensiveCards.length > 0}
 		<section
 			class="mt-20 mb-20"
@@ -573,7 +569,6 @@
 		class="w-full max-w-200 mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
-	<!-- Feature Highlights Section -->
 		<section
 			class="mb-20"
 			style="--intro-delay: 400ms"
@@ -586,7 +581,6 @@
 			<div
 				class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center feature-cards"
 			>
-				<!-- Collection Feature Card -->
 				<div
 					class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1"
 				>
@@ -623,7 +617,6 @@
 						</button>
 					{/if}
 				</div>
-				<!-- Wishlist Feature Card -->
 				<div
 					class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1"
 				>
@@ -655,7 +648,6 @@
 						</button>
 					{/if}
 				</div>
-				<!-- Explore Feature Card (unchanged) -->
 				<div
 					class="bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1"
 				>
@@ -679,7 +671,6 @@
 			</div>
 		</section>
 
-	<!-- Binder Builder Section -->
 		<section
 			class="mb-20"
 			style="--intro-delay: 450ms"
@@ -799,7 +790,6 @@
 		class="w-full max-w-50 mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
 	></div>
 
-	<!-- Call to Action Section -->
 		<section
 			class="text-center bg-linear-to-br from-gray-800 to-gray-900 p-8 rounded-lg shadow-xl mb-20 border border-gold-600/30"
 			style="--intro-delay: 500ms"
@@ -893,20 +883,17 @@
 
 	@media (min-width: 768px) {
 		.feature-cards {
-			/* Define this to be used as a reference */
 			display: grid;
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 			gap: 2rem;
 		}
 
 		.feature-cards-container {
-			/* Match the exact column sizing of the feature cards grid */
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 			gap: 2rem;
 		}
 
 		.feature-cards-container > div {
-			/* Span all 3 columns */
 			grid-column: span 3;
 		}
 	}

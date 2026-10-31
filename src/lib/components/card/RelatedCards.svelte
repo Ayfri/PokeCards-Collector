@@ -20,12 +20,11 @@
 
 	
 	interface Props {
-		// --- Props ---
 		cards: FullCard[];
 		pokemons: Pokemon[]; // Still needed for lookups if a card *is* a pokemon
 		prices: Record<string, PriceData>;
 		sets: Set[];
-		pokemon?: Pokemon | undefined; // Optional Pokemon context
+		pokemon?: Pokemon | undefined;
 		onCardSelect: (card: FullCard) => void;
 		lowRes?: boolean;
 	}
@@ -42,7 +41,6 @@
 
 	const relatedSort = persistedRecord('related-cards-sort', { direction: 'asc' as 'asc' | 'desc', value: 'sort-set' });
 
-	// --- User/Profile State ---
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
 
@@ -58,13 +56,11 @@
 	/** Built once per `sets`, so the sort comparators do a map lookup instead of scanning every set twice per comparison. */
 	const setsById = $derived(new Map(sets.map(set => [set.setId, set])));
 
-	// --- Helper Functions ---
 	function getPokemon(pokemonNumber: number | undefined): Pokemon | undefined {
 		if (!pokemonNumber) return undefined;
 		return pokemons.find(p => p.id === pokemonNumber);
 	}
 
-	// Sort the cards based on the current sort settings
 	function sortCards(cardsToSort: FullCard[], sortType: string, order: string) {
 		if (!cardsToSort?.length) return [];
 
@@ -80,7 +76,7 @@
 				break;
 			case 'sort-rarity':
 				sorted = sorted.sort((a, b) => {
-					const rarityA = a.rarity ?? ''; // Handle null/undefined rarity
+					const rarityA = a.rarity ?? '';
 					const rarityB = b.rarity ?? '';
 					return order === 'asc' ? rarityA.localeCompare(rarityB) : rarityB.localeCompare(rarityA);
 				});
@@ -96,7 +92,7 @@
 				sorted = sorted.sort((a, b) => {
 					const aSet = setsById.get(a.setId);
 					const bSet = setsById.get(b.setId);
-					const aTime = aSet?.releaseDate?.getTime() ?? 0; // Handle null/undefined date
+					const aTime = aSet?.releaseDate?.getTime() ?? 0;
 					const bTime = bSet?.releaseDate?.getTime() ?? 0;
 					return order === 'asc' ? aTime - bTime : bTime - aTime;
 				});
@@ -115,15 +111,12 @@
 		return sorted;
 	}
 
-	// Sort the cards based on the current sort settings (use the passed 'cards' directly)
 	const sortedCards = $derived(sortCards(cards, relatedSort.value, relatedSort.direction));
 
-	// Determine the title based on whether a specific Pokémon context is provided
 	const titleName = $derived(pokemon
 		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
-		: (sortedCards[0]?.name || 'Related')); // Fallback to first card name or generic term
+		: (sortedCards[0]?.name || 'Related'));
 
-	// --- Actions ---
 	async function toggleWishlist(cardCode: string, event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
@@ -220,7 +213,6 @@
 							<SetBadge class="bottom-2 left-2" set={cardSet} />
 						{/if}
 						{#if user && profile}
-							<!-- Collection/Wishlist Actions -->
 							<div class="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/50 p-1">
 								{#if collection.count(card.cardCode) > 0}
 									<button

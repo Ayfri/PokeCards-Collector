@@ -73,7 +73,6 @@
 				card.name.toLowerCase().includes(searchTermLower)
 			);
 
-			// Remove duplicates by cardCode
 			const seenCardCodes = new Set();
 			activeSuggestions = filteredCards.filter(card => {
 				if (seenCardCodes.has(card.cardCode)) return false;
@@ -148,7 +147,6 @@
 				loadingGuess = null;
 				isSubmitting = false;
 
-				// Scroll to the guess that was just appended at the end of the list
 				setTimeout(() => {
 					const latestGuess = document.querySelector('.historic-guess-item:last-child');
 					if (latestGuess) {
@@ -219,7 +217,6 @@
 </script>
 
 <div class="container mx-auto p-4 text-white">
-	<!-- Hero Section -->
 	<div class="text-center mb-8">
 		<div class="flex justify-center pt-4 mb-4 md:pt-7">
 			<PageTitle title="Card.dle" />
@@ -228,7 +225,6 @@
 			The daily Pokémon TCG guessing game! Can you identify today's mystery card?
 		</p>
 
-		<!-- Game Introduction -->
 		<div class="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8 max-w-3xl mx-auto shadow-lg">
 			<div class="flex items-center justify-center gap-3 mb-4">
 				<Gamepad2Icon class="text-gold-400" size={28} />
@@ -269,10 +265,8 @@
 		</div>
 	</div>
 
-	<!-- Historic Guesses Display -->
 	<div class="mt-8 w-full overflow-x-auto">
 		{#if historicGuesses.length > 0 || loadingGuess}
-			<!-- Global Header for Grid -->
 			<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-1 bg-gray-900 text-gold-400 p-1 rounded-t-md text-sm sticky top-0 z-10">
 				<div class="p-2" title="The card you guessed">Card</div>
 				<div class="flex items-center justify-center gap-1 p-2" title="Pokémon on the card"><PawPrintIcon size={14} /> Pokémon</div>
@@ -287,7 +281,6 @@
 				<div class="historic-guess-item mb-2 scroll-mt-80">
 					<h3 class="font-bold text-lg my-2 text-center text-gold-400">Guess {i + 1} - {guess.name}</h3>
 					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-sm items-stretch [&>div]:min-h-[50px]">
-						<!-- Card Image Cell -->
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
 							<CardImage
 								imageUrl={guess.cardImage}
@@ -296,7 +289,6 @@
 								lazy={true}
 							/>
 						</div>
-						<!-- Pokémon Sprite & Name Cell -->
 						<div class={`p-1 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(
 							guess.feedback.supertypeValue === 'Pokémon' ? guess.feedback.pokemonCorrect : undefined
 						)}`} title={getFeedbackHint('Pokémon', guess.feedback.supertypeValue === 'Pokémon' ? guess.feedback.pokemonCorrect : undefined)}>
@@ -309,7 +301,6 @@
 							{/if}
 							<span class="mt-1 text-center block leading-tight text-xs sm:text-sm">{guess.feedback.pokemonValue}</span>
 						</div>
-						<!-- Attribute Cells -->
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.artistCorrect)}`} title={getFeedbackHint('Artist', guess.feedback.artistCorrect)}>{guess.feedback.artistValue}</div>
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.setCorrect)}`} title={getFeedbackHint('Set', guess.feedback.setCorrect)}>{guess.feedback.setValue}</div>
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.supertypeCorrect)}`} title={getFeedbackHint('Supertype', guess.feedback.supertypeCorrect)}>{guess.feedback.supertypeValue}</div>
@@ -336,7 +327,6 @@
 				</div>
 			{/each}
 
-			<!-- Loading Guess (if any) -->
 			{#if loadingGuess}
 				<div class="historic-guess-item mb-2 animate-pulse">
 					<h3 class="font-bold text-lg my-2 text-center text-gold-400">
@@ -347,7 +337,6 @@
 						</span>
 					</h3>
 					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-sm items-stretch [&>div]:min-h-[50px]">
-						<!-- Card Image Cell -->
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
 							<CardImage
 								imageUrl={loadingGuess.cardImage}
@@ -357,7 +346,6 @@
 								lowRes={true}
 							/>
 						</div>
-						<!-- Pokémon Sprite & Name Cell -->
 						<div class="p-1 flex flex-col items-center justify-center text-center bg-gray-800 text-gray-300">
 							{#if loadingGuess.pokemonNumber}
 								<img src={getPokemonSpriteSrc(loadingGuess.pokemonNumber)} alt="Sprite" class="h-10 w-10 sm:h-12 sm:w-12 object-contain opacity-75"/>
@@ -366,7 +354,6 @@
 							{/if}
 							<span class="mt-1 text-center block leading-tight text-xs sm:text-sm opacity-75">{loadingGuess.name}</span>
 						</div>
-						<!-- Loading cells for attributes -->
 						{#each { length: 5 }, index (index)}
 							<div class="p-2 flex items-center justify-center text-center bg-gray-800 text-gray-400">
 								<div class="w-12 h-4 bg-gray-700 rounded-sm animate-pulse"></div>
@@ -378,7 +365,6 @@
 		{/if}
 	</div>
 
-	<!-- Search Section -->
 	<div class="bg-gray-800 rounded-xl shadow-lg p-6 mt-6 mb-8 max-w-2xl mx-auto border border-gray-700">
 		<div class="flex flex-col items-center">
 			<div class="flex gap-3 w-full max-w-md justify-center">
@@ -416,7 +402,6 @@
 		</div>
 	</div>
 
-	<!-- Card Suggestions Grid -->
 	<div class="my-8">
 		<div class="bg-gray-800 rounded-xl shadow-lg p-6 max-w-7xl mx-auto border border-gray-700 flex flex-col items-center">
 			{#if activeSuggestions.length > 0}
@@ -495,14 +480,12 @@
 		</div>
 	</div>
 
-	<!-- Example Grid (shown when no guesses have been made) -->
 	{#if historicGuesses.length === 0 && !activeSuggestions.length}
 		<div class="mt-8 mb-8">
 			<h3 class="flex items-center justify-center gap-2 text-2xl font-bold mb-6 text-gold-400">
 				<ClipboardListIcon size={22} /> This is how your guesses will appear:
 			</h3>
 			<div class="bg-gray-800 rounded-xl shadow-lg p-6 max-w-6xl mx-auto border border-gray-700">
-				<!-- Example Header -->
 				<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px font-semibold text-center mb-3 bg-gray-900 text-gold-400 p-2 rounded-t-md text-sm">
 					<div class="p-2">Card</div>
 					<div class="flex items-center justify-center gap-1 p-2"><PawPrintIcon size={14} /> Pokémon</div>
@@ -513,22 +496,18 @@
 					<div class="flex items-center justify-center gap-1 p-2"><CircleEuroIcon size={14} /> Price</div>
 				</div>
 
-				<!-- Example Row -->
 				<div class="mb-2">
 					<h4 class="font-bold text-lg my-2 text-center text-gray-400">Guess 1 - Example Card Name</h4>
 					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-sm items-stretch [&>div]:min-h-[50px]">
-						<!-- Example Card Image -->
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center">
 							<div class="w-full h-full bg-linear-to-br from-gray-700 to-gray-800 rounded-sm flex items-center justify-center">
 								<span class="text-gray-400 text-xs text-center">Card<br/>Image</span>
 							</div>
 						</div>
-						<!-- Example Pokémon Sprite -->
 						<div class="p-1 flex flex-col items-center justify-center text-center bg-red-600 text-white">
 							<CircleXIcon size={28} />
 							<span class="mt-1 text-center block text-sm">Wrong Pokémon</span>
 						</div>
-						<!-- Example attributes -->
 						<div class="p-2 flex items-center justify-center gap-1 text-center bg-green-600 text-white"><CheckIcon size={16} /> Correct Artist</div>
 						<div class="p-2 flex items-center justify-center gap-1 text-center bg-red-600 text-white"><XIcon size={16} /> Wrong Set</div>
 						<div class="p-2 flex items-center justify-center gap-1 text-center bg-green-600 text-white"><CheckIcon size={16} /> Pokémon</div>
@@ -554,7 +533,6 @@
 	{/if}
 </div>
 
-<!-- Rules Modal -->
 <Modal
 	bind:open={showRulesModal}
 	containerClass="max-w-3xl"
@@ -572,7 +550,6 @@
 			until they all turn green.
 		</p>
 
-		<!-- Steps -->
 		<section>
 			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-2"><ClipboardListIcon size={16} /> Three steps</h3>
 			<ol class="grid gap-3 sm:grid-cols-3">
@@ -586,7 +563,6 @@
 			</ol>
 		</section>
 
-		<!-- Attributes -->
 		<section>
 			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-2"><TagIcon size={16} /> The six compared attributes</h3>
 			<div class="grid gap-2 sm:grid-cols-2 md:grid-cols-3">
@@ -602,7 +578,6 @@
 			</div>
 		</section>
 
-		<!-- Feedback legend -->
 		<section>
 			<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-2"><PaletteIcon size={16} /> Reading a row</h3>
 			<div class="grid gap-2 sm:grid-cols-2">
@@ -625,7 +600,6 @@
 			</div>
 		</section>
 
-		<!-- Good to know and strategy -->
 		<div class="grid gap-3 md:grid-cols-2">
 			<section class="rounded-lg border border-gray-700 bg-gray-900 p-3">
 				<h3 class="flex items-center gap-2 font-bold text-gold-400 mb-2"><InfoIcon size={16} /> Good to know</h3>

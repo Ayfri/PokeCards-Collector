@@ -35,7 +35,6 @@
 		}
 	});
 
-	// Update the countUp animation when the end value changes
 	$effect(() => {
 		countUpAnim?.update(end);
 	});

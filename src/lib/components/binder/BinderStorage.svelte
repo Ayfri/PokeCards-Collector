@@ -74,7 +74,6 @@
 			const isCodeA = isCardCode(itemA);
 			const isCodeB = isCardCode(itemB);
 
-			// Group card codes before URLs
 			if (isCodeA && !isCodeB) return -1;
 			if (!isCodeA && isCodeB) return 1;
 
@@ -278,7 +277,6 @@
 </div>
 
 <style>
-	/* Custom scrollbar */
 	.overflow-y-auto::-webkit-scrollbar { width: 6px; }
 	.overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
 	.overflow-y-auto::-webkit-scrollbar-thumb { background-color: #4a4a4a; border-radius: 20px; }

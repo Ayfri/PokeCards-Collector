@@ -10,7 +10,6 @@
 
 	let { title, isOpen = $bindable(), children }: Props = $props();
 
-	// Generate a unique ID for ARIA attributes
 	const panelId = `section-panel-${Math.random().toString(36).substring(2, 9)}`;
 </script>
 

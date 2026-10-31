@@ -190,7 +190,6 @@
 	}
 	
 	.main-price-display:hover {
-		/* Remove transform scale effect */
 		transform: none;
 	}
 

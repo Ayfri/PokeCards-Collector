@@ -26,7 +26,7 @@ export const GET: RequestHandler = async () => {
 			cardCode: card.cardCode,
 			image: card.image,
 			name: card.name,
-			pokemonName: card.name.split(' ')[0], // First word of the card name
+			pokemonName: card.name.split(' ')[0],
 			pokemonNumber: card.pokemonNumber,
 			price,
 		});

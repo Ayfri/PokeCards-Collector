@@ -6,17 +6,13 @@
 	import { untrack } from 'svelte';
 
 	interface Props {
-		/** Alt text for the image. */
 		alt?: string;
 		/** The depicted card: the plate drawn in place of a missing scan shows its details. */
 		card?: FullCard | undefined;
-		/** CSS classes to apply to the image. */
 		class?: string;
-		/** Height of the image, optional if width is specified. */
 		height?: number | undefined;
 		/** The extensionless TCGdex image base, e.g. "https://assets.tcgdex.net/en/swsh/swsh3/136". */
 		imageUrl: string;
-		/** Whether the image is lazy loaded. */
 		lazy?: boolean;
 		/** Caps the candidates at the 245px variant, whatever the layout asks for. */
 		lowRes?: boolean;
@@ -26,11 +22,9 @@
 		priority?: boolean;
 		/** `sizes` value; defaults to the pixel width when one is given. */
 		sizes?: string | undefined;
-		/** Inline style of the image. */
 		style?: string | undefined;
 		/** Comma-separated energy types, e.g. `"Fire, Water"`: tints the plate when the card has no art and no `card` is given. */
 		types?: string | undefined;
-		/** Width of the image, optional if height is specified. */
 		width?: number | undefined;
 	}
 

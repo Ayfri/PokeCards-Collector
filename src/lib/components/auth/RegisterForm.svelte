@@ -250,7 +250,6 @@
 				{#if showPassword}<EyeOffIcon size={18} />{:else}<EyeIcon size={18} />{/if}
 			</button>
 		</div>
-		<!-- Password strength bar -->
 		<div class="mt-2 h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-sm">
 			<div class="h-2 rounded-sm transition-all duration-300 {passwordStrength === 1 ? 'bg-red-500' : passwordStrength === 2 ? 'bg-yellow-400' : passwordStrength === 3 ? 'bg-green-500' : 'bg-gray-200'}"
 				style="width: {passwordStrength * 33.33}%;">
@@ -316,7 +315,4 @@
 </form>
 
 <style>
-	/* @keyframes spin Removed as it's no longer used */
-
-	/* .loader-spin Removed as it's no longer used */
 </style> 

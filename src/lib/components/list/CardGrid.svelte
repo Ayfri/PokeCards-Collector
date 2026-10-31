@@ -65,7 +65,6 @@
 	function setFilterName(value: string) {
 		filters.name = value;
 
-		// Update URL with name parameter when search is used
 		const url = new URL(page.url);
 		if (value) {
 			url.searchParams.set('name', value);
@@ -73,7 +72,6 @@
 			url.searchParams.delete('name');
 		}
 
-		// Save current active element to restore focus later
 		const activeElement = document.activeElement as HTMLElement;
 		const activeElementId = activeElement?.id;
 
@@ -132,7 +130,6 @@
 <svelte:body style:overflow={showFilters ? "hidden" : "auto"} />
 
 {#if showFilters}
-	<!-- Overlay -->
 	<div
 		aria-hidden={!showFilters}
 		class="filter-overlay fixed inset-0 z-50 bg-black/70 transition-all duration-300"
@@ -140,7 +137,6 @@
 		onclick={() => (showFilters = false)}
 		onkeydown={handleKeydown}
 	></div>
-	<!-- Drawer -->
 	<div
 		class="fixed top-0 h-screen w-full md:w-112.5 bg-gray-800 z-60 shadow-lg flex flex-col {showFilters
 			? 'right-0'
@@ -167,15 +163,12 @@
 {/if}
 
 <div class="flex min-h-0 flex-1 flex-col">
-	<!-- Header Row -->
 	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-4 lg:px-10 gap-1 md:gap-0 mb-0">
-		<!-- Left Side (Title conditional based on prop, Counts always present) -->
 		<div class="flex flex-col md:flex-row items-center md:ml-14">
 			{#if pageTitle}
 				<PageTitle title={pageTitle} />
 			{/if}
 
-			<!-- Counts (on same line for desktop, below for mobile) -->
 			<span class="text-gold-400 text-xs md:text-sm mt-1 md:mt-0 md:ml-3">
 				({uniquePokemonCount} Pokémon, {visibleCardsCount} cards)
 			</span>
@@ -191,14 +184,11 @@
 			{/if}
 		</div>
 
-		<!-- Right Side (Controls) -->
 		<div class="flex items-end gap-2">
-			<!-- Grid Size Slider -->
 			<div class="mr-3 ml-1 hidden md:block">
 				<SizeSlider />
 			</div>
 
-			<!-- Name Search -->
 			<div class="w-48 hidden md:block">
 				<TextInput
 					id="name"
@@ -208,7 +198,6 @@
 					debounceFunction={setFilterName}
 				/>
 			</div>
-			<!-- Filters Button (Always Visible) -->
 			<div class="relative">
 				<Button
 					onClick={() => (showFilters = true)}
@@ -228,7 +217,6 @@
 				{/if}
 			</div>
 
-			<!-- Reset Button (Should be always visible) -->
 			<Button
 				onClick={localResetFilters}
 				disabled={filters.count === 0}

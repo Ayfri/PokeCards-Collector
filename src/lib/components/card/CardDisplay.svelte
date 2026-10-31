@@ -19,7 +19,6 @@
 
 	
 	interface Props {
-		// --- Props ---
 		allCards: FullCard[];
 		pokemons: Pokemon[];
 		prices: Record<string, PriceData>;
@@ -43,11 +42,9 @@
 		? resolve('/[catalogue=catalogue]-card/[cardCode]', { catalogue: catalogue.routeCode, cardCode })
 		: resolve('/card/[cardCode]', { cardCode });
 
-	// --- Internal State ---
 	let currentCard = $state<FullCard | undefined>(undefined);
 	let isInitialRenderComplete = $state(false);
 
-	// --- Reactive Computations ---
 	const cardPrices = $derived(currentCard ? prices[currentCard.cardCode] : undefined);
 	const currentSet = $derived(currentCard ? sets.find(set => set.setId === currentCard?.setId) : undefined);
 	const currentType = $derived(currentCard?.types?.toLowerCase().split(',')[0] || 'unknown');
@@ -64,7 +61,6 @@
 		? [...new Map(allCards.filter(c => c.pokemonNumber === currentPokemonId).map(c => [c.cardCode, c])).values()]
 		: []);
 
-	// --- Functions ---
 	function handlePokemonImageError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;
 		const pokemonId = img.dataset.pokemonId;
@@ -101,7 +97,6 @@
 		}
 	}
 
-	// --- Lifecycle ---
 	onMount(() => {
 		currentCard = pokemonCards[0];
 		isInitialRenderComplete = true;
@@ -124,14 +119,12 @@
 </script>
 
 <div class="flex flex-col gap-1 lg:gap-4 items-center content-center">
-	<!-- Evolution Chain Component (Only for Pokemon) -->
 	{#if currentPokemon && isInitialRenderComplete && currentCard}
 		<div in:fly={{ y: -30, duration: 400, delay: 100 }}>
 			<EvolutionChain card={currentCard} {pokemons} {allCards} pokemonCards={currentPokemonCards} {prices} />
 		</div>
 	{/if}
 
-	<!-- Pokédex number indicator (Only for Pokemon) -->
 	{#if currentPokemon && currentCard?.pokemonNumber}
 		<div class="pokedex-number-display relative text-center" in:fade={{ duration: 300, delay: 200 }}>
 			<div class="pokedex-number text-gold-400 bg-black/60 font-bold px-3 py-1 rounded-md inline-block z-10">
@@ -140,12 +133,10 @@
 		</div>
 	{/if}
 
-	<!-- Main card display container -->
 	<div class="card-display-area w-full px-4 md:px-12 max-w-8xl mx-auto perspective-container flex flex-col items-center">
 
 		<!-- Center Card, with no intro of its own: the page transition flies the opened card into it. -->
 		<div class="center-card-wrapper relative shrink-0 order-1 lg:order-2 perspective-container">
-			<!-- Conditional Aura for Pokemon Types -->
 			{#if currentPokemon && !NO_IMAGES}
 				<div class="card-aura {currentType}" id="card-aura"></div>
 			{/if}
@@ -157,9 +148,7 @@
 			/>
 		</div>
 
-		<!-- Mobile Navigation Wrapper -->
 		<div class="mobile-nav-wrapper w-full flex justify-between items-center mt-4 lg:hidden order-2">
-			<!-- Previous Pokemon (Mobile) -->
 			{#if previousPokemon && previousPokemonCard}
 				<button
 					onclick={() => handlePokemonNavigation(previousPokemonCard.cardCode)}
@@ -187,7 +176,6 @@
 				<div class="w-16"></div>
 			{/if}
 
-			<!-- Next Pokemon (Mobile) -->
 			{#if nextPokemon && nextPokemonCard}
 				<button
 					onclick={() => handlePokemonNavigation(nextPokemonCard.cardCode)}
@@ -216,8 +204,6 @@
 			{/if}
 		</div>
 
-		<!-- Desktop Navigation -->
-		<!-- Previous Pokemon (Desktop) -->
 		{#if previousPokemon && previousPokemonCard}
 			<button
 				onclick={() => handlePokemonNavigation(previousPokemonCard.cardCode)}
@@ -245,7 +231,6 @@
 			<div class="hidden lg:block w-48 order-1"></div>
 		{/if}
 
-		<!-- Next Pokemon (Desktop) -->
 		{#if nextPokemon && nextPokemonCard}
 			<button
 				onclick={() => handlePokemonNavigation(nextPokemonCard.cardCode)}
@@ -274,7 +259,6 @@
 		{/if}
 	</div>
 
-	<!-- Card Information Component -->
 	{#if currentCard && currentSet}
 		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 500 }}>
 			<CardInfo card={currentCard} set={currentSet} {cardPrices} pokemon={currentPokemon} />
@@ -283,7 +267,6 @@
 
 	<div class="separator w-full max-w-200 my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent" in:fade={{ duration: 600, delay: 600 }}></div>
 
-	<!-- Other Related Cards (Pokemon or Same Name Cards) -->
 	{#if currentPokemonCards.length > 1}
 		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 700 }}>
 			<RelatedCards cards={currentPokemonCards} {pokemons} {sets} {prices} pokemon={currentPokemon} onCardSelect={handleCardSelect} {lowRes} />
@@ -291,7 +274,6 @@
 	{/if}
 </div>
 
-<!-- Background Filter (Conditional on Pokemon Type?) -->
 {#if currentPokemon && !NO_IMAGES}
 	<div class="filter {currentType}" id="filter" transition:fade></div>
 {/if}
@@ -301,7 +283,6 @@
 		perspective: 1000px;
 	}
 
-	/* Card Aura Styles */
 	.card-aura {
 		aspect-ratio: 1 / 1;
 		background-color: var(--type-color);
@@ -318,7 +299,6 @@
 		z-index: -20;
 	}
 
-	/* Fixed background filter that covers the entire page */
 	.filter {
 		background-image: url(/particles.png);
 		/* 234 KB instead of 608 KB for the PNG, which only browsers without AVIF still fetch. */
@@ -336,7 +316,6 @@
 		z-index: -20;
 	}
 
-	/* Navigation Pokemon Styles */
 	.prev-pokemon-nav, .next-pokemon-nav {
 		cursor: pointer;
 		transition: transform 0.3s ease, opacity 0.3s ease;
@@ -354,7 +333,7 @@
 
 	@media (min-width: 1024px) {
 		.card-display-area {
-			flex-direction: row; /* Row layout for desktop */
+			flex-direction: row;
 			justify-content: space-between;
 			align-items: center;
 		}

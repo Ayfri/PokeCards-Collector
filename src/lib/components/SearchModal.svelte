@@ -43,7 +43,6 @@
 	});
 </script>
 
-<!-- Mobile search icon (only on xs screens) -->
 <button
 	class="text-gray-400 hover:text-white rounded-full sm:hidden"
 	onclick={event => { event.stopPropagation(); toggleModal(); }}
@@ -54,7 +53,6 @@
 	<Search />
 </button>
 
-<!-- Mobile search modal/overlay -->
 {#if isOpen}
 	<div
 		class="fixed inset-0 bg-black/80 z-110 flex-col pt-4"

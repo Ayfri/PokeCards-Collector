@@ -25,7 +25,7 @@
 	function handleInput(event: Event) {
 		const target = event.target as HTMLInputElement;
 		const numValue = target.value === '' ? undefined : parseFloat(target.value);
-		if (!isNaN(numValue ?? NaN)) { // Check if parsing resulted in a valid number or undefined
+		if (!isNaN(numValue ?? NaN)) {
 			debounceFunction(numValue);
 		}
 	}

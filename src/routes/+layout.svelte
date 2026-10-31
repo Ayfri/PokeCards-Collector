@@ -67,7 +67,6 @@
 	<link href="https://cdn.jsdelivr.net" rel="preconnect" crossorigin="anonymous"/>
 	<link href="https://www.googletagmanager.com" rel="dns-prefetch"/>
 
-	<!-- Google tag (gtag.js) -->
 	<script async src="https://www.googletagmanager.com/gtag/js?id=G-PS0GZ8MEB8"></script>
 	<script>
 		window.dataLayer = window.dataLayer || [];
@@ -80,13 +79,11 @@
 		gtag('config', 'G-PS0GZ8MEB8');
 	</script>
 
-	<!-- Cloudflare Web Analytics -->
 	<script
 		data-cf-beacon={`{"token": "9409bd4087bd4c07bd6e98a85b1a21c9"}`}
 		defer
 		src="https://static.cloudflareinsights.com/beacon.min.js"
 	></script>
-	<!-- End Cloudflare Web Analytics -->
 </svelte:head>
 <Seo
 	breadcrumbs={page.data.breadcrumbs}

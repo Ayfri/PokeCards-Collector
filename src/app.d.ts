@@ -1,11 +1,8 @@
-// See https://kit.svelte.dev/docs/types#app
-// for information about these interfaces
 import type { SupabaseClient, User, Session } from '@supabase/supabase-js';
 import type { Breadcrumb, Image, SeoType, UserProfile, Set } from '$lib/types';
 
 declare global {
 	namespace App {
-		// interface Error {}
 		interface Locals {
 			supabase: SupabaseClient;
 			user: User | null;
@@ -28,8 +25,6 @@ declare global {
 			type?: SeoType;
 			user: User | null;
 		}
-		// interface PageState {}
-		// interface Platform {}
 	}
 
 	interface Window {

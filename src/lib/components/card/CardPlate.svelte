@@ -6,7 +6,6 @@
 	import ImageOff from '@lucide/svelte/icons/image-off';
 
 	interface Props {
-		/** Accessible name of the plate. */
 		alt: string;
 		/** The card the plate stands for: fills the name, HP, types, set, number and rarity when given. */
 		card?: FullCard | undefined;

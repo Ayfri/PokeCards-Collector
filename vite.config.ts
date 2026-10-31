@@ -12,13 +12,11 @@ export default defineConfig(({mode}) => ({
 	css: {
 		devSourcemap: mode === 'development',
 	},
-	// Add Node.js polyfills for Cloudflare compatibility
 	server: {
 		fs: {
 			allow: ['.'],
 		},
 	},
-	// Provide empty shims for Node.js built-in modules
 	define: {
 		'process.env': {},
 	},

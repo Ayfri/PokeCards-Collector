@@ -4,11 +4,9 @@ import { wishlist } from '$stores/wishlist.svelte';
 import { loading } from '$stores/loading.svelte';
 import { selectAll } from './select-all';
 
-// Add a card to user's wishlist
 export async function addCardToWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		loading.mutation = true;
-		// Check if card already exists in wishlist
 		const { data: existingCard } = await client
 			.from('wishlists')
 			.select('*')
@@ -20,7 +18,6 @@ export async function addCardToWishlist(username: string, cardCode: string, clie
 			wishlist.add(cardCode);
 			return { data: existingCard, error: null };
 		} else {
-			// Insert new card if it doesn't exist
 			const { data, error } = await client
 				.from('wishlists')
 				.insert({
@@ -41,7 +38,6 @@ export async function addCardToWishlist(username: string, cardCode: string, clie
 	}
 }
 
-// Remove a card from user's wishlist
 export async function removeCardFromWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		loading.mutation = true;
