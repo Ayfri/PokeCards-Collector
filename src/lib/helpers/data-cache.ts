@@ -35,11 +35,25 @@ function edgeCache(): Cache | null {
 	return (caches as CacheStorage & { default: Cache }).default;
 }
 
+/** Thrown by a fetch whose rows are usable but known incomplete (a table caught mid-rewrite): they are served once and never stored. */
+export class PartialRows<Row> extends Error {
+	constructor(readonly rows: Row) {
+		super('Partial table read');
+	}
+}
+
 async function resolve<Row, T>(key: string, ttl: number, fetchRows: () => Promise<Row>, mapRows: (rows: Row) => T): Promise<T> {
 	const cache = edgeCache();
 	const request = new Request(`${CACHE_ORIGIN}/${key}`);
 	const stored = await cache?.match(request);
-	const rows = stored ? (await stored.json() as Row) : await fetchRows();
+
+	let rows: Row;
+	try {
+		rows = stored ? (await stored.json() as Row) : await fetchRows();
+	} catch (error) {
+		if (error instanceof PartialRows) return mapRows(error.rows as Row);
+		throw error;
+	}
 
 	// A colo hit can already be most of the way through its TTL, so the memo inherits what is left of it rather than restarting the clock.
 	const remaining = stored ? Math.max(ttl - Number(stored.headers.get('age') ?? 0), 60) : ttl;

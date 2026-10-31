@@ -12,8 +12,8 @@ export const load: PageServerLoad = async ({ params, parent, url }) => {
 	const { adjective, gridRoute } = catalogue;
 
 	// `parent()` only supplies the fallback share image, so the sets are read alongside it rather than after it.
-	const [{ image: parentImage }, sets] = await Promise.all([parent(), getSets(catalogue.language)]);
-	sets.sort((a, b) => a.name.localeCompare(b.name));
+	const [{ image: parentImage }, memoizedSets] = await Promise.all([parent(), getSets(catalogue.language)]);
+	const sets = memoizedSets.toSorted((a, b) => a.name.localeCompare(b.name));
 
 	const setParam = url.searchParams.get('set');
 	let ogImage = null;

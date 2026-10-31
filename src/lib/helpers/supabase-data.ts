@@ -1,6 +1,6 @@
 import type { FullCard, Pokemon, PriceData, Set } from "$lib/types";
 import { supabase } from '$lib/supabase';
-import { cachedTable, STATIC_TTL, TABLE_TTL } from '$helpers/data-cache';
+import { cachedTable, PartialRows, STATIC_TTL, TABLE_TTL } from '$helpers/data-cache';
 import { CATALOGUES, type CardTable, type Language, type PriceTable, type SetTable } from '$helpers/catalogues';
 import type { CatalogueData } from '$helpers/owned-cards';
 
@@ -196,6 +196,10 @@ async function readWithRetry<T extends QueryResult>(label: string, run: () => Pr
  * `keyColumn` must hold a unique value: the pages are separate queries, and Postgres only returns them in a
  * repeatable order when the sort is total. Paging `cards` on `name` alone dropped ~1700 rows and duplicated
  * others, because only 4618 of its 23546 rows have a name no other row shares.
+ *
+ * A paged row count that differs from the exact count means the table moved between the queries (the daily sync
+ * rewrites it), so the whole read is retried. Past the last attempt the short result is thrown as `PartialRows`:
+ * `cachedTable` serves it once without storing it, instead of pinning it for the TTL.
  */
 async function getAllData<T>(
 	tableName: CardTable | PriceTable | SetTable | 'pokemons' | 'types',
@@ -203,6 +207,23 @@ async function getAllData<T>(
 	selectQuery: string = '*',
 	orderBy?: { column: string; ascending: boolean }
 ): Promise<T[]> {
+	for (let attempt = 1; ; attempt++) {
+		const { count, rows } = await pageTable<T>(tableName, keyColumn, selectQuery, orderBy);
+		if (rows.length === count) return rows;
+
+		console.warn(`${tableName}: paged ${rows.length} rows for a count of ${count} (attempt ${attempt})`);
+		if (attempt === READ_ATTEMPTS) throw new PartialRows(rows);
+
+		await new Promise(resolve => setTimeout(resolve, 500 * attempt));
+	}
+}
+
+async function pageTable<T>(
+	tableName: CardTable | PriceTable | SetTable | 'pokemons' | 'types',
+	keyColumn: string,
+	selectQuery: string,
+	orderBy?: { column: string; ascending: boolean }
+): Promise<{ count: number; rows: T[] }> {
 	const batchSize = 5000;
 	const allData: T[] = [];
 
@@ -235,11 +256,7 @@ async function getAllData<T>(
 		}
 	}
 
-	if (allData.length !== totalCount) {
-		console.warn(`${tableName}: paged ${allData.length} rows for a count of ${totalCount}`);
-	}
-
-	return allData;
+	return { count: totalCount, rows: allData };
 }
 
 export async function getPokemons(): Promise<Pokemon[]> {
