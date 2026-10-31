@@ -1,6 +1,6 @@
 import { error, json } from '@sveltejs/kit';
-import { buildCardIndex, buildSetKeys, MAX_IMPORT_ROWS, resolveRows, type ImportRow } from '$helpers/collection-import';
-import { getCards, getSets } from '$helpers/supabase-data';
+import { buildCardIndex, buildSetKeys, CATALOGUE_LANGUAGES, MAX_IMPORT_ROWS, resolveRows, type Catalogue, type CatalogueLanguage, type ImportRow } from '$helpers/collection-import';
+import { getCards, getJapaneseCards, getJapaneseSets, getSets } from '$helpers/supabase-data';
 import type { Card, Set } from '$lib/types';
 import type { RequestHandler } from './$types';
 
@@ -17,12 +17,31 @@ interface ImportRequest {
 	setOverride?: string;
 }
 
-/** Rebuilt only when the weekly scrape hands back a different card array, which is once an hour at worst. */
-let cached: { cards: Card[]; index: Map<string, string>; setKeys: Map<string, string> } | null = null;
+interface CatalogueSource {
+	cards: () => Promise<Card[]>;
+	sets: () => Promise<Set[]>;
+}
 
-function lookups(cards: Card[], sets: Set[]) {
-	if (cached?.cards !== cards) cached = { cards, index: buildCardIndex(cards), setKeys: buildSetKeys(sets, cards) };
-	return cached;
+const ENGLISH: CatalogueSource = { cards: getCards, sets: getSets };
+
+const SOURCES: Record<CatalogueLanguage, CatalogueSource> = {
+	en: ENGLISH,
+	/** Temporary: French lines resolve against the English print until `fr_cards` exists, then this reads it. */
+	fr: ENGLISH,
+	ja: { cards: getJapaneseCards, sets: getJapaneseSets },
+};
+
+/** Rebuilt only when the daily scrape hands back a different card array, which is once an hour at worst. */
+const cached = new Map<CatalogueSource, { cards: Card[]; catalogue: Catalogue }>();
+
+async function lookups(source: CatalogueSource): Promise<Catalogue> {
+	const [cards, sets] = await Promise.all([source.cards(), source.sets()]);
+	let entry = cached.get(source);
+	if (entry?.cards !== cards) {
+		entry = { cards, catalogue: { index: buildCardIndex(cards), setKeys: buildSetKeys(sets, cards) } };
+		cached.set(source, entry);
+	}
+	return entry.catalogue;
 }
 
 export const POST: RequestHandler = async ({ locals, request }) => {
@@ -31,13 +50,12 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
 	const body = await request.json() as ImportRequest;
 	const kind = body.kind === 'wishlist' ? 'wishlist' : 'collection';
-	const rows = body.rows ?? [];
+	const rows = (body.rows ?? []).map(row => ({ ...row, language: CATALOGUE_LANGUAGES.includes(row.language) ? row.language : 'en' }));
 	if (rows.length === 0) error(400, 'The file holds no importable row.');
 	if (rows.length > MAX_IMPORT_ROWS) error(413, `The file holds ${rows.length} rows, over the ${MAX_IMPORT_ROWS} limit.`);
 
-	const [cards, sets] = await Promise.all([getCards(), getSets()]);
-	const { index, setKeys } = lookups(cards, sets);
-	const { matched, unmatched } = resolveRows(rows, index, setKeys, body.setOverride);
+	const [en, fr, ja] = await Promise.all([lookups(SOURCES.en), lookups(SOURCES.fr), lookups(SOURCES.ja)]);
+	const { matched, unmatched } = resolveRows(rows, { en, fr, ja }, body.setOverride);
 
 	// The rows already owned decide what is left to write, and cap a card that the file would push past 99 copies.
 	const { data: existing, error: readError } = await locals.supabase
@@ -65,8 +83,12 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	const bySet = new Map<string, number>();
 	for (const row of unmatched) bySet.set(row.set || row.number, (bySet.get(row.set || row.number) ?? 0) + 1);
 
+	const matchedByLanguage: Record<CatalogueLanguage, number> = { en: 0, fr: 0, ja: 0 };
+	for (const { language } of matched) matchedByLanguage[language]++;
+
 	const summary = {
 		added: inserts.length,
+		matchedByLanguage,
 		matchedCards: matched.length,
 		skipped,
 		unmatchedBySet: [...bySet].sort(([, a], [, b]) => b - a).slice(0, 25).map(([set, count]) => ({ count, set })),

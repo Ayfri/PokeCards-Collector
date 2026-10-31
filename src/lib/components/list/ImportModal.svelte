@@ -4,7 +4,7 @@
 	import Modal from '@components/ui/Modal.svelte';
 	import SearchXIcon from '@lucide/svelte/icons/search-x';
 	import UploadIcon from '@lucide/svelte/icons/upload';
-	import { detectColumns, MAX_IMPORT_ROWS, toImportRows } from '$helpers/collection-import';
+	import { detectColumns, MAX_IMPORT_ROWS, toImportRows, type CatalogueLanguage } from '$helpers/collection-import';
 	import { invalidateAll } from '$app/navigation';
 	import { parseDelimited } from '$helpers/csv';
 	import type { Set as CardSet } from '$lib/types';
@@ -13,6 +13,7 @@
 	interface Summary {
 		added: number;
 		failure?: string;
+		matchedByLanguage: Record<CatalogueLanguage, number>;
 		matchedCards: number;
 		skipped: number;
 		unmatchedBySet: { count: number; set: string }[];
@@ -38,6 +39,14 @@
 	let summary = $state<Summary | null>(null);
 
 	const sortedSets = $derived([...sets].sort((a, b) => a.name.localeCompare(b.name)));
+
+	const LANGUAGE_NAMES: Record<CatalogueLanguage, string> = { en: 'English', fr: 'French', ja: 'Japanese' };
+
+	/** Only shown when the file mixes prints, since a single language is already the whole count. */
+	const languageBreakdown = $derived.by(() => {
+		const matched = Object.entries(summary?.matchedByLanguage ?? {}).filter(([, count]) => count > 0);
+		return matched.length > 1 ? matched.map(([language, count]) => `${count} ${LANGUAGE_NAMES[language as CatalogueLanguage]}`).join(', ') : '';
+	});
 
 	function reset() {
 		fault = '';
@@ -107,7 +116,8 @@
 	<div class="flex flex-col gap-4 text-sm text-gray-200">
 		<p class="text-gray-400">
 			Takes the CSV a Pokécardex, Cardmarket or TCGCollector export gives you, in any of the six languages they print set names in.
-			Columns and separator are read from the file. Cards you already own are topped up, never duplicated past 99 copies.
+			Columns and separator are read from the file. A language column (English, French or Japanese) picks the print, and any other language reads as the English one.
+			Cards you already own are topped up, never duplicated past 99 copies.
 		</p>
 
 		<label class="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-gray-600 px-4 py-6 text-gold-400 hover:border-gold-400">
@@ -147,7 +157,7 @@
 							{/if}
 						</p>
 						<p class="text-xs text-gray-400">
-							{summary.matchedCards} card{summary.matchedCards === 1 ? '' : 's'} recognised{#if summary.skipped > 0}, {summary.skipped} cop{summary.skipped === 1 ? 'y' : 'ies'} you already had{/if}
+							{summary.matchedCards} card{summary.matchedCards === 1 ? '' : 's'} recognised{#if languageBreakdown} ({languageBreakdown}){/if}{#if summary.skipped > 0}, {summary.skipped} cop{summary.skipped === 1 ? 'y' : 'ies'} you already had{/if}
 						</p>
 					</div>
 				</div>

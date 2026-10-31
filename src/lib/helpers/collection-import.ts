@@ -1,8 +1,15 @@
 import setNames from '$scrapers/tcgdex/set-names.json' with { type: 'json' };
 import type { Card, Set } from '$lib/types';
 
-/** One line of an imported file, already reduced to the three things a card can be found by. */
+/** The catalogues a line can resolve against: each prints its own cards and its own card codes. */
+export type CatalogueLanguage = 'en' | 'fr' | 'ja';
+
+export const CATALOGUE_LANGUAGES: readonly CatalogueLanguage[] = ['en', 'fr', 'ja'];
+
+/** One line of an imported file, already reduced to the things a card can be found by. */
 export interface ImportRow {
+	/** The catalogue the print belongs to. */
+	language: CatalogueLanguage;
 	/** Only used to report an unmatched line back to the user, never to match on: card names are localised. */
 	name: string;
 	/** The printed number, numerator only: `004/165` and `TG12/TG30` arrive here as `004` and `TG12`. */
@@ -16,6 +23,7 @@ export interface ImportRow {
 export interface ColumnMapping {
 	/** A `card_code` column, which is what this site's own export writes, and matches with no set lookup at all. */
 	code: number;
+	language: number;
 	name: number;
 	number: number;
 	/** Every counted column: Pokécardex splits one card over `Nb Normal`, `Nb Ed1`, `Nb Reverse` and `Nb Spéciale`. */
@@ -45,6 +53,7 @@ const tokenKey = (value: string) => {
 
 const HEADER_ALIASES = {
 	code: ['cardcode', 'code', 'uniquecode'],
+	language: ['langue', 'language', 'lang', 'langage', 'idlanguage'],
 	name: ['nom', 'name', 'carte', 'card', 'cardname', 'nomcarte', 'nomdelacarte'],
 	number: ['numero', 'num', 'no', 'n', 'number', 'cardnumber', 'numerocarte', 'numcarte', 'localid', 'numerodecarte'],
 	set: ['extension', 'set', 'serie', 'series', 'setname', 'bloc', 'edition', 'nomextension', 'setid', 'collection'],
@@ -64,6 +73,7 @@ export function detectColumns(header: string[]): ColumnMapping {
 
 	return {
 		code: find(HEADER_ALIASES.code),
+		language: find(HEADER_ALIASES.language),
 		name: find(HEADER_ALIASES.name),
 		number: find(HEADER_ALIASES.number),
 		quantity: headers.map((cell, index) => (isQuantityHeader(cell) ? index : -1)).filter(index => index >= 0),
@@ -73,6 +83,22 @@ export function detectColumns(header: string[]): ColumnMapping {
 
 /** `004/165` -> `004`, `TG12/TG30` -> `tg12`, `SWSH039` -> `swsh039`. The denominator is the set size, never part of the identity. */
 export const normalizeNumber = (value: string) => normalize(value.split('/')[0] ?? '');
+
+/** `Langue` / `Language` values, normalized: Pokécardex writes `FR`, Cardmarket `French` or its numeric id. */
+const FRENCH_LANGUAGES = new Set(['fr', 'french', 'francais', 'francaise', '2']);
+const JAPANESE_LANGUAGES = new Set(['ja', 'jp', 'jpn', 'japanese', 'japonais', 'japon', '7']);
+const FRENCH_SET_NAMES = new Set(Object.keys(setNames.fr).map(normalize));
+
+/**
+ * The catalogue a line belongs to. German, Italian, Spanish and every other print are read as the English one, the
+ * same international cards. A file with no language column is read from the language its set is named in.
+ */
+function languageOf(value: string, set: string): CatalogueLanguage {
+	const language = normalize(value);
+	if (!language) return setNameForms(set).some(form => FRENCH_SET_NAMES.has(normalize(form))) ? 'fr' : 'en';
+	if (FRENCH_LANGUAGES.has(language)) return 'fr';
+	return JAPANESE_LANGUAGES.has(language) ? 'ja' : 'en';
+}
 
 /**
  * Turns the data lines into import rows. A file with no counted column is one copy per line; a file with several
@@ -84,6 +110,7 @@ export function toImportRows(rows: string[][], columns: ColumnMapping): ImportRo
 	return rows.map(row => {
 		const counted = columns.quantity.map(index => Number.parseInt(cell(row, index), 10)).filter(count => Number.isFinite(count) && count > 0);
 		return {
+			language: languageOf(cell(row, columns.language), cell(row, columns.set)),
 			name: cell(row, columns.name),
 			number: cell(row, columns.code) || cell(row, columns.number),
 			quantity: columns.quantity.length === 0 ? 1 : counted.reduce((total, count) => total + count, 0),
@@ -195,6 +222,8 @@ function setNameForms(value: string): string[] {
 
 export interface ImportMatch {
 	cardCode: string;
+	/** The catalogue of the first line that matched this card. */
+	language: CatalogueLanguage;
 	quantity: number;
 }
 
@@ -203,30 +232,35 @@ export interface ImportResolution {
 	unmatched: ImportRow[];
 }
 
+/** What a catalogue is searched with: its card index and the set aliases its cards are filed under. */
+export interface Catalogue {
+	index: Map<string, string>;
+	setKeys: Map<string, string>;
+}
+
 /**
- * Resolves rows against the catalogue. `setOverride` is the set the dialog pins when the file names none, which is
- * the normal case for a Pokécardex export: it exports one series at a time and only writes the number and the name.
+ * Resolves each row against the catalogue of its own language. `setOverride` is the set the dialog pins when the
+ * file names none, which is the normal case for a Pokécardex export: it exports one series at a time and only
+ * writes the number and the name.
  */
-export function resolveRows(rows: ImportRow[], index: Map<string, string>, setKeys: Map<string, string>, setOverride?: string): ImportResolution {
-	const matched = new Map<string, number>();
+export function resolveRows(rows: ImportRow[], catalogues: Record<CatalogueLanguage, Catalogue>, setOverride?: string): ImportResolution {
+	const matched = new Map<string, ImportMatch>();
 	const unmatched: ImportRow[] = [];
-	const pinned = setOverride ? setKeys.get(normalize(setOverride)) : undefined;
 
 	for (const row of rows) {
+		const { index, setKeys } = catalogues[row.language];
 		// A full card code needs no set at all, which is what makes this site's own export round-trip.
 		const direct = row.number.includes('_') ? index.get(`|${row.number.toLowerCase()}`) : undefined;
-		const setKey = row.set ? setNameForms(row.set).flatMap(form => [setKeys.get(normalize(form)), setKeys.get(tokenKey(form))]).find(Boolean) : pinned;
+		const setKey = row.set ? setNameForms(row.set).flatMap(form => [setKeys.get(normalize(form)), setKeys.get(tokenKey(form))]).find(Boolean) : setOverride && setKeys.get(normalize(setOverride));
 		const cardCode = direct ?? (setKey ? numberForms(normalizeNumber(row.number)).map(number => index.get(`${setKey}|${number}`)).find(Boolean) : undefined);
 
 		if (!cardCode) {
 			unmatched.push(row);
 			continue;
 		}
-		matched.set(cardCode, (matched.get(cardCode) ?? 0) + row.quantity);
+		const previous = matched.get(cardCode);
+		matched.set(cardCode, { cardCode, language: previous?.language ?? row.language, quantity: (previous?.quantity ?? 0) + row.quantity });
 	}
 
-	return {
-		matched: [...matched].map(([cardCode, quantity]) => ({ cardCode, quantity })),
-		unmatched,
-	};
+	return { matched: [...matched.values()], unmatched };
 }
