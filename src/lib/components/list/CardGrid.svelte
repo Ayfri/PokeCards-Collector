@@ -59,6 +59,7 @@
 
 	// A link into the grid names the filters it wants, so the URL wins over whatever the visitor last picked.
 	onMount(() => {
+		filters.clearUnknown(sets, artists);
 		filters.applyFromUrl(page.url, sets);
 		searchName = filters.name;
 	});

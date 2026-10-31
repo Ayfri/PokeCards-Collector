@@ -114,6 +114,12 @@ class CardFilters {
 		Object.assign(this, DEFAULTS);
 	}
 
+	/** One persisted record serves every catalogue, and a set or artist picked on one matches nothing on another (French set names differ). */
+	clearUnknown(sets: CardSet[], artists: string[]) {
+		if (this.set !== 'all' && !sets.some(candidate => candidate.name.toLowerCase() === this.set)) this.set = 'all';
+		if (this.artist !== 'all' && !artists.some(candidate => candidate.toLowerCase() === this.artist)) this.artist = 'all';
+	}
+
 	/**
 	 * Seeds the filters from `?set=…&artist=…` and friends. A single recognised parameter resets every other filter first,
 	 * so a link lands on exactly what it names rather than on top of whatever the visitor last picked. The sort is a
