@@ -1,63 +1,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import type { FullCard, PriceData } from '$lib/types';
 import { cardPrice } from '$helpers/card-utils';
+import { pickCardOfTheDay } from '$helpers/card-dle';
 import { getCards, getPrices } from '$helpers/supabase-data';
-
-interface CardOfTheDay extends FullCard {
-	price: number;
-}
-
-let allCards: FullCard[] | null = null;
-let prices: Record<string, PriceData> | null = null;
-let cardOfTheDay: CardOfTheDay | null = null;
-let lastLoadDate = '';
-
-/** Picks the card of the day; the date is the only seed, so every player gets the same one. */
-function selectDailyCard(cards: FullCard[], priceData: Record<string, PriceData>): CardOfTheDay | null {
-	// Cheap cards make for unguessable rounds, so they are excluded.
-	const eligibleCards: CardOfTheDay[] = [];
-
-	for (const card of cards) {
-		const price = cardPrice(priceData[card.cardCode]);
-		if (price && price >= 3) eligibleCards.push({ ...card, price });
-	}
-
-	if (eligibleCards.length === 0) return null;
-
-	const today = new Date();
-	const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-
-	// Sorting on cardCode pins the order, otherwise the same seed picks a different card between runs.
-	eligibleCards.sort((a, b) => a.cardCode.localeCompare(b.cardCode));
-
-	const index = seed % eligibleCards.length;
-	return eligibleCards[index];
-}
-
-async function loadDataIfNeeded(): Promise<boolean> {
-	const today = new Date().toDateString();
-
-	// Reload once per day, the cached tables are otherwise reused across requests.
-	if (lastLoadDate !== today || !allCards || !prices) {
-		try {
-			[allCards, prices] = await Promise.all([getCards(), getPrices()]);
-			cardOfTheDay = selectDailyCard(allCards, prices);
-			lastLoadDate = today;
-			return true;
-		} catch (error) {
-			console.error('❌ [CARD.DLE API] Erreur lors du chargement des données:', error);
-			return false;
-		}
-	}
-	return true;
-}
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		if (!await loadDataIfNeeded()) {
-			return json({ error: 'Impossible de charger les données du jeu' }, { status: 500 });
-		}
+		const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
+		const cardOfTheDay = pickCardOfTheDay(new Date().toISOString().slice(0, 10), allCards, prices);
 
 		if (!cardOfTheDay) {
 			return json({ error: 'Impossible de déterminer la carte du jour' }, { status: 500 });
@@ -70,8 +20,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json({ error: 'Aucune carte sélectionnée' }, { status: 400 });
 		}
 
-		const guessedCard = allCards!.find(card => card.cardCode === guessedCardCode);
-		const guessedPrice = cardPrice(prices![guessedCardCode]);
+		const guessedCard = allCards.find(card => card.cardCode === guessedCardCode);
+		const guessedPrice = cardPrice(prices[guessedCardCode]);
 
 		if (!guessedCard || !guessedPrice) {
 			return json({ error: 'Carte non trouvée ou sans prix' }, { status: 404 });
@@ -106,8 +56,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			guessedCardImage: guessedCard.image,
 			guessedPokemonNumber: guessedCard.pokemonNumber,
 			feedback,
-			isCorrectGuess,
-			cardOfTheDayForTesting: cardOfTheDay
+			isCorrectGuess
 		});
 
 	} catch (error) {

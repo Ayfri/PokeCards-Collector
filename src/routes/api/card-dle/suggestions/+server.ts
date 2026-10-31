@@ -1,10 +1,8 @@
 import { json } from '@sveltejs/kit';
+import { CARD_DLE_MIN_PRICE } from '$helpers/card-dle';
 import { cardPrice } from '$helpers/card-utils';
 import { getCards, getPrices } from '$helpers/supabase-data';
 import type { RequestHandler } from './$types';
-
-/** Below this a card is bulk nobody recognises, so it never shows up in the guess list. */
-const MIN_PRICE = 3;
 
 /** The six fields the guess picker draws. The page used to receive whole cards plus the entire catalogue and price table: a 13.7 MB document. */
 export interface CardDleSuggestion {
@@ -22,7 +20,7 @@ export const GET: RequestHandler = async () => {
 	const suggestions: CardDleSuggestion[] = [];
 	for (const card of cards) {
 		const price = cardPrice(prices[card.cardCode]);
-		if (!price || price < MIN_PRICE) continue;
+		if (!price || price < CARD_DLE_MIN_PRICE) continue;
 
 		suggestions.push({
 			cardCode: card.cardCode,
