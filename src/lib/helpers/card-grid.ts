@@ -3,11 +3,11 @@ import { compareRarities, getRarityLevel } from '$helpers/rarity';
 import type { ActiveFilters } from '$stores/filters.svelte';
 import { CARD_SIZES, DEFAULT_CARD_SIZE } from '$stores/grid.svelte';
 
-/** Set lookups are the hot path of the grid, so the map is rebuilt only when the set list changes. */
+/** Set lookups are the grid's hot path, so the map is rebuilt only when the set list changes. */
 let cachedSets: Set[] | null = null;
 let setsByKey = new Map<string, Set>();
 
-/** Set ids repeat across languages, so a mixed list keys on both; an untagged card or set is English. */
+/** Set ids repeat across languages, so the key holds the language too. A card or set with no language is English. */
 const setKey = ({ language = 'en', setId }: Pick<FullCard, 'language' | 'setId'>) => `${language}:${setId}`;
 
 export function getCardSet(card: Pick<FullCard, 'language' | 'setId'>, sets: Set[]): Set | null {
@@ -52,7 +52,7 @@ interface SortValues {
 const SUPERTYPE_ORDER: Record<string, number> = { 'Pokémon': 1, Trainer: 2, Energy: 3 };
 
 
-/** Sorts a card list, precomputing every sort key once instead of recomputing it inside the comparator. */
+/** Sort keys are computed once per card up front, so the comparator only does lookups. */
 export function sortCards(
 	cards: FullCard[],
 	sortBy: string,
@@ -97,7 +97,7 @@ export function sortCards(
 			case 'sort-release-date': return (aValues.releaseDate - bValues.releaseDate) * multiplier;
 		}
 
-		// Default sort is by Pokédex number, with non-Pokémon cards grouped by supertype at the end.
+		/** The default sort is by Pokédex number, with the non-Pokémon cards grouped by supertype at the end. */
 		if (aValues.isPokemon !== bValues.isPokemon) return aValues.isPokemon ? -1 : 1;
 
 		if (!aValues.isPokemon) {
@@ -114,7 +114,7 @@ export function sortCards(
 	});
 }
 
-/** Keeps the cards `filters` lets through, each test short-circuiting on an inactive filter. Runs before the sort, so everything downstream works on the smaller list. */
+/** An inactive filter skips its test. Filtering runs before the sort, so the sort and everything after it handle the smaller list. */
 export function filterCards(cards: FullCard[], filters: ActiveFilters): FullCard[] {
 	return cards.filter(card =>
 		(!filters.numero || card.pokemonNumber?.toString() === filters.numero)
@@ -131,7 +131,7 @@ export function sortBySupertype(cards: FullCard[]): FullCard[] {
 	return [...cards].sort((a, b) => (SUPERTYPE_ORDER[a.supertype] || 99) - (SUPERTYPE_ORDER[b.supertype] || 99));
 }
 
-/** Distinct rarities of a card list, most common first. Reading them from Postgres meant a full scan of `cards` for ~30 values. */
+/** Distinct rarities of a card list, most common first. They come from the list because a Postgres query would scan all of `cards` for ~30 values. */
 export function distinctRarities(cards: FullCard[]): string[] {
 	return [...new Set(cards.map(card => card.rarity).filter(Boolean))].sort(compareRarities);
 }

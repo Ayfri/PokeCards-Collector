@@ -38,9 +38,9 @@ const SUPERTYPES = new Set(['Pokémon', 'Trainer', 'Energy']);
 const read = <T>(path: string): T => JSON.parse(fs.readFileSync(path, 'utf8')) as T;
 
 /**
- * Checks the scraped JSON before it is uploaded: no two cards may share a `card_code` (it is the
- * primary key everywhere), and every code a user owns should still resolve to a card.
- * Owned codes that do not resolve are reported, never deleted - they render again once TCGdex has the set.
+ * Checks the scraped JSON before it is uploaded: no two cards may share a `card_code` (it is the join key
+ * everywhere), and every code a user owns should still resolve to a card.
+ * Owned codes that do not resolve are reported, never deleted: they render again once TCGdex has the set.
  * A language whose cards file does not exist yet is skipped.
  */
 export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {

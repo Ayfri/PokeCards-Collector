@@ -8,7 +8,7 @@ import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
-	// Started before `parent()` so the catalogue reads overlap the layout's auth and collection queries.
+	/** Started before `parent()` so the catalogue reads run in parallel with the layout's auth and collection queries. */
 	const catalogue = Promise.all([getCardDetails('en', cardCode), getCards(), getPrices(), getPokemons()]);
 	const parentData = await parent();
 	const [targetCard, allCards, prices, allPokemons] = await catalogue;
@@ -42,12 +42,11 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	const price = prices[targetCard.cardCode];
 	const value = cardPrice(price);
 
-	// The title carries the set and the card number because that is how a card is searched for: "Charizard ex 199/165".
+	/** The title has the set and card number because people search for a card that way: "Charizard ex 199/165". */
 	const numbering = targetCard.localId ? ` #${targetCard.localId}` : '';
 	const pageTitle = `${targetCard.name}${numbering} - ${targetCard.setName}`;
 
-	// The first sentence answers the query on its own, since answer engines quote the opening of a page far more
-	// often than the rest of it. The price comes last because it is the part that goes stale.
+	/** The first sentence answers the query alone, since answer engines quote the start of a page far more than the rest. The price comes last because it goes stale first. */
 	const pageDescription = [
 		`${targetCard.name} is ${article(targetCard.rarity || 'Pokémon')} ${targetCard.rarity || 'Pokémon'} card from the ${targetCard.setName} Pokémon TCG set`,
 		targetCard.artist ? `, illustrated by ${targetCard.artist}` : '',
@@ -56,7 +55,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		associatedPokemon?.description ? ` ${associatedPokemon.description}` : '',
 	].join('').slice(0, 300);
 
-	// `targetCard.image` is a TCGdex base with no extension, which no crawler can fetch as an `og:image`.
+	/** `targetCard.image` is a TCGdex base URL with no extension, which crawlers cannot fetch as an `og:image`, so it goes through `processCardImage`. */
 	const pageImage = {
 		alt: `${targetCard.name} Pokémon card from ${targetCard.setName}`,
 		url: targetCard.image ? processCardImage(targetCard.image) : parentData.image?.url || '',
@@ -68,7 +67,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		{ name: targetCard.name, url: `/card/${targetCard.cardCode}` },
 	);
 
-	// The layout already ships `sets`, and the page only reads the cards, Pokémon and prices around this one.
+	/** The layout already returns `sets`, and the page only needs the cards, Pokémon and prices around this one. */
 	return {
 		...cardPageCatalogue(targetCard.pokemonNumber, relevantCards, allCards, allPokemons, prices),
 		pokemon: associatedPokemon,

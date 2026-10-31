@@ -5,7 +5,6 @@ import { processCardImage } from '$helpers/card-images';
 import { SITEMAP_CHUNK, sitemapResponse, urlset } from '$helpers/sitemap';
 import type { RequestHandler } from './$types';
 
-/** A foreign catalogue, chunked the same way as the English one. */
 export const GET: RequestHandler = async ({ params }) => {
 	const page = Number(params.page);
 	if (!Number.isInteger(page) || page < 1) error(404, 'Not found');

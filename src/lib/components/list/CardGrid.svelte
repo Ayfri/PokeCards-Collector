@@ -52,10 +52,10 @@
 	/** Cards above the fold skip lazy loading so the LCP candidate is requested with the document, not after layout. */
 	const eagerCards = 12;
 
-	// Fixed height for the info container in Card.svelte
+	/** Fixed height of the info container in Card.svelte, added to the card height to get the virtual grid's row size. */
 	const infoContainerHeight = 70;
 
-	// A link into the grid names the filters it wants, so the URL wins over whatever the visitor last picked.
+	/** A link into the grid names the filters it wants, so the URL wins over what the visitor last picked. */
 	onMount(() => {
 		filters.clearUnknown(sets, artists);
 		filters.applyFromUrl(page.url, sets);
@@ -109,17 +109,19 @@
 
 	const pokemonMap = $derived(new Map(pokemons.map(pokemon => [pokemon.id, pokemon])));
 
-	// Filter first, then narrow, then sort: "Most Expensive Only" used to pick the priciest printing of each Pokémon
-	// across the whole catalogue before the set filter ran, so Base Set showed the 4 Pokémon whose best card happens to
-	// live there instead of its 69. Sorting last also means a picked set sorts ~100 cards rather than all 23546.
+	/**
+	 * Filter first, then narrow, then sort. "Most Expensive Only" must run after the set filter: run before it, it picks the
+	 * priciest printing of each Pokémon across the whole catalogue, and Base Set shows the 4 Pokémon whose best card lives
+	 * there instead of its 69. Sorting last also means a picked set sorts ~100 cards rather than all 23546.
+	 */
 	const matchingCards = $derived(filters.hasActive ? filterCards(cards, filters.active) : cards);
 	const narrowedCards = $derived(filters.mostExpensiveOnly ? keepMostExpensivePerGroup(matchingCards) : matchingCards);
 	const sortedCards = $derived(sortCards(narrowedCards, filters.sortBy, filters.sortOrder, pokemons, sets));
-	// Pokémon before Trainer before Energy, unless the user is already looking at a single supertype.
+	/** Pokémon, then Trainer, then Energy, unless the user already looks at a single supertype. */
 	const filteredCards = $derived(filters.supertype === "all" ? sortBySupertype(sortedCards) : sortedCards);
 
 	const visibleCardsCount = $derived(filteredCards.length);
-	// 66 Pokémon cards carry no dex id; without the guard they all collapse into one extra entry in the count.
+	/** 66 Pokémon cards have no dex id, and without the `pokemonNumber` guard they would collapse into one extra entry in the count. */
 	const uniquePokemonCount = $derived(new Set(
 		filteredCards.filter(card => card.supertype === "Pokémon" && card.pokemonNumber != null).map(card => card.pokemonNumber),
 	).size);

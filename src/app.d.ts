@@ -8,8 +8,7 @@ declare global {
 			user: User | null;
 			profile: UserProfile | null;
 		}
-		// Fields every load inherits from the root layout. Cards and prices are streamed,
-		// so they live under `streamed` in the layout data rather than here.
+		/** Fields every load inherits from the root layout. The catalogue is not among them: grid pages stream it under `streamed` in their own data. */
 		interface PageData {
 			breadcrumbs?: Breadcrumb[];
 			description: string;

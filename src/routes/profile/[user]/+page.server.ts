@@ -12,9 +12,9 @@ import type { CollectionStats } from '$lib/types';
 
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const requestedUsername = params.user;
-	// The profile lookup overlaps the layout load instead of queueing behind it.
+	/** The profile lookup runs in parallel with the layout load instead of waiting for it. */
 	const profilePromise = getProfileByUsername(requestedUsername, locals.supabase);
-	/** Read alongside the profile rather than after it: row level security already hides a private collection, so reading early leaks nothing. */
+	/** Read in parallel with the profile: row level security already hides a private collection, so reading early leaks nothing. */
 	const rowsPromise = Promise.all([getUserCollection(requestedUsername, locals.supabase), getUserWishlist(requestedUsername, locals.supabase)]);
 	const { profile: loggedInUserProfile } = await parent();
 	const isOwnProfile = loggedInUserProfile?.username === requestedUsername;
@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const { data: targetProfile, error: profileError } = await profilePromise;
 	if (profileError || !targetProfile) redirect(307, '/');
 
-	// Usernames resolve case-insensitively, so send both the browser and the crawler to the stored casing.
+	/** Usernames resolve case-insensitively, so browsers and crawlers are redirected to the stored casing. */
 	if (targetProfile.username !== requestedUsername) redirect(307, `/profile/${encodeURIComponent(targetProfile.username)}`);
 
 	const isPublic = targetProfile.is_public;
@@ -38,7 +38,7 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		if (collectionError || !collectionRows) console.error(`Error fetching collection stats for ${targetProfile.username}:`, collectionError);
 		else {
 			const wishlist = wishlistError ? [] : wishlistRows ?? [];
-			/** The catalogues only feed the stats computation, they are never returned: 23546 cards in the document for a card count. */
+			/** The catalogues only feed the stats and are never returned: returning them would put 23546 cards in the document just for a card count. */
 			const catalogues = await readOwnedCatalogues([...collectionRows, ...wishlist].map(row => row.card_code), getCatalogue);
 			collectionStats = computeCollectionStats(collectionRows, wishlist, catalogues);
 		}
@@ -56,7 +56,7 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		image: { alt: 'PokéCards-Collector logo', height: 436, url: '/favicon.png', width: 485 },
 		isOwnProfile,
 		isPublic,
-		// A private profile must never reach an index: the crawler would otherwise store the "private profile" shell under a real username.
+		/** A private profile must not be indexed: a crawler would otherwise store the "private profile" shell under a real username. */
 		noindex: !isPublic,
 		schemas: isPublic
 			? [profileSchema(targetProfile, `/profile/${targetProfile.username}`, collectionStats

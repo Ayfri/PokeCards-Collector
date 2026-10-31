@@ -185,7 +185,7 @@ export type CardFilter = {
 
 /**
  * One catalogue card as the binder needs it: the fields the storage panel draws, sorts and searches on.
- * Serving whole cards plus the price table put 11.4 MB into the binder document.
+ * Serving whole cards plus the price table would put 11.4 MB into the binder document.
  */
 export interface BinderCatalogueCard {
 	cardCode: string;
@@ -207,14 +207,12 @@ export interface BinderCards {
 	cardCode: string | undefined;
 }
 
-// Represents the structure of a user object returned by the searchUsers service function
 export interface SearchedUser {
 	is_public: boolean;
 	profile_color?: string;
 	username: string;
 }
 
-// Represents the result of the isUsernameTaken service function
 export interface UsernameCheckResult {
 	exists: boolean;
 	error: Error | string | null;
@@ -222,11 +220,11 @@ export interface UsernameCheckResult {
 
 export interface ServiceResponse<T> {
 	data: T | null;
-	// Accommodate Supabase PostgrestError (which is an object with message, details, hint, code) or other error types
+	/** Also accepts a Supabase `PostgrestError`, an object with `message`, `details`, `hint` and `code`. */
 	error: Error | { message: string; details?: string; hint?: string; code?: string; } | string | null;
 }
 
-// Per-attribute comparison between a card.dle guess and the card of the day
+/** Per-attribute comparison between a card.dle guess and the card of the day. */
 export interface CardDleFeedback {
 	artistCorrect: boolean;
 	artistValue: string;
@@ -242,7 +240,7 @@ export interface CardDleFeedback {
 	typesValue: string;
 }
 
-// Response of POST /api/card-dle/guess
+/** Response of `POST /api/card-dle/guess`. */
 export type CardDleGuessResponse =
 	| {
 		feedback: CardDleFeedback;
@@ -254,14 +252,14 @@ export type CardDleGuessResponse =
 	}
 	| { error: string; success?: false };
 
-// Row returned by the search_public_users_with_stats RPC
+/** Row returned by the `search_public_users_with_stats` RPC. */
 export interface SearchedUserWithStats extends SearchedUser {
 	created_at: string;
 	profile_color: string | null;
 	unique_card_count: number;
 }
 
-// Response of GET /api/search-users
+/** Response of `GET /api/search-users`. */
 export type SearchUsersResponse =
 	| { success: true; users: SearchedUserWithStats[] }
 	| { success?: false; error: string };

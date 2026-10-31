@@ -1,2 +1,2 @@
-// This is a wrapper for CountUp.js to ensure compatibility between ESM and CommonJS
+/** Re-exports CountUp.js through one module so ESM and CommonJS consumers resolve it the same way. */
 export { CountUp, type CountUpOptions } from 'countup.js';

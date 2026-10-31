@@ -28,8 +28,8 @@
 	let { data }: Props = $props();
 
 	/**
-	 * The load hands over a whole batch, so a turn costs nothing but a shift off the queue. Only the initial value is
-	 * read: a background refill must not swap the card out from under the player.
+	 * The load returns a whole batch, so a turn only takes one item off the queue. Only the initial value is read:
+	 * a background refill must not swap the card under the player.
 	 */
 	// svelte-ignore state_referenced_locally
 	let queue = $state<Round[]>(data.rounds.slice(1));
@@ -42,7 +42,7 @@
 	const releaseDate = $derived(round?.releaseDate ? new Date(round.releaseDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unknown');
 	const answered = $derived(verdict !== null);
 
-	/** The two gold plates the ripple animates, invisible until the animation classes are added, the second half a cycle behind. */
+	/** The two gold plates the ripple animates: invisible until the animation classes are added, the second one half a cycle behind. */
 	const RIPPLE =
 		"before:content-[''] before:absolute before:left-1/2 before:top-1/2 before:size-full before:rounded-[inherit] before:bg-gold-400 before:opacity-0 " +
 		"after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:size-full after:rounded-[inherit] after:bg-gold-400 after:opacity-0 after:[animation-delay:1.1s]";
@@ -63,8 +63,8 @@
 	const EXACT = ['Spot on!', 'Nailed it!', 'Perfect call!', 'Are you a dealer or what?', 'To the euro. Respect.'];
 
 	/**
-	 * Miss tiers by percentage off the real price, first match wins, so a 2 EUR miss on a 5 EUR card stings as much as
-	 * a 40 EUR miss on a 100 EUR one. Each side gets its own lines so the hint always says which way to move.
+	 * Miss tiers by percentage off the real price, first match wins, so a 2 EUR miss on a 5 EUR card counts as much as
+	 * a 40 EUR miss on a 100 EUR one. Too-high and too-low guesses have their own lines so the hint says which way to move.
 	 */
 	const TIERS: { color: string; high: string[]; low: string[]; maxOff: number }[] = [
 		{
@@ -116,7 +116,7 @@
 		if (verdict.correct) window.confetti?.({ origin: { y: 0.6 }, particleCount: 150, spread: 100 });
 	}
 
-	/** Re-running the load re-reads every card and price, so it happens in the background while the player is still busy. */
+	/** Re-running the load re-reads every card and price, so it runs in the background while the player is still busy. */
 	async function refill() {
 		if (refilling) return;
 		refilling = true;
@@ -135,7 +135,7 @@
 		if (queue.length < 5) refill();
 	}
 
-	/** Digits, Backspace, Escape and Enter drive a whole game, so the mouse and the keypad are both optional. */
+	/** Digits, Backspace, Escape and Enter play a whole game, so neither the mouse nor the on-screen keypad is required. */
 	function handleKey(event: KeyboardEvent) {
 		const target = event.target as HTMLElement | null;
 		if (target?.tagName === 'TEXTAREA' || (target?.tagName === 'INPUT' && target.id !== 'price-guess')) return;
@@ -161,8 +161,8 @@
 	<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.4/dist/confetti.browser.min.js"></script>
 </svelte:head>
 
-<!-- The board is sized to the viewport minus the layout's header offset (`pt-24` / `lg:pt-32`), since the `min-h-screen` layout never caps a child's height.
-     The top padding leaves room for the PageTitle ghost that overflows above it, which `overflow-hidden` would otherwise clip. -->
+<!-- The board height is the viewport minus the layout's header offset (`pt-24` / `lg:pt-32`), because the `min-h-screen` layout never caps a child's height.
+     The top padding leaves room for the PageTitle ghost that overflows above it, which `overflow-hidden` would clip. -->
 <div class="mx-auto flex h-[calc(100dvh-6rem)] w-full max-w-6xl flex-col items-center gap-3 overflow-hidden px-3 pt-4 pb-3 md:pt-7 lg:h-[calc(100dvh-8rem)] lg:gap-5">
 	<PageTitle title="Guess the Price!" />
 	<div class="h-px w-full max-w-md bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
@@ -177,9 +177,9 @@
 			{refilling ? 'Drawing...' : 'Retry'}
 		</button>
 	{:else}
-		<!-- Stacked on mobile the art row is the only one allowed to shrink, so the keypad never gets clipped. -->
+		<!-- Stacked on mobile, only the art row may shrink, so the keypad is never clipped. -->
 		<section class="grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_auto] gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:grid-rows-1 lg:gap-8">
-			<!-- Card side: the art takes every pixel the column has left over. -->
+			<!-- The art takes all the space the column has left. -->
 			<div class="flex min-h-0 flex-col items-center justify-center gap-2 md:gap-3">
 				{#key round.card.cardCode}
 					<div class="flex min-h-0 flex-1 items-center" in:fly={{ duration: 350, easing: cubicOut, y: 24 }}>
@@ -203,7 +203,6 @@
 				{/key}
 			</div>
 
-			<!-- Control side: guess, keypad and verdict, all stacked in one column. -->
 			<div class="flex min-h-0 flex-col gap-2 rounded-2xl border border-gold-500/30 bg-gray-800/70 p-3 backdrop-blur-sm md:justify-center md:gap-3 md:p-4">
 				<form class="flex flex-col gap-2" onsubmit={event => { event.preventDefault(); submitGuess(); }}>
 					<label class="flex items-baseline justify-between text-sm font-medium text-gray-300" for="price-guess">

@@ -70,7 +70,7 @@ export const USER_CARDS_COPY = {
 export type UserCardsKind = keyof typeof USER_CARDS_COPY;
 
 async function buildPayload(itemCodes: string[]): Promise<UserCardsPayload> {
-	// A missing, private or empty page draws no grid, so it never pays for the four catalogue reads.
+	/** A missing, private or empty page draws no grid, so it skips the four catalogue reads. */
 	if (itemCodes.length === 0) return { artists: [], cards: [], pokemons: [], rarities: [], sets: [], types: [] };
 
 	const [catalogues, pokemons, types] = await Promise.all([readOwnedCatalogues(itemCodes, getCatalogue), getPokemons(), getTypes()]);
@@ -80,10 +80,10 @@ async function buildPayload(itemCodes: string[]): Promise<UserCardsPayload> {
 	const dexIds = new Set(userCards.map(card => card.pokemonNumber));
 
 	return {
-		// The filter lists describe these cards rather than the whole catalogue: a 200-card collection got 1700 artists to pick from.
+		/** The filter lists come from these cards, not the whole catalogue: a 200-card collection would otherwise offer 1700 artists. */
 		artists: distinctArtists(userCards),
 		cards: userCards,
-		// Only the Pokémon these cards name: the full table is 1025 rows carrying their Pokédex entries, for a name lookup.
+		/** Only the Pokémon these cards name: the full table is 1025 rows with their Pokédex entries, just to look up a name. */
 		pokemons: pokemons.filter(pokemon => dexIds.has(pokemon.id)).map(({ id, name }) => ({ id, name })),
 		rarities: distinctRarities(userCards),
 		/** The English sets already come with the layout, so only the sets of the other catalogues' owned cards travel. */
@@ -116,7 +116,7 @@ interface UserCardsPageOptions {
  */
 export async function loadUserCardsPage({ client, fetchItems, kind, parent, requestedUsername }: UserCardsPageOptions) {
 	const copy = USER_CARDS_COPY[kind];
-	// The profile lookup overlaps the layout load instead of queueing behind it.
+	/** The profile lookup runs in parallel with the layout load instead of waiting for it. */
 	const [{ data: targetProfile, error: profileError }, viewer] = await Promise.all([getProfileByUsername(requestedUsername, client), parent()]);
 
 	if (profileError || !targetProfile) {
@@ -136,7 +136,7 @@ export async function loadUserCardsPage({ client, fetchItems, kind, parent, requ
 		};
 	}
 
-	// Usernames resolve case-insensitively, so send both the browser and the crawler to the stored casing.
+	/** Usernames match case-insensitively, so the browser and the crawler are sent to the stored casing. */
 	if (targetProfile.username !== requestedUsername) redirect(307, `/${kind}/${encodeURIComponent(targetProfile.username)}`);
 
 	const username = targetProfile.username;
@@ -157,11 +157,11 @@ export async function loadUserCardsPage({ client, fetchItems, kind, parent, requ
 			{ name: copy.crumb, url: `/${kind}/${username}` }
 		),
 		description: canRead ? (isOwner ? copy.ownDescription : copy.publicDescription(username)) : copy.privateDescription,
-		// The heading is the short form; `title` stays the long one the crawler indexes.
+		/** `heading` is the short form shown on the page, `title` the long one the crawler indexes. */
 		heading: canRead ? (isOwner ? copy.ownTitle : `${username}'s ${copy.label}`) : copy.privateHeading,
 		isOwner,
 		isPublic,
-		// Only a public profile's cards are public content; everything else is a shell the crawler must not keep.
+		/** Only a public profile's cards are public content, anything else is an empty shell the crawler must not index. */
 		noindex: !isPublic,
 		schemas: isPublic ? [profileSchema(targetProfile, `/${kind}/${username}`)] : [],
 		streamed: { payload: buildPayload(items.map(item => item.card_code)) },

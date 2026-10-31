@@ -3,8 +3,8 @@ import { breadcrumbs } from '$helpers/seo';
 
 /**
  * SEO only. The catalogue comes from `/api/binder` through `+page.ts`, and the owned card codes come straight from
- * the layout's `collectionItems` / `wishlistItems` - resolving them into whole cards here duplicated rows the
- * document already carried.
+ * the layout's `collectionItems` / `wishlistItems`: resolving them into whole cards here would duplicate rows the
+ * document already carries.
  */
 export const load: PageServerLoad = () => ({
 	title: 'Pokémon Card Binder Builder',

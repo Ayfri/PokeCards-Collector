@@ -4,13 +4,13 @@ import type { GridPayload } from '$helpers/grid-payload';
 import type { PageLoad } from './$types';
 
 /**
- * The grid payload sits behind an endpoint rather than in `+page.server.ts` because that load reads `?set=`, so
- * SvelteKit reran it - and re-sent all 23546 cards - on every set filter change. Fetching it from a universal load
- * and holding the promise in module scope means the catalogue crosses the wire once per session whatever the
- * filters do, and keeps it out of the document instead of streaming 17 MB of JSON into every first render.
+ * The grid payload comes from an endpoint, not `+page.server.ts`, because that load reads `?set=`: SvelteKit would
+ * rerun it and re-send all 23546 cards on every set filter change. A universal load fetches it and holds the promise
+ * in module scope, so the catalogue crosses the wire once per session whatever the filters do, and the first render
+ * does not stream 17 MB of JSON into the document.
  */
 export const load: PageLoad = ({ data, fetch }) => {
-	// On the server the grid is never rendered anyway - `VirtualGrid` measures itself before it draws a single tile.
+	/** On the server the promise never resolves: the grid does not render there, since `VirtualGrid` measures itself before drawing a tile. */
 	if (!browser) return { ...data, streamed: { grid: new Promise<GridPayload>(() => {}) } };
 
 	return { ...data, streamed: { grid: cachedJson<GridPayload>(fetch, '/api/cards-list') } };

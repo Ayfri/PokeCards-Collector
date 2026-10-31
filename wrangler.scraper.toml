@@ -18,14 +18,14 @@ PUBLIC_SUPABASE_URL = "https://ptbwuqaqkqntmgmaqboq.supabase.co"
 [limits]
 subrequests = 1_000_000
 
-# `enabled` is the logs toggle; traces stay opt-in until Cloudflare ties them to it behind a compatibility date.
+# `enabled` is the logs toggle. Traces need their own toggle below until Cloudflare ties them to it behind a compatibility date.
 [observability]
 enabled = true
 
 [observability.traces]
 enabled = true
 
-# Pins the TCGdex reads to Western Europe, see `TcgdexReader` in src/workers/scraper.ts.
+# Runs the TCGdex reads from a Durable Object hinted to Western Europe (best effort), see `TcgdexReader` in src/workers/scraper.ts.
 [[durable_objects.bindings]]
 name = "TCGDEX_READER"
 class_name = "TcgdexReader"

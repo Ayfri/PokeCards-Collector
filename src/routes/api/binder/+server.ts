@@ -4,7 +4,7 @@ import { getCards, getPrices } from '$helpers/supabase-data';
 import type { BinderCatalogueCard } from '$lib/types';
 import type { RequestHandler } from './$types';
 
-/** The binder catalogue, a fifth of the weight of the whole cards plus price table the page used to be handed, and cacheable. */
+/** Only the fields the binder draws: a fifth of the weight of the full cards plus price tables, and cacheable. */
 export const GET: RequestHandler = async () => {
 	const [cards, prices] = await Promise.all([getCards(), getPrices()]);
 

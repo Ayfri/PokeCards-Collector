@@ -858,8 +858,8 @@
 </main>
 
 <style>
-	/* The intro used to be a Svelte `in:` transition behind an `onMount` flag, which shipped an empty document to
-	   every crawler. As CSS it plays on hydrated markup, so the page renders in full on the server. */
+	/* The intro is a CSS animation, not a Svelte `in:` transition behind an `onMount` flag: that flag made the server send an
+	   empty document to crawlers. The animation plays on the hydrated markup, so the page renders in full on the server. */
 	section {
 		animation: intro 500ms var(--intro-delay, 0ms) both;
 	}
@@ -876,7 +876,7 @@
 	}
 
 	.feature-cards-container {
-		/* Use the same grid structure as the feature cards to ensure identical width */
+		/* Same grid as the feature cards, so both have identical widths. */
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
 	}

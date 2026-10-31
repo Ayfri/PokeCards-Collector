@@ -4,14 +4,14 @@ import type { PageServerLoad } from './$types';
 import { breadcrumbs, setSchema } from '$helpers/seo';
 
 /**
- * SEO only: the cards, prices, pokemons and types the grid needs come from `/api/{grid}-cards` through `+page.ts`.
- * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends whatever it returns.
+ * SEO only: the grid's cards, prices, pokemons and types come from `/api/{grid}-cards` through `+page.ts`.
+ * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends what it returns.
  */
 export const load: PageServerLoad = async ({ params, parent, url }) => {
 	const catalogue = BY_GRID[params.grid];
 	const { adjective, gridRoute } = catalogue;
 
-	// `parent()` only supplies the fallback share image, so the sets are read alongside it rather than after it.
+	/** `parent()` only supplies the fallback share image, so the sets load in parallel with it. */
 	const [{ image: parentImage }, memoizedSets] = await Promise.all([parent(), getSets(catalogue.language)]);
 	const sets = memoizedSets.toSorted((a, b) => a.name.localeCompare(b.name));
 

@@ -11,8 +11,8 @@ export interface ScrapeResult {
 
 /**
  * One pass per language: list the sets, expand them into card ids, then fetch every card.
- * The per-card REST call carries metadata and pricing together, so a second pricing pass is unnecessary
- * and the GraphQL endpoint - English-only and priceless - buys nothing.
+ * The per-card REST call returns metadata and pricing together, so no second pricing pass is needed, and the
+ * GraphQL endpoint (English-only, no prices) adds nothing.
  */
 export async function scrapeLanguage(client: TcgdexClient, lang: Language): Promise<ScrapeResult> {
 	const started = performance.now();
@@ -25,7 +25,7 @@ export async function scrapeLanguage(client: TcgdexClient, lang: Language): Prom
 		const detail = await client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`);
 		return detail && withProbedAssets(detail, lang);
 	});
-	// TCGdex lists sets it holds no card for yet (the 15 Japanese CS sets, all named トリプレットビート), which would show as empty pages.
+	/** TCGdex lists sets it has no card for yet (the 15 Japanese CS sets, all named トリプレットビート), which would show as empty pages. */
 	const sets = details.filter((set): set is TcgdexSet => !!set?.cards?.length).map(mapSet).sort((a, b) => a.name.localeCompare(b.name));
 
 	const fallback = lang === 'fr' ? await englishImages(client, details) : new Map<string, string>();

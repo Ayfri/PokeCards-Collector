@@ -21,7 +21,8 @@
 	
 	interface Props {
 		cards: FullCard[];
-		pokemons: Pokemon[]; // Still needed for lookups if a card *is* a pokemon
+		/** Looked up when a card is a Pokémon card. */
+		pokemons: Pokemon[];
 		prices: Record<string, PriceData>;
 		sets: Set[];
 		pokemon?: Pokemon | undefined;
@@ -97,7 +98,8 @@
 					return order === 'asc' ? aTime - bTime : bTime - aTime;
 				});
 				break;
-			default: // sort-set (default)
+			/** `sort-set` is the default sort. */
+			default:
 				sorted = sorted.sort((a, b) => {
 					const aSet = setsById.get(a.setId);
 					const bSet = setsById.get(b.setId);

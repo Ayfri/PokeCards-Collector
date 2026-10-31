@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import { searchUsers } from '$lib/services/profiles';
 import type { RequestHandler } from './$types';
 
-/** The RPC counts collection rows per profile it returns, so an uncapped limit turns one anonymous call into a full scrape. */
+/** The RPC counts collection rows for every profile it returns, so an uncapped limit would let one anonymous call scrape everything. */
 const MAX_LIMIT = 24;
 
 export const GET: RequestHandler = async ({ url }) => {

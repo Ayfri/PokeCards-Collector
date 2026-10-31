@@ -11,7 +11,8 @@
 		created_at: string;
 		unique_card_count: number;
 	};
-		highlightClass?: string; // Default for search
+		/** The default (blue) highlight classes are the ones the search results use. */
+		highlightClass?: string;
 		hoverBorderClass?: string;
 		hoverShadowClass?: string;
 		countTextPrefix?: string;

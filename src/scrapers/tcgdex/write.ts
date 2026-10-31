@@ -6,7 +6,7 @@ import type {Language} from './mappers';
 import {scrapeLanguage, scrapeTypes, type ScrapeResult} from './scraper';
 
 export interface ScrapeOptions {
-	/** `false` runs the whole pass without touching `src/assets/`, to diff or time it. */
+	/** `false` runs the whole pass without writing to `src/assets/`, to diff or time it. */
 	write?: boolean;
 }
 

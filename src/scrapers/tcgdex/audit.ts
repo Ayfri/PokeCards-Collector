@@ -13,27 +13,27 @@ import type {TcgdexCard, TcgdexSet} from './types';
 
 /**
  * Regenerates `set-aliases.json` and `card-code-overrides.json` by matching every `card_code` stored in Supabase to
- * its TCGdex card, then reports the owned codes left pointing at no card. The sync applies the overrides, moving any
+ * its TCGdex card, then reports the owned codes that point at no card. The sync applies the overrides and moves any
  * card whose stored code differs.
  */
 
-/** No `fr`: this pipeline mints the French codes, there is no older stored code to match. */
+/** No `fr`: the French codes are minted by this pipeline, so no older stored code exists to match. */
 const LANGS: readonly Language[] = ['en', 'ja'];
 
-/** The languages a collection export can name its sets in. TCGdex carries fewer sets in each than in English, and none at all past these. */
+/** The languages a collection export can name its sets in. TCGdex has fewer sets in each than in English, and none in any other language. */
 const NAME_LANGS = ['fr', 'de', 'es', 'it', 'pt'] as const;
 const HERE = new URL('.', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
 const norm = (value: string) => value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
-/** A number zero padding aside: "001" is "1", "H01" stays "h01". */
+/** Compares card numbers ignoring zero padding: "001" is "1", but "H01" stays "h01". */
 const exact = (value: string) => {
 	const key = norm(value);
 	return /^\d+$/.test(key) ? String(Number(key)) : key;
 };
-/** Only the digits, so "1" also meets "H01". */
+/** Keeps only the digits, so "1" also matches "H01". */
 const digits = (value: string) => String(Number(value.replace(/\D/g, '')));
 
-/** Set codes TCGdex keys differently and that no set name bridges. */
+/** Set codes that TCGdex ids differently and that no set name can match. */
 const MANUAL_SET_ALIASES: Record<string, string> = {cel25c: 'cel25cc', fut20: 'fut2020', swsh12pt5gg: 'swsh12.5gg'};
 
 interface StoredRow {
@@ -56,7 +56,7 @@ export async function auditTcgdex(write = true) {
 	const pool = new Http2Pool();
 	const aliases: Record<string, Record<string, string>> = {};
 	const overrides: Record<string, Record<string, string>> = {};
-	/** French codes are minted by the scrape, so there is no older stored code for the audit to match them against. */
+	/** French codes are minted by the scrape, so the audit has no older stored code to match them against. */
 	const owned = new Set([...await ownedCardCodes(supabase)].filter(code => !isFrenchCode(code)));
 	const resolved = new Set<string>();
 
@@ -91,7 +91,7 @@ export async function auditTcgdex(write = true) {
 		}
 
 		const sameSpecies = (dex: number, card: TcgdexCard) => card.dexId?.some(id => Math.trunc(id) === dex) || (lang === 'en' && speciesInName(card.name).includes(dex));
-		/** Nothing rules the pair out: same supertype, and the dex ids agree unless one side does not know it. */
+		/** Nothing rules the pair out: same supertype, and the dex ids agree unless one side has none. */
 		const agrees = (parts: string[], card: TcgdexCard) => {
 			const dex = Number(parts[1]);
 			return parts[0] === supertypeOf(card) && (dex === 0 || dex === UNKNOWN_POKEMON || !card.dexId?.length || sameSpecies(dex, card));
@@ -99,9 +99,9 @@ export async function auditTcgdex(write = true) {
 
 		/**
 		 * A code's number has no letters ("H1" and "1" are both "1"), so the number alone cannot tell Skyridge's Alakazam H1
-		 * from Aerodactyl 1. Passes go from strongest to weakest, and every code tries a pass before any code moves to
-		 * the next, so a weak match never takes a card a strong one wants. The species pass needs a single candidate,
-		 * and the last one keeps a code on the card its row names, for codes whose dex id is off (Klinklang under 599).
+		 * from Aerodactyl 1. The passes go from strongest to weakest, and every code tries a pass before any code moves on
+		 * to the next, so a weak match never takes a card that a strong one wants. The species pass needs a single candidate.
+		 * The last pass keeps a code on the card its row names, for codes with a wrong dex id (Klinklang under 599).
 		 */
 		const passes: ((parts: string[], card: TcgdexCard, name: string) => boolean)[] = [
 			(parts, card) => exact(card.localId) === exact(parts[3]) && agrees(parts, card),
@@ -145,14 +145,14 @@ export async function auditTcgdex(write = true) {
 	const missing = [...rarities].filter(rarity => !(rarity.toLowerCase() in RARITY_MAPPING));
 	console.log(missing.length ? `rarities missing from RARITY_MAPPING: ${missing.join(', ')}` : 'rarities: every TCGdex value has a tier');
 
-	/** A French value identical to its English one needs no entry in `FRENCH`. */
+	/** A French value that is identical to its English one needs no entry in `FRENCH`. */
 	for (const [kind, endpoint] of [['category', 'categories'], ['rarity', 'rarities'], ['stage', 'stages'], ['type', 'types']] as const) {
 		const [french, english] = await Promise.all([pool.json<string[]>(`/v2/fr/${endpoint}`), pool.json<string[]>(`/v2/en/${endpoint}`)]);
 		const untranslated = (french ?? []).filter(value => !(value in FRENCH[kind]) && !english?.includes(value));
 		console.log(untranslated.length ? `French ${endpoint} missing from FRENCH: ${untranslated.join(', ')}` : `French ${endpoint}: every value is translated`);
 	}
 
-	// Kept, never deleted: an owned code renders again the day TCGdex fills its set in.
+	/** Orphan codes are reported, never deleted: an owned code renders again once TCGdex fills its set in. */
 	const orphans = [...owned].filter(code => !resolved.has(code));
 	console.log(`collections + wishlists: ${owned.size} distinct card codes, ${orphans.length} point at no card${orphans.length ? `: ${orphans.join(', ')}` : ''}`);
 
@@ -167,8 +167,8 @@ export async function auditTcgdex(write = true) {
 }
 
 /**
- * Set names in every language a user's export can be written in, keyed on the normalized name and pointing at the
- * TCGdex set id the catalogue already resolves. Without it a Pokecardex CSV names `Foudre Noire` and nothing matches.
+ * Set names in every language a user's export can be written in, mapped to the TCGdex set id the catalogue already resolves.
+ * Without them, a Pokecardex CSV that names `Foudre Noire` matches no set.
  */
 async function localizedSetNames(pool: Http2Pool): Promise<Record<string, Record<string, string>>> {
 	const names: Record<string, Record<string, string>> = {};
@@ -179,7 +179,7 @@ async function localizedSetNames(pool: Http2Pool): Promise<Record<string, Record
 		let collisions = 0;
 
 		for (const set of sets) {
-			// Kept as printed, not normalized: the importer also matches on the words a name is made of.
+			/** The name is stored as printed, not normalized, because the importer also matches on the words it is made of. */
 			const key = set.name?.trim();
 			if (!key || !norm(key)) continue;
 			if (langNames[key] && langNames[key] !== set.id) collisions++;

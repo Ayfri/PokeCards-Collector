@@ -8,8 +8,8 @@ import type { RequestHandler } from './$types';
 
 /**
  * Backs the registration form's "username already taken" check, before the user has any session. A taken
- * username can belong to a private profile, which no anonymous read reaches, so the lookup runs with the
- * service key and only ever leaks the boolean the signup endpoint would return anyway.
+ * username can belong to a private profile that no anonymous read can see, so the lookup runs with the
+ * service key. It only returns a boolean, which the signup endpoint would reveal anyway.
  */
 export const GET: RequestHandler = async ({ url }) => {
 	const username = normalizeUsername(url.searchParams.get('username') ?? '');

@@ -3,7 +3,7 @@ import { breadcrumbs, gameSchema } from '$helpers/seo';
 
 /**
  * SEO only. The guessable cards come from `/api/card-dle/suggestions` through `+page.ts`: returning them here
- * serialized 5700 whole cards, the 21066-card catalogue and the 19819-entry price table into the document.
+ * would serialize 5700 whole cards, the 21066-card catalogue and the 19819-entry price table into the document.
  */
 export const load: PageServerLoad = () => ({
 	title: 'Card.dle - Daily Pokémon Card Guessing Game',

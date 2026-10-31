@@ -4,7 +4,7 @@ import { cardPrice } from '$helpers/card-utils';
 import { getCards, getPrices } from '$helpers/supabase-data';
 import type { RequestHandler } from './$types';
 
-/** The six fields the guess picker draws. The page used to receive whole cards plus the entire catalogue and price table: a 13.7 MB document. */
+/** The six fields the guess picker draws. Sending whole cards plus the catalogue and price table in the page made a 13.7 MB document. */
 export interface CardDleSuggestion {
 	cardCode: string;
 	image: string;
@@ -32,7 +32,7 @@ export const GET: RequestHandler = async () => {
 		});
 	}
 
-	// Sorted server-side so the search results read alphabetically without the browser resorting them.
+	/** Sorted here so the picker lists results alphabetically without the browser sorting them again. */
 	suggestions.sort((a, b) => a.name.localeCompare(b.name));
 
 	return json(suggestions, { headers: { 'cache-control': 'public, max-age=600' } });

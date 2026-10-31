@@ -53,8 +53,8 @@ export async function toggleProfileVisibility(username: string, isPublic: boolea
 }
 
 /**
- * Bounded at 5 s: a hanging lookup would leave the registration form waiting forever. The caller must pass a
- * service-role client, a taken username may belong to a private profile that no anonymous read can see.
+ * Bounded at 5 s, because a hanging lookup would leave the registration form waiting forever. The caller must pass a
+ * service-role client: a taken username may belong to a private profile that no anonymous read can see.
  */
 export async function isUsernameTaken(username: string, client: SupabaseClient): Promise<UsernameCheckResult> {
 	try {

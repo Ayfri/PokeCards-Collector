@@ -9,6 +9,6 @@ export const POST: RequestHandler = async ({ locals }) => {
 		throw svelteKitError(500, 'Error logging out. Please try again.');
 	}
 
-	// Successfully signed out on the server, cookies are cleared by Supabase SSR helper
+	/** The Supabase SSR helper clears the auth cookies during `signOut`. */
 	return json({ success: true });
 }; 

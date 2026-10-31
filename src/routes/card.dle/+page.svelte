@@ -56,7 +56,7 @@
 
 	let searchInput = $state('');
 	let activeSuggestions = $state<CardSuggestion[]>([]);
-	/** The guessable cards, fetched from `/api/card-dle/suggestions` rather than serialized into the document. */
+	/** The guessable cards, fetched from `/api/card-dle/suggestions` instead of being serialized into the document. */
 	let suggestions = $state<CardSuggestion[]>([]);
 	let historicGuesses = $state<HistoricGuess[]>([]);
 	let loadingGuess = $state<PendingGuess | null>(null);
@@ -86,7 +86,7 @@
 
 	onMount(async () => {
 		suggestions = await data.suggestions;
-		// A player who typed before the list landed gets their results as soon as it does.
+		/** A player who typed before the list arrived sees results as soon as it does. */
 		if (searchInput.trim()) displayMatchingCards();
 	});
 
@@ -114,7 +114,7 @@
 			pokemonNumber: card.pokemonNumber
 		};
 
-		// Don't scroll immediately - wait for the guess to be processed
+		/** The page does not scroll yet: it waits until the guess is processed. */
 
 		try {
 			const formData = new FormData();

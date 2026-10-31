@@ -3,7 +3,7 @@ import type { EmailOtpType } from '@supabase/supabase-js';
 
 const OTP_TYPES: readonly EmailOtpType[] = ['email', 'email_change', 'invite', 'magiclink', 'recovery', 'signup'];
 
-/** Only a same-origin path is followed, so a crafted `next` cannot bounce a freshly authenticated user off-site. */
+/** Only a same-origin path is followed, so a crafted `next` cannot redirect a freshly signed-in user to another site. */
 const safePath = (next: string | null): string => (next?.startsWith('/') && !next.startsWith('//') ? next : '/');
 
 const withError = (path: string, origin: string, code: string): string => {
@@ -14,8 +14,8 @@ const withError = (path: string, origin: string, code: string): string => {
 
 /**
  * Trades the one-time `token_hash` of an email link for a session. The exchange runs on `locals.supabase`, so
- * `hooks.server.ts` writes the auth cookies onto this very response and every later server load sees the user.
- * The link carries a hash rather than an access token, and it is spent here rather than in the browser.
+ * `hooks.server.ts` writes the auth cookies onto this response and every later server load sees the user.
+ * The link carries a hash, not an access token, and it is used up here on the server, not in the browser.
  */
 export const GET: RequestHandler = async ({ locals, url }) => {
 	const tokenHash = url.searchParams.get('token_hash');

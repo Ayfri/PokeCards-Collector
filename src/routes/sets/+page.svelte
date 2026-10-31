@@ -21,7 +21,7 @@
 
 	type SetSortValue = 'cardCount' | 'code' | 'name' | 'releaseDate' | 'totalPrice';
 
-	/** Every comparator sorts ascending; the direction flips the result rather than duplicating each branch. */
+	/** Every comparator sorts ascending, and the direction flips the result so no comparator needs a descending branch. */
 	const COMPARATORS: Record<SetSortValue, (a: SetWithPrice, b: SetWithPrice) => number> = {
 		cardCount: (a, b) => setCardCount(a) - setCardCount(b),
 		code: (a, b) => (a.ptcgoCode || '').localeCompare(b.ptcgoCode || ''),
@@ -44,7 +44,7 @@
 	}
 
 	const sortDirection = $derived(setsSort.direction === 'desc' ? -1 : 1);
-	/** localStorage can still hold a sort value from an older build, which would index `COMPARATORS` with a key it no longer has. */
+	/** localStorage can hold a sort value from an older build that `COMPARATORS` has no key for, so it falls back to `releaseDate`. */
 	const comparator = $derived(COMPARATORS[setsSort.value] ?? COMPARATORS.releaseDate);
 	const sortedSets = $derived([...(typedSets ?? [])].sort((a, b) => comparator(a, b) * sortDirection));
 
@@ -62,7 +62,7 @@
 		return acc;
 	}, {} as Record<string, SetWithPrice[]>));
 
-	// Series are ordered by their first set, except by name where the series name is what the user reads.
+	/** Series are ordered by their first set, except when sorting by name, where the series name is what the user reads. */
 	const seriesKeys = $derived(Object.keys(groupedSets).sort((a, b) => {
 		if (setsSort.value === 'name') return a.localeCompare(b) * sortDirection;
 
@@ -72,7 +72,7 @@
 		return comparator(firstSetA, firstSetB) * sortDirection;
 	}));
 
-	/** Release years a group spans, one year when all its sets came out the same year. */
+	/** The release years a group spans, a single year when all its sets came out the same year. */
 	function yearSpan(sets: SetWithPrice[]): string {
 		const years = sets.map(set => new Date(set.releaseDate).getFullYear());
 		const [first, last] = [Math.min(...years), Math.max(...years)];

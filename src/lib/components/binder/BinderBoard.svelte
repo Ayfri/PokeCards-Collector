@@ -24,7 +24,7 @@
 		rows: number;
 		/** Global index of the slot a click-to-place would fill, `-1` when nothing is armed. */
 		nextEmpty?: number;
-		/** Facing-pages view, as the binder actually opens. */
+		/** Two facing pages at once, the way a real binder opens. */
 		spread: boolean;
 	}
 
@@ -52,7 +52,7 @@
 	const step = $derived(spread ? 2 : 1);
 	/** The page actions work on whatever is on screen, so a spread is cleared or deleted as a whole. */
 	const actionTarget = $derived(visible.length > 1 ? 'both pages on screen' : 'the current page');
-	/** Deleting the last page leaves a fresh empty one, so the only pointless case is a binder that is already just that. */
+	/** Deleting the last page leaves a fresh empty one, so delete does nothing useful only when the binder is already a single empty page. */
 	const nothingToDelete = $derived(pages.length === 1 && !pages[0].some(Boolean));
 
 	function nextEmptyOn(pageIndex: number) {
@@ -97,7 +97,7 @@
 		</div>
 	</div>
 
-	<!-- Binder body: the sheets sit on a dark cover, split by a ringed spine when both facing pages show. -->
+	<!-- The sheets sit on a dark cover, split by a ringed spine when both facing pages show. -->
 	<div class="flex min-h-0 flex-1 justify-center rounded-2xl bg-gray-900 p-3 ring-1 ring-white/5 inset-shadow-sm">
 		<div class="flex h-full w-full items-stretch justify-center gap-2">
 			{#each visible as pageIndex (pageIndex)}

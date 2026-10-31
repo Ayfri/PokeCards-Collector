@@ -1,8 +1,8 @@
 /**
- * Logo and symbol of the English sets TCGdex holds no image for, as the pokemontcg.io API lists them: the images the collector
- * community settled on. Newer sets live on scrydex, its image host, with no extension. Only tried after the TCGdex CDN, so an
- * upload there takes over. pokemontcg.io gives the 2011-2021 McDonald's collections the same arches logo, so the 2023 and 2024
- * ones it does not list reuse it.
+ * Logo and symbol of the English sets TCGdex has no image for, as the pokemontcg.io API lists them: the images the collector
+ * community settled on. Newer sets use scrydex, its image host, with no file extension. They are only tried after the TCGdex
+ * CDN, so an upload there takes over. pokemontcg.io gives the 2011-2021 McDonald's collections the same arches logo, so the
+ * 2023 and 2024 ones it does not list reuse it.
  */
 const MCDONALDS_LOGO = 'https://images.pokemontcg.io/mcd21/logo.png';
 

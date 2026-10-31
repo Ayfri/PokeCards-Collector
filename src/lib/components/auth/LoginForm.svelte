@@ -64,7 +64,7 @@
 
 			onSuccess?.();
 
-			// Invalidate all load functions to ensure session changes are picked up
+			/** Re-runs every load function so the pages see the new session. */
 			await invalidateAll();
 
 			const currentPath = page.url.pathname;
@@ -94,7 +94,7 @@
 		}
 		resetLoading = true;
 		try {
-			/** No `redirectTo`: the Recovery email template points at `{{ .SiteURL }}/auth/confirm`, which is not gated on the redirect allow list. */
+			/** No `redirectTo`: the Recovery email template already links to `{{ .SiteURL }}/auth/confirm`, which the redirect allow list does not gate. */
 			const { error } = await supabase.auth.resetPasswordForEmail(resetEmail);
 			if (error) {
 				resetMessage = error.message || 'Failed to send reset email.';

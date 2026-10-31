@@ -6,8 +6,8 @@ import { POKEMONS_COUNT } from '~/constants';
 import { cardPrice } from '$helpers/card-utils';
 
 /**
- * What one grid tile needs. The page used to ship `cards` and `prices` whole - ~14 MB of JSON for 1025 tiles
- * that only read a count, a link target and a fallback scan - so the two tables stay on the server now.
+ * What one grid tile needs. The tiles only read a count, a link target and a fallback scan, so `cards` and `prices` stay
+ * on the server: sending them whole is ~14 MB of JSON for 1025 tiles.
  */
 export interface PokemonListEntry {
 	cardCode: string;
@@ -20,7 +20,7 @@ export interface PokemonListEntry {
 export const load: PageServerLoad = async () => {
 	const [pokemons, allCards, prices] = await Promise.all([getPokemons(), getCards(), getPrices()]);
 
-	// One pass over the 23546 cards, against a full scan per Pokémon before, which was 24M comparisons a render.
+	/** One pass over the 23546 cards: scanning all of them for each Pokémon would take 24M comparisons per render. */
 	const best = new Map<number, { cardCode: string; count: number; image: string; price: number }>();
 	for (const card of allCards) {
 		const pokemonId = card.pokemonNumber;

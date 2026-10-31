@@ -10,7 +10,7 @@ export interface BinderExportOptions {
 	username?: string;
 }
 
-/** Rendered size of one card, tuned so a 3x3 page lands around 1000px wide - big enough to read the art. */
+/** Size of one card in the export: a 3x3 page comes out ~1000px wide, big enough to read the art. */
 const CARD_WIDTH = 300;
 const CARD_HEIGHT = 420;
 const GAP = 12;
@@ -20,8 +20,8 @@ const BACKGROUND = '#0f1420';
 const SHEET = '#1b2130';
 
 /**
- * A binder slot stores the extensionless TCGdex base, while URL imports store a ready image URL. Only the
- * latter needs the proxy: `assets.tcgdex.net` answers with `Access-Control-Allow-Origin: *`.
+ * A slot holds either an extensionless TCGdex base or, for a URL import, a ready image URL. Only the ready URL goes
+ * through the proxy, because `assets.tcgdex.net` already sends `Access-Control-Allow-Origin: *`.
  */
 function resolveExportUrl(url: string): string {
 	const lastSegment = url.split('/').pop() ?? '';
@@ -59,7 +59,7 @@ export async function renderBinderImage({ columns, pages, rows, username }: Bind
 	ctx.fillStyle = BACKGROUND;
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-	// Every image is fetched at once, then drawn in order so a slow card never reorders the grid.
+	/** All images load in parallel but are drawn in slot order, so a slow card never moves the others. */
 	const images = await Promise.all(
 		pages.flatMap(page => page.map(slot => (slot?.url ? loadImage(resolveExportUrl(slot.url)) : Promise.resolve(null))))
 	);

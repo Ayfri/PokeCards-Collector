@@ -11,13 +11,13 @@ interface Env {
 	TCGDEX_READER: DurableObjectNamespace<TcgdexReader>;
 }
 
-/** Sets fetched per step: a step is one Worker invocation, so its subrequests must stay well under the per-invocation cap. */
+/** Sets fetched per step. A step is one Worker invocation, so its subrequests must stay well under the per-invocation cap. */
 const SETS_PER_STEP = 4;
 
 /**
  * Runs every TCGdex read from Western Europe. `api.tcgdex.net` is geo-DNS: Europe gets the French origin, North America
- * two Canadian mirrors frozen on the 2026-09-17 build, which list 158 of the 161 30th Celebration cards with no price.
- * Cron-created Workflow instances ran there, and the sync deleted the prices those mirrors no longer had.
+ * gets two Canadian mirrors frozen on the 2026-09-17 build, which list 158 of the 161 30th Celebration cards with no price.
+ * Workflow instances created by the cron ran in North America, so the sync deleted the prices those mirrors lacked.
  */
 export class TcgdexReader extends DurableObject<Env> {
 	private readonly supabase = createSyncClient(this.env.PUBLIC_SUPABASE_URL, this.env.SUPABASE_SECRET_KEY);
@@ -33,14 +33,14 @@ export class TcgdexReader extends DurableObject<Env> {
 }
 
 /**
- * Daily TCGdex -> Supabase refresh. One step per set batch, so a failure retries that batch alone
- * instead of the whole catalogue. Every delete is scoped to a set TCGdex just answered for (a card it dropped, a price
- * it lost, a set it holds no card for), so a half-finished pass never removes rows it has not reached yet.
+ * Daily TCGdex -> Supabase refresh. One step per set batch, so a failure retries that batch alone, not the whole
+ * catalogue. Every delete is scoped to a set TCGdex just answered for (a card it dropped, a price it lost, a set it
+ * holds no card for), so a half-finished pass never removes rows it has not reached yet.
  */
 export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 	async run(_event: WorkflowEvent<unknown>, step: WorkflowStep): Promise<void> {
 		const supabase = createSyncClient(this.env.PUBLIC_SUPABASE_URL, this.env.SUPABASE_SECRET_KEY);
-		/** A location hint only applies when the object is first created, so the fixed name keeps it in Western Europe for good. */
+		/** Cloudflare honours a location hint only when the object is first created, and only on a best-effort basis, so the fixed name `weur` reuses that one object. */
 		const reader = this.env.TCGDEX_READER.get(this.env.TCGDEX_READER.idFromName('weur'), {locationHint: 'weur'});
 
 		for (const lang of LANGUAGES) {

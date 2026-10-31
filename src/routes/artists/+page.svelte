@@ -19,7 +19,7 @@
 
 	let { data }: Props = $props();
 
-	/** Totals reach five figures, so cents are noise: they are dropped past 100 EUR. */
+	/** Totals reach five figures, so cents are noise and are dropped from 100 EUR up. */
 	function formatEuros(value: number): string {
 		return `${value.toLocaleString('en-US', { maximumFractionDigits: value >= 100 ? 0 : 2 })} €`;
 	}
@@ -27,7 +27,7 @@
 	/** Cards drawn on the preview stack of an artist card. */
 	const SHOWCASE_SIZE = 3;
 
-	/** Scans that failed to load: their card leaves the stack and the next candidate takes its place. */
+	/** Scans that failed to load: their card leaves the stack and the next candidate replaces it. */
 	const failedImages = new SvelteSet<string>();
 
 	/** The first candidates whose scan still loads, else the top ones drawn as "No artwork" plates. */
@@ -103,7 +103,7 @@
 
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ y: 50, duration: 400, delay: 400 }}>
 		{#each filteredArtists as artist (artist.name)}
-			<!-- Offscreen tiles skip style and layout until scrolled near: most of the 411 are below the fold. -->
+			<!-- Offscreen tiles skip style and layout work until they scroll near, since most of the 411 are below the fold. -->
 			<div class="[contain-intrinsic-size:auto_290px] [content-visibility:auto]" in:fly={{ y: 20, duration: 300, delay: 50 }}>
 				<a href="/cards-list?artist={encodeURIComponent(artist.name.toLowerCase())}" class="block h-full" title={`Browse every card illustrated by ${artist.name}`}>
 					<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">

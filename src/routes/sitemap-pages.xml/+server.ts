@@ -2,12 +2,12 @@ import { BY_GRID } from '$helpers/catalogues';
 import { getSets } from '$lib/helpers/supabase-data';
 import { sitemapResponse, urlset, type SitemapEntry } from '$helpers/sitemap';
 
-/** Browsable routes and every set grid. User pages are left out: they are `noindex` unless the profile is public. */
+/** Browsable routes and every set grid. User pages are left out because they are `noindex` unless the profile is public. */
 export async function GET() {
 	const foreign = Object.values(BY_GRID);
 	const [sets, ...foreignSets] = await Promise.all([getSets(), ...foreign.map(({ language }) => getSets(language))]);
 
-	/** No `lastmod` anywhere: nothing here carries a real modification date, and "now" on every URL teaches crawlers to ignore the field. */
+	/** No `lastmod`: nothing here has a real modification date, and a "now" timestamp on every URL teaches crawlers to ignore the field. */
 	const entries: SitemapEntry[] = [
 		{ changefreq: 'daily', loc: '/', priority: 1 },
 		{ changefreq: 'daily', loc: '/cards-list', priority: 0.9 },
@@ -22,7 +22,7 @@ export async function GET() {
 		{ changefreq: 'daily', loc: '/users', priority: 0.5 },
 	];
 
-	// A `?set=` grid is a distinct document with its own title, description and schema, so each one is listed.
+	/** A `?set=` grid is a separate document with its own title, description and schema, so each one is listed. */
 	for (const set of sets) {
 		entries.push({
 			changefreq: 'weekly',

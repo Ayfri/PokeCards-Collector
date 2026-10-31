@@ -11,7 +11,8 @@ export async function addCardToCollection(username: string, cardCode: string, cl
 		loading.mutation = true;
 		const { count, error: countError } = await client
 			.from('collections')
-			.select('*', { count: 'exact', head: true }) // Use head: true for efficiency
+			/** `head: true` returns the count without the rows. */
+			.select('*', { count: 'exact', head: true })
 			.eq('username', username)
 			.eq('card_code', cardCode);
 
@@ -36,8 +37,8 @@ export async function addCardToCollection(username: string, cardCode: string, cl
 
 		if (!error && data) collection.add(data.card_code, 1);
 
-		// Return minimal data, error handling happens in component
-		return { data: data ? { card_code: data.card_code } : null, error };
+		/** Only the card code is returned, the caller handles the error. */
+		return { data: data ?{ card_code: data.card_code } : null, error };
 	} catch (error) {
 		console.error('Error adding card instance to collection:', error);
 		return { data: null, error };
@@ -49,7 +50,7 @@ export async function addCardToCollection(username: string, cardCode: string, cl
 export async function removeCardFromCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		loading.mutation = true;
-		// Find *one* specific row ID for this card to delete
+		/** One row per copy, so removing one copy deletes exactly one row. */
 		const { data: rowToDelete, error: fetchError } = await client
 			.from('collections')
 			.select('id')
@@ -61,7 +62,7 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 		if (fetchError) throw fetchError;
 		
 		if (!rowToDelete) {
-			// Card not found, maybe store count was out of sync
+			/** No row means the client-side count was probably out of sync, so it is corrected here. */
 			console.warn('Attempted to remove a card instance not found in DB:', cardCode);
 			collection.remove(cardCode);
 			return { data: null, error: { message: 'Card instance not found in collection' } };
@@ -74,7 +75,7 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 
 		if (!deleteError) collection.add(cardCode, -1);
 
-		// Return minimal data, error handling happens in component
+		/** Only the card code is returned, the caller handles the error. */
 		return { data: !deleteError ? { card_code: cardCode } : null, error: deleteError }; 
 
 	} catch (error) {

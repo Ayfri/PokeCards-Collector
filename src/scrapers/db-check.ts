@@ -5,11 +5,11 @@ import {EXCLUDED_SERIES} from './tcgdex/excluded';
 import {sharedProductCodes, speciesInName} from './tcgdex/mappers';
 
 /**
- * Read-only sanity pass over the live Supabase catalogue. It never writes: every check reports counts
- * and a short sample, so a bad upload is visible before anyone browses into it.
+ * Read-only sanity pass over the live Supabase catalogue. It never writes: each check reports a count and a short
+ * sample, so a bad upload shows up before anyone browses into it.
  */
 
-/** A single card worth more than this is a scraping accident, not a price: the most expensive graded singles trade below it. */
+/** A single card above this price is a scraping accident: even the most expensive graded singles trade below it. */
 const ABSURD_PRICE = 100_000;
 const SAMPLE = 5;
 
@@ -129,10 +129,10 @@ export async function checkDatabase(): Promise<CheckReport> {
 		add(tag('sets holding more cards than total_cards'), 'warn', sets.filter(set => set.total_cards !== null && (heldPerSet.get(set.set_id) ?? 0) > set.total_cards).map(set => set.set_id));
 	}
 
-	/** A warning, since 19 legacy Japanese codes (`pokemon_6_sv3_125`) already match English ones and owned rows keep them frozen. */
+	/** Only a warning: 19 legacy Japanese codes (`pokemon_6_sv3_125`) already match English ones, and owned rows keep them frozen. */
 	add('card_code in several catalogues', 'warn', shared);
 
-	// Kept on purpose: an owned code no table carries renders again once TCGdex fills the set in.
+	/** Only a warning, and the rows are kept on purpose: an owned code no table carries renders again once TCGdex fills the set in. */
 	add('owned codes resolving to no card', 'warn', [...await ownedCardCodes(supabase)].filter(code => !known.has(code)));
 
 	return {

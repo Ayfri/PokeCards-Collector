@@ -6,17 +6,17 @@ import {catalogueSets, excludedSetIds} from './tcgdex/excluded';
 import {mapCard, mapPrice, mapSet, resolveCardCode, sharedProductCodes, type Language} from './tcgdex/mappers';
 import type {TcgdexCard, TcgdexSet} from './tcgdex/types';
 
-/** Workers-safe half of the scraper: no `node:fs`, no staged JSON, TCGdex straight into Supabase. */
+/** Workers-safe half of the scraper: no `node:fs` and no staged JSON, it maps TCGdex straight into Supabase. */
 
 export function createSyncClient(url: string, secretKey: string): SupabaseClient {
 	if (!url || !secretKey) throw new Error('Missing PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY');
 	return createClient(url, secretKey, {auth: {persistSession: false}});
 }
 
-/** The CLI's client, keyed from `.env`. */
+/** The CLI's client, configured from `.env`. */
 export const envClient = () => createSyncClient(process.env.PUBLIC_SUPABASE_URL ?? '', process.env.SUPABASE_SECRET_KEY ?? '');
 
-/** Pages a whole table under Supabase's 1000-row select cap. `orderBy` must be unique, or pages overlap and skip rows. */
+/** Reads a whole table in pages, because Supabase caps a select at 1000 rows. `orderBy` must be unique, or pages overlap and skip rows. */
 export async function readAll<T>(supabase: SupabaseClient, table: string, columns: string, orderBy: string): Promise<T[]> {
 	const rows: T[] = [];
 	for (let from = 0; ; from += 1000) {
@@ -27,13 +27,13 @@ export async function readAll<T>(supabase: SupabaseClient, table: string, column
 	}
 }
 
-/** Card codes users own. The binder lives in localStorage, so Postgres only knows these two tables. */
+/** Card codes users own. The binder lives in localStorage, so only the collections and wishlists tables hold owned cards. */
 export async function ownedCardCodes(supabase: SupabaseClient): Promise<Set<string>> {
 	const tables = await Promise.all(['collections', 'wishlists'].map(table => readAll<{id: string; card_code: string}>(supabase, table, 'id,card_code', 'id')));
 	return new Set(tables.flat().map(row => row.card_code));
 }
 
-/** Upserts in batches; Supabase rejects a single statement carrying tens of thousands of rows. */
+/** Upserts in batches, because Supabase rejects a single statement with tens of thousands of rows. */
 export async function upsertRows(supabase: SupabaseClient, table: string, rows: Record<string, unknown>[], onConflict: string, batchSize = 500): Promise<number> {
 	for (let index = 0; index < rows.length; index += batchSize) {
 		const {error} = await supabase.from(table).upsert(rows.slice(index, index + batchSize), {onConflict});
@@ -42,7 +42,7 @@ export async function upsertRows(supabase: SupabaseClient, table: string, rows: 
 	return rows.length;
 }
 
-/** Deletes the rows whose `column` is in `values`, in chunks that keep the PostgREST query string short, and returns how many went. */
+/** Deletes the rows whose `column` is in `values` and returns how many went. Chunks keep the PostgREST query string short. */
 export async function deleteIn(supabase: SupabaseClient, table: string, column: string, values: readonly string[], chunkSize = 200): Promise<number> {
 	let deleted = 0;
 	for (let index = 0; index < values.length; index += chunkSize) {
@@ -53,7 +53,7 @@ export async function deleteIn(supabase: SupabaseClient, table: string, column: 
 	return deleted;
 }
 
-/** Deduplicates on the primary key, keeping the last occurrence. */
+/** Keeps the last row for each `key`, because an upsert fails when one statement carries the same key twice. */
 export function deduplicate(rows: Record<string, unknown>[], key: string): Record<string, unknown>[] {
 	const byKey = new Map<unknown, Record<string, unknown>>();
 	for (const row of rows) byKey.set(row[key], row);
@@ -61,8 +61,8 @@ export function deduplicate(rows: Record<string, unknown>[], key: string): Recor
 }
 
 /**
- * Upserts every set of a language that holds a card, minus the excluded series, and drops the stored sets that no
- * longer do: TCGdex lists sets it has no card for yet (the 15 Japanese CS sets, all named トリプレットビート).
+ * Upserts every set of a language that holds a card, minus the excluded series, and drops the stored sets that hold none:
+ * TCGdex lists sets it has no card for yet (the 15 Japanese CS sets, all named トリプレットビート).
  * Returns every listed set id, empty ones included, so the card pass also clears the cards a set lost.
  */
 export async function syncSets(supabase: SupabaseClient, client: TcgdexClient, lang: Language): Promise<string[]> {
@@ -75,7 +75,7 @@ export async function syncSets(supabase: SupabaseClient, client: TcgdexClient, l
 	})).filter((set): set is TcgdexSet => set !== null);
 	await upsertRows(supabase, table, details.filter(set => set.cards?.length).map(set => setRow(mapSet(set))), 'set_id', 100);
 
-	// Only a set TCGdex answered for and found empty is dropped; one that failed to load keeps its row.
+	/** Only a set TCGdex answered for and found empty is dropped. A set that failed to load keeps its row. */
 	await deleteIn(supabase, table, 'set_id', details.filter(set => !set.cards?.length).map(set => set.id));
 	return details.map(set => set.id);
 }
@@ -91,7 +91,7 @@ interface StoredCard {
 	setId: string;
 }
 
-/** `tcgdex_id` -> stored `card_code` and set for the given sets, one query per set to stay under Supabase's 1000-row select cap. */
+/** `tcgdex_id` -> stored `card_code` and set for the given sets. One query per set keeps each under Supabase's 1000-row select cap. */
 async function storedCards(supabase: SupabaseClient, table: string, setIds: readonly string[]): Promise<Map<string, StoredCard>> {
 	const cards = new Map<string, StoredCard>();
 	await Promise.all(setIds.map(async setId => {
@@ -103,9 +103,9 @@ async function storedCards(supabase: SupabaseClient, table: string, setIds: read
 }
 
 /**
- * Fetches every card of the given sets and upserts cards then prices (the price table has a foreign key on `card_code`).
- * The rows to delete go first: a card TCGdex no longer lists, and the old row of a card whose code an override
- * changes, since two codes can swap within a set. Prices follow through `on delete cascade`; collections are never touched.
+ * Fetches every card of the given sets and upserts cards, then prices (the price table has a foreign key on `card_code`).
+ * Deletes run first: a card TCGdex no longer lists, and the old row of a card whose code an override changes, since two
+ * codes can swap within a set. Prices follow through `on delete cascade`. Collections are never touched.
  */
 export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClient, lang: Language, setIds: readonly string[]): Promise<SyncCardsResult> {
 	const tables = CATALOGUES[lang].tables;
@@ -118,7 +118,7 @@ export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClien
 	const fetched = await mapAll(ids, id => client.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`));
 	if (lang === 'fr') fileUnderListingSets(fetched, details);
 
-	// A set that failed to load removes nothing.
+	/** Only sets that answered can delete cards, so a set that failed to load removes nothing. */
 	const listed = new Set(ids);
 	const answered = new Set(details.flatMap(set => set ? [set.id] : []));
 	const stale = [...stored].filter(([tcgdexId, card]) => !listed.has(tcgdexId) && answered.has(card.setId)).map(([, card]) => card.code);
@@ -147,8 +147,8 @@ export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClien
 }
 
 /**
- * Clears the price and Cardmarket link of every card sharing its product with a differently named card
- * (see `sharedProductCodes`). The groups cross sets, so this runs once over the whole table after the card pass.
+ * Clears the price and Cardmarket link of every card that shares its product with a differently named card
+ * (see `sharedProductCodes`). The groups span several sets, so this runs once over the whole table after the card pass.
  */
 export async function dropSharedProducts(supabase: SupabaseClient, lang: Language): Promise<number> {
 	const tables = CATALOGUES[lang].tables;

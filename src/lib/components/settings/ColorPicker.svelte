@@ -23,7 +23,7 @@
 	const isValid = $derived(/^#[0-9A-Fa-f]{6}$/.test(value));
 
 	onMount(async () => {
-		// vanilla-colorful registers a custom element, so it must never run during SSR.
+		/** `vanilla-colorful` registers a custom element, so it can only be imported in the browser, never during SSR. */
 		await import('vanilla-colorful/hex-color-picker.js');
 		pickerReady = true;
 	});

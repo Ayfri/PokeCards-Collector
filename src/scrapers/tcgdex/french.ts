@@ -1,6 +1,6 @@
 import type {TcgdexCard} from './types';
 
-/** TCGdex localizes these four enumerations while the filters, RARITY_MAPPING and the card codes expect English values. */
+/** TCGdex localizes these four enumerations, but the filters, `RARITY_MAPPING` and the card codes expect English values. */
 export const FRENCH = {
 	category: {Dresseur: 'Trainer', Énergie: 'Energy', Pokémon: 'Pokemon'},
 	rarity: {

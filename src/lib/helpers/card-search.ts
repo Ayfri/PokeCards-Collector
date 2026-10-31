@@ -22,10 +22,10 @@ interface SearchEntry {
 	setNameLower: string;
 }
 
-/** Resolving the set and lowercasing the fields once per catalogue, so each search is a plain loop over the index. */
+/** The index resolves each card's set and lowercases its fields once per catalogue, so a search is a plain loop over it. */
 let searchIndex: SearchEntry[] = [];
 
-/** TCGdex zero-pads numbers ("043"), people type "43". */
+/** TCGdex zero-pads numbers ("043") but people type "43", so both sides drop the leading zeros. */
 const numberKey = (value: string) => value.replace(/^0+(?=\d)/, '');
 let indexedCards: FullCard[] | null = null;
 
@@ -51,7 +51,7 @@ function buildSearchIndex(cards: FullCard[], sets: Set[]): SearchEntry[] {
 	return searchIndex;
 }
 
-/** The per-query work `scoreEntry` used to redo for each of the 23546 entries: splitting on `/` and on spaces. */
+/** The per-query work (splitting on `/` and on spaces) done once, so `scoreEntry` does not repeat it for each of the 23546 entries. */
 interface CompiledQuery {
 	/** Every `name` / `setName` split point of a multi-word query ("pikachu base set" -> [["pikachu", "base set"], ...]). */
 	nameSetSplits: [string, string][] | null;
@@ -98,12 +98,12 @@ function compileQuery(text: string): CompiledQuery {
 	return query;
 }
 
-/** Higher is more relevant; 0 drops the card. Without it "pikachu" surfaced the Detective Pikachu set before any Pikachu. */
+/** Higher is more relevant, 0 drops the card. The tiers keep "pikachu" from listing the Detective Pikachu set before any Pikachu card. */
 function scoreEntry(entry: SearchEntry, query: CompiledQuery): number {
 	const { name, number, printedTotal, setCode, setNameLower: setName } = entry;
 	const text = query.text;
 
-	// Explicit combined forms win: they name a single printing.
+	/** Combined forms ("25/165", "pikachu 25") rank first because they name a single printing. */
 	if (query.slashNumber !== null && number === query.slashNumber
 		&& (query.numberTotal ? printedTotal === query.numberTotal : query.slashOpen)) return 130;
 
@@ -112,7 +112,7 @@ function scoreEntry(entry: SearchEntry, query: CompiledQuery): number {
 		if (name.includes(query.tailHead)) return 120;
 	}
 
-	// Card name + set name, trying every split point ("pikachu base set").
+	/** Card name + set name: every split point of the query is tried ("pikachu base set"). */
 	if (query.nameSetSplits) {
 		for (const [cardPart, setPart] of query.nameSetSplits) {
 			if (name.includes(cardPart) && setName.includes(setPart)) return 115;
@@ -130,8 +130,8 @@ function scoreEntry(entry: SearchEntry, query: CompiledQuery): number {
 
 /**
  * Ranks the catalogue against `query` and returns the best `limit` hits, already enriched with set and price.
- * The hits are kept in a sorted array of `limit` entries rather than collected and sorted at the end: a one-letter
- * query matches nearly every card, and sorting those 20k matches to keep ten of them was the bulk of the work.
+ * The hits live in a sorted array of `limit` entries instead of being collected and sorted at the end: a one-letter
+ * query matches nearly every card, and sorting those 20k matches to keep ten would be most of the work.
  */
 export function searchCards(
 	query: string,
@@ -151,7 +151,7 @@ export function searchCards(
 		const score = scoreEntry(entry, compiled);
 		if (score === 0) continue;
 
-		// Ties break on the shorter name, so an equal score still has to beat the tail on length.
+		/** Ties go to the shorter name, so an entry with the lowest kept score must also be shorter than the tail to get in. */
 		if (best.length === limit && (score < lowestScore
 			|| (score === lowestScore && entry.name.length >= best[limit - 1].entry.name.length))) continue;
 

@@ -313,6 +313,3 @@
 		{/if}
 	</button>
 </form>
-
-<style>
-</style> 

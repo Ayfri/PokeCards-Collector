@@ -39,7 +39,7 @@
 		<span class="text-gray-400">{filled}/{slotsPerPage}</span>
 	</div>
 
-	<!-- The sheet grows to the tallest size that still fits, so the cards are as big as the viewport allows. -->
+	<!-- The sheet takes the tallest size that fits, so the cards are as big as the viewport allows. -->
 	<div class="grid min-h-0 flex-1 place-items-center [container-type:size]">
 		<div
 			class="grid max-h-full w-full gap-2 grid-cols-[repeat(var(--columns),minmax(0,1fr))] grid-rows-[repeat(var(--rows),minmax(0,1fr))]"

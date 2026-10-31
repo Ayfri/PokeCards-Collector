@@ -41,15 +41,15 @@ export function morphCards(codes: (string | undefined)[], update: () => Promise<
 		card = findCard(codes);
 		card?.style.setProperty('view-transition-name', CARD_NAME);
 	};
-	/** Browsers without transition types only take the callback form, an options object there would never run `update`. */
+	/** Browsers without transition types only accept the callback form: an options object there never runs `update`. */
 	const transition = document.startViewTransition('types' in ViewTransition.prototype ? { types, update: run } : run);
 	const release = () => card?.style.removeProperty('view-transition-name');
 	transition.finished.then(release, release);
 }
 
 /**
- * The `onNavigate` side of the page transitions: history back plays them in reverse, and the card being opened or left flies between pages.
- * Query-only navigations (filters, sorting, paging) stay instant, a transition would freeze the grid on every change.
+ * The `onNavigate` side of the page transitions: going back plays them in reverse, and the card opened or left flies between pages.
+ * Query-only navigations (filters, sorting, paging) skip the transition, which would freeze the grid on every change.
  */
 export function transitionNavigation(navigation: OnNavigate): Promise<void> | undefined {
 	if (!canTransition() || navigation.from?.url.pathname === navigation.to?.url.pathname) return;

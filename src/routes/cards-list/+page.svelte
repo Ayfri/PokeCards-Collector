@@ -14,7 +14,7 @@
 
 	const sets = $derived(data.sets);
 
-	/** Only the L and XL presets are wide enough to be worth the full-resolution art. */
+	/** Only the L and XL card sizes are wide enough to need the full-resolution art. */
 	const lowRes = $derived(cardSize.current < 2);
 
 	const selectedSetName = $derived(filters.set !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === filters.set)?.name ?? null) : null);
@@ -24,7 +24,7 @@
 <main class="max-lg:px-0 text-white text-lg flex min-h-0 flex-col flex-1 lg:-mt-8">
 	<GridHeading description={data.description} title={data.title} />
 
-	<!-- The loader is out of the flow: during its out transition the grid mounts under it instead of below it. -->
+	<!-- The loader is absolutely positioned so that during its out transition the grid mounts under it, not below it. -->
 	<div class="relative flex min-h-0 flex-1 flex-col">
 		{#await data.streamed.grid}
 			<div class="absolute inset-x-0 top-32 flex justify-center">

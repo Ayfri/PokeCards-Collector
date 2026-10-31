@@ -2,12 +2,12 @@ import { error } from '@sveltejs/kit';
 import { BASE_URL } from '~/constants';
 import type { RequestHandler } from './$types';
 
-/** SVG is deliberately absent: it is a scriptable document, and echoing one back under our own origin is stored XSS. */
+/** SVG is left out on purpose: it can run scripts, and serving one from our own origin would be a stored XSS. */
 const ALLOWED_TYPES = new Set(['image/avif', 'image/gif', 'image/jpeg', 'image/png', 'image/webp']);
 
 const MAX_BYTES = 12 * 1024 * 1024;
 
-/** The site's custom domain, its `workers.dev` and preview hostnames and local dev, all of which would proxy back into this Worker. */
+/** The site's custom domain, its `workers.dev` and preview hostnames and localhost: all of them would loop the proxy back into this Worker. */
 const CUSTOM_HOSTNAME = new URL(BASE_URL).hostname;
 const isOwnHost = (hostname: string, requestHostname: string) =>
 	hostname === requestHostname
@@ -15,7 +15,7 @@ const isOwnHost = (hostname: string, requestHostname: string) =>
 	|| hostname === 'localhost'
 	|| hostname.endsWith('.workers.dev');
 
-/** Errors the stream past `limit` bytes: `content-length` is absent on a chunked upstream, so it cannot be trusted alone. */
+/** Errors the stream past `limit` bytes, since `content-length` is missing on a chunked upstream and cannot be trusted alone. */
 const capBytes = (limit: number) => {
 	let received = 0;
 	return new TransformStream<Uint8Array, Uint8Array>({
@@ -28,12 +28,12 @@ const capBytes = (limit: number) => {
 };
 
 /**
- * Proxies the user-supplied image URLs a binder draws on its canvas, and nothing else. Card art comes straight
- * from `assets.tcgdex.net`, which is CORS-open.
+ * Proxies the user-supplied image URLs a binder draws on its canvas, and nothing else. Card art needs no proxy
+ * because `assets.tcgdex.net` is CORS-open.
  *
- * The endpoint is public, so it is written as an image proxy rather than a URL proxy: HTTPS only, never our own
- * origin, and the upstream `content-type` has to be a raster image we recognise before a single byte is echoed
- * back. Forwarding it verbatim would let anyone serve HTML from `pokecards-collector.ayfri.com`.
+ * The endpoint is public, so it is an image proxy, not a URL proxy: HTTPS only, never our own origin, and the
+ * upstream `content-type` must be a known raster image before any byte is returned. Forwarding it as-is would let
+ * anyone serve HTML from `pokecards-collector.ayfri.com`.
  */
 export const GET: RequestHandler = async ({ fetch, url }) => {
 	const target = url.searchParams.get('url');
@@ -66,7 +66,7 @@ export const GET: RequestHandler = async ({ fetch, url }) => {
 	return new Response(response.body?.pipeThrough(capBytes(MAX_BYTES)), {
 		headers: {
 			'cache-control': 'public, max-age=31536000, immutable',
-			// Nothing here is a document, so pin the type and forbid the browser from ever treating it as one.
+			/** The response is never a document, so the type is pinned and the browser is forbidden from treating it as one. */
 			'content-security-policy': "default-src 'none'; sandbox",
 			'content-type': contentType,
 			'x-content-type-options': 'nosniff',

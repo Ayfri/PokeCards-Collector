@@ -5,16 +5,16 @@ import { getCards, getSets } from '$helpers/supabase-data';
 import type { Card, Set } from '$lib/types';
 import type { RequestHandler } from './$types';
 
-/** One row per copy, so a 99-copy card is 99 rows: the same shape `addCardToCollection` writes one at a time. */
+/** A collection stores one row per copy, so 99 copies of a card are 99 rows, the same shape `addCardToCollection` writes one at a time. */
 const MAX_CARD_QUANTITY = 99;
-/** Supabase rejects an oversized statement long before it rejects the payload, so the copies go up in slices. */
+/** Supabase rejects an oversized statement well before the payload gets too big, so the copies are inserted in slices. */
 const INSERT_BATCH = 500;
 
 interface ImportRequest {
 	dryRun?: boolean;
 	kind?: 'collection' | 'wishlist';
 	rows?: ImportRow[];
-	/** The set every row belongs to, for a file that names none. Any alias resolves: TCGdex id, legacy code or printed name. */
+	/** The set every row belongs to, for a file that names none. Any alias works: TCGdex id, legacy code or printed name. */
 	setOverride?: string;
 }
 
@@ -25,12 +25,12 @@ interface CatalogueSource {
 
 const SOURCES: Record<Language, CatalogueSource> = {
 	en: { cards: () => getCards('en'), sets: () => getSets('en') },
-	/** The English sets are added so a French line naming its set in English still finds the French card. */
+	/** The English sets are included so a French line that names its set in English still finds the French card. */
 	fr: { cards: () => getCards('fr'), sets: async () => (await Promise.all([getSets('fr'), getSets('en')])).flat() },
 	ja: { cards: () => getCards('ja'), sets: () => getSets('ja') },
 };
 
-/** Rebuilt only when the daily scrape hands back a different card array, which is once an hour at worst. */
+/** Rebuilt only when `getCards` returns a different array, which happens at most once an hour after the daily scrape. */
 const cached = new Map<CatalogueSource, { cards: Card[]; catalogue: Catalogue }>();
 
 async function lookups(source: CatalogueSource): Promise<Catalogue> {
@@ -56,7 +56,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	const [en, fr, ja] = await Promise.all([lookups(SOURCES.en), lookups(SOURCES.fr), lookups(SOURCES.ja)]);
 	const { matched, unmatched } = resolveRows(rows, { en, fr, ja }, body.setOverride);
 
-	// The rows already owned decide what is left to write, and cap a card that the file would push past 99 copies.
+	/** The rows already owned decide what is left to write, so a card never goes past 99 copies. */
 	const { data: existing, error: readError } = await locals.supabase
 		.from(kind === 'wishlist' ? 'wishlists' : 'collections')
 		.select('card_code')
@@ -71,14 +71,14 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	let skipped = 0;
 
 	for (const { cardCode, quantity } of matched) {
-		// A wishlist holds a card once; a collection holds one row per copy, up to the same 99 the card page enforces.
+		/** A wishlist holds a card once. A collection holds one row per copy, up to the same 99 the card page enforces. */
 		const room = kind === 'wishlist' ? (owned.has(cardCode) ? 0 : 1) : Math.max(MAX_CARD_QUANTITY - (owned.get(cardCode) ?? 0), 0);
 		const toAdd = Math.min(quantity, room);
 		skipped += quantity - toAdd;
 		for (let copy = 0; copy < toAdd; copy++) inserts.push({ card_code: cardCode, username });
 	}
 
-	// Grouped rather than listed: 200 raw lines say nothing, "Trick or Trade 2023, 23 cards" says the set is missing.
+	/** Unmatched rows are grouped by set: 200 raw lines say little, while "Trick or Trade 2023, 23 cards" shows the set is missing. */
 	const bySet = new Map<string, number>();
 	for (const row of unmatched) bySet.set(row.set || row.number, (bySet.get(row.set || row.number) ?? 0) + 1);
 
@@ -98,7 +98,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
 	for (let start = 0; start < inserts.length; start += INSERT_BATCH) {
 		const { error: insertError } = await locals.supabase.from(kind === 'wishlist' ? 'wishlists' : 'collections').insert(inserts.slice(start, start + INSERT_BATCH));
-		// A failed slice leaves the ones before it in place, so the count reported is the count actually written.
+		/** A failed slice leaves the earlier ones written, so `added: start` is the real count of rows saved. */
 		if (insertError) return json({ ...summary, added: start, failure: insertError.message }, { status: 207 });
 	}
 

@@ -19,7 +19,7 @@ const config = {
 			'~': 'src/*',
 		},
 		typescript: {
-			// The generated include list only covers src/ and vite.config.ts, so the root scraper CLI would go unchecked.
+			/** The generated tsconfig only includes `src/` and `vite.config.ts`, so `scraper-cli.ts` at the root is added to get type-checked. */
 			config: (config) => {
 				config.include.push('../scraper-cli.ts');
 				return config;

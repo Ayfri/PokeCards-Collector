@@ -54,13 +54,13 @@
 	const { collectionStats, isOwnProfile, isPublic, targetProfile, totalCards } = $derived(data);
 	const username = $derived(targetProfile.username);
 	const possessive = $derived(isOwnProfile ? 'your' : `${username}'s`);
-	/** Tints the banner and the accents with the color picked in the settings, gold when none is set. */
+	/** Tints the banner and accents with the color picked in the settings, gold when none is set. */
 	const accent = $derived(targetProfile.profile_color && /^#[0-9A-Fa-f]{6}$/.test(targetProfile.profile_color) ? targetProfile.profile_color : '#fbc54a');
 
 	const setEntries = $derived(Object.values(collectionStats?.set_completion ?? {}));
 	const sortedSets = $derived(setEntries.toSorted(SET_SORTS[setSort].compare));
 	const completedSets = $derived(setEntries.filter(entry => entry.count === entry.total).length);
-	/** Started sets summed card by card and euro by euro, so a 300-card set weighs more than a 17-card one, unlike the average. */
+	/** Started sets are summed card by card and euro by euro, so a 300-card set weighs more than a 17-card one, unlike in the average. */
 	const totalCompletion = $derived.by(() => {
 		const sum = (key: 'collectedValue' | 'count' | 'total' | 'totalValue') => setEntries.reduce((total, entry) => total + entry[key], 0);
 		const [count, total, collectedValue, totalValue] = [sum('count'), sum('total'), sum('collectedValue'), sum('totalValue')];
@@ -73,7 +73,7 @@
 	});
 	const averageCompletion = $derived(setEntries.length ? setEntries.reduce((sum, entry) => sum + entry.percentage, 0) / setEntries.length : 0);
 
-	/** Rarest first, the bar widths are relative to the most collected rarity. */
+	/** Rarest first. Bar widths are relative to the most collected rarity. */
 	const rarities = $derived(Object.entries(collectionStats?.cards_by_rarity ?? {}).sort(([a], [b]) => compareRarities(b, a)));
 	const maxRarityCount = $derived(Math.max(1, ...rarities.map(([, count]) => count)));
 
@@ -123,7 +123,7 @@
 				return;
 			}
 
-			// The toggle writes through the browser client, so the page data has to be reloaded to reflect it.
+			/** The toggle writes through the browser client, so the page data must be reloaded to show it. */
 			await invalidateAll();
 			successMessage = `Your profile is now ${newVisibility ? 'public' : 'private'}.`;
 			setTimeout(() => successMessage = '', 3000);

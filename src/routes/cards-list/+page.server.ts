@@ -2,8 +2,8 @@ import type { PageServerLoad } from './$types';
 import { breadcrumbs, setSchema } from '$helpers/seo';
 
 /**
- * SEO only: the cards, prices, pokemons and types the grid needs come from `/api/cards-list` through `+page.ts`.
- * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends whatever it returns.
+ * SEO only: the grid's cards, prices, pokemons and types come from `/api/cards-list` through `+page.ts`.
+ * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends what it returns.
  */
 export const load: PageServerLoad = async ({ parent, url }) => {
 	const parentLayoutData = await parent();
@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 	if (setParam) {
 		const set = sets.find(s => s.name.toLowerCase() === setParam.toLowerCase());
 		if (set) {
-			// A filtered grid is its own document: same path, different title, description, image and schema.
+			/** A filtered grid is its own document for crawlers: same path, but its own title, description, image and schema. */
 			const total = set.totalCards ?? set.printedTotal;
 			const released = set.releaseDate ? new Date(set.releaseDate).getFullYear() : null;
 			ogImage = { url: set.logo, alt: `${set.name} set logo` };

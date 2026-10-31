@@ -51,7 +51,7 @@
     animation-delay: calc(var(--uib-speed) * -0.36);
   }
 
-  .cube:nth-child(2) .cube__inner { /* SCSS nesting doesn't work in <style> tags */
+  .cube:nth-child(2) .cube__inner {
       animation-delay: calc(var(--uib-speed) * -0.36);
   }
   
@@ -59,7 +59,7 @@
     animation-delay: calc(var(--uib-speed) * -0.2);
   }
 
-  .cube:nth-child(3) .cube__inner {  /* SCSS nesting doesn't work in <style> tags */
+  .cube:nth-child(3) .cube__inner {
       animation-delay: calc(var(--uib-speed) * -0.2);
   }
   

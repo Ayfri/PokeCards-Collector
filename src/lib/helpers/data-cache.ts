@@ -1,24 +1,24 @@
 /**
  * Memoization for the whole-table Supabase reads.
  *
- * The scraper Worker rewrites `cards` / `prices` / `sets` once a week, so every SSR render re-reading them is
- * pure waste: the edge logs showed ~285k REST calls a day, ~105k of them paging `cards` at ~530 ms a batch.
+ * The scraper Worker rewrites `cards` / `prices` / `sets` once a day, so re-reading them on every SSR render is
+ * pure waste: the edge logs show ~285k REST calls a day without a cache, ~105k of them paging `cards` at ~530 ms a batch.
  *
  * Three layers, cheapest first:
- * - a module-scope map, alive for as long as the isolate is, holding the *mapped* app-shape value;
- * - an in-flight map, so a burst of concurrent renders on a cold isolate issues one read instead of one each;
- * - Cloudflare's Cache API, shared by every isolate in the colo, holding the *raw rows* (JSON round-trips, so
- *   `Date` and `undefined` must not be in there - that is why the mapping runs after the cache, not before).
+ * - a module-scope map, alive as long as the isolate, holding the *mapped* app-shape value;
+ * - an in-flight map, so a burst of renders on a cold isolate issues one read instead of one each;
+ * - Cloudflare's Cache API, shared by every isolate in the colo, holding the *raw rows*. They go through JSON, which
+ *   loses `Date` and `undefined`, so the mapping runs after the cache, not before.
  *
- * `caches` only exists in the Worker runtime, so `vite dev` transparently falls through to the memo alone.
+ * `caches` only exists in the Worker runtime, so `vite dev` skips that layer and uses the memo alone.
  */
 
 const CACHE_ORIGIN = 'https://supabase-data.internal';
 
-/** Cards, prices and sets only move on the daily 04:00 UTC scrape, so an hour is already short enough to never show stale data for long. */
+/** Cards, prices and sets only change on the daily 04:00 UTC scrape, so an hour keeps stale data short-lived. */
 export const TABLE_TTL = 60 * 60;
 
-/** The Pokédex and the type list are effectively frozen. */
+/** The Pokédex and the type list almost never change. */
 export const STATIC_TTL = 24 * 60 * 60;
 
 interface MemoEntry {
@@ -35,7 +35,7 @@ function edgeCache(): Cache | null {
 	return (caches as CacheStorage & { default: Cache }).default;
 }
 
-/** Thrown by a fetch whose rows are usable but known incomplete (a table caught mid-rewrite): they are served once and never stored. */
+/** Thrown by a fetch whose rows are usable but known to be incomplete (a table caught mid-rewrite). They are served once and never stored. */
 export class PartialRows<Row> extends Error {
 	constructor(readonly rows: Row) {
 		super('Partial table read');
@@ -55,7 +55,7 @@ async function resolve<Row, T>(key: string, ttl: number, fetchRows: () => Promis
 		throw error;
 	}
 
-	// A colo hit can already be most of the way through its TTL, so the memo inherits what is left of it rather than restarting the clock.
+	/** A colo hit may be late in its TTL, so the memo keeps only the time left instead of restarting the clock (60 s minimum). */
 	const remaining = stored ? Math.max(ttl - Number(stored.headers.get('age') ?? 0), 60) : ttl;
 
 	if (!stored) {

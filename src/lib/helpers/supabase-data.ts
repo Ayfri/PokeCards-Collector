@@ -4,7 +4,7 @@ import { cachedTable, PartialRows, STATIC_TTL, TABLE_TTL } from '$helpers/data-c
 import { CATALOGUES, type CardTable, type Language, type PriceTable, type SetTable } from '$helpers/catalogues';
 import type { CatalogueData } from '$helpers/owned-cards';
 
-/** Columns every card read shares; keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
+/** Every card column, for the reads that need the details. Keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
 const CARD_COLUMNS = `
 	card_code,
 	artist,
@@ -28,9 +28,9 @@ const CARD_COLUMNS = `
 `;
 
 /**
- * The columns a card list reads. `getCards` returns every card in the table, so the six columns nothing
- * renders (`hp`, `legal_standard`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`) are dead
- * weight in a payload the browser has to parse before the grid can paint.
+ * The columns a card list reads. `getCards` returns every card in the table, and nothing renders six of the columns
+ * (`hp`, `legal_standard`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`), so they would only slow down the
+ * payload the browser parses before the grid can paint.
  */
 const CARD_LIST_COLUMNS = `
 	card_code,
@@ -115,7 +115,7 @@ function toCard(card: CardRow): FullCard {
 		types: card.types || '',
 	};
 
-	// A list read selects `CARD_LIST_COLUMNS`, so the detail-only keys stay off the object instead of shipping 23546 empty values.
+	/** A list read selects `CARD_LIST_COLUMNS`, so the detail-only keys stay off the object instead of adding 23546 empty values. */
 	if (!('hp' in card)) return listCard;
 
 	return {
@@ -170,8 +170,8 @@ const READ_ATTEMPTS = 3;
  * Runs a Supabase read until it succeeds, up to `READ_ATTEMPTS` times with a linear backoff.
  *
  * Paging a card table fires ~5 subrequests at once, and one of them occasionally dies with
- * `Error: Network connection lost.` - a Workers-side transient the query itself is fine on the next try.
- * Without this, that single dropped batch propagated all the way up as a 500 on the page.
+ * `Error: Network connection lost.`, a Workers-side transient that works on the next try.
+ * Without the retry, that single dropped batch would reach the page as a 500.
  */
 async function readWithRetry<T extends QueryResult>(label: string, run: () => PromiseLike<T>): Promise<T> {
 	for (let attempt = 1; ; attempt++) {
@@ -194,7 +194,7 @@ async function readWithRetry<T extends QueryResult>(label: string, run: () => Pr
  * first and every 5000-row page is then requested in parallel.
  *
  * `keyColumn` must hold a unique value: the pages are separate queries, and Postgres only returns them in a
- * repeatable order when the sort is total. Paging `cards` on `name` alone dropped ~1700 rows and duplicated
+ * repeatable order when the sort is total. Paging `cards` on `name` alone drops ~1700 rows and duplicates
  * others, because only 4618 of its 23546 rows have a name no other row shares.
  *
  * A paged row count that differs from the exact count means the table moved between the queries (the daily sync

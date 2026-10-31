@@ -18,7 +18,7 @@
 	let { alt, card = undefined, class: classNames = '', style = '', types = undefined }: Props = $props();
 
 	const cardTypes = $derived(card?.types ?? types);
-	/** 70% of the japanese cards carry no art, so the plate borrows the card's energy colors and mixes them into the gray. */
+	/** 70% of the Japanese cards have no art, so the plate takes the card's energy colors and mixes them into the gray. */
 	const tintStyle = $derived(cardTypeTint(cardTypes));
 	const typeNames = $derived((cardTypes ?? '').split(',').map(type => type.trim()).filter(Boolean));
 	/** PokéAPI ships an artwork for every species, so a Pokémon card with no scan still shows what it depicts. */

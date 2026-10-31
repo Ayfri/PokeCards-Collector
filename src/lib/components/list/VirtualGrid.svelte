@@ -49,10 +49,10 @@
 	const startRow = $derived(Math.max(0, Math.floor(scrollTop / rowHeight) - marginRows));
 	const endRow = $derived(startRow + Math.ceil(containerHeight / rowHeight) + marginRows * 2);
 	const startIndex = $derived(startRow * itemsPerRow);
-	/** Only the on-screen slice is rendered: iterating the full list here is what used to cost ~12 ms per scroll step. */
+	/** Only the on-screen slice is rendered: iterating the full list here would cost ~12 ms per scroll step. */
 	const visibleItems = $derived(isInitialized ? items.slice(startIndex, Math.min(items.length, endRow * itemsPerRow)) : []);
 
-	/** Progress is derived from the sizes we already track, so scrolling never reads scrollHeight and never forces a reflow. */
+	/** Progress comes from the sizes already tracked, so scrolling never reads `scrollHeight` and never forces a reflow. */
 	$effect(() => {
 		const scrollable = totalHeight - containerHeight;
 		gridScroll.progress = scrollable > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollable) * 100)) : 0;

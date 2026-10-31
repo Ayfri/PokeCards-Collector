@@ -6,10 +6,10 @@ interface RangeQuery<T> {
 
 /**
  * Reads every row of a select, whatever the project's per-request row cap (the dashboard's API "Max rows") is set to.
- * The first page asks for everything with an exact count, so a result under the cap costs one round trip. Past it, the
- * first page's length *is* the cap, and every missing page is requested at once.
- * `query` must build a fresh builder each call, with `count: 'exact'` and an order on a unique column: builders are single use,
- * and pages of an unstable order drop and duplicate rows.
+ * The first page asks for everything with an exact count, so a result under the cap costs one round trip. Above the
+ * cap, the first page's length *is* the cap, and every missing page is requested in parallel.
+ * `query` must build a fresh builder on each call, with `count: 'exact'` and an order on a unique column: a builder
+ * is single use, and an unstable order makes pages drop and duplicate rows.
  */
 export async function selectAll<T>(query: () => RangeQuery<T>): Promise<{ data: T[]; error: null } | { data: null; error: PostgrestError }> {
 	const first = await query().range(0, 999_999);

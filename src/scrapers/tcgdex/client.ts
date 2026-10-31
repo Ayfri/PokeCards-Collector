@@ -4,10 +4,10 @@ import type {TcgdexCard, TcgdexSet} from './types';
 export const TCGDEX_ORIGIN = 'https://api.tcgdex.net';
 const TCGDEX_ASSETS = 'https://assets.tcgdex.net';
 
-/** Every set is probed at once, so an image host may reset a connection: that is retried, only an answered non-2xx means missing. */
+/** All sets are probed at once, so the image host may reset a connection. Resets are retried, and only an answered non-2xx means the file is missing. */
 const exists = (url: string) => withRetry(async () => (await fetch(url, {method: 'HEAD'})).ok, 3, 200).catch(() => false);
 
-/** A TCGdex base in both formats, PNG first since the stored logo also feeds Open Graph and the sitemap. */
+/** A TCGdex base URL in both formats, PNG first because the stored logo also feeds Open Graph and the sitemap. */
 const formats = (base: string | undefined) => base ? [`${base}.png`, `${base}.webp`] : [];
 
 async function firstExisting(urls: (string | undefined)[]): Promise<string | undefined> {
@@ -16,11 +16,12 @@ async function firstExisting(urls: (string | undefined)[]): Promise<string | und
 
 /**
  * Resolves the set logo and symbol to files the CDN actually holds, so the app never requests a missing one.
- * The API links every symbol under `univ/`, which the CDN answers 400 for (InvalidBucketName) while the same file sits under
- * each language, and English covers a language that lacks one. It also links logos it never uploaded and leaves out some it did.
- * An English or French set TCGdex has nothing for falls back to its community image from `community-images.ts` (French set ids are the English ones),
- * and a French logo to the English one.
- * `logo` and `symbol` come back as full URLs of files that exist, or undefined.
+ * The API links every symbol under `univ/`, which the CDN answers 400 for (InvalidBucketName), while the same file sits
+ * under each language, and English covers a language that lacks one. It also links logos it never uploaded and leaves
+ * out some it did.
+ * An English or French set that TCGdex has nothing for falls back to its community image from `community-images.ts`
+ * (French set ids are the English ones), and a French logo falls back to the English one.
+ * `logo` and `symbol` are full URLs of files that exist, or undefined.
  */
 export async function withProbedAssets(set: TcgdexSet, lang: string): Promise<TcgdexSet> {
 	const at = (language: string, file: string) => set.serie && `${TCGDEX_ASSETS}/${language}/${set.serie.id}/${set.id}/${file}`;
@@ -37,13 +38,12 @@ export async function withProbedAssets(set: TcgdexSet, lang: string): Promise<Tc
 	return {...set, logo, symbol};
 }
 
-/** Anything the scraper can pull TCGdex JSON through. `null` means the entity does not exist (404). */
+/** Anything the scraper can read TCGdex JSON through. `null` means the entity does not exist (404). */
 export interface TcgdexClient {
 	json<T>(path: string): Promise<T | null>;
 	close(): void;
 }
 
-/** Generic retry with exponential backoff and jitter. */
 export async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5, baseDelay = 500, log = false): Promise<T> {
 	for (let attempt = 0; ; attempt++) {
 		try {
@@ -57,7 +57,7 @@ export async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5, baseDel
 	}
 }
 
-/** `fetch` client for Workers: their `fetch` already negotiates HTTP/2 to the origin, while Node's and Bun's stay on HTTP/1.1, which is why the CLI keeps the h2 pool. */
+/** `fetch` client for Workers: their `fetch` already negotiates HTTP/2 to the origin, while Node's and Bun's stay on HTTP/1.1, so the CLI keeps the h2 pool. */
 export class FetchClient implements TcgdexClient {
 	private inflight = 0;
 	private readonly queue: (() => void)[] = [];
@@ -84,8 +84,8 @@ export class FetchClient implements TcgdexClient {
 }
 
 /**
- * Card id -> English image base for the cards of the given sets that carry no image in their own language. Many French sets
- * have no scan at all (every `dp*` set); the English card of the same id stands in. A set the English catalogue lacks adds nothing.
+ * Card id -> English image base for the cards of the given sets that have no image in their own language. Many French sets
+ * have no scan at all (every `dp*` set), so the English card with the same id stands in. A set missing from the English catalogue adds nothing.
  */
 export async function englishImages(client: TcgdexClient, sets: readonly (TcgdexSet | null)[]): Promise<Map<string, string>> {
 	const imageless = sets.filter(set => set?.cards?.some(card => !card.image));
@@ -94,8 +94,8 @@ export async function englishImages(client: TcgdexClient, sets: readonly (Tcgdex
 }
 
 /**
- * French only: TCGdex France lists the Arceus `pl4-AR*` cards under `pl3` and has no `pl4` set, so a card is filed under the set listing it.
- * The English and Japanese catalogues list no such card, and re-filing one would mint a second row with the same `tcgdex_id`.
+ * French only: TCGdex France lists the Arceus `pl4-AR*` cards under `pl3` and has no `pl4` set, so each card is filed under the set that lists it.
+ * The English and Japanese catalogues list no such card, and re-filing one there would create a second row with the same `tcgdex_id`.
  */
 export function fileUnderListingSets(cards: readonly (TcgdexCard | null)[], sets: readonly (TcgdexSet | null)[]): void {
 	const listing = new Map(sets.flatMap(set => set?.cards?.map(brief => [brief.id, set] as const) ?? []));
@@ -105,7 +105,7 @@ export function fileUnderListingSets(cards: readonly (TcgdexCard | null)[], sets
 	}
 }
 
-/** Runs `worker` over `items` with the client's own back-pressure, reporting progress every `logEvery` items. */
+/** Runs `worker` over every item at once, relying on the client's own queue for back-pressure, and logs progress every `logEvery` items. */
 export async function mapAll<T, R>(items: readonly T[], worker: (item: T, index: number) => Promise<R>, label?: string, logEvery = 2000): Promise<R[]> {
 	let done = 0;
 	return Promise.all(items.map(async (item, index) => {

@@ -5,13 +5,13 @@ import { getUserCollection } from '$lib/services/collections';
 import type { UserCollection, UserWishlist } from '$lib/types';
 
 /**
- * The catalogue is deliberately absent here. Anything a layout load returns is serialized into the document for
- * the client, so streaming `cards` and `prices` from this level shipped 23546 cards and 19819 prices on every
- * page that needed them server-side - a 24 MB document. Page loads call `getCards()` / `getPrices()` themselves
- * instead; both are memoized by `cachedTable`, so the whole-table read still happens once per isolate.
+ * The catalogue is deliberately not returned here. Everything a layout load returns is serialized into the document,
+ * so returning `cards` and `prices` put 23546 cards and 19819 prices (a 24 MB document) on every page, even those
+ * that only needed them server-side. Page loads call `getCards()` / `getPrices()` themselves; `cachedTable`
+ * memoizes both, so the whole-table read still happens once per isolate.
  */
 export const load: LayoutServerLoad = async ({ locals }) => {
-	// Sets and the user's own rows are independent queries, so they overlap instead of running back to back.
+	/** Sets and the user's own rows are independent queries, so they run in parallel. */
 	const setsPromise = getSets();
 
 	let wishlistItems: UserWishlist[] = [];
@@ -19,7 +19,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 
 	if (locals.profile) {
 		const username = locals.profile.username;
-		// `allSettled` so a failing wishlist does not also cost the user their collection.
+		/** `allSettled` so a failing wishlist query does not also lose the user's collection. */
 		const [wishlistResult, collectionResult] = await Promise.allSettled([
 			getUserWishlist(username, locals.supabase),
 			getUserCollection(username, locals.supabase)
@@ -44,8 +44,7 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		profile: locals.profile,
 		wishlistItems,
 		collectionItems,
-		// SEO defaults every page load overrides. `page.data` merges layout and page data, so a page only restates
-		// the fields it changes, and the ones it leaves out fall back to these.
+		/** SEO defaults. `page.data` merges layout and page data, so a page only returns the fields it changes and the rest fall back to these. */
 		title: 'PokéCards-Collector',
 		description: 'Explore the Pokémon TCG universe. Discover the latest set, check out the prices of the rarest cards, and manage your collection.',
 		image: { alt: 'PokéCards-Collector, a Pokémon TCG catalogue and collection tracker', height: 630, url: '/og-image.png', width: 1200 },

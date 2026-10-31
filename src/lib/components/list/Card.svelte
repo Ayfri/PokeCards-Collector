@@ -23,7 +23,7 @@
 		/** Loads the first screenful without waiting for the lazy-loading pass, so the LCP card is requested immediately. */
 		eager?: boolean;
 		lowRes?: boolean;
-		/** Prebuilt by the grid: a linear `find` over ~1000 Pokémon per card was showing up on every scroll frame. */
+		/** Built once by the grid, because a linear `find` over ~1000 Pokémon in every card would show up on each scroll frame. */
 		pokemonMap: Map<number, GridPokemon>;
 		sets: Set[];
 	}

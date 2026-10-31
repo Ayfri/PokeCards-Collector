@@ -25,8 +25,10 @@
 
 	let importing = $state(false);
 
-	// The grid is shared with /cards-list, so a visit starts from a clean slate, then takes the filters the URL names.
-	// Re-applied here rather than left to CardGrid alone, which mounts inside the await block and so runs in either order.
+	/**
+	 * The grid is shared with /cards-list, so a visit starts from a clean slate and then takes the filters the URL names.
+	 * This runs here as well as in CardGrid, which mounts inside the await block and so may run before or after it.
+	 */
 	onMount(() => {
 		filters.reset();
 		filters.applyFromUrl(page.url, data.sets);

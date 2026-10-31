@@ -2,7 +2,7 @@ import type { PageServerLoad } from './$types';
 import { breadcrumbs } from '$helpers/seo';
 import { searchUsers } from '$lib/services/profiles';
 
-/** The collectors the page features, ranked in SQL: an empty query makes the RPC list every public profile by unique cards. */
+/** How many collectors the page features. They are ranked in SQL: an empty query makes the RPC list every public profile by unique cards. */
 const FEATURED_COUNT = 5;
 
 export const load: PageServerLoad = async () => {

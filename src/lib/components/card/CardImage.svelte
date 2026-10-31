@@ -52,7 +52,7 @@
 	let loaded = $state(false);
 	let error = $state(false);
 
-	// assets.tcgdex.net answers with `Access-Control-Allow-Origin: *`, so no proxy is needed.
+	/** `assets.tcgdex.net` sends `Access-Control-Allow-Origin: *`, so the images need no proxy. */
 	const lowResImageUrl = $derived(processCardImage(imageUrl, 'low'));
 	const highResImageUrl = $derived(processCardImage(imageUrl, 'high'));
 
@@ -76,9 +76,9 @@
 	}
 
 	/**
-	 * A recycled tile keeps its <img> element, so a cached src is already complete: skip the fade instead of flashing.
-	 * A server-rendered <img> can also fail before hydration attaches `onerror`, which only this check catches.
-	 * `img` is read untracked: a failed load swaps it for the plate, and re-running on that reset `error` and looped forever.
+	 * A recycled tile keeps its <img> element, so a cached src is already complete: the fade is skipped instead of flashing.
+	 * A server-rendered <img> can also fail before hydration attaches `onerror`, and only this check catches that.
+	 * `img` is read untracked: a failed load swaps it for the plate, and re-running on that swap would reset `error` and loop forever.
 	 */
 	$effect(() => {
 		lowResImageUrl;
@@ -92,7 +92,7 @@
 </script>
 
 {#if error || !imageUrl}
-	<!-- No art, or a URL TCGdex lists before uploading the scan (404): the plate stays still rather than pretending to load. -->
+	<!-- No art, or a URL TCGdex lists before the scan is uploaded (404): the plate stays still instead of pretending to load. -->
 	<CardPlate {alt} {card} class="rounded-lg {classNames}" style={boxStyle} {types} />
 {:else}
 	<img

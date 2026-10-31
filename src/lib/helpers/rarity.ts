@@ -1,9 +1,10 @@
 /**
  * TCGdex rarities from most common to rarest, names sharing a tier rank the same.
- * The modern tiers follow collector pull-rate consensus (double < ACE SPEC < shiny < ultra < illustration < mega attack
- * < shiny ultra < special illustration < futuristic < hyper < black white < mega hyper < RGB), which only differs from the Japanese scale and English numbering
- * by ranking illustration above ultra. Older tiers sit next to their Japanese equivalent (V = RR, VMAX/VSTAR = RRR).
- * The Pocket tiers (diamonds, stars, shiny, crown) only keep `bun run scrapers audit` quiet, since the catalogue excludes that serie.
+ * The modern tiers follow the collector consensus on pull rates (double < ACE SPEC < shiny < ultra < illustration < mega attack
+ * < shiny ultra < special illustration < futuristic < hyper < black white < mega hyper < RGB). The only difference from the
+ * Japanese scale and the English numbering is that illustration ranks above ultra. Older tiers sit next to their Japanese
+ * equivalent (V = RR, VMAX/VSTAR = RRR).
+ * The Pocket tiers (diamonds, stars, shiny, crown) exist only so `bun run scrapers audit` stays quiet, since the catalogue excludes that serie.
  */
 const RARITY_TIERS: string[][] = [
 	['none'],

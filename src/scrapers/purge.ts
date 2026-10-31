@@ -5,9 +5,9 @@ import {Http2Pool} from './tcgdex/http2-pool';
 import {EXCLUDED_SERIES, excludedSetIds} from './tcgdex/excluded';
 
 /**
- * Drops every catalogue row belonging to an excluded serie (see `EXCLUDED_SERIES`).
+ * Drops every catalogue row that belongs to an excluded serie (see `EXCLUDED_SERIES`).
  * `collections` and `wishlists` are never touched: the report lists the rows left pointing at nothing,
- * which render again if the serie comes back.
+ * and they render again if the serie comes back.
  */
 
 const CHUNK = 200;
@@ -36,8 +36,8 @@ async function countIn(supabase: SupabaseClient, table: string, column: string, 
 }
 
 /**
- * Set ids to drop: what TCGdex lists under the excluded series, plus whatever the `sets` table already
- * carries under those serie names. The second half matters when TCGdex drops a serie the DB still holds.
+ * Set ids to drop: what TCGdex lists under the excluded series, plus whatever the `sets` table already holds
+ * under those serie names. The second part covers a serie that TCGdex dropped but the DB still holds.
  */
 async function targetSetIds(supabase: SupabaseClient, pool: Http2Pool, lang: Language, serieNames: readonly string[]): Promise<string[]> {
 	const ids = await excludedSetIds(pool, lang);

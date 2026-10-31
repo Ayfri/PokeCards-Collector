@@ -2,12 +2,12 @@ import { fail } from '@sveltejs/kit';
 import { isStrongPassword, PASSWORD_REQUIREMENTS } from '$helpers/password';
 import type { Actions, PageServerLoad } from './$types';
 
-/** The page only ever renders behind a one-time recovery token from an email, so it has nothing to offer an index. */
+/** The page only makes sense behind a one-time recovery token from an email, so search engines get nothing from indexing it. */
 export const load: PageServerLoad = async ({ locals, url }) => ({
 	authError: url.searchParams.get('auth_error'),
 	description: 'Choose a new password for your PokéCards-Collector account.',
 	noindex: true,
-	/** `/auth/confirm` turns the recovery link into a session, so a user on `locals` is the proof the link was valid. */
+	/** `/auth/confirm` turns the recovery link into a session, so a user on `locals` proves the link was valid. */
 	recovered: Boolean(locals.user),
 	title: 'Reset Password',
 });

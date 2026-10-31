@@ -16,12 +16,12 @@ export interface OwnedCatalogue extends CatalogueData {
 
 export type CatalogueReader = (language: Language) => Promise<CatalogueData>;
 
-/** French codes always carry a `fr`-prefixed set part (`pokemon_6_frsv03_125`); no English or Japanese code does, so the three tables never need a membership test against each other. */
+/** A French code always has a `fr`-prefixed set part (`pokemon_6_frsv03_125`) and no English or Japanese code does, so the code alone says which table holds it. */
 export const isFrenchCode = (code: string) => /^[^_]+_\d+_fr/.test(code);
 
 /**
  * Finds which catalogue holds each code, reading only the tables that can: French codes read `fr_*`, the rest read
- * the English and Japanese tables at once, and a code both hold resolves to the English card (19 Japanese codes equal an English one).
+ * the English and Japanese tables at once. A code held by both resolves to the English card (19 Japanese codes equal an English one).
  * A catalogue that resolves nothing is left out. The result is ordered en, ja, fr.
  */
 export async function readOwnedCatalogues(codes: Iterable<string>, read: CatalogueReader): Promise<OwnedCatalogue[]> {

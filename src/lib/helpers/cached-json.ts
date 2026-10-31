@@ -1,6 +1,6 @@
 const payloads = new Map<string, Promise<unknown>>();
 
-/** Fetches `url` as JSON once per session: the promise is shared, and a failed one is evicted so the next navigation retries. */
+/** Fetches `url` as JSON once per session and shares the promise. A failed fetch is dropped so the next navigation retries it. */
 export function cachedJson<T>(fetch: typeof globalThis.fetch, url: string): Promise<T> {
 	const cached = payloads.get(url) as Promise<T> | undefined;
 	if (cached) return cached;

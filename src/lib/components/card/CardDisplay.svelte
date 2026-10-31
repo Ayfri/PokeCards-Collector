@@ -56,7 +56,7 @@
 	const previousPokemonCard = $derived(previousPokemon ? getRepresentativeCardForPokemon(previousPokemon.id, allCards, prices) : undefined);
 	const nextPokemonCard = $derived(nextPokemon ? getRepresentativeCardForPokemon(nextPokemon.id, allCards, prices) : undefined);
 
-	// Deduplicated by cardCode: the same card can appear more than once in allCards.
+	/** Deduplicated by `cardCode`, because `allCards` can list the same card more than once. */
 	const currentPokemonCards = $derived(currentPokemonId
 		? [...new Map(allCards.filter(c => c.pokemonNumber === currentPokemonId).map(c => [c.cardCode, c])).values()]
 		: []);
@@ -105,7 +105,7 @@
 	afterNavigate(() => {
 		const urlParts = window.location.pathname.split('/');
 		const cardCodeFromUrl = urlParts[urlParts.length - 2];
-		// `pokemonCards` holds the viewed card with every column, `allCards` only its list fields.
+		/** `pokemonCards` holds the viewed card with every column, `allCards` only its list fields, so it is searched first. */
 		const matchingCard = pokemonCards.find(card => card.cardCode === cardCodeFromUrl) ?? allCards.find(card => card.cardCode === cardCodeFromUrl);
 
 		if (matchingCard && matchingCard !== currentCard) {
@@ -135,7 +135,7 @@
 
 	<div class="card-display-area w-full px-4 md:px-12 max-w-8xl mx-auto perspective-container flex flex-col items-center">
 
-		<!-- Center Card, with no intro of its own: the page transition flies the opened card into it. -->
+		<!-- The big card has no intro of its own: the page transition flies the opened card into it. -->
 		<div class="center-card-wrapper relative shrink-0 order-1 lg:order-2 perspective-container">
 			{#if currentPokemon && !NO_IMAGES}
 				<div class="card-aura {currentType}" id="card-aura"></div>
@@ -301,7 +301,7 @@
 
 	.filter {
 		background-image: url(/particles.png);
-		/* 234 KB instead of 608 KB for the PNG, which only browsers without AVIF still fetch. */
+		/* AVIF weighs 234 KB against 608 KB for the PNG, which only browsers without AVIF still fetch. */
 		background-image: image-set(url(/particles.avif) type('image/avif'), url(/particles.png) type('image/png'));
 		background-size: cover;
 		content: "";

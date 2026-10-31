@@ -4,10 +4,10 @@ import type { FullCard } from '$lib/types';
 import { breadcrumbs } from '$helpers/seo';
 import { cardPrice } from '$helpers/card-utils';
 
-/** Candidates sent per artist: the preview stack draws three, the spares replace a scan that fails to load in the browser. */
+/** Candidates sent per artist: the preview stack draws three, and the spares replace a scan that fails to load in the browser. */
 const SHOWCASE_CANDIDATES = 5;
 
-/** The card fields the preview stack renders. A showcase card carries nothing else, 411 artists ship ~2000 of them. */
+/** The card fields the preview stack renders and nothing more, because 411 artists send ~2000 of these cards. */
 interface ShowcaseCard {
 	cardCode: string;
 	image: string;
@@ -43,8 +43,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		else byArtist.set(card.artist, [card]);
 	}
 
-	// Aggregated here rather than in the browser: the page used to ship all 23546 cards and 19819 prices so the
-	// component could rebuild these 411 rows itself, which made the document ~26 MB.
+	/** Aggregated on the server: rebuilding these 411 rows in the browser needs all 23546 cards and 19819 prices, a ~26 MB document. */
 	const artists: ArtistWithCards[] = [...byArtist.entries()]
 		.map(([name, artistCards]) => {
 			let totalValue = 0;
@@ -52,7 +51,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 			let lastReleaseYear = Number.NEGATIVE_INFINITY;
 			const showcase: { card: FullCard; price: number }[] = [];
 
-			// One pass instead of a full sort per artist: the total, the years and the showcase candidates come out together.
+			/** One pass instead of a full sort per artist: the total, the years and the showcase candidates are computed together. */
 			for (const card of artistCards) {
 				const price = cardPrice(prices[card.cardCode]) ?? 0;
 				totalValue += price;

@@ -20,7 +20,7 @@
 
 	let { children }: Props = $props();
 
-	/** The layout load hands both lists down on every navigation, so the client mirrors stay in step with the session. */
+	/** The layout load returns both lists on every navigation, so the client stores follow the session. */
 	$effect(() => {
 		wishlist.replaceAll(((page.data.wishlistItems ?? []) as UserWishlist[]).map(item => item.card_code));
 		collection.replaceAll(((page.data.collectionItems ?? []) as UserCollection[]).map(item => item.card_code));
@@ -35,7 +35,7 @@
 			|| link.hasAttribute('target')
 			|| link.hasAttribute('download')
 			|| event.ctrlKey || event.metaKey || event.shiftKey
-			// A hash on the current page scrolls, it does not navigate.
+			/** A hash link on the current page only scrolls, it does not navigate. */
 			|| (link.pathname === window.location.pathname && link.hash)
 		) return;
 
@@ -46,7 +46,8 @@
 		loading.navigation = true;
 
 		navigation.complete.then(() => {
-			setTimeout(() => (loading.navigation = false), 100); // Small delay to ensure smoother transitions
+			/** The short delay keeps the bar from flickering off between quick transitions. */
+			setTimeout(() => (loading.navigation = false), 100);
 		});
 
 		return transitionNavigation(navigation);
@@ -62,7 +63,7 @@
 	<link href={BASE_URL} hreflang="en" rel="alternate"/>
 	<link href={BASE_URL} hreflang="x-default" rel="alternate"/>
 
-	<!-- Card art, sprites and the analytics beacons all sit on third-party origins the first paint needs. -->
+	<!-- Card art, sprites and analytics sit on third-party origins that the first paint needs, so the connections open early. -->
 	<link href="https://assets.tcgdex.net" rel="preconnect" crossorigin="anonymous"/>
 	<link href="https://cdn.jsdelivr.net" rel="preconnect" crossorigin="anonymous"/>
 	<link href="https://www.googletagmanager.com" rel="dns-prefetch"/>

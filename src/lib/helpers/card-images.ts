@@ -13,9 +13,8 @@ export function getCardImageForPokemon(pokemonId: number, cards: FullCard[]): st
 }
 
 /**
- * Turns a TCGdex extensionless image base into a real URL.
- * `https://assets.tcgdex.net/en/swsh/swsh3/136` -> `.../136/high.webp`, ~4x lighter than the PNG the old
- * pipeline served and delivered over HTTP/3 by the TCGdex CDN, so no mirror sits in front of it.
+ * Turns a TCGdex extensionless image base into a URL: `https://assets.tcgdex.net/en/swsh/swsh3/136` -> `.../136/high.webp`.
+ * WebP is ~4x lighter than PNG, and the TCGdex CDN serves it over HTTP/3, so no mirror sits in front of it.
  */
 export function processCardImage(imageUrl: string, quality: ImageQuality = 'high', extension: ImageExtension = 'webp'): string {
 	if (NO_IMAGES) return PLACEHOLDER;
@@ -26,8 +25,8 @@ export function processCardImage(imageUrl: string, quality: ImageQuality = 'high
 const TYPE_COLORS = new Set(['colorless', 'darkness', 'dragon', 'fairy', 'fighting', 'fire', 'grass', 'lightning', 'metal', 'psychic', 'water']);
 
 /**
- * Inline `--tint-a` / `--tint-b` for a card with no art: the energy colors are already in the payload, so the
- * placeholder needs no extra column and no image. Empty when the card carries no known type.
+ * Inline `--tint-a` / `--tint-b` for a card with no art. The energy types are already in the payload, so the
+ * placeholder needs no extra column and no image. Empty when the card has no known type.
  */
 export function cardTypeTint(types: string | undefined): string {
 	const names = (types ?? '').toLowerCase().split(',').map(name => name.trim()).filter(name => TYPE_COLORS.has(name));

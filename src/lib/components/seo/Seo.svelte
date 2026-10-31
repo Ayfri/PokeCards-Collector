@@ -48,14 +48,13 @@
 		return /^https?:\/\//.test(url) ? url : `${BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 	}
 
-	// The suffix is skipped whenever the brand is already in the title, wherever it sits: a page naming itself
-	// "PokeCards-Collector - ..." would otherwise ship the brand twice in one title.
+	/** The site name suffix is skipped when the brand is already anywhere in the title, so a page named "PokeCards-Collector - ..." does not repeat it. */
 	const effectiveTitle = $derived(
 		title.trim().toLowerCase().includes(SITE_NAME.toLowerCase())
 			? title.trim()
 			: `${title.trim()} - ${SITE_NAME}`
 	);
-	// The canonical drops the query string: `?set=`, `?page=` and friends are filters over the same document.
+	/** The canonical URL drops the query string: `?set=`, `?page=` and the like only filter the same document. */
 	const effectiveCanonicalUrl = $derived(canonicalUrl ? absolute(canonicalUrl) : `${BASE_URL}${page.url.pathname}`);
 	const imageUrl = $derived(image?.url ? absolute(image.url) : null);
 	const ogType = $derived(OG_TYPES[type]);
@@ -89,8 +88,7 @@
 		})),
 	} : null);
 
-	// A `@graph` entry is a page or a thing, never both: a `Product` page publishes an `ItemPage` node whose
-	// `mainEntity` points at the `Product` node the load built, rather than typing the page itself as a product.
+	/** A `@graph` entry is a page or a thing, never both: a `Product` page publishes an `ItemPage` node whose `mainEntity` points at the load's `Product` node. */
 	const mainEntityId = $derived(schemas.find(schema => typeof schema['@id'] === 'string')?.['@id'] as string | undefined);
 
 	const pageNode = $derived({

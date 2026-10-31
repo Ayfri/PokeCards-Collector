@@ -63,13 +63,13 @@ interface StoredRow {
 
 const storedRows = (table: string) => readAll<StoredRow>(supabase, table, 'card_code,set_id,tcgdex_id', 'card_code');
 
-/** Scraped `card_code` -> the code the card is stored under, resolved like the Worker sync does. */
+/** Scraped `card_code` -> the code the card is stored under, resolved the same way as the Worker sync. */
 function storedCodes(lang: Language, cards: readonly MappedCard[], rows: readonly StoredRow[]): Map<string, string> {
 	const byTcgdexId = new Map(rows.flatMap(row => row.tcgdex_id ? [[row.tcgdex_id, row.card_code] as const] : []));
 	return new Map(cards.map(card => [card.cardCode, resolveCardCode(lang, card.tcgdexId, byTcgdexId.get(card.tcgdexId), card.cardCode)]));
 }
 
-/** The scrape only keeps sets holding a card, so a stored set it no longer has is an emptied or dropped one. */
+/** The scrape only keeps sets that hold a card, so a stored set missing from it was emptied or dropped by TCGdex. */
 export async function uploadSets(lang: Language): Promise<void> {
 	const table = CATALOGUES[lang].tables.sets;
 	console.log(`📤 Uploading ${table}...`);
@@ -83,9 +83,9 @@ export async function uploadSets(lang: Language): Promise<void> {
 }
 
 /**
- * Replaces a card table with the TCGdex content, deleting first the rows of a scraped set TCGdex no longer lists and
- * the old row of every card changing code (their prices go with them), then upserting. `collections` and `wishlists`
- * are never touched: a code no card holds renders again once TCGdex fills the set in.
+ * Replaces a card table with the TCGdex content. It first deletes the rows of a scraped set that TCGdex no longer lists
+ * and the old row of every card that changes code (their prices go with them), then upserts. `collections` and
+ * `wishlists` are never touched: a code no card holds renders again once TCGdex fills the set in.
  */
 export async function uploadCards(lang: Language): Promise<void> {
 	const table = CATALOGUES[lang].tables.cards;
@@ -107,7 +107,7 @@ export async function uploadCards(lang: Language): Promise<void> {
 	await upsertAll(table, rows, 'card_code');
 }
 
-/** Upserts the scraped prices under the stored card codes, and drops the price of a scraped card that has none anymore. */
+/** Upserts the scraped prices under the stored card codes, and deletes the price of a scraped card that has none left. */
 export async function uploadPrices(lang: Language): Promise<void> {
 	const { cards: cardsTable, prices: table } = CATALOGUES[lang].tables;
 	console.log(`📤 Uploading ${table}...`);
@@ -121,7 +121,7 @@ export async function uploadPrices(lang: Language): Promise<void> {
 	await deleteAll(table, 'card_code', cards.filter(card => !prices[card.cardCode]).map(card => codes.get(card.cardCode)!), 'prices a card lost');
 }
 
-/** Dependency order: cards before prices, which carry a foreign key on `card_code`. */
+/** Cards go before prices because prices have a foreign key on `card_code`. */
 export async function uploadAllData(): Promise<void> {
 	console.log('🚀 Starting full Supabase data upload...');
 	await uploadTypes();

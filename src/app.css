@@ -2,7 +2,7 @@
 
 @import 'tailwindcss';
 
-/** The site is dark only: `dark:` follows the `dark` class `app.html` sets on `<html>`, not the OS preference that turned the auth modal white. */
+/* The site is dark only: `dark:` follows the `dark` class `app.html` sets on `<html>`, not the OS preference, which would turn the auth modal white. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
@@ -75,12 +75,9 @@
 }
 
 /*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
+  Tailwind CSS v4 defaults the border color to `currentcolor`. This restores the v3 default (gray-200) so borders
+  without an explicit color keep their look. Removing it means adding a border color utility to every element
+  that relies on the default.
 */
 @layer base {
   *,

@@ -23,7 +23,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			throw svelteKitError(500, 'Login failed unexpectedly');
 		}
 
-		/** The session stays out of the body on purpose: the SSR helper already set the cookies the client reads it from. */
+		/** The session is not returned in the body: the SSR helper already stored it in cookies, which is where the client reads it. */
 		return json({ success: true, message: 'Login successful' });
 
 	} catch (err) {

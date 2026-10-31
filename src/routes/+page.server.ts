@@ -5,13 +5,12 @@ import type { PageServerLoad } from './$types';
 import { cardPrice } from '$helpers/card-utils';
 
 export const load: PageServerLoad = async ({ parent }) => {
-	// Started before `parent()` so the catalogue reads overlap the layout's auth and collection queries.
+	/** Started before `parent()` so the catalogue reads run in parallel with the layout's auth and collection queries. */
 	const catalogue = Promise.all([getCards(), getPrices(), getPokemons(), countCards('ja'), countCards('fr')]);
 	const { sets = [] } = await parent();
 	const [allCardsResolved, pricesResolved, pokemons, japaneseCardCount, frenchCardCount] = await catalogue;
 
-	// An artless card is still a real card: deduplicating on `image` silently dropped every one of them.
-	// TCGdex gives every card its own art URL, so this only ever removed the cards it has no art for.
+	/** Cards are not deduplicated on `image`: TCGdex gives each card its own art URL, so that would only drop the real cards it has no art for. */
 	const processedAllCards = allCardsResolved.filter(card => Boolean(card.setName));
 
 	const latestSet = [...sets].sort((a, b) => {
@@ -26,7 +25,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	}) : [];
 
 	const priceOf = (card: FullCard) => cardPrice(pricesResolved[card.cardCode]) ?? 0;
-	/** One pass keeping the five priciest in order, since sorting the whole catalogue for them cost ~26 ms a render. */
+	/** One pass that keeps the five priciest in order: sorting the whole catalogue for them cost ~26 ms per render. */
 	const topFive = (cards: FullCard[]) => {
 		const top: { card: FullCard; price: number }[] = [];
 		for (const card of cards) {
@@ -36,7 +35,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 			else if (top.length < 5) top.push({ card, price });
 			if (top.length > 5) top.pop();
 		}
-		// The showcase rows print a price, and the catalogue no longer travels with the page for them to look it up.
+		/** The price is attached here because the prices table never reaches the browser, and the showcase rows print it. */
 		return top.map(({ card, price }) => ({ ...card, price }));
 	};
 
@@ -50,8 +49,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		trainerCards: latestSetCards.filter(card => card.supertype === 'Trainer').length,
 	};
 
-	// The counts are read back into the copy so the description states real numbers rather than a vague claim,
-	// which is what an answer engine can actually quote.
+	/** The real counts go into the description text, since answer engines can quote a number but not a vague claim. */
 	const cardTotal = allCardsResolved.length.toLocaleString('en-US');
 	const setTotal = sets.length.toLocaleString('en-US');
 
@@ -86,8 +84,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		title: 'PokéCards-Collector - Your Pokémon TCG Collection Manager',
 	};
 
-	// Neither the catalogue, the prices nor the Pokédex reach the browser: everything the page prints is counted here,
-	// and shipping them made the homepage a 24 MB document. `sets` already comes from the layout.
+	/** The catalogue, prices and Pokédex stay on the server and the page gets only counts: sending them made the homepage a 24 MB document. `sets` comes from the layout. */
 	return {
 		latestSet,
 		latestSetStats,

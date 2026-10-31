@@ -5,10 +5,10 @@ import {withRetry, type TcgdexClient} from './client';
 const API_ORIGIN = 'https://api.tcgdex.net';
 
 /**
- * HTTP/2 client pool for the scraper CLI. The API caps concurrent streams per connection, so a handful
- * of connections round-robined beats both a single h2 session and Node's HTTP/1.1 `fetch` pool
- * (~1720 req/s against ~990). Workers only ship `node:http2` stubs behind `enable_nodejs_http2_module`
- * and no outbound h2 client, so server code uses `FetchClient` - where `fetch` already speaks HTTP/2.
+ * HTTP/2 client pool for the scraper CLI. The API caps concurrent streams per connection, so a few connections
+ * used round-robin beat both a single h2 session and Node's HTTP/1.1 `fetch` pool (~1720 req/s against ~990).
+ * Workers only ship `node:http2` stubs behind `enable_nodejs_http2_module` and have no outbound h2 client, so server
+ * code uses `FetchClient`, where `fetch` already speaks HTTP/2.
  */
 export class Http2Pool implements TcgdexClient {
 	private readonly sessions: (http2.ClientHttp2Session | null)[];
@@ -50,7 +50,7 @@ export class Http2Pool implements TcgdexClient {
 		this.queue.shift()?.();
 	}
 
-	/** Single request without retry. Resolves `null` on 404 so callers can skip missing entities. */
+	/** One request with no retry. Resolves `null` on 404 so callers can skip missing entities. */
 	private request(path: string, method: string, body?: string): Promise<string | null> {
 		return new Promise((resolve, reject) => {
 			const index = this.cursor++ % this.connections;
@@ -106,7 +106,7 @@ export class Http2Pool implements TcgdexClient {
 		}
 	}
 
-	/** GraphQL is English-only and does not expose pricing; use it for bulk EN metadata only. */
+	/** GraphQL is English-only and has no pricing, so it only suits bulk English metadata. */
 	async graphql<T>(query: string): Promise<T> {
 		const response = await this.json<{data: T; errors?: {message: string}[]}>('/v2/graphql', 'POST', {query});
 		if (!response) throw new Error('GraphQL endpoint returned 404');

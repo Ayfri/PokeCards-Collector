@@ -1,5 +1,8 @@
 import type { FullCard, Pokemon, PriceData } from '$lib/types';
 
+/**
+ * `supertype_pokemonId_setCode_cardNumber`, like `pokemon_6_sv3_125`. The set part is the legacy code, or `fr` + the TCGdex id for French cards.
+ */
 export function generateUniqueCardCode(
 	pokemonId: number | string,
 	urlCode: string | undefined,
@@ -11,7 +14,7 @@ export function generateUniqueCardCode(
 		.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 		.replace(/[^a-z0-9]/g, '');
 
-	// Ensure it's "pokemon" for Pokémon with accent
+	/** Maps "pokmon", what `Pokémon` becomes when the `é` is dropped instead of decomposed, back to "pokemon". */
 	const finalSupertype = normalizedSupertype === "pokmon" ? "pokemon" : normalizedSupertype;
 
 	const normalizedUrlCode = (urlCode || '')
@@ -19,7 +22,7 @@ export function generateUniqueCardCode(
 		.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 		.replace(/[^a-z0-9]/g, '');
 
-	// Normalize card number the same way as the set code, so "H7" and "7" stay distinct cards
+	/** Normalized like the set code: letters stay, so "H7" and "7" remain distinct cards. */
 	const normalizedCardNumber = (cardNumber || '')
 		.toLowerCase()
 		.normalize("NFD").replace(/[̀-ͯ]/g, "")
@@ -43,10 +46,7 @@ export function formatCardNumber(cardNumber: string, printedTotal?: number | nul
 	return printedTotal && /^\d+$/.test(number) ? `${number}/${printedTotal}` : number;
 }
 
-/**
- * Checks if a given string matches the expected cardCode format.
- * Assumes card codes contain underscores and URLs generally don't in relevant parts.
- */
+/** A heuristic, not a parse: a card code contains `_` and a URL starts with `http`. */
 export function isCardCode(item: string): boolean {
 	if (!item) return false;
 	return item.includes('_') && !item.startsWith('http');
@@ -61,7 +61,7 @@ export function getRepresentativeCardForPokemon(pokemonId: number, allCards: Ful
 
 /**
  * The slice of the catalogue a card page reads: the cards, Pokédex rows and prices of the card's Pokémon, its dex
- * neighbours and two evolution stages either way, plus the page's sibling cards. Whole tables made it an 11.5 MB document.
+ * neighbours and two evolution stages either way, plus the page's sibling cards. Sending the whole tables would make the document 11.5 MB.
  */
 export function cardPageCatalogue(pokemonNumber: number | undefined, siblings: FullCard[], allCards: FullCard[], pokemons: Pokemon[], prices: Record<string, PriceData>) {
 	const ids = new Set<number>();

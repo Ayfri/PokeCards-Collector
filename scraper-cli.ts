@@ -42,7 +42,6 @@ function row(label: string, value: string | number): void {
 const SUPABASE_TARGETS = ['all', 'types', 'pokemons', 'sets', 'jp-sets', 'fr-sets', 'cards', 'jp-cards', 'fr-cards', 'prices', 'jp-prices', 'fr-prices'] as const;
 type SupabaseTarget = (typeof SUPABASE_TARGETS)[number];
 
-/** The uploader function of each target, and the catalogue it is called for when it is per language. */
 const SUPABASE_UPLOADERS: Record<SupabaseTarget, readonly [uploader: string, language?: Language]> = {
 	'all': ['uploadAllData'],
 	'types': ['uploadTypes'],

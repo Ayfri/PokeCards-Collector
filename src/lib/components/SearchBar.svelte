@@ -34,7 +34,8 @@
 	let searchResults: CardSearchResult[] = $state([]);
 	let pokemonResults: PokemonSearchResult[] = $state([]);
 	let showResults = $state(false);
-	const addedCards = new SvelteSet<string>(); // Card codes flashing the "added" state
+	/** Card codes currently flashing the "added" state. */
+	const addedCards = new SvelteSet<string>();
 	let platformModifierKey = $state('');
 	let inputFocused = $state(false);
 
@@ -127,7 +128,8 @@
 		platformModifierKey = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'Cmd' : 'Ctrl';
 
 		if (autoFocus && inputElement) {
-			setTimeout(() => inputElement?.focus(), 100); // The modal is still transitioning in, focusing right away gets undone
+			/** The modal is still transitioning in, and focusing right away gets undone. */
+		setTimeout(() => inputElement?.focus(), 100);
 		}
 	});
 
@@ -288,7 +290,7 @@
 		transform: scale(0.95);
 	}
 	
-	/* Prevent clear button from scaling when clicked */
+	/* Keeps the clear button from scaling down when clicked: it only needs its vertical centering. */
 	.search-container button:active:not(:disabled) {
 		transform: translateY(-50%);
 	}

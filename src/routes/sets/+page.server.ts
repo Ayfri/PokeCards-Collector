@@ -26,8 +26,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		type: 'CollectionPage' as const,
 	};
 
-	// `cards` and `prices` stay on the server: the page renders `setsWithPrices` alone, and shipping the
-	// catalogue alongside it turned this route into a 24 MB document.
+	/** `cards` and `prices` stay on the server: the page renders `setsWithPrices` alone, and sending the catalogue with it would make a 24 MB document. */
 	return {
 		setsWithPrices,
 		...pageSeoData

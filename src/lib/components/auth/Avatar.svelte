@@ -2,12 +2,14 @@
 	interface Props {
 		username: string;
 		size?: string;
-		profileColor?: string | null; // Expecting a hex color string e.g., "#RRGGBB"
+		/** Hex color, `#RRGGBB`. Anything else falls back to the gold default. */
+		profileColor?: string | null;
 	}
 
 	let { username, size = "size-8 text-lg", profileColor = null }: Props = $props();
 
-	const defaultColorStart = '#fbc54a'; // gold-400
+	/** Same as `gold-400` in the theme. */
+	const defaultColorStart = '#fbc54a';
 	const defaultColorEnd = '#c08e1a';
 
 	function darkenHexColor(hex: string, percent: number): string {
@@ -29,7 +31,8 @@
 
 		if (profileColor && /^#[0-9A-Fa-f]{6}$/.test(profileColor)) {
 			startColor = profileColor;
-			endColor = darkenHexColor(profileColor, 45); // Darker end stop, so the gradient stays visible
+			/** The end stop is 45% darker, otherwise the gradient would not show. */
+			endColor = darkenHexColor(profileColor, 45);
 		}
 		return `background-image: linear-gradient(to bottom right, ${startColor}, ${endColor});`;
 	})());

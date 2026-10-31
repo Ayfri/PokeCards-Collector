@@ -11,7 +11,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const { cardCode } = params;
 	const catalogue = BY_ROUTE_CODE[params.catalogue];
 	const { adjective, language } = catalogue;
-	/** Each foreign catalogue carries its own prices and sets, only the English ones come from the layout. */
+	/** Each catalogue has its own prices and sets; only the English ones come from the layout. */
 	const [card, allCards, prices, pokemons, sets] = await Promise.all([getCardDetails(language, cardCode), getCards(language), getPrices(language), getPokemons(), getSets(language)]);
 
 	if (!card) {
@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const pokemon = pokemons.find(p => p.id === card.pokemonNumber);
 
-	// Every print of the same Pokémon, or of the same name for a Trainer or Energy, with this card first.
+	/** Every print of the same Pokémon, or of the same name for a Trainer or Energy, with this card first. */
 	const siblings = allCards.filter(c => c.cardCode !== cardCode && (card.pokemonNumber ? c.pokemonNumber === card.pokemonNumber : c.name === card.name));
 	const pokemonCards: FullCard[] = [card, ...siblings];
 
@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const value = cardPrice(price);
 	const numbering = card.localId ? ` #${card.localId}` : '';
 
-	// `card.image` is a TCGdex base with no extension: handed to a crawler as-is it resolves to nothing.
+	/** `card.image` is a TCGdex base URL with no extension, so it is run through `processCardImage` to give crawlers a real file. */
 	const pageSeoData = {
 		breadcrumbs: breadcrumbs(
 			{ name: `${adjective} cards`, url: catalogue.gridRoute },
@@ -50,7 +50,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		type: 'Product' as const,
 	};
 
-	// The layout already ships the English `sets`, so this page swaps in the catalogue's own list.
+	/** The layout returns the English `sets`; this page overrides them with the catalogue's own list. */
 	return {
 		...cardPageCatalogue(card.pokemonNumber, pokemonCards, allCards, pokemons, prices),
 		card,

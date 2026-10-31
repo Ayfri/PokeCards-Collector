@@ -8,7 +8,7 @@ function sniffDelimiter(text: string): string {
 	let bestCount = 0;
 
 	for (const delimiter of DELIMITERS) {
-		// Counted outside quoted runs, so a `Charizard, Base Set` cell does not make `,` look like the separator.
+		/** Delimiters inside quotes are skipped, so a `Charizard, Base Set` cell does not make `,` look like the separator. */
 		let count = 0;
 		let quoted = false;
 		for (let index = 0; index < header.length; index++) {

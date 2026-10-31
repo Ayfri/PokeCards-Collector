@@ -11,7 +11,7 @@ export interface Round {
 	releaseDate: Date | null;
 }
 
-/** Shared by both exits of the load, so a page with no playable card still ships a full head. */
+/** Shared by both returns of the load, so a page with no playable card still has a full head. */
 const SEO = {
 	breadcrumbs: breadcrumbs({ name: 'Guess the Price', url: '/guess-the-price' }),
 	description: 'Guess what a Pokémon card is worth on Cardmarket. Real cards, real euro prices, a new set of rounds every time. Free and playable without an account.',
@@ -20,10 +20,10 @@ const SEO = {
 	title: 'Guess the Price - Pokémon Card Price Game',
 };
 
-/** Below this the guess is a coin flip between 0 and 2, so cheap bulk never gets drawn. */
+/** Below this price a guess is a coin flip between 0 and 2, so cheap bulk cards are never drawn. */
 const MIN_PRICE = 3;
 
-/** Rounds handed over per load. Re-running this load re-reads every card and price, so one batch buys ~20 instant turns. */
+/** Rounds returned per load. Re-running the load re-reads every card and price, so one batch gives ~20 turns with no wait. */
 const BATCH_SIZE = 20;
 
 export const load: PageServerLoad = async ({ parent }) => {
@@ -31,7 +31,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const sets: Set[] = (await parent()).sets || [];
 	const [allCards, prices] = await catalogue;
 
-	// The whole game is guessing from the picture, so a card TCGdex has no art for is unplayable.
+	/** The game is guessing from the picture, so a card TCGdex has no art for cannot be played. */
 	const playable: { card: Card; price: number }[] = [];
 	for (const card of allCards) {
 		if (!card.image) continue;

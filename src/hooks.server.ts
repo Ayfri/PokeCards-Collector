@@ -6,7 +6,7 @@ import type { UserProfile } from '$lib/types';
 
 /**
  * Endpoints that never read `locals.user`, `locals.profile` or `locals.supabase`, so they skip the `auth.getUser()` round
- * trip and the profile select. An allowlist: a new route resolves the session until it is listed here.
+ * trip and the profile select. It is an allowlist: a new route resolves the session until it is added here.
  */
 const PUBLIC_ROUTES = new Set([
 	'/api/[grid=catalogueGrid]-cards',
@@ -36,7 +36,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 					cookiesToSet.forEach(({ name, value, options }) => {
 						event.cookies.set(name, value, { ...options, path: '/' });
 					});
-					// A response that sets auth cookies carries `no-store` headers from the library, so a CDN never shares one user's session; `setHeaders` throws on a repeat.
+					/** The library sends `no-store` headers with auth cookies, so a CDN never shares one user's session. `setHeaders` throws if called twice. */
 					if (!authHeadersSet) event.setHeaders(headers);
 					authHeadersSet = true;
 				},
@@ -66,7 +66,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	return resolve(event, {
 		filterSerializedResponseHeaders(name) {
-			// Need to ensure the content-range header is exposed for Supabase
+			/** The Supabase client reads `content-range` (row counts) from server-side fetches replayed in the browser, so it must pass this filter. */
 			return name === 'content-range' || name === 'x-supabase-api-version';
 		},
 	});

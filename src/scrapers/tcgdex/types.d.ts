@@ -93,7 +93,6 @@ export interface TcgdexCard extends TcgdexCardBrief {
 	pricing?: TcgdexPricing | null;
 }
 
-/** Shape returned by the bulk GraphQL metadata query. */
 export interface TcgdexGraphqlCard {
 	id: string;
 	localId: string;

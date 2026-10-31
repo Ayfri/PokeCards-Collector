@@ -27,7 +27,7 @@
 
 	const sets = $derived(data.sets);
 
-	/** Fetched from `/api/binder` instead of riding in the document, so the page paints before the catalogue lands. */
+	/** Fetched from `/api/binder` rather than sent in the document, so the page paints before the catalogue arrives. */
 	let catalogue = $state<BinderCatalogueCard[]>([]);
 	const cardsByCode = $derived(new Map(catalogue.map(card => [card.cardCode, card])));
 	const loggedIn = $derived(Boolean(data.profile));
@@ -42,7 +42,7 @@
 	let selectedItem = $state<string | null>(null);
 	let storageOrder = $state<string[]>([]);
 	let exporting = $state(false);
-	/** Saving only starts once the stored binder is in, so the empty defaults never overwrite it. */
+	/** Saving only starts once the stored binder is loaded, so the empty defaults never overwrite it. */
 	let loaded = $state(false);
 
 	let showHelp = $state(false);
@@ -60,7 +60,7 @@
 	const slotsPerPage = $derived(rows * columns);
 	const totalSlots = $derived(pages.length * slotsPerPage);
 	const filledSlots = $derived(pages.reduce((total, page) => total + page.filter(Boolean).length, 0));
-	/** A slot holds either a card code or a raw URL, and the storage keys on the same two shapes. */
+	/** A slot holds either a card code or a raw URL, and the storage uses the same two kinds of key. */
 	const placedItems = $derived(new Set(pages.flat().map(slot => slot?.cardCode ?? slot?.url).filter((key): key is string => Boolean(key))));
 	/** Global index of the slot an armed card lands in: the first empty one from the current page onwards. */
 	const nextEmpty = $derived.by(() => {
@@ -84,7 +84,7 @@
 		} catch (e) { console.error('Failed to save the binder:', e); }
 	}
 
-	/** Image URLs from the pre-cardCode storage format, resolved once the catalogue is in. */
+	/** Image URLs from the older storage format that had no card codes, matched to cards once the catalogue arrives. */
 	let legacyUrls: string[] = [];
 
 	function loadFromLocalStorage() {
@@ -95,7 +95,7 @@
 				const parsed = JSON.parse(storedDataString);
 				if (Array.isArray(parsed)) {
 					if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0] !== null && 'url' in parsed[0]) {
-						// Pre-cardCode storage kept raw image URLs; matching them back onto the catalogue waits for it to arrive.
+						/** The older storage format kept raw image URLs, which can only be matched to cards once the catalogue has arrived. */
 						legacyUrls = parsed.map(oldCard => oldCard.url).filter((url: unknown): url is string => typeof url === 'string');
 					} else if (parsed.every(item => typeof item === 'string')) {
 						binderStorage.cards = parsed;
@@ -122,7 +122,7 @@
 			if (Array.isArray(binderData.pages)) {
 				pages = binderData.pages.length ? binderData.pages : [emptyPage()];
 			} else if (Array.isArray(binderData.cards)) {
-				// Single-grid layout from before the binder held several pages.
+				/** The older single-grid layout stored a flat `cards` array instead of `pages`. */
 				pages = [binderData.cards];
 			} else {
 				pages = [emptyPage()];
@@ -136,7 +136,7 @@
 
 	onMount(() => {
 		loadFromLocalStorage();
-		// Saving is held back while a migration is pending, so an empty storage never overwrites the legacy entry.
+		/** Saving waits while a URL migration is pending, so an empty storage never overwrites the legacy entry. */
 		if (!legacyUrls.length) loaded = true;
 
 		data.catalogue.then(cards => {
@@ -154,7 +154,7 @@
 		if (loaded) saveToLocalStorage();
 	});
 
-	// Resizing the pocket layout keeps whatever fits and drops the overflow, page by page.
+	/** Resizing the pocket grid keeps the cards that still fit and drops the overflow, page by page. */
 	$effect(() => {
 		const size = rows * columns;
 		if (pages.every(page => page.length === size)) return;
@@ -220,7 +220,7 @@
 		updatePage(pageIndex, page => { page[position] = null; return page; });
 	}
 
-	/** Dropping a slot back onto the storage empties it, and puts the card back in the list if it had been removed. */
+	/** Dropping a slot back onto the storage empties it and puts the card back in the list if it was removed. */
 	function handleStorageDrop(event: DragEvent) {
 		if (event.dataTransfer?.getData('source-type') !== 'binder') return;
 		const pageIndex = parseInt(event.dataTransfer.getData('source-page'));
@@ -257,7 +257,7 @@
 		pages = pages.map(() => emptyPage());
 	}
 
-	/** Pours everything still unplaced into the empty slots, appending pages until the storage runs out. */
+	/** Fills the empty slots with every unplaced card, adding pages until the storage is empty. */
 	function autoFill() {
 		const queue = (storageOrder.length ? storageOrder : binderStorage.cards).filter(item => !placedItems.has(item));
 		if (!queue.length) return;

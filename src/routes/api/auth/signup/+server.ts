@@ -76,7 +76,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			}, { status: 500 });
 		}
 
-		// Username check is case-insensitive: the column stores the lowercased form.
+		/** The lookup uses the normalized (lowercase) username because the column stores that form, which makes the check case-insensitive. */
 		let existingUser;
 		let usernameCheckError;
 
@@ -113,7 +113,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		let authError;
 
 		try {
-			// The admin REST endpoint is called directly; the JS client wraps it in a session flow this route does not want.
+			/** The admin REST endpoint is called directly because the JS client wraps it in a session flow this route does not want. */
 			const createUserResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
 				method: 'POST',
 				headers: {
@@ -135,7 +135,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					errorMessage = 'This email address is already registered.';
 				}
 
-				// Check specifically for the 422 status which often indicates email exists
+				/** A 422 from the admin endpoint usually means the email already exists. */
 				if (createUserResponse.status === 422 && errorMessage.includes('email')) {
 						 errorMessage = 'This email address is already registered.';
 				}
@@ -151,7 +151,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			};
 			authError = null;
 		} catch (createError) {
-			// Fallback to the standard client when the admin endpoint is unreachable.
+			/** The standard client signs the user up when the admin endpoint is unreachable. */
 			try {
 				const result = await supabaseAdmin.auth.signUp({
 					email,
@@ -218,7 +218,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			if (!profileResponse.ok) {
 				const errorBody = await readJson<ApiError>(profileResponse, {});
 
-				// A user with no profile row is unusable, so roll the auth user back.
+				/** A user with no profile row is unusable, so the auth user is deleted again. */
 				try {
 					await fetch(`${supabaseUrl}/auth/v1/admin/users/${authData.user.id}`, {
 						method: 'DELETE',
@@ -228,7 +228,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						}
 					});
 				} catch (deleteError) {
-					// Rollback is best effort; the original failure is what gets reported.
+					/** Rollback is best effort: the original failure is the one reported. */
 				}
 
 				return json({
@@ -237,7 +237,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				}, { status: 500 });
 			}
 		} catch (insertError) {
-			// A user with no profile row is unusable, so roll the auth user back.
+			/** A user with no profile row is unusable, so the auth user is deleted again. */
 			try {
 				await fetch(`${supabaseUrl}/auth/v1/admin/users/${authData.user.id}`, {
 					method: 'DELETE',
@@ -247,7 +247,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					}
 				});
 			} catch (deleteError) {
-				// Rollback is best effort; the original failure is what gets reported.
+				/** Rollback is best effort: the original failure is the one reported. */
 			}
 
 			return json({

@@ -140,17 +140,19 @@ export function buildSetKeys(sets: Set[], cards: Card[]): Map<string, string> {
 		if (card.ptcgoCode) add(card.ptcgoCode, legacy);
 	}
 
-	// Sets carrying no card still resolve, so an unmatched line blames the missing card rather than the set.
+	/** A set with no card still resolves, so an unmatched line reports a missing card instead of an unknown set. */
 	for (const set of sets) {
 		if (!set.setId) continue;
-		// Another catalogue's sets name this one's cards too: the English set name of a French card lands on its `fr` code.
+		/** Sets of another catalogue can name these cards too: the English set name of a French card maps to its `fr` code. */
 		const key = byTcgdexId.get(normalize(set.setId)) ?? normalize(set.setId);
 		add(set.setId, key);
 		if (set.name) add(set.name, key);
 	}
 
-	// A French, German, Spanish, Italian or Portuguese export names its sets in that language: a Pokecardex CSV
-	// says `Foudre Noire` where the catalogue says `Black Bolt`. The keys are already normalized by the generator.
+	/**
+	 * A French, German, Spanish, Italian or Portuguese export names its sets in that language: a Pokecardex CSV says
+	 * `Foudre Noire` where the catalogue says `Black Bolt`. The generator already normalizes these keys.
+	 */
 	for (const langNames of Object.values(setNames)) {
 		for (const [name, tcgdexId] of Object.entries(langNames)) {
 			const key = byTcgdexId.get(normalize(tcgdexId));
@@ -175,7 +177,7 @@ export function buildCardIndex(cards: Card[]): Map<string, string> {
 	const index = new Map<string, string>();
 	const parents = new Map<string, string>();
 
-	// The longest other set id this one extends, which is the set an export would have named instead.
+	/** The parent is the longest other set id this one starts with, the set an export would name instead. */
 	const setIds = [...new Set(cards.map(card => card.setId).filter((id): id is string => !!id))].sort();
 	for (const setId of setIds) {
 		const parent = setIds.filter(other => other !== setId && setId.startsWith(other)).sort((a, b) => b.length - a.length)[0];
@@ -187,7 +189,7 @@ export function buildCardIndex(cards: Card[]): Map<string, string> {
 		const { cardNumber, setCode } = parseCardCode(card.cardCode);
 		if (!setCode) continue;
 
-		// Keyed on the code itself too, so a code column is validated against the catalogue instead of trusted.
+		/** The code is also a key, so a code column is checked against the catalogue instead of trusted. */
 		index.set(`|${card.cardCode.toLowerCase()}`, card.cardCode);
 
 		const parentKey = card.setId ? setKeyOf.get(parents.get(card.setId) ?? '') : undefined;
@@ -197,7 +199,7 @@ export function buildCardIndex(cards: Card[]): Map<string, string> {
 			for (const number of numberForms(raw)) {
 				const key = `${setCode}|${number}`;
 				if (!index.has(key)) index.set(key, card.cardCode);
-				// Only a lettered number goes up to the parent: a bare `01` would shadow the parent's own card 1.
+				/** Only a lettered number is also filed under the parent: a bare `01` would shadow the parent's own card 1. */
 				if (parentKey && /[a-z]/.test(number) && !index.has(`${parentKey}|${number}`)) index.set(`${parentKey}|${number}`, card.cardCode);
 			}
 		}
@@ -240,8 +242,8 @@ export interface Catalogue {
 /**
  * Resolves each row against the catalogue of its own language. `setOverride` is the set the dialog pins when the
  * file names none, which is the normal case for a Pokécardex export: it exports one series at a time and only
- * writes the number and the name. A French line the French catalogue cannot place falls back to the English print:
- * TCGdex France lacks a few sets and cards, and the line matched on the English catalogue before it existed.
+ * writes the number and the name. A French line the French catalogue cannot place falls back to the English print,
+ * because TCGdex France lacks a few sets and cards.
  */
 export function resolveRows(rows: ImportRow[], catalogues: Record<Language, Catalogue>, setOverride?: string): ImportResolution {
 	const matched = new Map<string, ImportMatch>();
@@ -249,7 +251,7 @@ export function resolveRows(rows: ImportRow[], catalogues: Record<Language, Cata
 
 	const find = (language: Language, row: ImportRow) => {
 		const { index, setKeys } = catalogues[language];
-		// A full card code needs no set at all, which is what makes this site's own export round-trip.
+		/** A full card code needs no set, which is how this site's own export imports back. */
 		const direct = row.number.includes('_') ? index.get(`|${row.number.toLowerCase()}`) : undefined;
 		const setKey = row.set ? setNameForms(row.set).flatMap(form => [setKeys.get(normalize(form)), setKeys.get(tokenKey(form))]).find(Boolean) : setOverride && setKeys.get(normalize(setOverride));
 		return direct ?? (setKey ? numberForms(normalizeNumber(row.number)).map(number => index.get(`${setKey}|${number}`)).find(Boolean) : undefined);

@@ -58,7 +58,7 @@ export function cardSchema(card: Card, price: PriceData | undefined, pokemon?: P
 				availability: 'https://schema.org/InStock',
 				price: value.toFixed(2),
 				priceCurrency: 'EUR',
-				// Cardmarket restates its averages daily, so a longer validity would advertise a stale price.
+				/** Cardmarket updates its averages daily, so a longer validity would advertise a stale price. */
 				priceValidUntil: tomorrow(),
 				seller: { '@type': 'Organization', name: 'Cardmarket' },
 				url: card.cardMarketUrl || url,

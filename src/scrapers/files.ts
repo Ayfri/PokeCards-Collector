@@ -12,7 +12,6 @@ export const PRICES = 'src/assets/prices.json';
 export const SETS = 'src/assets/sets-full.json';
 export const TYPES = 'src/assets/types.json';
 
-/** The scraped JSON files of each catalogue. */
 export const FILES: Record<Language, {cards: string; prices: string; sets: string}> = {
 	en: {cards: CARDS, prices: PRICES, sets: SETS},
 	fr: {cards: FR_CARDS, prices: FR_PRICES, sets: FR_SETS},

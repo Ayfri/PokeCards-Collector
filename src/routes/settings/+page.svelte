@@ -23,7 +23,7 @@
 
 	let {data, form}: Props = $props();
 
-	/** Gold-400, the color Avatar.svelte falls back to. */
+	/** Gold-400, the color `Avatar.svelte` falls back to. */
 	const DEFAULT_PROFILE_COLOR = '#fbc54a';
 
 	const TABS = [
@@ -48,7 +48,7 @@
 		? new Date(profile.created_at).toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'})
 		: null);
 
-	// The stored color wins whenever the server sends a fresh profile, so a save shows up without a reload.
+	/** The stored color overrides the local one whenever the server sends a fresh profile, so a save shows without a reload. */
 	$effect(() => {
 		const stored = profile?.profile_color;
 		profileColor = typeof stored === 'string' && /^#[0-9A-Fa-f]{6}$/.test(stored) ? stored : DEFAULT_PROFILE_COLOR;
@@ -63,7 +63,7 @@
 		resetPasswordMessage = '';
 		resetPasswordError = '';
 
-		/** No `redirectTo`: the Recovery email template points at `{{ .SiteURL }}/auth/confirm`, which is not gated on the redirect allow list. */
+		/** There is no `redirectTo` because the Recovery email template links to `{{ .SiteURL }}/auth/confirm`, which the redirect allow list does not gate. */
 		const {error} = await supabase.auth.resetPasswordForEmail(user.email);
 
 		resetPasswordLoading = false;

@@ -117,7 +117,8 @@
 				e.preventDefault();
 				return;
 			}
-			e.dataTransfer.setData('text/plain', crypto.randomUUID()); // For Firefox compatibility
+			/** Firefox only starts a drag when `text/plain` data is set. */
+			e.dataTransfer.setData('text/plain', crypto.randomUUID());
 			e.dataTransfer.setData('cardCode', item);
 			e.dataTransfer.setData('cardUrl', fullCard.image);
 			e.dataTransfer.setData('source-type', 'storage');

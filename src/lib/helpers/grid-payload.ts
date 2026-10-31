@@ -28,7 +28,7 @@ interface Entry {
 const entries = new WeakMap<FullCard[], Entry>();
 
 async function serialize(cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[]): Promise<Serialized> {
-	// An artless card is still a real card: deduplicating on `image` hid 8899 of the 12781 Japanese cards.
+	/** An artless card is still a real card, so cards are not deduplicated on `image`: that would hide 8899 of the 12781 Japanese cards. */
 	/** `cardMarketUpdatedAt` is only drawn on a card page, so the 21k grid tiles leave it out. */
 	const visibleCards = cards.filter(card => Boolean(card.setName)).map(({ cardMarketUpdatedAt, ...card }) => ({ ...card, price: cardPrice(prices[card.cardCode]) }));
 
@@ -44,7 +44,7 @@ async function serialize(cards: FullCard[], prices: Record<string, PriceData>, p
 	return { body, etag: `"${Array.from(digest.subarray(0, 16), byte => byte.toString(16).padStart(2, '0')).join('')}"` };
 }
 
-/** The grid payload as a cacheable JSON response: serialized and hashed once per memoized table, `304` when the caller already holds that body. */
+/** The grid payload as a cacheable JSON response. It is serialized and hashed once per memoized table, and a caller that already has that body gets a `304`. */
 export async function gridResponse(request: Request, cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[]): Promise<Response> {
 	let entry = entries.get(cards);
 	if (!entry || entry.prices !== prices || entry.pokemons !== pokemons || entry.types !== types) {

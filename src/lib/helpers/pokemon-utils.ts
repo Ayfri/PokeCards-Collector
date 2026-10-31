@@ -1,6 +1,6 @@
 /**
- * jsDelivr mirrors the PokeAPI sprite repo behind a real CDN and serves it with `max-age=604800`;
- * `raw.githubusercontent.com` answers with `max-age=300`, so every visit re-downloaded the whole grid.
+ * jsDelivr mirrors the PokeAPI sprite repo behind a real CDN and serves it with `max-age=604800`.
+ * `raw.githubusercontent.com` answers with `max-age=300`, so each visit would download the whole grid again.
  */
 const SPRITES_BASE = 'https://cdn.jsdelivr.net/gh/PokeAPI/sprites@master/sprites/pokemon';
 
