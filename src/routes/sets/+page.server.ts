@@ -1,8 +1,8 @@
-import { getCards, getPrices } from '$helpers/supabase-data';
+import { getCards, getPrices } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
-import { breadcrumbs, setListSchema } from '$helpers/seo';
-import type { SetWithPrice } from '$lib/types';
-import { cardPrice } from '$helpers/card-utils';
+import { breadcrumbs, setListSchema } from '#helpers/seo.ts';
+import type { SetWithPrice } from '#lib/types.js';
+import { cardPrice } from '#helpers/card-utils.ts';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	const catalogue = Promise.all([getCards(), getPrices()]);

@@ -1,5 +1,5 @@
 import {createClient, type SupabaseClient} from '@supabase/supabase-js';
-import {CATALOGUES} from '$lib/helpers/catalogues';
+import {CATALOGUES} from '#helpers/catalogues.ts';
 import {cardRow, priceRow, setRow} from './rows';
 import {englishImages, fileUnderListingSets, mapAll, withProbedAssets, type TcgdexClient} from './tcgdex/client';
 import {catalogueSets, excludedSetIds} from './tcgdex/excluded';

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
-	import { timeAgo } from '$helpers/dates';
-	import { compareRarities } from '$helpers/rarity';
-	import { toggleProfileVisibility } from '$lib/services/profiles';
-	import SetLogo from '@components/SetLogo.svelte';
-	import Avatar from '@components/auth/Avatar.svelte';
-	import CardImage from '@components/card/CardImage.svelte';
+	import { refreshAll } from '$app/navigation';
+	import { timeAgo } from '#helpers/dates.ts';
+	import { compareRarities } from '#helpers/rarity.ts';
+	import { toggleProfileVisibility } from '#lib/services/profiles.ts';
+	import SetLogo from '#components/SetLogo.svelte';
+	import Avatar from '#components/auth/Avatar.svelte';
+	import CardImage from '#components/card/CardImage.svelte';
 	import BookOpen from '@lucide/svelte/icons/book-open';
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -24,8 +24,8 @@
 	import Trophy from '@lucide/svelte/icons/trophy';
 	import Wallet from '@lucide/svelte/icons/wallet';
 	import { fly } from 'svelte/transition';
-	import { CATALOGUES } from '$helpers/catalogues';
-	import type { CollectionStats } from '$lib/types';
+	import { CATALOGUES } from '#helpers/catalogues.ts';
+	import type { CollectionStats } from '#lib/types.js';
 	import type { PageData } from './$types';
 
 	interface Props {
@@ -124,7 +124,7 @@
 			}
 
 			/** The toggle writes through the browser client, so the page data must be reloaded to show it. */
-			await invalidateAll();
+			await refreshAll();
 			successMessage = `Your profile is now ${newVisibility ? 'public' : 'private'}.`;
 			setTimeout(() => successMessage = '', 3000);
 		} catch (error) {

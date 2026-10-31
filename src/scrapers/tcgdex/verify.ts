@@ -1,5 +1,5 @@
 import * as fs from 'node:fs';
-import {RARITY_MAPPING} from '$helpers/rarity';
+import {RARITY_MAPPING} from '#helpers/rarity.ts';
 import {envClient, ownedCardCodes} from '../supabase_sync';
 import {CARDS, FR_CARDS, FR_PRICES, FR_SETS, JP_CARDS, JP_PRICES, JP_SETS, PRICES, SETS, TYPES} from '../files';
 import type {MappedCard, MappedPrice, MappedSet} from './mappers';

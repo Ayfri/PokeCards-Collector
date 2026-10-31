@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { filters, filterSections, SORT_OPTIONS, SUPERTYPE_OPTIONS } from '$stores/filters.svelte';
-	import type { Set } from '$lib/types';
-	import Button from '@components/filters/Button.svelte';
-	import Section from '@components/filters/Section.svelte';
-	import Select from '@components/filters/Select.svelte';
-	import TextInput from '@components/filters/TextInput.svelte';
+	import { filters, filterSections, SORT_OPTIONS, SUPERTYPE_OPTIONS } from '#stores/filters.svelte.ts';
+	import type { Set } from '#lib/types.js';
+	import Button from '#components/filters/Button.svelte';
+	import Section from '#components/filters/Section.svelte';
+	import Select from '#components/filters/Select.svelte';
+	import TextInput from '#components/filters/TextInput.svelte';
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import ArrowUp from '@lucide/svelte/icons/arrow-up';
@@ -35,7 +35,7 @@
 	 * A `null` value drops the parameter instead of setting it.
 	 */
 	function applyFilterParam(param: string, value: string | null) {
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		if (value) {
 			url.searchParams.set(param, value);
 		} else {
@@ -44,7 +44,7 @@
 
 		const focusedId = (document.activeElement as HTMLElement | null)?.id;
 
-		goto(url.toString(), { replaceState: true }).then(() => {
+		goto(url.toString(), { replace: true }).then(() => {
 			if (focusedId) document.querySelector<HTMLElement>(`#${focusedId}`)?.focus();
 		});
 	}

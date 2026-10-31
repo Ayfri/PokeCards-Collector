@@ -1,5 +1,5 @@
-import type { Language } from '$helpers/catalogues';
-import type { FullCard, PriceData, Set } from '$lib/types';
+import type { Language } from '#helpers/catalogues.ts';
+import type { FullCard, PriceData, Set } from '#lib/types.js';
 
 /** What one catalogue holds: its card list, its price table and its sets. */
 export interface CatalogueData {

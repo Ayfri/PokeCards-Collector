@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { fade, fly, type FlyParams, type TransitionConfig } from 'svelte/transition';
 	import XIcon from '@lucide/svelte/icons/x';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 
 	interface Props {
 		open?: boolean;

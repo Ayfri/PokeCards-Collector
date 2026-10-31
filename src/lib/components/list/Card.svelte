@@ -1,20 +1,20 @@
 <script lang="ts">
-	import {NO_IMAGES} from '$lib/images';
-	import {addCardToWishlist, removeCardFromWishlist} from '$lib/services/wishlists';
-	import {addCardToCollection, removeCardFromCollection} from '$lib/services/collections';
-	import {wishlist} from '$stores/wishlist.svelte';
-	import {collection} from '$stores/collection.svelte';
+	import {NO_IMAGES} from '#lib/images.ts';
+	import {addCardToWishlist, removeCardFromWishlist} from '#lib/services/wishlists.ts';
+	import {addCardToCollection, removeCardFromCollection} from '#lib/services/collections.ts';
+	import {wishlist} from '#stores/wishlist.svelte.ts';
+	import {collection} from '#stores/collection.svelte.ts';
 	import { page } from '$app/state';
-	import type {FullCard, GridPokemon, Set} from '$lib/types';
-	import { formatCardNumber } from '$lib/helpers/card-utils';
-	import CardImage from '@components/card/CardImage.svelte';
+	import type {FullCard, GridPokemon, Set} from '#lib/types.js';
+	import { formatCardNumber } from '#helpers/card-utils.ts';
+	import CardImage from '#components/card/CardImage.svelte';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
-	import { getCardSet } from '$helpers/card-grid';
-	import { CATALOGUES, catalogueOfPath } from '$helpers/catalogues';
+	import { getCardSet } from '#helpers/card-grid.ts';
+	import { CATALOGUES, catalogueOfPath } from '#helpers/catalogues.ts';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Minus from '@lucide/svelte/icons/minus';
-	import SetBadge from '@components/SetBadge.svelte';
+	import SetBadge from '#components/SetBadge.svelte';
 
 	interface Props {
 		card: FullCard;

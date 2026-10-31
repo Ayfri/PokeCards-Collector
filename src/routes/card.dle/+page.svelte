@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
-	import type { CardDleFeedback, CardDleGuessResponse } from '$lib/types';
-	import { readJson } from '$helpers/http';
-	import { getPokemonSpriteSrc } from '$helpers/pokemon-utils';
-	import Modal from '@components/ui/Modal.svelte';
-	import CardImage from '@components/card/CardImage.svelte';
-	import TextInput from '@components/filters/TextInput.svelte';
-	import Button from '@components/filters/Button.svelte';
-	import BouncyLoader from '@components/BouncyLoader.svelte';
-	import PageTitle from '@components/PageTitle.svelte';
+	import type { CardDleFeedback, CardDleGuessResponse } from '#lib/types.js';
+	import { readJson } from '#helpers/http.ts';
+	import { getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
+	import Modal from '#components/ui/Modal.svelte';
+	import CardImage from '#components/card/CardImage.svelte';
+	import TextInput from '#components/filters/TextInput.svelte';
+	import Button from '#components/filters/Button.svelte';
+	import BouncyLoader from '#components/BouncyLoader.svelte';
+	import PageTitle from '#components/PageTitle.svelte';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ChevronsDownIcon from '@lucide/svelte/icons/chevrons-down';
 	import ChevronsUpIcon from '@lucide/svelte/icons/chevrons-up';

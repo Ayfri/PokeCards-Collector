@@ -1,4 +1,4 @@
-import type { Set as CardSet } from '$lib/types';
+import type { Set as CardSet } from '#lib/types.js';
 import { persistedRecord } from './persisted.svelte';
 
 export type SortOrder = 'asc' | 'desc';
@@ -125,7 +125,7 @@ class CardFilters {
 	 * so a link lands on exactly what it names rather than on top of whatever the visitor last picked. The sort is a
 	 * viewing preference, so it survives unless the link names one.
 	 */
-	applyFromUrl(url: URL, sets: CardSet[]) {
+	applyFromUrl(url: {searchParams: Pick<URLSearchParams, 'get'>}, sets: CardSet[]) {
 		const params = url.searchParams;
 		const value = (key: string) => params.get(key)?.trim().toLowerCase() || null;
 

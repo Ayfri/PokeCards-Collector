@@ -1,4 +1,4 @@
-import { getRandomCardCode } from "$helpers/supabase-data";
+import { getRandomCardCode } from "#helpers/supabase-data.ts";
 import { error, redirect } from "@sveltejs/kit";
 import type { PageServerLoad } from "../$types";
 

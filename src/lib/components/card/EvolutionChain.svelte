@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { pascalCase } from '$helpers/strings.js';
-	import { getPokemonImageSrc, handlePokemonImageError } from '$lib/helpers/pokemon-utils';
-	import { getCardImageForPokemon } from '$helpers/card-images';
-	import { NO_IMAGES } from '$lib/images';
-	import type { FullCard, Pokemon, PriceData } from '~/lib/types';
-	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
-	import { catalogueOfPath } from '$helpers/catalogues';
+	import { pascalCase } from '#helpers/strings.ts';
+	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
+	import { getCardImageForPokemon } from '#helpers/card-images.ts';
+	import { NO_IMAGES } from '#lib/images.ts';
+	import type { FullCard, Pokemon, PriceData } from '#lib/types.js';
+	import { getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
+	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { loading } from '$stores/loading.svelte';
+	import { loading } from '#stores/loading.svelte.ts';
 
 	interface Props {
 		allCards: FullCard[];

@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { ArtistWithCards } from './+page.server';
-	import { NO_IMAGES } from '$lib/images';
-	import SortControl from '@components/filters/SortControl.svelte';
-	import PageTitle from '@components/PageTitle.svelte';
-	import CardImage from '@components/card/CardImage.svelte';
-	import TextInput from '@components/filters/TextInput.svelte';
-	import { artistsSort, type ArtistsSortValue } from '$stores/artistsSort.svelte';
+	import { NO_IMAGES } from '#lib/images.ts';
+	import SortControl from '#components/filters/SortControl.svelte';
+	import PageTitle from '#components/PageTitle.svelte';
+	import CardImage from '#components/card/CardImage.svelte';
+	import TextInput from '#components/filters/TextInput.svelte';
+	import { artistsSort, type ArtistsSortValue } from '#stores/artistsSort.svelte.ts';
 	import { fade, fly } from 'svelte/transition';
 	import { SvelteSet } from 'svelte/reactivity';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';

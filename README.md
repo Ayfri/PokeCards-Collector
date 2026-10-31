@@ -241,8 +241,8 @@ There is no test suite and no lint script. `svelte-check` is installed but not w
 ├── supabase/migrations/     # SQL migrations: schema, indexes, grants, policies, RLS
 ├── static/                  # Favicon and static files
 ├── scraper-cli.ts           # Scraper CLI entry point
-├── svelte.config.js         # Adapter and path aliases
-├── vite.config.ts           # Vite + @tailwindcss/vite
+├── package.json             # Scripts and the `#...` import aliases
+├── vite.config.ts           # Vite, SvelteKit options (adapter) and @tailwindcss/vite
 ├── wrangler.toml            # Site Worker
 └── wrangler.scraper.toml    # Scraper Worker
 ```

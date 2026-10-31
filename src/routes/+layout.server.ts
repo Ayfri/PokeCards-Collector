@@ -1,8 +1,8 @@
-import { getSets } from '$helpers/supabase-data';
+import { getSets } from '#helpers/supabase-data.ts';
 import type { LayoutServerLoad } from './$types';
-import { getUserWishlist } from '$lib/services/wishlists';
-import { getUserCollection } from '$lib/services/collections';
-import type { UserCollection, UserWishlist } from '$lib/types';
+import { getUserWishlist } from '#lib/services/wishlists.ts';
+import { getUserCollection } from '#lib/services/collections.ts';
+import type { UserCollection, UserWishlist } from '#lib/types.js';
 
 /**
  * The catalogue is deliberately not returned here. Everything a layout load returns is serialized into the document,

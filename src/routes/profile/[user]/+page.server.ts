@@ -1,14 +1,14 @@
-import { LANGUAGES } from '$helpers/catalogues';
-import { countCards, getCatalogue } from '$helpers/supabase-data';
+import { LANGUAGES } from '#helpers/catalogues.ts';
+import { countCards, getCatalogue } from '#helpers/supabase-data.ts';
 import { redirect } from '@sveltejs/kit';
-import { computeCollectionStats } from '$helpers/collection-stats';
-import { readOwnedCatalogues } from '$helpers/owned-cards';
-import { getUserCollection } from '$lib/services/collections';
-import { getProfileByUsername } from '$lib/services/profiles';
-import { getUserWishlist } from '$lib/services/wishlists';
+import { computeCollectionStats } from '#helpers/collection-stats.ts';
+import { readOwnedCatalogues } from '#helpers/owned-cards.ts';
+import { getUserCollection } from '#lib/services/collections.ts';
+import { getProfileByUsername } from '#lib/services/profiles.ts';
+import { getUserWishlist } from '#lib/services/wishlists.ts';
 import type { PageServerLoad } from './$types';
-import { breadcrumbs, profileSchema } from '$helpers/seo';
-import type { CollectionStats } from '$lib/types';
+import { breadcrumbs, profileSchema } from '#helpers/seo.ts';
+import type { CollectionStats } from '#lib/types.js';
 
 export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	const requestedUsername = params.user;

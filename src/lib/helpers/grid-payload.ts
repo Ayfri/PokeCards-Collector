@@ -1,6 +1,6 @@
-import { distinctArtists, distinctRarities } from '$helpers/card-grid';
-import { cardPrice } from '$helpers/card-utils';
-import type { FullCard, GridPokemon, Pokemon, PriceData } from '$lib/types';
+import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
+import { cardPrice } from '#helpers/card-utils.ts';
+import type { FullCard, GridPokemon, Pokemon, PriceData } from '#lib/types.js';
 
 /** Everything a card grid renders. Kept out of the page load so a `?set=` change cannot force it over the wire again. */
 export interface GridPayload {

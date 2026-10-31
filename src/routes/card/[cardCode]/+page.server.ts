@@ -1,9 +1,9 @@
 import { error } from '@sveltejs/kit';
-import { getCardDetails, getCards, getPokemons, getPrices } from '$helpers/supabase-data';
-import { processCardImage } from '$helpers/card-images';
-import { cardPageCatalogue, cardPrice } from '$helpers/card-utils';
-import { article, breadcrumbs, cardSchema } from '$helpers/seo';
-import type { FullCard, Pokemon } from '$lib/types';
+import { getCardDetails, getCards, getPokemons, getPrices } from '#helpers/supabase-data.ts';
+import { processCardImage } from '#helpers/card-images.ts';
+import { cardPageCatalogue, cardPrice } from '#helpers/card-utils.ts';
+import { article, breadcrumbs, cardSchema } from '#helpers/seo.ts';
+import type { FullCard, Pokemon } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ params, parent }) => {

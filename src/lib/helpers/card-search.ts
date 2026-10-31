@@ -1,5 +1,5 @@
-import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
-import { cardPrice } from '$helpers/card-utils';
+import type { FullCard, Pokemon, PriceData, Set } from '#lib/types.js';
+import { cardPrice } from '#helpers/card-utils.ts';
 
 /** One search hit, carrying everything the result row renders so the client needs neither the sets nor the prices. */
 export interface CardSearchResult {

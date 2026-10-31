@@ -1,21 +1,21 @@
 <script lang="ts">
-	import CardInfo from '@components/card/CardInfo.svelte';
-	import EvolutionChain from '@components/card/EvolutionChain.svelte';
-	import RelatedCards from '@components/card/RelatedCards.svelte';
-	import {NO_IMAGES} from '$lib/images';
+	import CardInfo from '#components/card/CardInfo.svelte';
+	import EvolutionChain from '#components/card/EvolutionChain.svelte';
+	import RelatedCards from '#components/card/RelatedCards.svelte';
+	import {NO_IMAGES} from '#lib/images.ts';
 	import {fade, fly} from 'svelte/transition';
-	import type {FullCard, Pokemon, Set, PriceData} from '$lib/types';
-	import { pascalCase } from '$helpers/strings';
-	import InteractiveCard from '@components/card/InteractiveCard.svelte';
+	import type {FullCard, Pokemon, Set, PriceData} from '#lib/types.js';
+	import { pascalCase } from '#helpers/strings.ts';
+	import InteractiveCard from '#components/card/InteractiveCard.svelte';
 	import { flushSync, onMount } from 'svelte';
-	import { afterNavigate, goto, replaceState } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { catalogueOfPath } from '$helpers/catalogues';
-	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
-	import { getPokemonImageSrc, getPokemonSpriteSrc } from '$helpers/pokemon-utils';
-	import { loading } from '$stores/loading.svelte';
-	import { morphCards } from '$helpers/view-transitions';
+	import { catalogueOfPath } from '#helpers/catalogues.ts';
+	import { getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
+	import { getPokemonImageSrc, getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
+	import { loading } from '#stores/loading.svelte.ts';
+	import { morphCards } from '#helpers/view-transitions.ts';
 
 	
 	interface Props {
@@ -82,7 +82,7 @@
 	/** Swaps the displayed card without a navigation: the picked tile flies up into the big card while the page jumps back to the top. */
 	function handleCardSelect(selectedCard: FullCard) {
 		const { cardCode } = selectedCard;
-		replaceState(cardUrl(cardCode), { replaceUrl: true });
+		goto(cardUrl(cardCode), { replace: true, shallow: true });
 		morphCards([selectedCard.cardCode], () => {
 			currentCard = selectedCard;
 			flushSync();
@@ -102,9 +102,15 @@
 		isInitialRenderComplete = true;
 	});
 
-	afterNavigate(() => {
-		const urlParts = window.location.pathname.split('/');
-		const cardCodeFromUrl = urlParts[urlParts.length - 2];
+	/** Our shallow `goto` only rewrites the URL, the card is already swapped. A Back into that entry is `shallow` too but reloads the page, so it resyncs. */
+	afterNavigate(({ shallow, type }) => {
+		if (shallow && type === 'goto') return;
+
+		/**
+		 * Read from the address bar, not `page.url`: a Back into a shallow entry loads the page of the card it replaced, so `page.url`
+		 * names that card. Tile links end in a slash (`/card/<code>/`) and `resolve()` URLs do not, hence the last non-empty segment.
+		 */
+		const cardCodeFromUrl = window.location.pathname.split('/').filter(Boolean).at(-1);
 		/** `pokemonCards` holds the viewed card with every column, `allCards` only its list fields, so it is searched first. */
 		const matchingCard = pokemonCards.find(card => card.cardCode === cardCodeFromUrl) ?? allCards.find(card => card.cardCode === cardCodeFromUrl);
 

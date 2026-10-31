@@ -133,7 +133,7 @@ button {
 	@apply cursor-pointer;
 }
 
-/* Page transitions (`$helpers/view-transitions`): the page sinks away and rises back in under a still header, reversed on history back. */
+/* Page transitions (`#helpers/view-transitions.ts`): the page sinks away and rises back in under a still header, reversed on history back. */
 html:active-view-transition-type(back) {
 	--vt-direction: -1;
 }

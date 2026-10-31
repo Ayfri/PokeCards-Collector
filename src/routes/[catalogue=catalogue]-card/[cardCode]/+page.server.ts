@@ -1,11 +1,11 @@
-import { BY_ROUTE_CODE } from '$helpers/catalogues';
-import { getCardDetails, getCards, getPokemons, getPrices, getSets } from '$helpers/supabase-data';
-import type { FullCard } from '$lib/types';
+import { BY_ROUTE_CODE } from '#helpers/catalogues.ts';
+import { getCardDetails, getCards, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
+import type { FullCard } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
-import { processCardImage } from '$helpers/card-images';
-import { cardPageCatalogue, cardPrice } from '$helpers/card-utils';
-import { breadcrumbs, cardSchema } from '$helpers/seo';
+import { processCardImage } from '#helpers/card-images.ts';
+import { cardPageCatalogue, cardPrice } from '#helpers/card-utils.ts';
+import { breadcrumbs, cardSchema } from '#helpers/seo.ts';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const { cardCode } = params;

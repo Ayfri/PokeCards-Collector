@@ -1,4 +1,4 @@
-import { json, type RequestHandler } from '@sveltejs/kit';
+import type { RequestHandler } from '@sveltejs/kit';
 import { error as svelteKitError } from '@sveltejs/kit';
 
 export const POST: RequestHandler = async ({ locals }) => {
@@ -10,5 +10,5 @@ export const POST: RequestHandler = async ({ locals }) => {
 	}
 
 	/** The Supabase SSR helper clears the auth cookies during `signOut`. */
-	return json({ success: true });
+	return Response.json({ success: true });
 }; 

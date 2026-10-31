@@ -9,12 +9,12 @@
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import type { PageData } from './$types';
-	import type { SearchedUserWithStats, SearchUsersResponse } from '$lib/types';
-	import { readJson } from '$helpers/http';
-	import PageTitle from '@components/PageTitle.svelte';
-	import TextInput from '@components/filters/TextInput.svelte';
-	import UserCard from '@components/users/UserCard.svelte';
-	import BouncyLoader from '$lib/components/BouncyLoader.svelte';
+	import type { SearchedUserWithStats, SearchUsersResponse } from '#lib/types.js';
+	import { readJson } from '#helpers/http.ts';
+	import PageTitle from '#components/PageTitle.svelte';
+	import TextInput from '#components/filters/TextInput.svelte';
+	import UserCard from '#components/users/UserCard.svelte';
+	import BouncyLoader from '#lib/components/BouncyLoader.svelte';
 
 	interface Props {
 		data: PageData;
@@ -38,7 +38,7 @@
 		} else {
 			url.searchParams.delete('q');
 		}
-		history.replaceState({}, '', url.toString());
+		goto(url, { replace: true, shallow: true });
 	}
 
 	async function performSearchUsers() {

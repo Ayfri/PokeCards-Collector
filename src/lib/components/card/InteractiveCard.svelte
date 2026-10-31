@@ -1,8 +1,8 @@
 <script lang="ts">
-	import CardImage from '@components/card/CardImage.svelte';
-	import type { FullCard, Pokemon, Set } from '$lib/types';
-	import { pascalCase } from '$helpers/strings';
-	import { throttle } from '$helpers/throttle';
+	import CardImage from '#components/card/CardImage.svelte';
+	import type { FullCard, Pokemon, Set } from '#lib/types.js';
+	import { pascalCase } from '#helpers/strings.ts';
+	import { throttle } from '#helpers/throttle.ts';
 
 	
 	interface Props {

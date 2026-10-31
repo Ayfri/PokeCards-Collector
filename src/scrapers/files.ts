@@ -1,4 +1,4 @@
-import type {Language} from '$lib/helpers/catalogues';
+import type {Language} from '#helpers/catalogues.ts';
 
 export const CARDS ='src/assets/cards-full.json';
 export const FR_CARDS = 'src/assets/fr-cards-full.json';

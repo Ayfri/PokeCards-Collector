@@ -2,7 +2,7 @@
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
-	import {browser} from '$app/environment';
+	import {browser} from '$app/env';
 	import {onMount} from 'svelte';
 
 	interface Props {

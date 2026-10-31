@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { gridScroll } from '$stores/grid.svelte';
+	import { gridScroll } from '#stores/grid.svelte.ts';
 </script>
 
 <div class="relative z-10 h-[3px] w-full overflow-hidden max-lg:h-[2px]">

@@ -1,5 +1,5 @@
 import * as fs from 'node:fs';
-import { CATALOGUES, LANGUAGES } from '$helpers/catalogues';
+import { CATALOGUES, LANGUAGES } from '#helpers/catalogues.ts';
 import { FILES, POKEMONS, TYPES } from './files';
 import { cardRow, priceRow, setRow } from './rows';
 import { deduplicate, deleteIn, envClient, readAll, upsertRows } from './supabase_sync';

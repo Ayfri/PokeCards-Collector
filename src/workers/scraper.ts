@@ -1,7 +1,7 @@
 import {DurableObject, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep} from 'cloudflare:workers';
-import {LANGUAGES, type Language} from '$lib/helpers/catalogues';
-import {createSyncClient, dropSharedProducts, syncSetCards, syncSets, type SyncCardsResult} from '$scrapers/supabase_sync';
-import {FetchClient} from '$scrapers/tcgdex/client';
+import {LANGUAGES, type Language} from '#helpers/catalogues.ts';
+import {createSyncClient, dropSharedProducts, syncSetCards, syncSets, type SyncCardsResult} from '#scrapers/supabase_sync.ts';
+import {FetchClient} from '#scrapers/tcgdex/client.ts';
 
 interface Env {
 	PUBLIC_SUPABASE_URL: string;

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { cardTypeTint } from '$helpers/card-images';
-	import { getPokemonImageSrc } from '$helpers/pokemon-utils';
-	import { NO_IMAGES } from '$lib/images';
-	import type { FullCard } from '$lib/types';
+	import { cardTypeTint } from '#helpers/card-images.ts';
+	import { getPokemonImageSrc } from '#helpers/pokemon-utils.ts';
+	import { NO_IMAGES } from '#lib/images.ts';
+	import type { FullCard } from '#lib/types.js';
 	import ImageOff from '@lucide/svelte/icons/image-off';
 
 	interface Props {

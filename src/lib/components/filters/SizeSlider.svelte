@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CARD_SIZES, cardSize } from '$stores/grid.svelte';
+	import { CARD_SIZES, cardSize } from '#stores/grid.svelte.ts';
 	import Grid2x2Icon from '@lucide/svelte/icons/grid-2x2';
 
 	/** Presets ordered from the narrowest card to the widest, whatever order the record declares them in. */

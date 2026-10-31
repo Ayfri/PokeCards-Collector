@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { BASE_URL } from '~/constants';
+import { BASE_URL } from '#src/constants.ts';
 import type { RequestHandler } from './$types';
 
 /** SVG is left out on purpose: it can run scripts, and serving one from our own origin would be a stored XSS. */

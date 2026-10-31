@@ -1,6 +1,6 @@
-import setNames from '$scrapers/tcgdex/set-names.json' with { type: 'json' };
-import { LANGUAGES, type Language } from '$helpers/catalogues';
-import type { Card, Set } from '$lib/types';
+import setNames from '#scrapers/tcgdex/set-names.json' with { type: 'json' };
+import { LANGUAGES, type Language } from '#helpers/catalogues.ts';
+import type { Card, Set } from '#lib/types.js';
 
 /** One line of an imported file, already reduced to the things a card can be found by. */
 export interface ImportRow {

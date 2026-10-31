@@ -1,7 +1,7 @@
-import { BY_GRID } from '$helpers/catalogues';
-import { getSets } from '$helpers/supabase-data';
+import { BY_GRID } from '#helpers/catalogues.ts';
+import { getSets } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
-import { breadcrumbs, setSchema } from '$helpers/seo';
+import { breadcrumbs, setSchema } from '#helpers/seo.ts';
 
 /**
  * SEO only: the grid's cards, prices, pokemons and types come from `/api/{grid}-cards` through `+page.ts`.

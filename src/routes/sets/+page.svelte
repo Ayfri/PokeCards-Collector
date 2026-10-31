@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
 	import type { PageData } from './$types';
-	import { NO_IMAGES } from '$lib/images';
-	import SortControl from '@components/filters/SortControl.svelte';
-	import PageTitle from '@components/PageTitle.svelte';
-	import TextInput from '@components/filters/TextInput.svelte';
-	import { persistedRecord } from '$stores/persisted.svelte';
-	import type { SetWithPrice } from '$lib/types';
+	import { NO_IMAGES } from '#lib/images.ts';
+	import SortControl from '#components/filters/SortControl.svelte';
+	import PageTitle from '#components/PageTitle.svelte';
+	import TextInput from '#components/filters/TextInput.svelte';
+	import { persistedRecord } from '#stores/persisted.svelte.ts';
+	import type { SetWithPrice } from '#lib/types.js';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import LayersIcon from '@lucide/svelte/icons/layers';
-	import SetLogo from '@components/SetLogo.svelte';
-	import { setCardCount } from '$helpers/set-utils';
+	import SetLogo from '#components/SetLogo.svelte';
+	import { setCardCount } from '#helpers/set-utils.ts';
 
 	interface Props {
 		data: PageData;

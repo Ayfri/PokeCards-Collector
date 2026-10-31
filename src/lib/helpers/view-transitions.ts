@@ -1,4 +1,4 @@
-import type { OnNavigate } from '@sveltejs/kit';
+import type { OnNavigate } from '$app/navigation';
 
 /** The single `view-transition-name` a card carries while it flies between two places, styled in `app.css`. */
 const CARD_NAME = 'card';
@@ -61,7 +61,7 @@ export function transitionNavigation(navigation: OnNavigate): Promise<void> | un
 				resolve();
 				await navigation.complete;
 			},
-			[(navigation.delta ?? 0) < 0 ? 'back' : 'forward']
+			[navigation.type === 'popstate' && navigation.delta < 0 ? 'back' : 'forward']
 		);
 	});
 }

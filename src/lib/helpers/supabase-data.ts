@@ -1,8 +1,8 @@
-import type { FullCard, Pokemon, PriceData, Set } from "$lib/types";
-import { supabase } from '$lib/supabase';
-import { cachedTable, PartialRows, STATIC_TTL, TABLE_TTL } from '$helpers/data-cache';
-import { CATALOGUES, type CardTable, type Language, type PriceTable, type SetTable } from '$helpers/catalogues';
-import type { CatalogueData } from '$helpers/owned-cards';
+import type { FullCard, Pokemon, PriceData, Set } from "#lib/types.js";
+import { supabase } from '#lib/supabase.ts';
+import { cachedTable, PartialRows, STATIC_TTL, TABLE_TTL } from '#helpers/data-cache.ts';
+import { CATALOGUES, type CardTable, type Language, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
+import type { CatalogueData } from '#helpers/owned-cards.ts';
 
 /** Every card column, for the reads that need the details. Keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
 const CARD_COLUMNS = `

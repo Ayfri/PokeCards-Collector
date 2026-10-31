@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type {ActionData, PageData} from './$types';
-	import Avatar from '$lib/components/auth/Avatar.svelte';
-	import ColorPicker from '@components/settings/ColorPicker.svelte';
-	import PageTitle from '$lib/components/PageTitle.svelte';
+	import Avatar from '#lib/components/auth/Avatar.svelte';
+	import ColorPicker from '#components/settings/ColorPicker.svelte';
+	import PageTitle from '#lib/components/PageTitle.svelte';
 	import {enhance} from '$app/forms';
-	import {supabase} from '$lib/supabase';
+	import {supabase} from '#lib/supabase.ts';
 	import {fade, fly} from 'svelte/transition';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import EyeIcon from '@lucide/svelte/icons/eye';

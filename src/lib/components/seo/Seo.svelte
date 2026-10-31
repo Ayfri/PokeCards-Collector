@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { BASE_URL, SITE_NAME, SITE_TWITTER } from '~/constants';
-	import { inlineJson, organizationSchema } from '$helpers/seo';
-	import type { Breadcrumb, Image, SeoType } from '$lib/types';
+	import { BASE_URL, SITE_NAME, SITE_TWITTER } from '#src/constants.ts';
+	import { inlineJson, organizationSchema } from '#helpers/seo.ts';
+	import type { Breadcrumb, Image, SeoType } from '#lib/types.js';
 
 	const SITE_DESCRIPTION = 'Explore and manage your Pokémon TCG collection. Browse, search, and filter through a comprehensive list of Pokémon TCG cards.';
 

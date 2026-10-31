@@ -1,7 +1,7 @@
-import { cardPrice } from '$helpers/card-utils';
-import type { Language } from '$helpers/catalogues';
-import type { CatalogueData } from '$helpers/owned-cards';
-import type { Card, CollectionStats, PriceData, Set } from '$lib/types';
+import { cardPrice } from '#helpers/card-utils.ts';
+import type { Language } from '#helpers/catalogues.ts';
+import type { CatalogueData } from '#helpers/owned-cards.ts';
+import type { Card, CollectionStats, PriceData, Set } from '#lib/types.js';
 
 /** Number of owned cards the profile showcases, most valuable first. */
 const SHOWCASE_SIZE = 6;

@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { breadcrumbs } from '$helpers/seo';
+import { breadcrumbs } from '#helpers/seo.ts';
 
 /**
  * SEO only. The catalogue comes from `/api/binder` through `+page.ts`, and the owned card codes come straight from

@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { breadcrumbs, gameSchema } from '$helpers/seo';
+import { breadcrumbs, gameSchema } from '#helpers/seo.ts';
 
 /**
  * SEO only. The guessable cards come from `/api/card-dle/suggestions` through `+page.ts`: returning them here

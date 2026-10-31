@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { CATALOGUES, catalogueOfPath, type Language } from '$helpers/catalogues';
-	import type { Set } from '$lib/types';
-	import SetLogo from '@components/SetLogo.svelte';
+	import { CATALOGUES, catalogueOfPath, type Language } from '#helpers/catalogues.ts';
+	import type { Set } from '#lib/types.js';
+	import SetLogo from '#components/SetLogo.svelte';
 	import Layers from '@lucide/svelte/icons/layers';
 
 	interface Props {

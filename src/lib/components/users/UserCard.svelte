@@ -1,8 +1,8 @@
 <script lang="ts">
-	import Avatar from '@components/auth/Avatar.svelte';
+	import Avatar from '#components/auth/Avatar.svelte';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import LayersIcon from '@lucide/svelte/icons/layers';
-	import { timeAgo } from '$helpers/dates';
+	import { timeAgo } from '#helpers/dates.ts';
 
 	interface Props {
 		user: {

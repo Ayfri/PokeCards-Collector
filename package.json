@@ -2,6 +2,14 @@
 	"name": "pokecards-collector",
 	"type": "module",
 	"version": "2.0.0",
+	"imports": {
+		"#components/*": "./src/lib/components/*",
+		"#helpers/*": "./src/lib/helpers/*",
+		"#lib/*": "./src/lib/*",
+		"#scrapers/*": "./src/scrapers/*",
+		"#src/*": "./src/*",
+		"#stores/*": "./src/lib/stores/*"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
@@ -12,25 +20,25 @@
 		"scrapers": "bun --env-file=.env scraper-cli.ts"
 	},
 	"dependencies": {
-		"@lucide/svelte": "^1.35.0",
-		"@supabase/ssr": "^0.12.5",
-		"@supabase/supabase-js": "^2.112.4",
-		"@sveltejs/adapter-cloudflare": "^7.2.9",
-		"@sveltejs/kit": "^2.70.3",
+		"@lucide/svelte": "^1.66.0",
+		"@supabase/ssr": "^0.12.7",
+		"@supabase/supabase-js": "^2.118.0",
+		"@sveltejs/adapter-cloudflare": "^8.0.2",
+		"@sveltejs/kit": "^3.1.1",
 		"countup.js": "^2.10.1",
-		"svelte": "^5.57.0",
+		"svelte": "^5.57.3",
 		"vanilla-colorful": "^0.7.2"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-types": "^4.20260702.1",
-		"@inquirer/prompts": "^8.7.0",
-		"@sveltejs/vite-plugin-svelte": "^7.3.0",
+		"@cloudflare/workers-types": "^5.20261031.1",
+		"@inquirer/prompts": "^8.7.5",
+		"@sveltejs/vite-plugin-svelte": "^7.3.1",
 		"@tailwindcss/vite": "^4.3.3",
-		"@types/node": "^26.4.0",
-		"svelte-check": "^4.7.6",
+		"@types/node": "^26.6.6",
+		"svelte-check": "^4.7.7",
 		"tailwindcss": "^4.3.3",
 		"typescript": "^6.0.3",
-		"vite": "^8.2.2",
-		"wrangler": "^4.127.1"
+		"vite": "^8.3.5",
+		"wrangler": "^4.156.0"
 	}
 }

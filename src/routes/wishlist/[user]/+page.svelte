@@ -1,5 +1,5 @@
 <script lang="ts">
-	import UserCardsView from '@components/list/UserCardsView.svelte';
+	import UserCardsView from '#components/list/UserCardsView.svelte';
 	import type { PageData } from './$types';
 
 	interface Props {

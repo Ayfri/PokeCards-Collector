@@ -1,7 +1,6 @@
-import { json } from '@sveltejs/kit';
-import { CARD_DLE_MIN_PRICE } from '$helpers/card-dle';
-import { cardPrice } from '$helpers/card-utils';
-import { getCards, getPrices } from '$helpers/supabase-data';
+import { CARD_DLE_MIN_PRICE } from '#helpers/card-dle.ts';
+import { cardPrice } from '#helpers/card-utils.ts';
+import { getCards, getPrices } from '#helpers/supabase-data.ts';
 import type { RequestHandler } from './$types';
 
 /** The six fields the guess picker draws. Sending whole cards plus the catalogue and price table in the page made a 13.7 MB document. */
@@ -35,5 +34,5 @@ export const GET: RequestHandler = async () => {
 	/** Sorted here so the picker lists results alphabetically without the browser sorting them again. */
 	suggestions.sort((a, b) => a.name.localeCompare(b.name));
 
-	return json(suggestions, { headers: { 'cache-control': 'public, max-age=600' } });
+	return Response.json(suggestions, { headers: { 'cache-control': 'public, max-age=600' } });
 };

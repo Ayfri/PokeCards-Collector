@@ -1,15 +1,15 @@
 <script lang="ts">
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import CircleCheckIcon from '@lucide/svelte/icons/circle-check';
-	import Modal from '@components/ui/Modal.svelte';
+	import Modal from '#components/ui/Modal.svelte';
 	import SearchXIcon from '@lucide/svelte/icons/search-x';
 	import UploadIcon from '@lucide/svelte/icons/upload';
-	import { CATALOGUES, type Language } from '$helpers/catalogues';
-	import { detectColumns, MAX_IMPORT_ROWS, toImportRows } from '$helpers/collection-import';
-	import { invalidateAll } from '$app/navigation';
-	import { parseDelimited } from '$helpers/csv';
-	import type { Set as CardSet } from '$lib/types';
-	import type { UserCardsKind } from '$helpers/user-cards-page';
+	import { CATALOGUES, type Language } from '#helpers/catalogues.ts';
+	import { detectColumns, MAX_IMPORT_ROWS, toImportRows } from '#helpers/collection-import.ts';
+	import { refreshAll } from '$app/navigation';
+	import { parseDelimited } from '#helpers/csv.ts';
+	import type { Set as CardSet } from '#lib/types.js';
+	import type { UserCardsKind } from '#helpers/user-cards-page.ts';
 
 	interface Summary {
 		added: number;
@@ -96,7 +96,7 @@
 			summary = payload;
 			if (!dryRun) {
 				imported = true;
-				await invalidateAll();
+				await refreshAll();
 			}
 		} catch (cause) {
 			fault = cause instanceof Error ? cause.message : 'Import failed.';

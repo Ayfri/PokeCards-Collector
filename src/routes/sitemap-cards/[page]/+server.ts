@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { getCards } from '$lib/helpers/supabase-data';
-import { processCardImage } from '$helpers/card-images';
-import { SITEMAP_CHUNK, sitemapResponse, urlset } from '$helpers/sitemap';
+import { getCards } from '#helpers/supabase-data.ts';
+import { processCardImage } from '#helpers/card-images.ts';
+import { SITEMAP_CHUNK, sitemapResponse, urlset } from '#helpers/sitemap.ts';
 import type { RequestHandler } from './$types';
 
 /** One chunk of card URLs, each with its scan so the art can appear in Google Images. */

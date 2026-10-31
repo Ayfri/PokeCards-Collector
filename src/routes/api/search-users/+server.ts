@@ -1,5 +1,4 @@
-import { json } from '@sveltejs/kit';
-import { searchUsers } from '$lib/services/profiles';
+import { searchUsers } from '#lib/services/profiles.ts';
 import type { RequestHandler } from './$types';
 
 /** The RPC counts collection rows for every profile it returns, so an uncapped limit would let one anonymous call scrape everything. */
@@ -7,7 +6,7 @@ const MAX_LIMIT = 24;
 
 export const GET: RequestHandler = async ({ url }) => {
 	const query = url.searchParams.get('q') ?? '';
-	if (!query.trim()) return json({ success: true, users: [] });
+	if (!query.trim()) return Response.json({ success: true, users: [] });
 
 	const requested = Number(url.searchParams.get('limit'));
 	const limit = Number.isFinite(requested) && requested > 0 ? Math.min(Math.trunc(requested), MAX_LIMIT) : 10;
@@ -16,8 +15,8 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	if (error) {
 		console.error('Search users API error:', error);
-		return json({ success: false, error: 'Could not search users' }, { status: 500 });
+		return Response.json({ success: false, error: 'Could not search users' }, { status: 500 });
 	}
 
-	return json({ success: true, users: data ?? [] });
+	return Response.json({ success: true, users: data ?? [] });
 };

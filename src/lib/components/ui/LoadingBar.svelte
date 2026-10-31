@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { loading } from '$stores/loading.svelte';
+	import { loading } from '#stores/loading.svelte.ts';
 	import { fade } from 'svelte/transition';
 </script>
 

@@ -1,8 +1,8 @@
-import { BASE_URL, SITE_NAME, SITE_TWITTER } from '~/constants';
-import { processCardImage } from '$helpers/card-images';
-import { CATALOGUES, type Catalogue } from '$helpers/catalogues';
-import { cardPrice } from '$helpers/card-utils';
-import type { Breadcrumb, Card, Pokemon, PriceData, PublicProfile, Set } from '$lib/types';
+import { BASE_URL, SITE_NAME, SITE_TWITTER } from '#src/constants.ts';
+import { processCardImage } from '#helpers/card-images.ts';
+import { CATALOGUES, type Catalogue } from '#helpers/catalogues.ts';
+import { cardPrice } from '#helpers/card-utils.ts';
+import type { Breadcrumb, Card, Pokemon, PriceData, PublicProfile, Set } from '#lib/types.js';
 
 /** Schema.org nodes are free-form JSON, so every builder returns the same opaque shape the `Seo` component inlines. */
 export type Schema = Record<string, unknown>;

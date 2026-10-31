@@ -1,10 +1,10 @@
 <script lang="ts">
-	import CardGrid from '$lib/components/list/CardGrid.svelte';
+	import CardGrid from '#lib/components/list/CardGrid.svelte';
 	import type { PageData } from './$types';
-	import { filters } from '$stores/filters.svelte';
-	import GridHeading from '$lib/components/list/GridHeading.svelte';
-	import Loader from "$lib/components/Loader.svelte";
-	import { cardSize } from '$stores/grid.svelte';
+	import { filters } from '#stores/filters.svelte.ts';
+	import GridHeading from '#lib/components/list/GridHeading.svelte';
+	import Loader from "#lib/components/Loader.svelte";
+	import { cardSize } from '#stores/grid.svelte.ts';
 
 	interface Props {
 		data: PageData;

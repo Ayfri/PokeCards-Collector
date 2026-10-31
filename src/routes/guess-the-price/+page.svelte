@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { Round } from './+page.server';
-	import { invalidateAll } from '$app/navigation';
-	import CardImage from '@components/card/CardImage.svelte';
-	import Numpad from '$lib/components/Numpad.svelte';
-	import PageTitle from '$lib/components/PageTitle.svelte';
+	import { refreshAll } from '$app/navigation';
+	import CardImage from '#components/card/CardImage.svelte';
+	import Numpad from '#lib/components/Numpad.svelte';
+	import PageTitle from '#lib/components/PageTitle.svelte';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import GemIcon from '@lucide/svelte/icons/gem';
@@ -120,7 +120,7 @@
 	async function refill() {
 		if (refilling) return;
 		refilling = true;
-		await invalidateAll();
+		await refreshAll();
 		queue = [...queue, ...data.rounds];
 		refilling = false;
 	}

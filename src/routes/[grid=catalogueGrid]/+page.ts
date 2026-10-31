@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
-import { cachedJson } from '$helpers/cached-json';
-import type { GridPayload } from '$helpers/grid-payload';
+import { browser } from '$app/env';
+import { cachedJson } from '#helpers/cached-json.ts';
+import type { GridPayload } from '#helpers/grid-payload.ts';
 import type { PageLoad } from './$types';
 
 /**

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import Button from '@components/filters/Button.svelte';
-	import NumberInput from '@components/filters/NumberInput.svelte';
+	import Button from '#components/filters/Button.svelte';
+	import NumberInput from '#components/filters/NumberInput.svelte';
 	import BookUserIcon from '@lucide/svelte/icons/book-user';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import DownloadIcon from '@lucide/svelte/icons/download';

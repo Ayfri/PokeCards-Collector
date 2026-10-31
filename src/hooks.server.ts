@@ -1,8 +1,8 @@
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$env/static/public';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$app/env/public';
 import { createServerClient } from '@supabase/ssr';
-import type { Handle } from '@sveltejs/kit';
-import { getProfileByAuthId } from '$lib/services/profiles';
-import type { UserProfile } from '$lib/types';
+import type { Handle } from '@sveltejs/kit/hooks';
+import { getProfileByAuthId } from '#lib/services/profiles.ts';
+import type { UserProfile } from '#lib/types.js';
 
 /**
  * Endpoints that never read `locals.user`, `locals.profile` or `locals.supabase`, so they skip the `auth.getUser()` round

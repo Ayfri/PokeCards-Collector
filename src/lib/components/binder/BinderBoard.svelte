@@ -1,13 +1,13 @@
 <script lang="ts">
-	import BinderPage from '@components/binder/BinderPage.svelte';
-	import Button from '@components/filters/Button.svelte';
+	import BinderPage from '#components/binder/BinderPage.svelte';
+	import Button from '#components/filters/Button.svelte';
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import EraserIcon from '@lucide/svelte/icons/eraser';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
-	import type { BinderCards } from '$lib/types';
+	import type { BinderCards } from '#lib/types.js';
 
 	interface Props {
 		columns: number;

@@ -1,10 +1,10 @@
 <script lang="ts">
-	import CardGrid from '@components/list/CardGrid.svelte';
+	import CardGrid from '#components/list/CardGrid.svelte';
 	import { page } from '$app/state';
 	import type { PageData } from './$types';
-	import { filters } from '$stores/filters.svelte';
-	import GridHeading from '$lib/components/list/GridHeading.svelte';
-	import BouncyLoader from '@components/BouncyLoader.svelte';
+	import { filters } from '#stores/filters.svelte.ts';
+	import GridHeading from '#lib/components/list/GridHeading.svelte';
+	import BouncyLoader from '#components/BouncyLoader.svelte';
 
 	interface Props {
 		data: PageData;

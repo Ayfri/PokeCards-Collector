@@ -1,5 +1,5 @@
 import type { SupabaseClient, User, Session } from '@supabase/supabase-js';
-import type { Breadcrumb, Image, SeoType, UserProfile, Set } from '$lib/types';
+import type { Breadcrumb, Image, SeoType, UserProfile, Set } from '#lib/types.js';
 
 declare global {
 	namespace App {

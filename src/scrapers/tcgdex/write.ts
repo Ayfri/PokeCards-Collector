@@ -1,6 +1,6 @@
 import * as fs from 'node:fs/promises';
 import {Http2Pool} from './http2-pool';
-import {LANGUAGES} from '$lib/helpers/catalogues';
+import {LANGUAGES} from '#helpers/catalogues.ts';
 import {FILES, TYPES} from '../files';
 import type {Language} from './mappers';
 import {scrapeLanguage, scrapeTypes, type ScrapeResult} from './scraper';

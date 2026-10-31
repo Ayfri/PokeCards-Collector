@@ -1,8 +1,8 @@
 import { error } from '@sveltejs/kit';
-import { BY_ROUTE_CODE } from '$helpers/catalogues';
-import { getCards } from '$lib/helpers/supabase-data';
-import { processCardImage } from '$helpers/card-images';
-import { SITEMAP_CHUNK, sitemapResponse, urlset } from '$helpers/sitemap';
+import { BY_ROUTE_CODE } from '#helpers/catalogues.ts';
+import { getCards } from '#helpers/supabase-data.ts';
+import { processCardImage } from '#helpers/card-images.ts';
+import { SITEMAP_CHUNK, sitemapResponse, urlset } from '#helpers/sitemap.ts';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ params }) => {

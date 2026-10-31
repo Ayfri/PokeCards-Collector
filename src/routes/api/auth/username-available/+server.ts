@@ -1,9 +1,8 @@
-import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
-import { env } from '$env/dynamic/private';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '$helpers/username';
-import { isUsernameTaken } from '$lib/services/profiles';
+import { SUPABASE_SECRET_KEY } from '$app/env/private';
+import { PUBLIC_SUPABASE_URL } from '$app/env/public';
+import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#helpers/username.ts';
+import { isUsernameTaken } from '#lib/services/profiles.ts';
 import type { RequestHandler } from './$types';
 
 /**
@@ -15,25 +14,25 @@ export const GET: RequestHandler = async ({ url }) => {
 	const username = normalizeUsername(url.searchParams.get('username') ?? '');
 
 	if (!username) {
-		return json({ success: false, error: 'Missing username' }, { status: 400 });
+		return Response.json({ success: false, error: 'Missing username' }, { status: 400 });
 	}
 
 	if (!USERNAME_PATTERN.test(username)) {
-		return json({ success: false, error: USERNAME_REQUIREMENTS }, { status: 400 });
+		return Response.json({ success: false, error: USERNAME_REQUIREMENTS }, { status: 400 });
 	}
 
-	if (!env.SUPABASE_SECRET_KEY) {
+	if (!SUPABASE_SECRET_KEY) {
 		console.error('Username availability check is missing SUPABASE_SECRET_KEY');
-		return json({ success: false, error: 'Could not check username availability' }, { status: 500 });
+		return Response.json({ success: false, error: 'Could not check username availability' }, { status: 500 });
 	}
 
-	const admin = createClient(PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY);
+	const admin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY);
 	const { exists, error } = await isUsernameTaken(username, admin);
 
 	if (error) {
 		console.error('Username availability check failed:', error);
-		return json({ success: false, error: 'Could not check username availability' }, { status: 500 });
+		return Response.json({ success: false, error: 'Could not check username availability' }, { status: 500 });
 	}
 
-	return json({ success: true, exists });
+	return Response.json({ success: true, exists });
 };

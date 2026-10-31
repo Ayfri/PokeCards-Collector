@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ArrowUp from '@lucide/svelte/icons/arrow-up';
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
-	import Select from '@components/filters/Select.svelte';
-	import Button from '@components/filters/Button.svelte';
+	import Select from '#components/filters/Select.svelte';
+	import Button from '#components/filters/Button.svelte';
 
 	interface Props {
 		sortDirection: 'asc' | 'desc';

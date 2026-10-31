@@ -1,6 +1,5 @@
-import { json } from '@sveltejs/kit';
-import { getCards, getPokemons, getPrices, getSets } from '$helpers/supabase-data';
-import { searchCards, searchPokemons } from '$helpers/card-search';
+import { getCards, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { searchCards, searchPokemons } from '#helpers/card-search.ts';
 import type { RequestHandler } from './$types';
 
 const MAX_LENGTH = 64;
@@ -15,11 +14,11 @@ export const GET: RequestHandler = async ({ url }) => {
 	/** Scoring tries every name/set split of the query against every card, so its cost grows with the square of the word count. */
 	const query = url.searchParams.get('q')?.trim().split(/\s+/, MAX_WORDS).join(' ').slice(0, MAX_LENGTH).trim() ?? '';
 
-	if (!query) return json({ pokemons: [], results: [] });
+	if (!query) return Response.json({ pokemons: [], results: [] });
 
 	const [cards, pokemons, prices, sets] = await Promise.all([getCards(), getPokemons(), getPrices(), getSets()]);
 
-	return json({ pokemons: searchPokemons(query, pokemons, cards), results: searchCards(query, cards, sets, prices) }, {
+	return Response.json({ pokemons: searchPokemons(query, pokemons, cards), results: searchCards(query, cards, sets, prices) }, {
 		headers: { 'cache-control': 'public, max-age=300' },
 	});
 };

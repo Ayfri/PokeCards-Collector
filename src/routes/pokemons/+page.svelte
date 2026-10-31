@@ -2,16 +2,16 @@
 	import type { PageData } from './$types';
 	import type { PokemonListEntry } from './+page.server';
 	import { goto } from '$app/navigation';
-	import { pascalCase } from '$helpers/strings';
-	import { getPokemonImageSrc, handlePokemonImageError } from '$helpers/pokemon-utils';
-	import { NO_IMAGES } from '$lib/images';
-	import PageTitle from '@components/PageTitle.svelte';
-	import { loading } from '$stores/loading.svelte';
-	import ScrollToTop from '$lib/components/list/ScrollToTop.svelte';
-	import ScrollToBottom from '$lib/components/list/ScrollToBottom.svelte';
+	import { pascalCase } from '#helpers/strings.ts';
+	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
+	import { NO_IMAGES } from '#lib/images.ts';
+	import PageTitle from '#components/PageTitle.svelte';
+	import { loading } from '#stores/loading.svelte.ts';
+	import ScrollToTop from '#lib/components/list/ScrollToTop.svelte';
+	import ScrollToBottom from '#lib/components/list/ScrollToBottom.svelte';
 	import { fade } from 'svelte/transition';
-	import SortControl from '@components/filters/SortControl.svelte';
-	import TextInput from '@components/filters/TextInput.svelte';
+	import SortControl from '#components/filters/SortControl.svelte';
+	import TextInput from '#components/filters/TextInput.svelte';
 	import LayersIcon from "@lucide/svelte/icons/layers";
 
 	interface Props {

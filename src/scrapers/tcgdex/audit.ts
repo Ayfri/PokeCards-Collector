@@ -1,8 +1,8 @@
 import * as fs from 'node:fs';
-import {generateUniqueCardCode} from '$helpers/card-utils';
-import {RARITY_MAPPING} from '$helpers/rarity';
-import {CATALOGUES} from '$lib/helpers/catalogues';
-import {isFrenchCode} from '$helpers/owned-cards';
+import {generateUniqueCardCode} from '#helpers/card-utils.ts';
+import {RARITY_MAPPING} from '#helpers/rarity.ts';
+import {CATALOGUES} from '#helpers/catalogues.ts';
+import {isFrenchCode} from '#helpers/owned-cards.ts';
 import {envClient, ownedCardCodes, readAll} from '../supabase_sync';
 import {mapAll} from './client';
 import {catalogueSets, excludedSetIds} from './excluded';

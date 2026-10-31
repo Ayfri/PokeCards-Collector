@@ -1,14 +1,14 @@
 <script lang="ts">
-	import PageTitle from '@components/PageTitle.svelte';
-	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
-	import CardPrice from '@components/card/CardPrice.svelte';
-	import { formatCardNumber } from '$helpers/card-utils';
+	import PageTitle from '#components/PageTitle.svelte';
+	import type {FullCard, Pokemon, PriceData, Set} from '#lib/types.js';
+	import CardPrice from '#components/card/CardPrice.svelte';
+	import { formatCardNumber } from '#helpers/card-utils.ts';
 	import { page } from '$app/state';
-	import { catalogueOfPath } from '$helpers/catalogues';
-	import { collection } from '$stores/collection.svelte';
-	import { wishlist } from '$stores/wishlist.svelte';
-	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
-	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
+	import { catalogueOfPath } from '#helpers/catalogues.ts';
+	import { collection } from '#stores/collection.svelte.ts';
+	import { wishlist } from '#stores/wishlist.svelte.ts';
+	import { addCardToCollection, removeCardFromCollection } from '#lib/services/collections.ts';
+	import { addCardToWishlist, removeCardFromWishlist } from '#lib/services/wishlists.ts';
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
 	import Gem from '@lucide/svelte/icons/gem';
 	import Hash from '@lucide/svelte/icons/hash';
@@ -17,7 +17,7 @@
 	import Minus from '@lucide/svelte/icons/minus';
 	import Paintbrush from '@lucide/svelte/icons/paintbrush';
 	import Plus from '@lucide/svelte/icons/plus';
-	import SetLogo from '@components/SetLogo.svelte';
+	import SetLogo from '#components/SetLogo.svelte';
 	import Sparkles from '@lucide/svelte/icons/sparkles';
 	import { fly } from 'svelte/transition';
 

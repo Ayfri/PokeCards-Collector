@@ -1,4 +1,4 @@
-import { BASE_URL } from '~/constants';
+import { BASE_URL } from '#src/constants.ts';
 
 export interface SitemapEntry {
 	changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';

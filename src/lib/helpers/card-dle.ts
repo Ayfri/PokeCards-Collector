@@ -1,5 +1,5 @@
-import { cardPrice } from '$helpers/card-utils';
-import type { FullCard, PriceData } from '$lib/types';
+import { cardPrice } from '#helpers/card-utils.ts';
+import type { FullCard, PriceData } from '#lib/types.js';
 
 /** Cards priced below this are bulk nobody recognises, so they are never guessable and never the card of the day. */
 export const CARD_DLE_MIN_PRICE = 3;

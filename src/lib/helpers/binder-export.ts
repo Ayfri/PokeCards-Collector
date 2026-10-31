@@ -1,5 +1,5 @@
-import { processCardImage } from '$helpers/card-images';
-import type { BinderCards } from '$lib/types';
+import { processCardImage } from '#helpers/card-images.ts';
+import type { BinderCards } from '#lib/types.js';
 
 export interface BinderExportOptions {
 	columns: number;

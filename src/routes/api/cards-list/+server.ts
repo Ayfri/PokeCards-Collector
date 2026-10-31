@@ -1,5 +1,5 @@
-import { getCards, getPokemons, getPrices, getTypes } from '$helpers/supabase-data';
-import { gridResponse } from '$helpers/grid-payload';
+import { getCards, getPokemons, getPrices, getTypes } from '#helpers/supabase-data.ts';
+import { gridResponse } from '#helpers/grid-payload.ts';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ request }) => {

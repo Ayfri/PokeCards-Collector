@@ -1,24 +1,24 @@
 <script lang="ts">
-	import "~/styles/colors.css";
-	import { filters } from "$stores/filters.svelte";
-	import CardComponent from "@components/list/Card.svelte";
-	import Filters from "@components/list/Filters.svelte";
-	import VirtualGrid from "@components/list/VirtualGrid.svelte";
-	import PageTitle from "@components/PageTitle.svelte";
-	import ScrollProgress from "@components/list/ScrollProgress.svelte";
-	import TextInput from "$lib/components/filters/TextInput.svelte";
+	import "#src/styles/colors.css";
+	import { filters } from "#stores/filters.svelte.ts";
+	import CardComponent from "#components/list/Card.svelte";
+	import Filters from "#components/list/Filters.svelte";
+	import VirtualGrid from "#components/list/VirtualGrid.svelte";
+	import PageTitle from "#components/PageTitle.svelte";
+	import ScrollProgress from "#components/list/ScrollProgress.svelte";
+	import TextInput from "#lib/components/filters/TextInput.svelte";
 	import { onMount } from "svelte";
-	import type { FullCard, Set, GridPokemon } from "$lib/types";
+	import type { FullCard, Set, GridPokemon } from "#lib/types.js";
 	import { fade, fly } from "svelte/transition";
 	import XIcon from "@lucide/svelte/icons/x";
 	import SlidersHorizontalIcon from "@lucide/svelte/icons/sliders-horizontal";
 	import RotateCcwIcon from "@lucide/svelte/icons/rotate-ccw";
-	import Button from "$lib/components/filters/Button.svelte";
+	import Button from "#lib/components/filters/Button.svelte";
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
-	import { filterCards, getCardDimensions, keepMostExpensivePerGroup, sortBySupertype, sortCards } from "$helpers/card-grid";
-	import { cardSize } from "$stores/grid.svelte";
-	import SizeSlider from "$lib/components/filters/SizeSlider.svelte";
+	import { filterCards, getCardDimensions, keepMostExpensivePerGroup, sortBySupertype, sortCards } from "#helpers/card-grid.ts";
+	import { cardSize } from "#stores/grid.svelte.ts";
+	import SizeSlider from "#lib/components/filters/SizeSlider.svelte";
 
 	interface Props {
 		cards: FullCard[];
@@ -65,7 +65,7 @@
 	function setFilterName(value: string) {
 		filters.name = value;
 
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		if (value) {
 			url.searchParams.set('name', value);
 		} else {
@@ -75,7 +75,7 @@
 		const activeElement = document.activeElement as HTMLElement;
 		const activeElementId = activeElement?.id;
 
-		goto(url.toString(), { replaceState: true }).then(() => {
+		goto(url.toString(), { replace: true }).then(() => {
 			if (activeElementId !== 'name') return;
 			const inputElement = document.getElementById('name') as HTMLInputElement | null;
 			if (!inputElement) return;
@@ -92,12 +92,12 @@
 		filters.reset();
 		searchName = "";
 
-		const url = new URL(page.url);
+		const url = new URL(page.url.href);
 		const userParam = url.searchParams.get('user');
 		url.search = '';
 		if (userParam) url.searchParams.set('user', userParam);
 
-		goto(url.toString(), { replaceState: true });
+		goto(url.toString(), { replace: true });
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

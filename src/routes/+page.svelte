@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
-	import CardImage from "@components/card/CardImage.svelte";
-	import SetLogo from "@components/SetLogo.svelte";
-	import CountUp from "@components/ui/CountUp.svelte";
+	import CardImage from "#components/card/CardImage.svelte";
+	import SetLogo from "#components/SetLogo.svelte";
+	import CountUp from "#components/ui/CountUp.svelte";
 	import { page } from "$app/state";
-	import { CATALOGUES } from "$helpers/catalogues";
-	import { NO_IMAGES } from "$lib/images";
+	import { CATALOGUES } from "#helpers/catalogues.ts";
+	import { NO_IMAGES } from "#lib/images.ts";
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import GiftIcon from "@lucide/svelte/icons/gift";
@@ -23,7 +23,7 @@
 	import UserPlusIcon from "@lucide/svelte/icons/user-plus";
 	import GridIcon from "@lucide/svelte/icons/layout-grid";
 	import GlobeIcon from "@lucide/svelte/icons/globe";
-	import AuthModal from '@components/auth/AuthModal.svelte';
+	import AuthModal from '#components/auth/AuthModal.svelte';
 
 	interface Props {
 		data: PageData;

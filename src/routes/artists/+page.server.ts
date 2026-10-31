@@ -1,8 +1,8 @@
-import { getCards, getPrices } from '$helpers/supabase-data';
+import { getCards, getPrices } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
-import type { FullCard } from '$lib/types';
-import { breadcrumbs } from '$helpers/seo';
-import { cardPrice } from '$helpers/card-utils';
+import type { FullCard } from '#lib/types.js';
+import { breadcrumbs } from '#helpers/seo.ts';
+import { cardPrice } from '#helpers/card-utils.ts';
 
 /** Candidates sent per artist: the preview stack draws three, and the spares replace a scan that fails to load in the browser. */
 const SHOWCASE_CANDIDATES = 5;

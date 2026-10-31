@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { breadcrumbs, setSchema } from '$helpers/seo';
+import { breadcrumbs, setSchema } from '#helpers/seo.ts';
 
 /**
  * SEO only: the grid's cards, prices, pokemons and types come from `/api/cards-list` through `+page.ts`.

@@ -2,8 +2,8 @@
 	import { supabase } from '../../supabase';
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import { page } from '$app/state';
-	import { goto, invalidateAll } from '$app/navigation';
-	import { readJson, type ApiError } from '$helpers/http';
+	import { goto, refreshAll } from '$app/navigation';
+	import { readJson, type ApiError } from '#helpers/http.ts';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 
@@ -65,7 +65,7 @@
 			onSuccess?.();
 
 			/** Re-runs every load function so the pages see the new session. */
-			await invalidateAll();
+			await refreshAll();
 
 			const currentPath = page.url.pathname;
 			if (currentPath.includes('/login') || currentPath.includes('/auth') || currentPath.includes('/reset-password')) {

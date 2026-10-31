@@ -1,4 +1,4 @@
-import type { Language } from '$helpers/catalogues';
+import type { Language } from '#helpers/catalogues.ts';
 
 export interface CardVariants {
 	firstEdition: boolean;

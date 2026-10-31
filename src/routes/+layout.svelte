@@ -1,19 +1,19 @@
 <script lang="ts">
-	import '~/app.css';
-	import "~/fonts/stylesheet.css";
+	import '#src/app.css';
+	import "#src/fonts/stylesheet.css";
 	import {onNavigate} from '$app/navigation';
 	import {page} from '$app/state';
-	import {NO_IMAGES} from '$lib/images';
-	import {transitionNavigation} from '$helpers/view-transitions';
-	import Header from '@components/Header.svelte';
-	import LoadingBar from '$lib/components/ui/LoadingBar.svelte';
-	import {BASE_URL} from '~/constants';
-	import Seo from '$lib/components/seo/Seo.svelte';
-	import { loading } from '$stores/loading.svelte';
-	import { wishlist } from '$stores/wishlist.svelte';
-	import { collection } from '$stores/collection.svelte';
-	import type { UserWishlist, UserCollection } from '$lib/types';
-	import pokestore from '~/assets/pokecards-collector.png';
+	import {NO_IMAGES} from '#lib/images.ts';
+	import {transitionNavigation} from '#helpers/view-transitions.ts';
+	import Header from '#components/Header.svelte';
+	import LoadingBar from '#lib/components/ui/LoadingBar.svelte';
+	import {BASE_URL} from '#src/constants.ts';
+	import Seo from '#lib/components/seo/Seo.svelte';
+	import { loading } from '#stores/loading.svelte.ts';
+	import { wishlist } from '#stores/wishlist.svelte.ts';
+	import { collection } from '#stores/collection.svelte.ts';
+	import type { UserWishlist, UserCollection } from '#lib/types.js';
+	import pokestore from '#src/assets/pokecards-collector.png';
 	interface Props {
 		children?: import('svelte').Snippet;
 	}
@@ -43,6 +43,9 @@
 	}
 
 	onNavigate((navigation) => {
+		/** Only our own shallow `goto` (a related card pick) skips the transition: a Back into that entry is `shallow` too, but a real navigation. */
+		if (navigation.shallow && navigation.type === 'goto') return;
+
 		loading.navigation = true;
 
 		navigation.complete.then(() => {

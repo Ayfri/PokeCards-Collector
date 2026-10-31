@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
-import { breadcrumbs } from '$helpers/seo';
-import { searchUsers } from '$lib/services/profiles';
+import { breadcrumbs } from '#helpers/seo.ts';
+import { searchUsers } from '#lib/services/profiles.ts';
 
 /** How many collectors the page features. They are ranked in SQL: an empty query makes the RPC list every public profile by unique cards. */
 const FEATURED_COUNT = 5;

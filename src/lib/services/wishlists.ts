@@ -1,7 +1,7 @@
 import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { wishlist } from '$stores/wishlist.svelte';
-import { loading } from '$stores/loading.svelte';
+import { wishlist } from '#stores/wishlist.svelte.ts';
+import { loading } from '#stores/loading.svelte.ts';
 import { selectAll } from './select-all';
 
 export async function addCardToWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {

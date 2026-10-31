@@ -1,9 +1,9 @@
 import type { PageServerLoad } from './$types';
-import { getCards, getPokemons, getPrices } from '$helpers/supabase-data';
-import { processCardImage } from '$helpers/card-images';
-import { breadcrumbs } from '$helpers/seo';
-import { POKEMONS_COUNT } from '~/constants';
-import { cardPrice } from '$helpers/card-utils';
+import { getCards, getPokemons, getPrices } from '#helpers/supabase-data.ts';
+import { processCardImage } from '#helpers/card-images.ts';
+import { breadcrumbs } from '#helpers/seo.ts';
+import { POKEMONS_COUNT } from '#src/constants.ts';
+import { cardPrice } from '#helpers/card-utils.ts';
 
 /**
  * What one grid tile needs. The tiles only read a count, a link target and a fallback scan, so `cards` and `prices` stay

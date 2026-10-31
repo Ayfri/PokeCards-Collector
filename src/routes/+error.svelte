@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import PageTitle from '@components/PageTitle.svelte';
+	import PageTitle from '#components/PageTitle.svelte';
 	import House from '@lucide/svelte/icons/house';
 	import SearchX from '@lucide/svelte/icons/search-x';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';

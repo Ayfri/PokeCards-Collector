@@ -1,5 +1,5 @@
 <script lang="ts">
-	import PageTitle from '@components/PageTitle.svelte';
+	import PageTitle from '#components/PageTitle.svelte';
 	import House from '@lucide/svelte/icons/house';
 	import Search from '@lucide/svelte/icons/search';
 	import type { LucideIcon } from '@lucide/svelte';

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { FullCard, PriceData } from '$lib/types';
-	import { cardPrice } from '$helpers/card-utils';
+	import type { FullCard, PriceData } from '#lib/types.js';
+	import { cardPrice } from '#helpers/card-utils.ts';
 	import ChartLine from '@lucide/svelte/icons/chart-line';
 	import Clock from '@lucide/svelte/icons/clock';
 	import ExternalLink from '@lucide/svelte/icons/external-link';

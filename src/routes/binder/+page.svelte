@@ -1,22 +1,22 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
-	import PageTitle from '@components/PageTitle.svelte';
-	import Button from '@components/filters/Button.svelte';
-	import Checkbox from '@components/filters/Checkbox.svelte';
-	import Select from '@components/filters/Select.svelte';
-	import TextArea from '@components/filters/TextArea.svelte';
-	import TextInput from '@components/filters/TextInput.svelte';
-	import BinderBoard from '@components/binder/BinderBoard.svelte';
-	import BinderStorage from '@components/binder/BinderStorage.svelte';
-	import BinderToolbar from '@components/binder/BinderToolbar.svelte';
-	import README from '@components/binder/README.svelte';
-	import Modal from '@components/ui/Modal.svelte';
+	import { browser } from '$app/env';
+	import PageTitle from '#components/PageTitle.svelte';
+	import Button from '#components/filters/Button.svelte';
+	import Checkbox from '#components/filters/Checkbox.svelte';
+	import Select from '#components/filters/Select.svelte';
+	import TextArea from '#components/filters/TextArea.svelte';
+	import TextInput from '#components/filters/TextInput.svelte';
+	import BinderBoard from '#components/binder/BinderBoard.svelte';
+	import BinderStorage from '#components/binder/BinderStorage.svelte';
+	import BinderToolbar from '#components/binder/BinderToolbar.svelte';
+	import README from '#components/binder/README.svelte';
+	import Modal from '#components/ui/Modal.svelte';
 	import HelpCircleIcon from '@lucide/svelte/icons/circle-question-mark';
-	import { downloadDataUrl, renderBinderImage } from '$helpers/binder-export';
-	import { setCardCount } from '$helpers/set-utils';
-	import type { BinderCards, BinderCatalogueCard } from '$lib/types';
-	import { binderStorage } from '$stores/binder.svelte';
+	import { downloadDataUrl, renderBinderImage } from '#helpers/binder-export.ts';
+	import { setCardCount } from '#helpers/set-utils.ts';
+	import type { BinderCards, BinderCatalogueCard } from '#lib/types.js';
+	import { binderStorage } from '#stores/binder.svelte.ts';
 	import type { PageData } from './$types';
 
 	interface Props {

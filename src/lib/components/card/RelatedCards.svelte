@@ -1,21 +1,21 @@
 <script lang="ts">
-	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
-	import CardImage from '@components/card/CardImage.svelte';
+	import type {FullCard, Pokemon, PriceData, Set} from '#lib/types.js';
+	import CardImage from '#components/card/CardImage.svelte';
 	import {fade} from 'svelte/transition';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
-	import { persistedRecord } from '$stores/persisted.svelte';
-	import SortControl from '@components/filters/SortControl.svelte';
-	import { NO_IMAGES } from '$lib/images';
-	import { cardPrice } from '$helpers/card-utils';
-	import { addCardToCollection, removeCardFromCollection } from '$lib/services/collections';
-	import { addCardToWishlist, removeCardFromWishlist } from '$lib/services/wishlists';
-	import { collection } from '$stores/collection.svelte';
+	import { persistedRecord } from '#stores/persisted.svelte.ts';
+	import SortControl from '#components/filters/SortControl.svelte';
+	import { NO_IMAGES } from '#lib/images.ts';
+	import { cardPrice } from '#helpers/card-utils.ts';
+	import { addCardToCollection, removeCardFromCollection } from '#lib/services/collections.ts';
+	import { addCardToWishlist, removeCardFromWishlist } from '#lib/services/wishlists.ts';
+	import { collection } from '#stores/collection.svelte.ts';
 	import Heart from '@lucide/svelte/icons/heart';
 	import Minus from '@lucide/svelte/icons/minus';
 	import Plus from '@lucide/svelte/icons/plus';
-	import SetBadge from '@components/SetBadge.svelte';
+	import SetBadge from '#components/SetBadge.svelte';
 	import { page } from '$app/state';
-	import { wishlist } from '$stores/wishlist.svelte';
+	import { wishlist } from '#stores/wishlist.svelte.ts';
 	import { onMount } from 'svelte';
 
 	

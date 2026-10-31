@@ -1,12 +1,12 @@
-import {generateUniqueCardCode} from '$lib/helpers/card-utils';
-import type {Language} from '$lib/helpers/catalogues';
+import {generateUniqueCardCode} from '#helpers/card-utils.ts';
+import type {Language} from '#helpers/catalogues.ts';
 import {toEnglish} from './french';
 import type {TcgdexCard, TcgdexPricing, TcgdexSet} from './types';
 import setAliases from './set-aliases.json' with {type: 'json'};
 import cardCodeOverrides from './card-code-overrides.json' with {type: 'json'};
 import pokedex from '../../assets/pokemons-full.json' with {type: 'json'};
 
-export type {Language} from '$lib/helpers/catalogues';
+export type {Language} from '#helpers/catalogues.ts';
 
 export interface MappedCard {
 	artist: string;

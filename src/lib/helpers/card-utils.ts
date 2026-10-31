@@ -1,4 +1,4 @@
-import type { FullCard, Pokemon, PriceData } from '$lib/types';
+import type { FullCard, Pokemon, PriceData } from '#lib/types.js';
 
 /**
  * `supertype_pokemonId_setCode_cardNumber`, like `pokemon_6_sv3_125`. The set part is the legacy code, or `fr` + the TCGdex id for French cards.

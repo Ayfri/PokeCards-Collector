@@ -1,7 +1,7 @@
-import type { FullCard, GridPokemon, Set } from '$lib/types';
-import { compareRarities, getRarityLevel } from '$helpers/rarity';
-import type { ActiveFilters } from '$stores/filters.svelte';
-import { CARD_SIZES, DEFAULT_CARD_SIZE } from '$stores/grid.svelte';
+import type { FullCard, GridPokemon, Set } from '#lib/types.js';
+import { compareRarities, getRarityLevel } from '#helpers/rarity.ts';
+import type { ActiveFilters } from '#stores/filters.svelte.ts';
+import { CARD_SIZES, DEFAULT_CARD_SIZE } from '#stores/grid.svelte.ts';
 
 /** Set lookups are the grid's hot path, so the map is rebuilt only when the set list changes. */
 let cachedSets: Set[] | null = null;

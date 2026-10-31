@@ -1,7 +1,8 @@
 /// <reference no-default-lib="true"/>
 /// <reference lib="esnext" />
 /// <reference lib="webworker" />
-import { build, version } from '$service-worker';
+import { version } from '$app/env';
+import { immutable } from '$app/manifest';
 
 /**
  * Cache-first for the hashed build files and the icons only. Pages and `/api` stay on the network, since a cached
@@ -10,7 +11,7 @@ import { build, version } from '$service-worker';
  */
 const sw = self as unknown as ServiceWorkerGlobalScope;
 const CACHE = `pokecards-${version}`;
-const ASSETS = new Set([...build, '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png']);
+const ASSETS = new Set([...immutable.map(({ path }) => `/${path}`), '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon-maskable-512.png']);
 
 sw.addEventListener('install', event => {
 	event.waitUntil(caches.open(CACHE).then(cache => cache.addAll([...ASSETS])).then(() => sw.skipWaiting()));

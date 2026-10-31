@@ -1,5 +1,5 @@
-import {RARITY_MAPPING} from '$helpers/rarity';
-import {CATALOGUES, LANGUAGES, type Language} from '$lib/helpers/catalogues';
+import {RARITY_MAPPING} from '#helpers/rarity.ts';
+import {CATALOGUES, LANGUAGES, type Language} from '#helpers/catalogues.ts';
 import {envClient, ownedCardCodes, readAll} from './supabase_sync';
 import {EXCLUDED_SERIES} from './tcgdex/excluded';
 import {sharedProductCodes, speciesInName} from './tcgdex/mappers';

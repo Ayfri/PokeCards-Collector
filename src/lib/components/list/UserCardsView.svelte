@@ -1,14 +1,14 @@
 <script lang="ts">
-	import BouncyLoader from '@components/BouncyLoader.svelte';
-	import CardGrid from '@components/list/CardGrid.svelte';
-	import ImportModal from '@components/list/ImportModal.svelte';
+	import BouncyLoader from '#components/BouncyLoader.svelte';
+	import CardGrid from '#components/list/CardGrid.svelte';
+	import ImportModal from '#components/list/ImportModal.svelte';
 	import UploadIcon from '@lucide/svelte/icons/upload';
-	import PageNotice from '@components/PageNotice.svelte';
+	import PageNotice from '#components/PageNotice.svelte';
 	import ShieldAlert from '@lucide/svelte/icons/shield-alert';
 	import UserX from '@lucide/svelte/icons/user-x';
-	import type { Set } from '$lib/types';
-	import { USER_CARDS_COPY, type UserCardsKind, type UserCardsPageData } from '$helpers/user-cards-page';
-	import { filters } from '$stores/filters.svelte';
+	import type { Set } from '#lib/types.js';
+	import { USER_CARDS_COPY, type UserCardsKind, type UserCardsPageData } from '#helpers/user-cards-page.ts';
+	import { filters } from '#stores/filters.svelte.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 

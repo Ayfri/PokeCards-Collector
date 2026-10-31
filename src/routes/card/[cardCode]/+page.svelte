@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import CardDisplay from "@components/card/CardDisplay.svelte";
-	import type { Card, Pokemon, Set, PriceData } from "$lib/types";
+	import CardDisplay from "#components/card/CardDisplay.svelte";
+	import type { Card, Pokemon, Set, PriceData } from "#lib/types.js";
 	import { fade } from 'svelte/transition';
 
 	interface Props {

@@ -1,11 +1,11 @@
 import { redirect } from '@sveltejs/kit';
-import { distinctArtists, distinctRarities } from '$helpers/card-grid';
-import { breadcrumbs, profileSchema } from '$helpers/seo';
-import { readOwnedCatalogues } from '$helpers/owned-cards';
-import { getCatalogue, getPokemons, getTypes } from '$helpers/supabase-data';
-import { getProfileByUsername } from '$lib/services/profiles';
-import { cardPrice } from '$helpers/card-utils';
-import type { FullCard, GridPokemon, PublicProfile, Set, UserProfile } from '$lib/types';
+import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
+import { breadcrumbs, profileSchema } from '#helpers/seo.ts';
+import { readOwnedCatalogues } from '#helpers/owned-cards.ts';
+import { getCatalogue, getPokemons, getTypes } from '#helpers/supabase-data.ts';
+import { getProfileByUsername } from '#lib/services/profiles.ts';
+import { cardPrice } from '#helpers/card-utils.ts';
+import type { FullCard, GridPokemon, PublicProfile, Set, UserProfile } from '#lib/types.js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Everything the grid draws for one user's cards. Streamed, so the profile lookup answers before the catalogue is read. */

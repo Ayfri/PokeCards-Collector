@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { binderStorage } from '$stores/binder.svelte';
-	import { persistedRecord } from '$stores/persisted.svelte';
-	import Button from '@components/filters/Button.svelte';
-	import CardImage from '@components/card/CardImage.svelte';
-	import Select from '@components/filters/Select.svelte';
-	import TextInput from '@components/filters/TextInput.svelte';
+	import { binderStorage } from '#stores/binder.svelte.ts';
+	import { persistedRecord } from '#stores/persisted.svelte.ts';
+	import Button from '#components/filters/Button.svelte';
+	import CardImage from '#components/card/CardImage.svelte';
+	import Select from '#components/filters/Select.svelte';
+	import TextInput from '#components/filters/TextInput.svelte';
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
 	import ArrowUp from '@lucide/svelte/icons/arrow-up';
 	import CheckIcon from '@lucide/svelte/icons/check';
@@ -12,8 +12,8 @@
 	import WandSparklesIcon from '@lucide/svelte/icons/wand-sparkles';
 	import TrashIcon from '@lucide/svelte/icons/trash';
 	import X from '@lucide/svelte/icons/x';
-	import { formatCardNumber, isCardCode } from '$helpers/card-utils';
-	import type { BinderCatalogueCard, Set } from '$lib/types';
+	import { formatCardNumber, isCardCode } from '#helpers/card-utils.ts';
+	import type { BinderCatalogueCard, Set } from '#lib/types.js';
 
 	interface Props {
 		/** The catalogue keyed by card code, so a tile resolves its card without scanning 21066 of them. */

@@ -1,8 +1,8 @@
-import { getCards, getPrices } from '$helpers/supabase-data';
+import { getCards, getPrices } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
-import { breadcrumbs, gameSchema } from '$helpers/seo';
-import type { Card, Set } from '$lib/types';
-import { cardPrice } from '$helpers/card-utils';
+import { breadcrumbs, gameSchema } from '#helpers/seo.ts';
+import type { Card, Set } from '#lib/types.js';
+import { cardPrice } from '#helpers/card-utils.ts';
 
 /** One playable card: the art to show, the price to guess and the set date shown as a hint. */
 export interface Round {

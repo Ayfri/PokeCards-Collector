@@ -1,8 +1,8 @@
-import { countCards, getCards, getPokemons, getPrices } from '$helpers/supabase-data';
-import { cardListSchema, faqSchema } from '$helpers/seo';
-import type { FullCard } from '$lib/types';
+import { countCards, getCards, getPokemons, getPrices } from '#helpers/supabase-data.ts';
+import { cardListSchema, faqSchema } from '#helpers/seo.ts';
+import type { FullCard } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
-import { cardPrice } from '$helpers/card-utils';
+import { cardPrice } from '#helpers/card-utils.ts';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	/** Started before `parent()` so the catalogue reads run in parallel with the layout's auth and collection queries. */

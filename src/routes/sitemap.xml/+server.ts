@@ -1,6 +1,6 @@
-import { BY_ROUTE_CODE } from '$helpers/catalogues';
-import { countCards, getCards } from '$lib/helpers/supabase-data';
-import { SITEMAP_CHUNK, sitemapIndex, sitemapResponse } from '$helpers/sitemap';
+import { BY_ROUTE_CODE } from '#helpers/catalogues.ts';
+import { countCards, getCards } from '#helpers/supabase-data.ts';
+import { SITEMAP_CHUNK, sitemapIndex, sitemapResponse } from '#helpers/sitemap.ts';
 
 /**
  * The catalogue is too big for one sitemap file, so this is an index and the card lists are chunked child sitemaps.

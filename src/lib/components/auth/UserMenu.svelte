@@ -8,12 +8,12 @@
 	import Settings from '@lucide/svelte/icons/settings';
 	import { page } from '$app/state';
 	import AuthModal from './AuthModal.svelte';
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 	import Avatar from './Avatar.svelte';
-	import { loading } from '$stores/loading.svelte';
-	import type { UserProfile } from '$lib/types';
+	import { loading } from '#stores/loading.svelte.ts';
+	import type { UserProfile } from '#lib/types.js';
 	import type { User as AuthUser } from '@supabase/supabase-js';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto, refreshAll } from '$app/navigation';
 
 	let isMenuOpen = $state(false);
 	let isAuthModalOpen = $state(false);
@@ -67,7 +67,7 @@
 				return;
 			}
 
-			await invalidateAll();
+			await refreshAll();
 			const currentPath = page.url.pathname;
 			const currentSearch = page.url.search;
 			goto(currentPath + currentSearch);
@@ -75,7 +75,7 @@
 		} catch (error) {
 			console.error('An error occurred during sign out:', error);
 			loading.navigation = false;
-			await invalidateAll();
+			await refreshAll();
 			const currentPath = page.url.pathname;
 			const currentSearch = page.url.search;
 			goto(currentPath + currentSearch);

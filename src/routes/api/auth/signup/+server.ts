@@ -1,11 +1,10 @@
-import { json } from '@sveltejs/kit';
 import { createClient } from '@supabase/supabase-js';
 import type { RequestHandler } from './$types';
-import { PUBLIC_SUPABASE_URL } from '$env/static/public';
-import { env } from '$env/dynamic/private';
-import { readJson, type ApiError } from '$helpers/http';
-import { isStrongPassword, PASSWORD_REQUIREMENTS } from '$helpers/password';
-import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '$helpers/username';
+import { PUBLIC_SUPABASE_URL } from '$app/env/public';
+import { SUPABASE_SECRET_KEY } from '$app/env/private';
+import { readJson, type ApiError } from '#helpers/http.ts';
+import { isStrongPassword, PASSWORD_REQUIREMENTS } from '#helpers/password.ts';
+import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#helpers/username.ts';
 
 interface SignupBody {
 	email?: string;
@@ -25,7 +24,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		try {
 			userData = await request.json() as SignupBody;
 		} catch (parseError) {
-			return json({
+			return Response.json({
 				success: false,
 				error: 'Invalid JSON data'
 			}, { status: 400 });
@@ -34,7 +33,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		const { email, password, username } = userData;
 
 		if (!email || !password || !username) {
-			return json({
+			return Response.json({
 				success: false,
 				error: 'Missing required fields'
 			}, { status: 400 });
@@ -43,24 +42,24 @@ export const POST: RequestHandler = async ({ request }) => {
 		const normalizedUsername = normalizeUsername(username);
 
 		if (!USERNAME_PATTERN.test(normalizedUsername)) {
-			return json({
+			return Response.json({
 				success: false,
 				error: USERNAME_REQUIREMENTS
 			}, { status: 400 });
 		}
 
 		if (!isStrongPassword(password)) {
-			return json({
+			return Response.json({
 				success: false,
 				error: PASSWORD_REQUIREMENTS
 			}, { status: 400 });
 		}
 
 		const supabaseUrl = PUBLIC_SUPABASE_URL;
-		const supabaseSecretKey = env.SUPABASE_SECRET_KEY;
+		const supabaseSecretKey = SUPABASE_SECRET_KEY;
 
 		if (!supabaseUrl || !supabaseSecretKey) {
-			return json({
+			return Response.json({
 				success: false,
 				error: 'Server configuration error'
 			}, { status: 500 });
@@ -70,7 +69,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		try {
 			supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey);
 		} catch (clientError) {
-			return json({
+			return Response.json({
 				success: false,
 				error: 'Failed to initialize database connection'
 			}, { status: 500 });
@@ -89,21 +88,21 @@ export const POST: RequestHandler = async ({ request }) => {
 			existingUser = result.data;
 			usernameCheckError = result.error;
 		} catch (checkError) {
-			return json({
+			return Response.json({
 				success: false,
 				error: 'Error checking username availability'
 			}, { status: 500 });
 		}
 
 		if (usernameCheckError) {
-			return json({
+			return Response.json({
 				success: false,
 				error: 'Error checking username availability'
 			}, { status: 500 });
 		}
 
 		if (existingUser && existingUser.length > 0) {
-			return json({
+			return Response.json({
 				success: false,
 				error: 'Username already taken'
 			}, { status: 400 });
@@ -140,7 +139,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						 errorMessage = 'This email address is already registered.';
 				}
 
-				return json({
+				return Response.json({
 					success: false,
 					error: `Failed to create user: ${errorMessage}`
 				}, { status: createUserResponse.status });
@@ -166,7 +165,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				authData = result.data;
 				authError = result.error;
 			} catch (fallbackError) {
-				return json({
+				return Response.json({
 					success: false,
 					error: 'User creation failed after multiple attempts'
 				}, { status: 500 });
@@ -174,14 +173,14 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		if (authError) {
-			return json({
+			return Response.json({
 				success: false,
 				error: authError.message
 			}, { status: 400 });
 		}
 
 		if (!authData.user) {
-			return json({
+			return Response.json({
 				success: false,
 				error: 'User could not be created'
 			}, { status: 500 });
@@ -189,7 +188,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 
 		if (!authData || !authData.user || !authData.user.id) {
-			return json({
+			return Response.json({
 				success: false,
 				error: 'User data missing for profile creation'
 			}, { status: 500 });
@@ -231,7 +230,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					/** Rollback is best effort: the original failure is the one reported. */
 				}
 
-				return json({
+				return Response.json({
 					success: false,
 					error: `Profile creation failed: ${errorBody.message || 'Unknown error'}`
 				}, { status: 500 });
@@ -250,13 +249,13 @@ export const POST: RequestHandler = async ({ request }) => {
 				/** Rollback is best effort: the original failure is the one reported. */
 			}
 
-			return json({
+			return Response.json({
 				success: false,
 				error: 'Profile creation failed'
 			}, { status: 500 });
 		}
 
-		return json({
+		return Response.json({
 			success: true,
 			user: {
 				id: authData.user.id,
@@ -265,7 +264,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		});
 
 	} catch (error) {
-		return json({
+		return Response.json({
 			success: false,
 			error: 'An unexpected error occurred'
 		}, { status: 500 });

@@ -1,5 +1,5 @@
-import {NO_IMAGES} from '$lib/images';
-import type {FullCard} from '$lib/types';
+import {NO_IMAGES} from '#lib/images.ts';
+import type {FullCard} from '#lib/types.js';
 
 export type ImageQuality = 'high' | 'low';
 export type ImageExtension = 'webp' | 'png';

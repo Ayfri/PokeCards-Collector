@@ -1,6 +1,6 @@
-import { browser } from '$app/environment';
-import { cachedJson } from '$helpers/cached-json';
-import type { BinderCatalogueCard } from '$lib/types';
+import { browser } from '$app/env';
+import { cachedJson } from '#helpers/cached-json.ts';
+import type { BinderCatalogueCard } from '#lib/types.js';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = ({ data, fetch }) => {

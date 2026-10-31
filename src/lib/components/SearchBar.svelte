@@ -1,20 +1,20 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
-	import { formatCardNumber } from '$helpers/card-utils';
+	import { formatCardNumber } from '#helpers/card-utils.ts';
 	import { onMount } from 'svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
 	import PlusCircle from '@lucide/svelte/icons/circle-plus';
 	import Check from '@lucide/svelte/icons/check';
-	import CardImage from '@components/card/CardImage.svelte';
-	import { getPokemonImageSrc, handlePokemonImageError } from '$helpers/pokemon-utils';
-	import { pascalCase } from '$helpers/strings';
-	import { NO_IMAGES } from '$lib/images';
-	import type { FullCard } from '$lib/types';
-	import type { CardSearchResult, PokemonSearchResult } from '$helpers/card-search';
+	import CardImage from '#components/card/CardImage.svelte';
+	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
+	import { pascalCase } from '#helpers/strings.ts';
+	import { NO_IMAGES } from '#lib/images.ts';
+	import type { FullCard } from '#lib/types.js';
+	import type { CardSearchResult, PokemonSearchResult } from '#helpers/card-search.ts';
 	import { page } from '$app/state';
-	import { binderStorage } from '$stores/binder.svelte';
-	import { debounce } from '$helpers/debounce';
+	import { binderStorage } from '#stores/binder.svelte.ts';
+	import { debounce } from '#helpers/debounce.ts';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {

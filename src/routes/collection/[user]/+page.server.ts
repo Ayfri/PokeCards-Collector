@@ -1,5 +1,5 @@
-import { getUserCollection } from '$lib/services/collections';
-import { loadUserCardsPage } from '$helpers/user-cards-page';
+import { getUserCollection } from '#lib/services/collections.ts';
+import { loadUserCardsPage } from '#helpers/user-cards-page.ts';
 import type { PageServerLoad } from './$types';
 
 /**

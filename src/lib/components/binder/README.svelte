@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fly } from 'svelte/transition';
-	import Modal from '@components/ui/Modal.svelte';
+	import Modal from '#components/ui/Modal.svelte';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import DownloadIcon from '@lucide/svelte/icons/download';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';

@@ -1,8 +1,8 @@
-import { error, json } from '@sveltejs/kit';
-import { LANGUAGES, type Language } from '$helpers/catalogues';
-import { buildCardIndex, buildSetKeys, MAX_IMPORT_ROWS, resolveRows, type Catalogue, type ImportRow } from '$helpers/collection-import';
-import { getCards, getSets } from '$helpers/supabase-data';
-import type { Card, Set } from '$lib/types';
+import { error } from '@sveltejs/kit';
+import { LANGUAGES, type Language } from '#helpers/catalogues.ts';
+import { buildCardIndex, buildSetKeys, MAX_IMPORT_ROWS, resolveRows, type Catalogue, type ImportRow } from '#helpers/collection-import.ts';
+import { getCards, getSets } from '#helpers/supabase-data.ts';
+import type { Card, Set } from '#lib/types.js';
 import type { RequestHandler } from './$types';
 
 /** A collection stores one row per copy, so 99 copies of a card are 99 rows, the same shape `addCardToCollection` writes one at a time. */
@@ -94,13 +94,13 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		unmatchedCount: unmatched.length,
 	};
 
-	if (body.dryRun) return json(summary);
+	if (body.dryRun) return Response.json(summary);
 
 	for (let start = 0; start < inserts.length; start += INSERT_BATCH) {
 		const { error: insertError } = await locals.supabase.from(kind === 'wishlist' ? 'wishlists' : 'collections').insert(inserts.slice(start, start + INSERT_BATCH));
 		/** A failed slice leaves the earlier ones written, so `added: start` is the real count of rows saved. */
-		if (insertError) return json({ ...summary, added: start, failure: insertError.message }, { status: 207 });
+		if (insertError) return Response.json({ ...summary, added: start, failure: insertError.message }, { status: 207 });
 	}
 
-	return json(summary);
+	return Response.json(summary);
 };

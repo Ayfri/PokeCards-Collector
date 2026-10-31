@@ -1,7 +1,7 @@
 import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { collection } from '$stores/collection.svelte';
-import { loading } from '$stores/loading.svelte';
+import { collection } from '#stores/collection.svelte.ts';
+import { loading } from '#stores/loading.svelte.ts';
 import { selectAll } from './select-all';
 
 const MAX_CARD_QUANTITY = 99;

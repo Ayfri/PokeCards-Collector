@@ -1,5 +1,5 @@
-import { browser } from '$app/environment';
-import { cachedJson } from '$helpers/cached-json';
+import { browser } from '$app/env';
+import { cachedJson } from '#helpers/cached-json.ts';
 import type { CardDleSuggestion } from '../api/card-dle/suggestions/+server';
 import type { PageLoad } from './$types';
 

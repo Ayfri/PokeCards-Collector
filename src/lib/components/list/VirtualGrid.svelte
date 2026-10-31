@@ -1,9 +1,9 @@
 <script lang="ts">
-	import ScrollToBottom from '@components/list/ScrollToBottom.svelte';
-	import ScrollToTop from '@components/list/ScrollToTop.svelte';
-	import { gridScroll } from '$stores/grid.svelte';
+	import ScrollToBottom from '#components/list/ScrollToBottom.svelte';
+	import ScrollToTop from '#components/list/ScrollToTop.svelte';
+	import { gridScroll } from '#stores/grid.svelte.ts';
 	import { fade } from 'svelte/transition';
-	import type { FullCard } from '$lib/types';
+	import type { FullCard } from '#lib/types.js';
 
 	interface Props {
 		children?: import('svelte').Snippet<[{ item: FullCard; index: number }]>;

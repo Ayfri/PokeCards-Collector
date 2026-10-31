@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { NO_IMAGES } from '$lib/images';
-	import UserMenu from '@components/auth/UserMenu.svelte';
-	import SearchBar from '@components/SearchBar.svelte';
-	import SearchModal from '@components/SearchModal.svelte';
-	import pokecardsCollector from '~/assets/pokecards-collector.png';
+	import { NO_IMAGES } from '#lib/images.ts';
+	import UserMenu from '#components/auth/UserMenu.svelte';
+	import SearchBar from '#components/SearchBar.svelte';
+	import SearchModal from '#components/SearchModal.svelte';
+	import pokecardsCollector from '#src/assets/pokecards-collector.png';
 	import { onMount } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import type { LucideIcon } from '@lucide/svelte';

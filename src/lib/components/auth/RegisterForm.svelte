@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { goto, invalidateAll } from '$app/navigation';
+	import { goto, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import BouncyLoader from '../BouncyLoader.svelte';
-	import { readJson, type ApiError } from '$helpers/http';
-	import { isStrongPassword, PASSWORD_CRITERIA, PASSWORD_REQUIREMENTS } from '$helpers/password';
-	import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '$helpers/username';
+	import { readJson, type ApiError } from '#helpers/http.ts';
+	import { isStrongPassword, PASSWORD_CRITERIA, PASSWORD_REQUIREMENTS } from '#helpers/password.ts';
+	import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#helpers/username.ts';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 
@@ -147,7 +147,7 @@
 
 				onSuccess?.();
 
-				await invalidateAll();
+				await refreshAll();
 				const currentPath = page.url.pathname;
 				if (currentPath.includes('/login') || currentPath.includes('/auth') || currentPath.includes('/register') || currentPath.includes('/reset-password')) {
 					goto('/');

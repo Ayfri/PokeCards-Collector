@@ -1,7 +1,6 @@
-import { json } from '@sveltejs/kit';
-import { cardPrice } from '$helpers/card-utils';
-import { getCards, getPrices } from '$helpers/supabase-data';
-import type { BinderCatalogueCard } from '$lib/types';
+import { cardPrice } from '#helpers/card-utils.ts';
+import { getCards, getPrices } from '#helpers/supabase-data.ts';
+import type { BinderCatalogueCard } from '#lib/types.js';
 import type { RequestHandler } from './$types';
 
 /** Only the fields the binder draws: a fifth of the weight of the full cards plus price tables, and cacheable. */
@@ -20,5 +19,5 @@ export const GET: RequestHandler = async () => {
 		types: card.types,
 	}));
 
-	return json(payload, { headers: { 'cache-control': 'public, max-age=600' } });
+	return Response.json(payload, { headers: { 'cache-control': 'public, max-age=600' } });
 };

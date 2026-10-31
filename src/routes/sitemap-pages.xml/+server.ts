@@ -1,6 +1,6 @@
-import { BY_GRID } from '$helpers/catalogues';
-import { getSets } from '$lib/helpers/supabase-data';
-import { sitemapResponse, urlset, type SitemapEntry } from '$helpers/sitemap';
+import { BY_GRID } from '#helpers/catalogues.ts';
+import { getSets } from '#helpers/supabase-data.ts';
+import { sitemapResponse, urlset, type SitemapEntry } from '#helpers/sitemap.ts';
 
 /** Browsable routes and every set grid. User pages are left out because they are `noindex` unless the profile is public. */
 export async function GET() {
