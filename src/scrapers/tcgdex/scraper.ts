@@ -1,5 +1,5 @@
 import {mapAll, withProbedAssets, type TcgdexClient} from './client';
-import {excludedSetIds, withoutExcluded} from './excluded';
+import {catalogueSets, excludedSetIds} from './excluded';
 import {mapCard, mapPrice, mapSet, sharedProductCodes, type Language, type MappedCard, type MappedPrice, type MappedSet} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
 
@@ -17,8 +17,9 @@ export interface ScrapeResult {
 export async function scrapeLanguage(client: TcgdexClient, lang: Language): Promise<ScrapeResult> {
 	const started = performance.now();
 	const [listed, excluded] = await Promise.all([client.json<TcgdexSet[]>(`/v2/${lang}/sets`), excludedSetIds(client, lang)]);
-	const setList = withoutExcluded(listed ?? [], excluded);
-	console.log(`[${lang}] ${setList.length} sets${excluded.size ? ` (${(listed ?? []).length - setList.length} skipped, excluded series)` : ''}`);
+	const setList = catalogueSets(listed ?? [], excluded);
+	const skipped = (listed ?? []).length - setList.length;
+	console.log(`[${lang}] ${setList.length} sets${skipped ? ` (${skipped} skipped, excluded series or repeated id)` : ''}`);
 
 	const details = await mapAll(setList, async set => {
 		const detail = await client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`);

@@ -3,7 +3,7 @@ import {generateUniqueCardCode} from '$helpers/card-utils';
 import {RARITY_MAPPING} from '$helpers/rarity';
 import {envClient, ownedCardCodes, readAll, TABLES} from '../supabase_sync';
 import {mapAll} from './client';
-import {excludedSetIds, withoutExcluded} from './excluded';
+import {catalogueSets, excludedSetIds} from './excluded';
 import {Http2Pool} from './http2-pool';
 import {speciesInName, UNKNOWN_POKEMON, type Language} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
@@ -53,7 +53,7 @@ export async function auditTcgdex(write = true) {
 	const resolved = new Set<string>();
 
 	for (const lang of LANGS) {
-		const sets = withoutExcluded((await pool.json<TcgdexSet[]>(`/v2/${lang}/sets`))!, await excludedSetIds(pool, lang));
+		const sets = catalogueSets((await pool.json<TcgdexSet[]>(`/v2/${lang}/sets`))!, await excludedSetIds(pool, lang));
 		const rows = await readAll<StoredRow>(supabase, TABLES[lang].cards, 'card_code,name,set_name', 'card_code');
 		const names = new Map(rows.map(row => [row.card_code, row.name]));
 

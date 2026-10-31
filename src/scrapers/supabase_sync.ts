@@ -1,7 +1,7 @@
 import {createClient, type SupabaseClient} from '@supabase/supabase-js';
 import {cardRow, priceRow, setRow} from './rows';
 import {mapAll, withProbedAssets, type TcgdexClient} from './tcgdex/client';
-import {excludedSetIds, withoutExcluded} from './tcgdex/excluded';
+import {catalogueSets, excludedSetIds} from './tcgdex/excluded';
 import {mapCard, mapPrice, mapSet, resolveCardCode, sharedProductCodes, type Language} from './tcgdex/mappers';
 import type {TcgdexCard, TcgdexSet} from './tcgdex/types';
 
@@ -78,7 +78,7 @@ export function deduplicate(rows: Record<string, unknown>[], key: string): Recor
 export async function syncSets(supabase: SupabaseClient, client: TcgdexClient, lang: Language): Promise<string[]> {
 	const table = TABLES[lang].sets;
 	const [listed, excluded] = await Promise.all([client.json<TcgdexSet[]>(`/v2/${lang}/sets`), excludedSetIds(client, lang)]);
-	const list = withoutExcluded(listed ?? [], excluded);
+	const list = catalogueSets(listed ?? [], excluded);
 	const details = (await mapAll(list, async set => {
 		const detail = await client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`);
 		return detail && withProbedAssets(detail, lang);
