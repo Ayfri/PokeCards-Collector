@@ -1,6 +1,6 @@
 name = "pokecards-collector"
 main = ".svelte-kit/cloudflare/_worker.js"
-compatibility_date = "2026-08-28"
+compatibility_date = "2026-10-23"
 
 # Deploying overwrites the dashboard settings with this file, so every setting has to live here.
 workers_dev = true
@@ -22,6 +22,10 @@ binding = "ASSETS"
 enabled = true
 
 [observability.traces]
+enabled = true
+
+# Groups uncaught exceptions, 5xx responses and `console.error` calls into issues, with no SDK in the bundle.
+[observability.issues]
 enabled = true
 
 [placement]

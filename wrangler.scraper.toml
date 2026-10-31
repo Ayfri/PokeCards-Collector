@@ -4,12 +4,7 @@
 #   bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
 name = "pokecards-scraper"
 main = "src/workers/scraper.ts"
-compatibility_date = "2026-08-28"
-
-# The scraper shares the app's module aliases; wrangler bundles it without SvelteKit.
-[alias]
-"$lib" = "./src/lib"
-"$scrapers" = "./src/scrapers"
+compatibility_date = "2026-10-23"
 
 [vars]
 PUBLIC_SUPABASE_URL = "https://ptbwuqaqkqntmgmaqboq.supabase.co"
@@ -23,6 +18,10 @@ subrequests = 1_000_000
 enabled = true
 
 [observability.traces]
+enabled = true
+
+# Groups uncaught exceptions and `console.error` calls of the Workflow steps into issues, with no SDK in the bundle.
+[observability.issues]
 enabled = true
 
 # Runs the TCGdex reads from a Durable Object hinted to Western Europe (best effort), see `TcgdexReader` in src/workers/scraper.ts.
