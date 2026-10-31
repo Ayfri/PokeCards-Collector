@@ -6,9 +6,9 @@ import { sitemapResponse, urlset, type SitemapEntry } from '$helpers/sitemap';
 export async function GET() {
 	const foreign = Object.values(BY_GRID);
 	const [sets, ...foreignSets] = await Promise.all([getSets(), ...foreign.map(({ language }) => getSets(language))]);
-	const lastmod = new Date().toISOString();
 
-	const entries: SitemapEntry[] = ([
+	/** No `lastmod` anywhere: nothing here carries a real modification date, and "now" on every URL teaches crawlers to ignore the field. */
+	const entries: SitemapEntry[] = [
 		{ changefreq: 'daily', loc: '/', priority: 1 },
 		{ changefreq: 'daily', loc: '/cards-list', priority: 0.9 },
 		{ changefreq: 'weekly', loc: '/sets', priority: 0.9 },
@@ -20,14 +20,13 @@ export async function GET() {
 		{ changefreq: 'daily', loc: '/guess-the-price', priority: 0.7 },
 		{ changefreq: 'monthly', loc: '/binder', priority: 0.6 },
 		{ changefreq: 'daily', loc: '/users', priority: 0.5 },
-	] satisfies SitemapEntry[]).map(entry => ({ ...entry, lastmod }));
+	];
 
 	// A `?set=` grid is a distinct document with its own title, description and schema, so each one is listed.
 	for (const set of sets) {
 		entries.push({
 			changefreq: 'weekly',
 			image: set.logo ? { loc: set.logo, title: set.name } : undefined,
-			lastmod,
 			loc: `/cards-list?set=${encodeURIComponent(set.name)}`,
 			priority: 0.8,
 		});
@@ -38,7 +37,6 @@ export async function GET() {
 			entries.push({
 				changefreq: 'weekly',
 				image: set.logo ? { loc: set.logo, title: set.name } : undefined,
-				lastmod,
 				loc: `${gridRoute}?set=${encodeURIComponent(set.name)}`,
 				priority: 0.6,
 			});

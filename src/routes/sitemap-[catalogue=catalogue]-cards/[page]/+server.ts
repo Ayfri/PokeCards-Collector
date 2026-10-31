@@ -15,12 +15,9 @@ export const GET: RequestHandler = async ({ params }) => {
 	const slice = cards.slice((page - 1) * SITEMAP_CHUNK, page * SITEMAP_CHUNK);
 	if (!slice.length) error(404, 'Not found');
 
-	const lastmod = new Date().toISOString();
-
 	return sitemapResponse(urlset(slice.map(card => ({
 		changefreq: 'weekly' as const,
 		image: card.image ? { loc: processCardImage(card.image), title: card.name } : undefined,
-		lastmod,
 		loc: `${catalogue.cardRoute}/${card.cardCode}`,
 		priority: 0.4,
 	}))));

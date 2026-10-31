@@ -13,12 +13,10 @@ export const GET: RequestHandler = async ({ params }) => {
 	const slice = cards.slice((page - 1) * SITEMAP_CHUNK, page * SITEMAP_CHUNK);
 	if (!slice.length) error(404, 'Not found');
 
-	const lastmod = new Date().toISOString();
-
+	/** No `lastmod`: the list reads carry no per-card date, and a timestamp of "now" on every URL teaches crawlers to ignore the field. */
 	return sitemapResponse(urlset(slice.map(card => ({
 		changefreq: 'weekly' as const,
 		image: card.image ? { loc: processCardImage(card.image), title: card.name } : undefined,
-		lastmod,
 		loc: `/card/${card.cardCode}`,
 		priority: 0.6,
 	}))));
