@@ -5,8 +5,9 @@
 	import { NO_IMAGES } from '$lib/images';
 	import type { FullCard, Pokemon, PriceData } from '~/lib/types';
 	import { getRepresentativeCardForPokemon } from '$helpers/card-utils';
-	import { onMount } from 'svelte';
-	import { afterNavigate, goto } from '$app/navigation';
+	import { catalogueOfPath } from '$helpers/catalogues';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { loading } from '$stores/loading.svelte';
 
 	interface Props {
@@ -25,22 +26,12 @@
 		card
 	}: Props = $props();
 	
-	let isJapaneseContext = $state(false);
-	
-	const baseCardUrl = $derived(isJapaneseContext ? '/jp-card/' : '/card/');
-	
+	const catalogue = $derived(catalogueOfPath(page.url.pathname));
+
 	function navigateToPokemon(cardCode: string) {
 		loading.navigation = true;
-		goto(`${baseCardUrl}${cardCode}/`);
+		goto(`${catalogue.cardRoute}/${cardCode}/`);
 	}
-	
-	onMount(() => {
-		isJapaneseContext = window.location.pathname.includes('/jp-card/');
-	});
-	
-	afterNavigate(() => {
-		isJapaneseContext = window.location.pathname.includes('/jp-card/');
-	});
 
 	function buildEvolutionChain(card: FullCard) {
 		const currentPokemon = pokemons.find(p => p.id === card.pokemonNumber);

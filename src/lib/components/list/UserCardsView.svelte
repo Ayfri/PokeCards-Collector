@@ -44,6 +44,7 @@
 			<p class="mt-3 text-xl text-white">Loading {kind}...</p>
 		</div>
 	{:then payload}
+		{@const sets = [...data.sets, ...payload.sets]}
 		<div class="flex min-h-0 grow flex-col py-8">
 			<CardGrid
 				artists={payload.artists}
@@ -52,7 +53,7 @@
 				pokemons={payload.pokemons}
 				prices={payload.prices}
 				rarities={payload.rarities}
-				sets={data.sets}
+				{sets}
 				types={payload.types}
 			/>
 

@@ -9,7 +9,7 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
 	// Started before `parent()` so the catalogue reads overlap the layout's auth and collection queries.
-	const catalogue = Promise.all([getCardDetails('cards', cardCode), getCards(), getPrices(), getPokemons()]);
+	const catalogue = Promise.all([getCardDetails('en', cardCode), getCards(), getPrices(), getPokemons()]);
 	const parentData = await parent();
 	const [targetCard, allCards, prices, allPokemons] = await catalogue;
 	const sets = parentData.sets || [];

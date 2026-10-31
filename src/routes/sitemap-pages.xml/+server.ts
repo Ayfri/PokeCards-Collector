@@ -1,9 +1,11 @@
-import { getJapaneseSets, getSets } from '$lib/helpers/supabase-data';
+import { BY_GRID } from '$helpers/catalogues';
+import { getSets } from '$lib/helpers/supabase-data';
 import { sitemapResponse, urlset, type SitemapEntry } from '$helpers/sitemap';
 
 /** Browsable routes and every set grid. User pages are left out: they are `noindex` unless the profile is public. */
 export async function GET() {
-	const [sets, jpSets] = await Promise.all([getSets(), getJapaneseSets()]);
+	const foreign = Object.values(BY_GRID);
+	const [sets, ...foreignSets] = await Promise.all([getSets(), ...foreign.map(({ language }) => getSets(language))]);
 	const lastmod = new Date().toISOString();
 
 	const entries: SitemapEntry[] = ([
@@ -12,6 +14,7 @@ export async function GET() {
 		{ changefreq: 'weekly', loc: '/sets', priority: 0.9 },
 		{ changefreq: 'weekly', loc: '/pokemons', priority: 0.8 },
 		{ changefreq: 'weekly', loc: '/japan', priority: 0.8 },
+		{ changefreq: 'weekly', loc: '/france', priority: 0.8 },
 		{ changefreq: 'weekly', loc: '/artists', priority: 0.7 },
 		{ changefreq: 'daily', loc: '/card.dle', priority: 0.7 },
 		{ changefreq: 'daily', loc: '/guess-the-price', priority: 0.7 },
@@ -30,15 +33,17 @@ export async function GET() {
 		});
 	}
 
-	for (const set of jpSets) {
-		entries.push({
-			changefreq: 'weekly',
-			image: set.logo ? { loc: set.logo, title: set.name } : undefined,
-			lastmod,
-			loc: `/japan?set=${encodeURIComponent(set.name)}`,
-			priority: 0.6,
-		});
-	}
+	foreign.forEach(({ gridRoute }, index) => {
+		for (const set of foreignSets[index]) {
+			entries.push({
+				changefreq: 'weekly',
+				image: set.logo ? { loc: set.logo, title: set.name } : undefined,
+				lastmod,
+				loc: `${gridRoute}?set=${encodeURIComponent(set.name)}`,
+				priority: 0.6,
+			});
+		}
+	});
 
 	return sitemapResponse(urlset(entries));
 }

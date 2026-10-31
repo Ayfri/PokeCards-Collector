@@ -106,7 +106,8 @@
 
 	const setOptions = $derived([
 		{ value: 'all', label: 'All sets' },
-		...sets.map(set => ({ value: set.name.toLowerCase(), label: set.name })),
+		/** A set name shared by two languages (`151`, `Jungle`) is one entry: the filter matches on the name. */
+		...[...new Map(sets.map(set => [set.name.toLowerCase(), set.name]))].map(([value, label]) => ({ value, label })),
 	]);
 
 	const typeOptions = $derived([

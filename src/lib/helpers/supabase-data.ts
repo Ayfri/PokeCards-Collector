@@ -1,8 +1,10 @@
 import type { FullCard, Pokemon, PriceData, Set } from "$lib/types";
 import { supabase } from '$lib/supabase';
 import { cachedTable, STATIC_TTL, TABLE_TTL } from '$helpers/data-cache';
+import { CATALOGUES, type CardTable, type Language, type PriceTable, type SetTable } from '$helpers/catalogues';
+import type { CatalogueData } from '$helpers/owned-cards';
 
-/** Columns every card read shares; keep it in sync with the `cards` / `jp_cards` schema. */
+/** Columns every card read shares; keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
 const CARD_COLUMNS = `
 	card_code,
 	artist,
@@ -196,7 +198,7 @@ async function readWithRetry<T extends QueryResult>(label: string, run: () => Pr
  * others, because only 4618 of its 23546 rows have a name no other row shares.
  */
 async function getAllData<T>(
-	tableName: string,
+	tableName: CardTable | PriceTable | SetTable | 'pokemons' | 'types',
 	keyColumn: string,
 	selectQuery: string = '*',
 	orderBy?: { column: string; ascending: boolean }
@@ -244,12 +246,13 @@ export async function getPokemons(): Promise<Pokemon[]> {
 	return cachedTable('pokemons', STATIC_TTL, () => getAllData<Pokemon>('pokemons', 'id', '*', { column: 'id', ascending: true }), rows => rows);
 }
 
-function cardListRows(table: 'cards' | 'jp_cards'): Promise<CardRow[]> {
+function cardListRows(table: CardTable): Promise<CardRow[]> {
 	return getAllData<CardRow>(table, 'card_code', CARD_LIST_COLUMNS, { column: 'name', ascending: true });
 }
 
-export async function getCards(): Promise<FullCard[]> {
-	return cachedTable('cards', TABLE_TTL, () => cardListRows('cards'), rows => rows.map(toCard));
+export async function getCards(language: Language = 'en'): Promise<FullCard[]> {
+	const { cards } = CATALOGUES[language].tables;
+	return cachedTable(cards, TABLE_TTL, () => cardListRows(cards), rows => rows.map(toCard));
 }
 
 /** Picks a card without reading the table: one count, then the single row at that offset. */
@@ -269,31 +272,25 @@ export async function getRandomCardCode(): Promise<string | null> {
 }
 
 /** One card with every column, for its own page: the catalogue reads leave out `hp`, `stage`, `variants` and the like. */
-export async function getCardDetails(table: 'cards' | 'jp_cards', cardCode: string): Promise<FullCard | null> {
-	const { data } = await readWithRetry(`fetch ${table} ${cardCode}`, () => supabase.from(table).select(CARD_COLUMNS).eq('card_code', cardCode).maybeSingle<CardRow>());
+export async function getCardDetails(language: Language, cardCode: string): Promise<FullCard | null> {
+	const { cards } = CATALOGUES[language].tables;
+	const { data } = await readWithRetry(`fetch ${cards} ${cardCode}`, () => supabase.from(cards).select(CARD_COLUMNS).eq('card_code', cardCode).maybeSingle<CardRow>());
 	return data ? toCard(data) : null;
 }
 
-export async function getJapaneseCards(): Promise<FullCard[]> {
-	return cachedTable('jp_cards', TABLE_TTL, () => cardListRows('jp_cards'), rows => rows.map(toCard));
-}
-
 /** `select(count)` with `head: true`: the homepage only prints this number, it has no use for the 12781 rows behind it. */
-export async function countJapaneseCards(): Promise<number> {
-	return cachedTable('jp_cards:count', TABLE_TTL, async () => {
-		const { count, error } = await supabase.from('jp_cards').select('*', { count: 'exact', head: true });
-		if (error) throw new Error(`Failed to count jp_cards: ${error.message}`);
+export async function countCards(language: Language): Promise<number> {
+	const { cards } = CATALOGUES[language].tables;
+	return cachedTable(`${cards}:count`, TABLE_TTL, async () => {
+		const { count, error } = await supabase.from(cards).select('*', { count: 'exact', head: true });
+		if (error) throw new Error(`Failed to count ${cards}: ${error.message}`);
 		return count ?? 0;
 	}, count => count);
 }
 
-export async function getPrices(): Promise<Record<string, PriceData>> {
-	return cachedTable('prices', TABLE_TTL, () => getAllData<PriceRow>('prices', 'card_code'), pricesByCardCode);
-}
-
-/** Japanese cards carry cardmarket pricing too, in their own table. */
-export async function getJapanesePrices(): Promise<Record<string, PriceData>> {
-	return cachedTable('jp_prices', TABLE_TTL, () => getAllData<PriceRow>('jp_prices', 'card_code'), pricesByCardCode);
+export async function getPrices(language: Language = 'en'): Promise<Record<string, PriceData>> {
+	const { prices } = CATALOGUES[language].tables;
+	return cachedTable(prices, TABLE_TTL, () => getAllData<PriceRow>(prices, 'card_code'), pricesByCardCode);
 }
 
 function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
@@ -304,12 +301,15 @@ function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
 	return pricesObject;
 }
 
-export async function getSets(): Promise<Set[]> {
-	return cachedTable('sets', TABLE_TTL, () => getAllData<SetRow>('sets', 'set_id', '*', { column: 'name', ascending: true }), rows => rows.map(toSet));
+export async function getSets(language: Language = 'en'): Promise<Set[]> {
+	const { sets } = CATALOGUES[language].tables;
+	return cachedTable(sets, TABLE_TTL, () => getAllData<SetRow>(sets, 'set_id', '*', { column: 'name', ascending: true }), rows => rows.map(toSet));
 }
 
-export async function getJapaneseSets(): Promise<Set[]> {
-	return cachedTable('jp_sets', TABLE_TTL, () => getAllData<SetRow>('jp_sets', 'set_id', '*', { column: 'name', ascending: true }), rows => rows.map(toSet));
+/** The three reads of one language, memoized like each of them. */
+export async function getCatalogue(language: Language): Promise<CatalogueData> {
+	const [cards, prices, sets] = await Promise.all([getCards(language), getPrices(language), getSets(language)]);
+	return { cards, prices, sets };
 }
 
 export async function getTypes(): Promise<string[]> {

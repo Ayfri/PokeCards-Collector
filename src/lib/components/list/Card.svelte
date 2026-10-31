@@ -11,6 +11,7 @@
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
 	import { getCardSet } from '$helpers/card-grid';
+	import { CATALOGUES, catalogueOfPath } from '$helpers/catalogues';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Minus from '@lucide/svelte/icons/minus';
 	import SetBadge from '@components/SetBadge.svelte';
@@ -69,8 +70,8 @@
 
 	const isCollectionLimitReached = $derived(collectionCount >= MAX_CARD_QUANTITY);
 
-	const isJapaneseCard = $derived(page.url.pathname.includes('/japan'));
-	const cardLink = $derived(isJapaneseCard ? `/jp-card/${cardCode}/` : `/card/${cardCode}/`);
+	const catalogue = $derived(card.language ? CATALOGUES[card.language] : catalogueOfPath(page.url.pathname));
+	const cardLink = $derived(`${catalogue.cardRoute}/${cardCode}/`);
 
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
@@ -127,7 +128,7 @@
 		}
 	}
 
-	const cardName = $derived(pokemon
+	const cardName = $derived(pokemon && catalogue.speciesTitles
 		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
 		: (card.name ? card.name.charAt(0).toUpperCase() + card.name.slice(1) : 'Unknown'));
 </script>
@@ -216,7 +217,7 @@
 		/>
 
 		{#if set}
-			<SetBadge {set} style="bottom: {controlInset}px; left: {controlInset}px;" />
+			<SetBadge language={card.language} {set} style="bottom: {controlInset}px; left: {controlInset}px;" />
 		{/if}
 	</div>
 	<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-xs rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">

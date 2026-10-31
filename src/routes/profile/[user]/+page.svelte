@@ -24,7 +24,8 @@
 	import Trophy from '@lucide/svelte/icons/trophy';
 	import Wallet from '@lucide/svelte/icons/wallet';
 	import { fly } from 'svelte/transition';
-	import type { CollectionStats, Set } from '$lib/types';
+	import { CATALOGUES } from '$helpers/catalogues';
+	import type { CollectionStats } from '$lib/types';
 	import type { PageData } from './$types';
 
 	interface Props {
@@ -39,25 +40,24 @@
 	const SET_SORTS = {
 		completion: { compare: (a: SetEntry, b: SetEntry) => b.percentage - a.percentage || b.count - a.count, label: 'Completion' },
 		value: { compare: (a: SetEntry, b: SetEntry) => b.collectedValue - a.collectedValue, label: 'Value' },
-		recent: { compare: (a: SetEntry, b: SetEntry) => (b.set?.releaseDate.getTime() ?? 0) - (a.set?.releaseDate.getTime() ?? 0), label: 'Newest' },
+		recent: { compare: (a: SetEntry, b: SetEntry) => b.set.releaseDate.getTime() - a.set.releaseDate.getTime(), label: 'Newest' },
 	} as const;
 
 	type SetSort = keyof typeof SET_SORTS;
-	type SetEntry = CollectionStats['set_completion'][string] & { name: string; set: Set | undefined };
+	type SetEntry = CollectionStats['set_completion'][string];
 
 	let isLoading = $state(false);
 	let errorMessage = $state('');
 	let successMessage = $state('');
 	let setSort = $state<SetSort>('completion');
 
-	const { collectionStats, isOwnProfile, isPublic, sets, targetProfile, totalCards } = $derived(data);
+	const { collectionStats, isOwnProfile, isPublic, targetProfile, totalCards } = $derived(data);
 	const username = $derived(targetProfile.username);
 	const possessive = $derived(isOwnProfile ? 'your' : `${username}'s`);
 	/** Tints the banner and the accents with the color picked in the settings, gold when none is set. */
 	const accent = $derived(targetProfile.profile_color && /^#[0-9A-Fa-f]{6}$/.test(targetProfile.profile_color) ? targetProfile.profile_color : '#fbc54a');
 
-	const setsByName = $derived(new Map(sets.map(set => [set.name, set])));
-	const setEntries = $derived(Object.entries(collectionStats?.set_completion ?? {}).map(([name, completion]): SetEntry => ({ ...completion, name, set: setsByName.get(name) })));
+	const setEntries = $derived(Object.values(collectionStats?.set_completion ?? {}));
 	const sortedSets = $derived(setEntries.toSorted(SET_SORTS[setSort].compare));
 	const completedSets = $derived(setEntries.filter(entry => entry.count === entry.total).length);
 	/** Started sets summed card by card and euro by euro, so a 300-card set weighs more than a 17-card one, unlike the average. */
@@ -266,7 +266,7 @@
 						<h2 class="mb-5 flex items-center gap-2 text-xl font-semibold"><Gem class="text-gold-400" size={20} /> Most valuable cards</h2>
 						<div class="grid grid-cols-3 gap-4 sm:grid-cols-6 lg:grid-cols-3 xl:grid-cols-6">
 							{#each collectionStats.top_cards as { card, copies, price }, i (card.cardCode)}
-								<a class="group flex flex-col gap-2" href={`/card/${card.cardCode}`} title={`${card.name}, ${card.setName} ${card.localId}`}>
+								<a class="group flex flex-col gap-2" href={`${CATALOGUES[card.language ?? 'en'].cardRoute}/${card.cardCode}`} title={`${card.name}, ${card.setName} ${card.localId}`}>
 									<div class="relative transition-transform duration-300 group-hover:-translate-y-1.5 group-hover:rotate-1">
 										<CardImage alt={card.name} {card} class="w-full rounded-lg shadow-lg" imageUrl={card.image} lowRes sizes="160px" types={card.types} />
 										{#if i === 0}
@@ -349,7 +349,7 @@
 
 			{#if sortedSets.length}
 				<div class="grid max-h-160 grid-cols-1 gap-3 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
-					{#each sortedSets as entry (entry.name)}
+					{#each sortedSets as entry (`${entry.language}:${entry.name}`)}
 						{@const complete = entry.count === entry.total}
 						<a
 							class="group flex items-center gap-4 rounded-xl border p-3 transition-colors {complete ? 'border-gold-400/60 bg-gold-400/10' : 'border-white/5 bg-white/3 hover:border-gold-400/50'}"
@@ -357,15 +357,16 @@
 							title={`View ${possessive} cards from ${entry.name}`}
 						>
 							<div class="flex h-10 w-16 shrink-0 items-center justify-center">
-								{#if entry.set}
-									<SetLogo class="max-h-10 max-w-16 object-contain" set={entry.set}>
-										{#snippet fallback()}<LibraryIcon class="text-gray-500" size={22} />{/snippet}
-									</SetLogo>
-								{/if}
+								<SetLogo class="max-h-10 max-w-16 object-contain" set={entry.set}>
+									{#snippet fallback()}<LibraryIcon class="text-gray-500" size={22} />{/snippet}
+								</SetLogo>
 							</div>
 							<div class="min-w-0 grow">
 								<div class="flex items-center justify-between gap-2">
-									<p class="truncate text-sm font-medium group-hover:text-gold-400">{entry.name}</p>
+									<p class="truncate text-sm font-medium group-hover:text-gold-400">
+										{entry.name}
+										{#if entry.language !== 'en'}<span class="text-xs font-normal text-gray-500">{CATALOGUES[entry.language].adjective}</span>{/if}
+									</p>
 									{#if complete}
 										<Trophy class="shrink-0 text-gold-400" size={14} />
 									{:else}

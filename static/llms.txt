@@ -1,14 +1,14 @@
 # PokéCards-Collector
 
-> A free Pokémon Trading Card Game catalogue and collection tracker. Every English and Japanese card, each with its
+> A free Pokémon Trading Card Game catalogue and collection tracker. Every English, Japanese and French card, each with its
 > Cardmarket price in euros, plus collection tracking, wishlists, a binder builder and two daily card games.
 
-The catalogue is refreshed from [TCGdex](https://api.tcgdex.net) every Monday. Prices are Cardmarket values in EUR,
+The catalogue is refreshed from [TCGdex](https://api.tcgdex.net) every day. Prices are Cardmarket values in EUR,
 covering both the standard and the reverse-holo print of a card. Browsing needs no account; tracking a collection,
 a wishlist or a binder needs a free one.
 
 A card is addressed by a code of the form `supertype_pokemonId_setCode_cardNumber`, for example
-`pokemon_6_base1_4`. English cards live at `/card/<code>`, Japanese cards at `/jp-card/<code>`.
+`pokemon_6_base1_4`. English cards live at `/card/<code>`, Japanese cards at `/jp-card/<code>`, French cards at `/fr-card/<code>`.
 
 ## Browse
 
@@ -17,6 +17,7 @@ A card is addressed by a code of the form `supertype_pokemonId_setCode_cardNumbe
 - [Pokémon](https://pokecards-collector.ayfri.com/pokemons): all 1025 Pokémon and the cards depicting them.
 - [Artists](https://pokecards-collector.ayfri.com/artists): the illustrators behind the cards, with their full card list.
 - [Japanese cards](https://pokecards-collector.ayfri.com/japan): the Japanese catalogue, with its own sets and prices.
+- [French cards](https://pokecards-collector.ayfri.com/france): the French catalogue, with its own sets and prices. A card with no French scan shows the English one.
 
 ## Collect
 

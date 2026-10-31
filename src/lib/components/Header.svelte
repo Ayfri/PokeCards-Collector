@@ -47,6 +47,7 @@
 				{ href: '/sets', name: 'Sets', icon: LibraryIcon, description: 'Every set, grouped by series' },
 				{ href: '/artists', name: 'Artists', icon: ArtistIcon, description: 'Every card illustrator' },
 				{ href: '/japan', name: 'Japan', icon: GlobeIcon, description: 'The Japanese catalogue' },
+				{ href: '/france', name: 'France', icon: GlobeIcon, description: 'The French catalogue' },
 				{ href: '/random', name: 'Random Card', icon: ShuffleIcon, description: 'Jump to a random card' },
 			]
 		},
