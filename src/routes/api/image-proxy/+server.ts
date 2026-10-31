@@ -1,10 +1,31 @@
 import { error } from '@sveltejs/kit';
+import { BASE_URL } from '~/constants';
 import type { RequestHandler } from './$types';
 
 /** SVG is deliberately absent: it is a scriptable document, and echoing one back under our own origin is stored XSS. */
 const ALLOWED_TYPES = new Set(['image/avif', 'image/gif', 'image/jpeg', 'image/png', 'image/webp']);
 
 const MAX_BYTES = 12 * 1024 * 1024;
+
+/** The site's custom domain, its `workers.dev` and preview hostnames and local dev, all of which would proxy back into this Worker. */
+const CUSTOM_HOSTNAME = new URL(BASE_URL).hostname;
+const isOwnHost = (hostname: string, requestHostname: string) =>
+	hostname === requestHostname
+	|| hostname === CUSTOM_HOSTNAME
+	|| hostname === 'localhost'
+	|| hostname.endsWith('.workers.dev');
+
+/** Errors the stream past `limit` bytes: `content-length` is absent on a chunked upstream, so it cannot be trusted alone. */
+const capBytes = (limit: number) => {
+	let received = 0;
+	return new TransformStream<Uint8Array, Uint8Array>({
+		transform(chunk, controller) {
+			received += chunk.byteLength;
+			if (received > limit) controller.error(new Error('Image is too large to proxy'));
+			else controller.enqueue(chunk);
+		},
+	});
+};
 
 /**
  * Proxies the user-supplied image URLs a binder draws on its canvas, and nothing else. Card art comes straight
@@ -26,7 +47,7 @@ export const GET: RequestHandler = async ({ fetch, url }) => {
 	}
 
 	if (parsed.protocol !== 'https:') throw error(400, 'Only https image URLs are proxied');
-	if (parsed.origin === url.origin) throw error(400, 'Refusing to proxy our own origin');
+	if (isOwnHost(parsed.hostname, url.hostname)) throw error(400, 'Refusing to proxy our own origin');
 
 	const response = await fetch(parsed, { cf: { cacheEverything: true, cacheTtl: 31536000 } })
 		.catch((err: unknown) => {
@@ -42,7 +63,7 @@ export const GET: RequestHandler = async ({ fetch, url }) => {
 	const declaredLength = Number(response.headers.get('content-length'));
 	if (declaredLength > MAX_BYTES) throw error(413, 'Image is too large to proxy');
 
-	return new Response(response.body, {
+	return new Response(response.body?.pipeThrough(capBytes(MAX_BYTES)), {
 		headers: {
 			'cache-control': 'public, max-age=31536000, immutable',
 			// Nothing here is a document, so pin the type and forbid the browser from ever treating it as one.
