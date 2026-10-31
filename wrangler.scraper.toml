@@ -17,8 +17,11 @@ subrequests = 1_000_000
 [observability]
 enabled = true
 
+# A pass makes ~43k TCGdex requests, one span each: 99.7% of the Worker's events. Traces keep 10% of invocations, each one
+# whole; logs, errors and Issues stay complete. Set it back to 1.0 to trace every invocation while chasing a bug.
 [observability.traces]
 enabled = true
+head_sampling_rate = 0.1
 
 # Groups uncaught exceptions and `console.error` calls of the Workflow steps into issues, with no SDK in the bundle.
 [observability.issues]
