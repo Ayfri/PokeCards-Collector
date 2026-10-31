@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import { cachedJson } from '$helpers/cached-json';
-import type { CardsListPayload } from '../api/cards-list/+server';
+import type { GridPayload } from '$helpers/grid-payload';
 import type { PageLoad } from './$types';
 
 /**
@@ -11,7 +11,7 @@ import type { PageLoad } from './$types';
  */
 export const load: PageLoad = ({ data, fetch }) => {
 	// On the server the grid is never rendered anyway - `VirtualGrid` measures itself before it draws a single tile.
-	if (!browser) return { ...data, streamed: { grid: new Promise<CardsListPayload>(() => {}) } };
+	if (!browser) return { ...data, streamed: { grid: new Promise<GridPayload>(() => {}) } };
 
-	return { ...data, streamed: { grid: cachedJson<CardsListPayload>(fetch, '/api/cards-list') } };
+	return { ...data, streamed: { grid: cachedJson<GridPayload>(fetch, '/api/cards-list') } };
 };

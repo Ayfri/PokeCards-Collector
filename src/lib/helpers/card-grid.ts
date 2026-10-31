@@ -1,6 +1,5 @@
-import type { FullCard, Pokemon, PriceData, Set } from '$lib/types';
+import type { FullCard, GridPokemon, Set } from '$lib/types';
 import { compareRarities, getRarityLevel } from '$helpers/rarity';
-import { cardPrice } from '$helpers/card-utils';
 import type { ActiveFilters } from '$stores/filters.svelte';
 import { CARD_SIZES, DEFAULT_CARD_SIZE } from '$stores/grid.svelte';
 
@@ -20,7 +19,7 @@ export function getCardSet(card: Pick<FullCard, 'language' | 'setId'>, sets: Set
 }
 
 /** Groups Pokémon by dex number and other supertypes by name, keeping only the priciest card of each group. */
-export function keepMostExpensivePerGroup(cards: FullCard[], prices: Record<string, PriceData>): FullCard[] {
+export function keepMostExpensivePerGroup(cards: FullCard[]): FullCard[] {
 	const groups = new Map<string, FullCard>();
 
 	for (const card of cards) {
@@ -29,7 +28,7 @@ export function keepMostExpensivePerGroup(cards: FullCard[], prices: Record<stri
 			: `${card.supertype.toLowerCase()}_${card.name.toLowerCase()}`;
 
 		const existing = groups.get(groupKey);
-		if (!existing || (cardPrice(prices[card.cardCode]) ?? 0) > (cardPrice(prices[existing.cardCode]) ?? 0)) {
+		if (!existing || (card.price ?? 0) > (existing.price ?? 0)) {
 			groups.set(groupKey, card);
 		}
 	}
@@ -52,13 +51,13 @@ interface SortValues {
 
 const SUPERTYPE_ORDER: Record<string, number> = { 'Pokémon': 1, Trainer: 2, Energy: 3 };
 
+
 /** Sorts a card list, precomputing every sort key once instead of recomputing it inside the comparator. */
 export function sortCards(
 	cards: FullCard[],
 	sortBy: string,
 	sortOrder: string,
-	prices: Record<string, PriceData>,
-	pokemons: Pokemon[],
+	pokemons: GridPokemon[],
 	sets: Set[],
 ): FullCard[] {
 	const pokemonMap = new Map(pokemons.map(pokemon => [pokemon.id, pokemon]));
@@ -76,7 +75,7 @@ export function sortCards(
 			isPokemon: card.supertype === 'Pokémon' && card.pokemonNumber != null,
 			name: pokemon?.name ?? card.name,
 			pokemonNumber: card.pokemonNumber ?? 0,
-			price: cardPrice(prices[card.cardCode]) ?? 0,
+			price: card.price ?? 0,
 			rarityLevel: getRarityLevel(card.rarity),
 			releaseDate: getCardSet(card, sets)?.releaseDate?.getTime() ?? 0,
 			supertype: card.supertype,

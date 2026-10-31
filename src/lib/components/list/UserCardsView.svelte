@@ -65,7 +65,6 @@
 				cards={payload.cards}
 				pageTitle={data.heading}
 				pokemons={payload.pokemons}
-				prices={payload.prices}
 				rarities={payload.rarities}
 				{sets}
 				types={payload.types}

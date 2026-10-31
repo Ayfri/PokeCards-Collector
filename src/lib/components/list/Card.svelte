@@ -5,8 +5,8 @@
 	import {wishlist} from '$stores/wishlist.svelte';
 	import {collection} from '$stores/collection.svelte';
 	import { page } from '$app/state';
-	import type {FullCard, Pokemon, PriceData, Set} from '$lib/types';
-	import { cardPrice, formatCardNumber } from '$lib/helpers/card-utils';
+	import type {FullCard, GridPokemon, Set} from '$lib/types';
+	import { formatCardNumber } from '$lib/helpers/card-utils';
 	import CardImage from '@components/card/CardImage.svelte';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
@@ -24,8 +24,7 @@
 		eager?: boolean;
 		lowRes?: boolean;
 		/** Prebuilt by the grid: a linear `find` over ~1000 Pokémon per card was showing up on every scroll frame. */
-		pokemonMap: Map<number, Pokemon>;
-		prices: PriceData | undefined;
+		pokemonMap: Map<number, GridPokemon>;
 		sets: Set[];
 	}
 
@@ -36,7 +35,6 @@
 		eager = false,
 		lowRes = false,
 		pokemonMap,
-		prices,
 		sets
 	}: Props = $props();
 
@@ -55,7 +53,7 @@
 	const controlInset = $derived(Math.round(Math.max(10, width * 0.045)));
 
 	const cardNumber = $derived(card.localId);
-	const price = $derived(cardPrice(prices));
+	const price = $derived(card.price);
 	const pokemon = $derived(card.pokemonNumber ? pokemonMap.get(card.pokemonNumber) : null);
 	const set = $derived(getCardSet(card, sets));
 

@@ -8,7 +8,7 @@
 	import ScrollProgress from "@components/list/ScrollProgress.svelte";
 	import TextInput from "$lib/components/filters/TextInput.svelte";
 	import { onMount } from "svelte";
-	import type { FullCard, Set, Pokemon, PriceData } from "$lib/types";
+	import type { FullCard, Set, GridPokemon } from "$lib/types";
 	import { fade, fly } from "svelte/transition";
 	import XIcon from "@lucide/svelte/icons/x";
 	import SlidersHorizontalIcon from "@lucide/svelte/icons/sliders-horizontal";
@@ -23,8 +23,7 @@
 	interface Props {
 		cards: FullCard[];
 		sets: Set[];
-		pokemons: Pokemon[];
-		prices: Record<string, PriceData>;
+		pokemons: GridPokemon[];
 		rarities: string[];
 		types: string[];
 		artists?: string[];
@@ -38,7 +37,6 @@
 		cards,
 		sets,
 		pokemons,
-		prices,
 		rarities,
 		types,
 		artists = [],
@@ -117,8 +115,8 @@
 	// across the whole catalogue before the set filter ran, so Base Set showed the 4 Pokémon whose best card happens to
 	// live there instead of its 69. Sorting last also means a picked set sorts ~100 cards rather than all 23546.
 	const matchingCards = $derived(filters.hasActive ? filterCards(cards, filters.active) : cards);
-	const narrowedCards = $derived(filters.mostExpensiveOnly ? keepMostExpensivePerGroup(matchingCards, prices) : matchingCards);
-	const sortedCards = $derived(sortCards(narrowedCards, filters.sortBy, filters.sortOrder, prices, pokemons, sets));
+	const narrowedCards = $derived(filters.mostExpensiveOnly ? keepMostExpensivePerGroup(matchingCards) : matchingCards);
+	const sortedCards = $derived(sortCards(narrowedCards, filters.sortBy, filters.sortOrder, pokemons, sets));
 	// Pokémon before Trainer before Energy, unless the user is already looking at a single supertype.
 	const filteredCards = $derived(filters.supertype === "all" ? sortBySupertype(sortedCards) : sortedCards);
 
@@ -264,7 +262,6 @@
 					eager={index < eagerCards}
 					{lowRes}
 					{pokemonMap}
-					prices={prices[item.cardCode]}
 					{sets}
 				/>
 			{/snippet}

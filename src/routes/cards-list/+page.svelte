@@ -38,7 +38,6 @@
 				types={grid.types}
 				artists={grid.artists}
 				pokemons={grid.pokemons}
-				prices={grid.prices}
 				pageTitle={null}
 				selectedSetName={selectedSetName}
 				selectedArtistName={filters.artist !== 'all' ? (grid.artists.find(artist => artist.toLowerCase() === filters.artist) ?? null) : null}

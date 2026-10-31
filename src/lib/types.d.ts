@@ -11,7 +11,8 @@ export interface CardVariants {
 export interface Card {
 	artist: string;
 	cardCode: string;
-	cardMarketUpdatedAt: string;
+	/** Only on a card read with `getCardDetails`: the list reads leave it out. */
+	cardMarketUpdatedAt?: string;
 	cardMarketUrl: string;
 	hp?: number;
 	image: string;
@@ -21,6 +22,8 @@ export interface Card {
 	localId: string;
 	name: string;
 	pokemonNumber?: number;
+	/** Set only on the cards a grid payload carries: `cardPrice()` of the card, so the grid needs no price record. */
+	price?: number | null;
 	ptcgoCode?: string;
 	rarity: string;
 	regulationMark?: string;
@@ -42,6 +45,9 @@ export interface Pokemon {
 	evolves_from?: number;
 	evolves_to?: number[];
 }
+
+/** What the card grid reads of a Pokémon: the Pokédex entry text stays out of its payloads. */
+export type GridPokemon = Pick<Pokemon, 'id' | 'name'>;
 
 export interface PriceData {
 	simple?: number;
