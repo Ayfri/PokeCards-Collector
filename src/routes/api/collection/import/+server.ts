@@ -1,5 +1,6 @@
 import { error, json } from '@sveltejs/kit';
-import { buildCardIndex, buildSetKeys, CATALOGUE_LANGUAGES, MAX_IMPORT_ROWS, resolveRows, type Catalogue, type CatalogueLanguage, type ImportRow } from '$helpers/collection-import';
+import { LANGUAGES, type Language } from '$helpers/catalogues';
+import { buildCardIndex, buildSetKeys, MAX_IMPORT_ROWS, resolveRows, type Catalogue, type ImportRow } from '$helpers/collection-import';
 import { getCards, getSets } from '$helpers/supabase-data';
 import type { Card, Set } from '$lib/types';
 import type { RequestHandler } from './$types';
@@ -22,12 +23,10 @@ interface CatalogueSource {
 	sets: () => Promise<Set[]>;
 }
 
-const ENGLISH: CatalogueSource = { cards: getCards, sets: getSets };
-
-const SOURCES: Record<CatalogueLanguage, CatalogueSource> = {
-	en: ENGLISH,
-	/** Temporary: French lines resolve against the English print until `fr_cards` exists, then this reads it. */
-	fr: ENGLISH,
+const SOURCES: Record<Language, CatalogueSource> = {
+	en: { cards: () => getCards('en'), sets: () => getSets('en') },
+	/** The English sets are added so a French line naming its set in English still finds the French card. */
+	fr: { cards: () => getCards('fr'), sets: async () => (await Promise.all([getSets('fr'), getSets('en')])).flat() },
 	ja: { cards: () => getCards('ja'), sets: () => getSets('ja') },
 };
 
@@ -50,7 +49,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
 	const body = await request.json() as ImportRequest;
 	const kind = body.kind === 'wishlist' ? 'wishlist' : 'collection';
-	const rows = (body.rows ?? []).map(row => ({ ...row, language: CATALOGUE_LANGUAGES.includes(row.language) ? row.language : 'en' }));
+	const rows = (body.rows ?? []).map(row => ({ ...row, language: LANGUAGES.includes(row.language) ? row.language : 'en' }));
 	if (rows.length === 0) error(400, 'The file holds no importable row.');
 	if (rows.length > MAX_IMPORT_ROWS) error(413, `The file holds ${rows.length} rows, over the ${MAX_IMPORT_ROWS} limit.`);
 
@@ -83,7 +82,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	const bySet = new Map<string, number>();
 	for (const row of unmatched) bySet.set(row.set || row.number, (bySet.get(row.set || row.number) ?? 0) + 1);
 
-	const matchedByLanguage: Record<CatalogueLanguage, number> = { en: 0, fr: 0, ja: 0 };
+	const matchedByLanguage: Record<Language, number> = { en: 0, fr: 0, ja: 0 };
 	for (const { language } of matched) matchedByLanguage[language]++;
 
 	const summary = {

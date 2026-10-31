@@ -1,15 +1,11 @@
 import setNames from '$scrapers/tcgdex/set-names.json' with { type: 'json' };
+import type { Language } from '$helpers/catalogues';
 import type { Card, Set } from '$lib/types';
-
-/** The catalogues a line can resolve against: each prints its own cards and its own card codes. */
-export type CatalogueLanguage = 'en' | 'fr' | 'ja';
-
-export const CATALOGUE_LANGUAGES: readonly CatalogueLanguage[] = ['en', 'fr', 'ja'];
 
 /** One line of an imported file, already reduced to the things a card can be found by. */
 export interface ImportRow {
-	/** The catalogue the print belongs to. */
-	language: CatalogueLanguage;
+	/** The catalogue the print belongs to: each prints its own cards and its own card codes. */
+	language: Language;
 	/** Only used to report an unmatched line back to the user, never to match on: card names are localised. */
 	name: string;
 	/** The printed number, numerator only: `004/165` and `TG12/TG30` arrive here as `004` and `TG12`. */
@@ -93,7 +89,7 @@ const FRENCH_SET_NAMES = new Set(Object.keys(setNames.fr).map(normalize));
  * The catalogue a line belongs to. German, Italian, Spanish and every other print are read as the English one, the
  * same international cards. A file with no language column is read from the language its set is named in.
  */
-function languageOf(value: string, set: string): CatalogueLanguage {
+function languageOf(value: string, set: string): Language {
 	const language = normalize(value);
 	if (!language) return setNameForms(set).some(form => FRENCH_SET_NAMES.has(normalize(form))) ? 'fr' : 'en';
 	if (FRENCH_LANGUAGES.has(language)) return 'fr';
@@ -146,8 +142,11 @@ export function buildSetKeys(sets: Set[], cards: Card[]): Map<string, string> {
 
 	// Sets carrying no card still resolve, so an unmatched line blames the missing card rather than the set.
 	for (const set of sets) {
-		if (set.setId) add(set.setId, normalize(set.setId));
-		if (set.name && set.setId) add(set.name, normalize(set.setId));
+		if (!set.setId) continue;
+		// Another catalogue's sets name this one's cards too: the English set name of a French card lands on its `fr` code.
+		const key = byTcgdexId.get(normalize(set.setId)) ?? normalize(set.setId);
+		add(set.setId, key);
+		if (set.name) add(set.name, key);
 	}
 
 	// A French, German, Spanish, Italian or Portuguese export names its sets in that language: a Pokecardex CSV
@@ -223,7 +222,7 @@ function setNameForms(value: string): string[] {
 export interface ImportMatch {
 	cardCode: string;
 	/** The catalogue of the first line that matched this card. */
-	language: CatalogueLanguage;
+	language: Language;
 	quantity: number;
 }
 
@@ -241,25 +240,35 @@ export interface Catalogue {
 /**
  * Resolves each row against the catalogue of its own language. `setOverride` is the set the dialog pins when the
  * file names none, which is the normal case for a Pokécardex export: it exports one series at a time and only
- * writes the number and the name.
+ * writes the number and the name. A French line the French catalogue cannot place falls back to the English print:
+ * TCGdex France lacks a few sets and cards, and the line matched on the English catalogue before it existed.
  */
-export function resolveRows(rows: ImportRow[], catalogues: Record<CatalogueLanguage, Catalogue>, setOverride?: string): ImportResolution {
+export function resolveRows(rows: ImportRow[], catalogues: Record<Language, Catalogue>, setOverride?: string): ImportResolution {
 	const matched = new Map<string, ImportMatch>();
 	const unmatched: ImportRow[] = [];
 
-	for (const row of rows) {
-		const { index, setKeys } = catalogues[row.language];
+	const find = (language: Language, row: ImportRow) => {
+		const { index, setKeys } = catalogues[language];
 		// A full card code needs no set at all, which is what makes this site's own export round-trip.
 		const direct = row.number.includes('_') ? index.get(`|${row.number.toLowerCase()}`) : undefined;
 		const setKey = row.set ? setNameForms(row.set).flatMap(form => [setKeys.get(normalize(form)), setKeys.get(tokenKey(form))]).find(Boolean) : setOverride && setKeys.get(normalize(setOverride));
-		const cardCode = direct ?? (setKey ? numberForms(normalizeNumber(row.number)).map(number => index.get(`${setKey}|${number}`)).find(Boolean) : undefined);
+		return direct ?? (setKey ? numberForms(normalizeNumber(row.number)).map(number => index.get(`${setKey}|${number}`)).find(Boolean) : undefined);
+	};
+
+	for (const row of rows) {
+		let language = row.language;
+		let cardCode = find(language, row);
+		if (!cardCode && language === 'fr') {
+			language = 'en';
+			cardCode = find(language, row);
+		}
 
 		if (!cardCode) {
 			unmatched.push(row);
 			continue;
 		}
 		const previous = matched.get(cardCode);
-		matched.set(cardCode, { cardCode, language: previous?.language ?? row.language, quantity: (previous?.quantity ?? 0) + row.quantity });
+		matched.set(cardCode, { cardCode, language: previous?.language ?? language, quantity: (previous?.quantity ?? 0) + row.quantity });
 	}
 
 	return { matched: [...matched.values()], unmatched };

@@ -4,7 +4,8 @@
 	import Modal from '@components/ui/Modal.svelte';
 	import SearchXIcon from '@lucide/svelte/icons/search-x';
 	import UploadIcon from '@lucide/svelte/icons/upload';
-	import { detectColumns, MAX_IMPORT_ROWS, toImportRows, type CatalogueLanguage } from '$helpers/collection-import';
+	import { CATALOGUES, type Language } from '$helpers/catalogues';
+	import { detectColumns, MAX_IMPORT_ROWS, toImportRows } from '$helpers/collection-import';
 	import { invalidateAll } from '$app/navigation';
 	import { parseDelimited } from '$helpers/csv';
 	import type { Set as CardSet } from '$lib/types';
@@ -13,7 +14,7 @@
 	interface Summary {
 		added: number;
 		failure?: string;
-		matchedByLanguage: Record<CatalogueLanguage, number>;
+		matchedByLanguage: Record<Language, number>;
 		matchedCards: number;
 		skipped: number;
 		unmatchedBySet: { count: number; set: string }[];
@@ -40,12 +41,10 @@
 
 	const sortedSets = $derived([...sets].sort((a, b) => a.name.localeCompare(b.name)));
 
-	const LANGUAGE_NAMES: Record<CatalogueLanguage, string> = { en: 'English', fr: 'French', ja: 'Japanese' };
-
 	/** Only shown when the file mixes prints, since a single language is already the whole count. */
 	const languageBreakdown = $derived.by(() => {
 		const matched = Object.entries(summary?.matchedByLanguage ?? {}).filter(([, count]) => count > 0);
-		return matched.length > 1 ? matched.map(([language, count]) => `${count} ${LANGUAGE_NAMES[language as CatalogueLanguage]}`).join(', ') : '';
+		return matched.length > 1 ? matched.map(([language, count]) => `${count} ${CATALOGUES[language as Language].adjective}`).join(', ') : '';
 	});
 
 	function reset() {
