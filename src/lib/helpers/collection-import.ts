@@ -1,5 +1,5 @@
 import setNames from '$scrapers/tcgdex/set-names.json' with { type: 'json' };
-import type { Language } from '$helpers/catalogues';
+import { LANGUAGES, type Language } from '$helpers/catalogues';
 import type { Card, Set } from '$lib/types';
 
 /** One line of an imported file, already reduced to the things a card can be found by. */
@@ -256,7 +256,8 @@ export function resolveRows(rows: ImportRow[], catalogues: Record<Language, Cata
 	};
 
 	for (const row of rows) {
-		let language = row.language;
+		/** A card code names its own catalogue, whatever language column the file has or lacks. */
+		let language = row.number.includes('_') ? [row.language, ...LANGUAGES].find(lang => catalogues[lang].index.has(`|${row.number.toLowerCase()}`)) ?? row.language : row.language;
 		let cardCode = find(language, row);
 		if (!cardCode && language === 'fr') {
 			language = 'en';
