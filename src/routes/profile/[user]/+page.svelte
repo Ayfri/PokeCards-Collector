@@ -263,7 +263,16 @@
 			<div class="grid grid-cols-1 items-start gap-8 lg:grid-cols-3 motion-safe:animate-reveal motion-safe:[animation-delay:400ms]">
 				{#if collectionStats.top_cards.length}
 					<section class="rounded-2xl border border-white/10 bg-gray-900/60 p-6 lg:col-span-2">
-						<h2 class="mb-5 flex items-center gap-2 text-xl font-semibold"><Gem class="text-gold-400" size={20} /> Most valuable cards</h2>
+						<div class="mb-5 flex items-center justify-between gap-4">
+							<h2 class="flex items-center gap-2 text-xl font-semibold"><Gem class="text-gold-400" size={20} /> Most valuable cards</h2>
+							<a
+								class="group flex items-center gap-1 text-sm text-gold-400 hover:underline focus-ring"
+								href={`/collection/${encodeURIComponent(username)}?sortby=sort-price&sortorder=desc`}
+								title="The whole collection, priciest cards first"
+							>
+								See all <ChevronRight class="transition-transform duration-300 group-hover:translate-x-0.5" size={16} />
+							</a>
+						</div>
 						<div class="grid grid-cols-3 gap-4 sm:grid-cols-6 lg:grid-cols-3 xl:grid-cols-6">
 							{#each collectionStats.top_cards as { card, copies, price }, i (card.cardCode)}
 								<a class="group flex flex-col gap-2" href={`${CATALOGUES[card.language ?? 'en'].cardRoute}/${card.cardCode}`} title={`${card.name}, ${card.setName} ${card.localId}`}>
