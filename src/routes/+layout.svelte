@@ -121,10 +121,6 @@
 	<main class="flex min-h-0 grow flex-col pt-24 lg:pt-32">
 		{@render children?.()}
 	</main>
-	<!-- The EssentiarumTCG font is CC BY-NC: its credit has to stay visible on the site. -->
-	<footer class="px-4 py-3 text-center text-xs text-gray-500">
-		TCG symbols from the <a class="underline hover:text-gold-400" href="https://pokemonaaah.net/art/fonts/" rel="noopener noreferrer" target="_blank">EssentiarumTCG font by Pokémon Aaah!</a> (non-commercial Creative Commons)
-	</footer>
 	<div class="fixed top-[15%] [filter:grayscale(100%)_opacity(0.05)_contrast(3)_brightness(0.5)] -z-50 flex place-content-center h-lvh w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
 		<img src={pokestore} alt="Background" class="absolute w-1/2" />
 	</div>

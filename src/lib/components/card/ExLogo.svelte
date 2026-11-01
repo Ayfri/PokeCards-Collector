@@ -9,7 +9,7 @@
 	let { class: classNames = '' }: Props = $props();
 
 	const id = $props.id();
-	/** Room for the outline, which `paint-order` draws behind the fill and half outside the glyph. */
+	/** Room for the half of the outline that falls outside the glyph. */
 	const PAD = 4;
 </script>
 
@@ -26,5 +26,6 @@
 			<stop offset="1" stop-color="#8d939c" />
 		</linearGradient>
 	</defs>
-	<path d={EX_LOGO.d} fill="url(#{id}-silver)" paint-order="stroke" stroke="#111" stroke-linejoin="round" stroke-width="4.5" />
+	<!-- The outline is drawn over the fill: half of it eats into the letters, which thins the font's heavy glyph while the border thickens. -->
+	<path d={EX_LOGO.d} fill="url(#{id}-silver)" stroke="#111" stroke-linejoin="round" stroke-width="6" />
 </svg>
