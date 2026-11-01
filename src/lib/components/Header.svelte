@@ -16,7 +16,8 @@
 	import SearchUsersIcon from '@lucide/svelte/icons/users';
 	import MenuIcon from '@lucide/svelte/icons/menu';
 	import XIcon from '@lucide/svelte/icons/x';
-	import GlobeIcon from '@lucide/svelte/icons/globe';
+	import Flag from '#components/Flag.svelte';
+	import type { Language } from '#helpers/catalogues.ts';
 	import PokedexIcon from '@lucide/svelte/icons/paw-print';
 	import TrainersIcon from '@lucide/svelte/icons/backpack';
 	import PuzzleIcon from '@lucide/svelte/icons/puzzle';
@@ -30,6 +31,8 @@
 		href?: string;
 		name: string;
 		icon: LucideIcon | null;
+		/** Drawn in place of `icon` for the catalogue entries. */
+		flag?: Language;
 		description?: string;
 		isDropdown?: boolean;
 		children?: NavLink[];
@@ -48,8 +51,8 @@
 				{ href: '/cards-list', name: 'Cards', icon: CardStackIcon, description: 'Browse and filter every card' },
 				{ href: '/sets', name: 'Sets', icon: LibraryIcon, description: 'Every set, grouped by series' },
 				{ href: '/artists', name: 'Artists', icon: ArtistIcon, description: 'Every card illustrator' },
-				{ href: '/japan', name: 'Japan', icon: GlobeIcon, description: 'The Japanese catalogue' },
-				{ href: '/france', name: 'France', icon: GlobeIcon, description: 'The French catalogue' },
+				{ href: '/japan', name: 'Japan', icon: null, flag: 'ja', description: 'The Japanese catalogue' },
+				{ href: '/france', name: 'France', icon: null, flag: 'fr', description: 'The French catalogue' },
 				{ href: '/random', name: 'Random Card', icon: ShuffleIcon, description: 'Jump to a random card' },
 			]
 		},
@@ -124,7 +127,7 @@
 		</div>
 
 		<nav class="hidden lg:flex items-center gap-4">
-			{#each navLinks as link}
+			{#each navLinks as link (link.name)}
 				{#if link.href === '/'}
 					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2" href={link.href} title={link.description}>
 						{#if !NO_IMAGES}
@@ -157,13 +160,15 @@
 								class="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-2 min-w-48 z-10"
 								transition:slide={{ duration: 200, axis: 'y' }}
 							>
-								{#each link.children as child}
+								{#each link.children as child (child.name)}
 									<a
 										href={child.href}
 										class="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-gold-400 hover:bg-gray-700 transition-colors duration-200"
 										title={child.description}
 									>
-										{#if !NO_IMAGES && child.icon}
+										{#if child.flag}
+											<Flag class="h-[11px] w-4 shrink-0 rounded-[2px]" language={child.flag} />
+										{:else if !NO_IMAGES && child.icon}
 											<child.icon size={16} />
 										{/if}
 										{child.name}
@@ -229,7 +234,7 @@
 			tabindex="-1"
 		>
 			<nav class="flex flex-col gap-3">
-				{#each navLinks as link}
+				{#each navLinks as link (link.name)}
 					{#if link.href === '/'}
 						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href} title={link.description}>
 							{#if !NO_IMAGES}
@@ -250,9 +255,11 @@
 								{/if}
 								{link.name}
 							</div>
-							{#each link.children as child}
+							{#each link.children as child (child.name)}
 								<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 pl-6 rounded-sm hover:bg-gray-600" href={child.href} title={child.description}>
-									{#if !NO_IMAGES && child.icon}
+									{#if child.flag}
+										<Flag class="h-3 w-[18px] shrink-0 rounded-[2px]" language={child.flag} />
+									{:else if !NO_IMAGES && child.icon}
 										<child.icon size={18} />
 									{/if}
 									{child.name}
