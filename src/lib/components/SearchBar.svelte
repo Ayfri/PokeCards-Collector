@@ -15,7 +15,7 @@
 	import type { CardSearchResult, PokemonSearchResult } from '#helpers/card-search.ts';
 	import { page } from '$app/state';
 	import { binderStorage } from '#stores/binder.svelte.ts';
-	import { debounce } from '#helpers/utils.ts';
+	import { cardPath, debounce } from '#helpers/utils.ts';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {
@@ -233,7 +233,7 @@
 			{/each}
 			{#each searchResults as result (result.card.cardCode)}
 				{@const card = result.card}
-				{@const cardLink = `/card/${card.cardCode}/`}
+				{@const cardLink = cardPath('en', card.cardCode)}
 				{@const isAdded = addedCards.has(card.cardCode)}
 
 				<a 

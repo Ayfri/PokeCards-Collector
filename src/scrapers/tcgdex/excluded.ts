@@ -29,9 +29,14 @@ function catalogueSets<T extends {id: string}>(sets: readonly T[], excluded: Rea
 	return sets.filter(set => !seen.has(set.id) && !!seen.add(set.id));
 }
 
-/** The sets of a language the catalogue carries, and how many of the listed ones were left out (excluded series, repeated ids). */
+/**
+ * The sets of a language the catalogue carries, and how many of the listed ones were left out (excluded series, repeated ids).
+ * A missing list (404) throws instead of reading as zero sets: `audit` would regenerate its mapping files empty and the
+ * scheduled Workflow would silently skip the language, while a throw makes the Workflow step retry.
+ */
 export async function listCatalogueSets(client: TcgdexClient, lang: string): Promise<{sets: TcgdexSetBrief[]; skipped: number}> {
 	const [listed, excluded] = await Promise.all([client.json<TcgdexSetBrief[]>(`/v2/${lang}/sets`), excludedSetIds(client, lang)]);
-	const sets = catalogueSets(listed ?? [], excluded);
-	return {sets, skipped: (listed?.length ?? 0) - sets.length};
+	if (!listed) throw new Error(`TCGdex has no set list for "${lang}" (/v2/${lang}/sets answered 404)`);
+	const sets = catalogueSets(listed, excluded);
+	return {sets, skipped: listed.length - sets.length};
 }

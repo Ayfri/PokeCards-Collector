@@ -17,7 +17,7 @@ export async function GET() {
 
 	return sitemapResponse(sitemapIndex([
 		{ loc: '/sitemap-pages.xml' },
-		...chunks(englishCount,'/sitemap-cards'),
+		...chunks(englishCount, '/sitemap-cards'),
 		...foreign.flatMap(([routeCode], index) => chunks(foreignCounts[index], `/sitemap-${routeCode}-cards`)),
 	]));
 }

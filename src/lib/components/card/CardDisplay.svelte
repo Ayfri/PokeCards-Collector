@@ -10,12 +10,12 @@
 	import InteractiveCard from '#components/card/InteractiveCard.svelte';
 	import { flushSync, onMount } from 'svelte';
 	import { afterNavigate, goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { catalogueOfPath, type CardVersions } from '#helpers/catalogues.ts';
 	import { getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc, getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
 	import { loading } from '#stores/loading.svelte.ts';
+	import { cardPath } from '#helpers/utils.ts';
 	import { morphCards } from '#helpers/view-transitions.ts';
 
 	
@@ -40,10 +40,6 @@
 	}: Props = $props();
 
 	const catalogue = $derived(catalogueOfPath(page.url.pathname));
-
-	const cardUrl = (cardCode: string) => catalogue.routeCode
-		? resolve('/[catalogue=catalogue]-card/[cardCode]', { catalogue: catalogue.routeCode, cardCode })
-		: resolve('/card/[cardCode]', { cardCode });
 
 	let currentCard = $state<FullCard | undefined>(undefined);
 	let isInitialRenderComplete = $state(false);
@@ -86,7 +82,7 @@
 	/** Swaps the displayed card without a navigation: the picked tile flies up into the big card while the page jumps back to the top. */
 	function handleCardSelect(selectedCard: FullCard) {
 		const { cardCode } = selectedCard;
-		goto(cardUrl(cardCode), { replace: true, shallow: true });
+		goto(cardPath(catalogue.language, cardCode), { replace: true, shallow: true });
 		morphCards([selectedCard.cardCode], () => {
 			currentCard = selectedCard;
 			flushSync();
@@ -97,7 +93,7 @@
 	function handlePokemonNavigation(cardCode: string | undefined) {
 		if (cardCode) {
 			loading.navigation = true;
-			goto(cardUrl(cardCode));
+			goto(cardPath(catalogue.language, cardCode));
 		}
 	}
 
@@ -112,7 +108,7 @@
 
 		/**
 		 * Read from the address bar, not `page.url`: a Back into a shallow entry loads the page of the card it replaced, so `page.url`
-		 * names that card. Tile links end in a slash (`/card/<code>/`) and `resolve()` URLs do not, hence the last non-empty segment.
+		 * names that card. Card links have no trailing slash (`trailingSlash` is `never`), and the last non-empty segment also reads one that has.
 		 */
 		const cardCodeFromUrl = window.location.pathname.split('/').filter(Boolean).at(-1);
 		/** `pokemonCards` holds the viewed card with every column, `allCards` only its list fields, so it is searched first. */

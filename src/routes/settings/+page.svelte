@@ -6,6 +6,7 @@
 	import PageTitle from '#lib/components/PageTitle.svelte';
 	import {enhance} from '$app/forms';
 	import {supabase} from '#lib/supabase.ts';
+	import {flushSync} from 'svelte';
 	import {fade, fly} from 'svelte/transition';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import EyeIcon from '@lucide/svelte/icons/eye';
@@ -211,16 +212,23 @@
 					<div in:fade={{duration: 200}}>
 						<h2 class="mb-1 text-xl font-bold text-gold-400 md:text-2xl">Privacy</h2>
 						<p class="mb-5 text-sm text-gray-400">Who can see your collection and wishlist.</p>
-						<!-- Saved as soon as the box changes: the checkbox's `change` event bubbles to the form, which submits itself. -->
+						<!--
+							Saved as soon as the box changes: the checkbox's `change` event bubbles to the form, which submits itself.
+							`flushSync` first, because Svelte writes the hidden input's value in a later microtask and the submit would read the stale one.
+						-->
 						<form
 							action="?/updateVisibility"
 							class="flex flex-col gap-3 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4"
 							method="POST"
-							onchange={event => event.currentTarget.requestSubmit()}
+							onchange={event => {
+								flushSync();
+								event.currentTarget.requestSubmit();
+							}}
 							use:enhance={() => {
 								savingVisibility = true;
-								return async ({update}) => {
+								return async ({result, update}) => {
 									await update({reset: false});
+									if (result.type !== 'success') isPublic = profile?.is_public ?? false;
 									savingVisibility = false;
 								};
 							}}

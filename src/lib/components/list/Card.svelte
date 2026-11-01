@@ -13,6 +13,7 @@
 	import Heart from '@lucide/svelte/icons/heart';
 	import { getCardSet } from '#helpers/card-grid.ts';
 	import { CATALOGUES, catalogueOfPath } from '#helpers/catalogues.ts';
+	import { cardPath } from '#helpers/utils.ts';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Minus from '@lucide/svelte/icons/minus';
 	import SetBadge from '#components/SetBadge.svelte';
@@ -70,7 +71,7 @@
 	const isCollectionLimitReached = $derived(collectionCount >= MAX_CARD_QUANTITY);
 
 	const catalogue = $derived(card.language ? CATALOGUES[card.language] : catalogueOfPath(page.url.pathname));
-	const cardLink = $derived(`${catalogue.cardRoute}/${cardCode}/`);
+	const cardLink = $derived(cardPath(catalogue.language, cardCode));
 
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();

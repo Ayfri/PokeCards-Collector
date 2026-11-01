@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import { resolve } from '$app/paths';
 	import Flag from '#components/Flag.svelte';
-	import { cachedJson } from '#helpers/utils.ts';
+	import { cachedJson, cardPath } from '#helpers/utils.ts';
 	import { CATALOGUES, LANGUAGES, type CardVersions, type Language } from '#helpers/catalogues.ts';
 
 	interface Props {
@@ -17,13 +16,6 @@
 	const versions = $derived(cardCode === known.cardCode
 		? known.versions
 		: cachedJson<CardVersions>(fetch, `/api/card-versions?language=${language}&code=${encodeURIComponent(cardCode)}`).catch((): CardVersions => ({})));
-
-	const hrefOf = (target: Language, code: string) => {
-		const { routeCode } = CATALOGUES[target];
-		return routeCode
-			? resolve('/[catalogue=catalogue]-card/[cardCode]', { catalogue: routeCode, cardCode: code })
-			: resolve('/card/[cardCode]', { cardCode: code });
-	};
 
 	const pill = 'flex items-center gap-2 rounded-md bg-black/60 px-3 py-1 text-sm';
 </script>
@@ -43,7 +35,7 @@
 							{CATALOGUES[target].adjective}
 						</span>
 					{:else}
-						<a class={[pill, 'text-white transition-colors hover:bg-black/80 hover:text-gold-400']} href={hrefOf(target, code)}>
+						<a class={[pill, 'text-white transition-colors hover:bg-black/80 hover:text-gold-400']} href={cardPath(target, code)}>
 							<Flag language={target} class="h-4 w-6 rounded-sm" />
 							{CATALOGUES[target].adjective}
 						</a>

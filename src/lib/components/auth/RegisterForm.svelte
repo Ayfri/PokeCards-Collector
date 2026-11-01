@@ -64,12 +64,13 @@
 			return;
 		}
 
-		if (!(await validateUsername())) return;
-
+		/** Loading starts before the username check, so the button is disabled for the whole submit and cannot fire it twice. */
 		loading = true;
 		errorMessage = '';
 
 		try {
+			if (!(await validateUsername())) return;
+
 			/** One 15 s budget for the signup and the automatic login that follows it. */
 			const signal = AbortSignal.timeout(15_000);
 			const headers = { 'Content-Type': 'application/json' };
@@ -117,12 +118,12 @@
 
 	<div>
 		<label for="email" class="form-label">Email</label>
-		<input type="email" id="email" bind:value={email} class="form-input"placeholder="your@email.com" required />
+		<input type="email" id="email" bind:value={email} class="form-input" placeholder="your@email.com" required />
 	</div>
 
 	<div>
 		<label for="username" class="form-label">Username</label>
-		<input type="text" id="username" bind:value={username} class="form-input"placeholder="username" required maxlength="20" />
+		<input type="text" id="username" bind:value={username} class="form-input" placeholder="username" required maxlength="20" />
 	</div>
 
 	<PasswordField autocomplete="new-password" id="password" label="Password" name="password" placeholder="Choose a strong password" strength bind:value={password} />

@@ -13,7 +13,6 @@
 	let { data, form }: Props = $props();
 
 	let password = $state('');
-	let confirmation = $state('');
 	let submitting = $state(false);
 </script>
 
@@ -51,7 +50,7 @@
 			}}
 		>
 			<PasswordField autocomplete="new-password" id="password" label="New password" name="password" placeholder="••••••••" strength bind:value={password} />
-			<PasswordField autocomplete="new-password" id="confirm-password" label="Confirm new password" name="confirmPassword" placeholder="••••••••" bind:value={confirmation} />
+			<PasswordField autocomplete="new-password" id="confirm-password" label="Confirm new password" name="confirmPassword" placeholder="••••••••" />
 
 			<button
 				class="btn-outline-gold w-full disabled:cursor-not-allowed disabled:opacity-50"

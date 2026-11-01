@@ -87,7 +87,7 @@
 
 	<div>
 		<label for="email" class="form-label">Email</label>
-		<input type="email" id="email" bind:value={email} class="form-input"placeholder="your@email.com" required />
+		<input type="email" id="email" bind:value={email} class="form-input" placeholder="your@email.com" required />
 	</div>
 
 	<div>
@@ -114,7 +114,7 @@
 				placeholder="your@email.com"
 				disabled={resetLoading}
 			/>
-			<button type="button" class="btn-gold w-full"onclick={handlePasswordReset} disabled={resetLoading}>
+			<button type="button" class="btn-gold w-full" onclick={handlePasswordReset} disabled={resetLoading}>
 				{resetLoading ? 'Sending...' : 'Send reset email'}
 			</button>
 			{#if resetMessage}

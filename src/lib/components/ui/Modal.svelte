@@ -33,7 +33,7 @@
 		role="presentation"
 	>
 		<div
-			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto modal-content {containerClass}"
+			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto {containerClass}"
 			transition:fly={{ y: 20, duration: 200 }}
 			role="dialog"
 			aria-modal="true"
@@ -58,7 +58,7 @@
 				</div>
 			{/if}
 
-			<div class="modal-body">
+			<div>
 				{@render children?.()}
 			</div>
 

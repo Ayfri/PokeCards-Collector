@@ -10,10 +10,10 @@
 		name?: string;
 		placeholder: string;
 		strength?: boolean;
-		value: string;
+		value?: string;
 	}
 
-	let { autocomplete, id, label, name, placeholder, strength = false, value = $bindable() }: Props = $props();
+	let { autocomplete, id, label, name, placeholder, strength = false, value = $bindable('') }: Props = $props();
 
 	let visible = $state(false);
 

@@ -1,18 +1,38 @@
 import { countCards, getCards, getPokemons, getPrices } from '#helpers/supabase-data.ts';
 import { cardListSchema, faqSchema } from '#helpers/seo.ts';
-import type { FullCard } from '#lib/types.js';
+import type { FullCard, PriceData, Set as CardSet } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 import { cardPrice } from '#helpers/card-utils.ts';
 import { getRarityLevel, RARITY_MAPPING } from '#helpers/rarity.ts';
 
-export const load: PageServerLoad = async ({ parent }) => {
-	/** Started before `parent()` so the catalogue reads run in parallel with the layout's auth and collection queries. */
-	const catalogue = Promise.all([getCards(), getPrices(), getPokemons(), countCards('ja'), countCards('fr')]);
-	const { sets = [] } = await parent();
-	const [allCardsResolved, pricesResolved, pokemons, japaneseCardCount, frenchCardCount] = await catalogue;
+/** Page 2 holds 5 cards, so the preview reads as a binder in progress. */
+const BINDER_PAGE_SLOTS = 9;
+const BINDER_PREVIEW_SIZE = BINDER_PAGE_SLOTS + 5;
+
+interface CatalogueHome {
+	artists: number;
+	binderPreview: { cardCode: string; id: string; position: number; url: string }[];
+	latestSet: CardSet;
+	latestSetStats: { energyCards: number; pokemonCards: number; totalValue: number; trainerCards: number };
+	mostExpensiveCards: FullCard[];
+	mostExpensiveLatestSetCards: FullCard[];
+}
+
+interface HomeEntry {
+	home: CatalogueHome;
+	prices: Record<string, PriceData>;
+	sets: CardSet[];
+}
+
+/** Keyed on the memoized card list like `grid-payload.ts`, so a pass over the ~23.5k cards runs once per refreshed table and not once per request. */
+const homes = new WeakMap<FullCard[], HomeEntry>();
+
+function catalogueHome(cards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]): CatalogueHome {
+	const cached = homes.get(cards);
+	if (cached && cached.prices === prices && cached.sets === sets) return cached.home;
 
 	/** Cards are not deduplicated on `image`: TCGdex gives each card its own art URL, so that would only drop the real cards it has no art for. */
-	const processedAllCards = allCardsResolved.filter(card => Boolean(card.setName));
+	const processedAllCards = cards.filter(card => Boolean(card.setName));
 
 	/** `sets[0]` seeds the reduce and is `undefined` only when there are no sets, where the callback never runs. */
 	const latestSet = sets.reduce((latest, set) => new Date(set.releaseDate) > new Date(latest.releaseDate) ? set : latest, sets[0]);
@@ -22,11 +42,11 @@ export const load: PageServerLoad = async ({ parent }) => {
 		return cardSetName === latestSet.name.toLowerCase();
 	}) : [];
 
-	const priceOf = (card: FullCard) => cardPrice(pricesResolved[card.cardCode]) ?? 0;
+	const priceOf = (card: FullCard) => cardPrice(prices[card.cardCode]) ?? 0;
 	/** One pass that keeps the five priciest in order: sorting the whole catalogue for them cost ~26 ms per render. */
-	const topFive = (cards: FullCard[]) => {
+	const topFive = (list: FullCard[]) => {
 		const top: { card: FullCard; price: number }[] = [];
-		for (const card of cards) {
+		for (const card of list) {
 			const price = priceOf(card);
 			const slot = top.findIndex(entry => price > entry.price);
 			if (slot !== -1) top.splice(slot, 0, { card, price });
@@ -37,30 +57,46 @@ export const load: PageServerLoad = async ({ parent }) => {
 		return top.map(({ card, price }) => ({ ...card, price }));
 	};
 
-	const mostExpensiveLatestSetCards = topFive(latestSetCards);
-	const mostExpensiveCards = topFive(processedAllCards);
-
-	/** Page 2 holds 5 cards, so the preview reads as a binder in progress. */
-	const BINDER_PAGE_SLOTS = 9;
-	const BINDER_PREVIEW_SIZE = BINDER_PAGE_SLOTS + 5;
 	const minRarityLevel = RARITY_MAPPING['ultra rare'];
 	const releaseTime = new Map(sets.map(set => [set.setId, new Date(set.releaseDate).getTime()]));
 	/**
 	 * Rare cards (ultra rare and above) with a scan of their own, never one that borrows art. The newest sets come first, the rarest
-	 * first inside a set, so the latest set fills the binder and older sets only complete it. Only the filtered cards are sorted.
+	 * first inside a set, so the latest set fills the binder and older sets only complete it. Rarity levels and prices are read once
+	 * per card before the sort, and only the filtered cards are sorted.
 	 */
 	const binderPreview = processedAllCards
-		.filter(card => card.image && getRarityLevel(card.rarity) >= minRarityLevel)
-		.sort((a, b) => (releaseTime.get(b.setId) ?? 0) - (releaseTime.get(a.setId) ?? 0) || getRarityLevel(b.rarity) - getRarityLevel(a.rarity) || priceOf(b) - priceOf(a))
+		.flatMap(card => {
+			const level = getRarityLevel(card.rarity);
+			return card.image && level >= minRarityLevel ? [{ card, level, price: priceOf(card) }] : [];
+		})
+		.sort((a, b) => (releaseTime.get(b.card.setId) ?? 0) - (releaseTime.get(a.card.setId) ?? 0) || b.level - a.level || b.price - a.price)
 		.slice(0, BINDER_PREVIEW_SIZE)
-		.map((card, index) => ({ cardCode: card.cardCode, id: card.cardCode, position: index % BINDER_PAGE_SLOTS, url: card.image }));
+		.map(({ card }, index) => ({ cardCode: card.cardCode, id: card.cardCode, position: index % BINDER_PAGE_SLOTS, url: card.image }));
 
-	const latestSetStats = {
-		energyCards: latestSetCards.filter(card => card.supertype === 'Energy').length,
-		pokemonCards: latestSetCards.filter(card => card.supertype === 'Pokémon').length,
-		totalValue: latestSetCards.reduce((sum, card) => sum + priceOf(card), 0),
-		trainerCards: latestSetCards.filter(card => card.supertype === 'Trainer').length,
+	const home: CatalogueHome = {
+		artists: new Set(cards.map(card => card.artist).filter(Boolean)).size,
+		binderPreview,
+		latestSet,
+		latestSetStats: {
+			energyCards: latestSetCards.filter(card => card.supertype === 'Energy').length,
+			pokemonCards: latestSetCards.filter(card => card.supertype === 'Pokémon').length,
+			totalValue: latestSetCards.reduce((sum, card) => sum + priceOf(card), 0),
+			trainerCards: latestSetCards.filter(card => card.supertype === 'Trainer').length,
+		},
+		mostExpensiveCards: topFive(processedAllCards),
+		mostExpensiveLatestSetCards: topFive(latestSetCards),
 	};
+	homes.set(cards, { home, prices, sets });
+	return home;
+}
+
+export const load: PageServerLoad = async ({ parent }) => {
+	/** Started before `parent()` so the catalogue reads run in parallel with the layout's auth and collection queries. */
+	const catalogue = Promise.all([getCards(), getPrices(), getPokemons(), countCards('ja'), countCards('fr')]);
+	const { sets = [] } = await parent();
+	const [allCardsResolved, pricesResolved, pokemons, japaneseCardCount, frenchCardCount] = await catalogue;
+
+	const { artists, binderPreview, latestSet, latestSetStats, mostExpensiveCards, mostExpensiveLatestSetCards } = catalogueHome(allCardsResolved, pricesResolved, sets);
 
 	/** The real counts go into the description text, since answer engines can quote a number but not a vague claim. */
 	const cardTotal = allCardsResolved.length.toLocaleString('en-US');
@@ -105,7 +141,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		mostExpensiveLatestSetCards,
 		mostExpensiveCards,
 		stats: {
-			artists: new Set(allCardsResolved.map(card => card.artist).filter(Boolean)).size,
+			artists,
 			foreignCards: { fr: frenchCardCount, ja: japaneseCardCount },
 			totalCards: allCardsResolved.length,
 			uniquePokemon: pokemons.length,

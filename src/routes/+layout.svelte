@@ -123,7 +123,7 @@
 <div class="flex flex-col min-h-screen">
 	<LoadingBar />
 	<Header />
-	<main class={['flex min-h-0 grow flex-col pt-24', fullViewport ? 'h-dvh shrink-0' : 'lg:pt-32']}>
+	<main class={['flex min-h-0 grow flex-col pt-24', fullViewport ? 'h-dvh shrink-0 overflow-y-auto' : 'lg:pt-32']}>
 		{@render children?.()}
 	</main>
 	<!-- The Guess the Price board fills exactly one viewport, so a footer under it would only add a scrollbar. -->
