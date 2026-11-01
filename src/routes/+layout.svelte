@@ -21,13 +21,20 @@
 
 	let { children }: Props = $props();
 
+	/** A stable reference for "no list", so the derived arrays below only change when the layout load returns new ones. */
+	const EMPTY: readonly never[] = Object.freeze([]);
+
 	/**
-	 * The layout load returns both lists on every navigation, so the client stores follow the session. `replaceAll` reads the stores it
-	 * writes, so it runs untracked: tracked, a "+" would re-run this effect and reset the store to the load's list, hiding the new copy.
+	 * `page.data` is a new object on every client navigation while the layout load does not re-run, so the effect reads the two arrays through
+	 * `$derived`: it only re-runs when the load returned new lists, and a copy added with "+" survives navigation. `replaceAll` reads the stores
+	 * it writes, so it runs untracked: tracked, a "+" would re-run this effect and reset the store to the load's list.
 	 */
+	const wishlistItems = $derived((page.data.wishlistItems ?? EMPTY) as readonly UserWishlist[]);
+	const collectionItems = $derived((page.data.collectionItems ?? EMPTY) as readonly UserCollection[]);
+
 	$effect(() => {
-		const wishlistCodes = ((page.data.wishlistItems ?? []) as UserWishlist[]).map(item => item.card_code);
-		const collectionCodes = ((page.data.collectionItems ?? []) as UserCollection[]).map(item => item.card_code);
+		const wishlistCodes = wishlistItems.map(item => item.card_code);
+		const collectionCodes = collectionItems.map(item => item.card_code);
 		untrack(() => {
 			wishlist.replaceAll(wishlistCodes);
 			collection.replaceAll(collectionCodes);
@@ -114,6 +121,10 @@
 	<main class="flex min-h-0 grow flex-col pt-24 lg:pt-32">
 		{@render children?.()}
 	</main>
+	<!-- The EssentiarumTCG font is CC BY-NC: its credit has to stay visible on the site. -->
+	<footer class="px-4 py-3 text-center text-xs text-gray-500">
+		TCG symbols from the <a class="underline hover:text-gold-400" href="https://pokemonaaah.net/art/fonts/" rel="noopener noreferrer" target="_blank">EssentiarumTCG font by Pokémon Aaah!</a> (non-commercial Creative Commons)
+	</footer>
 	<div class="fixed top-[15%] [filter:grayscale(100%)_opacity(0.05)_contrast(3)_brightness(0.5)] -z-50 flex place-content-center h-lvh w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
 		<img src={pokestore} alt="Background" class="absolute w-1/2" />
 	</div>
