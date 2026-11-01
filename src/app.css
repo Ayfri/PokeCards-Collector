@@ -22,6 +22,8 @@
   --breakpoint-xs: 420px;
   --breakpoint-2xs: 350px;
 
+  --animate-bounce-left: bounceLeft 1s cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
+  --animate-bounce-right: bounceRight 1s cubic-bezier(0.5, 0, 0.5, 1) infinite alternate;
   --animate-gradient-x: gradient-x 6s ease infinite;
   --animate-loading-sweep: loading-sweep 1.5s linear infinite;
   --animate-ripple-wave: ripple-wave 1.5s ease-out infinite;
