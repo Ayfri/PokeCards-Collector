@@ -107,20 +107,3 @@ export interface TcgdexCard extends TcgdexCardBrief {
 	updated?: string;
 	pricing?: TcgdexPricing | null;
 }
-
-export interface TcgdexGraphqlCard {
-	id: string;
-	localId: string;
-	name: string;
-	image?: string | null;
-	rarity?: string | null;
-	category?: string | null;
-	illustrator?: string | null;
-	dexId?: number[] | null;
-	types?: string[] | null;
-	stage?: string | null;
-	hp?: number | null;
-	regulationMark?: string | null;
-	set?: {id: string; name: string} | null;
-	variants?: TcgdexVariants | null;
-}

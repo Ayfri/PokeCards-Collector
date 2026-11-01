@@ -1,6 +1,6 @@
 import http2 from 'node:http2';
 import {gunzipSync, inflateSync} from 'node:zlib';
-import {withRetry, type TcgdexClient} from './client';
+import {HttpError, withRetry, type TcgdexClient} from './client';
 
 const API_ORIGIN = 'https://api.tcgdex.net';
 
@@ -51,22 +51,15 @@ export class Http2Pool implements TcgdexClient {
 	}
 
 	/** One request with no retry. Resolves `null` on 404 so callers can skip missing entities. */
-	private request(path: string, method: string, body?: string): Promise<string | null> {
+	private request(path: string): Promise<string | null> {
 		return new Promise((resolve, reject) => {
 			const index = this.cursor++ % this.connections;
-			const headers: http2.OutgoingHttpHeaders = {
-				':method': method,
+			const stream = this.session(index).request({
 				':path': path,
 				'accept': 'application/json',
 				'accept-encoding': 'gzip, deflate',
 				'user-agent': 'pokestore-scraper',
-			};
-			if (body !== undefined) {
-				headers['content-type'] = 'application/json';
-				headers['content-length'] = Buffer.byteLength(body);
-			}
-
-			const stream = this.session(index).request(headers);
+			}, {endStream: true});
 			stream.setTimeout(30_000, () => stream.destroy(new Error(`Timeout on ${path}`)));
 
 			let status = 0;
@@ -82,36 +75,24 @@ export class Http2Pool implements TcgdexClient {
 			stream.on('end', () => {
 				if (status === 404) return resolve(null);
 				const raw = Buffer.concat(chunks);
-				if (status < 200 || status >= 300) return reject(new Error(`${status} on ${path}`));
+				if (status < 200 || status >= 300) return reject(new HttpError(status, path));
 				try {
 					resolve(decode(raw, encoding));
 				} catch (error) {
 					reject(error);
 				}
 			});
-
-			if (body !== undefined) stream.end(body);
-			else stream.end();
 		});
 	}
 
-	async json<T>(path: string, method = 'GET', body?: unknown): Promise<T | null> {
+	async json<T>(path: string): Promise<T | null> {
 		await this.acquire();
 		try {
-			const payload = body === undefined ? undefined : JSON.stringify(body);
-			const text = await withRetry(() => this.request(path, method, payload));
+			const text = await withRetry(() => this.request(path));
 			return text === null ? null : JSON.parse(text) as T;
 		} finally {
 			this.release();
 		}
-	}
-
-	/** GraphQL is English-only and has no pricing, so it only suits bulk English metadata. */
-	async graphql<T>(query: string): Promise<T> {
-		const response = await this.json<{data: T; errors?: {message: string}[]}>('/v2/graphql', 'POST', {query});
-		if (!response) throw new Error('GraphQL endpoint returned 404');
-		if (response.errors?.length) throw new Error(`GraphQL: ${response.errors.map(e => e.message).join('; ')}`);
-		return response.data;
 	}
 
 	close(): void {

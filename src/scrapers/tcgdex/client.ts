@@ -2,7 +2,7 @@ import {COMMUNITY_SET_IMAGES} from './community-images';
 import {jpTwinOf, type Language} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
 
-export const TCGDEX_ORIGIN = 'https://api.tcgdex.net';
+const TCGDEX_ORIGIN = 'https://api.tcgdex.net';
 const TCGDEX_ASSETS = 'https://assets.tcgdex.net';
 
 /** All sets are probed at once, so the image host may reset a connection. Resets are retried, and only an answered non-2xx means the file is missing. */
@@ -45,12 +45,20 @@ export interface TcgdexClient {
 	close(): void;
 }
 
+/** A non-2xx answer from TCGdex. `withRetry` does not retry the permanent 4xx ones. */
+export class HttpError extends Error {
+	constructor(readonly status: number, path: string) {
+		super(`${status} on ${path}`);
+	}
+}
+
 export async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5, baseDelay = 500, log = false): Promise<T> {
 	for (let attempt = 0; ; attempt++) {
 		try {
 			return await fn();
 		} catch (error) {
 			if (attempt >= maxRetries) throw error;
+			if (error instanceof HttpError && error.status < 500 && error.status !== 408 && error.status !== 429) throw error;
 			const delay = baseDelay * 1.5 ** attempt + Math.random() * baseDelay;
 			if (log) console.log(`Retry ${attempt + 1}/${maxRetries} after ${Math.round(delay)}ms: ${(error as Error).message}`);
 			await new Promise(resolve => setTimeout(resolve, delay));
@@ -58,7 +66,7 @@ export async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5, baseDel
 	}
 }
 
-/** `fetch` client for Workers: their `fetch` already negotiates HTTP/2 to the origin, while Node's and Bun's stay on HTTP/1.1, so the CLI keeps the h2 pool. */
+/** `fetch` client for Workers: their `fetch` already speaks HTTP/2. Node's stays on HTTP/1.1 and Bun 1.4's h2 `fetch` is opt-in and experimental, so the CLI keeps the h2 pool. */
 export class FetchClient implements TcgdexClient {
 	private inflight = 0;
 	private readonly queue: (() => void)[] = [];
@@ -72,7 +80,7 @@ export class FetchClient implements TcgdexClient {
 			return await withRetry(async () => {
 				const response = await fetch(`${this.origin}${path}`, {headers: {accept: 'application/json'}});
 				if (response.status === 404) return null;
-				if (!response.ok) throw new Error(`${response.status} on ${path}`);
+				if (!response.ok) throw new HttpError(response.status, path);
 				return await response.json() as T;
 			});
 		} finally {
@@ -88,7 +96,7 @@ export class FetchClient implements TcgdexClient {
  * Card id -> English image base for the cards of the given sets that have no image in their own language. Many French sets
  * have no scan at all (every `dp*` set), so the English card with the same id stands in. A set missing from the English catalogue adds nothing.
  */
-export const englishImages = (client: TcgdexClient, sets: readonly (TcgdexSet | null)[]) =>
+const englishImages = (client: TcgdexClient, sets: readonly (TcgdexSet | null)[]) =>
 	englishSetImages(client, sets.filter(set => set?.cards?.some(card => !card.image)).map(set => set!.id));
 
 /** Card id -> image base of every scanned card in the given English sets, one request per distinct set. */

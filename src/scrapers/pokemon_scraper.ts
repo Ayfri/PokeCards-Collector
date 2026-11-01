@@ -1,6 +1,7 @@
-import * as fs from "node:fs";
+import {writeFile} from 'node:fs/promises';
 import {POKEMONS_COUNT} from '../constants.js';
-import {POKEMONS} from './files.js';
+import {POKEMONS} from './cli-config';
+import {HttpError, withRetry} from './tcgdex/client';
 
 interface SearchResults {
 	results: {
@@ -30,42 +31,37 @@ interface PokemonExtractedData {
 	evolves_to?: number[];
 }
 
+/** A failure after the retries aborts the run: a skipped species would silently leave a hole in the Pokédex. */
+const getJson = <T>(url: string) => withRetry(async () => {
+	const response = await fetch(url);
+	if (!response.ok) throw new HttpError(response.status, url);
+	return await response.json() as T;
+}, 5, 500, true);
+
 export async function fetchPokemons() {
-	const response = await fetch(`https://pokeapi.co/api/v2/pokemon-species?limit=${POKEMONS_COUNT}`);
-	const json = await response.json() as SearchResults;
+	const json = await getJson<SearchResults>(`https://pokeapi.co/api/v2/pokemon-species?limit=${POKEMONS_COUNT}`);
 	console.log(`Fetched ${json.results.length} pokémons, fetching additional data...`);
 
-	const fetchPromises = json.results.map(async (pokemon, index) => {
-		try {
-			const descriptionResponse = await fetch(pokemon.url);
-			const descriptionJson = await descriptionResponse.json() as PokemonData;
-			const description = descriptionJson.flavor_text_entries.find(entry => entry.language.name === 'en')?.flavor_text?.replace(/[\n\f\r]/g, ' ') ?? '';
-			console.log(`Fetching ${index + 1}/${json.results.length} ${pokemon.name}`);
+	const pokemons = await Promise.all(json.results.map(async (pokemon, index): Promise<PokemonExtractedData> => {
+		const data = await getJson<PokemonData>(pokemon.url);
+		console.log(`Fetching ${index + 1}/${json.results.length} ${pokemon.name}`);
 
-			const evolvesFromRaw = descriptionJson.evolves_from_species?.url.replace(/.+\/(\d+)\/$/, '$1');
-			const evolvesFrom = evolvesFromRaw ? parseInt(evolvesFromRaw) : undefined;
+		const evolvesFromRaw = data.evolves_from_species?.url.replace(/.+\/(\d+)\/$/, '$1');
 
-			return {
-				id: index + 1,
-				name: pokemon.name,
-				description,
-				evolves_from: evolvesFrom,
-			} as PokemonExtractedData;
-		} catch (error) {
-			console.log(`Error fetching ${index + 1}/${json.results.length} ${pokemon.name}`);
-			return undefined;
-		}
-	});
+		return {
+			id: index + 1,
+			name: pokemon.name,
+			description: data.flavor_text_entries.find(entry => entry.language.name === 'en')?.flavor_text?.replace(/[\n\f\r]/g, ' ') ?? '',
+			evolves_from: evolvesFromRaw ? parseInt(evolvesFromRaw) : undefined,
+		};
+	}));
 
-	const pokemonsWithDescriptions = await Promise.all(fetchPromises);
-	pokemonsWithDescriptions.map(pokemon => {
-		if (pokemon?.evolves_from) {
-			const evolvesFrom = pokemonsWithDescriptions.find(p => p?.id === pokemon.evolves_from);
-			if (evolvesFrom) {
-				evolvesFrom.evolves_to ??= [];
-				evolvesFrom.evolves_to.push(pokemon.id);
-			}
-		}
-	});
-	fs.writeFileSync(POKEMONS, JSON.stringify(pokemonsWithDescriptions.filter(pokemon => pokemon)));
+	/** Ids are the list positions plus one, so the previous stage sits at `evolves_from - 1`. */
+	for (const pokemon of pokemons) {
+		if (!pokemon.evolves_from) continue;
+		const previous = pokemons[pokemon.evolves_from - 1];
+		if (previous) (previous.evolves_to ??= []).push(pokemon.id);
+	}
+
+	await writeFile(POKEMONS, JSON.stringify(pokemons));
 }
