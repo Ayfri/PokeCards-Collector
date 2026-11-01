@@ -30,7 +30,7 @@ const memo = new Map<string, MemoEntry>();
 const inFlight = new Map<string, Promise<unknown>>();
 
 /** `caches.default` is a Workers extension the DOM `CacheStorage` type does not declare, and the global is absent under `vite dev`. */
-function edgeCache(): Cache | null {
+export function edgeCache(): Cache | null {
 	if (typeof caches === 'undefined') return null;
 	return (caches as CacheStorage & { default: Cache }).default;
 }
