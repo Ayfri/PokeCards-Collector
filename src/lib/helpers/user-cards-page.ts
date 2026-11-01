@@ -9,7 +9,7 @@ import type { FullCard, GridPokemon, PublicProfile, Set, UserProfile } from '#li
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Everything the grid draws for one user's cards. Streamed, so the profile lookup answers before the catalogue is read. */
-export interface UserCardsPayload {
+interface UserCardsPayload {
 	artists: string[];
 	cards: FullCard[];
 	pokemons: GridPokemon[];

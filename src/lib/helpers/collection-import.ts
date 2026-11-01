@@ -78,7 +78,7 @@ export function detectColumns(header: string[]): ColumnMapping {
 }
 
 /** `004/165` -> `004`, `TG12/TG30` -> `tg12`, `SWSH039` -> `swsh039`. The denominator is the set size, never part of the identity. */
-export const normalizeNumber = (value: string) => normalize(value.split('/')[0] ?? '');
+const normalizeNumber = (value: string) => normalize(value.split('/')[0] ?? '');
 
 /** `Langue` / `Language` values, normalized: Pokécardex writes `FR`, Cardmarket `French` or its numeric id. */
 const FRENCH_LANGUAGES = new Set(['fr', 'french', 'francais', 'francaise', '2']);

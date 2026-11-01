@@ -18,7 +18,7 @@ export interface TrainerGroupEntry {
 	set?: Pick<Set, 'name' | 'printedTotal' | 'symbol'>;
 }
 
-export interface TrainerSection {
+interface TrainerSection {
 	groups: TrainerGroupEntry[];
 	label: string;
 }

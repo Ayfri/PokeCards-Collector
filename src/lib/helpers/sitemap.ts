@@ -10,7 +10,7 @@ export interface SitemapEntry {
 }
 
 /** URLs and titles carry `&`, `'` and accented set names, and an unescaped one makes the whole file unparseable. */
-export function xmlEscape(value: string): string {
+function xmlEscape(value: string): string {
 	return value
 		.replace(/&/g, '&amp;')
 		.replace(/</g, '&lt;')

@@ -1,7 +1,7 @@
 import type { Set as CardSet } from '#lib/types.js';
 import { persistedRecord } from './persisted.svelte';
 
-export type SortOrder = 'asc' | 'desc';
+type SortOrder = 'asc' | 'desc';
 
 /** The lowercased values `isVisible` tests a card against. */
 export interface ActiveFilters {

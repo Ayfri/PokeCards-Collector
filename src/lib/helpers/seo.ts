@@ -7,7 +7,7 @@ import type { Breadcrumb, Card, Pokemon, PriceData, PublicProfile, Set } from '#
 /** Schema.org nodes are free-form JSON, so every builder returns the same opaque shape the `Seo` component inlines. */
 export type Schema = Record<string, unknown>;
 
-export const HOME_CRUMB: Breadcrumb = { name: 'Home', url: '/' };
+const HOME_CRUMB: Breadcrumb = { name: 'Home', url: '/' };
 
 /** JSON safe to inline in a `<script>`: a `</script>` inside a username or card name would otherwise close the tag. */
 export const inlineJson = (value: unknown): string => JSON.stringify(value).replaceAll('<', `${String.fromCharCode(92)}u003c`);
