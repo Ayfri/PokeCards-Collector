@@ -103,7 +103,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	const setTotal = sets.length.toLocaleString('en-US');
 
 	const pageSeoData = {
-		description: `Browse ${cardTotal} Pokémon TCG cards across ${setTotal} sets with live Cardmarket prices in euros. Track your collection, build a wishlist, plan a binder and play two daily card games, all for free.`,
+		description: `Browse ${cardTotal} Pokémon TCG cards across ${setTotal} sets with live Cardmarket prices in euros. Track your collection, build a wishlist, plan a binder and play two card guessing games, all for free.`,
 		keywords: ['Pokémon TCG', 'Pokémon card prices', 'Pokémon card collection tracker', 'Pokémon card list', 'Cardmarket prices'],
 		schemas: [
 			cardListSchema(mostExpensiveCards, '/cards-list?sortby=sort-price&sortorder=desc', 'Most expensive Pokémon cards', 5),

@@ -24,6 +24,8 @@
 	import BookOpenCheckIcon from "@lucide/svelte/icons/book-open-check";
 	import LogInIcon from "@lucide/svelte/icons/log-in";
 	import UserPlusIcon from "@lucide/svelte/icons/user-plus";
+	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
+	import PuzzleIcon from '@lucide/svelte/icons/puzzle';
 	import Flag from '#components/Flag.svelte';
 	import AuthModal from '#components/auth/AuthModal.svelte';
 
@@ -49,6 +51,25 @@
 	]);
 
 	const FEATURE_CARD_CLASS = 'card-tile p-6';
+
+	const GAMES = [
+		{
+			action: "Play today's Card.dle",
+			description: "Find the day's mystery card from the hints every guess reveals. One card a day, the same for everyone.",
+			features: ['Seven hints per guess: Pokémon, artist, set, rarity, supertype, type and price', 'An easy mode that narrows the list as hints turn green', 'A daily streak and a spoiler-free grid to share'],
+			href: '/card.dle',
+			icon: PuzzleIcon,
+			name: 'Card.dle'
+		},
+		{
+			action: 'Start guessing',
+			description: 'Look at a real card and guess what it sells for on Cardmarket. The closer you land, the more you score.',
+			features: ['Points for accuracy, with a combo up to x3 on a streak', 'Your best streak, total score and accuracy breakdown', 'Endless rounds, no account needed'],
+			href: '/guess-the-price',
+			icon: CircleEuroIcon,
+			name: 'Guess the Price'
+		}
+	];
 
 	/** The server sends one flat list for the two-page spread, page 2 starting after the 9 slots of page 1. */
 	const binderPages = $derived([data.binderPreview.slice(0, 9), data.binderPreview.slice(9)]);
@@ -541,6 +562,34 @@
 					</a>
 				</div>
 			</div>
+		</div>
+	</section>
+
+	<section
+		class="mb-20"
+		style="--intro-delay: 475ms"
+	>
+		<h2 class="text-xl md:text-2xl font-bold text-center text-gold-400 mb-3">Play a Pokémon TCG Game</h2>
+		<p class="text-center text-gray-400 mb-10">Two free games built on the real catalogue, playable without an account.</p>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+			{#each GAMES as game (game.href)}
+				<article class="card-tile flex flex-col gap-4 p-6">
+					<h3 class="flex items-center gap-3 text-xl font-semibold text-gold-300">
+						{#if !NO_IMAGES}<game.icon class="text-gold-400" size={32} />{/if}
+						{game.name}
+					</h3>
+					<p class="text-gray-200">{game.description}</p>
+					<ul class="list-disc list-inside space-y-1.5 text-gray-400">
+						{#each game.features as feature (feature)}
+							<li>{feature}</li>
+						{/each}
+					</ul>
+					<a class="btn-gold mt-auto w-fit" href={game.href} title="Open {game.name}">
+						{game.action}
+						{#if !NO_IMAGES}<ArrowRight size={18} />{/if}
+					</a>
+				</article>
+			{/each}
 		</div>
 	</section>
 
