@@ -50,6 +50,7 @@
 	const ink = $derived(lightText ? 'text-white' : 'text-gray-950');
 	/** Text sits straight on the body like on a printed card; a full-art scan needs a dark panel behind it. */
 	const panel = $derived(fullArt ? 'rounded-[2cqw] bg-black/70 px-[3cqw] backdrop-blur-xs' : 'px-[1cqw]');
+	const artAlt = $derived(`${card?.name ?? alt} artwork`);
 	const heading = $derived(card ? title ?? card.name.charAt(0).toUpperCase() + card.name.slice(1) : '');
 	const number = $derived(card?.localId ? formatCardNumber(card.localId, set?.printedTotal, { printed: true }) : '');
 	const artist = $derived(card && card.artist !== 'Unknown' ? card.artist : '');
@@ -66,7 +67,7 @@
 <div aria-label={alt} class="card-plate @container overflow-hidden text-white select-none {classNames}" data-card-code={card?.cardCode} role="img" style="{style}; {tintStyle}; {plateTexture(card)}">
 	<div class="relative isolate flex h-full flex-col gap-[2cqw] px-[6.5cqw] pt-[4cqw] pb-[max(3.2rem,16cqw)] @max-[200px]:pb-[max(3.2rem,22cqw)] @max-[120px]:justify-center @max-[120px]:p-[6cqw] @max-[120px]:pb-[6cqw]">
 		{#if scan && fullArt}
-			<CardPlateArt base={scan} full onerror={() => (failedScan = scan)} />
+			<CardPlateArt alt={artAlt} base={scan} full onerror={() => (failedScan = scan)} />
 			<div class="absolute inset-x-0 top-0 -z-10 h-[30%] bg-linear-to-b from-black/85 via-black/55 to-transparent"></div>
 		{/if}
 		<div class={['pointer-events-none absolute inset-0 border-[3.5cqw] @max-[120px]:hidden', hasSilverBorder(card) ? 'border-zinc-300' : 'border-gold-400']}></div>
@@ -79,12 +80,12 @@
 		     or an icon when there is none. Small tiles let it fill the space instead. A full-art scan sits behind the whole plate, so the window stays empty and frameless. -->
 		<div class={['relative flex aspect-[1.5] items-center justify-center rounded-[0.8cqw] @max-[200px]:aspect-auto @max-[200px]:min-h-0 @max-[200px]:flex-1 @max-[120px]:flex-none', !fullArt && 'card-plate-window']}>
 			{#if scan && !fullArt}
-				<CardPlateArt base={scan} onerror={() => (failedScan = scan)} trainer={identity.kind === 'trainer'} />
+				<CardPlateArt alt={artAlt} base={scan} onerror={() => (failedScan = scan)} trainer={identity.kind === 'trainer'} />
 			{:else if !scan && identity.kind !== 'pokemon'}
 				<CardPlateEmblem accent={identity.accent} emblem={identity.emblem} kind={identity.kind} special={identity.special} />
 			{:else if !scan && artUrl && artUrl !== failedArt}
 				<img
-					alt=""
+					alt={artAlt}
 					class="max-h-4/5 max-w-4/5 object-contain opacity-95 drop-shadow-[0_0_4cqw_rgb(0_0_0/0.55)] @max-[120px]:hidden"
 					decoding="async"
 					draggable="false"

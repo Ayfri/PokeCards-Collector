@@ -60,7 +60,7 @@
 		<div class="flex flex-col items-start gap-1.5 sm:col-span-2 lg:col-span-1">
 			<a class="flex items-center gap-2" href="/">
 				{#if !NO_IMAGES}
-					<img alt="" class="aspect-square h-8 w-8 object-contain" height="32" loading="lazy" src={pokecardsCollector} width="32" />
+					<img alt="PokéCards-Collector logo" class="aspect-square h-8 w-8 object-contain" height="32" loading="lazy" src={pokecardsCollector} width="32" />
 				{/if}
 				<span class="text-lg font-bold text-gold-400">{SITE_NAME}</span>
 			</a>

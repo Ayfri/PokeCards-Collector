@@ -72,7 +72,7 @@
 							ondragstart={onDrop && (event => handleDragStart(event, position))}
 						>
 							<CardImage
-								alt={card.cardCode ?? 'Binder card'}
+								alt="Binder card, page {pageIndex + 1} slot {position + 1}"
 								class="max-h-full max-w-full rounded-[4%] object-contain {NO_IMAGES ? 'ring-1 ring-gold-400 ring-inset' : ''}"
 								imageUrl={card.url}
 								lazy={true}

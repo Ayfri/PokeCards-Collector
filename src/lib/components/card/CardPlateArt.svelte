@@ -2,6 +2,7 @@
 	import { processCardImage } from '#helpers/card-images.ts';
 
 	interface Props {
+		alt: string;
 		/** Extensionless TCGdex image base of the scan whose illustration box fills the window. */
 		base: string;
 		/** Covers the whole plate instead of the window: the full-art cards, whose illustration is the card. */
@@ -11,7 +12,7 @@
 		trainer?: boolean;
 	}
 
-	let { base, full = false, onerror, trainer = false }: Props = $props();
+	let { alt, base, full = false, onerror, trainer = false }: Props = $props();
 </script>
 
 <!-- The crop needs a `relative` parent, the art window of `CardPlate`; `full` needs the plate's body, which it fills from behind its content.
@@ -21,7 +22,7 @@
      `sizes="auto"` lets the browser pick the 245px or the 600px scan from the rendered width, which is why the image is lazy. -->
 {#if full}
 	<img
-		alt=""
+		{alt}
 		class="absolute inset-0 -z-10 size-full object-cover @max-[120px]:hidden"
 		decoding="async"
 		draggable="false"
@@ -34,7 +35,7 @@
 {:else}
 	<div class="absolute inset-0 overflow-hidden rounded-[inherit] [container-type:size] @max-[120px]:hidden">
 		<img
-			alt=""
+			{alt}
 			class={['absolute top-1/2 left-1/2 aspect-245/337 h-auto w-[max(calc(100cqw/0.84),calc(100cqh/0.488))] max-w-none -translate-x-1/2', trainer ? '-translate-y-[33%]' : '-translate-y-[29.25%]']}
 			decoding="async"
 			draggable="false"

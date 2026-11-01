@@ -67,7 +67,7 @@
 	{#key card?.image}
 		{#if card}
 			<CardImage
-				alt={pokemon ? pascalCase(pokemon.name) : card.name}
+				alt="{pokemon ? pascalCase(pokemon.name) : card.name} - {card.setName}"
 				{card}
 				imageUrl={card.image}
 				lowRes={false}
