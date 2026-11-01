@@ -1,7 +1,7 @@
 import type { FullCard, Pokemon, PriceData, Set } from "#lib/types.js";
 import { supabase } from '#lib/supabase.ts';
 import { cachedTable, PartialRows, STATIC_TTL, TABLE_TTL } from '#helpers/data-cache.ts';
-import { CATALOGUES, type CardTable, type Language, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
+import { CATALOGUES, isTwinLanguage, TWIN_LANGUAGES, type CardTable, type CardVersions, type Language, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
 import type { CatalogueData } from '#helpers/owned-cards.ts';
 
 /** Every card column, for the reads that need the details. Keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
@@ -293,6 +293,25 @@ export async function getCardDetails(language: Language, cardCode: string): Prom
 	const { cards } = CATALOGUES[language].tables;
 	const { data } = await readWithRetry(`fetch ${cards} ${cardCode}`, () => supabase.from(cards).select(CARD_COLUMNS).eq('card_code', cardCode).maybeSingle<CardRow>());
 	return data ? toCard(data) : null;
+}
+
+/** The same card in the other catalogues, found through its TCGdex id. A Japanese card, or a card with no id, only has itself. */
+export async function getCardVersions(language: Language, cardCode: string): Promise<CardVersions> {
+	const versions: CardVersions = { [language]: cardCode };
+	if (!isTwinLanguage(language)) return versions;
+
+	const { cards } = CATALOGUES[language].tables;
+	const { data } = await readWithRetry(`fetch ${cards} ${cardCode} tcgdex id`, () => supabase.from(cards).select('tcgdex_id').eq('card_code', cardCode).maybeSingle<{ tcgdex_id: string | null }>());
+	const tcgdexId = data?.tcgdex_id;
+	if (!tcgdexId) return versions;
+
+	await Promise.all(TWIN_LANGUAGES.filter(twin => twin !== language).map(async twin => {
+		const table = CATALOGUES[twin].tables.cards;
+		const { data: twinCard } = await readWithRetry(`fetch ${table} ${tcgdexId}`, () => supabase.from(table).select('card_code').eq('tcgdex_id', tcgdexId).maybeSingle<{ card_code: string }>());
+		if (twinCard) versions[twin] = twinCard.card_code;
+	}));
+
+	return versions;
 }
 
 /** `select(count)` with `head: true`: the homepage only prints this number, it has no use for the 12781 rows behind it. */

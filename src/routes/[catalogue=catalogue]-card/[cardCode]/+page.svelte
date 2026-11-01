@@ -22,15 +22,18 @@
 		{#if !pokemonCards || pokemonCards.length === 0}
 			<p class="text-center text-lg">Loading...</p>
 		{:else}
-			<div in:fade={{ duration: 300 }}>
-				<CardDisplay
-					allCards={allCards}
-					pokemonCards={pokemonCards}
-					{pokemons}
-					{sets}
-					{prices}
-				/>
-			</div>
+			{#key data.card.cardCode}
+				<div in:fade={{ duration: 300 }}>
+					<CardDisplay
+						allCards={allCards}
+						pokemonCards={pokemonCards}
+						{pokemons}
+						{sets}
+						{prices}
+						versions={data.versions}
+					/>
+				</div>
+			{/key}
 		{/if}
 	</div>
 </main>

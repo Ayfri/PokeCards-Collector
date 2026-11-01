@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CardInfo from '#components/card/CardInfo.svelte';
+	import CardLanguages from '#components/card/CardLanguages.svelte';
 	import EvolutionChain from '#components/card/EvolutionChain.svelte';
 	import RelatedCards from '#components/card/RelatedCards.svelte';
 	import {NO_IMAGES} from '#lib/images.ts';
@@ -11,7 +12,7 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { catalogueOfPath } from '#helpers/catalogues.ts';
+	import { catalogueOfPath, isTwinLanguage, type CardVersions } from '#helpers/catalogues.ts';
 	import { getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc, getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
 	import { loading } from '#stores/loading.svelte.ts';
@@ -24,6 +25,7 @@
 		prices: Record<string, PriceData>;
 		sets: Set[];
 		pokemonCards: FullCard[];
+		versions: Promise<CardVersions>;
 		lowRes?: boolean;
 	}
 
@@ -33,6 +35,7 @@
 		prices,
 		sets,
 		pokemonCards,
+		versions,
 		lowRes = false
 	}: Props = $props();
 
@@ -264,6 +267,10 @@
 			<div class="hidden lg:block w-48 order-3"></div>
 		{/if}
 	</div>
+
+	{#if currentCard && isTwinLanguage(catalogue.language)}
+		<CardLanguages cardCode={currentCard.cardCode} language={catalogue.language} known={{ cardCode: pokemonCards[0].cardCode, versions }} />
+	{/if}
 
 	{#if currentCard && currentSet}
 		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 500 }}>

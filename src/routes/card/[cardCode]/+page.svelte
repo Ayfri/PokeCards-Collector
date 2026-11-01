@@ -31,6 +31,7 @@
 						{pokemons}
 						{sets}
 						{prices}
+						versions={data.versions}
 						lowRes={true}
 					/>
 				</div>

@@ -49,7 +49,19 @@ export type CardTable = CatalogueTables['cards'];
 export type PriceTable = CatalogueTables['prices'];
 export type SetTable = CatalogueTables['sets'];
 
-export const BY_ROUTE_CODE = {fr: CATALOGUES.fr, jp: CATALOGUES.ja};
+/** Language -> `card_code` of the same card in each catalogue that carries it. */
+export type CardVersions = Partial<Record<Language, string>>;
+
+/**
+ * Only English and French share TCGdex ids. Japanese ids are separate products that collide by accident:
+ * `neo4-109` is Shining Mewtwo in English and a Trainer in Japanese, so a Japanese card is never matched by id.
+ */
+export const TWIN_LANGUAGES = ['en', 'fr'] as const satisfies readonly Language[];
+export type TwinLanguage = (typeof TWIN_LANGUAGES)[number];
+
+export const isTwinLanguage = (language: Language): language is TwinLanguage => TWIN_LANGUAGES.some(twin => twin === language);
+
+export const BY_ROUTE_CODE ={fr: CATALOGUES.fr, jp: CATALOGUES.ja};
 export const BY_GRID = {france: CATALOGUES.fr, japan: CATALOGUES.ja};
 
 /** The catalogue a URL path belongs to: its grid page or one of its card pages, English for everything else. */

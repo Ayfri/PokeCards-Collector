@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { getCardDetails, getCards, getPokemons, getPrices } from '#helpers/supabase-data.ts';
+import { getCardDetails, getCards, getCardVersions, getPokemons, getPrices } from '#helpers/supabase-data.ts';
 import { processCardImage } from '#helpers/card-images.ts';
+import type { CardVersions } from '#helpers/catalogues.ts';
 import { cardPageCatalogue, cardPrice } from '#helpers/card-utils.ts';
 import { article, breadcrumbs, cardSchema } from '#helpers/seo.ts';
 import type { FullCard, Pokemon } from '#lib/types.js';
@@ -10,6 +11,8 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	const { cardCode } = params;
 	/** Started before `parent()` so the catalogue reads run in parallel with the layout's auth and collection queries. */
 	const catalogue = Promise.all([getCardDetails('en', cardCode), getCards(), getPrices(), getPokemons()]);
+	/** Streamed, not awaited: the language switcher is decorative, so a slow or failed read never holds back or breaks the page. */
+	const versions = getCardVersions('en', cardCode).catch((): CardVersions => ({ en: cardCode }));
 	const parentData = await parent();
 	const [targetCard, allCards, prices, allPokemons] = await catalogue;
 	const sets = parentData.sets || [];
@@ -73,6 +76,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		pokemon: associatedPokemon,
 		pokemonCards: relevantCards,
 		targetCard,
+		versions,
 		title: pageTitle,
 		description: pageDescription,
 		image: pageImage,

@@ -1,5 +1,5 @@
-import { BY_ROUTE_CODE } from '#helpers/catalogues.ts';
-import { getCardDetails, getCards, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { BY_ROUTE_CODE, type CardVersions } from '#helpers/catalogues.ts';
+import { getCardDetails, getCards, getCardVersions, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
 import type { FullCard } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
@@ -12,7 +12,10 @@ export const load: PageServerLoad = async ({ params }) => {
 	const catalogue = BY_ROUTE_CODE[params.catalogue];
 	const { adjective, language } = catalogue;
 	/** Each catalogue has its own prices and sets; only the English ones come from the layout. */
-	const [card, allCards, prices, pokemons, sets] = await Promise.all([getCardDetails(language, cardCode), getCards(language), getPrices(language), getPokemons(), getSets(language)]);
+	const reads = Promise.all([getCardDetails(language, cardCode), getCards(language), getPrices(language), getPokemons(), getSets(language)]);
+	/** Streamed, not awaited: the language switcher is decorative, so a slow or failed read never holds back or breaks the page. */
+	const versions = getCardVersions(language, cardCode).catch((): CardVersions => ({ [language]: cardCode }));
+	const [card, allCards, prices, pokemons, sets] = await reads;
 
 	if (!card) {
 		throw error(404, 'Card not found');
@@ -57,6 +60,7 @@ export const load: PageServerLoad = async ({ params }) => {
 		pokemon,
 		pokemonCards,
 		sets,
+		versions,
 		...pageSeoData
 	};
 };
