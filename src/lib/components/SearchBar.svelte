@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
-	import { formatCardNumber } from '#helpers/card-utils.ts';
+	import { cardPath, formatCardNumber } from '#helpers/card-utils.ts';
 	import { onMount } from 'svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
@@ -15,7 +15,7 @@
 	import type { CardSearchResult, PokemonSearchResult } from '#helpers/card-search.ts';
 	import { page } from '$app/state';
 	import { binderStorage } from '#stores/binder.svelte.ts';
-	import { cardPath, debounce } from '#helpers/utils.ts';
+	import { debounce } from '#helpers/utils.ts';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {
@@ -233,7 +233,7 @@
 			{/each}
 			{#each searchResults as result (result.card.cardCode)}
 				{@const card = result.card}
-				{@const cardLink = cardPath('en', card.cardCode)}
+				{@const cardLink = cardPath('en', card)}
 				{@const isAdded = addedCards.has(card.cardCode)}
 
 				<a 

@@ -1,12 +1,15 @@
 <script lang="ts">
 	import BouncyLoader from '#components/BouncyLoader.svelte';
 	import CardGrid from '#components/list/CardGrid.svelte';
+	import GridHeading from '#components/list/GridHeading.svelte';
 	import ImportModal from '#components/list/ImportModal.svelte';
 	import UploadIcon from '@lucide/svelte/icons/upload';
 	import PageNotice from '#components/PageNotice.svelte';
 	import ShieldAlert from '@lucide/svelte/icons/shield-alert';
 	import UserX from '@lucide/svelte/icons/user-x';
 	import type { Set } from '#lib/types.js';
+	import { cardPath, formatCardNumber } from '#helpers/card-utils.ts';
+	import { formatEuros } from '#helpers/format.ts';
 	import { USER_CARDS_COPY, type UserCardsKind, type UserCardsPageData } from '#helpers/user-cards-page.ts';
 	import { filters } from '#stores/filters.svelte.ts';
 	import { onMount } from 'svelte';
@@ -22,6 +25,13 @@
 	const copy = $derived(USER_CARDS_COPY[kind]);
 	const isMissing = $derived(!data.targetProfile);
 	const isPrivate = $derived(!!data.targetProfile && !data.isPublic && !data.isOwner);
+	const summary = $derived(data.summary);
+	const summaryText = $derived.by(() => {
+		if (!summary) return '';
+		const cards = `${summary.uniqueCards.toLocaleString('en-US')} ${kind === 'collection' ? 'unique ' : ''}card${summary.uniqueCards === 1 ? '' : 's'}`;
+		const copies = kind === 'collection' && summary.copies !== summary.uniqueCards ? ` (${summary.copies.toLocaleString('en-US')} copies)` : '';
+		return `${cards}${copies}, worth about ${formatEuros(summary.totalValue)} on Cardmarket.`;
+	});
 
 	let importing = $state(false);
 
@@ -44,6 +54,17 @@
 		The {kind} for <strong class="text-gold-400">"{data.targetUsername}"</strong> is set to private. You cannot view {kind === 'collection' ? 'their cards' : 'it'} at this time.
 	</PageNotice>
 {:else}
+	{#if summary}
+		<GridHeading description={summaryText} title={data.heading} />
+		{#if summary.topCards.length}
+			<p class="shrink-0 px-4 pb-2 text-xs text-gray-400 max-md:text-center lg:px-10">
+				Most valuable:
+				{#each summary.topCards as card, index (card.cardCode)}
+					{index ? ', ' : ''}<a class="text-gold-400 hover:underline" href={cardPath(card.language, card)}>{card.name} #{formatCardNumber(card.localId)}</a> <span class="tabular-nums">{formatEuros(card.price)}</span>
+				{/each}
+			</p>
+		{/if}
+	{/if}
 	{#await data.streamed.payload}
 		<div class="flex min-h-0 grow flex-col items-center justify-center py-8 text-center">
 			<BouncyLoader size={40} />
@@ -65,7 +86,7 @@
 			<CardGrid
 				artists={payload.artists}
 				cards={payload.cards}
-				pageTitle={data.heading}
+				pageTitle={summary ? null : data.heading}
 				pokemons={payload.pokemons}
 				rarities={payload.rarities}
 				{sets}

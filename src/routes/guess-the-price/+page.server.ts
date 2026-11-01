@@ -1,5 +1,6 @@
 import { getCards, getPrices } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
+import { ogImage } from '#helpers/og-image.ts';
 import { breadcrumbs, gameSchema } from '#helpers/seo.ts';
 import type { Card, Set } from '#lib/types.js';
 import { cardPrice } from '#helpers/card-utils.ts';
@@ -17,6 +18,7 @@ const SEO = {
 	description: 'Guess what a Pokémon card is worth on Cardmarket. Real cards, real euro prices, a new set of rounds every time. Free and playable without an account.',
 	keywords: ['guess the price', 'Pokémon card price game', 'Pokémon TCG game', 'card value quiz'],
 	schemas: [gameSchema('Guess the Price', 'A Pokémon TCG price guessing game: estimate the Cardmarket value of a real card and score on how close you land.', '/guess-the-price')],
+	image: ogImage({ kind: 'page', name: 'guess-the-price' }, 'Guess the Price, the Pokémon card price game: a valuable card with its price hidden under a ??? € tag'),
 	title: 'Guess the Price - Pokémon Card Price Game',
 };
 

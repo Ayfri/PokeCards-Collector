@@ -1,7 +1,9 @@
 import type { PageServerLoad } from './$types';
+import { ogImage } from '#helpers/og-image.ts';
 import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
-import { cardGroupKey, cardGroupName, cardPrice, SUBTYPE_SECTIONS } from '#helpers/card-utils.ts';
+import { BASE_URL } from '#src/constants.ts';
+import { cardGroupKey, cardGroupName, cardPath, cardPrice, SUBTYPE_SECTIONS } from '#helpers/card-utils.ts';
 import type { Card, Set } from '#lib/types.js';
 
 /**
@@ -14,6 +16,7 @@ export interface TrainerGroupEntry {
 	/** Raw TCGdex image base of the group's most valuable print that has a scan, or of its most valuable print when none has. */
 	image: string;
 	name: string;
+	path: string;
 	plate: Pick<Card, 'subtype' | 'supertype' | 'types'> & Partial<Pick<Card, 'artImage' | 'artist' | 'artSource' | 'localId' | 'rarity'>>;
 	set?: Pick<Set, 'name' | 'printedTotal' | 'symbol'>;
 }
@@ -69,6 +72,7 @@ export const load: PageServerLoad = async () => {
 			cardCount: group.count,
 			image: card.image,
 			name: cardGroupName(card.name),
+			path: cardPath('en', card),
 			plate: {
 				subtype,
 				supertype: card.supertype,
@@ -96,12 +100,13 @@ export const load: PageServerLoad = async () => {
 				'@type': 'ListItem',
 				name: entry.name,
 				position: index + 1,
-				url: `/card/${entry.cardCode}`,
+				url: `${BASE_URL}${entry.path}`,
 			})),
 			name: 'Trainer and Energy cards of the Pokémon TCG',
 			numberOfItems: groups.size,
 		}],
 		sections,
+		image: ogImage({ kind: 'page', name: 'trainers' }, 'Every Trainer and Energy card on PokéCards-Collector, with the most valuable ones'),
 		title: 'All Trainer and Energy Cards',
 		type: 'CollectionPage' as const,
 	};

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import CardImage from '#components/card/CardImage.svelte';
 	import { loading } from '#stores/loading.svelte.ts';
 	import type { FullCard } from '#lib/types.js';
@@ -29,7 +28,7 @@
 
 <a
 	class="card-tile focus-ring group p-3 flex flex-col items-center text-center [content-visibility:auto] [contain-intrinsic-size:auto_20rem]"
-	href={resolve('/card/[cardCode]', { cardCode: group.cardCode })}
+	href={group.path}
 	onclick={() => (loading.navigation = true)}
 	title={`View the ${group.name} prints`}
 >

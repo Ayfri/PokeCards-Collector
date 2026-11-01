@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { CATALOGUES, catalogueOfPath, type Language } from '#helpers/catalogues.ts';
+	import { setPath } from '#helpers/card-utils.ts';
 	import type { Set } from '#lib/types.js';
 	import SetLogo from '#components/SetLogo.svelte';
 	import Layers from '@lucide/svelte/icons/layers';
@@ -10,7 +11,7 @@
 		class?: string;
 		/** The catalogue of the set when the page mixes several, otherwise the one the path belongs to. */
 		language?: Language;
-		set: Pick<Set, 'logo' | 'name' | 'symbol'>;
+		set: Pick<Set, 'logo' | 'name' | 'setId' | 'symbol'>;
 		style?: string;
 	}
 
@@ -20,7 +21,7 @@
 </script>
 
 <a
-	href="{catalogue.gridRoute}?set={encodeURIComponent(set.name)}"
+	href={setPath(set, catalogue)}
 	class="absolute z-10 p-1 bg-black/50 border border-white/70 rounded-full hover:bg-white/20 transition-colors size-8 flex items-center justify-center {classNames}"
 	{style}
 	aria-label="View all cards from set {set.name}"

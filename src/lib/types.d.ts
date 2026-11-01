@@ -169,6 +169,7 @@ export interface Breadcrumb {
 /** Everything a page load may hand the `Seo` component through `page.data`. */
 export interface SeoData {
 	breadcrumbs?: Breadcrumb[];
+	canonical?: string;
 	description: string;
 	image: Image;
 	keywords?: string[];

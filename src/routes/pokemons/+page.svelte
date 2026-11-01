@@ -1,13 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { PokemonListEntry } from './+page.server';
-	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import { pascalCase } from '#helpers/format.ts';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import PageTitle from '#components/PageTitle.svelte';
-	import { loading } from '#stores/loading.svelte.ts';
 	import ScrollButton from '#components/list/ScrollButton.svelte';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
@@ -40,12 +37,6 @@
 	let hasScrolled = $state(false);
 	const scrollThreshold = 100;
 	const scrollDuration = 500;
-
-	function navigateToPokemonCard(pokemon: PokemonListEntry) {
-		if (!pokemon.cardCode) return;
-		loading.navigation = true;
-		goto(resolve('/card/[cardCode]', { cardCode: pokemon.cardCode }));
-	}
 
 	function smoothScroll(targetPosition: number, duration: number) {
 		const startPosition = window.scrollY;
@@ -88,7 +79,7 @@
 <div class="container mx-auto px-4 py-8 text-white">
 	<div class="flex justify-between items-center mb-4">
 		<div class="shrink-0">
-			<PageTitle title="All Pokémons" />
+			<PageTitle title="All Pokémon" />
 		</div>
 		<div class="flex items-end gap-4">
 			<TextInput
@@ -113,8 +104,9 @@
 
 	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8 align-items-start align-content-start">
 		{#each sortedPokemons as pokemon (pokemon.id)}
-			<button
-				onclick={() => navigateToPokemonCard(pokemon)}
+			<!-- A real link, not a button calling `goto`: crawlers only follow `href`s, and this page is the one hub linking every Pokémon. -->
+			<a
+				href={pokemon.path || undefined}
 				class="card-tile focus-ring group p-3 flex flex-col items-center text-center [content-visibility:auto] [contain-intrinsic-size:auto_11rem]"
 				title={`View the most valuable ${pascalCase(pokemon.name)} card`}
 			>
@@ -146,7 +138,7 @@
 					<LayersIcon size={12} />
 					{pokemon.cardCount} card{pokemon.cardCount === 1 ? '' : 's'}
 				</span>
-			</button>
+			</a>
 		{/each}
 	</div>
 </div>

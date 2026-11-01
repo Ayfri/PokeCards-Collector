@@ -4,8 +4,8 @@
 	import CardPrice from '#components/card/CardPrice.svelte';
 	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
-	import { formatCardNumber } from '#helpers/card-utils.ts';
-	import { formatDate } from '#helpers/format.ts';
+	import { formatCardNumber, setPath } from '#helpers/card-utils.ts';
+	import { formatDate, pascalCase } from '#helpers/format.ts';
 	import { page } from '$app/state';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { collection } from '#stores/collection.svelte.ts';
@@ -41,8 +41,13 @@
 	const cardNumber = $derived(card.localId);
 
 	const catalogue = $derived(catalogueOfPath(page.url.pathname));
+	const setHref = $derived(setPath(set, catalogue));
 
-	const displayName = $derived(pokemon && catalogue.speciesTitles ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name);
+	/**
+	 * The page's h1, so it names the print ("Charizard ex", "Dark Charizard") the title and the searches name, not the species alone.
+	 * A Japanese card keeps the English species name, since its own name is in Japanese script on an English page.
+	 */
+	const displayName = $derived(pokemon && catalogue.language === 'ja' ? pascalCase(pokemon.name) : card.name);
 	const displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card?.name}`);
 
 	const user = $derived(page.data.user);
@@ -206,14 +211,14 @@
 						<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Set this card was printed in"><Library size={14} /> Set:</dt>
 						<dd class="flex items-center gap-2 justify-end">
 							<a 
-								href="{catalogue.gridRoute}?set={encodeURIComponent(set.name)}"
+								href={setHref}
 								class="text-white hover:text-gold-400 transition-colors underline group"
 								title="View all cards in this set"
 							>
 								{set.name}
 								<span class="text-xs opacity-80 italic ml-1 text-gray-400 group-hover:text-gold-300 transition-colors">(view all)</span>
 							</a>
-							<a href="{catalogue.gridRoute}?set={encodeURIComponent(set.name)}" title="View all cards in this set">
+							<a href={setHref} title="View all cards in this set">
 								<SetLogo class="inline-block max-w-[60px] max-h-[25px] object-contain hover:opacity-80 transition-opacity" {set} />
 							</a>
 						</dd>

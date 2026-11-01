@@ -1,5 +1,6 @@
 import { getCards, getPrices } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
+import { ogImage } from '#helpers/og-image.ts';
 import type { FullCard } from '#lib/types.js';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { cardPrice } from '#helpers/card-utils.ts';
@@ -100,6 +101,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 			name: 'Pokémon TCG illustrators',
 			numberOfItems: artists.length,
 		}],
+		image: ogImage({ kind: 'page', name: 'artists' }, 'Every Pokémon TCG illustrator on PokéCards-Collector, with the artist count and the most valuable cards'),
 		title: 'Pokémon TCG Card Artists',
 		type: 'CollectionPage' as const,
 	};

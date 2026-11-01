@@ -1,5 +1,6 @@
 import { getCards, getPrices } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
+import { ogImage } from '#helpers/og-image.ts';
 import { breadcrumbs, setListSchema } from '#helpers/seo.ts';
 import type { SetWithPrice } from '#lib/types.js';
 import { cardPrice } from '#helpers/card-utils.ts';
@@ -22,6 +23,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		description: `All ${setsWithPrices.length} Pokémon TCG sets, from Base Set to the latest release, with release dates, card counts and the estimated total value of a complete set in euros.`,
 		keywords: ['Pokémon TCG sets', 'Pokémon set list', 'Pokémon set value', 'Pokémon card sets by release date'],
 		schemas: [setListSchema(setsWithPrices)],
+		image: ogImage({ kind: 'page', name: 'sets' }, 'Every Pokémon TCG set on PokéCards-Collector, with the set and series count and the most valuable cards'),
 		title: 'All Pokémon TCG Sets',
 		type: 'CollectionPage' as const,
 	};

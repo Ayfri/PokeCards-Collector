@@ -1,10 +1,14 @@
 import { redirect } from '@sveltejs/kit';
 import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
 import { breadcrumbs, profileSchema } from '#helpers/seo.ts';
+import { ogImage } from '#helpers/og-image.ts';
 import { readOwnedCatalogues } from '#helpers/owned-cards.ts';
 import { getCatalogue, getPokemons, getTypes } from '#helpers/supabase-data.ts';
 import { getProfileByUsername } from '#lib/services/profiles.ts';
-import { cardPrice } from '#helpers/card-utils.ts';
+import { cardPrice, type CardLink } from '#helpers/card-utils.ts';
+import type { Language } from '#helpers/catalogues.ts';
+import { computeCollectionStats } from '#helpers/collection-stats.ts';
+import { formatEuros } from '#helpers/format.ts';
 import type { FullCard, GridPokemon, PublicProfile, Set, UserProfile } from '#lib/types.js';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -21,6 +25,21 @@ interface UserCardsPayload {
 
 type CardItem = { card_code: string };
 
+/** The numbers and top cards the server draws into the HTML, since the grid itself streams in after the first byte. */
+export interface UserCardsSummary {
+	/** Duplicates included, equal to `uniqueCards` on a wishlist. */
+	copies: number;
+	/** The few most valuable owned cards, carrying what `cardPath` needs and the `cardCode` that keys them, since two cards can share a slug. */
+	topCards: (CardLink & { cardCode: string; language: Language; price: number })[];
+	totalValue: number;
+	uniqueCards: number;
+}
+
+/** How many top cards the HTML names: the document stays small and the line stays on one row. */
+const SUMMARY_TOP_CARDS = 5;
+
+const cardCount = (count: number) => `${count.toLocaleString('en-US')} unique Pokémon TCG card${count === 1 ? '' : 's'}`;
+
 interface UserCardsCopy {
 	crumb: string;
 	emptyHint: string;
@@ -32,7 +51,8 @@ interface UserCardsCopy {
 	privateDescription: string;
 	privateHeading: string;
 	privateTitle: string;
-	publicDescription: (username: string) => string;
+	/** `summary` is null for an empty list, which is not indexed anyway. */
+	publicDescription: (username: string, summary: UserCardsSummary | null) => string;
 	publicTitle: (username: string) => string;
 }
 
@@ -48,7 +68,9 @@ export const USER_CARDS_COPY = {
 		privateDescription: `This user's collection is private.`,
 		privateHeading: 'Collection is Private',
 		privateTitle: 'Private Collection',
-		publicDescription: username => `Every Pokémon TCG card ${username} owns, with Cardmarket prices in euros, set completion and filtering by set, rarity and type.`,
+		publicDescription: (username, summary) => summary
+			? `${username} owns ${cardCount(summary.uniqueCards)} worth about ${formatEuros(summary.totalValue)}, with Cardmarket prices in euros, set completion and filtering by set, rarity and type.`
+			: `Every Pokémon TCG card ${username} owns, with Cardmarket prices in euros, set completion and filtering by set, rarity and type.`,
 		publicTitle: username => `${username}'s Pokémon Card Collection`,
 	},
 	wishlist: {
@@ -62,16 +84,18 @@ export const USER_CARDS_COPY = {
 		privateDescription: `This user's wishlist is private.`,
 		privateHeading: 'Wishlist is Private',
 		privateTitle: 'Private Wishlist',
-		publicDescription: username => `The Pokémon TCG cards ${username} is still hunting for, with Cardmarket prices in euros and the set each card belongs to.`,
+		publicDescription: (username, summary) => summary
+			? `${username} is still hunting for ${cardCount(summary.uniqueCards)} worth about ${formatEuros(summary.totalValue)}, with Cardmarket prices in euros and the set each card belongs to.`
+			: `The Pokémon TCG cards ${username} is still hunting for, with Cardmarket prices in euros and the set each card belongs to.`,
 		publicTitle: username => `${username}'s Pokémon Card Wishlist`,
 	},
 } satisfies Record<'collection' | 'wishlist', UserCardsCopy>;
 
 export type UserCardsKind = keyof typeof USER_CARDS_COPY;
 
-async function buildPayload(itemCodes: string[]): Promise<UserCardsPayload> {
+async function buildPayload(itemCodes: string[]): Promise<{ payload: UserCardsPayload; summary: UserCardsSummary | null }> {
 	/** A missing, private or empty page draws no grid, so it skips the four catalogue reads. */
-	if (itemCodes.length === 0) return { artists: [], cards: [], pokemons: [], rarities: [], sets: [], types: [] };
+	if (itemCodes.length === 0) return { payload: { artists: [], cards: [], pokemons: [], rarities: [], sets: [], types: [] }, summary: null };
 
 	const [catalogues, pokemons, types] = await Promise.all([readOwnedCatalogues(itemCodes, getCatalogue), getPokemons(), getTypes()]);
 
@@ -79,19 +103,38 @@ async function buildPayload(itemCodes: string[]): Promise<UserCardsPayload> {
 	const userCards = catalogues.flatMap(({ language, owned, prices }) => owned.map(card => ({ ...card, language, price: cardPrice(prices[card.cardCode]) })));
 	const dexIds = new Set(userCards.map(card => card.pokemonNumber));
 
+	/** A wishlist goes in as the collection argument, so every copy count stays 1 and `wishlist_*` are not read. */
+	const stats = computeCollectionStats(itemCodes.map(card_code => ({ card_code })), [], catalogues);
+
 	return {
-		/** The filter lists come from these cards, not the whole catalogue: a 200-card collection would otherwise offer 1700 artists. */
-		artists: distinctArtists(userCards),
-		cards: userCards,
-		/** Only the Pokémon these cards name: the full table is 1025 rows with their Pokédex entries, just to look up a name. */
-		pokemons: pokemons.filter(pokemon => dexIds.has(pokemon.id)).map(({ id, name }) => ({ id, name })),
-		rarities: distinctRarities(userCards),
-		/** The English sets already come with the layout, so only the sets of the other catalogues' owned cards travel. */
-		sets: catalogues.filter(({ language }) => language !== 'en').flatMap(({ language, owned, sets }) => {
-			const ownedSetIds = new Set(owned.map(card => card.setId));
-			return sets.filter(set => ownedSetIds.has(set.setId)).map(set => ({ ...set, language }));
-		}),
-		types,
+		payload: {
+			/** The filter lists come from these cards, not the whole catalogue: a 200-card collection would otherwise offer 1700 artists. */
+			artists: distinctArtists(userCards),
+			cards: userCards,
+			/** Only the Pokémon these cards name: the full table is 1025 rows with their Pokédex entries, just to look up a name. */
+			pokemons: pokemons.filter(pokemon => dexIds.has(pokemon.id)).map(({ id, name }) => ({ id, name })),
+			rarities: distinctRarities(userCards),
+			/** The English sets already come with the layout, so only the sets of the other catalogues' owned cards travel. */
+			sets: catalogues.filter(({ language }) => language !== 'en').flatMap(({ language, owned, sets }) => {
+				const ownedSetIds = new Set(owned.map(card => card.setId));
+				return sets.filter(set => ownedSetIds.has(set.setId)).map(set => ({ ...set, language }));
+			}),
+			types,
+		},
+		summary: {
+			copies: stats.total_instances,
+			topCards: stats.top_cards.slice(0, SUMMARY_TOP_CARDS).map(({ card, price }) => ({
+				cardCode: card.cardCode,
+				language: card.language ?? 'en',
+				localId: card.localId,
+				name: card.name,
+				price,
+				setId: card.setId,
+				setName: card.setName,
+			})),
+			totalValue: stats.total_value,
+			uniqueCards: stats.unique_cards,
+		},
 	};
 }
 
@@ -128,7 +171,8 @@ export async function loadUserCardsPage({ client, fetchItems, kind, parent, requ
 			isPublic: false,
 			noindex: true,
 			schemas: [],
-			streamed: { payload: buildPayload([]) },
+			streamed: { payload: buildPayload([]).then(({ payload }) => payload) },
+			summary: null as UserCardsSummary | null,
 			targetProfile: null as PublicProfile | null,
 			targetUsername: requestedUsername,
 			title: 'User Not Found',
@@ -150,21 +194,32 @@ export async function loadUserCardsPage({ client, fetchItems, kind, parent, requ
 			: (await fetchItems(username, client)).data ?? []
 		: [];
 
+	const built = buildPayload(items.map(item => item.card_code));
+	/** Awaited so the HTML names the numbers and the top cards, since a crawler that skips JavaScript never sees the streamed grid. A failed read leaves the summary out and the stream shows the error. */
+	const summary = canRead && items.length ? await built.then(({ summary }) => summary, () => null) : null;
+
 	return {
 		breadcrumbs: breadcrumbs(
 			{ name: 'Collectors', url: '/users' },
 			{ name: username, url: `/profile/${username}` },
 			{ name: copy.crumb, url: `/${kind}/${username}` }
 		),
-		description: canRead ? (isOwner ? copy.ownDescription : copy.publicDescription(username)) : copy.privateDescription,
+		description: canRead ? (isOwner ? copy.ownDescription : copy.publicDescription(username, summary)) : copy.privateDescription,
 		/** `heading` is the short form shown on the page, `title` the long one the crawler indexes. */
 		heading: canRead ? (isOwner ? copy.ownTitle : `${username}'s ${copy.label}`) : copy.privateHeading,
+		/** Versioned on the owned codes and the rounded total value of a public list only, so a private one never feeds what the owner sees into its URL. */
+		image: ogImage(
+			{ kind, username },
+			isPublic ? `${username}'s Pokémon card ${kind}: ${items.length} unique cards, their value and the most valuable ones` : `${username}'s private Pokémon card ${kind}`,
+			...(isPublic ? [items.length, items.map(item => item.card_code).join(), Math.round((summary?.totalValue ?? 0) * 100)] : ['private']),
+		),
 		isOwner,
 		isPublic,
-		/** Only a public profile's cards are public content, anything else is an empty shell the crawler must not index. */
-		noindex: !isPublic,
+		/** Only a public profile's cards are public content, anything else (an empty public list included) is a shell the crawler must not index. */
+		noindex: !isPublic || !items.length,
 		schemas: isPublic ? [profileSchema(targetProfile, `/${kind}/${username}`)] : [],
-		streamed: { payload: buildPayload(items.map(item => item.card_code)) },
+		streamed: { payload: built.then(({ payload }) => payload) },
+		summary,
 		targetProfile,
 		targetUsername: username,
 		title: canRead ? (isOwner ? copy.ownTitle : copy.publicTitle(username)) : copy.privateTitle,

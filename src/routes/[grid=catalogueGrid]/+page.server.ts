@@ -1,50 +1,56 @@
 import { BY_GRID } from '#helpers/catalogues.ts';
-import { getSets } from '#helpers/supabase-data.ts';
+import { setPath } from '#helpers/card-utils.ts';
+import { redirectToSetPage } from '#helpers/grid-payload.ts';
+import { ogImage, setShareImage, setValue } from '#helpers/og-image.ts';
+import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
-import { breadcrumbs, setSchema } from '#helpers/seo.ts';
+import { breadcrumbs } from '#helpers/seo.ts';
 
 /**
  * SEO only: the grid's cards, prices, pokemons and types come from `/api/{grid}-cards` through `+page.ts`.
  * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends what it returns.
  */
-export const load: PageServerLoad = async ({ params, parent, url }) => {
+export const load: PageServerLoad = async ({ isDataRequest, params, url }) => {
 	const catalogue = BY_GRID[params.grid];
 	const { adjective, gridRoute } = catalogue;
 
-	/** `parent()` only supplies the fallback share image, so the sets load in parallel with it. */
-	const [{ image: parentImage }, memoizedSets] = await Promise.all([parent(), getSets(catalogue.language)]);
+	const memoizedSets = await getSets(catalogue.language);
 	const sets = memoizedSets.toSorted((a, b) => a.name.localeCompare(b.name));
 
 	const setParam = url.searchParams.get('set');
-	let ogImage = null;
+	let image = ogImage({ kind: 'page', name: params.grid }, `Every ${adjective} Pokémon TCG card on PokéCards-Collector: the card and set count, and the three most valuable cards`);
 	let ogTitle = `${adjective} Pokémon Cards`;
 	let ogDescription = `Browse ${adjective} Pokémon TCG cards across ${sets.length} ${adjective} sets, with Cardmarket prices in euros. Filter by set, type, rarity or artist.`;
 	let ogKeywords = [`${adjective} Pokémon cards`, `${adjective} Pokémon TCG`, `${adjective} Pokémon card prices`, `${adjective} Pokémon sets`];
 	let ogCrumbs = breadcrumbs({ name: `${adjective} cards`, url: gridRoute });
-	const ogSchemas: Record<string, unknown>[] = [];
+	let canonical: string | undefined;
 
 	if (setParam) {
 		const set = sets.find(s => s.name.toLowerCase() === setParam.toLowerCase());
 		if (set) {
+			redirectToSetPage(url, isDataRequest, set, catalogue);
+
+			/** A `?set=` grid that combines filters is a view of the set page: it keeps its set title and image, and the set page is its canonical. */
+			const [cards, prices] = await Promise.all([getCards(catalogue.language), getPrices(catalogue.language)]);
 			const total = set.totalCards ?? set.printedTotal;
-			ogImage = { url: set.logo, alt: `${set.name} ${adjective} set logo` };
-			ogTitle = `${set.name} - ${adjective} Card List`;
+			image = setShareImage(set, setValue(set.setId, cards, prices), catalogue);
+			ogTitle = `${set.name} - ${adjective} Card List & Prices`;
 			ogDescription = `Every card in the ${adjective} Pokémon TCG set ${set.name}${total ? `, ${total} cards in total` : ''}, with Cardmarket prices in euros.`;
 			ogKeywords = [`${set.name} ${adjective.toLowerCase()} set`, `${set.name} card list`, `${adjective} Pokémon TCG`];
-			ogCrumbs = breadcrumbs({ name: `${adjective} cards`, url: gridRoute }, { name: set.name, url: `${gridRoute}?set=${encodeURIComponent(set.name)}` });
-			ogSchemas.push(setSchema(set, catalogue));
+			ogCrumbs = breadcrumbs({ name: `${adjective} cards`, url: gridRoute }, { name: set.name, url: setPath(set, catalogue) });
+			canonical = setPath(set, catalogue);
 		}
 	}
 
 	return {
+		canonical,
 		sets,
 		title: ogTitle,
 		description: ogDescription,
-		image: ogImage ?? parentImage,
+		image,
 		breadcrumbs: ogCrumbs,
 		keywords: ogKeywords,
 		note: catalogue.note,
-		schemas: ogSchemas,
 		type: 'CollectionPage' as const,
 	};
 };

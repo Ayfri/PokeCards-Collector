@@ -1,12 +1,18 @@
 import { BASE_URL } from '#src/constants.ts';
 
 export interface SitemapEntry {
+	/** Rendered as `xhtml:link` hreflang alternates. Google needs them reciprocal and self-referencing, so each page of a group lists the whole group. */
+	alternates?: { href: string; hreflang: string }[];
 	changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
 	/** Rendered as an `image:image` entry, which is what puts card art into Google Images. */
 	image?: { loc: string; title?: string };
 	lastmod?: string;
 	loc: string;
 	priority?: number;
+}
+
+function absolute(url: string): string {
+	return url.startsWith('http') ? url : `${BASE_URL}${url}`;
 }
 
 /** URLs and titles carry `&`, `'` and accented set names, and an unescaped one makes the whole file unparseable. */
@@ -31,12 +37,17 @@ export function sitemapResponse(body: string, maxAge = 3600): Response {
 	});
 }
 
+/** The English and French pages of one card, as the alternates both entries carry. */
+export function twinAlternates(twin: Record<'en' | 'fr', string> | undefined): SitemapEntry['alternates'] {
+	return twin && [{ hreflang: 'en', href: twin.en }, { hreflang: 'fr', href: twin.fr }];
+}
+
 export function urlset(entries: SitemapEntry[]): string {
 	const body = entries.map(entry => {
-		const loc = entry.loc.startsWith('http') ? entry.loc : `${BASE_URL}${entry.loc}`;
 		return [
 			'\t<url>',
-			`\t\t<loc>${xmlEscape(loc)}</loc>`,
+			`\t\t<loc>${xmlEscape(absolute(entry.loc))}</loc>`,
+			...(entry.alternates ?? []).map(alternate => `\t\t<xhtml:link rel="alternate" hreflang="${xmlEscape(alternate.hreflang)}" href="${xmlEscape(absolute(alternate.href))}"/>`),
 			entry.lastmod ? `\t\t<lastmod>${entry.lastmod}</lastmod>` : '',
 			entry.changefreq ? `\t\t<changefreq>${entry.changefreq}</changefreq>` : '',
 			entry.priority !== undefined ? `\t\t<priority>${entry.priority.toFixed(1)}</priority>` : '',
@@ -48,7 +59,7 @@ export function urlset(entries: SitemapEntry[]): string {
 	}).join('\n');
 
 	return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml">
 ${body}
 </urlset>`;
 }
@@ -56,7 +67,7 @@ ${body}
 export function sitemapIndex(locations: { lastmod?: string; loc: string }[]): string {
 	const body = locations.map(entry => [
 		'\t<sitemap>',
-		`\t\t<loc>${xmlEscape(entry.loc.startsWith('http') ? entry.loc : `${BASE_URL}${entry.loc}`)}</loc>`,
+		`\t\t<loc>${xmlEscape(absolute(entry.loc))}</loc>`,
 		entry.lastmod ? `\t\t<lastmod>${entry.lastmod}</lastmod>` : '',
 		'\t</sitemap>',
 	].filter(Boolean).join('\n')).join('\n');

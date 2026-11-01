@@ -1,16 +1,6 @@
 import { version } from '$app/env';
 import { goto, refreshAll } from '$app/navigation';
-import { resolve } from '$app/paths';
 import { page } from '$app/state';
-import { CATALOGUES, type Language } from '#helpers/catalogues.ts';
-
-/** The card page of a catalogue. It lives here and not in `catalogues.ts`, which the scrapers and the Worker bundle and which cannot import `$app/paths`. */
-export function cardPath(language: Language, cardCode: string): string {
-	const { routeCode } = CATALOGUES[language];
-	return routeCode
-		? resolve('/[catalogue=catalogue]-card/[cardCode]', { catalogue: routeCode, cardCode })
-		: resolve('/card/[cardCode]', { cardCode });
-}
 
 /** Reruns every load so the pages see the new session, then leaves the pages that only make sense signed out (`/auth/*`, `/reset-password`). */
 export async function finishSignIn(): Promise<void> {

@@ -3,12 +3,9 @@
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { getCardImageForPokemon, NO_IMAGES } from '#helpers/card-images.ts';
 	import type { FullCard, Pokemon, PriceData } from '#lib/types.js';
-	import { getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
+	import { cardPath, getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
-	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { loading } from '#stores/loading.svelte.ts';
-	import { cardPath } from '#helpers/utils.ts';
 
 	interface Props {
 		allCards: FullCard[];
@@ -27,11 +24,6 @@
 	}: Props = $props();
 	
 	const catalogue = $derived(catalogueOfPath(page.url.pathname));
-
-	function navigateToPokemon(cardCode: string) {
-		loading.navigation = true;
-		goto(cardPath(catalogue.language, cardCode));
-	}
 
 	function buildEvolutionChain(card: FullCard) {
 		const currentPokemon = pokemons.find(p => p.id === card.pokemonNumber);
@@ -85,12 +77,14 @@
 
 {#if uniqueChain.length > 1}
 	<div class="evolution-chain bg-gray-800/75 flex items-center justify-center gap-4 max-w-full overflow-x-auto px-4 py-2">
-		{#each uniqueChain as pokemon, i}
+		{#each uniqueChain as pokemon, i (pokemon.id)}
 			{@const representativeCard = getRepresentativeCardForPokemon(pokemon.id, allCards, prices)}
 			<div class="evolution-item flex flex-col items-center">
-				<button
-					onclick={() => representativeCard ? navigateToPokemon(representativeCard.cardCode) : navigateToPokemon(pokemon.id.toString())}
+				<!-- A real link so crawlers follow the evolution line from card to card. A Pokémon with no card in the catalogue has nothing to open. -->
+				<a
+					href={representativeCard ? cardPath(catalogue.language, representativeCard) : undefined}
 					class="evolution-image-wrapper relative"
+					title="{pascalCase(pokemon.name)} cards"
 				>
 					<div class="pokemon-number text-[0.6rem] absolute -top-1 -right-1 bg-black text-white rounded-full w-6 h-6 flex items-center justify-center z-10">
 						{pokemon.id}
@@ -114,7 +108,7 @@
 					{#if pokemon.id === currentPokemon?.id}
 						<div class="current-marker absolute inset-0 border-2 border-gold-400 rounded-full"></div>
 					{/if}
-				</button>
+				</a>
 				<span class="evolution-name text-xs text-center mt-1 max-w-16 overflow-hidden text-ellipsis">
 					{pascalCase(pokemon.name)}
 				</span>

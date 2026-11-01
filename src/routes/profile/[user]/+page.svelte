@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { refreshAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { cardPath } from '#helpers/card-utils.ts';
 	import { formatEuros, timeAgo } from '#helpers/format.ts';
 	import { compareRarities } from '#helpers/rarity.ts';
 	import { toggleProfileVisibility } from '#lib/services/profiles.ts';
@@ -137,7 +138,7 @@
 	}
 </script>
 
-<main class="container mx-auto flex flex-col gap-8 overflow-x-hidden px-4 pt-4 pb-12 text-white" style="--accent: {accent}">
+<div class="container mx-auto flex flex-col gap-8 overflow-x-hidden px-4 pt-4 pb-12 text-white" style="--accent: {accent}">
 	<section
 		class="relative overflow-hidden rounded-2xl border border-white/10 bg-gray-900 shadow-2xl motion-safe:animate-reveal motion-safe:[animation-delay:100ms]"
 	>
@@ -277,7 +278,7 @@
 						</div>
 						<div class="grid grid-cols-3 gap-4 sm:grid-cols-6 lg:grid-cols-3 xl:grid-cols-6">
 							{#each collectionStats.top_cards as { card, copies, price }, i (card.cardCode)}
-								<a class="group flex flex-col gap-2" href={`${CATALOGUES[card.language ?? 'en'].cardRoute}/${card.cardCode}`} title={`${card.name}, ${card.setName} ${card.localId}`}>
+								<a class="group flex flex-col gap-2" href={cardPath(card.language ?? 'en', card)} title={`${card.name}, ${card.setName} ${card.localId}`}>
 									<div class="relative transition-transform duration-300 group-hover:-translate-y-1.5 group-hover:rotate-1">
 										<CardImage alt={card.name} {card} class="w-full rounded-lg shadow-lg" imageUrl={card.image} lowRes sizes="160px" types={card.types} />
 										{#if i === 0}
@@ -406,4 +407,4 @@
 			{/if}
 		</section>
 	{/if}
-</main>
+</div>

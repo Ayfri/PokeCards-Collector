@@ -6,7 +6,7 @@
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
-	import { cardGroupName, cardPrice } from '#helpers/card-utils.ts';
+	import { cardGroupName, cardPath, cardPrice } from '#helpers/card-utils.ts';
 	import { formatEuros } from '#helpers/format.ts';
 	import { addCardToCollection, removeCardFromCollection } from '#lib/services/collections.ts';
 	import { addCardToWishlist, removeCardFromWishlist } from '#lib/services/wishlists.ts';
@@ -16,6 +16,7 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import SetBadge from '#components/SetBadge.svelte';
 	import { page } from '$app/state';
+	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { wishlist } from '#stores/wishlist.svelte.ts';
 	import { onMount } from 'svelte';
 
@@ -43,6 +44,7 @@
 
 	const relatedSort = persistedRecord('related-cards-sort', { direction: 'asc' as 'asc' | 'desc', value: 'sort-set' });
 
+	const catalogue = $derived(catalogueOfPath(page.url.pathname));
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
 
@@ -120,6 +122,12 @@
 		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
 		: (cardGroupName(sortedCards[0]?.name ?? '') || 'Related'));
 
+	function selectCard(card: FullCard, event: MouseEvent) {
+		if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+		event.preventDefault();
+		onCardSelect(card);
+	}
+
 	async function toggleWishlist(cardCode: string, event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
@@ -173,14 +181,16 @@
 	{#if sortedCards.length > 0}
 		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 md:gap-4">
 			{#if !showTiles}
-				{#each { length: sortedCards.length }}
-					<div class="flex flex-col items-center" aria-hidden="true">
+				<!-- The placeholders are what the server renders, so each one is a real link to its print for crawlers. They keep the
+				     prop order, not the persisted sort, which only exists in the browser and would break hydration. -->
+				{#each cards as card (card.cardCode)}
+					{@const setName = setsById.get(card.setId)?.name ?? card.setName}
+					{@const price = cardPrice(prices[card.cardCode])}
+					<a class="flex flex-col items-center text-sm" href={cardPath(catalogue.language, card)} title="{card.name} - {setName}">
 						<div class="w-full animate-pulse rounded-lg bg-gray-700/50" style="aspect-ratio: 63/88;"></div>
-						<div class="mt-0.5 flex flex-col items-center">
-							<div class="flex h-5 items-center"><div class="h-3 w-24 animate-pulse rounded bg-gray-700/50"></div></div>
-							<div class="flex h-5 items-center"><div class="h-3 w-16 animate-pulse rounded bg-gray-700/50"></div></div>
-						</div>
-					</div>
+						<span class="mt-0.5 flex h-5 items-center font-bold">{setName}</span>
+						<span class="flex h-5 items-center">{price ? formatEuros(price) : 'Priceless'}</span>
+					</a>
 				{/each}
 			{:else}
 			{#each sortedCards as card (card.cardCode)}
@@ -191,13 +201,15 @@
 					class="relative flex flex-col items-center transition-transform duration-300 hover:-translate-y-1"
 					transition:fade={{ duration: 200 }}
 				>
-					<!-- Stretched button: covers the whole tile so the nested controls stay valid HTML. -->
-					<button
+					<!-- Stretched link: covers the whole tile so the nested controls stay valid HTML. A plain click swaps the card in place,
+					     a modified one opens the print's own page like any link. -->
+					<a
 						class="absolute inset-0 z-2 cursor-pointer"
-						onclick={() => onCardSelect(card)}
+						href={cardPath(catalogue.language, card)}
+						onclick={(event) => selectCard(card, event)}
 						aria-label={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
 						title={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
-					></button>
+					></a>
 					<div class="relative rounded-lg overflow-hidden shadow-lg w-full" style="aspect-ratio: 63/88;">
 						{#if !NO_IMAGES}
 							<CardImage
@@ -205,7 +217,7 @@
 								{card}
 								set={cardSet}
 								types={card.types}
-								alt={cardPokemon ? cardPokemon.name : card.name}
+								alt="{cardPokemon ? cardPokemon.name : card.name} - {cardSet?.name ?? card.setName}"
 								class="card-image"
 								lazy={true}
 								lowRes={lowRes}

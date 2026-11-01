@@ -75,7 +75,7 @@
 <div class="container mx-auto px-4 py-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
 		<div transition:fly={{ y: 50, duration: 400, delay: 200 }}>
-			<PageTitle title="Artists" />
+			<PageTitle title="Card Artists" />
 		</div>
 
 		<div class="flex items-center gap-2" transition:fly={{ y: 50, duration: 500, delay: 250 }}>

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
 	import Flag from '#components/Flag.svelte';
-	import { cachedJson, cardPath } from '#helpers/utils.ts';
+	import { cachedJson } from '#helpers/utils.ts';
 	import { CATALOGUES, LANGUAGES, type CardVersions, type Language } from '#helpers/catalogues.ts';
 
 	interface Props {
@@ -22,20 +22,20 @@
 
 {#await versions then found}
 	{@const available = LANGUAGES.flatMap(target => {
-		const code = found[target];
-		return code ? [{ code, target }] : [];
+		const path = found[target];
+		return path ? [{ path, target }] : [];
 	})}
 	{#if available.length > 1}
 		<div class="w-full" in:fade={{ duration: 400 }}>
 			<nav class="flex gap-2 justify-center" aria-label="Card language">
-				{#each available as { code, target } (target)}
+				{#each available as { path, target } (target)}
 					{#if target === language}
 						<span class={[pill, 'text-gold-400 ring-1 ring-gold-400']} aria-current="true">
 							<Flag language={target} class="h-4 w-6 rounded-sm" />
 							{CATALOGUES[target].adjective}
 						</span>
 					{:else}
-						<a class={[pill, 'text-white transition-colors hover:bg-black/80 hover:text-gold-400']} href={cardPath(target, code)}>
+						<a class={[pill, 'text-white transition-colors hover:bg-black/80 hover:text-gold-400']} href={path}>
 							<Flag language={target} class="h-4 w-6 rounded-sm" />
 							{CATALOGUES[target].adjective}
 						</a>

@@ -19,6 +19,8 @@
 
 	interface Props {
 		breadcrumbs?: Breadcrumb[];
+		/** Root-relative canonical for a page whose request path is not its document's URL: a `?set=` grid points at the set page (`/sets/151`), a card at its own slug. Defaults to the bare path. */
+		canonical?: string;
 		description?: string;
 		image?: Image | null;
 		keywords?: string[];
@@ -32,6 +34,7 @@
 
 	let {
 		breadcrumbs = [],
+		canonical,
 		description = SITE_DESCRIPTION,
 		image = null,
 		keywords = [],
@@ -52,8 +55,11 @@
 			? title.trim()
 			: `${title.trim()} - ${SITE_NAME}`
 	);
-	/** The canonical URL drops the query string: `?set=`, `?page=` and the like only filter the same document. */
-	const effectiveCanonicalUrl = $derived(`${BASE_URL}${page.url.pathname}`);
+	/**
+	 * The canonical drops the query string unless the load names one: sorts and secondary filters only rearrange the same document,
+	 * while a `?set=` grid that still renders (it combines filters, so it is not redirected) names the set page as its canonical.
+	 */
+	const effectiveCanonicalUrl = $derived(`${BASE_URL}${canonical ?? page.url.pathname}`);
 	const imageUrl = $derived(image?.url ? absolute(image.url) : null);
 	const ogType = $derived(OG_TYPES[type]);
 	const robots = $derived(noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1');

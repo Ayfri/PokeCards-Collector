@@ -8,14 +8,12 @@
 	import type {FullCard, Pokemon, Set, PriceData} from '#lib/types.js';
 	import { pascalCase } from '#helpers/format.ts';
 	import InteractiveCard from '#components/card/InteractiveCard.svelte';
-	import { flushSync, onMount } from 'svelte';
+	import { flushSync } from 'svelte';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { catalogueOfPath, type CardVersions } from '#helpers/catalogues.ts';
-	import { getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
+	import { cardPath, cardSlug, getRepresentativeCardForPokemon, setPath, type SetNeighbourLinks } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc, getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
-	import { loading } from '#stores/loading.svelte.ts';
-	import { cardPath } from '#helpers/utils.ts';
 	import { morphCards } from '#helpers/view-transitions.ts';
 
 	
@@ -25,6 +23,7 @@
 		prices: Record<string, PriceData>;
 		sets: Set[];
 		pokemonCards: FullCard[];
+		neighbours: SetNeighbourLinks;
 		versions: Promise<CardVersions>;
 		lowRes?: boolean;
 	}
@@ -35,17 +34,23 @@
 		prices,
 		sets,
 		pokemonCards,
+		neighbours,
 		versions,
 		lowRes = false
 	}: Props = $props();
 
 	const catalogue = $derived(catalogueOfPath(page.url.pathname));
 
-	let currentCard = $state<FullCard | undefined>(undefined);
-	let isInitialRenderComplete = $state(false);
+	/**
+	 * Derived from the load rather than set in `onMount`, so the server renders the whole card with its heading, details and links:
+	 * crawlers that run no JavaScript, most answer engines among them, only read that HTML. A related pick or a Back into a shallow entry overrides it.
+	 */
+	let currentCard = $derived<FullCard | undefined>(pokemonCards[0]);
 
 	const cardPrices = $derived(currentCard ? prices[currentCard.cardCode] : undefined);
 	const currentSet = $derived(currentCard ? sets.find(set => set.setId === currentCard?.setId) : undefined);
+	/** The neighbours belong to the loaded card: after a related print is swapped in, they would point around the wrong one. */
+	const showNeighbours = $derived(currentCard?.cardCode === pokemonCards[0].cardCode && !!(neighbours.previous || neighbours.next));
 	const currentType = $derived(currentCard?.types?.toLowerCase().split(',')[0] || 'unknown');
 	const currentPokemonId = $derived(currentCard?.pokemonNumber);
 
@@ -81,26 +86,13 @@
 
 	/** Swaps the displayed card without a navigation: the picked tile flies up into the big card while the page jumps back to the top. */
 	function handleCardSelect(selectedCard: FullCard) {
-		const { cardCode } = selectedCard;
-		goto(cardPath(catalogue.language, cardCode), { replace: true, shallow: true });
+		goto(cardPath(catalogue.language, selectedCard), { replace: true, shallow: true });
 		morphCards([selectedCard.cardCode], () => {
 			currentCard = selectedCard;
 			flushSync();
 			window.scrollTo({ behavior: 'instant', top: 0 });
 		});
 	}
-
-	function handlePokemonNavigation(cardCode: string | undefined) {
-		if (cardCode) {
-			loading.navigation = true;
-			goto(cardPath(catalogue.language, cardCode));
-		}
-	}
-
-	onMount(() => {
-		currentCard = pokemonCards[0];
-		isInitialRenderComplete = true;
-	});
 
 	/** Our shallow `goto` only rewrites the URL, the card is already swapped. A Back into that entry is `shallow` too but reloads the page, so it resyncs. */
 	afterNavigate(({ shallow, type }) => {
@@ -109,27 +101,24 @@
 		/**
 		 * Read from the address bar, not `page.url`: a Back into a shallow entry loads the page of the card it replaced, so `page.url`
 		 * names that card. Card links have no trailing slash (`trailingSlash` is `never`), and the last non-empty segment also reads one that has.
+		 * The pathname is percent-encoded (Japanese slugs), and the slug is NFC like the ones `cardSlug` builds.
 		 */
-		const cardCodeFromUrl = window.location.pathname.split('/').filter(Boolean).at(-1);
+		const slugFromUrl = decodeURIComponent(window.location.pathname.split('/').filter(Boolean).at(-1) ?? '').normalize('NFC');
+		const isShown = (card: FullCard) => cardSlug(card, catalogue.language) === slugFromUrl;
 		/** `pokemonCards` holds the viewed card with every column, `allCards` only its list fields, so it is searched first. */
-		const matchingCard = pokemonCards.find(card => card.cardCode === cardCodeFromUrl) ?? allCards.find(card => card.cardCode === cardCodeFromUrl);
+		const matchingCard = pokemonCards.find(isShown) ?? allCards.find(isShown);
 
-		if (matchingCard && matchingCard !== currentCard) {
-			currentCard = matchingCard;
-		} else if (!currentCard) {
-			currentCard = pokemonCards[0];
-		}
-
-		isInitialRenderComplete = true;
+		if (matchingCard && matchingCard !== currentCard) currentCard = matchingCard;
 	});
 </script>
 
 <!-- The mobile row sits under the card, the desktop buttons flank it (`order`), and an empty slot keeps the card centered. -->
 {#snippet pokemonNav(pokemon: Pokemon | undefined, card: FullCard | undefined, side: 'prev' | 'next', desktop: boolean)}
 	{#if pokemon && card}
-		<button
-			onclick={() => handlePokemonNavigation(card.cardCode)}
+		<a
+			href={cardPath(catalogue.language, card)}
 			class={['pokemon-nav flex-col items-center opacity-70 hover:opacity-100 transition-opacity', desktop ? 'hidden lg:flex w-48' : 'flex w-auto', desktop && (side === 'prev' ? 'order-1' : 'order-3')]}
+			title="{pascalCase(pokemon.name)} cards"
 			in:fly={{ x: side === 'prev' ? -50 : 50, duration: 400, delay: 400 }}
 		>
 			{#if !NO_IMAGES}
@@ -148,14 +137,14 @@
 			{/if}
 			<span class="mt-1 text-center text-xs font-bold">{pascalCase(pokemon.name)}</span>
 			<span class="text-xs text-gray-400">#{pokemon.id}</span>
-		</button>
+		</a>
 	{:else}
 		<div class={desktop ? ['hidden lg:block w-48', side === 'prev' ? 'order-1' : 'order-3'] : 'w-16'}></div>
 	{/if}
 {/snippet}
 
 <div class="flex flex-col gap-1 lg:gap-4 items-center content-center">
-	{#if currentPokemon && isInitialRenderComplete && currentCard}
+	{#if currentPokemon && currentCard}
 		<div in:fly={{ y: -30, duration: 400, delay: 100 }}>
 			<EvolutionChain card={currentCard} {pokemons} {allCards} pokemonCards={currentPokemonCards} {prices} />
 		</div>
@@ -192,6 +181,28 @@
 		{@render pokemonNav(previousPokemon, previousPokemonCard, 'prev', true)}
 		{@render pokemonNav(nextPokemon, nextPokemonCard, 'next', true)}
 	</div>
+
+	{#if currentCard && showNeighbours}
+		<nav aria-label="Cards in this set" class="grid w-full max-w-2xl grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-md bg-black/60 px-3 py-2 text-sm">
+			{#if neighbours.previous}
+				<a class="min-w-0 justify-self-start truncate text-white transition-colors hover:text-gold-400" href={neighbours.previous.path} rel="prev">
+					‹ #{neighbours.previous.number} {neighbours.previous.name}
+				</a>
+			{:else}
+				<span></span>
+			{/if}
+			<a class="max-w-40 truncate text-center font-bold text-gold-400 hover:underline sm:max-w-xs" href={setPath(currentSet ?? { name: currentCard.setName, setId: currentCard.setId }, catalogue)} title="View all cards in this set">
+				{currentSet?.name ?? currentCard.setName}
+			</a>
+			{#if neighbours.next}
+				<a class="min-w-0 justify-self-end truncate text-white transition-colors hover:text-gold-400" href={neighbours.next.path} rel="next">
+					{neighbours.next.name} #{neighbours.next.number} ›
+				</a>
+			{:else}
+				<span></span>
+			{/if}
+		</nav>
+	{/if}
 
 	{#if currentCard}
 		<CardLanguages cardCode={currentCard.cardCode} language={catalogue.language} known={{ cardCode: pokemonCards[0].cardCode, versions }} />

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { resolve } from "$app/paths";
 	import type { PageData } from "./$types";
 	import BinderPage from "#components/binder/BinderPage.svelte";
 	import CardImage from "#components/card/CardImage.svelte";
 	import RaritySymbol from "#components/card/RaritySymbol.svelte";
 	import SetLogo from "#components/SetLogo.svelte";
 	import CountUp from "#components/ui/CountUp.svelte";
+	import { cardPath, setPath } from "#helpers/card-utils.ts";
 	import { CATALOGUES } from "#helpers/catalogues.ts";
 	import { formatDate, formatEuros } from "#helpers/format.ts";
 	import { NO_IMAGES } from "#helpers/card-images.ts";
@@ -49,6 +49,8 @@
 		{ count: data.sets.length, duration: 2, href: '/sets', icon: SetIcon, label: 'Sets', title: 'Browse every set' },
 		{ count: data.stats.artists, duration: 2.5, href: '/artists', icon: PaintbrushIcon, label: 'Artists', title: 'Browse every illustrator' },
 	]);
+
+	const latestSetPath = $derived(data.latestSet ? setPath(data.latestSet, CATALOGUES.en) : '/sets');
 
 	const FEATURE_CARD_CLASS = 'card-tile p-6';
 
@@ -115,7 +117,7 @@
 					<div
 						class="card-tile overflow-hidden flex flex-col"
 					>
-						<a href={resolve('/card/[cardCode]', { cardCode: card.cardCode })} class="block">
+						<a href={cardPath('en', card)} class="block">
 							<div class="relative pt-[140%]">
 								<CardImage
 									imageUrl={card.image}
@@ -148,7 +150,7 @@
 	{/if}
 {/snippet}
 
-<main class="container mx-auto px-4 py-8 text-white overflow-x-hidden">
+<div class="container mx-auto px-4 py-8 text-white overflow-x-hidden">
 	<section class="flex flex-col md:flex-row gap-8 mb-20" style="--intro-delay: 100ms">
 		<div class="flex-1">
 			<h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight text-balance text-gold-400">
@@ -206,9 +208,7 @@
 			{#if data.latestSet}
 				<h2 class="text-lg font-semibold uppercase tracking-[0.2em] text-gold-400">Latest set</h2>
 				<a
-					href="/cards-list?set={encodeURIComponent(
-						data.latestSet.name,
-					)}"
+					href={latestSetPath}
 					class="relative w-full max-w-lg transform transition-all duration-300 hover:scale-105 block"
 				>
 					<SetLogo class="w-[95%] mb-2 object-contain mx-auto rounded-lg shadow-md" set={data.latestSet}>
@@ -250,7 +250,7 @@
 				class="flex flex-col sm:flex-row justify-between items-center mb-8"
 			>
 				<a
-					href="/cards-list?set={encodeURIComponent(data.latestSet.name)}"
+					href={latestSetPath}
 					class="text-gold-400 hover:text-gold-300 transition-colors"
 				>
 					<h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
@@ -261,7 +261,7 @@
 					</h2>
 				</a>
 				<a
-					href="/cards-list?set={encodeURIComponent(data.latestSet.name)}"
+					href={latestSetPath}
 					class="text-gold-400 hover:underline flex items-center gap-1 group"
 				>
 					View all cards in this set
@@ -274,7 +274,7 @@
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
 				<a
-					href="/cards-list?set={encodeURIComponent(data.latestSet.name)}"
+					href={latestSetPath}
 					class="card-tile block p-6"
 				>
 					<div class="flex flex-col sm:flex-row gap-6 items-center">
@@ -382,7 +382,7 @@
 	></div>
 
 	{#if data.latestSet}
-		{@render valuableCards(`Most Valuable Cards in ${data.latestSet.name}`, `/cards-list?set=${encodeURIComponent(data.latestSet.name)}`, data.mostExpensiveLatestSetCards)}
+		{@render valuableCards(`Most Valuable Cards in ${data.latestSet.name}`, latestSetPath, data.mostExpensiveLatestSetCards)}
 	{/if}
 	{@render valuableCards('Most Valuable Cards', '/cards-list?mostexpensive=true&sortby=sort-price', data.mostExpensiveCards)}
 
@@ -662,7 +662,7 @@
 	</section>
 
 	<AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} initialMode={authMode} />
-</main>
+</div>
 
 <style>
 	/* The intro is a CSS animation, not a Svelte `in:` transition behind an `onMount` flag: that flag made the server send an

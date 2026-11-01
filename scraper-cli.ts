@@ -112,9 +112,12 @@ const commands: Command[] = [
 				row(file.lang, `${file.cards} cards, ${file.sets} sets, ${file.priced} priced ${dim('|')} ${collisions}`);
 				if (file.unknownValues.length) row(`${file.lang} unknown`, styleText('red', file.unknownValues.join(', ')));
 				if (file.missingTwins.length) row(`${file.lang} bad twins`, styleText('red', `${file.missingTwins.length}: ${file.missingTwins.slice(0, 5).join(', ')}`));
+				if (file.slugCollisions.length) row(`${file.lang} slug collisions`, styleText('red', `${file.slugCollisions.length}: ${file.slugCollisions.slice(0, 5).join(', ')}`));
 				if (file.sharedSetNames.length) row(`${file.lang} shared names`, styleText('yellow', file.sharedSetNames.join(', ')));
 			}
 			row('cross collisions', report.crossCollisions.length === 0 ? styleText('green', 'none') : styleText('red', `${report.crossCollisions.length}: ${report.crossCollisions.slice(0, 10).join(', ')}`));
+			/** Two cards or sets sharing a slug share a public URL, so it fails the run; the 19 cross-catalogue codes are a known warning. */
+			if (report.files.some(file => file.slugCollisions.length)) process.exitCode = 1;
 			if (!offline) {
 				const status = report.missing.length === 0 ? styleText('green', 'all resolve') : styleText('yellow', `${report.missing.length} unresolved`);
 				row('owned codes', `${report.owned} ${dim('|')} ${status}`);

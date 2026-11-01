@@ -1,5 +1,5 @@
 import * as fs from 'node:fs';
-import {SUBTYPE_SECTIONS} from '#helpers/card-utils.ts';
+import {cardSlug, SUBTYPE_SECTIONS, setSlug} from '#helpers/card-utils.ts';
 import {RARITY_MAPPING} from '#helpers/rarity.ts';
 import {envClient, FILES, TYPES} from '../cli-config';
 import {ownedCardCodes} from '../supabase_sync';
@@ -17,6 +17,8 @@ export interface FileReport {
 	/** Set names used by more than one set. */
 	sharedSetNames: string[];
 	sets: number;
+	/** Card slugs (`cardSlug`) shared by several `card_code`s and set slugs (`setSlug`, prefixed `set:`) shared by several set ids: their public URLs would collide. */
+	slugCollisions: string[];
 	/** Rarities missing from `RARITY_MAPPING`, supertypes outside Pokémon/Trainer/Energy, subtypes outside `SUBTYPE_SECTIONS` and types missing from `types.json`. */
 	unknownValues: string[];
 	unpriced: string[];
@@ -37,6 +39,13 @@ const SUPERTYPES = new Set(['Pokémon', 'Trainer', 'Energy']);
 const SUBTYPES = new Set<string>(SUBTYPE_SECTIONS.map(section => section.subtype));
 
 const read = <T>(path: string): T => JSON.parse(fs.readFileSync(path, 'utf8')) as T;
+
+/** `slug (id, id)` for each slug that more than one distinct id produces. */
+function sharedSlugs(entries: Iterable<[slug: string, id: string]>): string[] {
+	const ids = new Map<string, Set<string>>();
+	for (const [slug, id] of entries) ids.set(slug, (ids.get(slug) ?? new Set<string>()).add(id));
+	return [...ids].filter(([, found]) => found.size > 1).map(([slug, found]) => `${slug} (${[...found].join(', ')})`);
+}
 
 /**
  * Checks the scraped JSON before it is uploaded: no two cards may share a `card_code` (it is the join key
@@ -89,6 +98,10 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 			priced: Object.keys(prices).length,
 			sharedSetNames: [...setNames].filter(([, count]) => count > 1).map(([name]) => name),
 			sets: sets.length,
+			slugCollisions: [
+				...sharedSlugs(cards.map((card): [string, string] => [cardSlug(card, lang), card.cardCode])),
+				...sharedSlugs(sets.map((set): [string, string] => [setSlug(set, lang), set.setId])).map(slug => `set:${slug}`),
+			],
 			unknownValues: [...unknownValues],
 			unpriced: cards.filter(card => !prices[card.cardCode]).slice(0, 5).map(card => card.cardCode),
 		});

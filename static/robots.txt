@@ -6,6 +6,11 @@ Disallow: /api/
 Disallow: /settings
 Disallow: /reset-password
 Disallow: /random
+# Sort orders only rearrange a grid that canonicalizes to its bare path, and Google prefers robots.txt over canonical for such facets.
+# `?name=` stays open: it is the `SearchAction` target of the WebSite node.
+Disallow: /*?*sortby=
+Disallow: /*?*sortorder=
+Disallow: /*?*mostexpensive=
 
 # Answer engines are the second search surface now, and they are only allowed here explicitly.
 User-agent: GPTBot
@@ -27,5 +32,8 @@ Disallow: /api/
 Disallow: /settings
 Disallow: /reset-password
 Disallow: /random
+Disallow: /*?*sortby=
+Disallow: /*?*sortorder=
+Disallow: /*?*mostexpensive=
 
 Sitemap: https://pokecards-collector.ayfri.com/sitemap.xml

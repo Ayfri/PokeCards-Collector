@@ -1,4 +1,4 @@
-import {SUBTYPE_SECTIONS} from '#helpers/card-utils.ts';
+import {cardSlug, SUBTYPE_SECTIONS, setSlug} from '#helpers/card-utils.ts';
 import {RARITY_MAPPING} from '#helpers/rarity.ts';
 import {CATALOGUES, LANGUAGES, type Language} from '#helpers/catalogues.ts';
 import {envClient} from './cli-config';
@@ -34,10 +34,12 @@ interface CardRow {
 	card_code: string;
 	card_market_url: string | null;
 	image: string | null;
+	local_id: string | null;
 	name: string;
 	pokemon_id: number | null;
 	rarity: string | null;
 	set_id: string | null;
+	set_name: string | null;
 	subtype: string | null;
 	supertype: string | null;
 	tcgdex_id: string | null;
@@ -51,6 +53,7 @@ interface PriceRow {
 }
 
 interface SetRow {
+	name: string;
 	release_date: string | null;
 	series: string | null;
 	set_id: string;
@@ -88,9 +91,9 @@ export async function checkDatabase(): Promise<CheckReport> {
 	for (const lang of LANGUAGES) {
 		const tables = CATALOGUES[lang].tables;
 		const [cards, prices, sets] = await Promise.all([
-			readAll<CardRow>(supabase, tables.cards, `card_code,card_market_url,image,name,pokemon_id,rarity,set_id,subtype,supertype,tcgdex_id${lang === 'ja' ? ',twin_tcgdex_id' : ''}`, 'card_code'),
+			readAll<CardRow>(supabase, tables.cards, `card_code,card_market_url,image,local_id,name,pokemon_id,rarity,set_id,set_name,subtype,supertype,tcgdex_id${lang === 'ja' ? ',twin_tcgdex_id' : ''}`, 'card_code'),
 			readAll<PriceRow>(supabase, tables.prices, '*', 'card_code'),
-			readAll<SetRow>(supabase, tables.sets, 'release_date,series,set_id,total_cards', 'set_id'),
+			readAll<SetRow>(supabase, tables.sets, 'name,release_date,series,set_id,total_cards', 'set_id'),
 		]);
 
 		const tag = (name: string) => `${lang}: ${name}`;
@@ -109,6 +112,9 @@ export async function checkDatabase(): Promise<CheckReport> {
 		add(tag('rows'), 'info', [`${cards.length} cards, ${prices.length} prices, ${sets.length} sets`], cards.length);
 		add(tag('duplicate card_code'), 'error', duplicates(cards, card => card.card_code));
 		add(tag('duplicate set_id'), 'error', duplicates(sets, set => set.set_id));
+		/** Two cards or sets with one slug would share a public URL, and the page would serve only one of them. */
+		add(tag('duplicate card slug'), 'error', duplicates(cards, card => cardSlug({localId: card.local_id ?? '', name: card.name, setId: card.set_id ?? '', setName: card.set_name ?? ''}, lang)));
+		add(tag('duplicate set slug'), 'error', duplicates(sets, set => setSlug({name: set.name, setId: set.set_id}, lang)));
 		add(tag('prices with no card'), 'error', prices.filter(price => !cardCodes.has(price.card_code)).map(price => price.card_code));
 		add(tag('cards in an unknown set'), 'error', cards.filter(card => !card.set_id || !setIds.has(card.set_id)).map(card => card.card_code));
 		add(tag('cards from an excluded serie'), 'error', cards.filter(card => card.set_id && excluded.has(card.set_id)).map(card => card.card_code));

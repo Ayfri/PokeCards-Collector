@@ -1,4 +1,5 @@
 import { getSets } from '#helpers/supabase-data.ts';
+import { ogImage } from '#helpers/og-image.ts';
 import type { LayoutServerLoad } from './$types';
 import { getUserWishlist } from '#lib/services/wishlists.ts';
 import { getUserCollection } from '#lib/services/collections.ts';
@@ -47,6 +48,6 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		/** SEO defaults. `page.data` merges layout and page data, so a page only returns the fields it changes and the rest fall back to these. */
 		title: 'PokéCards-Collector',
 		description: 'Explore the Pokémon TCG universe. Discover the latest set, check out the prices of the rarest cards, and manage your collection.',
-		image: { alt: 'PokéCards-Collector, a Pokémon TCG catalogue and collection tracker', height: 630, url: '/og-image.png', width: 1200 },
+		image: ogImage({ kind: 'page', name: 'home' }, 'PokéCards-Collector, a Pokémon TCG catalogue and collection tracker: its card count in English, Japanese and French, and three of the most valuable cards'),
 	};
 };

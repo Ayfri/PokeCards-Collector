@@ -13,7 +13,8 @@
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import SetLogo from '#components/SetLogo.svelte';
-	import { setCardCount } from '#helpers/card-utils.ts';
+	import { CATALOGUES } from '#helpers/catalogues.ts';
+	import { setCardCount, setPath } from '#helpers/card-utils.ts';
 
 	interface Props {
 		data: PageData;
@@ -94,7 +95,7 @@
 <div class="container mx-auto px-4 py-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
 		<div transition:fly={{ y: 50, duration: 400, delay: 200 }}>
-			<PageTitle title="Sets" />
+			<PageTitle title="Pokémon TCG Sets" />
 		</div>
 
 		<div class="flex items-center gap-2" transition:fly={{ y: 50, duration: 500, delay: 250 }}>
@@ -143,7 +144,7 @@
 				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ y: 50, duration: 500, delay: 200 * index }}>
 					{#each groupedSets[series] as set (set.name)}
 						<div in:fly={{ y: 20, duration: 300, delay: 50 }}>
-							<a href="/cards-list?set={encodeURIComponent(set.name)}" class="block h-full" title={`Browse every card in ${set.name}`}>
+							<a href={setPath(set, CATALOGUES.en)} class="block h-full" title={`Browse every card in ${set.name}`}>
 								<div class="card-tile overflow-hidden h-full flex flex-col">
 									<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
 										<SetLogo class="max-h-full object-contain" {set}>

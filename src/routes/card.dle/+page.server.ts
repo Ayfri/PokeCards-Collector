@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { ogImage } from '#helpers/og-image.ts';
 import { utcDay } from '#helpers/card-dle.ts';
 import { breadcrumbs, gameSchema } from '#helpers/seo.ts';
 
@@ -8,6 +9,7 @@ import { breadcrumbs, gameSchema } from '#helpers/seo.ts';
  * the 19819-entry price table into the document.
  */
 export const load: PageServerLoad = () => ({
+	image: ogImage({ kind: 'page', name: 'card.dle' }, 'Card.dle, the daily Pokémon card guessing game, with rows of hint tiles turning from red to green'),
 	title: 'Card.dle - Daily Pokémon Card Guessing Game',
 	description: 'Guess the mystery Pokémon card of the day. Every guess compares the Pokémon, artist, set, rarity, supertype, type and price with the mystery card. One card a day, the same for everyone, free and without an account.',
 	breadcrumbs: breadcrumbs({ name: 'Card.dle', url: '/card.dle' }),

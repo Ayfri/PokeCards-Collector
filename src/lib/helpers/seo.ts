@@ -1,7 +1,7 @@
 import { BASE_URL, SITE_NAME, SITE_TWITTER } from '#src/constants.ts';
 import { processCardImage } from '#helpers/card-images.ts';
 import { CATALOGUES, type Catalogue } from '#helpers/catalogues.ts';
-import { cardPrice } from '#helpers/card-utils.ts';
+import { cardPath, cardPrice, setPath } from '#helpers/card-utils.ts';
 import type { Breadcrumb, Card, Pokemon, PriceData, PublicProfile, Set } from '#lib/types.js';
 
 /** Schema.org nodes are free-form JSON, so every builder returns the same opaque shape the `Seo` component inlines. */
@@ -23,12 +23,14 @@ export function article(word: string): string {
 }
 
 /**
- * A card as a `Product` with an `Offer`: this is what makes a card page eligible for the price and availability
- * treatment in search results, and it is the only place the cardmarket value is exposed to a crawler.
+ * A card as a `Product` with an `AggregateOffer`: this is what makes a card page eligible for a Product snippet with a price range, and it is
+ * the only place the Cardmarket value is exposed to a crawler. Google reserves a plain `Offer` for merchant listings, which need a page
+ * that sells the item, so an aggregator of Cardmarket prices declares the range it reports, from the lowest listing to the market value.
  */
 export function cardSchema(card: Card, price: PriceData | undefined, pokemon?: Pokemon, set?: Set, catalogue: Catalogue = CATALOGUES.en): Schema {
 	const value = cardPrice(price);
-	const url = `${BASE_URL}${catalogue.cardRoute}/${card.cardCode}`;
+	const low = price?.low && price.low > 0 ? Math.min(price.low, value ?? price.low) : value;
+	const url = `${BASE_URL}${cardPath(catalogue.language, card)}`;
 
 	return {
 		'@id': `${url}#product`,
@@ -52,30 +54,29 @@ export function cardSchema(card: Card, price: PriceData | undefined, pokemon?: P
 		isPartOf: set ? { '@id': setNodeId(set, catalogue) } : undefined,
 		name: card.name,
 		...(card.artist && { creator: { '@type': 'Person', name: card.artist } }),
-		...(value && {
+		...(value && low && {
 			offers: {
-				'@type': 'Offer',
-				availability: 'https://schema.org/InStock',
-				price: value.toFixed(2),
+				'@type': 'AggregateOffer',
+				highPrice: value.toFixed(2),
+				lowPrice: low.toFixed(2),
 				priceCurrency: 'EUR',
-				/** Cardmarket updates its averages daily, so a longer validity would advertise a stale price. */
-				priceValidUntil: tomorrow(),
 				seller: { '@type': 'Organization', name: 'Cardmarket' },
 				url: card.cardMarketUrl || url,
 			},
 		}),
+		sku: card.tcgdexId ?? card.cardCode,
 		url,
 	};
 }
 
 /** A card grid as an `ItemList`, which is how a crawler learns the page is a list and what the first entries are. */
-export function cardListSchema(cards: Card[], listUrl: string, name: string, limit = 25): Schema {
+export function cardListSchema(cards: Card[], listUrl: string, name: string, limit = 25, catalogue: Catalogue = CATALOGUES.en): Schema {
 	return {
 		'@type': 'ItemList',
 		itemListElement: cards.slice(0, limit).map((card, index) => ({
 			'@type': 'ListItem',
 			position: index + 1,
-			url: `${BASE_URL}/card/${card.cardCode}`,
+			url: `${BASE_URL}${cardPath(catalogue.language, card)}`,
 			name: card.name,
 			image: processCardImage(card.image),
 		})),
@@ -95,7 +96,7 @@ export function setSchema(set: Set, catalogue: Catalogue = CATALOGUES.en): Schem
 		image: set.logo || undefined,
 		name: set.name,
 		numberOfItems: set.totalCards ?? set.printedTotal,
-		url: `${BASE_URL}${catalogue.gridRoute}?set=${encodeURIComponent(set.name)}`,
+		url: `${BASE_URL}${setPath(set, catalogue)}`,
 	};
 }
 
@@ -187,21 +188,13 @@ function property(name: string, value: string | number | undefined | null) {
 	return { '@type': 'PropertyValue', name, value: String(value) };
 }
 
-/** The `@id` of a set node, shared by the set itself and the cards pointing at it; a foreign catalogue's set name can repeat an English one. */
+/** The `@id` of a set node, shared by the set itself and the cards pointing at it; the set page URL is already unique per catalogue. */
 function setNodeId(set: Set, catalogue: Catalogue): string {
-	return `${BASE_URL}/sets#${slug(set.name)}${catalogue.routeCode ? `-${catalogue.routeCode}` : ''}`;
-}
-
-function slug(value: string): string {
-	return value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+	return `${BASE_URL}${setPath(set, catalogue)}#set`;
 }
 
 function isoDate(value: Date | string | undefined): string | undefined {
 	if (!value) return undefined;
 	const date = value instanceof Date ? value : new Date(value);
 	return Number.isNaN(date.getTime()) ? undefined : date.toISOString().slice(0, 10);
-}
-
-function tomorrow(): string {
-	return new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
 }

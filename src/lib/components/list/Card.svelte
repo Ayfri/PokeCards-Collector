@@ -7,13 +7,12 @@
 	import {collection} from '#stores/collection.svelte.ts';
 	import { page } from '$app/state';
 	import type {FullCard, GridPokemon, Set} from '#lib/types.js';
-	import { formatCardNumber } from '#helpers/card-utils.ts';
+	import { cardPath, formatCardNumber } from '#helpers/card-utils.ts';
 	import CardImage from '#components/card/CardImage.svelte';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
 	import { getCardSet } from '#helpers/card-grid.ts';
 	import { CATALOGUES, catalogueOfPath } from '#helpers/catalogues.ts';
-	import { cardPath } from '#helpers/utils.ts';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Minus from '@lucide/svelte/icons/minus';
 	import SetBadge from '#components/SetBadge.svelte';
@@ -71,7 +70,7 @@
 	const isCollectionLimitReached = $derived(collectionCount >= MAX_CARD_QUANTITY);
 
 	const catalogue = $derived(card.language ? CATALOGUES[card.language] : catalogueOfPath(page.url.pathname));
-	const cardLink = $derived(cardPath(catalogue.language, cardCode));
+	const cardLink = $derived(cardPath(catalogue.language, card));
 
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
@@ -203,7 +202,7 @@
 			</div>
 		{/if}
 		<CardImage
-			alt={cardName}
+			alt="{cardName} - {card.setName}"
 			class="rounded-lg absolute top-0 left-0"
 			style="width: {width}px; height: {height}px; max-width: 100%;"
 			imageUrl={card.image}

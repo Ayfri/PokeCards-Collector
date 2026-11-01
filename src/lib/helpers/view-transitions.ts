@@ -55,9 +55,16 @@ export function morphCards(codes: (string | undefined)[], update: () => Promise<
 export function transitionNavigation(navigation: OnNavigate): Promise<void> | undefined {
 	if (!canTransition() || navigation.from?.url.pathname === navigation.to?.url.pathname) return;
 
+	/**
+	 * The URL holds a slug, not the card code, so the card opened is the one inside the link to that URL, and the card left is the page's big one.
+	 * The destination pathname and the `href`s are both percent-encoded, so they compare as they are.
+	 */
+	const opened = navigation.to && document.querySelector<HTMLElement>(`a[href="${CSS.escape(navigation.to.url.pathname)}"] [data-card-code]`)?.dataset.cardCode;
+	const left = document.querySelector<HTMLElement>('[data-card-hero]')?.dataset.cardHero;
+
 	return new Promise(resolve => {
 		morphCards(
-			[navigation.to?.params?.cardCode, navigation.from?.params?.cardCode],
+			[opened || undefined, left],
 			async () => {
 				resolve();
 				await navigation.complete;

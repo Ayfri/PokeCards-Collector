@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { ogImage } from '#helpers/og-image.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { searchUsers } from '#lib/services/profiles.ts';
 
@@ -28,6 +29,7 @@ export const load: PageServerLoad = async () => {
 			name: 'Featured Pokémon TCG collectors',
 			numberOfItems: featuredUsers.length,
 		}],
+		image: ogImage({ kind: 'page', name: 'users' }, 'The Pokémon TCG collectors sharing their collections on PokéCards-Collector'),
 		title: 'Pokémon TCG Collectors',
 		type: 'CollectionPage' as const,
 	};

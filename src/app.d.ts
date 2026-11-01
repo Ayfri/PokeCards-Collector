@@ -11,6 +11,8 @@ declare global {
 		/** Fields every load inherits from the root layout. The catalogue is not among them: grid pages stream it under `streamed` in their own data. */
 		interface PageData {
 			breadcrumbs?: Breadcrumb[];
+			/** Root-relative canonical, set when the request path is not the document's own URL: a `?set=` grid, a card whose slug arrived percent-encoded another way. */
+			canonical?: string;
 			description: string;
 			image: Image;
 			keywords?: string[];

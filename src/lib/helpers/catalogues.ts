@@ -50,7 +50,7 @@ export type PriceTable = CatalogueTables['prices'];
 export type SetTable = CatalogueTables['sets'];
 
 /**
- * Language -> `card_code` of the same card in each catalogue that carries it.
+ * Language -> card page path (`cardPath`) of the same card in each catalogue that carries it.
  * English and French share TCGdex ids, so the twin is found by id. Japanese ids are separate products that collide by accident
  * (`neo4-109` is Shining Mewtwo in English and a Trainer in Japanese), so a Japanese print is linked through `jp_cards.twin_tcgdex_id`,
  * which `bun run scrapers link` fills by matching language-independent traits.
@@ -60,6 +60,6 @@ export type CardVersions = Partial<Record<Language, string>>;
 export const BY_ROUTE_CODE = {fr: CATALOGUES.fr, jp: CATALOGUES.ja};
 export const BY_GRID = {france: CATALOGUES.fr, japan: CATALOGUES.ja};
 
-/** The catalogue a URL path belongs to: its grid page or one of its card pages, English for everything else. */
+/** The catalogue a URL path belongs to: its grid page, its set pages (`/france/sets/x`) or one of its card pages, English for everything else. */
 export const catalogueOfPath = (pathname: string): Catalogue =>
-	Object.values<Catalogue>(CATALOGUES).find(catalogue => pathname === catalogue.gridRoute || pathname.startsWith(`${catalogue.cardRoute}/`)) ?? CATALOGUES.en;
+	Object.values<Catalogue>(CATALOGUES).find(catalogue => pathname === catalogue.gridRoute || pathname.startsWith(`${catalogue.gridRoute}/`) || pathname.startsWith(`${catalogue.cardRoute}/`)) ?? CATALOGUES.en;

@@ -1,3 +1,4 @@
+import { CATALOGUES, type Catalogue, type Language } from '#helpers/catalogues.ts';
 import type { Card, FullCard, Pokemon, PriceData, Set as CardSet } from '#lib/types.js';
 
 /**
@@ -80,6 +81,105 @@ export function formatCardNumber(cardNumber: string, printedTotal?: number | nul
 
 /** How many cards a set holds: `printedTotal` is the numbering denominator, which TCGdex leaves at 0 on the promo sets. */
 export const setCardCount = (set: Pick<CardSet, 'printedTotal' | 'totalCards'>) => set.totalCards || set.printedTotal;
+
+/** The fields a card's public URL is built from; every card payload carries them, so a link needs no extra data. */
+export type CardLink = Pick<Card, 'localId' | 'name' | 'setId' | 'setName'>;
+
+const SLUG_SYMBOLS: Record<string, string> = {
+	'&': ' and ',
+	'δ': ' delta ',
+	'☆': ' star ',
+	'★': ' star ',
+	'◇': ' prism-star ',
+	'♀': ' female ',
+	'♂': ' male ',
+};
+
+/**
+ * Lowercase letters and digits of any script joined by single hyphens, `Black & White` -> `black-and-white`, `Flabébé` -> `flabebe`.
+ * Accents are stripped and the text is composed again, so Japanese `ガ` keeps its dakuten. `'` and `.` vanish instead of splitting (`farfetchd`, `mr-mime`).
+ * `ex`, `gx` and `v` stay words (`charizard-ex`).
+ */
+export function slugify(value: string): string {
+	return value
+		.normalize('NFKD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.normalize('NFC')
+		.toLowerCase()
+		.replace(/[&δ☆★◇♀♂]/g, symbol => SLUG_SYMBOLS[symbol])
+		.replace(/['’.]/g, '')
+		.replace(/[^\p{L}\p{N}]+/gu, '-')
+		.replace(/^-|-$/g, '');
+}
+
+/**
+ * `name-set-number`, like `charizard-ex-obsidian-flames-125`. It depends only on the card's own fields, so adding a card never moves another card's URL.
+ * Japanese cards keep their Japanese name, and their set part is the set id because Japanese set names repeat (`SV4a` and `SV3a` are both "レイジングサーフ").
+ * A numeric number loses its leading zeros like `formatCardNumber` does, a lettered one keeps its form (`tg01`), and the Unown `!` and `?` are spelled out.
+ */
+export function cardSlug(card: CardLink, language: Language): string {
+	return cardSlugParts(card, language).filter(Boolean).join('-');
+}
+
+/** The `[name, set, number]` parts of `cardSlug`, each possibly empty. */
+export function cardSlugParts(card: CardLink, language: Language): [name: string, set: string, number: string] {
+	const number = /^\d+$/.test(card.localId)
+		? card.localId.replace(/^0+(?=\d)/, '')
+		: card.localId.replaceAll('!', ' exclamation ').replaceAll('?', ' question ');
+	return [slugify(card.name), slugify(language === 'ja' ? card.setId : card.setName), slugify(number)];
+}
+
+/** The card page of a catalogue, percent-encoded for the Japanese names. No `paths.base`, so `goto` and `href` take it as is. */
+export function cardPath(language: Language, card: CardLink): string {
+	return `${CATALOGUES[language].cardRoute}/${encodeURIComponent(cardSlug(card, language))}`;
+}
+
+/** English and French sets use their name, Japanese ones add the set id (`ポケモンジャングル-pmcg2`) since their names repeat. */
+export function setSlug(set: Pick<CardSet, 'name' | 'setId'>, language: Language): string {
+	return [slugify(set.name), language === 'ja' ? slugify(set.setId) : ''].filter(Boolean).join('-');
+}
+
+/** `/sets/<slug>` in English, `/france/sets/<slug>` and `/japan/sets/<slug>` in the other catalogues. */
+export function setPath(set: Pick<CardSet, 'name' | 'setId'>, catalogue: Catalogue): string {
+	return `${catalogue.routeCode ? catalogue.gridRoute : ''}/sets/${encodeURIComponent(setSlug(set, catalogue.language))}`;
+}
+
+/** The order a set is printed in: numeric numbers by value, lettered ones (`TG01`, `GG05`) after their prefix, the same order `setLanding` lists. */
+const byLocalId = (a: FullCard, b: FullCard) => a.localId.localeCompare(b.localId, 'en', { numeric: true });
+
+/** Sorted once per set and card list, so a card page never re-sorts the catalogue; the list is the memoized one `getCards` returns. */
+const setOrders = new WeakMap<FullCard[], Map<string, FullCard[]>>();
+
+/** The cards printed just before and after this one in its set. `cards` may list a card twice, so the set is deduplicated by `cardCode`. */
+export function setNeighbours(card: Pick<FullCard, 'cardCode' | 'setId'>, cards: FullCard[]): { next?: FullCard; previous?: FullCard } {
+	let orders = setOrders.get(cards);
+	if (!orders) setOrders.set(cards, orders = new Map());
+	let order = orders.get(card.setId);
+	if (!order) {
+		const inSet = new Map(cards.filter(other => other.setId === card.setId).map(other => [other.cardCode, other]));
+		orders.set(card.setId, order = [...inSet.values()].sort(byLocalId));
+	}
+	const index = order.findIndex(other => other.cardCode === card.cardCode);
+	return index < 0 ? {} : { next: order[index + 1], previous: order[index - 1] };
+}
+
+/** A neighbouring card as the card page links it: `name`, printed `number` (`66`, `TG01`) and `path`. */
+export interface NeighbourLink {
+	name: string;
+	number: string;
+	path: string;
+}
+
+export interface SetNeighbourLinks {
+	next?: NeighbourLink;
+	previous?: NeighbourLink;
+}
+
+export function setNeighbourLinks(language: Language, card: Pick<FullCard, 'cardCode' | 'setId'>, cards: FullCard[]): SetNeighbourLinks {
+	const link = (neighbour?: FullCard): NeighbourLink | undefined => neighbour && { name: neighbour.name, number: formatCardNumber(neighbour.localId), path: cardPath(language, neighbour) };
+	const { next, previous } = setNeighbours(card, cards);
+	return { next: link(next), previous: link(previous) };
+}
 
 /** A heuristic, not a parse: a card code contains `_` and a URL starts with `http`. */
 export function isCardCode(item: string): boolean {

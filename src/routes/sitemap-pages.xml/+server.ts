@@ -1,8 +1,9 @@
-import { BY_GRID } from '#helpers/catalogues.ts';
+import { BY_GRID, CATALOGUES } from '#helpers/catalogues.ts';
+import { setPath } from '#helpers/card-utils.ts';
 import { getSets } from '#helpers/supabase-data.ts';
 import { sitemapResponse, urlset, type SitemapEntry } from '#helpers/sitemap.ts';
 
-/** Browsable routes and every set grid. User pages are left out because they are `noindex` unless the profile is public. */
+/** Browsable routes and every set page. User pages are left out because they are `noindex` unless the profile is public. */
 export async function GET() {
 	const foreign = Object.values(BY_GRID);
 	const [sets, ...foreignSets] = await Promise.all([getSets(), ...foreign.map(({ language }) => getSets(language))]);
@@ -23,22 +24,22 @@ export async function GET() {
 		{ changefreq: 'daily', loc: '/users', priority: 0.5 },
 	];
 
-	/** A `?set=` grid is a separate document with its own title, description and schema, so each one is listed. */
+	/** A set page is a document with its own title, description, checklist and schema, so each one is listed. */
 	for (const set of sets) {
 		entries.push({
 			changefreq: 'weekly',
 			image: set.logo ? { loc: set.logo, title: set.name } : undefined,
-			loc: `/cards-list?set=${encodeURIComponent(set.name)}`,
+			loc: setPath(set, CATALOGUES.en),
 			priority: 0.8,
 		});
 	}
 
-	foreign.forEach(({ gridRoute }, index) => {
+	foreign.forEach((catalogue, index) => {
 		for (const set of foreignSets[index]) {
 			entries.push({
 				changefreq: 'weekly',
 				image: set.logo ? { loc: set.logo, title: set.name } : undefined,
-				loc: `${gridRoute}?set=${encodeURIComponent(set.name)}`,
+				loc: setPath(set, catalogue),
 				priority: 0.6,
 			});
 		}

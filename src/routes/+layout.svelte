@@ -9,7 +9,6 @@
 	import Footer from '#components/Footer.svelte';
 	import Header from '#components/Header.svelte';
 	import LoadingBar from '#lib/components/ui/LoadingBar.svelte';
-	import {BASE_URL} from '#src/constants.ts';
 	import Seo from '#lib/components/seo/Seo.svelte';
 	import { loading } from '#stores/loading.svelte.ts';
 	import { wishlist } from '#stores/wishlist.svelte.ts';
@@ -23,7 +22,7 @@
 	let { children }: Props = $props();
 
 	/** These pages scroll their card grid inside exactly one viewport, so the footer sits below the fold instead of taking the grid's height. */
-	const FULL_VIEWPORT_ROUTES = new Set(['/cards-list', '/[grid=catalogueGrid]', '/collection/[user]', '/wishlist/[user]']);
+	const FULL_VIEWPORT_ROUTES = new Set(['/cards-list', '/[grid=catalogueGrid]', '/[[grid=catalogueGrid]]/sets/[setSlug]', '/collection/[user]', '/wishlist/[user]']);
 	const fullViewport = $derived(FULL_VIEWPORT_ROUTES.has(page.route.id ?? ''));
 
 	/** A stable reference for "no list", so the derived arrays below only change when the layout load returns new ones. */
@@ -51,6 +50,8 @@
 		const link = (event.target as HTMLElement).closest('a');
 		if (
 			!link?.href
+			/** A link whose own handler took the click over (a related print swapped in place) never navigates. */
+			|| event.defaultPrevented
 			|| link.origin !== window.location.origin
 			|| link.hasAttribute('target')
 			|| link.hasAttribute('download')
@@ -82,25 +83,31 @@
 <svelte:head>
 	<meta content="Ayfri;Anta;Bahsiik" name="author"/>
 
+	<!-- No site-wide hreflang: the site is English-only, and alternates pointing every page at the homepage told crawlers the homepage was each page's English version. -->
 	<link href="/sitemap.xml" rel="sitemap"/>
-	<link href={BASE_URL} hreflang="en" rel="alternate"/>
-	<link href={BASE_URL} hreflang="x-default" rel="alternate"/>
 
 	<!-- Card art, sprites and analytics sit on third-party origins that the first paint needs, so the connections open early. -->
 	<link href="https://assets.tcgdex.net" rel="preconnect" crossorigin="anonymous"/>
 	<link href="https://cdn.jsdelivr.net" rel="preconnect" crossorigin="anonymous"/>
 	<link href="https://www.googletagmanager.com" rel="dns-prefetch"/>
 
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-PS0GZ8MEB8"></script>
+	<!-- About 97% of the Google Analytics users of Sep-Oct 2026 were headless browsers from AWS data centres, so gtag never loads when `navigator.webdriver` is set. -->
 	<script>
-		window.dataLayer = window.dataLayer || [];
+		if (!navigator.webdriver) {
+			window.dataLayer = window.dataLayer || [];
 
-		function gtag() {
-			dataLayer.push(arguments);
+			function gtag() {
+				dataLayer.push(arguments);
+			}
+
+			gtag('js', new Date());
+			gtag('config', 'G-PS0GZ8MEB8');
+
+			const gtagScript = document.createElement('script');
+			gtagScript.async = true;
+			gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-PS0GZ8MEB8';
+			document.head.appendChild(gtagScript);
 		}
-
-		gtag('js', new Date());
-		gtag('config', 'G-PS0GZ8MEB8');
 	</script>
 
 	<script
@@ -111,6 +118,7 @@
 </svelte:head>
 <Seo
 	breadcrumbs={page.data.breadcrumbs}
+	canonical={page.data.canonical}
 	description={page.data.description}
 	image={page.data.image}
 	keywords={page.data.keywords}
@@ -131,6 +139,7 @@
 		<Footer />
 	{/if}
 	<div class="fixed top-[15%] [filter:grayscale(100%)_opacity(0.05)_contrast(3)_brightness(0.5)] -z-50 flex place-content-center h-lvh w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
-		<img src={pokestore} alt="Background" class="absolute w-1/2" />
+		<!-- A watermark at 5% opacity: it carries no content, so an empty alt keeps it out of the accessibility tree. -->
+		<img src={pokestore} alt="" aria-hidden="true" class="absolute w-1/2" />
 	</div>
 </div>

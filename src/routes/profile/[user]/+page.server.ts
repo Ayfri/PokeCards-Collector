@@ -2,6 +2,8 @@ import { LANGUAGES } from '#helpers/catalogues.ts';
 import { countCards, getCatalogue } from '#helpers/supabase-data.ts';
 import { redirect } from '@sveltejs/kit';
 import { computeCollectionStats } from '#helpers/collection-stats.ts';
+import { formatEuros } from '#helpers/format.ts';
+import { ogImage } from '#helpers/og-image.ts';
 import { readOwnedCatalogues } from '#helpers/owned-cards.ts';
 import { getUserCollection } from '#lib/services/collections.ts';
 import { getProfileByUsername } from '#lib/services/profiles.ts';
@@ -53,11 +55,24 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 		breadcrumbs: breadcrumbs({ name: 'Collectors', url: '/users' }, { name: targetProfile.username, url: `/profile/${targetProfile.username}` }),
 		collectionStats,
 		description,
-		image: { alt: 'PokéCards-Collector logo', height: 436, url: '/favicon.png', width: 485 },
+		/** Versioned on public numbers only: the owner of a private profile sees its stats, but the image never draws them. */
+		image: isPublic && collectionStats
+			? ogImage(
+				{ kind: 'profile', username: targetProfile.username },
+				`${targetProfile.username}'s Pokémon card collection: ${collectionStats.unique_cards} unique cards worth ${formatEuros(collectionStats.total_value)}, with the most valuable ones`,
+				collectionStats.unique_cards,
+				collectionStats.total_instances,
+				collectionStats.total_value,
+				collectionStats.top_cards.map(({ card }) => card.cardCode).join(),
+			)
+			: ogImage({ kind: 'profile', username: targetProfile.username }, `${targetProfile.username}'s private Pokémon card collector profile`, 'private'),
 		isOwnProfile,
 		isPublic,
-		/** A private profile must not be indexed: a crawler would otherwise store the "private profile" shell under a real username. */
-		noindex: !isPublic,
+		/**
+		 * A private profile must not be indexed: a crawler would otherwise store the "private profile" shell under a real username.
+		 * A public one with no card is thin content, one of dozens of identical empty pages, so it waits for its first card.
+		 */
+		noindex: !isPublic || !collectionStats?.unique_cards,
 		schemas: isPublic
 			? [profileSchema(targetProfile, `/profile/${targetProfile.username}`, collectionStats
 				? { cards: collectionStats.total_instances, uniqueCards: collectionStats.unique_cards }
