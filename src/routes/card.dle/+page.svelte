@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import type { CardDleFeedback, CardDleGuessResponse } from '#lib/types.js';
+	import { formatEuros } from '#helpers/format.ts';
 	import { readJson } from '#helpers/http.ts';
 	import { getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
 	import Modal from '#components/ui/Modal.svelte';
@@ -321,7 +322,7 @@
 								{:else if guess.feedback.priceComparison === 'lower'}
 									<ChevronsDownIcon size={16} />
 								{/if}
-								{guess.feedback.priceValue.toFixed(2)} €
+								{formatEuros(guess.feedback.priceValue)}
 							</span>
 							<span class="text-xs">{getPriceComparisonText(guess.feedback.priceComparison)}</span>
 						</div>
@@ -446,7 +447,7 @@
 							<p class="text-sm leading-tight font-bold text-white mb-1">{suggestion.name}</p>
 							<div class="flex items-center justify-center gap-1 text-xs text-gray-400">
 								<span class="bg-green-800 text-green-300 px-2 py-1 rounded-full font-semibold" title="Cardmarket value of this card">
-									{suggestion.price.toFixed(2)} €
+									{formatEuros(suggestion.price)}
 								</span>
 							</div>
 						</button>

@@ -5,6 +5,7 @@
 	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import { formatCardNumber } from '#helpers/card-utils.ts';
+	import { formatDate } from '#helpers/format.ts';
 	import { page } from '$app/state';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { collection } from '#stores/collection.svelte.ts';
@@ -43,10 +44,6 @@
 
 	const displayName = $derived(pokemon && catalogue.speciesTitles ? (pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)) : card?.name);
 	const displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card?.name}`);
-
-	function formatDate(date: Date) {
-		return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-	}
 
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);

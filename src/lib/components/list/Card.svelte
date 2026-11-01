@@ -1,4 +1,5 @@
 <script lang="ts">
+	import {formatEuros} from '#helpers/format.ts';
 	import {NO_IMAGES} from '#lib/images.ts';
 	import {addCardToWishlist, removeCardFromWishlist} from '#lib/services/wishlists.ts';
 	import {addCardToCollection, removeCardFromCollection} from '#lib/services/collections.ts';
@@ -238,7 +239,7 @@
 					aria-label="View on Cardmarket"
 				>
 					<div class="flex items-center justify-center whitespace-nowrap">
-						<span>{price ? `${price} €` : 'Priceless'}</span>
+						<span>{price ? formatEuros(price) : 'Priceless'}</span>
 						<span class="mx-1">-</span>
 						<span class="text-gold-400 font-bold underline flex items-center">
 							Cardmarket
@@ -247,7 +248,7 @@
 					</div>
 				</a>
 			{:else}
-				<h3 class="text-center text-sm lg:text-base">{price ? `${price} €` : 'Priceless'}</h3>
+				<h3 class="text-center text-sm lg:text-base">{price ? formatEuros(price) : 'Priceless'}</h3>
 			{/if}
 		</div>
 	</div>

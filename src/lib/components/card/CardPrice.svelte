@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { FullCard, PriceData } from '#lib/types.js';
 	import { cardPrice } from '#helpers/card-utils.ts';
+	import { formatEuros } from '#helpers/format.ts';
 	import ChartLine from '@lucide/svelte/icons/chart-line';
 	import Clock from '@lucide/svelte/icons/clock';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
@@ -13,6 +14,8 @@
 	}
 
 	let { card, cardPrices }: Props = $props();
+
+	const mainPrice = $derived(cardPrice(cardPrices));
 
 	const UPDATED_AT_FORMAT = new Intl.DateTimeFormat('en-GB', {dateStyle: 'long', timeStyle: 'short'});
 
@@ -36,7 +39,7 @@
 
 	<div class="main-price-display bg-gray-900 border-2 border-gold-400 rounded-lg p-3 mb-4 text-center">
 		<span class="text-2xl font-bold">
-			{cardPrice(cardPrices) ? `${cardPrice(cardPrices)} €` : 'Priceless'}
+			{mainPrice ? formatEuros(mainPrice) : 'Priceless'}
 		</span>
 		<span class="text-sm text-gray-400 block">Main Price</span>
 	</div>

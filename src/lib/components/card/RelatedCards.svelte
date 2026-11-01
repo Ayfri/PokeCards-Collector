@@ -7,6 +7,7 @@
 	import SortControl from '#components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '#lib/images.ts';
 	import { cardGroupName, cardPrice } from '#helpers/card-utils.ts';
+	import { formatEuros } from '#helpers/format.ts';
 	import { addCardToCollection, removeCardFromCollection } from '#lib/services/collections.ts';
 	import { addCardToWishlist, removeCardFromWishlist } from '#lib/services/wishlists.ts';
 	import { collection } from '#stores/collection.svelte.ts';
@@ -269,7 +270,7 @@
 								>
 									<div class="flex items-center justify-center whitespace-nowrap">
 										<span class="text-sm">
-											{price.toFixed(2)} €
+											{formatEuros(price)}
 										</span>
 										<span class="mx-1 text-sm">-</span>
 										<span class="text-gold-400 font-bold underline text-sm flex items-center">
@@ -280,7 +281,7 @@
 								</a>
 							{:else}
 								<div class="text-sm">
-									{price ? `${price.toFixed(2)} €` : 'Priceless'}
+									{price ? formatEuros(price) : 'Priceless'}
 								</div>
 							{/if}
 						</div>

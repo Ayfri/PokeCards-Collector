@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { ArtistWithCards } from './+page.server';
+	import { formatEuros } from '#helpers/format.ts';
 	import { NO_IMAGES } from '#lib/images.ts';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import PageTitle from '#components/PageTitle.svelte';
@@ -20,9 +21,7 @@
 	let { data }: Props = $props();
 
 	/** Totals reach five figures, so cents are noise and are dropped from 100 EUR up. */
-	function formatEuros(value: number): string {
-		return `${value.toLocaleString('en-US', { maximumFractionDigits: value >= 100 ? 0 : 2 })} €`;
-	}
+	const euros = (value: number) => formatEuros(value, value >= 100 ? 0 : 2);
 
 	/** Cards drawn on the preview stack of an artist card. */
 	const SHOWCASE_SIZE = 3;
@@ -134,8 +133,8 @@
 								<span class="flex items-center gap-1.5" title="First and last year this artist was printed"><CalendarDaysIcon size={14} /> {artist.firstReleaseYear} - {artist.lastReleaseYear}</span>
 							</div>
 							<div class="mt-1 text-sm text-gray-400 flex justify-between">
-								<span class="flex items-center gap-1.5 text-green-400 font-semibold" title="Cardmarket value of every card by this artist"><CircleEuroIcon size={14} /> {formatEuros(artist.totalValue)}</span>
-								<span title="Average value of one card by this artist">{formatEuros(artist.averageValue)} avg</span>
+								<span class="flex items-center gap-1.5 text-green-400 font-semibold" title="Cardmarket value of every card by this artist"><CircleEuroIcon size={14} /> {euros(artist.totalValue)}</span>
+								<span title="Average value of one card by this artist">{euros(artist.averageValue)} avg</span>
 							</div>
 						</div>
 					</div>

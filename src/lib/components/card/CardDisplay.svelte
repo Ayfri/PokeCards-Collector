@@ -6,7 +6,7 @@
 	import {NO_IMAGES} from '#lib/images.ts';
 	import {fade, fly} from 'svelte/transition';
 	import type {FullCard, Pokemon, Set, PriceData} from '#lib/types.js';
-	import { pascalCase } from '#helpers/strings.ts';
+	import { pascalCase } from '#helpers/format.ts';
 	import InteractiveCard from '#components/card/InteractiveCard.svelte';
 	import { flushSync, onMount } from 'svelte';
 	import { afterNavigate, goto } from '$app/navigation';

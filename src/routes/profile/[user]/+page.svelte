@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { refreshAll } from '$app/navigation';
-	import { timeAgo } from '#helpers/dates.ts';
+	import { formatEuros, timeAgo } from '#helpers/format.ts';
 	import { compareRarities } from '#helpers/rarity.ts';
 	import { toggleProfileVisibility } from '#lib/services/profiles.ts';
 	import SetLogo from '#components/SetLogo.svelte';
@@ -35,7 +35,6 @@
 
 	let { data }: Props = $props();
 
-	const currencyFormatter = new Intl.NumberFormat('en-US', { currency: 'EUR', style: 'currency' });
 	const numberFormatter = new Intl.NumberFormat('en-US');
 
 	const SET_SORTS = {
@@ -68,7 +67,7 @@
 		const unique = collectionStats?.unique_cards ?? 0;
 		return [
 			{ detail: `${numberFormatter.format(count)} / ${numberFormatter.format(total)} cards`, label: 'Started sets', percentage: total ? (count / total) * 100 : 0 },
-			{ detail: `${currencyFormatter.format(collectedValue)} / ${currencyFormatter.format(totalValue)}`, label: 'Value of the started sets', percentage: totalValue ? (collectedValue / totalValue) * 100 : 0 },
+			{ detail: `${formatEuros(collectedValue)} / ${formatEuros(totalValue)}`, label: 'Value of the started sets', percentage: totalValue ? (collectedValue / totalValue) * 100 : 0 },
 			{ detail: `${numberFormatter.format(unique)} / ${numberFormatter.format(totalCards)} cards`, label: 'Whole catalogue', percentage: totalCards ? (unique / totalCards) * 100 : 0 },
 		];
 	});
@@ -86,13 +85,13 @@
 			value: numberFormatter.format(collectionStats.total_instances),
 		},
 		{
-			hint: collectionStats.total_instances ? `${currencyFormatter.format(collectionStats.total_value / collectionStats.total_instances)} per card on average` : 'Cardmarket trend prices',
+			hint: collectionStats.total_instances ? `${formatEuros(collectionStats.total_value / collectionStats.total_instances)} per card on average` : 'Cardmarket trend prices',
 			icon: Wallet,
 			label: 'Collection value',
-			value: currencyFormatter.format(collectionStats.total_value),
+			value: formatEuros(collectionStats.total_value),
 		},
 		{
-			hint: `${currencyFormatter.format(collectionStats.wishlist_total_value)} to complete it`,
+			hint: `${formatEuros(collectionStats.wishlist_total_value)} to complete it`,
 			icon: ListTodo,
 			label: 'Wishlist',
 			value: numberFormatter.format(collectionStats.wishlist_count),
@@ -279,7 +278,7 @@
 									</div>
 									<div class="min-w-0 text-center">
 										<p class="truncate text-xs text-gray-300 group-hover:text-white">{card.name}</p>
-										<p class="text-sm font-semibold text-gold-400 tabular-nums">{currencyFormatter.format(price)}</p>
+										<p class="text-sm font-semibold text-gold-400 tabular-nums">{formatEuros(price)}</p>
 									</div>
 								</a>
 							{/each}
@@ -379,7 +378,7 @@
 								</div>
 								<div class="flex justify-between text-xs text-gray-400 tabular-nums">
 									<span>{entry.count} / {entry.total} <span class="text-gray-500">({entry.percentage.toFixed(1)}%)</span></span>
-									<span>{currencyFormatter.format(entry.collectedValue)}</span>
+									<span>{formatEuros(entry.collectedValue)}</span>
 								</div>
 							</div>
 						</a>

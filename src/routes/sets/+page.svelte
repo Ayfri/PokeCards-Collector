@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import type { PageData } from './$types';
+	import { formatEuros } from '#helpers/format.ts';
 	import { NO_IMAGES } from '#lib/images.ts';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import PageTitle from '#components/PageTitle.svelte';
@@ -88,10 +89,6 @@
 		const [first, last] = [Math.min(...years), Math.max(...years)];
 		return first === last ? `${first}` : `${first} - ${last}`;
 	}
-
-	function formatCurrency(value: number): string {
-		return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR' }).format(value);
-	}
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -138,7 +135,7 @@
 						<h2 class="text-xl font-bold text-gold-400">{series}</h2>
 						<p class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-300" title="Release years"><CalendarDaysIcon size={14} /> {yearSpan(groupedSets[series])}</p>
 						<p class="whitespace-nowrap text-sm text-gray-400">{groupedSets[series].length} sets</p>
-						<p class="ml-auto whitespace-nowrap text-sm text-gold-400">{formatCurrency(groupedSets[series].reduce((acc, set) => acc + set.totalPrice, 0))}</p>
+						<p class="ml-auto whitespace-nowrap text-sm text-gold-400">{formatEuros(groupedSets[series].reduce((acc, set) => acc + set.totalPrice, 0))}</p>
 					</div>
 					<hr class="w-full border-t border-gray-700 my-2" />
 				</div>
@@ -157,7 +154,7 @@
 										<h2 class="text-lg font-semibold text-white">{set.name}</h2>
 										<div class="flex justify-between mt-2 text-sm text-gray-400">
 											<span class="flex items-center gap-1.5" title="Cards in this set"><LayersIcon size={14} /> {setCardCount(set)} cards</span>
-											<span class="flex items-center gap-1.5 text-gold-400" title="Cardmarket value of a complete set"><CircleEuroIcon size={14} /> {formatCurrency(set.totalPrice)}</span>
+											<span class="flex items-center gap-1.5 text-gold-400" title="Cardmarket value of a complete set"><CircleEuroIcon size={14} /> {formatEuros(set.totalPrice)}</span>
 										</div>
 										<div class="flex justify-between mt-1 text-sm text-gray-400">
 											<span class="flex items-center gap-1.5" title="Release date"><CalendarDaysIcon size={14} /> {new Date(set.releaseDate).toLocaleDateString()}</span>

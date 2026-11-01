@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { formatEuros } from '#helpers/format.ts';
 	import { binderStorage } from '#stores/binder.svelte.ts';
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import Button from '#components/filters/Button.svelte';
@@ -264,7 +265,7 @@
 									<div class="truncate font-semibold">{fullCard.name}</div>
 									<div class="truncate">#{formatCardNumber(fullCard.localId || '?', set?.printedTotal)}</div>
 									<div class="flex items-center justify-center gap-1 truncate text-gray-300"><RaritySymbol decorative rarity={fullCard.rarity} />{fullCard.rarity}</div>
-									<div class="truncate text-gold-400">{fullCard.price ? `${fullCard.price.toFixed(2)} €` : 'No price'}</div>
+									<div class="truncate text-gold-400">{fullCard.price ? formatEuros(fullCard.price) : 'No price'}</div>
 								{:else}
 									<div class="truncate font-semibold">Imported from URL</div>
 								{/if}

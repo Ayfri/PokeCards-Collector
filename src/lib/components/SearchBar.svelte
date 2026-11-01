@@ -9,7 +9,7 @@
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import CardImage from '#components/card/CardImage.svelte';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
-	import { pascalCase } from '#helpers/strings.ts';
+	import { formatEuros, pascalCase } from '#helpers/format.ts';
 	import { NO_IMAGES } from '#lib/images.ts';
 	import type { FullCard } from '#lib/types.js';
 	import type { CardSearchResult, PokemonSearchResult } from '#helpers/card-search.ts';
@@ -290,7 +290,7 @@
 							</div>
 							
 							{#if result.price}
-								<p class="text-gold-400 font-medium mt-1 text-sm">{result.price.toFixed(2)} €</p>
+								<p class="text-gold-400 font-medium mt-1 text-sm">{formatEuros(result.price)}</p>
 							{/if}
 						</div>
 					</div>

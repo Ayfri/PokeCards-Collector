@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { pascalCase } from '#helpers/strings.ts';
+	import { pascalCase } from '#helpers/format.ts';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { getCardImageForPokemon } from '#helpers/card-images.ts';
 	import { NO_IMAGES } from '#lib/images.ts';
