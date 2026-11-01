@@ -236,8 +236,11 @@ export interface CardDleFeedback {
 	artistValue: string;
 	pokemonCorrect: boolean;
 	pokemonValue: string;
+	/** Describes the guess: `higher` means the guessed card costs more than the mystery card. */
 	priceComparison: 'higher' | 'lower' | 'correct';
 	priceValue: number;
+	rarityCorrect: boolean;
+	rarityValue: string;
 	setCorrect: boolean;
 	setValue: string;
 	supertypeCorrect: boolean;
@@ -246,9 +249,51 @@ export interface CardDleFeedback {
 	typesValue: string;
 }
 
+/** The fields the card.dle picker draws. Sending whole cards plus the catalogue and price table in the page made a 13.7 MB document. */
+export interface CardDleSuggestion {
+	/** Compared with the feedback's artist by the easy mode filter. */
+	artist: string;
+	cardCode: string;
+	image: string;
+	name: string;
+	/** The whole card, only for a card with no scan: its placeholder plate draws the name, type and kind from it. */
+	plate?: FullCard;
+	pokemonName: string;
+	pokemonNumber?: number;
+	price: number;
+	/** Compared with the feedback's rarity by the easy mode filter. */
+	rarity: string;
+	/** Looked up in the layout's sets for the logo, so the payload carries no image URL per card. */
+	setId: string;
+	setName: string;
+	/** Compared with the feedback's supertype by the easy mode filter. */
+	supertype: string;
+	/** The raw comma-separated `types` string, the one the guess endpoint compares with `===`. */
+	types: string;
+}
+
+/** One judged guess, as the board draws it and localStorage keeps it. */
+export interface CardDleGuess {
+	cardCode: string;
+	feedback: CardDleFeedback;
+	image: string;
+	isCorrect: boolean;
+	name: string;
+	/** The whole card, only when it has no scan, for its placeholder plate. */
+	plate?: FullCard;
+	pokemonNumber?: number;
+	/** Looked up in the layout's sets for the logo. */
+	setId: string;
+}
+
+/** A guess waiting for the server's verdict: the board draws it as a skeleton row. */
+export type CardDlePendingGuess = Pick<CardDleGuess, 'cardCode' | 'image' | 'name' | 'plate'>;
+
 /** Response of `POST /api/card-dle/guess`. */
 export type CardDleGuessResponse =
 	| {
+		/** The UTC day of the mystery card the guess was judged against: the board the guess belongs to. */
+		date: string;
 		feedback: CardDleFeedback;
 		guessedCard: FullCard;
 		isCorrectGuess: boolean;

@@ -1,12 +1,13 @@
 import type { RequestHandler } from './$types';
 import { cardPrice } from '#helpers/card-utils.ts';
-import { pickCardOfTheDay } from '#helpers/card-dle.ts';
+import { pickCardOfTheDay, utcDay } from '#helpers/card-dle.ts';
 import { getCards, getPrices } from '#helpers/supabase-data.ts';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
-		const cardOfTheDay = pickCardOfTheDay(new Date().toISOString().slice(0, 10), allCards, prices);
+		const date = utcDay();
+		const cardOfTheDay = pickCardOfTheDay(date, allCards, prices);
 
 		if (!cardOfTheDay) {
 			return Response.json({ error: 'Could not pick the card of the day' }, { status: 500 });
@@ -33,6 +34,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			artistValue: guessedCard.artist,
 			setCorrect: guessedCard.setName === cardOfTheDay.setName,
 			setValue: guessedCard.setName,
+			rarityCorrect: guessedCard.rarity === cardOfTheDay.rarity,
+			rarityValue: guessedCard.rarity,
 			supertypeCorrect: guessedCard.supertype === cardOfTheDay.supertype,
 			supertypeValue: guessedCard.supertype,
 			typesCorrect: guessedCard.types === cardOfTheDay.types,
@@ -45,12 +48,14 @@ export const POST: RequestHandler = async ({ request }) => {
 		const isCorrectGuess = feedback.pokemonCorrect &&
 							   feedback.artistCorrect &&
 							   feedback.setCorrect &&
+							   feedback.rarityCorrect &&
 							   feedback.supertypeCorrect &&
 							   feedback.typesCorrect &&
 							   feedback.priceComparison === 'correct';
 
 		return Response.json({
 			success: true,
+			date,
 			guessedCard,
 			feedback,
 			isCorrectGuess

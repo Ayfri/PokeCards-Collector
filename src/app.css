@@ -36,11 +36,19 @@
   --animate-ripple-wave: ripple-wave 1.5s ease-out infinite;
   /* Entrance for server-rendered content: a CSS animation starts on first paint and survives hydration, a Svelte intro would replay after it. */
   --animate-reveal: reveal 0.4s cubic-bezier(0.33, 1, 0.68, 1) both;
+  --animate-flip-in: flip-in 0.5s cubic-bezier(0.33, 1, 0.68, 1) both;
 
   @keyframes reveal {
     from {
       opacity: 0;
       translate: 0 2rem;
+    }
+  }
+
+  @keyframes flip-in {
+    from {
+      opacity: 0;
+      transform: perspective(40rem) rotateX(-90deg);
     }
   }
 

@@ -1,23 +1,8 @@
 import { CARD_DLE_MIN_PRICE } from '#helpers/card-dle.ts';
 import { cardPrice } from '#helpers/card-utils.ts';
 import { getCards, getPrices } from '#helpers/supabase-data.ts';
-import type { FullCard } from '#lib/types.js';
+import type { CardDleSuggestion } from '#lib/types.js';
 import type { RequestHandler } from './$types';
-
-/** The fields the guess picker draws. Sending whole cards plus the catalogue and price table in the page made a 13.7 MB document. */
-export interface CardDleSuggestion {
-	cardCode: string;
-	image: string;
-	name: string;
-	/** The whole card, only for a card with no scan: its placeholder plate draws the name, type and kind from it. */
-	plate?: FullCard;
-	pokemonName: string;
-	pokemonNumber?: number;
-	price: number;
-	/** Looked up in the layout's sets for the logo, so the payload carries no image URL per card. */
-	setId: string;
-	setName: string;
-}
 
 export const GET: RequestHandler = async () => {
 	const [cards, prices] = await Promise.all([getCards(), getPrices()]);
@@ -28,6 +13,7 @@ export const GET: RequestHandler = async () => {
 		if (!price || price < CARD_DLE_MIN_PRICE) continue;
 
 		suggestions.push({
+			artist: card.artist,
 			cardCode: card.cardCode,
 			image: card.image,
 			name: card.name,
@@ -35,8 +21,11 @@ export const GET: RequestHandler = async () => {
 			pokemonName: card.name.split(' ')[0],
 			pokemonNumber: card.pokemonNumber,
 			price,
+			rarity: card.rarity,
 			setId: card.setId,
 			setName: card.setName,
+			supertype: card.supertype,
+			types: card.types,
 		});
 	}
 
