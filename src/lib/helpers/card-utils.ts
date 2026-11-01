@@ -68,9 +68,12 @@ export function cardPrice(price: PriceData | undefined): number | null {
  * The number as printed: uppercase like the card ("TG01", "R"), over the set total only when it is a plain number.
  * A lettered one sits outside that count: the 30th Celebration Mews read "R/RGB", never "R/128".
  */
+/** A numeric number loses its leading zeros (`081` -> `81/162`), a lettered one (`TG05`, `SV033`) keeps its printed form. */
 export function formatCardNumber(cardNumber: string, printedTotal?: number | null): string {
 	const number = cardNumber.toUpperCase();
-	return printedTotal && /^\d+$/.test(number) ? `${number}/${printedTotal}` : number;
+	if (!/^\d+$/.test(number)) return number;
+	const trimmed = String(Number(number));
+	return printedTotal ? `${trimmed}/${printedTotal}` : trimmed;
 }
 
 /** A heuristic, not a parse: a card code contains `_` and a URL starts with `http`. */
