@@ -11,8 +11,9 @@
     --water2: #445e9c;
     --fighting: #e06d11;
     --fighting2: #7d1f1a;
-    --colorless: #a8a878;
-    --colorless2: #6d6d4e;
+    /* Off-white like the TCG Colorless symbol and card body, not the beige of the video games' Normal type. */
+    --colorless: #dedbd2;
+    --colorless2: #9a978d;
     --darkness: #595d62;
     --darkness2: #3a3a3a;
     --psychic: #8e4b9e;

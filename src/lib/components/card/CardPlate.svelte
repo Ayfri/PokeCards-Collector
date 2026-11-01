@@ -158,7 +158,7 @@
 						<SetLogo class="size-[5cqw] object-contain @max-[200px]:size-[7cqw]" set={symbolSet} />
 					{/if}
 					{number}
-					<RaritySymbol rarity={card.rarity} />
+					<RaritySymbol light={!lightText} rarity={card.rarity} />
 				</span>
 			</footer>
 		{/if}

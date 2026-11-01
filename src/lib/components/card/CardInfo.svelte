@@ -147,7 +147,7 @@
 							<dd class="flex flex-wrap justify-end gap-1.5">
 								{#if card?.types}
 									{#each card.types.toLowerCase().split(',') as type (type)}
-										<span class={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-sm font-medium capitalize ${type} bg-(--type-color) text-white`}>
+										<span class={['inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-sm font-medium capitalize bg-(--type-color)', type, type === 'colorless' ? 'text-gray-900' : 'text-white']}>
 											<TypeSymbol glyph="black" pale {type} />
 											{type}
 										</span>
