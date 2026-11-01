@@ -146,7 +146,7 @@ export async function auditTcgdex(write = true) {
 	console.log(missing.length ? `rarities missing from RARITY_MAPPING: ${missing.join(', ')}` : 'rarities: every TCGdex value has a tier');
 
 	/** A French value that is identical to its English one needs no entry in `FRENCH`. */
-	for (const [kind, endpoint] of [['category', 'categories'], ['rarity', 'rarities'], ['stage', 'stages'], ['type', 'types']] as const) {
+	for (const [kind, endpoint] of [['category', 'categories'], ['rarity', 'rarities'], ['stage', 'stages'], ['type', 'types'], ['trainerType', 'trainer-types'], ['energyType', 'energy-types']] as const) {
 		const [french, english] = await Promise.all([pool.json<string[]>(`/v2/fr/${endpoint}`), pool.json<string[]>(`/v2/en/${endpoint}`)]);
 		const untranslated = (french ?? []).filter(value => !(value in FRENCH[kind]) && !english?.includes(value));
 		console.log(untranslated.length ? `French ${endpoint} missing from FRENCH: ${untranslated.join(', ')}` : `French ${endpoint}: every value is translated`);

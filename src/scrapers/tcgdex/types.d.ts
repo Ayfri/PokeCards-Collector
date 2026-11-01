@@ -87,6 +87,10 @@ export interface TcgdexCard extends TcgdexCardBrief {
 	hp?: number;
 	types?: string[];
 	stage?: string;
+	/** Only on Energy cards. */
+	energyType?: string;
+	/** Only on Trainer cards. */
+	trainerType?: string;
 	regulationMark?: string;
 	legal?: {standard?: boolean; expanded?: boolean};
 	updated?: string;

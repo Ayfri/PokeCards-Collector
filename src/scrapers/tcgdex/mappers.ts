@@ -24,6 +24,8 @@ export interface MappedCard {
 	setId: string;
 	setName: string;
 	stage: string;
+	/** TCGdex's `trainerType` or `energyType` in English, empty on a Pokémon and on the old Trainers TCGdex has no type for. */
+	subtype: string;
 	supertype: string;
 	tcgdexId: string;
 	types: string;
@@ -167,6 +169,8 @@ export function mapCard(lang: Language, source: TcgdexCard): MappedCard {
 		setId: card.set?.id ?? '',
 		setName: card.set?.name ?? '',
 		stage: card.stage ?? '',
+		/** Read by category: TCGdex gives 9 ecard1 Pokémon a stray trainerType and the Trainer ex8-86 Energy Charge an energyType. */
+		subtype: (card.category === 'Trainer' ? card.trainerType : card.category === 'Energy' ? card.energyType : undefined) ?? '',
 		supertype: toSupertype(card.category),
 		tcgdexId: card.id,
 		types: card.types?.join(', ') ?? '',

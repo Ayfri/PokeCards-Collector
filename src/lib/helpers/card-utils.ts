@@ -1,5 +1,20 @@
 import type { Card, FullCard, Pokemon, PriceData } from '#lib/types.js';
 
+/**
+ * The Trainer and Energy sections a card's `subtype` can fill, in display order. They are TCGdex's English `trainerType` / `energyType` values:
+ * its basic Energy is `Normal`, not `Basic`. `verify` and `check` flag any other subtype so a new TCGdex value or an untranslated one shows up.
+ */
+export const SUBTYPE_SECTIONS = [
+	{ label: 'Supporters', subtype: 'Supporter', supertype: 'Trainer' },
+	{ label: 'Items', subtype: 'Item', supertype: 'Trainer' },
+	{ label: 'Stadiums', subtype: 'Stadium', supertype: 'Trainer' },
+	{ label: 'Tools', subtype: 'Tool', supertype: 'Trainer' },
+	{ label: 'Technical Machines', subtype: 'Technical Machine', supertype: 'Trainer' },
+	{ label: "Rocket's Secret Machines", subtype: "Rocket's Secret Machine", supertype: 'Trainer' },
+	{ label: 'Basic Energy', subtype: 'Normal', supertype: 'Energy' },
+	{ label: 'Special Energy', subtype: 'Special', supertype: 'Energy' },
+] as const;
+
 /** Display name of a Trainer/Energy group: a trailing letters-only parenthetical names the art's character ("Professor's Research (Professor Oak)"), while one with a digit is part of the card ("PokéDex (HANDY909)"). */
 export function cardGroupName(name: string): string {
 	return name.replace(/\s*\([\p{L}\s'’.]+\)$/u, '').trim();

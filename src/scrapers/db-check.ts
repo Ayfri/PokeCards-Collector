@@ -1,3 +1,4 @@
+import {SUBTYPE_SECTIONS} from '#helpers/card-utils.ts';
 import {RARITY_MAPPING} from '#helpers/rarity.ts';
 import {CATALOGUES, LANGUAGES, type Language} from '#helpers/catalogues.ts';
 import {envClient, ownedCardCodes, readAll} from './supabase_sync';
@@ -36,6 +37,7 @@ interface CardRow {
 	pokemon_id: number | null;
 	rarity: string | null;
 	set_id: string | null;
+	subtype: string | null;
 	supertype: string | null;
 	tcgdex_id: string | null;
 }
@@ -62,7 +64,9 @@ const duplicates = <T>(rows: readonly T[], key: (row: T) => string): string[] =>
 	return [...twice];
 };
 
-const priceColumns = (row: PriceRow) => Object.entries(row).filter(([column]) => column !== 'card_code');
+const subtypes = new Set<string>(SUBTYPE_SECTIONS.map(section => section.subtype));
+
+const priceColumns =(row: PriceRow) => Object.entries(row).filter(([column]) => column !== 'card_code');
 
 export async function checkDatabase(): Promise<CheckReport> {
 	const supabase = envClient();
@@ -79,7 +83,7 @@ export async function checkDatabase(): Promise<CheckReport> {
 	for (const lang of LANGUAGES) {
 		const tables = CATALOGUES[lang].tables;
 		const [cards, prices, sets] = await Promise.all([
-			readAll<CardRow>(supabase, tables.cards, 'card_code,card_market_url,image,name,pokemon_id,rarity,set_id,supertype,tcgdex_id', 'card_code'),
+			readAll<CardRow>(supabase, tables.cards, 'card_code,card_market_url,image,name,pokemon_id,rarity,set_id,subtype,supertype,tcgdex_id', 'card_code'),
 			readAll<PriceRow>(supabase, tables.prices, '*', 'card_code'),
 			readAll<SetRow>(supabase, tables.sets, 'release_date,series,set_id,total_cards', 'set_id'),
 		]);
@@ -111,6 +115,8 @@ export async function checkDatabase(): Promise<CheckReport> {
 		add(tag('cards with no rarity'), 'warn', cards.filter(card => !card.rarity).map(card => card.card_code));
 		add(tag('rarities with no tier in RARITY_TIERS'), 'error', [...new Set(cards.flatMap(card => card.rarity && !(card.rarity.toLowerCase() in RARITY_MAPPING) ? [card.rarity] : []))]);
 		add(tag('Pokémon cards with no species'), 'warn', cards.filter(card => card.supertype === 'Pokémon' && card.pokemon_id === null).map(card => `${card.card_code} ${card.name}`));
+		add(tag('Trainer and Energy cards with no subtype'), 'warn', cards.filter(card => (card.supertype === 'Trainer' || card.supertype === 'Energy') && !card.subtype).map(card => `${card.card_code} ${card.name}`));
+		add(tag('subtypes outside SUBTYPE_SECTIONS'), 'warn', [...new Set(cards.flatMap(card => card.subtype && !subtypes.has(card.subtype) ? [card.subtype] : []))]);
 		add(tag('pokemon_id out of the dex range'), 'error', cards.filter(card => card.pokemon_id !== null && (card.pokemon_id < 1 || card.pokemon_id > 1100)).map(card => `${card.card_code} (${card.pokemon_id})`));
 		if (lang === 'en') {
 			add(tag('pokemon_id the card name does not spell'), 'warn', cards.filter(card => {

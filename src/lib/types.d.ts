@@ -30,6 +30,8 @@ export interface Card {
 	setId: string;
 	setName: string;
 	stage?: string;
+	/** TCGdex's English `trainerType` or `energyType` (`Supporter`, `Item`, `Normal`, `Special`, see `SUBTYPE_SECTIONS`). Only on a Trainer or Energy card that has one. */
+	subtype?: string;
 	supertype: string;
 	tcgdexId?: string;
 	types: string;

@@ -1,8 +1,9 @@
 import type {TcgdexCard} from './types';
 
-/** TCGdex localizes these four enumerations, but the filters, `RARITY_MAPPING` and the card codes expect English values. */
+/** TCGdex localizes these enumerations, but the filters, `RARITY_MAPPING`, the card codes and `SUBTYPE_SECTIONS` expect English values. */
 export const FRENCH = {
 	category: {Dresseur: 'Trainer', Énergie: 'Energy', Pokémon: 'Pokemon'},
+	energyType: {'De base': 'Normal', 'Spécial': 'Special'},
 	rarity: {
 		'Chromatique ultra rare': 'Shiny Ultra Rare',
 		'Collection Classique': 'Classic Collection',
@@ -31,6 +32,7 @@ export const FRENCH = {
 		'Une Étoile': 'One Star',
 	},
 	stage: {'Bébé': 'Baby', 'Base': 'Basic', 'MÉGA': 'MEGA', 'Niveau 1': 'Stage1', 'Niveau 2': 'Stage2', 'Niveau Sup': 'LEVEL-UP', 'Restauré': 'RESTORED', 'TURBO': 'BREAK'},
+	trainerType: {'Machine Technique': 'Technical Machine', Objet: 'Item', Outil: 'Tool', Stade: 'Stadium'},
 	type: {
 		Combat: 'Fighting',
 		Eau: 'Water',
@@ -52,8 +54,10 @@ export function toEnglish(card: TcgdexCard): TcgdexCard {
 	return {
 		...card,
 		category: card.category && translate(FRENCH.category, card.category),
+		energyType: card.energyType && translate(FRENCH.energyType, card.energyType),
 		rarity: card.rarity && translate(FRENCH.rarity, card.rarity),
 		stage: card.stage && translate(FRENCH.stage, card.stage),
+		trainerType: card.trainerType && translate(FRENCH.trainerType, card.trainerType),
 		types: card.types?.map(type => translate(FRENCH.type, type)),
 	};
 }

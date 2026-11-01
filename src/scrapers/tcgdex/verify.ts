@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import {SUBTYPE_SECTIONS} from '#helpers/card-utils.ts';
 import {RARITY_MAPPING} from '#helpers/rarity.ts';
 import {envClient, ownedCardCodes} from '../supabase_sync';
 import {CARDS, FR_CARDS, FR_PRICES, FR_SETS, JP_CARDS, JP_PRICES, JP_SETS, PRICES, SETS, TYPES} from '../files';
@@ -14,7 +15,7 @@ export interface FileReport {
 	/** Set names used by more than one set. */
 	sharedSetNames: string[];
 	sets: number;
-	/** Rarities missing from `RARITY_MAPPING`, supertypes outside Pokémon/Trainer/Energy and types missing from `types.json`. */
+	/** Rarities missing from `RARITY_MAPPING`, supertypes outside Pokémon/Trainer/Energy, subtypes outside `SUBTYPE_SECTIONS` and types missing from `types.json`. */
 	unknownValues: string[];
 	unpriced: string[];
 }
@@ -34,6 +35,7 @@ const LANGS = [
 ] as const;
 
 const SUPERTYPES = new Set(['Pokémon', 'Trainer', 'Energy']);
+const SUBTYPES = new Set<string>(SUBTYPE_SECTIONS.map(section => section.subtype));
 
 const read = <T>(path: string): T => JSON.parse(fs.readFileSync(path, 'utf8')) as T;
 
@@ -70,6 +72,7 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 		for (const card of cards) {
 			if (!(card.rarity.toLowerCase() in RARITY_MAPPING)) unknownValues.add(`rarity ${card.rarity}`);
 			if (!SUPERTYPES.has(card.supertype)) unknownValues.add(`supertype ${card.supertype}`);
+			if (card.subtype && !SUBTYPES.has(card.subtype)) unknownValues.add(`subtype ${card.subtype}`);
 			for (const type of card.types ? card.types.split(', ') : []) if (!knownTypes.has(type)) unknownValues.add(`type ${type}`);
 		}
 

@@ -33,6 +33,7 @@ export function cardRow(card: MappedCard): Record<string, unknown> {
 		set_id: card.setId || null,
 		set_name: card.setName || null,
 		stage: card.stage || null,
+		subtype: card.subtype || null,
 		supertype: card.supertype || null,
 		tcgdex_id: card.tcgdexId,
 		types: card.types || null,

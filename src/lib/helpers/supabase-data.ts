@@ -21,6 +21,7 @@ const CARD_COLUMNS = `
 	set_id,
 	set_name,
 	stage,
+	subtype,
 	supertype,
 	tcgdex_id,
 	types,
@@ -44,6 +45,7 @@ const CARD_LIST_COLUMNS = `
 	rarity,
 	set_id,
 	set_name,
+	subtype,
 	supertype,
 	types
 `;
@@ -64,6 +66,7 @@ interface CardRow {
 	set_id: string | null;
 	set_name: string | null;
 	stage?: string | null;
+	subtype?: string | null;
 	supertype: string | null;
 	tcgdex_id?: string | null;
 	types: string | null;
@@ -111,6 +114,8 @@ function toCard(card: CardRow): FullCard {
 		rarity: card.rarity || '',
 		setId: card.set_id || '',
 		setName: card.set_name || '',
+		/** Only Trainer and Energy cards have one, so the 17k Pokémon carry no empty key. */
+		...(card.subtype && { subtype: card.subtype }),
 		supertype: card.supertype || '',
 		types: card.types || '',
 	};
