@@ -30,14 +30,15 @@ const CARD_COLUMNS = `
 
 /**
  * The columns a card list reads. `getCards` returns every card in the table, and nothing renders six of the columns
- * (`hp`, `legal_standard`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`), so they would only slow down the
- * payload the browser parses before the grid can paint.
+ * (`legal_standard`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`), so they would only slow down the
+ * payload the browser parses before the grid can paint. `hp` is read, but `toCard` only keeps it on cards with no scan.
  */
 const CARD_LIST_COLUMNS = `
 	card_code,
 	artist,
 	card_market_updated_at,
 	card_market_url,
+	hp,
 	image,
 	local_id,
 	name,
@@ -114,6 +115,8 @@ function toCard(card: CardRow): FullCard {
 		rarity: card.rarity || '',
 		setId: card.set_id || '',
 		setName: card.set_name || '',
+		/** Only a card drawn as a plate shows its HP, so the tiles with a scan skip it: 1251 numbers in the English grid payload instead of 17941. */
+		...(!card.image && card.hp != null && { hp: card.hp }),
 		/** Only Trainer and Energy cards have one, so the 17k Pokémon carry no empty key. */
 		...(card.subtype && { subtype: card.subtype }),
 		supertype: card.supertype || '',
@@ -121,7 +124,7 @@ function toCard(card: CardRow): FullCard {
 	};
 
 	/** A list read selects `CARD_LIST_COLUMNS`, so the detail-only keys stay off the object instead of adding 23546 empty values. */
-	if (!('hp' in card)) return listCard;
+	if (!('variants' in card)) return listCard;
 
 	return {
 		...listCard,

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CardPlateEmblem from '#components/card/CardPlateEmblem.svelte';
+	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import SetLogo from '#components/SetLogo.svelte';
 	import { cardTypeTint } from '#helpers/card-images.ts';
 	import { plateIdentity } from '#helpers/card-plate.ts';
@@ -52,10 +53,18 @@
 					{/if}
 					<span class="line-clamp-2 text-[6.5cqw] leading-tight font-bold @max-[200px]:text-[9cqw]">{card.name}</span>
 				</div>
-				{#if card.hp}
-					<span class="shrink-0 text-[6.5cqw] leading-tight font-extrabold text-gold-400 @max-[200px]:text-[9cqw]">
-						{card.hp}<small class="ml-[0.15em] text-[0.6em]">HP</small>
-					</span>
+				{#if card.hp || (identity.kind === 'pokemon' && identity.typeNames.length)}
+					<!-- Past the first symbol the rest only fit on a wide tile. -->
+					<div class="flex shrink-0 items-center gap-[1.2cqw] text-[6.5cqw] leading-tight @max-[200px]:text-[9cqw]">
+						{#if card.hp}
+							<span class="font-extrabold text-gold-400">{card.hp}<small class="ml-[0.15em] text-[0.6em]">HP</small></span>
+						{/if}
+						{#if identity.kind === 'pokemon'}
+							{#each identity.typeNames as type, index (type)}
+								<TypeSymbol class={[index > 0 && '@max-[200px]:hidden']} {type} />
+							{/each}
+						{/if}
+					</div>
 				{/if}
 			</header>
 		{/if}
@@ -96,7 +105,7 @@
 				<div class="flex flex-wrap items-center gap-[1.5cqw]">
 					{#each identity.typeNames as type (type)}
 						<span class="flex items-center gap-[1.2cqw] rounded-full border border-white/25 bg-black/30 px-[2.5cqw] py-[0.5cqw] text-[3.5cqw] tracking-wide uppercase">
-							<span class="size-[2.5cqw] rounded-full bg-(--type-dot)" style="--type-dot: var(--{type.toLowerCase()}, transparent)"></span>{type}
+							<TypeSymbol {type} />{type}
 						</span>
 					{/each}
 					{#if rarity}
