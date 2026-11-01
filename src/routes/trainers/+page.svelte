@@ -5,6 +5,10 @@
 	import SortControl from '#components/filters/SortControl.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import TrainerGroupTile from '#components/list/TrainerGroupTile.svelte';
+	import ScrollToBottom from '#components/list/ScrollToBottom.svelte';
+	import ScrollToTop from '#components/list/ScrollToTop.svelte';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
+	import { fade } from 'svelte/transition';
 
 	interface Props {
 		data: PageData;
@@ -12,6 +16,7 @@
 
 	let { data }: Props = $props();
 
+	let scrollY = $state(0);
 	let searchTerm = $state('');
 	let sortBy = $state('name');
 	let sortOrder: 'asc' | 'desc' = $state('asc');
@@ -34,6 +39,8 @@
 			.filter(section => section.groups.length > 0);
 	});
 </script>
+
+<svelte:window bind:scrollY />
 
 <div class="container mx-auto px-4 py-8 text-white">
 	<div class="flex justify-between items-center mb-4">
@@ -61,18 +68,29 @@
 	<div class="w-full max-w-200 mx-auto my-6 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
 
 	{#each sections as section (section.label)}
-		<section class="mt-8">
-			<h2 class="text-xl md:text-2xl font-bold text-gold-400 mb-4">
-				{section.label}
-				<span class="text-sm font-normal text-gray-400">({section.groups.length})</span>
-			</h2>
+		<!-- A native `<details>`: folding needs no state, and a folded section's tiles are not rendered by the browser. -->
+		<details class="group mt-8" open>
+			<summary class="mb-4 flex cursor-pointer list-none items-center gap-2 select-none [&::-webkit-details-marker]:hidden">
+				<ChevronDownIcon class="size-6 shrink-0 -rotate-90 text-gold-400 transition-transform group-open:rotate-0" />
+				<h2 class="text-xl md:text-2xl font-bold text-gold-400">
+					{section.label}
+					<span class="text-sm font-normal text-gray-400">({section.groups.length})</span>
+				</h2>
+			</summary>
 			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 align-items-start align-content-start">
 				{#each section.groups as group (group.cardCode)}
 					<TrainerGroupTile {group} />
 				{/each}
 			</div>
-		</section>
+		</details>
 	{:else}
 		<p class="mt-12 text-center text-gray-400">No Trainer or Energy card matches "{searchTerm}".</p>
 	{/each}
 </div>
+
+{#if scrollY > 100}
+	<div transition:fade={{ duration: 300 }}>
+		<ScrollToTop onclick={() => window.scrollTo({ behavior: 'smooth', top: 0 })} />
+	</div>
+{/if}
+<ScrollToBottom onclick={() => window.scrollTo({ behavior: 'smooth', top: document.body.scrollHeight })} />
