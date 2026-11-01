@@ -1,17 +1,21 @@
 import type { PageServerLoad } from './$types';
-import { getCards, getPrices } from '#helpers/supabase-data.ts';
+import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { cardGroupKey, cardGroupName, cardPrice, SUBTYPE_SECTIONS } from '#helpers/card-utils.ts';
-import type { Card } from '#lib/types.js';
+import type { Card, Set } from '#lib/types.js';
 
-/** What one tile needs. `plate` is what the placeholder of a missing scan reads, so the cards and prices stay on the server. */
+/**
+ * What one tile needs. `plate` is what the placeholder of a missing scan reads, so the cards and prices stay on the server: the kind and
+ * types on every tile, for a scan that turns out to 404, and the printed details plus `set` only on the few tiles with no scan at all.
+ */
 export interface TrainerGroupEntry {
 	cardCode: string;
 	cardCount: number;
-	/** Raw TCGdex image base of the group's most valuable print. */
+	/** Raw TCGdex image base of the group's most valuable print that has a scan, or of its most valuable print when none has. */
 	image: string;
 	name: string;
-	plate: Pick<Card, 'subtype' | 'supertype' | 'types'>;
+	plate: Pick<Card, 'subtype' | 'supertype' | 'types'> & Partial<Pick<Card, 'artist' | 'localId' | 'rarity'>>;
+	set?: Pick<Set, 'name' | 'printedTotal' | 'symbol'>;
 }
 
 export interface TrainerSection {
@@ -28,9 +32,9 @@ const SECTION_ORDER = [
 ];
 
 export const load: PageServerLoad = async () => {
-	const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
+	const [allCards, prices, sets] = await Promise.all([getCards(), getPrices(), getSets()]);
 
-	/** One pass over the catalogue, keeping per group its most valuable print, its size and how its prints are subtyped. */
+	/** One pass over the catalogue, keeping per group its tile print, its size and how its prints are subtyped. A scanned print beats a pricier one with no scan. */
 	const groups = new Map<string, { card: Card; count: number; price: number; subtypes: Map<string, number> }>();
 	for (const card of allCards) {
 		if ((card.supertype !== 'Trainer' && card.supertype !== 'Energy') || !card.setName) continue;
@@ -44,13 +48,14 @@ export const load: PageServerLoad = async () => {
 		}
 
 		group.count++;
-		if (price > group.price) {
+		if (!!card.image !== !!group.card.image ? !!card.image : price > group.price) {
 			group.card = card;
 			group.price = price;
 		}
 		if (card.subtype) group.subtypes.set(card.subtype, (group.subtypes.get(card.subtype) ?? 0) + 1);
 	}
 
+	const setsById = new Map(sets.map(({ name, printedTotal, setId, symbol }) => [setId, { name, printedTotal, symbol }]));
 	const bySection = new Map<string, TrainerGroupEntry[]>();
 	for (const group of groups.values()) {
 		const { card } = group;
@@ -64,7 +69,13 @@ export const load: PageServerLoad = async () => {
 			cardCount: group.count,
 			image: card.image,
 			name: cardGroupName(card.name),
-			plate: { subtype, supertype: card.supertype, types: card.types },
+			plate: {
+				subtype,
+				supertype: card.supertype,
+				types: card.types,
+				...(!card.image && { artist: card.artist, localId: card.localId, rarity: card.rarity }),
+			},
+			...(!card.image && { set: setsById.get(card.setId) }),
 		});
 		bySection.set(label, entries);
 	}
