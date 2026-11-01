@@ -23,7 +23,7 @@
 	import BookOpenCheckIcon from "@lucide/svelte/icons/book-open-check";
 	import LogInIcon from "@lucide/svelte/icons/log-in";
 	import UserPlusIcon from "@lucide/svelte/icons/user-plus";
-	import GlobeIcon from "@lucide/svelte/icons/globe";
+	import Flag from '#components/Flag.svelte';
 	import AuthModal from '#components/auth/AuthModal.svelte';
 
 	interface Props {
@@ -33,12 +33,12 @@
 	let { data }: Props = $props();
 
 	const tiles = $derived([
-		{ count: data.stats.totalCards, duration: 4, href: '/cards-list', icon: GridIcon, label: 'Cards', title: 'Browse every English card' },
+		{ count: data.stats.totalCards, duration: 4, href: '/cards-list', language: 'en' as const, label: 'EN Cards', title: 'Browse every English card' },
 		...[CATALOGUES.ja, CATALOGUES.fr].map(catalogue => ({
 			count: data.stats.foreignCards[catalogue.language],
 			duration: 4,
 			href: catalogue.gridRoute,
-			icon: GlobeIcon,
+			language: catalogue.language,
 			label: `${catalogue.routeCode.toUpperCase()} Cards`,
 			title: `Browse the ${catalogue.adjective} catalogue`,
 		})),
@@ -146,8 +146,12 @@
 						title={tile.title}
 					>
 						{#if !NO_IMAGES}
-							<div class="flex justify-center mb-2">
-								<tile.icon size={24} class="text-gold-400" />
+							<div class="flex h-6 items-center justify-center mb-2">
+								{#if tile.language}
+									<Flag class="h-5 w-7.5 rounded-xs ring-1 ring-white/20" language={tile.language} />
+								{:else if tile.icon}
+									<tile.icon size={24} class="text-gold-400" />
+								{/if}
 							</div>
 						{/if}
 						<div class="flex items-center justify-center w-full">
