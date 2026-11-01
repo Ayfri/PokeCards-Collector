@@ -28,6 +28,9 @@ vite.config.ts.timestamp-*
 .idea/
 .vscode/
 
+# Scraper caches (artwork hashes)
+.cache/
+
 # Images
 images/
 supabase/.temp/

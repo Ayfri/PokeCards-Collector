@@ -103,7 +103,7 @@ export async function uploadCards(lang: Language): Promise<void> {
 	}).map(row => row.card_code);
 	await deleteAll(table, 'card_code', stale, 'rows TCGdex no longer has or that change code');
 
-	const rows = cards.map(card => cardRow({ ...card, cardCode: codes.get(card.cardCode)! }));
+	const rows = cards.map(card => cardRow({ ...card, cardCode: codes.get(card.cardCode)! }, lang));
 	await upsertAll(table, rows, 'card_code');
 }
 

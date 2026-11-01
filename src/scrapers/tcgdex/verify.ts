@@ -11,6 +11,8 @@ export interface FileReport {
 	distinct: number;
 	imageless: number;
 	lang: string;
+	/** Japanese only: twin ids (`twinTcgdexId`) that no English card carries, so the twin link would lead nowhere. */
+	missingTwins: string[];
 	priced: number;
 	/** Set names used by more than one set. */
 	sharedSetNames: string[];
@@ -50,6 +52,8 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 	const produced = new Set<string>();
 	const crossCollisions = new Set<string>();
 	const knownTypes = new Set(read<string[]>(TYPES));
+	/** `LANGS` lists English first, so its ids are known when the Japanese file is checked. */
+	const englishIds = new Set<string>();
 
 	for (const {lang, cards: cardsPath, prices: pricesPath, sets: setsPath} of LANGS) {
 		if (!fs.existsSync(cardsPath)) {
@@ -59,6 +63,7 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 		const cards = read<MappedCard[]>(cardsPath);
 		const prices = read<Record<string, MappedPrice>>(pricesPath);
 		const sets = read<MappedSet[]>(setsPath);
+		if (lang === 'en') for (const card of cards) englishIds.add(card.tcgdexId);
 		const distinct = new Set(cards.map(card => card.cardCode));
 		for (const code of distinct) {
 			if (produced.has(code)) crossCollisions.add(code);
@@ -82,6 +87,7 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 			distinct: distinct.size,
 			imageless: cards.filter(card => !card.image).length,
 			lang,
+			missingTwins: lang === 'ja' ? cards.flatMap(card => card.twinTcgdexId && !englishIds.has(card.twinTcgdexId) ? [`${card.tcgdexId} -> ${card.twinTcgdexId}`] : []) : [],
 			priced: Object.keys(prices).length,
 			sharedSetNames: [...setNames].filter(([, count]) => count > 1).map(([name]) => name),
 			sets: sets.length,

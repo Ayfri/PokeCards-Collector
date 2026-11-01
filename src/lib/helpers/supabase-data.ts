@@ -1,7 +1,7 @@
 import type { FullCard, Pokemon, PriceData, Set } from "#lib/types.js";
 import { supabase } from '#lib/supabase.ts';
 import { cachedTable, PartialRows, STATIC_TTL, TABLE_TTL } from '#helpers/data-cache.ts';
-import { CATALOGUES, isTwinLanguage, TWIN_LANGUAGES, type CardTable, type CardVersions, type Language, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
+import { CATALOGUES, LANGUAGES, type CardTable, type CardVersions, type Language, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
 import type { CatalogueData } from '#helpers/owned-cards.ts';
 
 /** Every card column, for the reads that need the details. Keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
@@ -303,20 +303,26 @@ export async function getCardDetails(language: Language, cardCode: string): Prom
 	return data ? toCard(data) : null;
 }
 
-/** The same card in the other catalogues, found through its TCGdex id. A Japanese card, or a card with no id, only has itself. */
+/**
+ * The same card in the other catalogues. English and French cards share their TCGdex id, and a Japanese card stores the English id of
+ * its twin in `twin_tcgdex_id`, so the English id is the key: a Japanese card reads it from its own row, the other two use their `tcgdex_id`.
+ * Several Japanese prints can share one English twin, and the first `card_code` stands for them so the link never changes between visits.
+ * A card with no id, or a Japanese card with no twin, only has itself.
+ */
 export async function getCardVersions(language: Language, cardCode: string): Promise<CardVersions> {
 	const versions: CardVersions = { [language]: cardCode };
-	if (!isTwinLanguage(language)) return versions;
+	const own = language === 'ja' ? 'twin_tcgdex_id' : 'tcgdex_id';
 
 	const { cards } = CATALOGUES[language].tables;
-	const { data } = await readWithRetry(`fetch ${cards} ${cardCode} tcgdex id`, () => supabase.from(cards).select('tcgdex_id').eq('card_code', cardCode).maybeSingle<{ tcgdex_id: string | null }>());
-	const tcgdexId = data?.tcgdex_id;
+	const { data } = await readWithRetry(`fetch ${cards} ${cardCode} ${own}`, () => supabase.from(cards).select(own).eq('card_code', cardCode).maybeSingle<Record<string, string | null>>());
+	const tcgdexId = data?.[own];
 	if (!tcgdexId) return versions;
 
-	await Promise.all(TWIN_LANGUAGES.filter(twin => twin !== language).map(async twin => {
-		const table = CATALOGUES[twin].tables.cards;
-		const { data: twinCard } = await readWithRetry(`fetch ${table} ${tcgdexId}`, () => supabase.from(table).select('card_code').eq('tcgdex_id', tcgdexId).maybeSingle<{ card_code: string }>());
-		if (twinCard) versions[twin] = twinCard.card_code;
+	await Promise.all(LANGUAGES.filter(target => target !== language).map(async target => {
+		const table = CATALOGUES[target].tables.cards;
+		const column = target === 'ja' ? 'twin_tcgdex_id' : 'tcgdex_id';
+		const { data: twin } = await readWithRetry(`fetch ${table} ${column} ${tcgdexId}`, () => supabase.from(table).select('card_code').eq(column, tcgdexId).order('card_code').limit(1).maybeSingle<{ card_code: string }>());
+		if (twin) versions[target] = twin.card_code;
 	}));
 
 	return versions;

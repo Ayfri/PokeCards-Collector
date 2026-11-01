@@ -77,7 +77,18 @@ export interface TcgdexCardBrief {
 	image?: string;
 }
 
+export interface TcgdexAttack {
+	cost?: string[];
+	damage?: string | number;
+}
+
 export interface TcgdexCard extends TcgdexCardBrief {
+	/** `abilities`, `attacks`, `resistances`, `retreat` and `weaknesses` are only read by `link.ts`, which matches Japanese cards to English ones on them. */
+	abilities?: unknown[];
+	attacks?: TcgdexAttack[];
+	resistances?: {type: string}[];
+	retreat?: number;
+	weaknesses?: {type: string}[];
 	category?: string;
 	illustrator?: string;
 	rarity?: string;

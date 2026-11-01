@@ -82,6 +82,24 @@ const commands: Command[] = [
 		},
 	},
 	{
+		name: 'link',
+		description: 'Match every Japanese card to its English twin and write jp-twins.json',
+		flags: '--dry-run  --json',
+		run: async ({ dryRun }) => {
+			const { linkTwins } = await import('./src/scrapers/tcgdex/link.js');
+			const report = await linkTwins({ write: !dryRun });
+			heading('link');
+			row('linked', `${report.linked} of ${report.jaCards} Japanese cards`);
+			for (const [method, categories] of Object.entries(report.byMethod).sort()) {
+				row(method, Object.entries(categories).map(([category, count]) => `${count} ${category}`).join(', '));
+			}
+			row('guard drops', `${report.guardDrops.dex} on the Pokédex number, ${report.guardDrops.art} on the artwork`);
+			row('gained a scan', `${report.scanlessGained} Japanese cards with no scan take their twin's`);
+			if (dryRun) console.log(dim('  dry run: jp-twins.json untouched'));
+			return report;
+		},
+	},
+	{
 		name: 'verify',
 		description: 'Check the scraped JSON for card_code collisions and unresolved owned cards',
 		flags: '--offline  --json',
@@ -92,6 +110,7 @@ const commands: Command[] = [
 				const collisions = file.collisions === 0 ? styleText('green', 'no collisions') : styleText('red', `${file.collisions} collisions`);
 				row(file.lang, `${file.cards} cards, ${file.sets} sets, ${file.priced} priced ${dim('|')} ${collisions}`);
 				if (file.unknownValues.length) row(`${file.lang} unknown`, styleText('red', file.unknownValues.join(', ')));
+				if (file.missingTwins.length) row(`${file.lang} bad twins`, styleText('red', `${file.missingTwins.length}: ${file.missingTwins.slice(0, 5).join(', ')}`));
 				if (file.sharedSetNames.length) row(`${file.lang} shared names`, styleText('yellow', file.sharedSetNames.join(', ')));
 			}
 			row('cross collisions', report.crossCollisions.length === 0 ? styleText('green', 'none') : styleText('red', `${report.crossCollisions.length}: ${report.crossCollisions.slice(0, 10).join(', ')}`));

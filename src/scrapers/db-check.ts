@@ -40,6 +40,8 @@ interface CardRow {
 	subtype: string | null;
 	supertype: string | null;
 	tcgdex_id: string | null;
+	/** `jp_cards` only. */
+	twin_tcgdex_id?: string | null;
 }
 
 interface PriceRow {
@@ -79,11 +81,13 @@ export async function checkDatabase(): Promise<CheckReport> {
 	const excludedNames = new Set(['Pokémon TCG Pocket']);
 	const known = new Map<string, Language>();
 	const shared: string[] = [];
+	/** `LANGUAGES` lists English first, so its ids are known when the Japanese twins are checked. */
+	const englishIds = new Set<string>();
 
 	for (const lang of LANGUAGES) {
 		const tables = CATALOGUES[lang].tables;
 		const [cards, prices, sets] = await Promise.all([
-			readAll<CardRow>(supabase, tables.cards, 'card_code,card_market_url,image,name,pokemon_id,rarity,set_id,subtype,supertype,tcgdex_id', 'card_code'),
+			readAll<CardRow>(supabase, tables.cards, `card_code,card_market_url,image,name,pokemon_id,rarity,set_id,subtype,supertype,tcgdex_id${lang === 'ja' ? ',twin_tcgdex_id' : ''}`, 'card_code'),
 			readAll<PriceRow>(supabase, tables.prices, '*', 'card_code'),
 			readAll<SetRow>(supabase, tables.sets, 'release_date,series,set_id,total_cards', 'set_id'),
 		]);
@@ -93,6 +97,7 @@ export async function checkDatabase(): Promise<CheckReport> {
 		const cardCodes = new Set(cards.map(card => card.card_code));
 		const pricedCodes = new Set(prices.map(price => price.card_code));
 		const heldPerSet = new Map<string, number>();
+		if (lang === 'en') for (const card of cards) if (card.tcgdex_id) englishIds.add(card.tcgdex_id);
 		for (const card of cards) {
 			const first = known.get(card.card_code);
 			if (first && first !== lang) shared.push(`${card.card_code} (${first}, ${lang})`);
@@ -111,6 +116,7 @@ export async function checkDatabase(): Promise<CheckReport> {
 
 		add(tag('cards with no tcgdex_id'), 'warn', cards.filter(card => !card.tcgdex_id).map(card => card.card_code));
 		add(tag('cards with no image'), 'warn', cards.filter(card => !card.image).map(card => card.card_code));
+		if (lang === 'ja') add(tag('twin_tcgdex_id missing from cards'), 'warn', cards.filter(card => card.twin_tcgdex_id && !englishIds.has(card.twin_tcgdex_id)).map(card => `${card.card_code} -> ${card.twin_tcgdex_id}`));
 		add(tag('cards with no name'), 'error', cards.filter(card => !card.name).map(card => card.card_code));
 		add(tag('cards with no rarity'), 'warn', cards.filter(card => !card.rarity).map(card => card.card_code));
 		add(tag('rarities with no tier in RARITY_TIERS'), 'error', [...new Set(cards.flatMap(card => card.rarity && !(card.rarity.toLowerCase() in RARITY_MAPPING) ? [card.rarity] : []))]);

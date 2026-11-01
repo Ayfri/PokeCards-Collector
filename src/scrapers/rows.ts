@@ -1,4 +1,4 @@
-import {UNKNOWN_POKEMON, type MappedCard, type MappedPrice, type MappedSet} from './tcgdex/mappers';
+import {UNKNOWN_POKEMON, type Language, type MappedCard, type MappedPrice, type MappedSet} from './tcgdex/mappers';
 
 /** Row shapes shared by the CLI uploader and the scheduled Worker, so both write identical columns. */
 
@@ -16,7 +16,8 @@ export function setRow(set: MappedSet): Record<string, unknown> {
 	};
 }
 
-export function cardRow(card: MappedCard): Record<string, unknown> {
+/** The twin columns exist on `jp_cards` only: `cards` and `fr_cards` have no such column, so writing them there would fail the upsert. */
+export function cardRow(card: MappedCard, lang: Language): Record<string, unknown> {
 	return {
 		artist: card.artist || null,
 		card_code: card.cardCode,
@@ -36,6 +37,7 @@ export function cardRow(card: MappedCard): Record<string, unknown> {
 		subtype: card.subtype || null,
 		supertype: card.supertype || null,
 		tcgdex_id: card.tcgdexId,
+		...(lang === 'ja' && {twin_method: card.twinMethod || null, twin_tcgdex_id: card.twinTcgdexId || null}),
 		types: card.types || null,
 		variants: card.variants,
 	};

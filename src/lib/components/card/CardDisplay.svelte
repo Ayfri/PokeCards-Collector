@@ -12,7 +12,7 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import { catalogueOfPath, isTwinLanguage, type CardVersions } from '#helpers/catalogues.ts';
+	import { catalogueOfPath, type CardVersions } from '#helpers/catalogues.ts';
 	import { getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc, getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
 	import { loading } from '#stores/loading.svelte.ts';
@@ -269,7 +269,7 @@
 		{/if}
 	</div>
 
-	{#if currentCard && isTwinLanguage(catalogue.language)}
+	{#if currentCard}
 		<CardLanguages cardCode={currentCard.cardCode} language={catalogue.language} known={{ cardCode: pokemonCards[0].cardCode, versions }} />
 	{/if}
 

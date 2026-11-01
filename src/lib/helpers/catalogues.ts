@@ -27,7 +27,7 @@ export const CATALOGUES = {
 		cardRoute: '/jp-card',
 		gridRoute: '/japan',
 		language: 'ja',
-		note: 'Japanese catalogue still incomplete.',
+		note: 'Japanese catalogue still incomplete. Cards with no Japanese scan show the English one of the same print.',
 		routeCode: 'jp',
 		speciesTitles: true,
 		tables: {cards: 'jp_cards', prices: 'jp_prices', sets: 'jp_sets'},
@@ -49,17 +49,13 @@ export type CardTable = CatalogueTables['cards'];
 export type PriceTable = CatalogueTables['prices'];
 export type SetTable = CatalogueTables['sets'];
 
-/** Language -> `card_code` of the same card in each catalogue that carries it. */
-export type CardVersions = Partial<Record<Language, string>>;
-
 /**
- * Only English and French share TCGdex ids. Japanese ids are separate products that collide by accident:
- * `neo4-109` is Shining Mewtwo in English and a Trainer in Japanese, so a Japanese card is never matched by id.
+ * Language -> `card_code` of the same card in each catalogue that carries it.
+ * English and French share TCGdex ids, so the twin is found by id. Japanese ids are separate products that collide by accident
+ * (`neo4-109` is Shining Mewtwo in English and a Trainer in Japanese), so a Japanese print is linked through `jp_cards.twin_tcgdex_id`,
+ * which `bun run scrapers link` fills by matching language-independent traits.
  */
-export const TWIN_LANGUAGES = ['en', 'fr'] as const satisfies readonly Language[];
-export type TwinLanguage = (typeof TWIN_LANGUAGES)[number];
-
-export const isTwinLanguage = (language: Language): language is TwinLanguage => TWIN_LANGUAGES.some(twin => twin === language);
+export type CardVersions = Partial<Record<Language, string>>;
 
 export const BY_ROUTE_CODE ={fr: CATALOGUES.fr, jp: CATALOGUES.ja};
 export const BY_GRID = {france: CATALOGUES.fr, japan: CATALOGUES.ja};

@@ -1,7 +1,7 @@
 import {createClient, type SupabaseClient} from '@supabase/supabase-js';
 import {CATALOGUES} from '#helpers/catalogues.ts';
 import {cardRow, priceRow, setRow} from './rows';
-import {englishImages, fileUnderListingSets, mapAll, withProbedAssets, type TcgdexClient} from './tcgdex/client';
+import {fileUnderListingSets, imageFallbacks, mapAll, withProbedAssets, type TcgdexClient} from './tcgdex/client';
 import {catalogueSets, excludedSetIds} from './tcgdex/excluded';
 import {mapCard, mapPrice, mapSet, resolveCardCode, sharedProductCodes, type Language} from './tcgdex/mappers';
 import type {TcgdexCard, TcgdexSet} from './tcgdex/types';
@@ -120,7 +120,7 @@ export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClien
 		mapAll(setIds, id => client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(id)}`)),
 		storedCards(supabase, tables.cards, setIds),
 	]);
-	const fallback = lang === 'fr' ? await englishImages(client, details) : new Map<string, string>();
+	const fallback = await imageFallbacks(client, lang, details);
 	const ids = details.flatMap(set => set?.cards?.map(card => card.id) ?? []);
 	const fetched = await mapAll(ids, id => client.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`));
 	if (lang === 'fr') fileUnderListingSets(fetched, details);
@@ -140,7 +140,7 @@ export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClien
 		const previous = stored.get(card.id)?.code;
 		mapped.cardCode = resolveCardCode(lang, card.id, previous, mapped.cardCode);
 		if (previous && previous !== mapped.cardCode) stale.push(previous);
-		cards.push(cardRow(mapped));
+		cards.push(cardRow(mapped, lang));
 		const price = mapPrice(card.pricing);
 		if (price) prices.push(priceRow(mapped.cardCode, price));
 		else unpriced.push(mapped.cardCode);

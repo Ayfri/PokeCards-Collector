@@ -4,9 +4,16 @@ import {toEnglish} from './french';
 import type {TcgdexCard, TcgdexPricing, TcgdexSet} from './types';
 import setAliases from './set-aliases.json' with {type: 'json'};
 import cardCodeOverrides from './card-code-overrides.json' with {type: 'json'};
+import jpTwins from './jp-twins.json' with {type: 'json'};
 import pokedex from '../../assets/pokemons-full.json' with {type: 'json'};
 
 export type {Language} from '#helpers/catalogues.ts';
+
+/** The English twin of a Japanese card, written by `bun run scrapers link`. `method` is the pass that found it (`strong`, `dex+hp+attacks`, `art`...). */
+export interface JpTwin {
+	en: string;
+	method: string;
+}
 
 export interface MappedCard {
 	artist: string;
@@ -28,6 +35,9 @@ export interface MappedCard {
 	subtype: string;
 	supertype: string;
 	tcgdexId: string;
+	/** Japanese cards only: the English TCGdex id of the same print and the pass that matched it, empty when no match is certain. */
+	twinMethod?: string;
+	twinTcgdexId?: string;
 	types: string;
 	variants: TcgdexCard['variants'] | null;
 }
@@ -58,6 +68,8 @@ export interface MappedPrice {
 	reverseAvg7?: number | null;
 	reverseAvg30?: number | null;
 }
+
+export const jpTwinOf = (tcgdexId: string): JpTwin | undefined => (jpTwins as Record<string, JpTwin>)[tcgdexId];
 
 /** Pokémon cards with an unknown species carry 99999 in their code. The `pokemons` table has no such row, so `pokemon_id` stores null. */
 export const UNKNOWN_POKEMON = 99999;
@@ -151,6 +163,7 @@ export function toSupertype(category: string | undefined): string {
 export function mapCard(lang: Language, source: TcgdexCard): MappedCard {
 	const card = lang === 'fr' ? toEnglish(source) : source;
 	const cardmarket = card.pricing?.cardmarket;
+	const twin = lang === 'ja' ? jpTwinOf(card.id) : undefined;
 	return {
 		artist: card.illustrator ?? 'Unknown',
 		cardCode: buildCardCode(lang, card),
@@ -173,6 +186,7 @@ export function mapCard(lang: Language, source: TcgdexCard): MappedCard {
 		subtype: (card.category === 'Trainer' ? card.trainerType : card.category === 'Energy' ? card.energyType : undefined) ?? '',
 		supertype: toSupertype(card.category),
 		tcgdexId: card.id,
+		...(lang === 'ja' && {twinMethod: twin?.method ?? '', twinTcgdexId: twin?.en ?? ''}),
 		types: card.types?.join(', ') ?? '',
 		variants: card.variants ?? null,
 	};
