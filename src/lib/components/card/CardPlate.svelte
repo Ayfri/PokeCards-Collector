@@ -1,9 +1,10 @@
 <script lang="ts">
+	import CardPlateArt from '#components/card/CardPlateArt.svelte';
 	import CardPlateEmblem from '#components/card/CardPlateEmblem.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import SetLogo from '#components/SetLogo.svelte';
 	import { cardTypeTint } from '#helpers/card-images.ts';
-	import { plateIdentity } from '#helpers/card-plate.ts';
+	import { artNote, plateIdentity } from '#helpers/card-plate.ts';
 	import { formatCardNumber } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc } from '#helpers/pokemon-utils.ts';
 	import { NO_IMAGES } from '#lib/images.ts';
@@ -32,6 +33,9 @@
 	const artUrl = $derived(!NO_IMAGES && card?.pokemonNumber ? getPokemonImageSrc(card.pokemonNumber) : '');
 	/** Keyed on the URL rather than a boolean, so a recycled tile showing another Pokémon retries its artwork. */
 	let failedArt = $state<string>();
+	/** The scan of another print or language whose illustration fills the window. Its own state, so a failed sprite never brings a failed scan back. */
+	let failedScan = $state<string>();
+	const scan = $derived(!NO_IMAGES && card?.artImage && card.artImage !== failedScan ? card.artImage : '');
 	const subtitle = $derived(card?.stage ?? (identity.kind === 'pokemon' ? card?.supertype : identity.label));
 	const rarity = $derived(card && card.rarity !== 'None' ? card.rarity : '');
 	const number = $derived(card?.localId ? formatCardNumber(card.localId, set?.printedTotal) : '');
@@ -69,9 +73,11 @@
 			</header>
 		{/if}
 
-		<!-- The art window of a real card: a recessed frame holding the Pokémon's artwork, or an icon when there is none. -->
+		<!-- The art window of a real card: a recessed frame holding a borrowed illustration, the Pokémon's artwork, or an icon when there is none. -->
 		<div class="card-plate-window relative flex min-h-0 flex-1 items-center justify-center rounded-[3cqw] @max-[120px]:flex-none">
-			{#if identity.kind !== 'pokemon'}
+			{#if scan}
+				<CardPlateArt base={scan} note={artNote(card?.artSource)} onerror={() => (failedScan = scan)} />
+			{:else if identity.kind !== 'pokemon'}
 				<CardPlateEmblem emblem={identity.emblem} kind={identity.kind} special={identity.special} />
 			{:else if artUrl && artUrl !== failedArt}
 				<img
@@ -92,7 +98,8 @@
 					`absolute bottom-[3cqw] left-1/2 -translate-x-1/2 rounded-full border border-white/15 bg-black/45 px-[3.5cqw] py-[1cqw] text-[3.5cqw] tracking-widest whitespace-nowrap text-white/65 uppercase
 					@max-[200px]:text-[5.5cqw]
 					@max-[120px]:static @max-[120px]:translate-x-0 @max-[120px]:border-none @max-[120px]:bg-transparent @max-[120px]:p-0 @max-[120px]:text-center @max-[120px]:text-[clamp(0.5rem,9cqw,0.85rem)] @max-[120px]:whitespace-normal @max-[120px]:text-white/45`,
-					identity.label && '@min-[200px]:hidden'
+					identity.label && '@min-[200px]:hidden',
+					scan && !identity.label && '@min-[120px]:hidden'
 				]}
 			>
 				{identity.label || 'No artwork'}

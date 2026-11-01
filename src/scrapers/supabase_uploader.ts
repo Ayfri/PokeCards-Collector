@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import { CATALOGUES, LANGUAGES } from '#helpers/catalogues.ts';
 import { FILES, POKEMONS, TYPES } from './files';
-import { cardRow, priceRow, setRow } from './rows';
+import { artRow, cardRow, priceRow, setRow } from './rows';
 import { deduplicate, deleteIn, envClient, readAll, upsertRows } from './supabase_sync';
 import { resolveCardCode, type Language, type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
 
@@ -103,7 +103,7 @@ export async function uploadCards(lang: Language): Promise<void> {
 	}).map(row => row.card_code);
 	await deleteAll(table, 'card_code', stale, 'rows TCGdex no longer has or that change code');
 
-	const rows = cards.map(card => cardRow({ ...card, cardCode: codes.get(card.cardCode)! }, lang));
+	const rows = cards.map(card => ({ ...cardRow({ ...card, cardCode: codes.get(card.cardCode)! }, lang), ...artRow(card) }));
 	await upsertAll(table, rows, 'card_code');
 }
 

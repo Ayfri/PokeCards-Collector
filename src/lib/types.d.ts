@@ -9,6 +9,10 @@ export interface CardVariants {
 }
 
 export interface Card {
+	/** Extensionless TCGdex image base of the artwork a plate crops in place of a missing scan. Only on a card with no scan that has a source. */
+	artImage?: string;
+	/** Where `artImage` comes from: `lang:<language>`, `reprint:<tcgdex id>` or `energy:<tcgdex id>`. */
+	artSource?: string;
 	artist: string;
 	cardCode: string;
 	/** Only on a card read with `getCardDetails`: the list reads leave it out. */

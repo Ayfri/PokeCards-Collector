@@ -7,6 +7,8 @@ import type { CatalogueData } from '#helpers/owned-cards.ts';
 /** Every card column, for the reads that need the details. Keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
 const CARD_COLUMNS = `
 	card_code,
+	art_image,
+	art_source,
 	artist,
 	card_market_updated_at,
 	card_market_url,
@@ -31,10 +33,12 @@ const CARD_COLUMNS = `
 /**
  * The columns a card list reads. `getCards` returns every card in the table, and nothing renders six of the columns
  * (`legal_standard`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`), so they would only slow down the
- * payload the browser parses before the grid can paint. `hp` is read, but `toCard` only keeps it on cards with no scan.
+ * payload the browser parses before the grid can paint. `hp` and the art columns are read, but `toCard` only keeps them on cards with no scan.
  */
 const CARD_LIST_COLUMNS = `
 	card_code,
+	art_image,
+	art_source,
 	artist,
 	card_market_updated_at,
 	card_market_url,
@@ -53,6 +57,8 @@ const CARD_LIST_COLUMNS = `
 
 interface CardRow {
 	card_code: string;
+	art_image: string | null;
+	art_source: string | null;
 	artist: string | null;
 	card_market_updated_at?: string | null;
 	card_market_url: string | null;
@@ -117,6 +123,8 @@ function toCard(card: CardRow): FullCard {
 		setName: card.set_name || '',
 		/** Only a card drawn as a plate shows its HP, so the tiles with a scan skip it: 1251 numbers in the English grid payload instead of 17941. */
 		...(!card.image && card.hp != null && { hp: card.hp }),
+		/** A card with a scan never draws its plate, so a stale borrowed artwork (the scan arrived after the CLI stored it) stays off the object. */
+		...(!card.image && card.art_image && { artImage: card.art_image, artSource: card.art_source ?? undefined }),
 		/** Only Trainer and Energy cards have one, so the 17k Pokémon carry no empty key. */
 		...(card.subtype && { subtype: card.subtype }),
 		supertype: card.supertype || '',

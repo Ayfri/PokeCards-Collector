@@ -43,6 +43,12 @@ export function cardRow(card: MappedCard, lang: Language): Record<string, unknow
 	};
 }
 
+/**
+ * The fallback artwork columns, written by the CLI uploader only and left out of `cardRow`: the Worker's rows omit them, so the upsert keeps what
+ * the CLI stored. The CLI owns them because the reprint search needs the whole catalogue of a language, which a Worker batch of 4 sets never holds.
+ */
+export const artRow = (card: MappedCard): Record<string, unknown> => ({art_image: card.artImage || null, art_source: card.artSource || null});
+
 export function priceRow(cardCode: string, price: MappedPrice): Record<string, unknown> {
 	return {
 		avg1: price.avg1 ?? null,

@@ -16,6 +16,9 @@ export interface JpTwin {
 }
 
 export interface MappedCard {
+	/** Artwork borrowed for a card with no scan (see `art.ts`): an image base and where it came from. Set by the CLI scrape only, absent otherwise. */
+	artImage?: string;
+	artSource?: string;
 	artist: string;
 	cardCode: string;
 	cardMarketUpdatedAt: string;

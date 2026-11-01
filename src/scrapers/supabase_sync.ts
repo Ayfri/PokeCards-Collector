@@ -140,6 +140,7 @@ export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClien
 		const previous = stored.get(card.id)?.code;
 		mapped.cardCode = resolveCardCode(lang, card.id, previous, mapped.cardCode);
 		if (previous && previous !== mapped.cardCode) stale.push(previous);
+		/** No `art_image` / `art_source`: the CLI owns them (see `artRow`), and an upsert without them keeps the stored values. */
 		cards.push(cardRow(mapped, lang));
 		const price = mapPrice(card.pricing);
 		if (price) prices.push(priceRow(mapped.cardCode, price));

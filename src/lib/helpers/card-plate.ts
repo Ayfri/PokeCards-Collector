@@ -48,6 +48,15 @@ function trainerKind(card: FullCard): {emblem: string; kind: string} {
 	return rule ? {emblem: rule[2], kind: rule[1]} : {emblem: 'trainer', kind: 'trainer'};
 }
 
+const LANGUAGE_NAMES = new Intl.DisplayNames('en', {type: 'language'});
+
+/** The chip naming where a plate's borrowed artwork comes from (`Art: German print`, `Art: reprint`, `Art: basic Energy`), empty for a source it does not know. */
+export function artNote(source: string | undefined): string {
+	const [kind, value = ''] = (source ?? '').split(':');
+	if (kind === 'lang') return `Art: ${LANGUAGE_NAMES.of(value) ?? value} print`;
+	return kind === 'reprint' ? 'Art: reprint' : kind === 'energy' ? 'Art: basic Energy' : '';
+}
+
 /** What the placeholder of a card with no scan shows: its kind, the icon standing for it and the color it takes. */
 export function plateIdentity(card: FullCard | undefined, types: string | undefined): PlateIdentity {
 	const listed = (card?.types ?? types ?? '').split(',').map(type => type.trim()).filter(Boolean);

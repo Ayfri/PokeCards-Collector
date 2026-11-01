@@ -14,7 +14,7 @@ export interface TrainerGroupEntry {
 	/** Raw TCGdex image base of the group's most valuable print that has a scan, or of its most valuable print when none has. */
 	image: string;
 	name: string;
-	plate: Pick<Card, 'subtype' | 'supertype' | 'types'> & Partial<Pick<Card, 'artist' | 'localId' | 'rarity'>>;
+	plate: Pick<Card, 'subtype' | 'supertype' | 'types'> & Partial<Pick<Card, 'artImage' | 'artist' | 'artSource' | 'localId' | 'rarity'>>;
 	set?: Pick<Set, 'name' | 'printedTotal' | 'symbol'>;
 }
 
@@ -73,7 +73,7 @@ export const load: PageServerLoad = async () => {
 				subtype,
 				supertype: card.supertype,
 				types: card.types,
-				...(!card.image && { artist: card.artist, localId: card.localId, rarity: card.rarity }),
+				...(!card.image && { artist: card.artist, localId: card.localId, rarity: card.rarity, ...(card.artImage && { artImage: card.artImage, artSource: card.artSource }) }),
 			},
 			...(!card.image && { set: setsById.get(card.setId) }),
 		});

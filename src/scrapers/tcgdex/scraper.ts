@@ -1,3 +1,4 @@
+import {addFallbackArt} from './art';
 import {fileUnderListingSets, imageFallbacks, mapAll, withProbedAssets, type TcgdexClient} from './client';
 import {catalogueSets, excludedSetIds} from './excluded';
 import {mapCard, mapPrice, mapSet, sharedProductCodes, type Language, type MappedCard, type MappedPrice, type MappedSet} from './mappers';
@@ -51,6 +52,7 @@ export async function scrapeLanguage(client: TcgdexClient, lang: Language): Prom
 		card.cardMarketUrl = '';
 		delete prices[card.cardCode];
 	}
+	await addFallbackArt(client, lang, cards, sets);
 	cards.sort((a, b) => a.name.localeCompare(b.name));
 
 	const elapsed = (performance.now() - started) / 1000;
