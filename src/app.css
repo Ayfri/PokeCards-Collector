@@ -95,8 +95,10 @@
   scrollbar-width: none;
 }
 
-/* Gold fill rising from the bottom, paired with :active because Tailwind's hover variant is media-gated and touch devices would otherwise keep gold text on the gold fill. */
+/* Gold fill rising from the bottom, paired with :active because Tailwind's hover variant is media-gated and touch devices would otherwise keep gold text on the gold fill.
+   The fill sits at `z-index: -1` inside an isolated stacking context: at 0 it painted over the label, which is in-flow and unpositioned, so the black text was hidden. */
 @utility animated-hover-button {
+	isolation: isolate;
 	overflow: hidden;
 	position: relative;
 
@@ -109,7 +111,7 @@
 		position: absolute;
 		transition: height 0.3s ease-in-out;
 		width: 100%;
-		z-index: 0;
+		z-index: -1;
 	}
 
 	&:not(:disabled):hover,
