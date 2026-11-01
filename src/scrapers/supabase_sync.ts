@@ -53,10 +53,17 @@ export async function deleteIn(supabase: SupabaseClient, table: string, column: 
 	return deleted;
 }
 
-/** Keeps the last row for each `key`, because an upsert fails when one statement carries the same key twice. */
+/**
+ * Keeps the first row for each `key`, because an upsert fails when one statement carries the same key twice, and warns about every row it drops:
+ * a silent drop once lost four real cards whose codes collided. Card rows carry `tcgdex_id`, which names the two cards in the warning.
+ */
 export function deduplicate(rows: Record<string, unknown>[], key: string): Record<string, unknown>[] {
 	const byKey = new Map<unknown, Record<string, unknown>>();
-	for (const row of rows) byKey.set(row[key], row);
+	for (const row of rows) {
+		const kept = byKey.get(row[key]);
+		if (kept) console.warn(`Duplicate ${key} ${String(row[key])}: kept ${String(kept.tcgdex_id ?? 'first row')}, dropped ${String(row.tcgdex_id ?? 'later row')}`);
+		else byKey.set(row[key], row);
+	}
 	return [...byKey.values()];
 }
 

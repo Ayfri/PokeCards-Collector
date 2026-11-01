@@ -92,8 +92,27 @@ export function speciesInName(name: string): number[] {
 
 const overrideCode = (lang: Language, tcgdexId: string): string | undefined => (cardCodeOverrides as Partial<Record<Language, Record<string, string>>>)[lang]?.[tcgdexId];
 
-/** A card's code never changes on its own. TCGdex adding a dex id would change the built code, so the stored code wins and only an override moves a card. */
-export const resolveCardCode = (lang: Language, tcgdexId: string, stored: string | undefined, built: string): string => overrideCode(lang, tcgdexId) ?? stored ?? built;
+const overrideOwners = new Map<Language, Map<string, string>>();
+
+/** Override code -> the TCGdex id it pins, built on first use for each language. */
+function overrideOwner(lang: Language, code: string): string | undefined {
+	let owners = overrideOwners.get(lang);
+	if (!owners) {
+		owners = new Map(Object.entries((cardCodeOverrides as Partial<Record<Language, Record<string, string>>>)[lang] ?? {}).map(([id, pinned]) => [pinned, id]));
+		overrideOwners.set(lang, owners);
+	}
+	return owners.get(code);
+}
+
+/**
+ * A card's code never changes on its own. TCGdex adding a dex id would change the built code, so the stored code wins and only an override moves a card.
+ * A stored code that an override gives to another card is dropped: moving a code to a new card leaves it behind on the old holder (`cel25cc-CC004`
+ * still stored as the `pokemon_6_cel25c_4` that now belongs to CC002), and keeping it would make two cards share one row.
+ */
+export function resolveCardCode(lang: Language, tcgdexId: string, stored: string | undefined, built: string): string {
+	const owner = stored && overrideOwner(lang, stored);
+	return overrideCode(lang, tcgdexId) ?? (owner && owner !== tcgdexId ? undefined : stored) ?? built;
+}
 
 /**
  * TCGdex's dex id is trusted unless the English name names other species (it files the Tapu promos one species off
