@@ -6,6 +6,7 @@
 	import X from '@lucide/svelte/icons/x';
 	import PlusCircle from '@lucide/svelte/icons/circle-plus';
 	import Check from '@lucide/svelte/icons/check';
+	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import CardImage from '#components/card/CardImage.svelte';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { pascalCase } from '#helpers/strings.ts';
@@ -34,6 +35,9 @@
 	let searchResults: CardSearchResult[] = $state([]);
 	let pokemonResults: PokemonSearchResult[] = $state([]);
 	let showResults = $state(false);
+	let searchStatus = $state<'idle' | 'loading' | 'done' | 'error'>('idle');
+	/** The query the displayed results answer, which can lag behind the input while a request is in flight. */
+	let searchedQuery = $state('');
 	/** Card codes currently flashing the "added" state. */
 	const addedCards = new SvelteSet<string>();
 	let platformModifierKey = $state('');
@@ -55,17 +59,25 @@
 	/** Keystrokes race: only the answer to the most recent query is allowed to land. */
 	let latestRequest = 0;
 
+	const clearResults = () => {
+		latestRequest++;
+		pokemonResults = [];
+		searchResults = [];
+		searchStatus = 'idle';
+		showResults = false;
+	};
+
 	const performSearch = async () => {
 		const query = searchQuery.trim();
 
 		if (!query) {
-			pokemonResults = [];
-			searchResults = [];
-			showResults = false;
+			clearResults();
 			return;
 		}
 
 		const request = ++latestRequest;
+		searchStatus = 'loading';
+		showResults = true;
 
 		try {
 			const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
@@ -76,13 +88,14 @@
 
 			pokemonResults = pokemons;
 			searchResults = results;
-			showResults = pokemons.length + results.length > 0;
+			searchedQuery = query;
+			searchStatus = 'done';
 		} catch (error) {
 			if (request !== latestRequest) return;
 			console.error('Search failed:', error);
 			pokemonResults = [];
 			searchResults = [];
-			showResults = false;
+			searchStatus = 'error';
 		}
 	};
 
@@ -92,11 +105,12 @@
 		searchQuery = value;
 
 		if (value.trim()) {
+			/** The loader shows during the debounce too, so the panel reacts to the first keystroke. */
+			searchStatus = 'loading';
+			showResults = true;
 			debouncedSearch();
 		} else {
-			pokemonResults = [];
-			searchResults = [];
-			showResults = false;
+			clearResults();
 		}
 	};
 
@@ -109,18 +123,13 @@
 	};
 
 	const handleInputFocus = () => {
-		if (searchQuery.trim() !== '') {
-			performSearch();
-			showResults = true;
-		}
+		if (searchQuery.trim() !== '') performSearch();
 		inputFocused = true;
 	};
 
 	const handleClearSearch = () => {
 		searchQuery = '';
-		pokemonResults = [];
-		searchResults = [];
-		showResults = false;
+		clearResults();
 		inputElement?.focus();
 	};
 
@@ -185,11 +194,21 @@
 		{/if}
 	</div>
 
-	{#if showResults && pokemonResults.length + searchResults.length > 0}
+	{#if showResults && searchStatus !== 'idle'}
 		<div
 			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg overflow-y-auto max-h-96 z-100 border border-gray-700"
 			transition:fade={{ duration: 150 }}
 		>
+			{#if searchStatus === 'loading'}
+				<p class="flex items-center justify-center gap-2 p-3 text-sm text-gray-400" role="status">
+					<LoaderCircle class="animate-spin" size={16} />
+					Searching…
+				</p>
+			{:else if searchStatus === 'error'}
+				<p class="p-4 text-center text-sm text-red-400" role="alert">Search failed, try again</p>
+			{:else if pokemonResults.length + searchResults.length === 0}
+				<p class="p-4 text-center text-sm text-gray-400 wrap-anywhere" role="status">Nothing found for “{searchedQuery}”</p>
+			{/if}
 			{#each pokemonResults as pokemon (pokemon.id)}
 				<a
 					href="/cards-list?pokemon={pokemon.id}"

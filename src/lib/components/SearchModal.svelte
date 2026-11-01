@@ -57,7 +57,7 @@
 
 {#if isOpen}
 	<div
-		class="fixed inset-0 bg-black/80 z-110 flex-col pt-4"
+		class="fixed inset-0 bg-black/90 backdrop-blur-sm z-110 flex-col pt-4"
 		transition:fade={{ duration: 200 }}
 	>
 		<div class="w-full px-4" bind:this={modalContent}>
