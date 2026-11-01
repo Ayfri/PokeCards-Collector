@@ -113,13 +113,31 @@ function dexesOf(lang: Language, cards: readonly TcgdexCard[]): Dexes {
 	return dexes;
 }
 
-/** Pokémon links from the pass 1 key, the set mapping its links vote for, and the pass 2 keys searched inside the mapped sets. */
-function linkPokemon(ja: readonly TcgdexCard[], en: readonly TcgdexCard[], jaDexes: Dexes, enDexes: Dexes): {links: Map<string, Link>; mappedSets: Map<string, Set<string>>} {
+/**
+ * Pokémon links from the pass 1 key, the set mapping its links vote for, and the pass 2 keys searched inside the mapped sets.
+ * A key with several hits (regular print, full art, gold, promos and reprints share their stats and illustrator) is settled by the artwork
+ * when the Japanese card has a scan, so those links carry the key's method plus `-art`. Art links vote like unique ones.
+ * `-free` is the fallback for any card the artwork leaves open, and the guards in `linkTwins` still check it.
+ */
+async function linkPokemon(
+	ja: readonly TcgdexCard[],
+	en: readonly TcgdexCard[],
+	jaDexes: Dexes,
+	enDexes: Dexes,
+	hashes: ArtHashes,
+): Promise<{links: Map<string, Link>; mappedSets: Map<string, Set<string>>}> {
 	const links = new Map<string, Link>();
 	const strong = groupBy(en, strongKey);
+	const strongHits = (card: TcgdexCard) => strong.get(strongKey(card) ?? '') ?? [];
 	for (const card of ja) {
-		const hits = strong.get(strongKey(card) ?? '');
-		if (hits?.length === 1) links.set(card.id, {en: hits[0], method: 'strong'});
+		const hits = strongHits(card);
+		if (hits.length === 1) links.set(card.id, {en: hits[0], method: 'strong'});
+	}
+	const ambiguous = ja.filter(card => card.image && strongHits(card).length > 1);
+	await hashes.fill(ambiguous.flatMap(card => [card.image, ...strongHits(card).map(hit => hit.image)]));
+	for (const card of ambiguous) {
+		const best = closestArt(card, strongHits(card), hashes);
+		if (best) links.set(card.id, {en: best, method: 'strong-art'});
 	}
 
 	/** Mechanics-only unique matches whose Pokédex number agrees vote too, so the old Japanese sets with no illustrator still get mapped. */
@@ -148,16 +166,28 @@ function linkPokemon(ja: readonly TcgdexCard[], en: readonly TcgdexCard[], jaDex
 	const enBySet = Map.groupBy(en, card => card.set?.id ?? '');
 	const indexes = PASS_2_KEYS.map(([, key]) => new Map([...enBySet].map(([setId, cards]) => [setId, groupBy(cards, card => key(card, enDexes))] as const)));
 	const claimed = new Set([...links.values()].map(link => link.en.id));
-	for (const card of ja) {
-		const sets = mappedSets.get(card.set?.id ?? '');
-		if (links.has(card.id) || !sets?.size || categoryOf(card) !== 'Pokemon') continue;
-		for (const [index, [method, key]] of PASS_2_KEYS.entries()) {
-			const wanted = key(card, jaDexes);
-			if (wanted === null) continue;
-			const hits = [...sets].flatMap(setId => indexes[index].get(setId)?.get(wanted) ?? []);
+	const hitsOf = (card: TcgdexCard, index: number, sets: Set<string>) => {
+		const wanted = PASS_2_KEYS[index][1](card, jaDexes);
+		return wanted === null ? [] : [...sets].flatMap(setId => indexes[index].get(setId)?.get(wanted) ?? []);
+	};
+	const pending = ja.filter(card => !links.has(card.id) && mappedSets.get(card.set?.id ?? '')?.size && categoryOf(card) === 'Pokemon');
+	await hashes.fill(pending.flatMap(card => card.image ? PASS_2_KEYS.flatMap((_, index) => {
+		const hits = hitsOf(card, index, mappedSets.get(card.set?.id ?? '')!);
+		return hits.length > 1 ? [card.image, ...hits.map(hit => hit.image)] : [];
+	}) : []));
+	for (const card of pending) {
+		const sets = mappedSets.get(card.set?.id ?? '')!;
+		for (const [index, [method]] of PASS_2_KEYS.entries()) {
+			const hits = hitsOf(card, index, sets);
 			if (hits.length === 1) {
 				links.set(card.id, {en: hits[0], method});
 				claimed.add(hits[0].id);
+				break;
+			}
+			const best = hits.length > 1 ? closestArt(card, hits, hashes) : null;
+			if (best) {
+				links.set(card.id, {en: best, method: `${method}-art`});
+				claimed.add(best.id);
 				break;
 			}
 			/** Several prints of one art in the mapped sets: the one no other Japanese card has claimed, when exactly one is left. */
@@ -320,22 +350,32 @@ class ArtHashes {
 }
 
 /**
+ * The candidate whose artwork is within `BEST_ART` bits of the card's, when no other candidate is within `SAME_PRINT`. Candidates with no
+ * scan are skipped. Two equally close candidates are both within `SAME_PRINT`, so a tie never picks one.
+ */
+function closestArt(card: TcgdexCard, candidates: readonly TcgdexCard[], hashes: ArtHashes): TcgdexCard | null {
+	const art = hashes.get(card.image);
+	if (!art) return null;
+	const ranked = candidates.flatMap(candidate => {
+		const hash = hashes.get(candidate.image);
+		return hash ? [{candidate, bits: distance(art, hash)}] : [];
+	}).sort((a, b) => a.bits - b.bits);
+	return ranked[0] && ranked[0].bits <= BEST_ART && !(ranked[1] && ranked[1].bits <= SAME_PRINT) ? ranked[0].candidate : null;
+}
+
+/**
  * Trainer and Energy cards have no stats to match, so a Japanese one is matched on its artwork against the English cards of the same
- * category in its mapped sets: the best must be within `BEST_ART` bits and no other candidate within `SAME_PRINT`.
+ * category in its mapped sets, through `closestArt`.
  * Trainer type and illustrator inside the mapped sets alone were wrong on 12 % of the links, and effect-text digits were too noisy.
  */
 function linkByArt(ja: readonly TcgdexCard[], en: readonly TcgdexCard[], mappedSets: Map<string, Set<string>>, hashes: ArtHashes): Map<string, Link> {
 	const links = new Map<string, Link>();
-	const scanned = en.filter(card => hashes.get(card.image) && categoryOf(card) !== 'Pokemon');
-	const bySetAndCategory = Map.groupBy(scanned, card => `${card.set?.id}|${categoryOf(card)}`);
+	const bySetAndCategory = Map.groupBy(en.filter(card => categoryOf(card) !== 'Pokemon'), card => `${card.set?.id}|${categoryOf(card)}`);
 	for (const card of ja) {
-		const art = hashes.get(card.image);
-		if (!art || categoryOf(card) === 'Pokemon') continue;
-		const candidates = [...mappedSets.get(card.set?.id ?? '') ?? []]
-			.flatMap(setId => bySetAndCategory.get(`${setId}|${categoryOf(card)}`) ?? [])
-			.map(candidate => ({candidate, bits: distance(art, hashes.get(candidate.image)!)}))
-			.sort((a, b) => a.bits - b.bits);
-		if (candidates[0] && candidates[0].bits <= BEST_ART && !(candidates[1] && candidates[1].bits <= SAME_PRINT)) links.set(card.id, {en: candidates[0].candidate, method: 'art'});
+		if (categoryOf(card) === 'Pokemon') continue;
+		const candidates = [...mappedSets.get(card.set?.id ?? '') ?? []].flatMap(setId => bySetAndCategory.get(`${setId}|${categoryOf(card)}`) ?? []);
+		const best = closestArt(card, candidates, hashes);
+		if (best) links.set(card.id, {en: best, method: 'art'});
 	}
 	return links;
 }
@@ -355,9 +395,9 @@ export async function linkTwins({write = true}: LinkOptions = {}): Promise<LinkR
 
 	const jaDexes = dexesOf('ja', ja);
 	const enDexes = dexesOf('en', en);
-	const {links: pokemonLinks, mappedSets} = linkPokemon(ja, en, jaDexes, enDexes);
-
 	const hashes = await ArtHashes.load();
+	const {links: pokemonLinks, mappedSets} = await linkPokemon(ja, en, jaDexes, enDexes, hashes);
+
 	const trainerOrEnergy = (card: TcgdexCard) => categoryOf(card) !== 'Pokemon';
 	const mappedEnglish = new Set([...mappedSets.values()].flatMap(sets => [...sets]));
 	await hashes.fill([
