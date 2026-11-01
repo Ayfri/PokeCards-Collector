@@ -158,9 +158,9 @@ TCGdex needs no API key, so there is nothing else to sign up for.
 | `scrape` | Fetch every card, price and set from TCGdex into `src/assets/`. `--lang en,ja,fr` picks the languages, all three by default. | Nothing |
 | `pokemons` | Fetch Pokédex names and descriptions from PokéAPI. | Nothing |
 | `audit` | Match every stored `card_code` to its TCGdex card, rebuild `set-aliases.json` and `card-code-overrides.json` (English and Japanese), report the owned codes pointing at no card and the French vocabulary missing from `french.ts`. | Supabase credentials |
-| `check` | Read-only sanity pass over the live catalogue: duplicates, orphans, unranked rarities, mismatched species, shared Cardmarket products, empty sets. | Supabase credentials |
+| `check` | Read-only sanity pass over the live catalogue: duplicates (card and set slugs included), orphans, unranked rarities, mismatched species, shared Cardmarket products, empty sets. | Supabase credentials |
 | `purge` | Delete the cards, prices and sets of an excluded serie (Pokémon TCG Pocket). | Supabase credentials |
-| `verify` | Check the scraped JSON for `card_code` collisions (within and across catalogues), unknown values, shared set names and owned cards that no longer resolve. `--offline` skips Supabase. | `scrape` |
+| `verify` | Check the scraped JSON for `card_code` collisions (within and across catalogues), card and set slug collisions, unknown values, shared set names and owned cards that no longer resolve. `--offline` skips Supabase. | `scrape` |
 | `supabase <target>` | Push one JSON file into its table: `all`, `cards`, `jp-cards`, `fr-cards`, `prices`, `jp-prices`, `fr-prices`, `sets`, `jp-sets`, `fr-sets`, `types`, `pokemons`. | `scrape` |
 
 Every command takes `--dry-run` (run without writing), `--json` (raw report), `-q` (summary only) and `--help`.
@@ -253,8 +253,12 @@ There is no `tailwind.config.mjs`: Tailwind 4 is configured CSS-first from the `
 ## 🔑 Card Identity
 
 Cards are keyed by a synthetic `cardCode` of the form `supertype_pokemonId_setCode_cardNumber`, for example
-`pokemon_25_swsh3_136`. It is the join key everywhere: routes (`/card/[cardCode]`), price lookups, collection and
-wishlist rows.
+`pokemon_25_swsh3_136`. It is the join key everywhere except the public URL: price lookups, collection and wishlist
+rows. A card page lives at a readable slug built from its name, set and number (`/card/charizard-ex-obsidian-flames-125`,
+`/fr-card/...`, `/jp-card/...`, where a Japanese card keeps its Japanese name and its set id). `cardPath`, `cardSlug` and
+`setPath` in `src/lib/helpers/card-utils.ts` build the URLs, and the old `/card/<cardCode>` URLs redirect to the slug with
+a 301. Sets have pages too: `/sets/<slug>`, `/france/sets/<slug>` and `/japan/sets/<slug>`, and a `?set=` grid URL with no
+other filter redirects to its set page.
 
 A stored card keeps its code: the sync picks the card's entry in `src/scrapers/tcgdex/card-code-overrides.json`,
 else the code Supabase already holds, else the one built from the card. The `setCode` part can differ from the

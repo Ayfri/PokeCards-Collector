@@ -7,13 +7,15 @@ The catalogue is refreshed from [TCGdex](https://api.tcgdex.net) every day. Pric
 covering both the standard and the reverse-holo print of a card. Browsing needs no account; tracking a collection,
 a wishlist or a binder needs a free one.
 
-A card is addressed by a code of the form `supertype_pokemonId_setCode_cardNumber`, for example
-`pokemon_6_base1_4`. English cards live at `/card/<code>`, Japanese cards at `/jp-card/<code>`, French cards at `/fr-card/<code>`.
+A card page has a readable URL made of the card name, its set and its number, for example `/card/charizard-base-set-4`.
+English cards live at `/card/<slug>`, Japanese cards at `/jp-card/<slug>` (the slug keeps the Japanese name and uses the set id, as in
+`/jp-card/リザードンex-sv2a-201`) and French cards at `/fr-card/<slug>`. Behind the URL, each card has an internal code of the form
+`supertype_pokemonId_setCode_cardNumber`, for example `pokemon_6_base1_4`; the old `/card/<code>` URLs redirect to the slug.
 
 ## Browse
 
-- [All cards](https://pokecards-collector.ayfri.com/cards-list): every English card, filterable by set, artist, rarity, type and Pokémon, sortable by price, name or Pokédex number. Filters are URL parameters: `?set=`, `?artist=`, `?rarity=`, `?type=`, `?name=`, `?sortby=`, `?sortorder=`.
-- [Sets](https://pokecards-collector.ayfri.com/sets): every set with its release date, card count and the estimated euro value of a complete set.
+- [All cards](https://pokecards-collector.ayfri.com/cards-list): every English card, filterable by set, artist, rarity, type and Pokémon, sortable by price, name or Pokédex number. Filters are URL parameters: `?set=`, `?artist=`, `?rarity=`, `?type=`, `?pokemon=` (Pokédex number), `?name=`, `?sortby=`, `?sortorder=`.
+- [Sets](https://pokecards-collector.ayfri.com/sets): every set with its release date, card count and the estimated euro value of a complete set. Each set has its own page at `/sets/<set name slug>` (for example `/sets/30th-celebration`), with its release date, series, total value, most valuable cards and a checklist of every card with its number and price. French sets live at `/france/sets/<slug>` and Japanese sets at `/japan/sets/<slug>`.
 - [Pokémon](https://pokecards-collector.ayfri.com/pokemons): all 1025 Pokémon and the cards depicting them.
 - [Artists](https://pokecards-collector.ayfri.com/artists): the illustrators behind the cards, with their full card list.
 - [Japanese cards](https://pokecards-collector.ayfri.com/japan): the Japanese catalogue, with its own sets and prices.
@@ -32,4 +34,4 @@ A card is addressed by a code of the form `supertype_pokemonId_setCode_cardNumbe
 ## Optional
 
 - [Sitemap index](https://pokecards-collector.ayfri.com/sitemap.xml): every indexable URL, split into a pages sitemap and chunked card sitemaps.
-- [Source code](https://github.com/Ayfri/PokeCards-Collector): SvelteKit 2 + Svelte 5 on Cloudflare Workers, data in Supabase Postgres.
+- [Source code](https://github.com/Ayfri/PokeCards-Collector): SvelteKit 3 + Svelte 5 on Cloudflare Workers, data in Supabase Postgres.
