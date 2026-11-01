@@ -114,6 +114,8 @@
 	isolation: isolate;
 	overflow: hidden;
 	position: relative;
+	/* The label turns black once the fill has risen behind it, and back to gold at once on leave so it never sits black on the dark page. */
+	transition: color 0.1s ease-in-out;
 
 	&::before {
 		background-color: var(--color-gold-400);
@@ -130,6 +132,7 @@
 	&:not(:disabled):hover,
 	&:not(:disabled):active {
 		color: var(--color-black);
+		transition-delay: 0.2s;
 	}
 
 	&:not(:disabled):hover::before,
