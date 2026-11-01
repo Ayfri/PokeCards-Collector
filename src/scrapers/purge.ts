@@ -1,6 +1,7 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {CATALOGUES, LANGUAGES, type Language} from '#helpers/catalogues.ts';
-import {deleteIn, envClient, ownedCardCodes} from './supabase_sync';
+import {envClient} from './cli-config';
+import {deleteIn, ownedCardCodes} from './supabase_sync';
 import {Http2Pool} from './tcgdex/http2-pool';
 import {EXCLUDED_SERIES, excludedSetIds} from './tcgdex/excluded';
 

@@ -1,6 +1,6 @@
 import {addFallbackArt} from './art';
 import {fileUnderListingSets, imageFallbacks, mapAll, withProbedAssets, type TcgdexClient} from './client';
-import {catalogueSets, excludedSetIds} from './excluded';
+import {listCatalogueSets} from './excluded';
 import {mapCard, mapPrice, mapSet, sharedProductCodes, type Language, type MappedCard, type MappedPrice, type MappedSet} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
 
@@ -17,9 +17,7 @@ export interface ScrapeResult {
  */
 export async function scrapeLanguage(client: TcgdexClient, lang: Language): Promise<ScrapeResult> {
 	const started = performance.now();
-	const [listed, excluded] = await Promise.all([client.json<TcgdexSet[]>(`/v2/${lang}/sets`), excludedSetIds(client, lang)]);
-	const setList = catalogueSets(listed ?? [], excluded);
-	const skipped = (listed ?? []).length - setList.length;
+	const {sets: setList, skipped} = await listCatalogueSets(client, lang);
 	console.log(`[${lang}] ${setList.length} sets${skipped ? ` (${skipped} skipped, excluded series or repeated id)` : ''}`);
 
 	const details = await mapAll(setList, async set => {

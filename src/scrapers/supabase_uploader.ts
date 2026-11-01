@@ -1,8 +1,8 @@
 import * as fs from 'node:fs';
 import { CATALOGUES, LANGUAGES } from '#helpers/catalogues.ts';
-import { FILES, POKEMONS, TYPES } from './files';
+import { envClient, FILES, POKEMONS, TYPES } from './cli-config';
 import { artRow, cardRow, priceRow, setRow } from './rows';
-import { deduplicate, deleteIn, envClient, readAll, upsertRows } from './supabase_sync';
+import { deduplicate, deleteIn, readAll, upsertRows } from './supabase_sync';
 import { resolveCardCode, type Language, type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
 
 const supabase = envClient();

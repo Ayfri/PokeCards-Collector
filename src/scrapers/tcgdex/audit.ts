@@ -3,9 +3,10 @@ import {generateUniqueCardCode} from '#helpers/card-utils.ts';
 import {RARITY_MAPPING} from '#helpers/rarity.ts';
 import {CATALOGUES} from '#helpers/catalogues.ts';
 import {isFrenchCode} from '#helpers/owned-cards.ts';
-import {envClient, ownedCardCodes, readAll} from '../supabase_sync';
+import {envClient} from '../cli-config';
+import {ownedCardCodes, readAll} from '../supabase_sync';
 import {mapAll} from './client';
-import {catalogueSets, excludedSetIds} from './excluded';
+import {listCatalogueSets} from './excluded';
 import {FRENCH} from './french';
 import {Http2Pool} from './http2-pool';
 import {speciesInName, UNKNOWN_POKEMON, type Language} from './mappers';
@@ -61,7 +62,7 @@ export async function auditTcgdex(write = true) {
 	const resolved = new Set<string>();
 
 	for (const lang of LANGS) {
-		const sets = catalogueSets((await pool.json<TcgdexSet[]>(`/v2/${lang}/sets`))!, await excludedSetIds(pool, lang));
+		const {sets} = await listCatalogueSets(pool, lang);
 		const rows = await readAll<StoredRow>(supabase, CATALOGUES[lang].tables.cards, 'card_code,name,set_name', 'card_code');
 		const names = new Map(rows.map(row => [row.card_code, row.name]));
 

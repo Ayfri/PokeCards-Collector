@@ -24,7 +24,14 @@ export async function excludedSetIds(client: TcgdexClient, lang: string): Promis
  * The listed sets the catalogue carries, each id once. TCGdex lists ja `BW8a` twice (Raiden Knuckle and Spiral Force) while
  * `/sets/BW8a` only ever answers Raiden Knuckle, and a repeated id makes the whole `jp_sets` upsert fail on its `set_id` conflict.
  */
-export function catalogueSets<T extends {id: string}>(sets: readonly T[], excluded: ReadonlySet<string>): T[] {
+function catalogueSets<T extends {id: string}>(sets: readonly T[], excluded: ReadonlySet<string>): T[] {
 	const seen = new Set(excluded);
 	return sets.filter(set => !seen.has(set.id) && !!seen.add(set.id));
+}
+
+/** The sets of a language the catalogue carries, and how many of the listed ones were left out (excluded series, repeated ids). */
+export async function listCatalogueSets(client: TcgdexClient, lang: string): Promise<{sets: TcgdexSetBrief[]; skipped: number}> {
+	const [listed, excluded] = await Promise.all([client.json<TcgdexSetBrief[]>(`/v2/${lang}/sets`), excludedSetIds(client, lang)]);
+	const sets = catalogueSets(listed ?? [], excluded);
+	return {sets, skipped: (listed?.length ?? 0) - sets.length};
 }

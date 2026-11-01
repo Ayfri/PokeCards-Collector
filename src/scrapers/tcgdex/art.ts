@@ -4,7 +4,7 @@ import type {TcgdexCardBrief} from './types';
 
 /** CLI only: the reprint search needs the whole catalogue of a language, which the Worker's batches of 4 sets never hold. */
 
-export interface Art {
+interface Art {
 	/** Extensionless TCGdex image base, like `MappedCard.image`. */
 	image: string;
 	/** `lang:<language>`, `reprint:<tcgdex id>` or `energy:<tcgdex id>`. */
@@ -22,7 +22,7 @@ const SCAN_LANGUAGES: Record<Language, readonly string[]> = {
 };
 
 /** Language -> card id -> image base, in the order of preference. The briefs of `/v2/{lang}/cards` already carry the image. */
-export async function otherLanguageScans(client: TcgdexClient, lang: Language): Promise<Map<string, Map<string, string>>> {
+async function otherLanguageScans(client: TcgdexClient, lang: Language): Promise<Map<string, Map<string, string>>> {
 	const lists = await Promise.all(SCAN_LANGUAGES[lang].map(async other => {
 		const briefs = await client.json<TcgdexCardBrief[]>(`/v2/${other}/cards`);
 		return [other, new Map(briefs?.flatMap(card => card.image ? [[card.id, card.image] as const] : []))] as const;
@@ -41,7 +41,7 @@ const isBasicEnergy = (card: MappedCard) => card.supertype === 'Energy' && card.
  * card of the same category with the same name and illustrator, the newest one, ties broken by id), or a scanned basic Energy of the same type.
  * A reprint can itself carry a borrowed scan (the French English fallback, the Japanese twin), which is still a picture of the same art.
  */
-export function findArt(cards: readonly MappedCard[], sets: readonly MappedSet[], scans: ReadonlyMap<string, ReadonlyMap<string, string>>): Map<string, Art> {
+function findArt(cards: readonly MappedCard[], sets: readonly MappedSet[], scans: ReadonlyMap<string, ReadonlyMap<string, string>>): Map<string, Art> {
 	const released = new Map(sets.map(set => [set.setId, set.releaseDate]));
 	const newestLast = cards.filter(card => card.image).sort((a, b) => (released.get(a.setId) ?? '').localeCompare(released.get(b.setId) ?? '') || a.tcgdexId.localeCompare(b.tcgdexId));
 	const reprints = new Map<string, MappedCard>();

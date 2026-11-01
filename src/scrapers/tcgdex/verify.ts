@@ -1,8 +1,8 @@
 import * as fs from 'node:fs';
 import {SUBTYPE_SECTIONS} from '#helpers/card-utils.ts';
 import {RARITY_MAPPING} from '#helpers/rarity.ts';
-import {envClient, ownedCardCodes} from '../supabase_sync';
-import {CARDS, FR_CARDS, FR_PRICES, FR_SETS, JP_CARDS, JP_PRICES, JP_SETS, PRICES, SETS, TYPES} from '../files';
+import {envClient, FILES, TYPES} from '../cli-config';
+import {ownedCardCodes} from '../supabase_sync';
 import type {MappedCard, MappedPrice, MappedSet} from './mappers';
 
 export interface FileReport {
@@ -30,11 +30,8 @@ export interface VerifyReport {
 	owned: number;
 }
 
-const LANGS = [
-	{lang: 'en', cards: CARDS, prices: PRICES, sets: SETS},
-	{lang: 'ja', cards: JP_CARDS, prices: JP_PRICES, sets: JP_SETS},
-	{lang: 'fr', cards: FR_CARDS, prices: FR_PRICES, sets: FR_SETS},
-] as const;
+/** English first: its ids are needed to check the Japanese twin ids. */
+const LANGS = ['en', 'ja', 'fr'] as const;
 
 const SUPERTYPES = new Set(['Pokémon', 'Trainer', 'Energy']);
 const SUBTYPES = new Set<string>(SUBTYPE_SECTIONS.map(section => section.subtype));
@@ -52,10 +49,11 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 	const produced = new Set<string>();
 	const crossCollisions = new Set<string>();
 	const knownTypes = new Set(read<string[]>(TYPES));
-	/** `LANGS` lists English first, so its ids are known when the Japanese file is checked. Empty without the English file, which skips the twin check. */
+	/** Empty without the English file, which skips the twin check. */
 	const englishIds = new Set<string>();
 
-	for (const {lang, cards: cardsPath, prices: pricesPath, sets: setsPath} of LANGS) {
+	for (const lang of LANGS) {
+		const {cards: cardsPath, prices: pricesPath, sets: setsPath} = FILES[lang];
 		if (!fs.existsSync(cardsPath)) {
 			console.log(`  ${lang}: ${cardsPath} does not exist, skipped`);
 			continue;

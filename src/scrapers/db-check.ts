@@ -1,7 +1,8 @@
 import {SUBTYPE_SECTIONS} from '#helpers/card-utils.ts';
 import {RARITY_MAPPING} from '#helpers/rarity.ts';
 import {CATALOGUES, LANGUAGES, type Language} from '#helpers/catalogues.ts';
-import {envClient, ownedCardCodes, readAll} from './supabase_sync';
+import {envClient} from './cli-config';
+import {ownedCardCodes, readAll} from './supabase_sync';
 import {EXCLUDED_SERIES} from './tcgdex/excluded';
 import {sharedProductCodes, speciesInName} from './tcgdex/mappers';
 

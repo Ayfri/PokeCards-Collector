@@ -147,7 +147,7 @@ export function pokemonNumber(lang: Language, card: TcgdexCard): number | undefi
 }
 
 /** Needs a card with English enumerations (see `mapCard`). */
-export function buildCardCode(lang: Language, card: TcgdexCard): string {
+function buildCardCode(lang: Language, card: TcgdexCard): string {
 	const override = overrideCode(lang, card.id);
 	if (override) return override;
 
@@ -159,7 +159,7 @@ export function buildCardCode(lang: Language, card: TcgdexCard): string {
 }
 
 /** The DB and the filter UI use the accented `Pokémon`, while TCGdex says `Pokemon`. */
-export function toSupertype(category: string | undefined): string {
+function toSupertype(category: string | undefined): string {
 	return category === 'Pokemon' ? 'Pokémon' : (category ?? 'Pokémon');
 }
 
@@ -196,7 +196,7 @@ export function mapCard(lang: Language, source: TcgdexCard): MappedCard {
 }
 
 /** Cardmarket link to a single product, built from `idProduct`, the only identifier TCGdex exposes. */
-export function cardMarketUrl(idProduct: number | undefined): string {
+function cardMarketUrl(idProduct: number | undefined): string {
 	return idProduct ? `https://www.cardmarket.com/en/Pokemon/Products/Singles?idProduct=${idProduct}` : '';
 }
 

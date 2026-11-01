@@ -2,7 +2,7 @@ import {createClient, type SupabaseClient} from '@supabase/supabase-js';
 import {CATALOGUES} from '#helpers/catalogues.ts';
 import {cardRow, priceRow, setRow} from './rows';
 import {fileUnderListingSets, imageFallbacks, mapAll, withProbedAssets, type TcgdexClient} from './tcgdex/client';
-import {catalogueSets, excludedSetIds} from './tcgdex/excluded';
+import {listCatalogueSets} from './tcgdex/excluded';
 import {mapCard, mapPrice, mapSet, resolveCardCode, sharedProductCodes, type Language} from './tcgdex/mappers';
 import type {TcgdexCard, TcgdexSet} from './tcgdex/types';
 
@@ -12,9 +12,6 @@ export function createSyncClient(url: string, secretKey: string): SupabaseClient
 	if (!url || !secretKey) throw new Error('Missing PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY');
 	return createClient(url, secretKey, {auth: {persistSession: false}});
 }
-
-/** The CLI's client, configured from `.env`. */
-export const envClient = () => createSyncClient(process.env.PUBLIC_SUPABASE_URL ?? '', process.env.SUPABASE_SECRET_KEY ?? '');
 
 /** Reads a whole table in pages, because Supabase caps a select at 1000 rows. `orderBy` must be unique, or pages overlap and skip rows. */
 export async function readAll<T>(supabase: SupabaseClient, table: string, columns: string, orderBy: string): Promise<T[]> {
@@ -74,9 +71,7 @@ export function deduplicate(rows: Record<string, unknown>[], key: string): Recor
  */
 export async function syncSets(supabase: SupabaseClient, client: TcgdexClient, lang: Language): Promise<string[]> {
 	const table = CATALOGUES[lang].tables.sets;
-	const [listed, excluded] = await Promise.all([client.json<TcgdexSet[]>(`/v2/${lang}/sets`), excludedSetIds(client, lang)]);
-	const list = catalogueSets(listed ?? [], excluded);
-	const details = (await mapAll(list, async set => {
+	const details = (await mapAll((await listCatalogueSets(client, lang)).sets, async set => {
 		const detail = await client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`);
 		return detail && withProbedAssets(detail, lang);
 	})).filter((set): set is TcgdexSet => set !== null);

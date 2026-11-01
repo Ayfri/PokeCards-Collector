@@ -1,7 +1,7 @@
 import * as fs from 'node:fs/promises';
 import {inflateSync} from 'node:zlib';
 import {mapAll, withRetry, type TcgdexClient} from './client';
-import {catalogueSets, excludedSetIds} from './excluded';
+import {listCatalogueSets} from './excluded';
 import {Http2Pool} from './http2-pool';
 import {pokemonNumber, UNKNOWN_POKEMON, type JpTwin, type Language} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
@@ -14,7 +14,7 @@ import type {TcgdexCard, TcgdexSet} from './types';
  * Measured on the full catalogues, a unique match on all of them but the Pokédex number agrees with the Pokédex number on 99.5 % of the links.
  */
 
-export const TWINS_FILE = 'src/scrapers/tcgdex/jp-twins.json';
+const TWINS_FILE = 'src/scrapers/tcgdex/jp-twins.json';
 /** The file name carries the hash algorithm: change `hashArt` and bump the version, or old hashes would be compared with new ones. */
 const HASH_CACHE = '.cache/art-hashes-bun-v1.json';
 
@@ -98,8 +98,7 @@ function groupBy<T>(items: readonly T[], key: (item: T) => string | null): Map<s
 }
 
 async function fetchCards(client: TcgdexClient, lang: Language): Promise<TcgdexCard[]> {
-	const [listed, excluded] = await Promise.all([client.json<TcgdexSet[]>(`/v2/${lang}/sets`), excludedSetIds(client, lang)]);
-	const sets = await mapAll(catalogueSets(listed ?? [], excluded), set => client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`));
+	const sets = await mapAll((await listCatalogueSets(client, lang)).sets, set => client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`));
 	const ids = sets.flatMap(set => set?.cards?.map(card => card.id) ?? []);
 	const cards = await mapAll(ids, id => client.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`), `[${lang}] cards`);
 	return cards.filter((card): card is TcgdexCard => card !== null).sort((a, b) => a.id.localeCompare(b.id));
