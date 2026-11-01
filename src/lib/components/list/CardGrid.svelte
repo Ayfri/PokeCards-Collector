@@ -5,6 +5,7 @@
 	import Filters from "#components/list/Filters.svelte";
 	import VirtualGrid from "#components/list/VirtualGrid.svelte";
 	import PageTitle from "#components/PageTitle.svelte";
+	import SetLogo from "#components/SetLogo.svelte";
 	import ScrollProgress from "#components/list/ScrollProgress.svelte";
 	import TextInput from "#lib/components/filters/TextInput.svelte";
 	import { onMount } from "svelte";
@@ -109,6 +110,7 @@
 		}
 	}
 	const cardDimensions = $derived(getCardDimensions(cardSize.current, clientWidth));
+	const selectedSet = $derived(selectedSetName ? sets.find(set => set.name === selectedSetName) : undefined);
 
 	const pokemonMap = $derived(new Map(pokemons.map(pokemon => [pokemon.id, pokemon])));
 
@@ -183,6 +185,9 @@
 			{#if selectedSetName || selectedArtistName}
 				<div class="flex flex-wrap gap-2 items-center ml-3">
 					{#if selectedSetName}
+						{#if selectedSet}
+							<SetLogo class="h-6 w-auto max-w-24 object-contain" set={selectedSet} />
+						{/if}
 						<span class="px-2 py-0.5 rounded-lg bg-gold-200 text-black font-normal text-xs">Set: {selectedSetName}</span>
 					{/if}
 					{#if selectedArtistName}
