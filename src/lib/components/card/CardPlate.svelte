@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CardPlateArt from '#components/card/CardPlateArt.svelte';
 	import CardPlateEmblem from '#components/card/CardPlateEmblem.svelte';
+	import ExLogo from '#components/card/ExLogo.svelte';
 	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import SetLogo from '#components/SetLogo.svelte';
@@ -50,6 +51,9 @@
 	const ink = $derived(lightText ? 'text-white' : 'text-gray-950');
 	/** Text sits straight on the body like on a printed card; a full-art scan needs a dark panel behind it. */
 	const panel = $derived(fullArt ? 'rounded-[2cqw] bg-black/70 px-[3cqw] backdrop-blur-xs' : 'px-[1cqw]');
+	const heading = $derived(card ? title ?? card.name.charAt(0).toUpperCase() + card.name.slice(1) : '');
+	/** Scarlet & Violet prints a lowercase `ex` as a silver logo after the name; the older uppercase `EX` is a different mark and stays text. */
+	const exSuffix = $derived(/ ex$/.test(heading));
 	const subtitle = $derived(stageLabel(card?.stage, language) || (identity.kind === 'pokemon' ? card?.supertype : identity.label));
 	const number = $derived(card?.localId ? formatCardNumber(card.localId, set?.printedTotal, { printed: true }) : '');
 	const artist = $derived(card && card.artist !== 'Unknown' ? card.artist : '');
@@ -78,7 +82,7 @@
 					{#if subtitle}
 						<span class="shrink-0 rounded-full bg-white/60 px-[2.2cqw] py-[0.4cqw] text-[3cqw] leading-tight font-semibold tracking-wide text-gray-950 uppercase italic @max-[200px]:hidden">{subtitle}</span>
 					{/if}
-					<span class="truncate text-[6cqw] leading-[1.2] font-semibold @max-[200px]:line-clamp-2 @max-[200px]:text-[9cqw] @max-[200px]:whitespace-normal">{title ?? card.name.charAt(0).toUpperCase() + card.name.slice(1)}</span>
+					<span class="truncate text-[6cqw] leading-[1.2] font-semibold @max-[200px]:line-clamp-2 @max-[200px]:text-[9cqw] @max-[200px]:whitespace-normal">{heading.replace(/ ex$/, '')}{#if exSuffix}&nbsp;<ExLogo />{/if}</span>
 				</div>
 				{#if card.hp || (identity.kind === 'pokemon' && identity.typeNames.length)}
 					<!-- Past the first symbol the rest only fit on a wide tile. -->

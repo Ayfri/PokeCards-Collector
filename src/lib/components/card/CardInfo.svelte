@@ -147,15 +147,23 @@
 							<dd class="flex flex-wrap justify-end gap-1.5">
 								{#if card?.types}
 									{#each card.types.toLowerCase().split(',') as type (type)}
-										<span class={['inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-sm font-medium capitalize bg-(--type-color)', type, type === 'colorless' ? 'text-gray-900' : 'text-white']}>
+										<a
+											class={['inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-sm font-medium capitalize bg-(--type-color) transition hover:brightness-110 hover:ring-2 hover:ring-gold-400', type, type === 'colorless' ? 'text-gray-900' : 'text-white']}
+											href="{catalogue.gridRoute}?pokemontype={encodeURIComponent(type.trim())}"
+											title="View all {type.trim()} cards"
+										>
 											<TypeSymbol glyph="black" pale {type} />
 											{type}
-										</span>
+										</a>
 									{/each}
 								{:else if card?.supertype}
-									<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${card.supertype.toLowerCase()} text-white`}>
+									<a
+										class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${card.supertype.toLowerCase()} text-white transition hover:text-gold-400`}
+										href="{catalogue.gridRoute}?type={card.supertype.toLowerCase().replace('é', 'e')}"
+										title="View all {card.supertype} cards"
+									>
 										{card.supertype}
-									</span>
+									</a>
 								{/if}
 							</dd>
 						</div>
@@ -186,7 +194,15 @@
 
 					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
 						<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="How scarce this print is"><Gem size={14} /> Rarity:</dt>
-						<dd class="flex items-center justify-end gap-2 text-white text-right"><RaritySymbol class="text-base" rarity={card.rarity} />{card.rarity}</dd>
+						<dd class="text-white text-right">
+								<a
+									class="inline-flex items-center justify-end gap-2 underline transition-colors hover:text-gold-400"
+									href="{catalogue.gridRoute}?rarity={encodeURIComponent(card.rarity.toLowerCase())}"
+									title="View all {card.rarity} cards"
+								>
+									<RaritySymbol class="text-base" rarity={card.rarity} />{card.rarity}
+								</a>
+							</dd>
 					</div>
 
 					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
