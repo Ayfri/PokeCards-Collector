@@ -25,6 +25,8 @@
 		/** `sizes` value; defaults to the pixel width when one is given. */
 		sizes?: string | undefined;
 		style?: string | undefined;
+		/** The name the plate prints in its header when the caller shows another one than `card.name`, such as the Pokédex species name of a Japanese card. */
+		title?: string | undefined;
 		/** Comma-separated energy types, e.g. `"Fire, Water"`: tints the plate when the card has no art and no `card` is given. */
 		types?: string | undefined;
 		width?: number | undefined;
@@ -43,6 +45,7 @@
 		set = undefined,
 		sizes = undefined,
 		style = undefined,
+		title = undefined,
 		types = undefined,
 		width = undefined
 	}: Props = $props();
@@ -99,7 +102,7 @@
 
 {#if error || !imageUrl}
 	<!-- No art, or a URL TCGdex lists before the scan is uploaded (404): the plate stays still instead of pretending to load. -->
-	<CardPlate {alt} {card} class="rounded-lg {classNames}" {set} style={boxStyle} {types} />
+	<CardPlate {alt} {card} class="rounded-lg {classNames}" {set} style={boxStyle} {title} {types} />
 {:else}
 	<img
 		bind:this={img}

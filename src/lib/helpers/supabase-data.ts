@@ -32,8 +32,8 @@ const CARD_COLUMNS = `
 
 /**
  * The columns a card list reads. `getCards` returns every card in the table, and nothing renders six of the columns
- * (`legal_standard`, `regulation_mark`, `stage`, `tcgdex_id`, `variants`), so they would only slow down the
- * payload the browser parses before the grid can paint. `hp` and the art columns are read, but `toCard` only keeps them on cards with no scan.
+ * (`legal_standard`, `regulation_mark`, `tcgdex_id`, `variants`), so they would only slow down the
+ * payload the browser parses before the grid can paint. `hp`, `stage` and the art columns are read, but `toCard` only keeps them on cards with no scan.
  */
 const CARD_LIST_COLUMNS = `
 	card_code,
@@ -50,6 +50,7 @@ const CARD_LIST_COLUMNS = `
 	rarity,
 	set_id,
 	set_name,
+	stage,
 	subtype,
 	supertype,
 	types
@@ -123,6 +124,8 @@ function toCard(card: CardRow): FullCard {
 		setName: card.set_name || '',
 		/** Only a card drawn as a plate shows its HP, so the tiles with a scan skip it: 1251 numbers in the English grid payload instead of 17941. */
 		...(!card.image && card.hp != null && { hp: card.hp }),
+		/** The plate names the stage (`Basic`, `Stage1`) in its name bar like a real card, so only the cards drawn as plates carry it. */
+		...(!card.image && card.stage && { stage: card.stage }),
 		/** A card with a scan never draws its plate, so a stale borrowed artwork (the scan arrived after the CLI stored it) stays off the object. */
 		...(!card.image && card.art_image && { artImage: card.art_image, artSource: card.art_source ?? undefined }),
 		/** Only Trainer and Energy cards have one, so the 17k Pokémon carry no empty key. */

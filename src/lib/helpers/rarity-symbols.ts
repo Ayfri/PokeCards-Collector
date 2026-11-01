@@ -19,6 +19,8 @@ export const RARITY_TONES: Record<RarityTone, string> = {
 
 const RARITY_GROUPS: [RaritySymbolSpec, string[]][] = [
 	[{ count: 1, shape: 'circle', tone: 'ink' }, ['Common']],
+	/** TCGdex gives no rarity for these cards: the circle is a default, not printed data. */
+	[{ count: 1, shape: 'circle', tone: 'ink' }, ['None', '']],
 	[{ count: 1, shape: 'diamond', tone: 'ink' }, ['Uncommon']],
 	[{ count: 1, shape: 'star', tone: 'ink' }, [
 		'Amazing Rare', 'Character Rare', 'Classic Collection', 'Full Art Trainer', 'Holo Rare', 'Holo Rare V', 'Holo Rare VMAX', 'Holo Rare VSTAR',
@@ -35,7 +37,7 @@ const RARITY_GROUPS: [RaritySymbolSpec, string[]][] = [
 	[{ count: 1, shape: 'star', tone: 'pink' }, ['ACE SPEC Rare']]
 ];
 
-/** Official symbol of each TCGdex rarity, keyed by its exact name. A rarity with no entry (`None`, empty) has no symbol. */
+/** Official symbol of each TCGdex rarity, keyed by its exact name. A rarity with no entry has no symbol. */
 export const RARITY_SYMBOLS: Record<string, RaritySymbolSpec | undefined> = Object.fromEntries(
 	RARITY_GROUPS.flatMap(([spec, rarities]) => rarities.map(rarity => [rarity, spec]))
 );

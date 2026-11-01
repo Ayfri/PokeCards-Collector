@@ -5,7 +5,7 @@
 
 	interface Props {
 		class?: ClassValue;
-		/** A TCGdex rarity name. One with no official symbol (`None`, empty) renders nothing. */
+		/** A TCGdex rarity name. `None` and empty get a default circle, an unknown name renders nothing. */
 		rarity: string;
 	}
 

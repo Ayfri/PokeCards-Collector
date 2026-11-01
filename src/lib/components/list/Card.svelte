@@ -207,6 +207,7 @@
 			imageUrl={card.image}
 			{card}
 			set={set ?? undefined}
+			title={cardName}
 			{types}
 			{lowRes}
 			lazy={!eager}

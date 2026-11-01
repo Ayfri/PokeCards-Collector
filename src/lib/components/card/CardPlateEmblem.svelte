@@ -24,6 +24,7 @@
 {#if typeSymbol}
 	<TypeSymbol
 		class={['rounded-full text-[34.8cqw] @max-[120px]:hidden', special && 'ring-[1cqw] ring-gold-400/70 ring-offset-[1cqw] ring-offset-transparent']}
+		glyph="black"
 		type={emblem}
 	/>
 {:else}
