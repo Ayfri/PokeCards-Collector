@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { supabase } from '../../supabase';
 	import BouncyLoader from '../BouncyLoader.svelte';
-	import { page } from '$app/state';
-	import { goto, refreshAll } from '$app/navigation';
-	import { readJson, type ApiError } from '#helpers/utils.ts';
-	import EyeIcon from '@lucide/svelte/icons/eye';
-	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+	import PasswordField from './PasswordField.svelte';
+	import { finishSignIn, readJson, type ApiError } from '#helpers/utils.ts';
+	import { FORM_INPUT_CLASS, FORM_LABEL_CLASS, GOLD_BUTTON_CLASS } from '#src/constants.ts';
 
 	interface Props {
-		onSuccess?: (() => void) | undefined;
+		onSuccess?: () => void;
 	}
 
-	let { onSuccess = undefined }: Props = $props();
+	let { onSuccess }: Props = $props();
 
 	let email = $state('');
 	let password = $state('');
@@ -21,7 +19,6 @@
 	let resetEmail = $state('');
 	let resetLoading = $state(false);
 	let resetMessage = $state('');
-	let showPassword = $state(false);
 
 	async function handleSubmit(event: SubmitEvent) {
 		event.preventDefault();
@@ -34,55 +31,35 @@
 		loading = true;
 		errorMessage = '';
 
-		const loginTimeout = setTimeout(() => {
-			if (loading) {
-				errorMessage = 'Login is taking longer than expected. Please check your internet connection or try again later.';
-				loading = false;
-			}
-		}, 15000);
-
 		try {
 			const response = await fetch('/api/auth/login', {
 				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
+				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email, password }),
+				signal: AbortSignal.timeout(15_000),
 			});
-
-			clearTimeout(loginTimeout);
 
 			if (!response.ok) {
 				const errorData = await readJson<ApiError>(response, { message: 'Invalid login credentials' });
 				console.error('Error during login:', response.status, errorData.message);
 				errorMessage = errorData.message || 'Incorrect email or password';
-				loading = false;
 				return;
 			}
 
-			loading = false;
-
 			onSuccess?.();
-
-			/** Re-runs every load function so the pages see the new session. */
-			await refreshAll();
-
-			const currentPath = page.url.pathname;
-			if (currentPath.includes('/login') || currentPath.includes('/auth') || currentPath.includes('/reset-password')) {
-				goto('/');
-			} else {
-				goto(currentPath + page.url.search);
-			}
-
-		} catch (error: any) {
-			clearTimeout(loginTimeout);
-			loading = false;
+			await finishSignIn();
+		} catch (error: unknown) {
 			console.error('Network or unexpected error during login:', error);
-			if (error.message?.includes('Failed to fetch')) {
+			const message = error instanceof Error ? error.message : 'Unknown error';
+			if (error instanceof DOMException && error.name === 'TimeoutError') {
+				errorMessage = 'Login is taking longer than expected. Please check your internet connection or try again later.';
+			} else if (message.includes('Failed to fetch')) {
 				errorMessage = 'Could not connect to the authentication service. Please check your internet connection.';
 			} else {
-				errorMessage = `Login failed: ${error?.message || 'Unknown error'}`;
+				errorMessage = `Login failed: ${message}`;
 			}
+		} finally {
+			loading = false;
 		}
 	}
 
@@ -96,118 +73,61 @@
 		try {
 			/** No `redirectTo`: the Recovery email template already links to `{{ .SiteURL }}/auth/confirm`, which the redirect allow list does not gate. */
 			const { error } = await supabase.auth.resetPasswordForEmail(resetEmail);
-			if (error) {
-				resetMessage = error.message || 'Failed to send reset email.';
-			} else {
-				resetMessage = 'Password reset email sent! Check your inbox.';
-			}
-		} catch (e) {
+			resetMessage = error ? error.message || 'Failed to send reset email.' : 'Password reset email sent! Check your inbox.';
+		} catch {
 			resetMessage = 'An error occurred. Please try again.';
 		}
 		resetLoading = false;
 	}
-
-	const togglePasswordVisibility = () => {
-		showPassword = !showPassword;
-	};
 </script>
 
 <form onsubmit={handleSubmit} class="space-y-4">
 	{#if errorMessage}
-		<div class="p-3 bg-red-100 text-red-800 rounded-lg text-sm">
-			{errorMessage}
-		</div>
+		<div class="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-400">{errorMessage}</div>
 	{/if}
 
 	<div>
-		<label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-			Email
-		</label>
-		<input
-			type="email"
-			id="email"
-			bind:value={email}
-			class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-			placeholder="your@email.com"
-			required
-		/>
+		<label for="email" class={FORM_LABEL_CLASS}>Email</label>
+		<input type="email" id="email" bind:value={email} class={FORM_INPUT_CLASS} placeholder="your@email.com" required />
 	</div>
 
 	<div>
-		<label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-			Password
-		</label>
-		<div class="relative">
-			{#if showPassword}
-				<input
-					bind:value={password}
-					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-					id="password"
-					name="password"
-					placeholder="Enter your password"
-					required
-					type="text"
-				/>
-			{:else}
-				<input
-					bind:value={password}
-					class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white"
-					id="password"
-					name="password"
-					placeholder="Enter your password"
-					required
-					type="password"
-				/>
-			{/if}
-			<button
-				class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-700 dark:text-gray-300"
-				onclick={togglePasswordVisibility}
-				type="button"
-				title={showPassword ? "Hide password" : "Show password"}
-			>
-				<span class="sr-only">{showPassword ? "Hide password" : "Show password"}</span>
-				{#if showPassword}<EyeOffIcon size={18} />{:else}<EyeIcon size={18} />{/if}
-			</button>
-		</div>
+		<PasswordField autocomplete="current-password" id="password" label="Password" name="password" placeholder="Enter your password" bind:value={password} />
 		<div class="mt-2 text-right">
-			<button type="button" class="text-xs text-red-600 hover:underline focus:outline-hidden" onclick={() => { showReset = !showReset; resetMessage = ''; }}>
+			<button
+				type="button"
+				class="rounded-sm text-xs text-gold-400 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-gold-400"
+				onclick={() => { showReset = !showReset; resetMessage = ''; }}
+			>
 				{showReset ? 'Cancel' : 'Forgot password?'}
 			</button>
 		</div>
 	</div>
 
 	{#if showReset}
-		<div class="mt-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-			<label for="reset-email" class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Enter your email to reset password</label>
+		<div class="space-y-2">
+			<label for="reset-email" class={FORM_LABEL_CLASS}>Enter your email to reset password</label>
 			<input
 				type="email"
 				id="reset-email"
 				bind:value={resetEmail}
-				class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-xs focus:outline-hidden focus:ring-red-500 focus:border-red-500 dark:bg-gray-700 dark:text-white mb-2"
+				class={FORM_INPUT_CLASS}
 				placeholder="your@email.com"
 				disabled={resetLoading}
 			/>
-			<button type="button"
-				class="w-full py-2 px-4 bg-gold-400 text-black rounded-lg transition-all duration-400 flex items-center justify-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-				onclick={handlePasswordReset}
-				disabled={resetLoading}
-			>
+			<button type="button" class={GOLD_BUTTON_CLASS} onclick={handlePasswordReset} disabled={resetLoading}>
 				{resetLoading ? 'Sending...' : 'Send reset email'}
 			</button>
 			{#if resetMessage}
-				<div class="mt-2 text-xs text-center {resetMessage.includes('sent') ? 'text-gold-500' : 'text-red-600'}">{resetMessage}</div>
+				<div class={['text-center text-xs', resetMessage.includes('sent') ? 'text-green-400' : 'text-red-400']}>{resetMessage}</div>
 			{/if}
 		</div>
 	{/if}
 
-	<button
-		type="submit"
-		disabled={loading}
-		class="w-full py-2 px-4 border border-transparent rounded-md shadow-xs text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-	>
+	<button type="submit" disabled={loading} class={GOLD_BUTTON_CLASS}>
 		{#if loading}
-			<BouncyLoader size={20} gradientColorStart="#FFFFFF" gradientColorEnd="#FFFFFF" />
-			<span class="ml-2">Logging in...</span>
+			<BouncyLoader size={20} gradientColorStart="#000000" gradientColorEnd="#000000" />
+			Logging in...
 		{:else}
 			Log in
 		{/if}

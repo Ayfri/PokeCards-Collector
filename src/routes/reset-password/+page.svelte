@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import BouncyLoader from '#lib/components/BouncyLoader.svelte';
-	import { PASSWORD_CRITERIA } from '#src/constants.ts';
-	import EyeIcon from '@lucide/svelte/icons/eye';
-	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+	import PasswordField from '#components/auth/PasswordField.svelte';
 	import LockIcon from '@lucide/svelte/icons/lock';
 	import type { ActionData, PageData } from './$types';
 
@@ -15,12 +13,8 @@
 	let { data, form }: Props = $props();
 
 	let password = $state('');
-	let showPassword = $state(false);
+	let confirmation = $state('');
 	let submitting = $state(false);
-
-	const met = $derived(PASSWORD_CRITERIA.map(criterion => criterion.test(password)));
-	const strength = $derived(met.filter(Boolean).length);
-	const strengthColor = $derived(['bg-gray-700', 'bg-red-500', 'bg-yellow-400', 'bg-green-500'][strength]);
 </script>
 
 <main class="mx-auto w-full max-w-md px-4 py-16">
@@ -68,51 +62,8 @@
 				};
 			}}
 		>
-			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-300" for="password">New password</label>
-				<div class="relative">
-					<input
-						autocomplete="new-password"
-						bind:value={password}
-						class="w-full rounded-md border border-gray-700/60 bg-gray-900/50 px-3 py-2 pr-10 text-white placeholder-gray-500 focus:border-gold-400 focus:outline-hidden"
-						id="password"
-						name="password"
-						placeholder="••••••••"
-						required
-						type={showPassword ? 'text' : 'password'}
-					/>
-					<button
-						class="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 transition-colors hover:text-gold-400"
-						onclick={() => (showPassword = !showPassword)}
-						title={showPassword ? 'Hide password' : 'Show password'}
-						type="button"
-					>
-						{#if showPassword}<EyeOffIcon size={18} />{:else}<EyeIcon size={18} />{/if}
-					</button>
-				</div>
-
-				<div class="mt-2 h-1.5 w-full rounded-sm bg-gray-800">
-					<div class={['h-1.5 rounded-sm transition-all duration-300', strengthColor]} style="width: {(strength / PASSWORD_CRITERIA.length) * 100}%"></div>
-				</div>
-				<ul class="mt-2 space-y-0.5 text-xs text-gray-500">
-					{#each PASSWORD_CRITERIA as criterion, index (criterion.id)}
-						<li class={met[index] ? 'text-green-400' : ''}>• {criterion.label}</li>
-					{/each}
-				</ul>
-			</div>
-
-			<div>
-				<label class="mb-1 block text-sm font-medium text-gray-300" for="confirm-password">Confirm new password</label>
-				<input
-					autocomplete="new-password"
-					class="w-full rounded-md border border-gray-700/60 bg-gray-900/50 px-3 py-2 text-white placeholder-gray-500 focus:border-gold-400 focus:outline-hidden"
-					id="confirm-password"
-					name="confirmPassword"
-					placeholder="••••••••"
-					required
-					type={showPassword ? 'text' : 'password'}
-				/>
-			</div>
+			<PasswordField autocomplete="new-password" id="password" label="New password" name="password" placeholder="••••••••" strength bind:value={password} />
+			<PasswordField autocomplete="new-password" id="confirm-password" label="Confirm new password" name="confirmPassword" placeholder="••••••••" bind:value={confirmation} />
 
 			<button
 				class="animated-hover-button relative flex w-full items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"

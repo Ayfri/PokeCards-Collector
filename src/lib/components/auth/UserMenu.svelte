@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import User from '@lucide/svelte/icons/user';
 	import LogOut from '@lucide/svelte/icons/log-out';
@@ -8,7 +7,6 @@
 	import Settings from '@lucide/svelte/icons/settings';
 	import { page } from '$app/state';
 	import AuthModal from './AuthModal.svelte';
-	import { browser } from '$app/env';
 	import Avatar from './Avatar.svelte';
 	import { loading } from '#stores/loading.svelte.ts';
 	import type { UserProfile } from '#lib/types.js';
@@ -82,25 +80,16 @@
 		}
 	}
 
-	onMount(() => {
-		if (browser) {
-			window.addEventListener('click', handleClickOutside, true);
-		}
-	});
-
-	onDestroy(() => {
-		if (browser) {
-			window.removeEventListener('click', handleClickOutside, true);
-		}
-	});
 </script>
+
+<svelte:window onclickcapture={handleClickOutside} />
 
 <div class="relative">
 	<AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
 
 	<button
 		type="button"
-		class="flex items-center justify-center size-9 text-gray-400 hover:text-white rounded-full focus:outline-hidden"
+		class="flex items-center justify-center size-9 text-gray-400 hover:text-white rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-gold-400"
 		onclick={() => {
 			if (user && profile) {
 				toggleMenu();
@@ -124,23 +113,23 @@
 		<div
 			bind:this={menuElement}
 			transition:fly={{ y: -10, duration: 200 }}
-			class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 shadow-lg ring-1 ring-black/5 focus:outline-hidden"
+			class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-white/10 focus:outline-hidden"
 			role="menu"
 			aria-orientation="vertical"
 			aria-labelledby="user-menu-button"
 			tabindex="-1"
 		>
 			{#if user && profile}
-				<div class="py-2 px-3 border-b dark:border-gray-700">
-					<p class="text-sm font-medium text-gray-900 dark:text-white">{profile.username}</p>
-					<p class="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+				<div class="py-2 px-3 border-b border-gray-700">
+					<p class="text-sm font-medium text-white">{profile.username}</p>
+					<p class="text-xs text-gray-400 truncate">{user.email}</p>
 				</div>
 				<div class="py-1">
 					<a
 						href={`/profile/${encodeURIComponent(profile.username)}`}
 						target="_self"
 						title="Your public profile and collection stats"
-						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
 						role="menuitem"
 						onclick={handleNavigation}
 					>
@@ -151,7 +140,7 @@
 						href={`/collection/${encodeURIComponent(profile.username)}`}
 						target="_self"
 						title="Every card you own"
-						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
 						role="menuitem"
 						onclick={handleNavigation}
 					>
@@ -162,7 +151,7 @@
 						href={`/wishlist/${encodeURIComponent(profile.username)}`}
 						target="_self"
 						title="Every card you are after"
-						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
 						role="menuitem"
 						onclick={handleNavigation}
 					>
@@ -172,7 +161,7 @@
 					<a
 						href="/settings"
 						title="Account, appearance, privacy and security"
-						class="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
 						role="menuitem"
 						onclick={handleNavigation}
 					>
@@ -181,12 +170,12 @@
 					</a>
 					<button
 						type="button"
-						class="flex w-full items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+						class="flex w-full items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
 						role="menuitem"
 						onclick={handleSignOut}
 						title="Sign out of your account"
 					>
-						<LogOut class="mr-3" size={16} />
+						<LogOut class="mr-3 text-red-400" size={16} />
 						Sign out
 					</button>
 				</div>

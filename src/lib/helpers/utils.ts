@@ -1,3 +1,12 @@
+import { goto, refreshAll } from '$app/navigation';
+import { page } from '$app/state';
+
+/** Reruns every load so the pages see the new session, then leaves the pages that only make sense signed out (`/auth/*`, `/reset-password`). */
+export async function finishSignIn(): Promise<void> {
+	await refreshAll();
+	if (['/auth', '/reset-password'].some(path => page.url.pathname.startsWith(path))) await goto('/');
+}
+
 /** Parses a JSON response body as `T`, falling back to `fallback` when the body is absent or malformed. */
 export async function readJson<T>(response: Response, fallback: T): Promise<T> {
 	try {
