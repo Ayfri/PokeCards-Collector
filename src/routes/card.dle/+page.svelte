@@ -13,6 +13,7 @@
 	import BouncyLoader from '#components/BouncyLoader.svelte';
 	import PageTitle from '#components/PageTitle.svelte';
 	import SortControl from '#components/filters/SortControl.svelte';
+	import SetLogo from '#components/SetLogo.svelte';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ChevronsDownIcon from '@lucide/svelte/icons/chevrons-down';
 	import ChevronsUpIcon from '@lucide/svelte/icons/chevrons-up';
@@ -70,6 +71,8 @@
 	let showRulesModal = $state(false);
 	let hasWon = $state(false);
 	let isSubmitting = $state(false);
+
+	const setsById = $derived(new Map(data.sets.map(set => [set.setId, set])));
 
 	const SORT_OPTIONS = [
 		{ label: 'Name', value: 'name' },
@@ -445,6 +448,7 @@
 				</div>
 				<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
 					{#each sortedSuggestions as suggestion (suggestion.cardCode)}
+						{@const logoSet = setsById.get(suggestion.setId)}
 						<button
 							type="button"
 							onclick={(e) => {
@@ -472,7 +476,12 @@
 								/>
 							</div>
 							<p class="text-sm leading-tight font-bold text-white">{suggestion.name}</p>
-							<p class="mt-0.5 text-xs text-gray-400">{suggestion.setName}</p>
+							<p class="mt-1 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+								{#if logoSet}
+									<SetLogo class="h-4 w-auto max-w-10 shrink-0 object-contain" set={logoSet} />
+								{/if}
+								{suggestion.setName}
+							</p>
 							<p class="mt-1 text-sm text-white" title="Cardmarket value of this card">{formatEuros(suggestion.price)}</p>
 						</button>
 					{/each}

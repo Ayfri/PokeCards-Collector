@@ -14,6 +14,8 @@ export interface CardDleSuggestion {
 	pokemonName: string;
 	pokemonNumber?: number;
 	price: number;
+	/** Looked up in the layout's sets for the logo, so the payload carries no image URL per card. */
+	setId: string;
 	setName: string;
 }
 
@@ -33,6 +35,7 @@ export const GET: RequestHandler = async () => {
 			pokemonName: card.name.split(' ')[0],
 			pokemonNumber: card.pokemonNumber,
 			price,
+			setId: card.setId,
 			setName: card.setName,
 		});
 	}
