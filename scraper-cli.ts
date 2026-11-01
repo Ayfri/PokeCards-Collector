@@ -95,6 +95,7 @@ const commands: Command[] = [
 			}
 			row('guard drops', `${report.guardDrops.dex} on the Pokédex number, ${report.guardDrops.art} on the artwork`);
 			row('gained a scan', `${report.scanlessGained} Japanese cards with no scan take their twin's`);
+			row('unhashed', `${report.unhashedCandidates} English candidates skipped by the artwork comparison for lack of a hash`);
 			if (dryRun) console.log(dim('  dry run: jp-twins.json untouched'));
 			return report;
 		},

@@ -40,6 +40,8 @@ export interface LinkReport {
 	linked: number;
 	/** Japanese cards with no scan that now take the English scan of their twin. */
 	scanlessGained: number;
+	/** Candidates the artwork comparison skipped for lack of a hash, counted per comparison. */
+	unhashedCandidates: number;
 }
 
 interface Link {
@@ -190,7 +192,17 @@ async function linkPokemon(
 				claimed.add(best.id);
 				break;
 			}
-			/** Several prints of one art in the mapped sets: the one no other Japanese card has claimed, when exactly one is left. */
+		}
+	}
+	/**
+	 * The `-free` fallback runs once every unique and `-art` decision is taken, so a card never claims an English print that a later card
+	 * art-links to: with several prints of one art in the mapped sets, it takes the one no other Japanese card has claimed, when exactly one is left.
+	 */
+	for (const card of pending) {
+		if (links.has(card.id)) continue;
+		const sets = mappedSets.get(card.set?.id ?? '')!;
+		for (const [index, [method]] of PASS_2_KEYS.entries()) {
+			const hits = hitsOf(card, index, sets);
 			const free = hits.filter(hit => !claimed.has(hit.id));
 			if (hits.length > 1 && free.length === 1) {
 				links.set(card.id, {en: free[0], method: `${method}-free`});
@@ -306,6 +318,8 @@ async function hashArt(base: string): Promise<string | null> {
  */
 class ArtHashes {
 	private readonly parsed = new Map<string, ArtHash | null>();
+	/** Candidates `closestArt` skipped because their scan has no hash, which can hide the real twin from an art decision. */
+	unhashedCandidates = 0;
 
 	private constructor(private readonly cache: Record<string, string>) {}
 
@@ -358,6 +372,7 @@ function closestArt(card: TcgdexCard, candidates: readonly TcgdexCard[], hashes:
 	if (!art) return null;
 	const ranked = candidates.flatMap(candidate => {
 		const hash = hashes.get(candidate.image);
+		if (!hash) hashes.unhashedCandidates++;
 		return hash ? [{candidate, bits: distance(art, hash)}] : [];
 	}).sort((a, b) => a.bits - b.bits);
 	return ranked[0] && ranked[0].bits <= BEST_ART && !(ranked[1] && ranked[1].bits <= SAME_PRINT) ? ranked[0].candidate : null;
@@ -438,5 +453,6 @@ export async function linkTwins({write = true}: LinkOptions = {}): Promise<LinkR
 		jaCards: ja.length,
 		linked: links.size,
 		scanlessGained: [...links.keys()].filter(id => !jaById.get(id)!.image).length,
+		unhashedCandidates: hashes.unhashedCandidates,
 	};
 }
