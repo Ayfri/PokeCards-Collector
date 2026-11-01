@@ -82,7 +82,7 @@
 	}
 
 	/**
-	 * A recycled tile keeps its <img> element, so a cached src is already complete: the skeleton is skipped instead of flashing.
+	 * A recycled tile keeps its <img> element, so a cached src is already complete: the fade is skipped instead of flashing.
 	 * A server-rendered <img> can also fail before hydration attaches `onerror`, and only this check catches that.
 	 * `img` is read untracked: a failed load swaps it for the plate, and re-running on that swap would reset `error` and loop forever.
 	 */
@@ -104,7 +104,7 @@
 	<img
 		bind:this={img}
 		{alt}
-		class="{classNames} {loaded ? '' : 'animate-pulse bg-gray-700/50'} {NO_IMAGES ? 'border border-gold-400/50' : ''}"
+		class="transition-opacity duration-300 ease-in-out {classNames} {loaded ? '' : 'opacity-0'} {NO_IMAGES ? 'border border-gold-400/50' : ''}"
 		data-card-code={card?.cardCode}
 		decoding="async"
 		draggable="false"
