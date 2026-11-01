@@ -33,7 +33,7 @@
 	/** The plate mimics a printed card, so its stage and kind labels use the language of the card's catalogue. */
 	const language = $derived(card?.language ?? catalogueOfPath(page.url.pathname).language);
 	/** A Trainer or Energy has no species to draw, so the plate shows an emblem of what it is instead of an artwork. */
-	const identity = $derived(plateIdentity(card, types, language));
+	const identity = $derived(plateIdentity(card, types));
 	/** 70% of the Japanese cards have no art, so the plate takes the card's energy colors for its body, or the silver of a printed Trainer. */
 	const tintStyle = $derived(identity.kind === 'trainer' ? TRAINER_BODY : cardTypeTint(identity.tint));
 	/** PokéAPI ships an artwork for every species, so a Pokémon card with no scan still shows what it depicts. */
@@ -79,7 +79,7 @@
 		     or an icon when there is none. Small tiles let it fill the space instead. A full-art scan sits behind the whole plate, so the window stays empty and frameless. -->
 		<div class={['relative flex aspect-[1.5] items-center justify-center rounded-[0.8cqw] @max-[200px]:aspect-auto @max-[200px]:min-h-0 @max-[200px]:flex-1 @max-[120px]:flex-none', !fullArt && 'card-plate-window']}>
 			{#if scan && !fullArt}
-				<CardPlateArt base={scan} onerror={() => (failedScan = scan)} />
+				<CardPlateArt base={scan} onerror={() => (failedScan = scan)} trainer={identity.kind === 'trainer'} />
 			{:else if !scan && identity.kind !== 'pokemon'}
 				<CardPlateEmblem accent={identity.accent} emblem={identity.emblem} kind={identity.kind} special={identity.special} />
 			{:else if !scan && artUrl && artUrl !== failedArt}

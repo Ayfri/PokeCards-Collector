@@ -72,14 +72,14 @@
 	}
 </script>
 
-<!-- A printed Trainer card opens with a dark slanted `TRAINER` tab against the left border and its kind in a colored pill on the right. -->
+<!-- A printed Trainer card opens with a large gray `TRAINER` against the left border and its kind on the right, in the kind's color outlined in white. -->
 {#if identity.banner}
-	<div class="-mb-[1cqw] -ml-[3.5cqw] -mr-[3cqw] flex items-center justify-between gap-[2cqw] @max-[200px]:hidden">
-		<span class="-skew-x-12 bg-gray-900 py-[0.4cqw] pr-[3cqw] pl-[3.5cqw] text-[3.4cqw] leading-tight font-bold tracking-wider text-white uppercase italic">{identity.banner}</span>
+	<div class="-mb-[1.5cqw] -ml-[1.5cqw] -mr-[1cqw] flex items-baseline justify-between gap-[2cqw] @max-[200px]:hidden">
+		<span class="inline-block origin-bottom-left scale-y-85 -skew-x-20 text-[7cqw] leading-none font-black tracking-wide text-gray-500 uppercase [text-shadow:0_0.3cqw_0_rgb(255_255_255/0.6)]">{identity.banner}</span>
 		{#if kindPill}
 			<span
-				class="rounded-full px-[2.5cqw] py-[0.3cqw] text-[3cqw] leading-tight font-semibold whitespace-nowrap text-white italic shadow-[0_0.3cqw_0.8cqw_rgb(0_0_0/0.35)]"
-				style:background-color="color-mix(in oklab, var(--{identity.accent}) 55%, var(--{identity.accent}2))"
+				class="-translate-y-[0.8cqw] text-[4.5cqw] leading-none font-extrabold whitespace-nowrap italic [paint-order:stroke_fill] [-webkit-text-stroke:0.9cqw_white]"
+				style:color="color-mix(in oklab, var(--{identity.accent}) 55%, var(--{identity.accent}2))"
 			>{kindPill}</span>
 		{/if}
 	</div>

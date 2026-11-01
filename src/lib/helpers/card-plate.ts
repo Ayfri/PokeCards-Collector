@@ -6,7 +6,7 @@ export type PlateKind = 'energy' | 'pokemon' | 'trainer';
 export interface PlateIdentity {
 	/** The energy color of a Trainer's kind pill and emblem (`water` for an Item), empty for other cards. */
 	accent: string;
-	/** The `TRAINER` banner a Trainer card prints in its top-left corner, in the card's language, empty for other cards. */
+	/** The `TRAINER` banner a Trainer card prints in its top-left corner, empty for other cards. */
 	banner: string;
 	/** Key of the icon the plate draws: an energy type, a Trainer kind (`supporter`, `item`, `stadium`, `tool`, `trainer`) or a finer Trainer glyph (`ball`, `potion`, `fossil`, `machine`), empty for a Pokémon. */
 	emblem: string;
@@ -95,17 +95,17 @@ export function stageLabel(stage: string | undefined, language: Language): strin
 	return stage ? (STAGE_LABELS[stage]?.[language] ?? stage) : '';
 }
 
-/** What a Trainer or Energy card is called on the printed card, in each catalogue's language, by kind key (`machine`, `basic`...). The secret machine only has its English print. */
-const KIND_LABELS: Record<string, Record<Language, string>> = {
-	basic: {en: 'Basic Energy', fr: 'Énergie de base', ja: '基本エネルギー'},
-	item: {en: 'Item', fr: 'Objet', ja: 'グッズ'},
-	machine: {en: 'Technical Machine', fr: 'Machine Technique', ja: 'わざマシン'},
-	rocket: sameInEveryLanguage("Rocket's Secret Machine"),
-	special: {en: 'Special Energy', fr: 'Énergie spéciale', ja: '特殊エネルギー'},
-	stadium: {en: 'Stadium', fr: 'Stade', ja: 'スタジアム'},
-	supporter: {en: 'Supporter', fr: 'Supporter', ja: 'サポート'},
-	tool: {en: 'Pokémon Tool', fr: 'Outil Pokémon', ja: 'ポケモンのどうぐ'},
-	trainer: {en: 'Trainer', fr: 'Dresseur', ja: 'トレーナーズ'}
+/** What a Trainer or Energy card is, by kind key (`machine`, `basic`...). Kept in English on every catalogue, like the rest of the site's wording. */
+const KIND_LABELS: Record<string, string> = {
+	basic: 'Basic Energy',
+	item: 'Item',
+	machine: 'Technical Machine',
+	rocket: "Rocket's Secret Machine",
+	special: 'Special Energy',
+	stadium: 'Stadium',
+	supporter: 'Supporter',
+	tool: 'Pokémon Tool',
+	trainer: 'Trainer'
 };
 
 /** English and French set ids (`sv03`, `me01`, `svp`, `2023sv`, `30th`) of the Scarlet & Violet era and later. */
@@ -164,7 +164,7 @@ export function artNote(source: string | undefined): string {
 }
 
 /** What the placeholder of a card with no scan shows: its kind, the icon standing for it and the color it takes. */
-export function plateIdentity(card: FullCard | undefined, types: string | undefined, language: Language = 'en'): PlateIdentity {
+export function plateIdentity(card: FullCard | undefined, types: string | undefined): PlateIdentity {
 	const listed = (card?.types ?? types ?? '').split(',').map(type => type.trim()).filter(Boolean);
 
 	if (card?.supertype === 'Energy') {
@@ -176,7 +176,7 @@ export function plateIdentity(card: FullCard | undefined, types: string | undefi
 			banner: '',
 			emblem: energyType || 'rainbow',
 			kind: 'energy',
-			label: KIND_LABELS[special ? 'special' : 'basic'][language],
+			label: KIND_LABELS[special ? 'special' : 'basic'],
 			special,
 			tint: listed.length ? listed.join(', ') : energyType,
 			typeNames: listed.length ? listed : energyType ? [energyType] : []
@@ -189,10 +189,10 @@ export function plateIdentity(card: FullCard | undefined, types: string | undefi
 		const labelKey = declared.includes('rocket') ? 'rocket' : declared.includes('technical machine') || emblem === 'machine' ? 'machine' : kind;
 		return {
 			accent: TRAINER_ACCENTS[kind] ?? 'metal',
-			banner: KIND_LABELS.trainer[language],
+			banner: KIND_LABELS.trainer,
 			emblem,
 			kind: 'trainer',
-			label: KIND_LABELS[labelKey][language],
+			label: KIND_LABELS[labelKey],
 			special: false,
 			tint: '',
 			typeNames: []
