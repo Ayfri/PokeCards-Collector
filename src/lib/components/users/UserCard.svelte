@@ -15,7 +15,6 @@
 		highlightClass?: string;
 		hoverBorderClass?: string;
 		hoverShadowClass?: string;
-		countTextPrefix?: string;
 		countTextSuffix?: string;
 	}
 
@@ -24,7 +23,6 @@
 		highlightClass = 'text-blue-300 group-hover:text-blue-300',
 		hoverBorderClass = 'hover:border-blue-400/80',
 		hoverShadowClass = 'hover:shadow-blue-500/25',
-		countTextPrefix = '',
 		countTextSuffix = 'unique card'
 	}: Props = $props();
 </script>
@@ -41,7 +39,7 @@
 		<div class="text-sm text-gray-300 space-y-0.5">
 			<p class="flex items-center justify-center gap-1.5 {highlightClass}" title={`${user.unique_card_count} unique cards collected`}>
 				<LayersIcon size={14} />
-				{countTextPrefix}{user.unique_card_count} {countTextSuffix}{user.unique_card_count !== 1 ? 's' : ''}
+				{user.unique_card_count} {countTextSuffix}{user.unique_card_count !== 1 ? 's' : ''}
 			</p>
 			<p class="flex items-center justify-center gap-1.5 text-gray-400 text-xs" title={`Joined on ${new Date(user.created_at).toLocaleDateString()}`}>
 				<CalendarDaysIcon size={12} />

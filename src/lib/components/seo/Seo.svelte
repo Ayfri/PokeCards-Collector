@@ -19,7 +19,6 @@
 
 	interface Props {
 		breadcrumbs?: Breadcrumb[];
-		canonicalUrl?: string | null;
 		description?: string;
 		image?: Image | null;
 		keywords?: string[];
@@ -33,7 +32,6 @@
 
 	let {
 		breadcrumbs = [],
-		canonicalUrl = null,
 		description = SITE_DESCRIPTION,
 		image = null,
 		keywords = [],
@@ -55,7 +53,7 @@
 			: `${title.trim()} - ${SITE_NAME}`
 	);
 	/** The canonical URL drops the query string: `?set=`, `?page=` and the like only filter the same document. */
-	const effectiveCanonicalUrl = $derived(canonicalUrl ? absolute(canonicalUrl) : `${BASE_URL}${page.url.pathname}`);
+	const effectiveCanonicalUrl = $derived(`${BASE_URL}${page.url.pathname}`);
 	const imageUrl = $derived(image?.url ? absolute(image.url) : null);
 	const ogType = $derived(OG_TYPES[type]);
 	const robots = $derived(noindex ? 'noindex, nofollow' : 'index, follow, max-image-preview:large, max-snippet:-1');

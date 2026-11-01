@@ -1,12 +1,5 @@
 <script lang="ts">
 	import { EX_LOGO } from '#helpers/tcg-symbols.ts';
-	import type { ClassValue } from 'svelte/elements';
-
-	interface Props {
-		class?: ClassValue;
-	}
-
-	let { class: classNames = '' }: Props = $props();
 
 	const id = $props.id();
 	/** Room for the half of the outline that falls outside the glyph. */
@@ -15,7 +8,7 @@
 
 <svg
 	aria-label="ex"
-	class={['inline-block h-[0.9em] w-auto shrink-0 overflow-visible align-[-0.1em]', classNames]}
+	class="inline-block h-[0.9em] w-auto shrink-0 overflow-visible align-[-0.1em]"
 	role="img"
 	viewBox="{-PAD} {-PAD} {EX_LOGO.width + PAD * 2} {100 + PAD * 2}"
 >

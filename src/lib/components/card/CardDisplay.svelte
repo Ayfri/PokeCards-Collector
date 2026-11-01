@@ -128,6 +128,36 @@
 	});
 </script>
 
+<!-- The mobile row sits under the card, the desktop buttons flank it (`order`), and an empty slot keeps the card centered. -->
+{#snippet pokemonNav(pokemon: Pokemon | undefined, card: FullCard | undefined, side: 'prev' | 'next', desktop: boolean)}
+	{#if pokemon && card}
+		<button
+			onclick={() => handlePokemonNavigation(card.cardCode)}
+			class={['pokemon-nav flex-col items-center opacity-70 hover:opacity-100 transition-opacity', desktop ? 'hidden lg:flex w-48' : 'flex w-auto', desktop && (side === 'prev' ? 'order-1' : 'order-3')]}
+			in:fly={{ x: side === 'prev' ? -50 : 50, duration: 400, delay: 400 }}
+		>
+			{#if !NO_IMAGES}
+				<img
+					src={getPokemonImageSrc(pokemon.id)}
+					alt={pascalCase(pokemon.name)}
+					class={['object-contain nav-pokemon-image', desktop ? 'size-24' : 'size-16']}
+					title={pascalCase(pokemon.name)}
+					onerror={handlePokemonImageError}
+					data-pokemon-id={pokemon.id}
+				/>
+			{:else}
+				<div class={['flex items-center justify-center text-white bg-gray-800 rounded-full', desktop ? 'size-24' : 'size-16 text-xs']}>
+					#{pokemon.id}
+				</div>
+			{/if}
+			<span class="mt-1 text-center text-xs font-bold">{pascalCase(pokemon.name)}</span>
+			<span class="text-xs text-gray-400">#{pokemon.id}</span>
+		</button>
+	{:else}
+		<div class={desktop ? ['hidden lg:block w-48', side === 'prev' ? 'order-1' : 'order-3'] : 'w-16'}></div>
+	{/if}
+{/snippet}
+
 <div class="flex flex-col gap-1 lg:gap-4 items-center content-center">
 	{#if currentPokemon && isInitialRenderComplete && currentCard}
 		<div in:fly={{ y: -30, duration: 400, delay: 100 }}>
@@ -159,114 +189,12 @@
 		</div>
 
 		<div class="mobile-nav-wrapper w-full flex justify-between items-center mt-4 lg:hidden order-2">
-			{#if previousPokemon && previousPokemonCard}
-				<button
-					onclick={() => handlePokemonNavigation(previousPokemonCard.cardCode)}
-					class="prev-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
-					in:fly={{ x: -50, duration: 400, delay: 400 }}
-				>
-					{#if !NO_IMAGES}
-					<img
-						src={getPokemonImageSrc(previousPokemon.id)}
-						alt={pascalCase(previousPokemon.name)}
-						class="w-16 h-16 object-contain nav-pokemon-image"
-						title={pascalCase(previousPokemon.name)}
-						onerror={handlePokemonImageError}
-						data-pokemon-id={previousPokemon.id}
-					/>
-					{:else}
-					<div class="w-16 h-16 flex items-center justify-center text-white text-xs bg-gray-800 rounded-full">
-						#{previousPokemon.id}
-					</div>
-					{/if}
-					<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(previousPokemon.name)}</span>
-					<span class="nav-pokemon-id text-xs text-gray-400">#{previousPokemon.id}</span>
-				</button>
-			{:else}
-				<div class="w-16"></div>
-			{/if}
-
-			{#if nextPokemon && nextPokemonCard}
-				<button
-					onclick={() => handlePokemonNavigation(nextPokemonCard.cardCode)}
-					class="next-pokemon-nav flex flex-col items-center w-auto opacity-70 hover:opacity-100 transition-opacity"
-					in:fly={{ x: 50, duration: 400, delay: 400 }}
-				>
-					{#if !NO_IMAGES}
-					<img
-						src={getPokemonImageSrc(nextPokemon.id)}
-						alt={pascalCase(nextPokemon.name)}
-						class="w-16 h-16 object-contain nav-pokemon-image"
-						title={pascalCase(nextPokemon.name)}
-						onerror={handlePokemonImageError}
-						data-pokemon-id={nextPokemon.id}
-					/>
-					{:else}
-					<div class="w-16 h-16 flex items-center justify-center text-white text-xs bg-gray-800 rounded-full">
-						#{nextPokemon.id}
-					</div>
-					{/if}
-					<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(nextPokemon.name)}</span>
-					<span class="nav-pokemon-id text-xs text-gray-400">#{nextPokemon.id}</span>
-				</button>
-			{:else}
-				<div class="w-16"></div>
-			{/if}
+			{@render pokemonNav(previousPokemon, previousPokemonCard, 'prev', false)}
+			{@render pokemonNav(nextPokemon, nextPokemonCard, 'next', false)}
 		</div>
 
-		{#if previousPokemon && previousPokemonCard}
-			<button
-				onclick={() => handlePokemonNavigation(previousPokemonCard.cardCode)}
-				class="prev-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-1"
-				in:fly={{ x: -50, duration: 400, delay: 400 }}
-			>
-				{#if !NO_IMAGES}
-					<img
-						src={getPokemonImageSrc(previousPokemon.id)}
-						alt={pascalCase(previousPokemon.name)}
-						class="w-24 h-24 object-contain nav-pokemon-image"
-						title={pascalCase(previousPokemon.name)}
-						onerror={handlePokemonImageError}
-						data-pokemon-id={previousPokemon.id}
-					/>
-				{:else}
-					<div class="w-24 h-24 flex items-center justify-center text-white bg-gray-800 rounded-full">
-						#{previousPokemon.id}
-					</div>
-				{/if}
-				<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(previousPokemon.name)}</span>
-				<span class="nav-pokemon-id text-xs text-gray-400">#{previousPokemon.id}</span>
-			</button>
-		{:else}
-			<div class="hidden lg:block w-48 order-1"></div>
-		{/if}
-
-		{#if nextPokemon && nextPokemonCard}
-			<button
-				onclick={() => handlePokemonNavigation(nextPokemonCard.cardCode)}
-				class="next-pokemon-nav hidden lg:flex flex-col items-center w-48 opacity-70 hover:opacity-100 transition-opacity order-3"
-				in:fly={{ x: 50, duration: 400, delay: 400 }}
-			>
-				{#if !NO_IMAGES}
-					<img
-						src={getPokemonImageSrc(nextPokemon.id)}
-						alt={pascalCase(nextPokemon.name)}
-						class="w-24 h-24 object-contain nav-pokemon-image"
-						title={pascalCase(nextPokemon.name)}
-						onerror={handlePokemonImageError}
-						data-pokemon-id={nextPokemon.id}
-					/>
-				{:else}
-					<div class="w-24 h-24 flex items-center justify-center text-white bg-gray-800 rounded-full">
-						#{nextPokemon.id}
-					</div>
-				{/if}
-				<span class="nav-pokemon-name mt-1 text-center text-xs font-bold">{pascalCase(nextPokemon.name)}</span>
-				<span class="nav-pokemon-id text-xs text-gray-400">#{nextPokemon.id}</span>
-			</button>
-		{:else}
-			<div class="hidden lg:block w-48 order-3"></div>
-		{/if}
+		{@render pokemonNav(previousPokemon, previousPokemonCard, 'prev', true)}
+		{@render pokemonNav(nextPokemon, nextPokemonCard, 'next', true)}
 	</div>
 
 	{#if currentCard}
@@ -330,13 +258,13 @@
 		z-index: -20;
 	}
 
-	.prev-pokemon-nav, .next-pokemon-nav {
+	.pokemon-nav {
 		cursor: pointer;
 		transition: transform 0.3s ease, opacity 0.3s ease;
 		opacity: 0.7;
 	}
 
-	.prev-pokemon-nav:hover, .next-pokemon-nav:hover {
+	.pokemon-nav:hover {
 		transform: scale(1.1);
 		opacity: 1;
 	}

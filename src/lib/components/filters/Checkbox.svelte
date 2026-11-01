@@ -5,20 +5,17 @@
 		label: string;
 		checked?: boolean;
 		disabled?: boolean;
-		class?: string;
 	}
 
 	let {
 		id,
 		label,
 		checked = $bindable(false),
-		disabled = false,
-		class: className = ""
+		disabled = false
 	}: Props = $props();
-	
 </script>
 
-<div class="flex items-center gap-2 {className}">
+<div class="flex items-center gap-2">
 	<div class="relative">
 		<input
 			type="checkbox"

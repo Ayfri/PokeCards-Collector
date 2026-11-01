@@ -5,12 +5,10 @@
 	import SortControl from '#components/filters/SortControl.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import TrainerGroupTile from '#components/list/TrainerGroupTile.svelte';
-	import ScrollToBottom from '#components/list/ScrollToBottom.svelte';
-	import ScrollToTop from '#components/list/ScrollToTop.svelte';
+	import ScrollButton from '#components/list/ScrollButton.svelte';
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import { onMount } from 'svelte';
-	import { fade } from 'svelte/transition';
 
 	interface Props {
 		data: PageData;
@@ -103,9 +101,5 @@
 	{/each}
 </div>
 
-{#if scrollY > 100}
-	<div transition:fade={{ duration: 300 }}>
-		<ScrollToTop onclick={() => window.scrollTo({ behavior: 'smooth', top: 0 })} />
-	</div>
-{/if}
-<ScrollToBottom onclick={() => window.scrollTo({ behavior: 'smooth', top: document.body.scrollHeight })} />
+<ScrollButton direction="up" onclick={() => window.scrollTo({ behavior: 'smooth', top: 0 })} visible={scrollY > 100} />
+<ScrollButton direction="down" onclick={() => window.scrollTo({ behavior: 'smooth', top: document.body.scrollHeight })} />

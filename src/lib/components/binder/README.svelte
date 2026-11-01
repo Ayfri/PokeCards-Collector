@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { fly } from 'svelte/transition';
 	import Modal from '#components/ui/Modal.svelte';
 	import BookOpenIcon from '@lucide/svelte/icons/book-open';
 	import DownloadIcon from '@lucide/svelte/icons/download';
@@ -37,8 +36,6 @@
 <Modal
 	open={showHelp}
 	onClose={toggleHelp}
-	transitionFn={fly}
-	transitionParams={{ y: 20, duration: 200 }}
 	title="Binder Builder"
 	containerClass="max-w-lg lg:max-w-2xl"
 >

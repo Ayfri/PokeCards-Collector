@@ -1,16 +1,11 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import { fade, fly, type FlyParams, type TransitionConfig } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import XIcon from '@lucide/svelte/icons/x';
-	import { browser } from '$app/env';
 
 	interface Props {
 		open?: boolean;
 		title?: string;
-		transitionFn?: (node: Element, params: FlyParams) => TransitionConfig;
-		transitionParams?: FlyParams;
 		containerClass?: string;
-		fullscreen?: boolean;
 		onClose?: () => void;
 		header?: import('svelte').Snippet;
 		children?: import('svelte').Snippet;
@@ -20,35 +15,15 @@
 	let {
 		open = $bindable(false),
 		title = '',
-		transitionFn = fly,
-		transitionParams = { y: 20, duration: 200 },
 		containerClass = 'max-w-md',
-		fullscreen = false,
 		onClose = () => {},
 		header,
 		children,
 		footer
 	}: Props = $props();
-
-	
-	function handleKeydown(event: KeyboardEvent) {
-		if (open && event.key === 'Escape') {
-			onClose();
-		}
-	}
-
-	onMount(() => {
-		if (browser) {
-			window.addEventListener('keydown', handleKeydown);
-		}
-	});
-
-	onDestroy(() => {
-		if (browser) {
-			window.removeEventListener('keydown', handleKeydown);
-		}
-	});
 </script>
+
+<svelte:window onkeydown={event => { if (open && event.key === 'Escape') onClose(); }} />
 
 {#if open}
 	<div
@@ -58,8 +33,8 @@
 		role="presentation"
 	>
 		<div
-			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto modal-content {containerClass} {fullscreen ? 'w-[95vw] h-[95vh] max-w-none max-h-none' : ''}"
-			transition:transitionFn={transitionParams}
+			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto modal-content {containerClass}"
+			transition:fly={{ y: 20, duration: 200 }}
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="modal-title"

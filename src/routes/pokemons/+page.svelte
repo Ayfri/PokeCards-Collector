@@ -7,9 +7,7 @@
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import PageTitle from '#components/PageTitle.svelte';
 	import { loading } from '#stores/loading.svelte.ts';
-	import ScrollToTop from '#lib/components/list/ScrollToTop.svelte';
-	import ScrollToBottom from '#lib/components/list/ScrollToBottom.svelte';
-	import { fade } from 'svelte/transition';
+	import ScrollButton from '#components/list/ScrollButton.svelte';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import LayersIcon from "@lucide/svelte/icons/layers";
@@ -152,9 +150,5 @@
 	</div>
 </div>
 
-{#if hasScrolled}
-	<div transition:fade={{ duration: 300 }}>
-		<ScrollToTop onclick={scrollToTopPage} />
-	</div>
-{/if}
-<ScrollToBottom onclick={scrollToBottomPage} />
+<ScrollButton direction="up" onclick={scrollToTopPage} visible={hasScrolled} />
+<ScrollButton direction="down" onclick={scrollToBottomPage} />

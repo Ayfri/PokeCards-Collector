@@ -5,14 +5,12 @@
 	interface Props {
 		duration?: number;
 		end: number;
-		start?: number;
 		options?: CountUpOptions;
 	}
 
 	let {
 		duration = 2,
 		end,
-		start = 0,
 		options = {}
 	}: Props = $props();
 
@@ -23,7 +21,6 @@
 		if (!spanElement) return;
 
 		countUpAnim = new CountUpJs(spanElement, end, {
-			startVal: start,
 			duration,
 			...options,
 		});
@@ -40,4 +37,4 @@
 	});
 </script>
 
-<span bind:this={spanElement}>{start}</span> 
+<span bind:this={spanElement}>0</span>

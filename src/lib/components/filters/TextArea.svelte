@@ -1,5 +1,4 @@
 <script lang="ts">
-	import type { FullAutoFill } from 'svelte/elements';
 	import { onMount } from 'svelte';
 
 	interface Props {
@@ -7,8 +6,6 @@
 		label: string;
 		value: string;
 		placeholder?: string;
-		autocomplete?: FullAutoFill | undefined;
-		debounceFunction?: (value: string) => void;
 		rows?: number;
 		class?: string;
 	}
@@ -18,8 +15,6 @@
 		label,
 		value = $bindable(),
 		placeholder = "",
-		autocomplete = undefined,
-		debounceFunction = () => {},
 		rows = 4,
 		class: className = ""
 	}: Props = $props();
@@ -34,9 +29,7 @@
 	}
 
 	function handleInput(event: Event) {
-		const target = event.target as HTMLTextAreaElement;
-		debounceFunction(target.value);
-		adjustHeight(target);
+		adjustHeight(event.target as HTMLTextAreaElement);
 	}
 
 	onMount(() => {
@@ -51,7 +44,6 @@
 	<textarea
 		bind:this={textareaElement}
 		class="bg-transparent border-2 rounded-sm text-white p-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 resize-none overflow-hidden {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
-		{autocomplete}
 		{id}
 		{placeholder}
 		{rows}

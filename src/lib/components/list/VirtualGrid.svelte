@@ -1,8 +1,6 @@
 <script lang="ts">
-	import ScrollToBottom from '#components/list/ScrollToBottom.svelte';
-	import ScrollToTop from '#components/list/ScrollToTop.svelte';
+	import ScrollButton from '#components/list/ScrollButton.svelte';
 	import { gridScroll } from '#stores/grid.svelte.ts';
-	import { fade } from 'svelte/transition';
 	import type { FullCard } from '#lib/types.js';
 
 	interface Props {
@@ -138,9 +136,5 @@
 	{/if}
 </div>
 
-{#if scrollTop > 100}
-	<div transition:fade={{ duration: 300 }}>
-		<ScrollToTop onclick={scrollToTop}/>
-	</div>
-{/if}
-<ScrollToBottom onclick={scrollToLast}/>
+<ScrollButton direction="up" onclick={scrollToTop} visible={scrollTop > 100} />
+<ScrollButton direction="down" onclick={scrollToLast} />

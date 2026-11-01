@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { fade } from 'svelte/transition';
-	import { onMount } from 'svelte';
 	import SearchBar from './SearchBar.svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import X from '@lucide/svelte/icons/x';
@@ -25,23 +24,9 @@
 			}
 		}
 	}
-
-	onMount(() => {
-		const handleKeydown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape' && isOpen) {
-				closeModal();
-			}
-		};
-
-		document.addEventListener('keydown', handleKeydown);
-		document.addEventListener('click', handleClickOutside);
-
-		return () => {
-			document.removeEventListener('keydown', handleKeydown);
-			document.removeEventListener('click', handleClickOutside);
-		};
-	});
 </script>
+
+<svelte:document onclick={handleClickOutside} onkeydown={event => { if (event.key === 'Escape' && isOpen) closeModal(); }} />
 
 <!-- On phones the header has no room for the real input, so this field-shaped button spans the free width and opens the search. -->
 <button

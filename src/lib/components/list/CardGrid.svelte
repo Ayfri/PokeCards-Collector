@@ -40,7 +40,7 @@
 		rarities,
 		types,
 		artists = [],
-		pageTitle = "Card List",
+		pageTitle,
 		selectedSetName = null,
 		selectedArtistName = null,
 		lowRes = true

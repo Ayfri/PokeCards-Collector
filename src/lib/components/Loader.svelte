@@ -4,17 +4,9 @@
 
 	interface Props {
 		message?: string;
-		size?: number;
-		gradientColorStart?: string;
-		gradientColorEnd?: string;
 	}
 
-	let {
-		message = "Loading...",
-		size = 48,
-		gradientColorStart = '#fbc54a',
-		gradientColorEnd = '#ae8833'
-	}: Props = $props();
+	let { message = "Loading..." }: Props = $props();
 </script>
 
 <div
@@ -24,7 +16,7 @@
 >
 	<div class="flex flex-col items-center">
 		<div class="mb-4">
-			<BouncyLoader {size} {gradientColorStart} {gradientColorEnd} />
+			<BouncyLoader size={48} />
 		</div>
 		<p class="text-white text-xl">{message}</p>
 	</div>

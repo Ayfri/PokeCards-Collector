@@ -189,7 +189,6 @@
 						highlightClass="text-gold-400 group-hover:text-gold-300"
 						hoverBorderClass="hover:border-gold-400/70"
 						hoverShadowClass="hover:shadow-gold-400/30"
-						countTextSuffix="unique card"
 					/>
 				{/each}
 			</div>

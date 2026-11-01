@@ -132,7 +132,7 @@
 		: (card.name ? card.name.charAt(0).toUpperCase() + card.name.slice(1) : 'Unknown'));
 </script>
 
-<div class="card-pokecards-collector group relative flex flex-col items-center w-fit cursor-pointer text-white transition-transform duration-500 ease-out hover:scale-[1.025] hover:z-10" style="z-index: 1;">
+<div class="card-pokecards-collector group relative flex flex-col items-center w-fit cursor-pointer text-white transition-transform duration-500 ease-out hover:scale-[1.025] z-1 hover:z-10">
 	<!-- Stretched link: covers the whole card so nested links stay valid HTML. -->
 	<a
 		aria-label={`Go to the card page of ${cardName}`}
