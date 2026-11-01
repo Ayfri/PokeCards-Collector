@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { pascalCase } from '#helpers/format.ts';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
-	import { getCardImageForPokemon } from '#helpers/card-images.ts';
-	import { NO_IMAGES } from '#lib/images.ts';
+	import { getCardImageForPokemon, NO_IMAGES } from '#helpers/card-images.ts';
 	import type { FullCard, Pokemon, PriceData } from '#lib/types.js';
 	import { getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';

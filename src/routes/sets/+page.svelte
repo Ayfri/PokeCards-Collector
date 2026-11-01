@@ -3,7 +3,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import type { PageData } from './$types';
 	import { formatEuros } from '#helpers/format.ts';
-	import { NO_IMAGES } from '#lib/images.ts';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import PageTitle from '#components/PageTitle.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
@@ -13,7 +13,7 @@
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import SetLogo from '#components/SetLogo.svelte';
-	import { setCardCount } from '#helpers/set-utils.ts';
+	import { setCardCount } from '#helpers/card-utils.ts';
 
 	interface Props {
 		data: PageData;

@@ -1,8 +1,11 @@
-import {NO_IMAGES} from '#lib/images.ts';
+import {PUBLIC_NO_IMAGES} from '$app/env/public';
 import type {FullCard} from '#lib/types.js';
 
 export type ImageQuality = 'high' | 'low';
 export type ImageExtension = 'webp' | 'png';
+
+/** Dev switch: renders placeholders instead of card art so a local run costs no bandwidth. */
+export const NO_IMAGES = PUBLIC_NO_IMAGES === 'true';
 
 const PLACEHOLDER = 'https://placehold.co/300x450/transparent/transparent';
 

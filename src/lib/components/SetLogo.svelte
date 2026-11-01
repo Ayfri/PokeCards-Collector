@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import type { Set } from '#lib/types.js';
-	import { NO_IMAGES } from '#lib/images.ts';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 
 	interface Props {
 		class?: string;

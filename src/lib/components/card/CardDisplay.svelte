@@ -3,7 +3,7 @@
 	import CardLanguages from '#components/card/CardLanguages.svelte';
 	import EvolutionChain from '#components/card/EvolutionChain.svelte';
 	import RelatedCards from '#components/card/RelatedCards.svelte';
-	import {NO_IMAGES} from '#lib/images.ts';
+	import {NO_IMAGES} from '#helpers/card-images.ts';
 	import {fade, fly} from 'svelte/transition';
 	import type {FullCard, Pokemon, Set, PriceData} from '#lib/types.js';
 	import { pascalCase } from '#helpers/format.ts';

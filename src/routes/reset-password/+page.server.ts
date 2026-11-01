@@ -1,5 +1,5 @@
 import { fail } from '@sveltejs/kit';
-import { isStrongPassword, PASSWORD_REQUIREMENTS } from '#helpers/password.ts';
+import { isStrongPassword, PASSWORD_REQUIREMENTS } from '#src/constants.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 /** The page only makes sense behind a one-time recovery token from an email, so search engines get nothing from indexing it. */

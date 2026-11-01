@@ -14,7 +14,7 @@
 	import Modal from '#components/ui/Modal.svelte';
 	import HelpCircleIcon from '@lucide/svelte/icons/circle-question-mark';
 	import { downloadDataUrl, renderBinderImage } from '#helpers/binder-export.ts';
-	import { setCardCount } from '#helpers/set-utils.ts';
+	import { setCardCount } from '#helpers/card-utils.ts';
 	import type { BinderCards, BinderCatalogueCard } from '#lib/types.js';
 	import { binderStorage } from '#stores/binder.svelte.ts';
 	import type { PageData } from './$types';

@@ -1,13 +1,23 @@
+<script lang="ts" module>
+	import { persistedRecord } from '#stores/persisted.svelte.ts';
+
+	type ArtistsSortValue = 'averageValue' | 'firstReleaseDate' | 'lastReleaseDate' | 'name' | 'totalCards' | 'totalValue';
+
+	const artistsSort = persistedRecord('artists-sort', {
+		direction: 'asc' as 'asc' | 'desc',
+		value: 'name' as ArtistsSortValue,
+	});
+</script>
+
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { ArtistWithCards } from './+page.server';
 	import { formatEuros } from '#helpers/format.ts';
-	import { NO_IMAGES } from '#lib/images.ts';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import PageTitle from '#components/PageTitle.svelte';
 	import CardImage from '#components/card/CardImage.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
-	import { artistsSort, type ArtistsSortValue } from '#stores/artistsSort.svelte.ts';
 	import { fade, fly } from 'svelte/transition';
 	import { SvelteSet } from 'svelte/reactivity';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';

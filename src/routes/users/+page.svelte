@@ -10,7 +10,7 @@
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import type { PageData } from './$types';
 	import type { SearchedUserWithStats, SearchUsersResponse } from '#lib/types.js';
-	import { readJson } from '#helpers/http.ts';
+	import { readJson } from '#helpers/utils.ts';
 	import PageTitle from '#components/PageTitle.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import UserCard from '#components/users/UserCard.svelte';

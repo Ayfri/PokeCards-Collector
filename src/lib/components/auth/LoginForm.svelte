@@ -3,7 +3,7 @@
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import { page } from '$app/state';
 	import { goto, refreshAll } from '$app/navigation';
-	import { readJson, type ApiError } from '#helpers/http.ts';
+	import { readJson, type ApiError } from '#helpers/utils.ts';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 

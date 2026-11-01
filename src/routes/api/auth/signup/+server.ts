@@ -2,9 +2,8 @@ import { createClient } from '@supabase/supabase-js';
 import type { RequestHandler } from './$types';
 import { PUBLIC_SUPABASE_URL } from '$app/env/public';
 import { SUPABASE_SECRET_KEY } from '$app/env/private';
-import { readJson, type ApiError } from '#helpers/http.ts';
-import { isStrongPassword, PASSWORD_REQUIREMENTS } from '#helpers/password.ts';
-import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#helpers/username.ts';
+import { readJson, type ApiError } from '#helpers/utils.ts';
+import { isStrongPassword, normalizeUsername, PASSWORD_REQUIREMENTS, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
 
 interface SignupBody {
 	email?: string;

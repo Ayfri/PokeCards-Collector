@@ -1,5 +1,5 @@
 import { browser } from '$app/env';
-import { cachedJson } from '#helpers/cached-json.ts';
+import { cachedJson } from '#helpers/utils.ts';
 import type { GridPayload } from '#helpers/grid-payload.ts';
 import type { PageLoad } from './$types';
 

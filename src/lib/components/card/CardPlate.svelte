@@ -5,12 +5,11 @@
 	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import SetLogo from '#components/SetLogo.svelte';
-	import { cardTypeTint } from '#helpers/card-images.ts';
+	import { cardTypeTint, NO_IMAGES } from '#helpers/card-images.ts';
 	import { artNote, DARK_BODY_TYPES, FULL_ART_RARITIES, hasSilverBorder, plateIdentity, plateTexture } from '#helpers/card-plate.ts';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { formatCardNumber } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc } from '#helpers/pokemon-utils.ts';
-	import { NO_IMAGES } from '#lib/images.ts';
 	import type { FullCard, Set } from '#lib/types.js';
 	import { page } from '$app/state';
 	import ImageOff from '@lucide/svelte/icons/image-off';

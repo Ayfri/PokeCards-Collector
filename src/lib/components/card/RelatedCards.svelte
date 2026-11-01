@@ -5,7 +5,7 @@
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import SortControl from '#components/filters/SortControl.svelte';
-	import { NO_IMAGES } from '#lib/images.ts';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import { cardGroupName, cardPrice } from '#helpers/card-utils.ts';
 	import { formatEuros } from '#helpers/format.ts';
 	import { addCardToCollection, removeCardFromCollection } from '#lib/services/collections.ts';

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import CardImage from '#components/card/CardImage.svelte';
-	import { NO_IMAGES } from '#lib/images.ts';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import X from '@lucide/svelte/icons/x';
 	import type { BinderCards } from '#lib/types.js';
 

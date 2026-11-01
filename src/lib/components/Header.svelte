@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { NO_IMAGES } from '#lib/images.ts';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import UserMenu from '#components/auth/UserMenu.svelte';
 	import SearchBar from '#components/SearchBar.svelte';
 	import SearchModal from '#components/SearchModal.svelte';

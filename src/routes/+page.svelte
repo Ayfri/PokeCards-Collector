@@ -6,7 +6,7 @@
 	import CountUp from "#components/ui/CountUp.svelte";
 	import { CATALOGUES } from "#helpers/catalogues.ts";
 	import { formatDate, formatEuros } from "#helpers/format.ts";
-	import { NO_IMAGES } from "#lib/images.ts";
+	import { NO_IMAGES } from "#helpers/card-images.ts";
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import GiftIcon from "@lucide/svelte/icons/gift";

@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_SECRET_KEY } from '$app/env/private';
 import { PUBLIC_SUPABASE_URL } from '$app/env/public';
-import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#helpers/username.ts';
 import { isUsernameTaken } from '#lib/services/profiles.ts';
+import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
 import type { RequestHandler } from './$types';
 
 /**

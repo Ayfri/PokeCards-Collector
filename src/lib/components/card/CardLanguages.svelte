@@ -2,7 +2,7 @@
 	import { fade } from 'svelte/transition';
 	import { resolve } from '$app/paths';
 	import Flag from '#components/Flag.svelte';
-	import { cachedJson } from '#helpers/cached-json.ts';
+	import { cachedJson } from '#helpers/utils.ts';
 	import { CATALOGUES, LANGUAGES, type CardVersions, type Language } from '#helpers/catalogues.ts';
 
 	interface Props {

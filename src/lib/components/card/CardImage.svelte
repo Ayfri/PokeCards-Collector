@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { processCardImage } from '#helpers/card-images.ts';
+	import { NO_IMAGES, processCardImage } from '#helpers/card-images.ts';
 	import CardPlate from '#components/card/CardPlate.svelte';
-	import { NO_IMAGES } from '#lib/images.ts';
 	import type { FullCard, Set } from '#lib/types.js';
 	import { untrack } from 'svelte';
 

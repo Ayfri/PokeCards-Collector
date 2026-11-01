@@ -9,7 +9,7 @@
 	import TrainersIcon from '@lucide/svelte/icons/backpack';
 	import Flag from '#components/Flag.svelte';
 	import type { Language } from '#helpers/catalogues.ts';
-	import { NO_IMAGES } from '#lib/images.ts';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import { SITE_NAME } from '#src/constants.ts';
 	import pokecardsCollector from '#src/assets/pokecards-collector.png';
 

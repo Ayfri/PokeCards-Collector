@@ -2,7 +2,7 @@
 	import CardImage from '#components/card/CardImage.svelte';
 	import type { FullCard, Pokemon, Set } from '#lib/types.js';
 	import { pascalCase } from '#helpers/format.ts';
-	import { throttle } from '#helpers/throttle.ts';
+	import { throttle } from '#helpers/utils.ts';
 
 	
 	interface Props {

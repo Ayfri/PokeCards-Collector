@@ -3,7 +3,7 @@
 	import type { PageData } from './$types';
 	import type { CardDleFeedback, CardDleGuessResponse } from '#lib/types.js';
 	import { formatEuros } from '#helpers/format.ts';
-	import { readJson } from '#helpers/http.ts';
+	import { readJson } from '#helpers/utils.ts';
 	import { getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
 	import Modal from '#components/ui/Modal.svelte';
 	import CardImage from '#components/card/CardImage.svelte';

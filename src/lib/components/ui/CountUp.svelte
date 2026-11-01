@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CountUp as CountUpJs, type CountUpOptions } from '#lib/countup-wrapper.ts';
+	import { CountUp as CountUpJs, type CountUpOptions } from 'countup.js';
 	import { onMount } from 'svelte';
 
 	interface Props {

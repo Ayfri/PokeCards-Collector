@@ -4,7 +4,7 @@
 	import {onNavigate} from '$app/navigation';
 	import {page} from '$app/state';
 	import {untrack} from 'svelte';
-	import {NO_IMAGES} from '#lib/images.ts';
+	import {NO_IMAGES} from '#helpers/card-images.ts';
 	import {transitionNavigation} from '#helpers/view-transitions.ts';
 	import Footer from '#components/Footer.svelte';
 	import Header from '#components/Header.svelte';

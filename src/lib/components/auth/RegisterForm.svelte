@@ -2,9 +2,8 @@
 	import { goto, refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import BouncyLoader from '../BouncyLoader.svelte';
-	import { readJson, type ApiError } from '#helpers/http.ts';
-	import { isStrongPassword, PASSWORD_CRITERIA, PASSWORD_REQUIREMENTS } from '#helpers/password.ts';
-	import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#helpers/username.ts';
+	import { readJson, type ApiError } from '#helpers/utils.ts';
+	import { isStrongPassword, normalizeUsername, PASSWORD_CRITERIA, PASSWORD_REQUIREMENTS, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 

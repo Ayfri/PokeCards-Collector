@@ -10,12 +10,12 @@
 	import CardImage from '#components/card/CardImage.svelte';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { formatEuros, pascalCase } from '#helpers/format.ts';
-	import { NO_IMAGES } from '#lib/images.ts';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import type { FullCard } from '#lib/types.js';
 	import type { CardSearchResult, PokemonSearchResult } from '#helpers/card-search.ts';
 	import { page } from '$app/state';
 	import { binderStorage } from '#stores/binder.svelte.ts';
-	import { debounce } from '#helpers/debounce.ts';
+	import { debounce } from '#helpers/utils.ts';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {

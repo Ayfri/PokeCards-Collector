@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import BouncyLoader from '#lib/components/BouncyLoader.svelte';
-	import { PASSWORD_CRITERIA } from '#helpers/password.ts';
+	import { PASSWORD_CRITERIA } from '#src/constants.ts';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 	import LockIcon from '@lucide/svelte/icons/lock';

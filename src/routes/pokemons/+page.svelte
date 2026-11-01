@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { pascalCase } from '#helpers/format.ts';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
-	import { NO_IMAGES } from '#lib/images.ts';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import PageTitle from '#components/PageTitle.svelte';
 	import { loading } from '#stores/loading.svelte.ts';
 	import ScrollToTop from '#lib/components/list/ScrollToTop.svelte';

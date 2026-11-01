@@ -1,6 +1,6 @@
 <script lang="ts">
 	import {formatEuros} from '#helpers/format.ts';
-	import {NO_IMAGES} from '#lib/images.ts';
+	import {NO_IMAGES} from '#helpers/card-images.ts';
 	import {addCardToWishlist, removeCardFromWishlist} from '#lib/services/wishlists.ts';
 	import {addCardToCollection, removeCardFromCollection} from '#lib/services/collections.ts';
 	import {wishlist} from '#stores/wishlist.svelte.ts';

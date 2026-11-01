@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { debounce } from '#helpers/debounce.ts';
+	import { debounce } from '#helpers/utils.ts';
 	import type { FullAutoFill, HTMLInputAttributes } from 'svelte/elements';
 
 	interface Props extends HTMLInputAttributes {

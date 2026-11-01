@@ -1,4 +1,4 @@
-import type { Card, FullCard, Pokemon, PriceData } from '#lib/types.js';
+import type { Card, FullCard, Pokemon, PriceData, Set as CardSet } from '#lib/types.js';
 
 /**
  * The Trainer and Energy sections a card's `subtype` can fill, in display order. They are TCGdex's English `trainerType` / `energyType` values:
@@ -77,6 +77,9 @@ export function formatCardNumber(cardNumber: string, printedTotal?: number | nul
 	if (!printedTotal) return shown;
 	return `${shown}/${printed ? String(printedTotal).padStart(number.length, '0') : printedTotal}`;
 }
+
+/** How many cards a set holds: `printedTotal` is the numbering denominator, which TCGdex leaves at 0 on the promo sets. */
+export const setCardCount = (set: Pick<CardSet, 'printedTotal' | 'totalCards'>) => set.totalCards || set.printedTotal;
 
 /** A heuristic, not a parse: a card code contains `_` and a URL starts with `http`. */
 export function isCardCode(item: string): boolean {
