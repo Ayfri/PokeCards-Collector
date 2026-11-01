@@ -9,21 +9,21 @@ export const POST: RequestHandler = async ({ request }) => {
 		const cardOfTheDay = pickCardOfTheDay(new Date().toISOString().slice(0, 10), allCards, prices);
 
 		if (!cardOfTheDay) {
-			return Response.json({ error: 'Impossible de déterminer la carte du jour' }, { status: 500 });
+			return Response.json({ error: 'Could not pick the card of the day' }, { status: 500 });
 		}
 
 		const formData = await request.formData();
 		const guessedCardCode = formData.get('guessedCardId') as string;
 
 		if (!guessedCardCode) {
-			return Response.json({ error: 'Aucune carte sélectionnée' }, { status: 400 });
+			return Response.json({ error: 'No card selected' }, { status: 400 });
 		}
 
 		const guessedCard = allCards.find(card => card.cardCode === guessedCardCode);
 		const guessedPrice = cardPrice(prices[guessedCardCode]);
 
 		if (!guessedCard || !guessedPrice) {
-			return Response.json({ error: 'Carte non trouvée ou sans prix' }, { status: 404 });
+			return Response.json({ error: 'Card not found or without a price' }, { status: 404 });
 		}
 
 		const feedback = {
@@ -51,15 +51,13 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		return Response.json({
 			success: true,
-			guessedCardName: guessedCard.name,
-			guessedCardImage: guessedCard.image,
-			guessedPokemonNumber: guessedCard.pokemonNumber,
+			guessedCard,
 			feedback,
 			isCorrectGuess
 		});
 
 	} catch (error) {
-		console.error('❌ [CARD.DLE API] Erreur:', error);
-		return Response.json({ error: 'Erreur interne du serveur' }, { status: 500 });
+		console.error('Card.dle guess failed:', error);
+		return Response.json({ error: 'Internal server error' }, { status: 500 });
 	}
 };

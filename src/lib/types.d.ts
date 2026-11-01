@@ -250,9 +250,7 @@ export interface CardDleFeedback {
 export type CardDleGuessResponse =
 	| {
 		feedback: CardDleFeedback;
-		guessedCardImage: string;
-		guessedCardName: string;
-		guessedPokemonNumber?: number;
+		guessedCard: FullCard;
 		isCorrectGuess: boolean;
 		success: true;
 	}

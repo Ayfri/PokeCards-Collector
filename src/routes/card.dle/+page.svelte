@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import type { PageData } from './$types';
-	import type { CardDleFeedback, CardDleGuessResponse } from '#lib/types.js';
+	import type { CardDleFeedback, CardDleGuessResponse, FullCard } from '#lib/types.js';
 	import { formatEuros } from '#helpers/format.ts';
 	import { readJson } from '#helpers/utils.ts';
 	import { getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
@@ -12,6 +12,7 @@
 	import Button from '#components/filters/Button.svelte';
 	import BouncyLoader from '#components/BouncyLoader.svelte';
 	import PageTitle from '#components/PageTitle.svelte';
+	import SortControl from '#components/filters/SortControl.svelte';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import ChevronsDownIcon from '@lucide/svelte/icons/chevrons-down';
 	import ChevronsUpIcon from '@lucide/svelte/icons/chevrons-up';
@@ -45,9 +46,12 @@
 	type CardSuggestion = Awaited<PageData['suggestions']>[number];
 
 	interface PendingGuess {
+		cardCode: string;
 		cardImage: string;
 		id: number;
 		name: string;
+		/** The whole card when it has no scan, for its placeholder plate. */
+		plate?: FullCard;
 		pokemonNumber?: number;
 	}
 
@@ -66,6 +70,22 @@
 	let showRulesModal = $state(false);
 	let hasWon = $state(false);
 	let isSubmitting = $state(false);
+
+	const SORT_OPTIONS = [
+		{ label: 'Name', value: 'name' },
+		{ label: 'Price', value: 'price' },
+		{ label: 'Set', value: 'set' }
+	];
+	let sortValue = $state('name');
+	let sortDirection = $state<'asc' | 'desc'>('asc');
+
+	/** The 100 matches at most, so sorting them on each change is cheap; ties keep the server's alphabetical order. */
+	const sortedSuggestions = $derived.by(() => {
+		const sign = sortDirection === 'asc' ? 1 : -1;
+		const compare = (a: CardSuggestion, b: CardSuggestion) =>
+			sortValue === 'price' ? a.price - b.price : sortValue === 'set' ? a.setName.localeCompare(b.setName) : a.name.localeCompare(b.name);
+		return activeSuggestions.toSorted((a, b) => sign * compare(a, b));
+	});
 
 	/** Lowercased once when the list arrives, so a keystroke only runs `includes` over ~10k cards. */
 	const searchable = $derived(suggestions.map(card => ({ card, name: card.name.toLowerCase(), pokemonName: card.pokemonName.toLowerCase() })));
@@ -109,8 +129,10 @@
 
 		loadingGuess = {
 			id: new Date().getTime(),
+			cardCode: card.cardCode,
 			name: card.name,
 			cardImage: card.image,
+			plate: card.plate,
 			pokemonNumber: card.pokemonNumber
 		};
 
@@ -128,11 +150,14 @@
 			const result = await readJson<CardDleGuessResponse>(response, { error: 'Invalid server response' });
 
 			if (result.success) {
+				const { guessedCard } = result;
 				const newGuess = {
 					id: new Date().getTime(),
-					name: result.guessedCardName,
-					cardImage: result.guessedCardImage,
-					pokemonNumber: result.guessedPokemonNumber,
+					cardCode: guessedCard.cardCode,
+					name: guessedCard.name,
+					cardImage: guessedCard.image,
+					plate: guessedCard.image ? undefined : guessedCard,
+					pokemonNumber: guessedCard.pokemonNumber,
 					feedback: result.feedback,
 					isCorrect: result.isCorrectGuess
 				};
@@ -279,9 +304,10 @@
 					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-sm items-stretch [&>div]:min-h-[50px]">
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
 							<CardImage
+								card={guess.plate}
 								imageUrl={guess.cardImage}
 								alt="Card: {guess.name}"
-								class="max-w-full max-h-full object-contain rounded-sm"
+								class="h-full max-w-full object-contain rounded-sm"
 								lazy={true}
 							/>
 						</div>
@@ -341,9 +367,10 @@
 					<div class="grid grid-cols-[minmax(80px,auto)_minmax(100px,auto)_repeat(5,minmax(80px,1fr))] gap-px bg-gray-700 border border-gray-600 rounded-b-md overflow-hidden text-sm items-stretch [&>div]:min-h-[50px]">
 						<div class="h-52 p-1 bg-gray-900 flex items-center justify-center aspect-[0.717]">
 							<CardImage
+								card={loadingGuess.plate}
 								imageUrl={loadingGuess.cardImage}
 								alt="Card: {loadingGuess.name}"
-								class="max-w-full max-h-full object-contain rounded-sm opacity-75"
+								class="h-full max-w-full object-contain rounded-sm opacity-75"
 								lazy={true}
 								lowRes={true}
 							/>
@@ -407,12 +434,17 @@
 	<div class="my-8">
 		<div class="bg-gray-800 rounded-xl shadow-lg p-6 max-w-7xl mx-auto border border-gray-700 flex flex-col items-center">
 			{#if activeSuggestions.length > 0}
-				<h3 class="flex items-center justify-center gap-2 text-xl md:text-2xl font-bold mb-6 text-gold-400">
-					<TargetIcon size={22} /> Select a Card to Guess:
-					<span class="text-lg font-normal text-gray-400">({activeSuggestions.length} found)</span>
-				</h3>
+				<div class="mb-6 flex w-full flex-wrap items-end justify-between gap-4">
+					<h3 class="flex items-center gap-2 text-xl md:text-2xl font-bold text-gold-400">
+						<TargetIcon size={22} /> Select a Card to Guess:
+						<span class="text-lg font-normal text-gray-400">({activeSuggestions.length} found)</span>
+					</h3>
+					<div class="w-56">
+						<SortControl bind:sortDirection bind:sortValue options={SORT_OPTIONS} />
+					</div>
+				</div>
 				<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-					{#each activeSuggestions as suggestion (suggestion.cardCode)}
+					{#each sortedSuggestions as suggestion (suggestion.cardCode)}
 						<button
 							type="button"
 							onclick={(e) => {
@@ -420,17 +452,18 @@
 								e.stopPropagation();
 								selectSuggestion(suggestion);
 							}}
-							class="bg-gray-900 hover:bg-gray-700 p-3 rounded-xl shadow-md hover:shadow-xl focus-ring transition-all duration-300 hover:-translate-y-1 flex flex-col items-center text-center border border-gray-600 hover:border-gold-400 group relative {isSubmitting && loadingGuess?.cardImage === suggestion.image ? 'opacity-75 scale-95' : ''}"
+							class="bg-gray-900 hover:bg-gray-700 p-3 rounded-xl shadow-md hover:shadow-xl focus-ring transition-all duration-300 hover:-translate-y-1 flex flex-col items-center text-center border border-gray-600 hover:border-gold-400 group relative {isSubmitting && loadingGuess?.cardCode === suggestion.cardCode ? 'opacity-75 scale-95' : ''}"
 							title={suggestion.name}
 							disabled={isSubmitting || hasWon}
 						>
-							{#if isSubmitting && loadingGuess?.cardImage === suggestion.image}
+							{#if isSubmitting && loadingGuess?.cardCode === suggestion.cardCode}
 								<div class="absolute inset-0 bg-black/50 rounded-xl flex items-center justify-center z-10">
 									<BouncyLoader size={24} speed={0.8} />
 								</div>
 							{/if}
-							<div class="relative overflow-hidden rounded-lg mb-3 group-hover:scale-105 transition-transform duration-200">
+							<div class="relative mb-3 w-full overflow-hidden rounded-lg transition-transform duration-200 group-hover:scale-105">
 								<CardImage
+									card={suggestion.plate}
 									imageUrl={suggestion.image}
 									alt={suggestion.name}
 									class="w-full h-auto object-contain aspect-[0.717] transition-opacity duration-300"
@@ -438,12 +471,9 @@
 									lowRes={true}
 								/>
 							</div>
-							<p class="text-sm leading-tight font-bold text-white mb-1">{suggestion.name}</p>
-							<div class="flex items-center justify-center gap-1 text-xs text-gray-400">
-								<span class="bg-green-800 text-green-300 px-2 py-1 rounded-full font-semibold" title="Cardmarket value of this card">
-									{formatEuros(suggestion.price)}
-								</span>
-							</div>
+							<p class="text-sm leading-tight font-bold text-white">{suggestion.name}</p>
+							<p class="mt-0.5 text-xs text-gray-400">{suggestion.setName}</p>
+							<p class="mt-1 text-sm text-white" title="Cardmarket value of this card">{formatEuros(suggestion.price)}</p>
 						</button>
 					{/each}
 				</div>
