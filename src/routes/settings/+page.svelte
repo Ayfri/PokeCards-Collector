@@ -2,6 +2,7 @@
 	import type {ActionData, PageData} from './$types';
 	import Avatar from '#lib/components/auth/Avatar.svelte';
 	import ColorPicker from '#components/settings/ColorPicker.svelte';
+	import Checkbox from '#components/filters/Checkbox.svelte';
 	import PageTitle from '#lib/components/PageTitle.svelte';
 	import {enhance} from '$app/forms';
 	import {supabase} from '#lib/supabase.ts';
@@ -44,6 +45,9 @@
 
 	const user = $derived(data.user);
 	const profile = $derived(data.profile);
+	/** Follows the stored value, and the checkbox overrides it until the save's reload brings the stored one back. */
+	let isPublic = $derived(profile?.is_public ?? false);
+	let savingVisibility = $state(false);
 	const memberSince = $derived(profile?.created_at
 		? new Date(profile.created_at).toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'})
 		: null);
@@ -210,18 +214,31 @@
 					<div in:fade={{duration: 200}}>
 						<h2 class="mb-1 text-xl font-semibold text-gold-400">Privacy</h2>
 						<p class="mb-5 text-sm text-gray-400">Who can see your collection and wishlist.</p>
-						<p class="mb-4 text-sm text-gray-300">
-							Your profile is currently <span class={profile.is_public ? 'text-green-400' : 'text-gray-100'}>{profile.is_public ? 'public' : 'private'}</span>.
-							{profile.is_public ? 'Anyone can browse your collection and wishlist.' : 'Only you can see your collection and wishlist.'}
-							Visibility is toggled from your profile page.
-						</p>
-						<a
-							class="animated-hover-button relative inline-flex items-center gap-2 overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300"
-							href="/profile"
-							title="Open your profile page to change visibility"
+						<!-- Saved as soon as the box changes: the checkbox's `change` event bubbles to the form, which submits itself. -->
+						<form
+							action="?/updateVisibility"
+							class="flex flex-col gap-3 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4"
+							method="POST"
+							onchange={event => event.currentTarget.requestSubmit()}
+							use:enhance={() => {
+								savingVisibility = true;
+								return async ({update}) => {
+									await update({reset: false});
+									savingVisibility = false;
+								};
+							}}
 						>
-							<span class="relative z-10 flex items-center gap-2"><ShieldIcon size={16} /> Go to profile settings</span>
-						</a>
+							<Checkbox bind:checked={isPublic} disabled={savingVisibility} id="is-public" label="Public profile" />
+							<input name="is_public" type="hidden" value={isPublic} />
+							<p class="text-sm text-gray-400">
+								{isPublic ? 'Anyone can browse your collection and wishlist.' : 'Only you can see your collection and wishlist.'}
+							</p>
+							{#if form?.visibilityError}
+								<p class="text-sm text-red-400">{form.visibilityError}</p>
+							{:else if form?.visibilityMessage}
+								<p class="text-sm text-green-400">{form.visibilityMessage}</p>
+							{/if}
+						</form>
 					</div>
 				{:else}
 					<div in:fade={{duration: 200}}>

@@ -66,5 +66,21 @@ export const actions: Actions = {
 			message: 'Profile color updated successfully!',
 			profileColor
 		};
+	},
+
+	updateVisibility: async ({ request, locals: { supabase, user } }) => {
+		if (!user) {
+			throw redirect(303, '/');
+		}
+
+		const isPublic = (await request.formData()).get('is_public') === 'true';
+		const { error } = await supabase.from('profiles').update({ is_public: isPublic }).eq('auth_id', user.id);
+
+		if (error) {
+			console.error('Error updating profile visibility:', error);
+			return fail(500, { visibilityError: 'Server error. Could not update your profile visibility.' });
+		}
+
+		return { visibilityMessage: `Your profile is now ${isPublic ? 'public' : 'private'}.` };
 	}
 };
