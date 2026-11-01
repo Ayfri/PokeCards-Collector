@@ -6,6 +6,7 @@
 	import {untrack} from 'svelte';
 	import {NO_IMAGES} from '#lib/images.ts';
 	import {transitionNavigation} from '#helpers/view-transitions.ts';
+	import Footer from '#components/Footer.svelte';
 	import Header from '#components/Header.svelte';
 	import LoadingBar from '#lib/components/ui/LoadingBar.svelte';
 	import {BASE_URL} from '#src/constants.ts';
@@ -121,6 +122,10 @@
 	<main class="flex min-h-0 grow flex-col pt-24 lg:pt-32">
 		{@render children?.()}
 	</main>
+	<!-- The Guess the Price board fills exactly one viewport, so a footer under it would only add a scrollbar. -->
+	{#if page.route.id !== '/guess-the-price'}
+		<Footer />
+	{/if}
 	<div class="fixed top-[15%] [filter:grayscale(100%)_opacity(0.05)_contrast(3)_brightness(0.5)] -z-50 flex place-content-center h-lvh w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
 		<img src={pokestore} alt="Background" class="absolute w-1/2" />
 	</div>
