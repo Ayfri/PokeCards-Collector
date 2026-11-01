@@ -5,6 +5,7 @@
 	import Heart from '@lucide/svelte/icons/heart';
 	import Library from '@lucide/svelte/icons/library';
 	import Settings from '@lucide/svelte/icons/settings';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import AuthModal from './AuthModal.svelte';
 	import Avatar from './Avatar.svelte';
@@ -126,7 +127,7 @@
 				</div>
 				<div class="py-1">
 					<a
-						href={`/profile/${encodeURIComponent(profile.username)}`}
+						href={resolve('/profile/[user]', { user: encodeURIComponent(profile.username) })}
 						target="_self"
 						title="Your public profile and collection stats"
 						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
@@ -137,7 +138,7 @@
 						My profile
 					</a>
 					<a
-						href={`/collection/${encodeURIComponent(profile.username)}`}
+						href={resolve('/collection/[user]', { user: encodeURIComponent(profile.username) })}
 						target="_self"
 						title="Every card you own"
 						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
@@ -148,7 +149,7 @@
 						My collection
 					</a>
 					<a
-						href={`/wishlist/${encodeURIComponent(profile.username)}`}
+						href={resolve('/wishlist/[user]', { user: encodeURIComponent(profile.username) })}
 						target="_self"
 						title="Every card you are after"
 						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"

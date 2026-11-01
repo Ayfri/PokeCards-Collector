@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { refreshAll } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { formatEuros, timeAgo } from '#helpers/format.ts';
 	import { compareRarities } from '#helpers/rarity.ts';
 	import { toggleProfileVisibility } from '#lib/services/profiles.ts';
@@ -53,6 +54,7 @@
 
 	const { collectionStats, isOwnProfile, isPublic, targetProfile, totalCards } = $derived(data);
 	const username = $derived(targetProfile.username);
+	const collectionPath = $derived(resolve('/collection/[user]', { user: encodeURIComponent(username) }));
 	const possessive = $derived(isOwnProfile ? 'your' : `${username}'s`);
 	/** Tints the banner and accents with the color picked in the settings, gold when none is set. */
 	const accent = $derived(targetProfile.profile_color && /^#[0-9A-Fa-f]{6}$/.test(targetProfile.profile_color) ? targetProfile.profile_color : '#fbc54a');
@@ -178,7 +180,7 @@
 				<div class="flex flex-wrap gap-2 md:justify-end">
 					<a
 						class="btn-gold text-sm"
-						href={`/collection/${encodeURIComponent(username)}`}
+						href={collectionPath}
 						title={`Browse every card in ${possessive} collection`}
 					>
 						<BookOpen size={16} />
@@ -186,7 +188,7 @@
 					</a>
 					<a
 						class="focus-ring flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:border-gold-400 hover:text-gold-400"
-						href={`/wishlist/${encodeURIComponent(username)}`}
+						href={resolve('/wishlist/[user]', { user: encodeURIComponent(username) })}
 						title={`Browse every card on ${possessive} wishlist`}
 					>
 						<ListTodo size={16} />
@@ -267,7 +269,7 @@
 							<h2 class="flex items-center gap-2 text-xl font-semibold"><Gem class="text-gold-400" size={20} /> Most valuable cards</h2>
 							<a
 								class="group flex items-center gap-1 text-sm text-gold-400 hover:underline focus-ring"
-								href={`/collection/${encodeURIComponent(username)}?sortby=sort-price&sortorder=desc`}
+								href={`${collectionPath}?sortby=sort-price&sortorder=desc`}
 								title="The whole collection, priciest cards first"
 							>
 								See all <ChevronRight class="transition-transform duration-300 group-hover:translate-x-0.5" size={16} />
@@ -362,7 +364,7 @@
 						{@const complete = entry.count === entry.total}
 						<a
 							class="group flex items-center gap-4 rounded-xl border p-3 transition-colors {complete ? 'border-gold-400/60 bg-gold-400/10' : 'border-white/5 bg-white/3 hover:border-gold-400/50'}"
-							href={`/collection/${encodeURIComponent(username)}?set=${encodeURIComponent(entry.name)}`}
+							href={`${collectionPath}?set=${encodeURIComponent(entry.name)}`}
 							title={`View ${possessive} cards from ${entry.name}`}
 						>
 							<div class="flex h-10 w-16 shrink-0 items-center justify-center">

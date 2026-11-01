@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import type { PageData } from './$types';
 	import type { CardDleFeedback, CardDleGuessResponse } from '#lib/types.js';
 	import { formatEuros } from '#helpers/format.ts';
@@ -59,31 +59,29 @@
 	let searchInput = $state('');
 	let activeSuggestions = $state<CardSuggestion[]>([]);
 	/** The guessable cards, fetched from `/api/card-dle/suggestions` instead of being serialized into the document. */
-	let suggestions = $state<CardSuggestion[]>([]);
-	let historicGuesses = $state<HistoricGuess[]>([]);
+	let suggestions = $state.raw<CardSuggestion[]>([]);
+	/** Raw: guesses are only appended by replacing the array. */
+	let historicGuesses = $state.raw<HistoricGuess[]>([]);
 	let loadingGuess = $state<PendingGuess | null>(null);
 	let showRulesModal = $state(false);
 	let hasWon = $state(false);
 	let isSubmitting = $state(false);
 
+	/** Lowercased once when the list arrives, so a keystroke only runs `includes` over ~10k cards. */
+	const searchable = $derived(suggestions.map(card => ({ card, name: card.name.toLowerCase(), pokemonName: card.pokemonName.toLowerCase() })));
+
 	function displayMatchingCards(searchTerm?: string) {
 		const term = searchTerm || searchInput.trim();
+		const matches = new Map<string, CardSuggestion>();
 		if (term.length > 0) {
 			const searchTermLower = term.toLowerCase();
-			const filteredCards = suggestions.filter(card =>
-				card.pokemonName.toLowerCase().includes(searchTermLower) ||
-				card.name.toLowerCase().includes(searchTermLower)
-			);
-
-			const seenCardCodes = new Set();
-			activeSuggestions = filteredCards.filter(card => {
-				if (seenCardCodes.has(card.cardCode)) return false;
-				seenCardCodes.add(card.cardCode);
-				return true;
-			}).slice(0, 100);
-		} else {
-			activeSuggestions = [];
+			for (const entry of searchable) {
+				if (matches.size === 100) break;
+				if (matches.has(entry.card.cardCode)) continue;
+				if (entry.pokemonName.includes(searchTermLower) || entry.name.includes(searchTermLower)) matches.set(entry.card.cardCode, entry.card);
+			}
 		}
+		activeSuggestions = [...matches.values()];
 	}
 
 	onMount(async () => {
@@ -149,12 +147,8 @@
 				loadingGuess = null;
 				isSubmitting = false;
 
-				setTimeout(() => {
-					const latestGuess = document.querySelector('.historic-guess-item:last-child');
-					if (latestGuess) {
-						latestGuess.scrollIntoView({ behavior: 'smooth', block: 'center' });
-					}
-				}, 100);
+				await tick();
+				document.querySelector('.historic-guess-item:last-child')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 			} else {
 				console.error("API error:", result.error);
 				loadingGuess = null;

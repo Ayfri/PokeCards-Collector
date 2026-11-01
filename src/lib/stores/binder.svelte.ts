@@ -3,7 +3,8 @@
  * header search bar lives in the layout, above the page that owns the binder, and adds searched cards straight to it.
  */
 class BinderStorage {
-	cards = $state<string[]>([]);
+	/** Raw: the array is only ever replaced, never mutated in place. */
+	cards = $state.raw<string[]>([]);
 
 	/** Appends the codes that are not in the storage yet, keeping the order the user built. */
 	add(cardCodes: string[]) {

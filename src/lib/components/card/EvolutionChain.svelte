@@ -6,6 +6,7 @@
 	import { getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { loading } from '#stores/loading.svelte.ts';
 
@@ -29,7 +30,9 @@
 
 	function navigateToPokemon(cardCode: string) {
 		loading.navigation = true;
-		goto(`${catalogue.cardRoute}/${cardCode}/`);
+		goto(catalogue.routeCode
+			? resolve('/[catalogue=catalogue]-card/[cardCode]', { catalogue: catalogue.routeCode, cardCode })
+			: resolve('/card/[cardCode]', { cardCode }));
 	}
 
 	function buildEvolutionChain(card: FullCard) {

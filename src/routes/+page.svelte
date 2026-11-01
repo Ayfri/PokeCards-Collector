@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from "$app/paths";
 	import type { PageData } from "./$types";
 	import BinderPage from "#components/binder/BinderPage.svelte";
 	import CardImage from "#components/card/CardImage.svelte";
@@ -93,7 +94,7 @@
 					<div
 						class="card-tile overflow-hidden flex flex-col"
 					>
-						<a href="/card/{card.cardCode}" class="block">
+						<a href={resolve('/card/[cardCode]', { cardCode: card.cardCode })} class="block">
 							<div class="relative pt-[140%]">
 								<CardImage
 									imageUrl={card.image}

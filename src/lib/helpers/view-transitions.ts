@@ -1,4 +1,5 @@
 import type { OnNavigate } from '$app/navigation';
+import { prefersReducedMotion } from 'svelte/motion';
 
 /** The single `view-transition-name` a card carries while it flies between two places, styled in `app.css`. */
 const CARD_NAME = 'card';
@@ -23,7 +24,7 @@ function findCard(codes: (string | undefined)[]): HTMLElement | undefined {
 	}
 }
 
-const canTransition = () => !!document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canTransition = () => !!document.startViewTransition && !prefersReducedMotion.current;
 
 /**
  * Runs `update` inside a view transition, flying the first card of `codes` found on screen to the first one found afterwards.

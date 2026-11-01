@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import Avatar from '#components/auth/Avatar.svelte';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import LayersIcon from '@lucide/svelte/icons/layers';
@@ -30,7 +31,7 @@
 <a
 	class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl {hoverBorderClass} {hoverShadowClass} cursor-pointer focus-ring"
 	aria-label={`View profile of ${user.username}`}
-	href={`/profile/${encodeURIComponent(user.username)}`}
+	href={resolve('/profile/[user]', { user: encodeURIComponent(user.username) })}
 	title={`View profile of ${user.username}`}
 >
 	<div class="p-4 flex flex-col items-center text-center space-y-1.5">

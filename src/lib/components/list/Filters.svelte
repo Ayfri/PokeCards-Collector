@@ -25,10 +25,8 @@
 	}: Props = $props();
 
 	/** The text inputs debounce, so they hold their own value until the filter catches up, and follow URL seeding and resets. */
-	let searchNumero = $state(filters.numero);
-	let searchName = $state(filters.name);
-	$effect.pre(() => { searchNumero = filters.numero; });
-	$effect.pre(() => { searchName = filters.name; });
+	let searchNumero = $derived(filters.numero);
+	let searchName = $derived(filters.name);
 
 	/**
 	 * Writes one filter param to the URL and navigates without a reload, keeping the focused control focused.

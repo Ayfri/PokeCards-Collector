@@ -52,7 +52,7 @@
 
 	let clientWidth: number = $state(0);
 	let showFilters = $state(false);
-	let searchName = $state("");
+	let searchName = $derived(filters.name);
 	/** Cards above the fold skip lazy loading so the LCP candidate is requested with the document, not after layout. */
 	const eagerCards = 12;
 
@@ -63,7 +63,6 @@
 	onMount(() => {
 		filters.clearUnknown(sets, artists);
 		filters.applyFromUrl(page.url, sets);
-		searchName = filters.name;
 	});
 
 	function setFilterName(value: string) {

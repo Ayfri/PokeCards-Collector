@@ -28,14 +28,15 @@
 	const sets = $derived(data.sets);
 
 	/** Fetched from `/api/binder` rather than sent in the document, so the page paints before the catalogue arrives. */
-	let catalogue = $state<BinderCatalogueCard[]>([]);
+	let catalogue = $state.raw<BinderCatalogueCard[]>([]);
 	const cardsByCode = $derived(new Map(catalogue.map(card => [card.cardCode, card])));
 	const loggedIn = $derived(Boolean(data.profile));
 	const catalogueReady = $derived(catalogue.length > 0);
 
 	let rows = $state(3);
 	let columns = $state(3);
-	let pages = $state<Array<Array<BinderCards | null>>>([[]]);
+	/** Raw: every write replaces the page arrays (`updatePage` mutates a copy), none writes into one in place. */
+	let pages = $state.raw<Array<Array<BinderCards | null>>>([[]]);
 	let currentPage = $state(0);
 	let spread = $state(true);
 

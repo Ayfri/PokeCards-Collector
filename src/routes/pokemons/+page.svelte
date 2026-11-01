@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import type { PokemonListEntry } from './+page.server';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { pascalCase } from '#helpers/format.ts';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
@@ -43,7 +44,7 @@
 	function navigateToPokemonCard(pokemon: PokemonListEntry) {
 		if (!pokemon.cardCode) return;
 		loading.navigation = true;
-		goto(`/card/${pokemon.cardCode}`);
+		goto(resolve('/card/[cardCode]', { cardCode: pokemon.cardCode }));
 	}
 
 	function smoothScroll(targetPosition: number, duration: number) {

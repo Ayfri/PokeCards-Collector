@@ -37,7 +37,6 @@
 	type TabId = (typeof TABS)[number]['id'];
 
 	let activeTab = $state<TabId>('account');
-	let profileColor = $state(DEFAULT_PROFILE_COLOR);
 	let saving = $state(false);
 	let resetPasswordLoading = $state(false);
 	let resetPasswordMessage = $state('');
@@ -53,9 +52,9 @@
 		: null);
 
 	/** The stored color overrides the local one whenever the server sends a fresh profile, so a save shows without a reload. */
-	$effect(() => {
+	let profileColor = $derived.by(() => {
 		const stored = profile?.profile_color;
-		profileColor = typeof stored === 'string' && /^#[0-9A-Fa-f]{6}$/.test(stored) ? stored : DEFAULT_PROFILE_COLOR;
+		return typeof stored === 'string' && /^#[0-9A-Fa-f]{6}$/.test(stored) ? stored : DEFAULT_PROFILE_COLOR;
 	});
 
 	async function handlePasswordReset() {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import AlertTriangleIcon from '@lucide/svelte/icons/triangle-alert';
 	import CrownIcon from '@lucide/svelte/icons/crown';
 	import SearchIcon from '@lucide/svelte/icons/search';
@@ -79,7 +80,7 @@
 	}
 
 	function viewProfile(username: string) {
-		goto(`/profile/${encodeURIComponent(username)}`);
+		goto(resolve('/profile/[user]', { user: encodeURIComponent(username) }));
 	}
 
 	onMount(() => {

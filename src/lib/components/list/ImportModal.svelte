@@ -34,7 +34,7 @@
 	let fault = $state('');
 	let fileName = $state('');
 	let imported = $state(false);
-	let rows = $state<ReturnType<typeof toImportRows>>([]);
+	let rows = $state.raw<ReturnType<typeof toImportRows>>([]);
 	let needsSet = $state(false);
 	let setOverride = $state('');
 	let summary = $state<Summary | null>(null);
