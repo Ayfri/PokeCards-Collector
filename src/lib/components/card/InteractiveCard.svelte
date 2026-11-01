@@ -71,6 +71,7 @@
 				{card}
 				imageUrl={card.image}
 				lowRes={false}
+				set={currentSet}
 				sizes="384px"
 				class="image size-full rounded-xl"
 				lazy={false}

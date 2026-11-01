@@ -2,7 +2,7 @@
 	import { processCardImage } from '#helpers/card-images.ts';
 	import CardPlate from '#components/card/CardPlate.svelte';
 	import { NO_IMAGES } from '#lib/images.ts';
-	import type { FullCard } from '#lib/types.js';
+	import type { FullCard, Set } from '#lib/types.js';
 	import { untrack } from 'svelte';
 
 	interface Props {
@@ -20,6 +20,8 @@
 		onerror?: () => void;
 		/** Marks the image as above the fold: eager + `fetchpriority="high"`, for the LCP candidate. */
 		priority?: boolean;
+		/** The card's set when the caller already holds it: the plate drawn in place of a missing scan shows its symbol and the card's `n/total` number. */
+		set?: Pick<Set, 'name' | 'printedTotal' | 'symbol'> | undefined;
 		/** `sizes` value; defaults to the pixel width when one is given. */
 		sizes?: string | undefined;
 		style?: string | undefined;
@@ -38,6 +40,7 @@
 		lowRes = false,
 		onerror,
 		priority = false,
+		set = undefined,
 		sizes = undefined,
 		style = undefined,
 		types = undefined,
@@ -93,7 +96,7 @@
 
 {#if error || !imageUrl}
 	<!-- No art, or a URL TCGdex lists before the scan is uploaded (404): the plate stays still instead of pretending to load. -->
-	<CardPlate {alt} {card} class="rounded-lg {classNames}" style={boxStyle} {types} />
+	<CardPlate {alt} {card} class="rounded-lg {classNames}" {set} style={boxStyle} {types} />
 {:else}
 	<img
 		bind:this={img}

@@ -202,6 +202,7 @@
 							<CardImage
 								imageUrl={card.image}
 								{card}
+								set={cardSet}
 								types={card.types}
 								alt={cardPokemon ? cardPokemon.name : card.name}
 								class="card-image"

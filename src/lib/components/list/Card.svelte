@@ -206,6 +206,7 @@
 			style="width: {width}px; height: {height}px; max-width: 100%;"
 			imageUrl={card.image}
 			{card}
+			set={set ?? undefined}
 			{types}
 			{lowRes}
 			lazy={!eager}
