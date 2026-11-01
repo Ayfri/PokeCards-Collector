@@ -147,14 +147,14 @@
 	}
 </script>
 
-<div class="bg-gray-800/40 border-gold-400 border-2 rounded-2xl p-6 w-full">
-	<div class="flex items-center justify-between mb-4">
+<div class="bg-gray-800/40 border-gold-400 border-2 rounded-2xl p-4 md:p-6 w-full">
+	<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4">
 		<h2 class="text-xl font-bold text-gold-400">
 			All {titleName} Cards
 			<span class="font-medium text-lg ml-1">({sortedCards.length})</span>
 		</h2>
 
-		<div class="flex items-center gap-4">
+		<div class="flex items-center gap-4 max-sm:w-full">
 			<SortControl
 				bind:sortDirection={relatedSort.direction}
 				bind:sortValue={relatedSort.value}

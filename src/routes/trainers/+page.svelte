@@ -57,11 +57,11 @@
 <svelte:window bind:scrollY />
 
 <div class="container mx-auto px-4 py-8 text-white">
-	<div class="flex justify-between items-center mb-4">
+	<div class="flex flex-wrap justify-between items-center gap-x-4 gap-y-6 mb-4">
 		<div class="shrink-0">
 			<PageTitle title="Trainers & Energy" />
 		</div>
-		<div class="flex items-end gap-4">
+		<div class="flex items-end gap-4 w-full md:w-auto">
 			<TextInput
 				id="trainer-search"
 				label="Search Trainer and Energy cards"

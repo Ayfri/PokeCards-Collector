@@ -163,7 +163,7 @@
 								{#each link.children as child (child.name)}
 									<a
 										href={child.href}
-										class="flex items-center gap-2 px-4 py-2 text-gray-300 hover:text-gold-400 hover:bg-gray-700 transition-colors duration-200"
+										class="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-gray-300 hover:text-gold-400 hover:bg-gray-700 transition-colors duration-200"
 										title={child.description}
 									>
 										{#if child.flag}

@@ -41,7 +41,7 @@
 		lowRes
 		set={group.set}
 	/>
-	<span class="text-sm md:text-base font-semibold group-hover:text-gold-400 transition-colors duration-200">{group.name}</span>
+	<span class="flex grow items-center text-sm md:text-base font-semibold group-hover:text-gold-400 transition-colors duration-200">{group.name}</span>
 	<span class="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-1" title="Prints of this card">
 		<LayersIcon size={12} />
 		{group.cardCount} card{group.cardCount === 1 ? '' : 's'}
