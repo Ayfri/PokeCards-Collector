@@ -66,7 +66,7 @@
 			</a>
 			<p>Track, price and collect every Pokémon TCG card.</p>
 			<a
-				class="my-1 inline-flex items-center gap-2 rounded-full bg-gold-400 px-4 py-1.5 font-semibold text-black transition-colors duration-200 hover:bg-gold-300"
+				class="focus-ring my-1 inline-flex items-center gap-2 rounded-full bg-gold-400 px-4 py-1.5 font-semibold text-black transition-colors duration-300 hover:bg-gold-300"
 				href="/random"
 			>
 				<ShuffleIcon aria-hidden="true" size={16} />

@@ -22,33 +22,21 @@
 
 	{#if form?.success}
 		<p class="mb-5 text-sm text-gray-400">Your new password is active on every device.</p>
-		<p class="rounded-lg border border-green-500/40 bg-green-500/10 p-4 text-sm text-green-400">{form.message}</p>
-		<a
-			class="animated-hover-button relative mt-5 inline-flex items-center gap-2 overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300"
-			href="/"
-			title="Back to the card catalogue"
-		>
-			<span class="relative z-10">Back to the catalogue</span>
-		</a>
+		<p class="alert-success">{form.message}</p>
+		<a class="btn-outline-gold mt-5" href="/" title="Back to the card catalogue">Back to the catalogue</a>
 	{:else if !data.recovered}
 		<p class="mb-5 text-sm text-gray-400">This page opens from a reset email.</p>
-		<p class="rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-400">
+		<p class="alert-error">
 			{data.authError === 'expired_link'
 				? 'That reset link has expired or was already used. Reset links are valid once, and only for a short while.'
 				: 'This page needs a valid reset link. Ask for a new one from the login form.'}
 		</p>
-		<a
-			class="animated-hover-button relative mt-5 inline-flex items-center gap-2 overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300"
-			href="/"
-			title="Back to the card catalogue"
-		>
-			<span class="relative z-10">Back to the catalogue</span>
-		</a>
+		<a class="btn-outline-gold mt-5" href="/" title="Back to the card catalogue">Back to the catalogue</a>
 	{:else}
 		<p class="mb-5 text-sm text-gray-400">Pick the password you will sign in with from now on.</p>
 
 		{#if form?.message}
-			<p class="mb-4 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-400">{form.message}</p>
+			<p class="alert-error mb-4">{form.message}</p>
 		{/if}
 
 		<form
@@ -66,20 +54,18 @@
 			<PasswordField autocomplete="new-password" id="confirm-password" label="Confirm new password" name="confirmPassword" placeholder="••••••••" bind:value={confirmation} />
 
 			<button
-				class="animated-hover-button relative flex w-full items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+				class="btn-outline-gold w-full disabled:cursor-not-allowed disabled:opacity-50"
 				disabled={submitting}
 				title="Save this password"
 				type="submit"
 			>
-				<span class="relative z-10 flex items-center gap-2">
-					{#if submitting}
-						<BouncyLoader gradientColorEnd="var(--color-gold-400)" gradientColorStart="var(--color-gold-400)" size={20} />
-						Updating...
-					{:else}
-						<LockIcon size={16} />
-						Update password
-					{/if}
-				</span>
+				{#if submitting}
+					<BouncyLoader gradientColorEnd="var(--color-gold-400)" gradientColorStart="var(--color-gold-400)" size={20} />
+					Updating...
+				{:else}
+					<LockIcon size={16} />
+					Update password
+				{/if}
 			</button>
 		</form>
 	{/if}

@@ -108,13 +108,13 @@
 			/>
 		</div>
 	</div>
-	<div class="w-full max-w-200 mx-auto my-6 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
+	<div class="gold-rule my-6"></div>
 
 	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8 align-items-start align-content-start">
 		{#each sortedPokemons as pokemon (pokemon.id)}
 			<button
 				onclick={() => navigateToPokemonCard(pokemon)}
-				class="group bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-hidden focus:ring-2 focus:ring-gold-400/75 p-3 flex flex-col items-center text-center border border-transparent hover:border-gold-400 [content-visibility:auto] [contain-intrinsic-size:auto_11rem]"
+				class="card-tile focus-ring group p-3 flex flex-col items-center text-center [content-visibility:auto] [contain-intrinsic-size:auto_11rem]"
 				title={`View the most valuable ${pascalCase(pokemon.name)} card`}
 			>
 				<div class="relative w-24 h-24 md:w-28 md:h-28 mb-2">

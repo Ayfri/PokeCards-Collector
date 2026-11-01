@@ -28,7 +28,7 @@
 </script>
 
 <a
-	class="group bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-hidden focus:ring-2 focus:ring-gold-400/75 p-3 flex flex-col items-center text-center border border-transparent hover:border-gold-400 [content-visibility:auto] [contain-intrinsic-size:auto_20rem]"
+	class="card-tile focus-ring group p-3 flex flex-col items-center text-center [content-visibility:auto] [contain-intrinsic-size:auto_20rem]"
 	href={resolve('/card/[cardCode]', { cardCode: group.cardCode })}
 	onclick={() => (loading.navigation = true)}
 	title={`View the ${group.name} prints`}

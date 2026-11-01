@@ -352,7 +352,7 @@
 			<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{pages.length} page{pages.length > 1 ? 's' : ''} of {slotsPerPage}</span>
 			<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{filledSlots}/{totalSlots} slots filled</span>
 			<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{binderStorage.cards.length - placedItems.size} left in storage</span>
-			{#if exporting}<span class="rounded-full bg-gold-500 px-3 py-1 text-black">Rendering image...</span>{/if}
+			{#if exporting}<span class="rounded-full bg-gold-400 px-3 py-1 text-black">Rendering image...</span>{/if}
 		</div>
 	</div>
 
@@ -425,7 +425,7 @@
 
 	{#snippet footer()}
 		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleSetModal}>Cancel</Button>
-		<Button class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600 disabled:opacity-50" disabled={!selectedSet || !catalogueReady} onClick={addSetToStorage}>{catalogueReady ? 'Add set' : 'Loading cards...'}</Button>
+		<button class="btn-gold text-sm" disabled={!selectedSet || !catalogueReady} onclick={addSetToStorage} type="button">{catalogueReady ? 'Add set' : 'Loading cards...'}</button>
 	{/snippet}
 </Modal>
 
@@ -446,13 +446,14 @@
 
 	{#snippet footer()}
 		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleMyCardsModal}>Cancel</Button>
-		<Button
-			class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600 disabled:opacity-50"
+		<button
+			class="btn-gold text-sm"
 			disabled={!loggedIn || (!includeCollection && !includeWishlist)}
-			onClick={addMyCardsToStorage}
+			onclick={addMyCardsToStorage}
+			type="button"
 		>
 			Add to storage
-		</Button>
+		</button>
 	{/snippet}
 </Modal>
 
@@ -475,7 +476,7 @@
 	</div>
 	{#snippet footer()}
 		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleUrlModal}>Cancel</Button>
-		<Button class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600 disabled:opacity-50" disabled={!cardUrl && !multipleCardUrls} onClick={addCardFromUrl}>Add card(s)</Button>
+		<button class="btn-gold text-sm" disabled={!cardUrl && !multipleCardUrls} onclick={addCardFromUrl} type="button">Add card(s)</button>
 	{/snippet}
 </Modal>
 
@@ -490,7 +491,7 @@
 	{#snippet footer()}
 		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleExportModal}>Cancel</Button>
 		<Button class="px-4 py-2 text-sm" onClick={() => exportBinder('page')}>Current page</Button>
-		<Button class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600" onClick={() => exportBinder('all')}>All {pages.length} pages</Button>
+		<button class="btn-gold text-sm" onclick={() => exportBinder('all')} type="button">All {pages.length} pages</button>
 	{/snippet}
 </Modal>
 
@@ -499,6 +500,6 @@
 
 	{#snippet footer()}
 		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleClearStorageModal}>Cancel</Button>
-		<Button class="bg-gold-500 px-4 py-2 text-sm text-black hover:bg-gold-600" onClick={clearAllStoredCards}>Clear all cards</Button>
+		<button class="btn-gold text-sm" onclick={clearAllStoredCards} type="button">Clear all cards</button>
 	{/snippet}
 </Modal>

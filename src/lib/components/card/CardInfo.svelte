@@ -86,7 +86,7 @@
 				{#if collectionCount > 0}
 					<button
 						aria-label="Remove one copy from collection"
-						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+						class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 						onclick={handleRemoveCard}
 						disabled={collectionCount === 0}
 						title="Remove one copy from collection"
@@ -104,7 +104,7 @@
 				{/if}
 				<button
 					aria-label="Add one copy to collection"
-					class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 					onclick={handleAddCard}
 					disabled={collectionCount >= MAX_CARD_QUANTITY}
 					title={collectionCount >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
@@ -119,7 +119,7 @@
 			<div class="flex items-center justify-center rounded-full bg-gray-700/60 p-1 border border-gray-600 shadow-md">
 				<button
 					aria-label={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-					class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 					onclick={toggleWishlist}
 					title={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
 					in:fly={{ y: -5, duration: 200, delay: 250 }}

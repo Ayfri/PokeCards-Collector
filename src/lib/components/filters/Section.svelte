@@ -22,7 +22,7 @@
 		aria-controls={panelId}
 		title={isOpen ? `Collapse ${title}` : `Expand ${title}`}
 	>
-		<h3 class="text-[0.9rem] font-semibold m-0 text-gold-400">{title}</h3>
+		<h3 class="text-sm font-semibold m-0 text-gold-400">{title}</h3>
 		<div class={['transition-transform duration-300', isOpen && 'rotate-180']}>
 			<ChevronDown size={16} />
 		</div>

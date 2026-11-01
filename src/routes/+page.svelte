@@ -47,7 +47,7 @@
 		{ count: data.stats.artists, duration: 2.5, href: '/artists', icon: PaintbrushIcon, label: 'Artists', title: 'Browse every illustrator' },
 	]);
 
-	const FEATURE_CARD_CLASS = 'bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1';
+	const FEATURE_CARD_CLASS = 'card-tile p-6';
 
 	/** The server sends one flat list for the two-page spread, page 2 starting after the 9 slots of page 1. */
 	const binderPages = $derived([data.binderPreview.slice(0, 9), data.binderPreview.slice(9)]);
@@ -69,7 +69,7 @@
 		>
 			<div class="flex justify-between items-center mb-8">
 				<h2
-					class="text-2xl font-bold text-gold-400 flex items-center gap-2"
+					class="text-xl md:text-2xl font-bold text-gold-400 flex items-center gap-2"
 				>
 					{#if !NO_IMAGES}
 						<Tag size={24} />
@@ -83,7 +83,7 @@
 					View all cards
 					<ArrowRight
 						size={16}
-						class="group-hover:translate-x-1 transition-all duration-400"
+						class="group-hover:translate-x-1 transition-all duration-300"
 					/>
 				</a>
 			</div>
@@ -91,7 +91,7 @@
 			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
 				{#each cards as card, i (card.cardCode)}
 					<div
-						class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2 border border-transparent hover:border-gold-400 flex flex-col"
+						class="card-tile overflow-hidden flex flex-col"
 					>
 						<a href="/card/{card.cardCode}" class="block">
 							<div class="relative pt-[140%]">
@@ -142,7 +142,7 @@
 				{#each tiles as tile (tile.href)}
 					<a
 						href={tile.href}
-						class="bg-gray-800 p-4 rounded-lg shadow-lg text-center transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25 overflow-hidden"
+						class="card-tile p-4 text-center overflow-hidden"
 						title={tile.title}
 					>
 						{#if !NO_IMAGES}
@@ -169,12 +169,12 @@
 			<div class="flex flex-wrap gap-4 mb-10 md:mb-0">
 				<a
 					href="/cards-list"
-					class="group px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-400 flex items-center gap-2 hover:bg-gold-300"
+					class="btn-gold group"
 				>
 					Explore Cards
 					<ArrowRight
 						size={18}
-						class="group-hover:translate-x-1 transition-all duration-400"
+						class="group-hover:translate-x-1 transition-all duration-300"
 					/>
 				</a>
 			</div>
@@ -216,7 +216,7 @@
 	</section>
 
 	<div
-		class="w-full max-w-200 mx-auto my-16 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
+		class="gold-rule my-16"
 	></div>
 
 	{#if data.latestSet}
@@ -231,7 +231,7 @@
 					href="/cards-list?set={encodeURIComponent(data.latestSet.name)}"
 					class="text-gold-400 hover:text-gold-300 transition-colors"
 				>
-					<h2 class="text-2xl font-bold flex items-center gap-2">
+					<h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
 						{#if !NO_IMAGES}
 							<GiftIcon size={24} />
 						{/if}
@@ -245,7 +245,7 @@
 					View all cards in this set
 					<ArrowRight
 						size={16}
-						class="group-hover:translate-x-1 transition-all duration-400"
+						class="group-hover:translate-x-1 transition-all duration-300"
 					/>
 				</a>
 			</div>
@@ -253,7 +253,7 @@
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
 				<a
 					href="/cards-list?set={encodeURIComponent(data.latestSet.name)}"
-					class="block bg-gray-800 p-6 rounded-lg shadow-lg transition-all duration-300 border border-transparent hover:border-gold-400 hover:-translate-y-1.25"
+					class="card-tile block p-6"
 				>
 					<div class="flex flex-col sm:flex-row gap-6 items-center">
 						<SetLogo class="w-32 h-32 object-contain" set={data.latestSet}>
@@ -356,7 +356,7 @@
 	{/if}
 
 	<div
-		class="w-full max-w-50 mx-auto my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
+		class="gold-rule my-12"
 	></div>
 
 	{#if data.latestSet}
@@ -365,7 +365,7 @@
 	{@render valuableCards('Most Valuable Cards', '/cards-list?mostexpensive=true&sortby=sort-price', data.mostExpensiveCards)}
 
 	<div
-		class="w-full max-w-200 mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
+		class="gold-rule my-20"
 	></div>
 
 	<section
@@ -373,7 +373,7 @@
 		style="--intro-delay: 400ms"
 	>
 		<h2
-			class="text-2xl md:text-3xl font-bold text-center text-gold-400 mb-12"
+			class="text-xl md:text-2xl font-bold text-center text-gold-400 mb-12"
 		>
 			Discover PokéCards-Collector Features
 		</h2>
@@ -404,7 +404,7 @@
 				{:else}
 					<button
 						onclick={() => openAuthModal('login')}
-						class="text-gold-400 hover:underline mt-4 inline-block focus:outline-hidden"
+						class="focus-ring text-gold-400 hover:underline mt-4 inline-block"
 						title="Sign in to track your collection"
 						type="button"
 					>
@@ -433,7 +433,7 @@
 				{:else}
 					<button
 						onclick={() => openAuthModal('register')}
-						class="text-gold-400 hover:underline mt-4 inline-block focus:outline-hidden"
+						class="focus-ring text-gold-400 hover:underline mt-4 inline-block"
 						title="Create an account to build a wishlist"
 						type="button"
 					>
@@ -472,7 +472,7 @@
 			<div class="flex flex-col lg:flex-row items-center gap-8">
 				<div class="flex-1">
 					<h2
-						class="text-2xl md:text-3xl font-bold text-gold-400 mb-4"
+						class="text-xl md:text-2xl font-bold text-gold-400 mb-4"
 					>
 						{#if !NO_IMAGES}
 							<div class="flex items-center gap-2">
@@ -511,7 +511,7 @@
 					</ul>
 					<a
 						href="/binder"
-						class="px-6 py-3 w-fit bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 hover:bg-gold-300 mt-2 flex items-center gap-2"
+						class="btn-gold mt-2 w-fit"
 						title="Open the Binder Builder"
 					>
 						Try Binder Builder
@@ -544,7 +544,7 @@
 	</section>
 
 	<div
-		class="w-full max-w-50 mx-auto my-20 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"
+		class="gold-rule my-20"
 	></div>
 
 	<section
@@ -552,7 +552,7 @@
 		style="--intro-delay: 500ms"
 	>
 		{#if data.profile}
-			<h2 class="text-2xl md:text-3xl font-bold text-gold-400 mb-8">
+			<h2 class="text-xl md:text-2xl font-bold text-gold-400 mb-8">
 				Welcome back, {data.profile.username}!
 			</h2>
 			<p class="text-gray-300 text-lg mb-10">
@@ -561,7 +561,7 @@
 			<div class="flex flex-wrap justify-center gap-4">
 				<a
 					href="/collection"
-					class="px-6 py-3 bg-gold-400 hover:bg-gold-500 text-black font-bold rounded-lg transition-colors flex items-center gap-2"
+					class="btn-gold"
 				>
 					Go to Collection
 					{#if !NO_IMAGES}
@@ -570,7 +570,7 @@
 				</a>
 				<a
 					href="/wishlist"
-					class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2"
+					class="btn-secondary"
 				>
 					View Wishlist
 					{#if !NO_IMAGES}
@@ -579,7 +579,7 @@
 				</a>
 			</div>
 		{:else}
-			<h2 class="text-2xl md:text-3xl font-bold text-gold-400 mb-8">
+			<h2 class="text-xl md:text-2xl font-bold text-gold-400 mb-8">
 				Join PokéCards-Collector Today!
 			</h2>
 			<p class="text-gray-300 text-lg mb-10">
@@ -589,7 +589,7 @@
 			<div class="flex flex-wrap justify-center gap-4">
 				<button
 					onclick={() => openAuthModal('login')}
-					class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:bg-gold-300 focus:outline-hidden"
+					class="btn-gold"
 					title="Sign in to your account"
 					type="button"
 				>
@@ -598,7 +598,7 @@
 				</button>
 				<button
 					onclick={() => openAuthModal('register')}
-					class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg transition-colors flex items-center gap-2 focus:outline-hidden"
+					class="btn-secondary"
 					title="Create a new account"
 					type="button"
 				>

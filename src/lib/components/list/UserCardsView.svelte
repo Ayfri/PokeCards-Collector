@@ -82,7 +82,7 @@
 			{/if}
 		</div>
 	{:catch error}
-		<PageNotice icon={ShieldAlert} iconClass="text-red-500" title={`Error Loading ${copy.label}`}>
+		<PageNotice icon={ShieldAlert} iconClass="text-red-400" title={`Error Loading ${copy.label}`}>
 			There was an error loading the {kind} data: {error.message}
 		</PageNotice>
 	{/await}

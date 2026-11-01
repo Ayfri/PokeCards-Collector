@@ -150,7 +150,7 @@
 
 <div class="bg-gray-800/40 border-gold-400 border-2 rounded-2xl p-4 md:p-6 w-full">
 	<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4">
-		<h2 class="text-xl font-bold text-gold-400">
+		<h2 class="text-xl md:text-2xl font-bold text-gold-400">
 			All {titleName} Cards
 			<span class="font-medium text-lg ml-1">({sortedCards.length})</span>
 		</h2>
@@ -188,7 +188,7 @@
 				{@const cardSet = setsById.get(card.setId)}
 				{@const price = cardPrice(prices[card.cardCode])}
 				<div
-					class="relative flex flex-col items-center transition-transform duration-200 hover:-translate-y-2.5"
+					class="relative flex flex-col items-center transition-transform duration-300 hover:-translate-y-1"
 					transition:fade={{ duration: 200 }}
 				>
 					<!-- Stretched button: covers the whole tile so the nested controls stay valid HTML. -->
@@ -221,7 +221,7 @@
 								{#if collection.count(card.cardCode) > 0}
 									<button
 										aria-label="Remove one copy from collection"
-										class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+										class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 										onclick={(e) => handleRemoveCard(card.cardCode, e)}
 										disabled={collection.count(card.cardCode) === 0}
 										title="Remove one copy from collection"
@@ -237,7 +237,7 @@
 								{/if}
 								<button
 									aria-label="Add one copy to collection"
-									class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+									class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 									onclick={(e) => handleAddCard(card.cardCode, e)}
 									disabled={collection.count(card.cardCode) >= MAX_CARD_QUANTITY}
 									title={collection.count(card.cardCode) >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
@@ -247,7 +247,7 @@
 								<div class="w-px h-5 bg-white/30 mx-1"></div>
 								<button
 									aria-label={wishlist.has(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
-									class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+									class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 									onclick={(e) => toggleWishlist(card.cardCode, e)}
 									title={wishlist.has(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
 								>

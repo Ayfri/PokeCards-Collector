@@ -177,7 +177,7 @@
 			{#if isPublic || isOwnProfile}
 				<div class="flex flex-wrap gap-2 md:justify-end">
 					<a
-						class="flex items-center gap-2 rounded-lg bg-gold-400 px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-gold-300"
+						class="btn-gold text-sm"
 						href={`/collection/${encodeURIComponent(username)}`}
 						title={`Browse every card in ${possessive} collection`}
 					>
@@ -185,7 +185,7 @@
 						Collection
 					</a>
 					<a
-						class="flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold transition-colors hover:border-gold-400 hover:text-gold-400"
+						class="focus-ring flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:border-gold-400 hover:text-gold-400"
 						href={`/wishlist/${encodeURIComponent(username)}`}
 						title={`Browse every card on ${possessive} wishlist`}
 					>
@@ -195,7 +195,7 @@
 					{#if isOwnProfile}
 						<button
 							type="button"
-							class="flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold transition-colors hover:border-gold-400 hover:text-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
+							class="focus-ring flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:border-gold-400 hover:text-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
 							disabled={isLoading}
 							onclick={handleToggleVisibility}
 							title={isPublic ? 'Hide your collection and wishlist from other users' : 'Let other users browse your collection and wishlist'}
@@ -211,7 +211,7 @@
 						</button>
 						<a
 							aria-label="Settings"
-							class="flex items-center rounded-lg border border-white/15 bg-white/5 px-3 py-2 transition-colors hover:border-gold-400 hover:text-gold-400"
+							class="focus-ring flex items-center rounded-lg border border-white/15 bg-white/5 px-3 py-2 transition-colors duration-300 hover:border-gold-400 hover:text-gold-400"
 							href="/settings"
 							title="Edit your profile color, email and password"
 						>
@@ -224,10 +224,10 @@
 	</section>
 
 	{#if successMessage}
-		<p class="rounded-xl border border-green-500/40 bg-green-500/10 p-4 text-green-300" in:fly={{ y: -20, duration: 300 }}>{successMessage}</p>
+		<p class="alert-success" in:fly={{ y: -20, duration: 300 }}>{successMessage}</p>
 	{/if}
 	{#if errorMessage}
-		<p class="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-red-300" in:fly={{ y: -20, duration: 300 }}>{errorMessage}</p>
+		<p class="alert-error" in:fly={{ y: -20, duration: 300 }}>{errorMessage}</p>
 	{/if}
 
 	{#if !isPublic && !isOwnProfile}
@@ -235,7 +235,7 @@
 			<div class="rounded-full bg-white/5 p-4 text-gold-400"><Lock size={28} /></div>
 			<h2 class="text-2xl font-bold">This collection is private</h2>
 			<p class="max-w-md text-gray-400">{username} keeps their collection and wishlist to themselves.</p>
-			<a class="mt-2 flex items-center gap-2 rounded-lg border border-gold-400 px-4 py-2 text-sm font-semibold text-gold-400 transition-colors hover:bg-gold-400 hover:text-black" href="/">
+			<a class="btn-outline-gold mt-2" href="/">
 				<House size={16} />
 				Return to Home
 			</a>

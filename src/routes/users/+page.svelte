@@ -96,7 +96,7 @@
 <div class="container mx-auto px-4 py-6 space-y-6 md:space-y-10 text-white">
 	<div class="flex flex-col items-center text-center space-y-2">
 		<PageTitle title="Users & Collectors" />
-		<p class="text-sm md:text-base text-gray-400 max-w-2xl mx-auto text-balance">
+		<p class="text-sm md:text-base text-gray-300 max-w-2xl mx-auto text-balance">
 			Discover fellow Pokémon TCG enthusiasts! See who's leading the pack, or search for specific users to view their public profiles and stats.
 		</p>
 	</div>
@@ -118,7 +118,7 @@
 					placeholder="Search public users by username..."
 					bind:value={searchQuery}
 					debounceFunction={handleSearchInput}
-					class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:outline-hidden text-white shadow-xs placeholder-gray-500 h-auto!"
+					class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-gold-400 text-white shadow-xs placeholder-gray-500 h-auto!"
 					aria-label="Search users by username"
 				/>
 			</div>
@@ -131,9 +131,9 @@
 			<span class="ml-3 text-white">Searching users...</span>
 		</div>
 	{:else if searchErrorMessage}
-		<div class="text-center py-6 bg-gray-800/70 backdrop-blur-xs rounded-lg border border-red-600 max-w-md mx-auto shadow-xl">
+		<div class="alert-error text-center max-w-md mx-auto">
 			<AlertTriangleIcon size={36} class="mx-auto mb-2 text-red-400" />
-			<h3 class="text-lg font-medium text-white mb-1">Search Error</h3>
+			<h3 class="text-xl font-semibold text-white mb-1">Search Error</h3>
 			<p class="text-gray-300 mb-3 text-sm px-4">{searchErrorMessage}</p>
 			<button
 				class="px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-400 transition-colors text-sm font-medium shadow-md hover:shadow-lg"
@@ -162,7 +162,7 @@
 		{:else if searchQuery.trim() !== ''}
 			<div class="text-center py-8 bg-gray-800/70 backdrop-blur-xs rounded-lg border border-gray-700 max-w-md mx-auto shadow-lg">
 				<UserXIcon size={40} class="mx-auto mb-3 text-gray-400" />
-				<h3 class="text-xl font-medium text-white mb-1">No Users Found</h3>
+				<h3 class="text-xl font-semibold text-white mb-1">No Users Found</h3>
 				<p class="text-gray-400 px-4">No public users match <strong class="text-gold-400">"{searchQuery}"</strong>. Try a different search term.</p>
 			</div>
 		{/if}
@@ -171,14 +171,14 @@
 	{/if}
 
 	<section aria-labelledby="featured-users-title" class="space-y-4">
-		<h2 id="featured-users-title" class="text-2xl md:text-3xl font-semibold text-gold-400 flex items-center gap-3">
+		<h2 id="featured-users-title" class="text-xl md:text-2xl font-bold text-gold-400 flex items-center gap-3">
 			<CrownIcon size={28} />
 			Featured Collectors
 		</h2>
 		{#if featuredUsersError}
-			<div class="text-center my-6 p-5 bg-gray-800/70 backdrop-blur-xs rounded-lg border border-red-600 shadow-xl">
+			<div class="alert-error text-center my-6">
 				<AlertTriangleIcon size={40} class="mx-auto mb-3 text-red-400" />
-				<h3 class="text-xl font-medium text-white mb-1">Error Loading Featured Collectors</h3>
+				<h3 class="text-xl font-semibold text-white mb-1">Error Loading Featured Collectors</h3>
 				<p class="text-gray-300">{featuredUsersError}</p>
 			</div>
 		{:else if featuredUsers.length > 0}
@@ -195,7 +195,7 @@
 		{:else}
 			<div class="text-center my-6 p-5 bg-gray-800/70 backdrop-blur-xs rounded-lg border border-gray-700 shadow-lg">
 				<TrendingUpIcon size={40} class="mx-auto mb-3 text-gray-400" />
-				<h3 class="text-xl font-medium text-white mb-1">No Featured Collectors Yet</h3>
+				<h3 class="text-xl font-semibold text-white mb-1">No Featured Collectors Yet</h3>
 				<p class="text-gray-400 mb-2">Check back later to see top collectors!</p>
 				<p class="text-sm text-gray-500">To appear here, make your profile public and add cards to your collection.</p>
 			</div>

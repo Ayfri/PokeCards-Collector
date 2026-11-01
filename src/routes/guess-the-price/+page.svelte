@@ -171,7 +171,7 @@
 	{#if !round}
 		<p class="text-xl text-gray-400">{data.error ?? 'No card to display.'}</p>
 		<button
-			class="rounded-sm bg-gold-400 px-4 py-2 font-bold text-black transition-colors hover:bg-gold-500 disabled:opacity-50"
+			class="btn-gold"
 			disabled={refilling}
 			onclick={nextCard}
 		>
@@ -229,7 +229,7 @@
 
 					{#if !answered}
 						<button
-							class="flex w-full items-center justify-center gap-2 rounded-lg bg-gold-400 py-2.5 font-bold text-black transition-all hover:bg-gold-500 active:scale-[0.98] disabled:opacity-40"
+							class="btn-gold w-full transition-all active:scale-[0.98]"
 							disabled={!guess}
 							title="Check how close your guess is (Enter)"
 							type="submit"
@@ -245,7 +245,7 @@
 						<p class="text-lg font-semibold {verdict.color}">{verdict.headline}</p>
 						<p class="text-3xl font-bold text-gold-300 tabular-nums" in:scale={{ duration: 450, easing: backOut, start: 0.6 }}>{verdict.price} €</p>
 						<button
-							class="relative w-full overflow-hidden rounded-lg bg-gold-400 py-2.5 font-bold text-black transition-all hover:bg-gold-500 active:scale-[0.98] {RIPPLE} before:animate-ripple-wave after:animate-ripple-wave"
+							class="btn-gold relative w-full overflow-hidden transition-all active:scale-[0.98] {RIPPLE} before:animate-ripple-wave after:animate-ripple-wave"
 							onclick={nextCard}
 							title="Draw another random card (Enter)"
 							type="button"

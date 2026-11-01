@@ -103,9 +103,9 @@
 		</div>
 	</div>
 
-	<hr class="w-full border-t-[3px] border-gold-400 my-4" transition:fade={{ duration: 400, delay: 300 }} />
+	<hr class="gold-rule my-4 border-0" transition:fade={{ duration: 400, delay: 300 }} />
 
-	<p class="text-gray-400 mb-6" transition:fade={{ duration: 400, delay: 300 }}>
+	<p class="text-gray-300 mb-6" transition:fade={{ duration: 400, delay: 300 }}>
 		Artists are the creators of the cards, they are responsible for the design and artwork of the cards.<br>
 		<span class="text-sm">Showing {filteredArtists.length} of {sortedArtists.length} artists.</span>
 	</p>
@@ -115,7 +115,7 @@
 			<!-- Offscreen tiles skip style and layout work until they scroll near, since most of the 411 are below the fold. -->
 			<div class="[contain-intrinsic-size:auto_290px] [content-visibility:auto]" in:fly={{ y: 20, duration: 300, delay: 50 }}>
 				<a href="/cards-list?artist={encodeURIComponent(artist.name.toLowerCase())}" class="block h-full" title={`Browse every card illustrated by ${artist.name}`}>
-					<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
+					<div class="card-tile overflow-hidden h-full flex flex-col">
 						<div class="bg-gray-900 p-2 {NO_IMAGES ? 'hidden' : ''}">
 							<div class="flex justify-center items-center gap-1 h-40 overflow-hidden perspective-[500px]">
 								{#each showcase(artist) as card, index (card.cardCode)}

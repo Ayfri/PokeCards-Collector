@@ -149,7 +149,7 @@
 }
 
 @utility btn-outline-gold {
-	@apply animated-hover-button focus-ring inline-flex items-center justify-center gap-2 rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400;
+	@apply animated-hover-button focus-ring inline-flex items-center justify-center gap-2 rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
 @utility btn-secondary {
@@ -172,6 +172,15 @@
 
 @utility form-input {
 	@apply w-full rounded-md border border-gray-700/60 bg-gray-900/50 px-3 py-2 text-white placeholder:text-gray-500 focus:border-gold-400 focus:outline-hidden;
+}
+
+/* Boxed messages: errors in red, confirmations in green. Unboxed inline error text uses `text-red-400`. */
+@utility alert-error {
+	@apply rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-400;
+}
+
+@utility alert-success {
+	@apply rounded-lg border border-green-500/40 bg-green-500/10 p-4 text-sm text-green-400;
 }
 
 html {

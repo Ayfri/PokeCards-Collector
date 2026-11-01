@@ -120,9 +120,9 @@
 			/>
 		</div>
 	</div>
-	<hr class="w-full border-t-[3px] border-gold-400 my-4" transition:fade={{ duration: 400, delay: 250 }} />
+	<hr class="gold-rule my-4 border-0" transition:fade={{ duration: 400, delay: 250 }} />
 
-	<p class="text-gray-400 mb-6" transition:fade={{ duration: 400, delay: 250 }}>
+	<p class="text-gray-300 mb-6" transition:fade={{ duration: 400, delay: 250 }}>
 		Sets are collections of cards that are released together.<br>
 		<span class="text-sm">Showing {filteredSets.length} of {sortedSets.length} sets.</span>
 	</p>
@@ -132,7 +132,7 @@
 			<div class="mb-8">
 				<div class="mb-4">
 					<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
-						<h2 class="text-xl font-bold text-gold-400">{series}</h2>
+						<h2 class="text-xl font-bold text-gold-400 md:text-2xl">{series}</h2>
 						<p class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-300" title="Release years"><CalendarDaysIcon size={14} /> {yearSpan(groupedSets[series])}</p>
 						<p class="whitespace-nowrap text-sm text-gray-400">{groupedSets[series].length} sets</p>
 						<p class="ml-auto whitespace-nowrap text-sm text-gold-400">{formatEuros(groupedSets[series].reduce((acc, set) => acc + set.totalPrice, 0))}</p>
@@ -144,7 +144,7 @@
 					{#each groupedSets[series] as set (set.name)}
 						<div in:fly={{ y: 20, duration: 300, delay: 50 }}>
 							<a href="/cards-list?set={encodeURIComponent(set.name)}" class="block h-full" title={`Browse every card in ${set.name}`}>
-								<div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:translate-y-[-4px] border border-transparent hover:border-gold-400 h-full flex flex-col">
+								<div class="card-tile overflow-hidden h-full flex flex-col">
 									<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
 										<SetLogo class="max-h-full object-contain" {set}>
 											{#snippet fallback()}<LayersIcon class="text-gray-600" size={56} />{/snippet}

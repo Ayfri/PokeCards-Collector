@@ -98,11 +98,11 @@
 		<div class="mx-4 flex items-center justify-between lg:mx-28">
 			<PageTitle title="Settings" />
 		</div>
-		<div class="mx-auto my-2 h-1 w-full max-w-200 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
+		<div class="gold-rule my-2"></div>
 	</div>
 
 	{#if !profile}
-		<p class="rounded-xl border border-red-500/40 bg-red-500/10 p-6 text-center text-red-300">
+		<p class="alert-error text-center">
 			Your profile could not be loaded. Try reloading the page.
 		</p>
 	{:else}
@@ -156,7 +156,7 @@
 			<section class="rounded-xl border border-gray-700/60 bg-linear-to-br from-gray-800 to-gray-900 p-6 shadow-xl">
 				{#if activeTab === 'account'}
 					<div in:fade={{duration: 200}}>
-						<h2 class="mb-1 text-xl font-semibold text-gold-400">Account</h2>
+						<h2 class="mb-1 text-xl font-bold text-gold-400 md:text-2xl">Account</h2>
 						<p class="mb-5 text-sm text-gray-400">The identity attached to your collection.</p>
 						<div class="grid gap-4 sm:grid-cols-2">
 							{@render readOnlyField('email', 'Email', user?.email || '', 'To change your email, please contact support.')}
@@ -165,7 +165,7 @@
 					</div>
 				{:else if activeTab === 'appearance'}
 					<div in:fade={{duration: 200}}>
-						<h2 class="mb-1 text-xl font-semibold text-gold-400">Appearance</h2>
+						<h2 class="mb-1 text-xl font-bold text-gold-400 md:text-2xl">Appearance</h2>
 						<p class="mb-5 text-sm text-gray-400">Your color tints your avatar everywhere on the site.</p>
 
 						<form
@@ -198,21 +198,19 @@
 							{/if}
 
 							<button
-								class="animated-hover-button relative inline-flex w-fit items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+								class="btn-outline-gold w-fit"
 								disabled={saving}
 								title="Save this color to your profile"
 								type="submit"
 							>
-								<span class="relative z-10 flex items-center gap-2">
-									<SaveIcon size={16} />
-									{saving ? "Saving..." : "Save profile color"}
-								</span>
+								<SaveIcon size={16} />
+								{saving ? "Saving..." : "Save profile color"}
 							</button>
 						</form>
 					</div>
 				{:else if activeTab === 'privacy'}
 					<div in:fade={{duration: 200}}>
-						<h2 class="mb-1 text-xl font-semibold text-gold-400">Privacy</h2>
+						<h2 class="mb-1 text-xl font-bold text-gold-400 md:text-2xl">Privacy</h2>
 						<p class="mb-5 text-sm text-gray-400">Who can see your collection and wishlist.</p>
 						<!-- Saved as soon as the box changes: the checkbox's `change` event bubbles to the form, which submits itself. -->
 						<form
@@ -242,23 +240,21 @@
 					</div>
 				{:else}
 					<div in:fade={{duration: 200}}>
-						<h2 class="mb-1 text-xl font-semibold text-gold-400">Security</h2>
+						<h2 class="mb-1 text-xl font-bold text-gold-400 md:text-2xl">Security</h2>
 						<p class="mb-5 text-sm text-gray-400">Change the password you sign in with.</p>
 						<div class="flex items-center gap-3 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4 text-sm text-gray-300">
 							<MailIcon class="shrink-0 text-gold-400" size={18} />
 							<span>We send a reset link to <span class="font-medium text-white">{user?.email}</span>, and it opens the page where you pick a new password.</span>
 						</div>
 						<button
-							class="animated-hover-button relative mt-5 inline-flex items-center justify-center overflow-hidden rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400 transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50"
+							class="btn-outline-gold mt-5"
 							disabled={resetPasswordLoading}
 							onclick={handlePasswordReset}
 							title="Email yourself a password reset link"
 							type="button"
 						>
-							<span class="relative z-10 flex items-center gap-2">
-								<LockIcon size={16} />
-								{resetPasswordLoading ? 'Sending...' : 'Send password reset email'}
-							</span>
+							<LockIcon size={16} />
+							{resetPasswordLoading ? 'Sending...' : 'Send password reset email'}
 						</button>
 						{#if resetPasswordMessage}
 							<p class="mt-3 text-sm text-green-400">{resetPasswordMessage}</p>

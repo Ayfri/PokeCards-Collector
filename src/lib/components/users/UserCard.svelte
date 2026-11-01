@@ -28,7 +28,7 @@
 </script>
 
 <a
-	class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl {hoverBorderClass} {hoverShadowClass} cursor-pointer focus:outline-hidden focus:ring-0"
+	class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-xl {hoverBorderClass} {hoverShadowClass} cursor-pointer focus-ring"
 	aria-label={`View profile of ${user.username}`}
 	href={`/profile/${encodeURIComponent(user.username)}`}
 	title={`View profile of ${user.username}`}

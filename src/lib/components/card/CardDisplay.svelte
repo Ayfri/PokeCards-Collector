@@ -207,7 +207,7 @@
 		</div>
 	{/if}
 
-	<div class="separator w-full max-w-200 my-12 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent" in:fade={{ duration: 600, delay: 600 }}></div>
+	<div class="gold-rule my-12" in:fade={{ duration: 600, delay: 600 }}></div>
 
 	{#if currentPokemonCards.length > 1}
 		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 700 }}>

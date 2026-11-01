@@ -132,7 +132,7 @@
 		: (card.name ? card.name.charAt(0).toUpperCase() + card.name.slice(1) : 'Unknown'));
 </script>
 
-<div class="card-pokecards-collector group relative flex flex-col items-center w-fit cursor-pointer text-white transition-transform duration-500 ease-out hover:scale-[1.025] z-1 hover:z-10">
+<div class="card-pokecards-collector group relative flex flex-col items-center w-fit cursor-pointer text-white transition-transform duration-300 ease-out hover:scale-[1.025] z-1 hover:z-10">
 	<!-- Stretched link: covers the whole card so nested links stay valid HTML. -->
 	<a
 		aria-label={`Go to the card page of ${cardName}`}
@@ -145,7 +145,7 @@
 	{#if !NO_IMAGES}
 		<div
 			class={`aura absolute blur-[1.5rem] rounded-[15rem] -z-10 bg-(--type-color) will-change-transform
-			transition-transform duration-700 ease-out group-hover:scale-110 ${types.toLowerCase().split(',')}`}
+			transition-transform duration-300 ease-out group-hover:scale-110 ${types.toLowerCase().split(',')}`}
 			style="width: {width * 0.8}px; height: {height * 0.85}px;"
 		></div>
 	{/if}
@@ -155,7 +155,7 @@
 				{#if collectionCount > 0}
 					<button
 						aria-label="Remove one copy from collection"
-						class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+						class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 						onclick={handleRemoveCard}
 						disabled={isUpdatingCollection}
 						title="Remove one copy from collection"
@@ -174,7 +174,7 @@
 				{/if}
 				<button
 					aria-label="Add one copy to collection"
-					class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 					onclick={handleAddCard}
 					disabled={isUpdatingCollection || isCollectionLimitReached}
 					title={isCollectionLimitReached ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
@@ -189,7 +189,7 @@
 
 				<button
 					aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-					class="p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 					onclick={toggleWishlist}
 					disabled={isUpdatingWishlist}
 					title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}

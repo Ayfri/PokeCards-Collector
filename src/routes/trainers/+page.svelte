@@ -77,7 +77,7 @@
 			/>
 		</div>
 	</div>
-	<div class="w-full max-w-200 mx-auto my-6 h-1 bg-linear-to-r from-transparent via-gold-400 to-transparent"></div>
+	<div class="gold-rule my-6"></div>
 
 	{#each sections as section (section.label)}
 		<!-- A native `<details>`: folding needs no state, and a folded section's tiles are not rendered by the browser.

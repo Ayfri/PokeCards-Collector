@@ -112,7 +112,7 @@
 
 <form onsubmit={handleSubmit} class="space-y-4">
 	{#if errorMessage}
-		<div class="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-400">{errorMessage}</div>
+		<div class="alert-error">{errorMessage}</div>
 	{/if}
 
 	<div>

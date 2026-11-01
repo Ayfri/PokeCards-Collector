@@ -113,7 +113,7 @@
 		<div
 			bind:this={menuElement}
 			transition:fly={{ y: -10, duration: 200 }}
-			class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-gray-800 shadow-lg ring-1 ring-white/10 focus:outline-hidden"
+			class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-lg bg-gray-800 shadow-lg ring-1 ring-white/10 focus:outline-hidden"
 			role="menu"
 			aria-orientation="vertical"
 			aria-labelledby="user-menu-button"

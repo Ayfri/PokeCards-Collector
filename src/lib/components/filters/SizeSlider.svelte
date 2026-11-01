@@ -29,7 +29,7 @@
 			<button
 				type="button"
 				onclick={() => setSize(size)}
-				class={['relative z-10 w-6 h-6 rounded-full transition-colors duration-150 flex items-center justify-center', cardSize.current === size ? 'bg-gold-400 text-black' : 'text-gray-400 hover:bg-gray-600']}
+				class={['relative z-10 w-6 h-6 rounded-full transition-colors duration-200 flex items-center justify-center', cardSize.current === size ? 'bg-gold-400 text-black' : 'text-gray-400 hover:bg-gray-600']}
 				aria-label={`Set grid size to ${name}`}
 				aria-pressed={cardSize.current === size}
 				title={`Set grid size to ${name}`}

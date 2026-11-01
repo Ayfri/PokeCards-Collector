@@ -153,7 +153,7 @@
 		>
 			<h2 class="m-0 text-xl font-semibold text-gold-400">Filters</h2>
 			<button
-				class="bg-transparent border-none text-white p-1 rounded-sm hover:bg-white/10 transition-colors flex items-center justify-center"
+				class="focus-ring bg-transparent border-none text-white p-1 rounded-sm hover:bg-white/10 transition-colors flex items-center justify-center"
 				onclick={() => (showFilters = false)}
 				aria-label="Close filters"
 				title="Close filters"

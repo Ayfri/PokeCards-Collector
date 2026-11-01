@@ -48,7 +48,7 @@
 						{/if}
 					{/if}
 					<button
-						class="text-gray-400 hover:text-white"
+						class="focus-ring text-gray-400 hover:text-white"
 						onclick={onClose}
 						aria-label="Close modal"
 						title="Close (Esc)"

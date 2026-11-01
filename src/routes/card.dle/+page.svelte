@@ -230,7 +230,7 @@
 		<div class="bg-gray-800 border border-gray-700 rounded-xl p-6 mb-8 max-w-3xl mx-auto shadow-lg">
 			<div class="flex items-center justify-center gap-3 mb-4">
 				<Gamepad2Icon class="text-gold-400" size={28} />
-				<h2 class="text-2xl font-bold text-gold-400">How to Play</h2>
+				<h2 class="text-xl md:text-2xl font-bold text-gold-400">How to Play</h2>
 			</div>
 
 			<div class="text-center space-y-4 flex flex-col items-center">
@@ -358,13 +358,13 @@
 							{#if loadingGuess.pokemonNumber}
 								<img src={getPokemonSpriteSrc(loadingGuess.pokemonNumber)} alt="Sprite" class="h-10 w-10 sm:h-12 sm:w-12 object-contain opacity-75"/>
 							{:else}
-								<div class="h-10 w-10 sm:h-12 sm:w-12 bg-gray-700 rounded-sm animate-pulse"></div>
+								<div class="h-10 w-10 sm:h-12 sm:w-12 bg-gray-700/50 rounded-sm animate-pulse"></div>
 							{/if}
 							<span class="mt-1 text-center block leading-tight text-xs sm:text-sm opacity-75">{loadingGuess.name}</span>
 						</div>
 						{#each { length: 5 }, index (index)}
 							<div class="p-2 flex items-center justify-center text-center bg-gray-800 text-gray-400">
-								<div class="w-12 h-4 bg-gray-700 rounded-sm animate-pulse"></div>
+								<div class="w-12 h-4 bg-gray-700/50 rounded-sm animate-pulse"></div>
 							</div>
 						{/each}
 					</div>
@@ -413,7 +413,7 @@
 	<div class="my-8">
 		<div class="bg-gray-800 rounded-xl shadow-lg p-6 max-w-7xl mx-auto border border-gray-700 flex flex-col items-center">
 			{#if activeSuggestions.length > 0}
-				<h3 class="flex items-center justify-center gap-2 text-2xl font-bold mb-6 text-gold-400">
+				<h3 class="flex items-center justify-center gap-2 text-xl md:text-2xl font-bold mb-6 text-gold-400">
 					<TargetIcon size={22} /> Select a Card to Guess:
 					<span class="text-lg font-normal text-gray-400">({activeSuggestions.length} found)</span>
 				</h3>
@@ -426,7 +426,7 @@
 								e.stopPropagation();
 								selectSuggestion(suggestion);
 							}}
-							class="bg-gray-900 hover:bg-gray-700 p-3 rounded-xl shadow-md hover:shadow-xl focus:ring-2 focus:ring-gold-400 transition-all duration-200 hover:-translate-y-0.5 flex flex-col items-center text-center border border-gray-600 hover:border-gold-400 group relative {isSubmitting && loadingGuess?.cardImage === suggestion.image ? 'opacity-75 scale-95' : ''}"
+							class="bg-gray-900 hover:bg-gray-700 p-3 rounded-xl shadow-md hover:shadow-xl focus-ring transition-all duration-300 hover:-translate-y-1 flex flex-col items-center text-center border border-gray-600 hover:border-gold-400 group relative {isSubmitting && loadingGuess?.cardImage === suggestion.image ? 'opacity-75 scale-95' : ''}"
 							title={suggestion.name}
 							disabled={isSubmitting || hasWon}
 						>
@@ -490,7 +490,7 @@
 
 	{#if historicGuesses.length === 0 && !activeSuggestions.length}
 		<div class="mt-8 mb-8">
-			<h3 class="flex items-center justify-center gap-2 text-2xl font-bold mb-6 text-gold-400">
+			<h3 class="flex items-center justify-center gap-2 text-xl md:text-2xl font-bold mb-6 text-gold-400">
 				<ClipboardListIcon size={22} /> This is how your guesses will appear:
 			</h3>
 			<div class="bg-gray-800 rounded-xl shadow-lg p-6 max-w-6xl mx-auto border border-gray-700">

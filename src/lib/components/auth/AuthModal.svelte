@@ -35,7 +35,7 @@
 		{#each TABS as tab (tab.id)}
 			<button
 				class={[
-					'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-gold-400',
+					'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-ring',
 					activeTab === tab.id ? 'bg-gold-400/15 text-gold-400' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
 				]}
 				onclick={() => (activeTab = tab.id)}

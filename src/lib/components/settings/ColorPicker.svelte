@@ -49,7 +49,7 @@
 		{#if pickerReady}
 			<hex-color-picker color={isValid ? value : defaultValue} oncolor-changed={handleColorChange}></hex-color-picker>
 		{:else}
-			<div class="size-[200px] animate-pulse rounded-lg bg-gray-800"></div>
+			<div class="size-[200px] animate-pulse rounded-lg bg-gray-700/50"></div>
 		{/if}
 	</div>
 

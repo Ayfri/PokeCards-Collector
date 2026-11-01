@@ -229,7 +229,7 @@
 					{@const fullCard = isCardCode(item) ? cards.get(item) : undefined}
 					{@const isPlaced = placedItems.has(item)}
 					{#if isCardCode(item) && !fullCard && !ready}
-						<div class="aspect-2/3 animate-pulse rounded-sm border-2 border-gray-700 bg-gray-700/40"></div>
+						<div class="aspect-2/3 animate-pulse rounded-sm border-2 border-gray-700 bg-gray-700/50"></div>
 					{:else if isCardCode(item) && !fullCard}
 						<div class="relative flex aspect-2/3 items-center justify-center rounded-sm border-2 border-dashed border-red-700 p-1 text-center">
 							<span class="text-xs text-red-400">Data missing for {item}</span>
