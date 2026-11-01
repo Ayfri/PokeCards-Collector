@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
+	import BinderPage from "#components/binder/BinderPage.svelte";
 	import CardImage from "#components/card/CardImage.svelte";
 	import RaritySymbol from "#components/card/RaritySymbol.svelte";
 	import SetLogo from "#components/SetLogo.svelte";
@@ -48,14 +49,8 @@
 
 	const FEATURE_CARD_CLASS = 'bg-gray-800 p-6 rounded-lg shadow-lg border border-transparent hover:border-gold-400 transition-all duration-300 transform hover:-translate-y-1';
 
-	const PREVIEW_CARDS = [
-		{ name: "Riolu", imageUrl: "https://images.pokemontcg.io/swsh12pt5gg/GG26_hires.png", pokedexNumber: 447 },
-		{ name: "Swablu", imageUrl: "https://images.pokemontcg.io/swsh12pt5gg/GG27_hires.png", pokedexNumber: 333 },
-		{ name: "Duskull", imageUrl: "https://images.pokemontcg.io/swsh12pt5gg/GG28_hires.png", pokedexNumber: 355 },
-		{ name: "Bidoof", imageUrl: "https://images.pokemontcg.io/swsh12pt5gg/GG29_hires.png", pokedexNumber: 399 },
-		{ name: "Pikachu", imageUrl: "https://images.pokemontcg.io/swsh12pt5gg/GG30_hires.png", pokedexNumber: 25 },
-		{ name: "Turtwig", imageUrl: "https://images.pokemontcg.io/swsh12pt5gg/GG31_hires.png", pokedexNumber: 387 },
-	];
+	/** The server sends one flat list for the two-page spread, page 2 starting after the 9 slots of page 1. */
+	const binderPages = $derived([data.binderPreview.slice(0, 9), data.binderPreview.slice(9)]);
 
 	let isAuthModalOpen = $state(false);
 	let authMode: 'login' | 'register' = $state('login');
@@ -519,50 +514,26 @@
 						{#if !NO_IMAGES}<GridIcon size={18} />{/if}
 					</a>
 				</div>
-				<div class="flex-1 flex justify-center">
-					<div
-						class="w-full max-w-md bg-[#1a1a1a] rounded-lg shadow-inner relative overflow-hidden border border-[#444]"
-						style="aspect-ratio: 1/1;"
+				<div class="flex-1 lg:flex-[1.4] flex justify-center w-full">
+					<!-- A static copy of the /binder spread: the 10/7 ratio gives BinderPage's container-query sizing the height it needs. -->
+					<a
+						class="flex aspect-7/10 w-full max-w-sm sm:aspect-10/7 sm:max-w-2xl justify-center gap-2 rounded-2xl bg-gray-900 p-3 ring-1 ring-white/5 inset-shadow-sm transition-transform duration-300 hover:scale-[1.02]"
+						href="/binder"
+						title="Open the Binder Builder"
 					>
-						<div
-							class="absolute inset-0 grid grid-cols-3 grid-rows-3"
-						>
-							{#each { length: 9 }, i}
-								<div
-									class="relative bg-[#1e1e1e] border border-[#333] overflow-hidden"
-								>
-									{#if i < PREVIEW_CARDS.length}
-										{@const card = PREVIEW_CARDS[i]}
-										<div class="absolute inset-0 flex items-center justify-center">
-											{#if !NO_IMAGES}
-												<CardImage
-													imageUrl={card.imageUrl}
-													alt={card.name}
-													class="object-contain w-[90%] h-[90%]"
-													lazy={true}
-												/>
-											{:else}
-												<div class="w-[90%] h-[90%] bg-[#333] flex items-center justify-center text-[#555]">
-													Pokemon {card.pokedexNumber}
-												</div>
-											{/if}
-										</div>
-									{:else}
-										<div
-											class="absolute inset-0 flex items-center justify-center text-[#555] text-[10px] font-light"
-										>
-											Drop card here
-										</div>
-									{/if}
+						{#each binderPages as slots, pageIndex (pageIndex)}
+							{#if pageIndex === 1}
+								<div class="hidden w-6 shrink-0 flex-col items-center justify-center gap-6 rounded bg-black/40 sm:flex">
+									{#each Array(3) as _, ring (ring)}
+										<span class="size-3 rounded-full border-2 border-gray-600 bg-gray-800"></span>
+									{/each}
 								</div>
-							{/each}
-						</div>
-						<div
-							class="absolute top-2 right-2 bg-[#333] text-xs text-[#eee] px-2 py-1 rounded-md"
-						>
-							Preview
-						</div>
-					</div>
+							{/if}
+							<div class={['min-w-0 flex-1', pageIndex === 1 && 'hidden sm:block']}>
+								<BinderPage columns={3} {pageIndex} rows={3} {slots} />
+							</div>
+						{/each}
+					</a>
 				</div>
 			</div>
 		</div>

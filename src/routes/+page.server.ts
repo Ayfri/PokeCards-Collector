@@ -3,6 +3,7 @@ import { cardListSchema, faqSchema } from '#helpers/seo.ts';
 import type { FullCard } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 import { cardPrice } from '#helpers/card-utils.ts';
+import { getRarityLevel, RARITY_MAPPING } from '#helpers/rarity.ts';
 
 export const load: PageServerLoad = async ({ parent }) => {
 	/** Started before `parent()` so the catalogue reads run in parallel with the layout's auth and collection queries. */
@@ -38,6 +39,21 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	const mostExpensiveLatestSetCards = topFive(latestSetCards);
 	const mostExpensiveCards = topFive(processedAllCards);
+
+	/** Page 2 holds 5 cards, so the preview reads as a binder in progress. */
+	const BINDER_PAGE_SLOTS = 9;
+	const BINDER_PREVIEW_SIZE = BINDER_PAGE_SLOTS + 5;
+	const minRarityLevel = RARITY_MAPPING['ultra rare'];
+	const releaseTime = new Map(sets.map(set => [set.setId, new Date(set.releaseDate).getTime()]));
+	/**
+	 * Rare cards (ultra rare and above) with a scan of their own, never one that borrows art. The newest sets come first, the rarest
+	 * first inside a set, so the latest set fills the binder and older sets only complete it. Only the filtered cards are sorted.
+	 */
+	const binderPreview = processedAllCards
+		.filter(card => card.image && getRarityLevel(card.rarity) >= minRarityLevel)
+		.sort((a, b) => (releaseTime.get(b.setId) ?? 0) - (releaseTime.get(a.setId) ?? 0) || getRarityLevel(b.rarity) - getRarityLevel(a.rarity) || priceOf(b) - priceOf(a))
+		.slice(0, BINDER_PREVIEW_SIZE)
+		.map((card, index) => ({ cardCode: card.cardCode, id: card.cardCode, position: index % BINDER_PAGE_SLOTS, url: card.image }));
 
 	const latestSetStats = {
 		energyCards: latestSetCards.filter(card => card.supertype === 'Energy').length,
@@ -83,6 +99,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 	/** The catalogue, prices and Pokédex stay on the server and the page gets only counts: sending them made the homepage a 24 MB document. `sets` comes from the layout. */
 	return {
+		binderPreview,
 		latestSet,
 		latestSetStats,
 		mostExpensiveLatestSetCards,

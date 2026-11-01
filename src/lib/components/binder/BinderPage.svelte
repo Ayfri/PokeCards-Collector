@@ -8,9 +8,10 @@
 		columns: number;
 		/** Highlights the slot a click-to-place would land in, `-1` when nothing is armed. */
 		nextEmpty?: number;
-		onDrop: (pageIndex: number, position: number, event: DragEvent) => void;
-		onRemove: (pageIndex: number, position: number) => void;
-		onSlotClick: (pageIndex: number, position: number) => void;
+		/** Without these three handlers the sheet is a static, non-interactive display. */
+		onDrop?: (pageIndex: number, position: number, event: DragEvent) => void;
+		onRemove?: (pageIndex: number, position: number) => void;
+		onSlotClick?: (pageIndex: number, position: number) => void;
 		pageIndex: number;
 		rows: number;
 		slots: Array<BinderCards | null>;
@@ -53,21 +54,22 @@
 				{@const isTarget = nextEmpty === position}
 				<div
 					class="group relative min-h-0 rounded-md border transition-colors
-						{dragOver === position ? 'border-gold-400 bg-gold-400/10' : isTarget ? 'border-gold-400/70 border-dashed bg-gold-400/5' : 'border-gray-700 hover:border-gray-500'}
+						{dragOver === position ? 'border-gold-400 bg-gold-400/10' : isTarget ? 'border-gold-400/70 border-dashed bg-gold-400/5' : onDrop ? 'border-gray-700 hover:border-gray-500' : 'border-gray-700'}
 						{card ? 'bg-gray-900' : 'bg-gray-900/40'}"
 					role="gridcell"
-					tabindex="0"
-					ondragover={event => { event.preventDefault(); dragOver = position; }}
-					ondragleave={() => { if (dragOver === position) dragOver = -1; }}
-					ondrop={event => { event.preventDefault(); dragOver = -1; onDrop(pageIndex, position, event); }}
+					tabindex={onDrop ? 0 : undefined}
+					ondragover={onDrop && (event => { event.preventDefault(); dragOver = position; })}
+					ondragleave={onDrop && (() => { if (dragOver === position) dragOver = -1; })}
+					ondrop={onDrop && (event => { event.preventDefault(); dragOver = -1; onDrop(pageIndex, position, event); })}
 				>
 					{#if card}
+						<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 						<div
-							class="absolute inset-0 flex cursor-grab items-center justify-center p-px active:cursor-grabbing"
-							draggable="true"
-							role="button"
-							tabindex="-1"
-							ondragstart={event => handleDragStart(event, position)}
+							class={['absolute inset-0 flex items-center justify-center p-px', onDrop && 'cursor-grab active:cursor-grabbing']}
+							draggable={onDrop ? 'true' : undefined}
+							role={onDrop ? 'button' : undefined}
+							tabindex={onDrop ? -1 : undefined}
+							ondragstart={onDrop && (event => handleDragStart(event, position))}
 						>
 							<CardImage
 								alt={card.cardCode ?? 'Binder card'}
@@ -75,24 +77,29 @@
 								imageUrl={card.url}
 								lazy={true}
 							/>
-							<button
-								aria-label="Remove this card from the binder"
-								class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-								onclick={() => onRemove(pageIndex, position)}
-								title="Remove this card from the binder"
-							>
-								<X size={14} />
-							</button>
+							{#if onRemove}
+								<button
+									aria-label="Remove this card from the binder"
+									class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+									onclick={() => onRemove(pageIndex, position)}
+									title="Remove this card from the binder"
+								>
+									<X size={14} />
+								</button>
+							{/if}
 						</div>
 					{:else}
-						<button
+						<!-- The click handler only exists on the button variant. -->
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<svelte:element
+							this={onSlotClick ? 'button' : 'div'}
 							class="absolute inset-0 flex flex-col items-center justify-center gap-1 text-gray-600"
-							onclick={() => onSlotClick(pageIndex, position)}
-							title="Place the selected card here"
+							onclick={onSlotClick && (() => onSlotClick(pageIndex, position))}
+							title={onSlotClick ? 'Place the selected card here' : undefined}
 						>
 							<span class="text-sm font-semibold tabular-nums">{pageIndex * slotsPerPage + position + 1}</span>
 							{#if isTarget}<span class="text-[0.6rem] text-gold-400 uppercase">next</span>{/if}
-						</button>
+						</svelte:element>
 					{/if}
 				</div>
 			{/each}
