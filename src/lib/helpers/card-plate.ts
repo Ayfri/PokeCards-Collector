@@ -23,12 +23,9 @@ const BASIC_ENERGY = new RegExp(`^(basic )?(${ENERGY_TYPES.join('|')}) energy$`,
 /** The Trainer kinds, each tinted with the energy color that reads best next to the others. */
 const TRAINER_TINTS: Record<string, string> = {item: 'water', stadium: 'grass', supporter: 'fire', tool: 'psychic', trainer: 'metal'};
 
-/**
- * A `subtype` column does not exist yet, so it is read defensively: once the mapper ships it
- * (`Supporter`, `Item`, `Stadium`, `Tool`, `Basic`, `Special`), the plate uses it instead of the name.
- */
+/** The card's `subtype` (`Supporter`, `Item`, `Normal`, `Special`...) wins over the name guesses below, which only cover cards that have none. */
 function subtypeOf(card: FullCard): string {
-	return 'subtype' in card && typeof card.subtype === 'string' ? card.subtype.toLowerCase() : '';
+	return card.subtype?.toLowerCase() ?? '';
 }
 
 /**

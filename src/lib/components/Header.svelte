@@ -18,6 +18,7 @@
 	import XIcon from '@lucide/svelte/icons/x';
 	import GlobeIcon from '@lucide/svelte/icons/globe';
 	import PokedexIcon from '@lucide/svelte/icons/paw-print';
+	import TrainersIcon from '@lucide/svelte/icons/backpack';
 	import PuzzleIcon from '@lucide/svelte/icons/puzzle';
 	import PriceGameIcon from '@lucide/svelte/icons/circle-euro';
 	import GamepadIcon from '@lucide/svelte/icons/gamepad-2';
@@ -43,6 +44,7 @@
 			isDropdown: true,
 			children: [
 				{ href: '/pokemons', name: 'Pokémons', icon: PokedexIcon, description: 'Every Pokémon and its cards' },
+				{ href: '/trainers', name: 'Trainers & Energy', icon: TrainersIcon, description: 'Every Trainer and Energy card, grouped' },
 				{ href: '/cards-list', name: 'Cards', icon: CardStackIcon, description: 'Browse and filter every card' },
 				{ href: '/sets', name: 'Sets', icon: LibraryIcon, description: 'Every set, grouped by series' },
 				{ href: '/artists', name: 'Artists', icon: ArtistIcon, description: 'Every card illustrator' },

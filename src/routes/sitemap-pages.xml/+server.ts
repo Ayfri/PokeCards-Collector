@@ -13,6 +13,7 @@ export async function GET() {
 		{ changefreq: 'daily', loc: '/cards-list', priority: 0.9 },
 		{ changefreq: 'weekly', loc: '/sets', priority: 0.9 },
 		{ changefreq: 'weekly', loc: '/pokemons', priority: 0.8 },
+		{ changefreq: 'weekly', loc: '/trainers', priority: 0.8 },
 		{ changefreq: 'weekly', loc: '/japan', priority: 0.8 },
 		{ changefreq: 'weekly', loc: '/france', priority: 0.8 },
 		{ changefreq: 'weekly', loc: '/artists', priority: 0.7 },

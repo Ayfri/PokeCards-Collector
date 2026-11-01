@@ -63,8 +63,8 @@ Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
   </tr>
   <tr>
     <td>🎨</td>
-    <td><b>Artists, Sets, Pokédex</b></td>
-    <td>Browse by illustrator, by set and series, or by Pokémon with its dex entry.</td>
+    <td><b>Artists, Sets, Pokédex, Trainers</b></td>
+    <td>Browse by illustrator, by set and series, by Pokémon with its dex entry, or by Trainer and Energy card with all its prints grouped.</td>
   </tr>
   <tr>
     <td>🔐</td>
