@@ -1,12 +1,12 @@
 <script lang="ts">
 	import CardPlateArt from '#components/card/CardPlateArt.svelte';
 	import CardPlateEmblem from '#components/card/CardPlateEmblem.svelte';
-	import ExLogo from '#components/card/ExLogo.svelte';
+	import CardPlateHeader from '#components/card/CardPlateHeader.svelte';
 	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import SetLogo from '#components/SetLogo.svelte';
 	import { cardTypeTint } from '#helpers/card-images.ts';
-	import { artNote, DARK_BODY_TYPES, FULL_ART_RARITIES, hasSilverBorder, plateIdentity, plateTexture, stageLabel } from '#helpers/card-plate.ts';
+	import { artNote, DARK_BODY_TYPES, FULL_ART_RARITIES, hasSilverBorder, plateIdentity, plateTexture } from '#helpers/card-plate.ts';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { formatCardNumber } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc } from '#helpers/pokemon-utils.ts';
@@ -52,9 +52,6 @@
 	/** Text sits straight on the body like on a printed card; a full-art scan needs a dark panel behind it. */
 	const panel = $derived(fullArt ? 'rounded-[2cqw] bg-black/70 px-[3cqw] backdrop-blur-xs' : 'px-[1cqw]');
 	const heading = $derived(card ? title ?? card.name.charAt(0).toUpperCase() + card.name.slice(1) : '');
-	/** Scarlet & Violet prints a lowercase `ex` as a silver logo after the name; the older uppercase `EX` is a different mark and stays text. */
-	const exSuffix = $derived(/ ex$/.test(heading));
-	const subtitle = $derived(stageLabel(card?.stage, language) || (identity.kind === 'pokemon' ? card?.supertype : identity.label));
 	const number = $derived(card?.localId ? formatCardNumber(card.localId, set?.printedTotal, { printed: true }) : '');
 	const artist = $derived(card && card.artist !== 'Unknown' ? card.artist : '');
 	/** `SetLogo` prefers the logo, which is too wide for the strip: the plate hands it the symbol alone. */
@@ -76,28 +73,7 @@
 		<div class={['pointer-events-none absolute inset-0 border-[3.5cqw] @max-[120px]:hidden', hasSilverBorder(card) ? 'border-zinc-300' : 'border-gold-400']}></div>
 
 		{#if card}
-			<!-- Like on a real card the header has no box and its text is black, white (with a shadow) only over a full-art scan or a dark body. -->
-			<header class={['flex items-center justify-between -mx-[3cqw] gap-[2cqw] px-[1cqw] -mb-[0.5cqw] @max-[120px]:hidden', lightText ? 'text-white [text-shadow:0_1px_2px_rgb(0_0_0/0.65)]' : 'text-gray-950']}>
-				<div class="flex min-w-0 items-center gap-[2cqw]">
-					{#if subtitle}
-						<span class="shrink-0 rounded-full bg-white/60 px-[2.2cqw] py-[0.4cqw] text-[3cqw] leading-tight font-semibold tracking-wide text-gray-950 uppercase italic @max-[200px]:hidden">{subtitle}</span>
-					{/if}
-					<span class="truncate text-[6cqw] leading-[1.2] font-semibold @max-[200px]:line-clamp-2 @max-[200px]:text-[9cqw] @max-[200px]:whitespace-normal">{heading.replace(/ ex$/, '')}{#if exSuffix}&nbsp;<ExLogo />{/if}</span>
-				</div>
-				{#if card.hp || (identity.kind === 'pokemon' && identity.typeNames.length)}
-					<!-- Past the first symbol the rest only fit on a wide tile. -->
-					<div class="flex shrink-0 items-center gap-[1.2cqw] text-[7cqw] leading-tight @max-[200px]:text-[9cqw]">
-						{#if card.hp}
-							<span class="font-bold"><small class="mr-[0.15em] text-[0.5em]">HP</small>{card.hp}</span>
-						{/if}
-						{#if identity.kind === 'pokemon'}
-							{#each identity.typeNames as type, index (type)}
-								<TypeSymbol class={[index > 0 && '@max-[200px]:hidden']} glyph="black" pale {type} />
-							{/each}
-						{/if}
-					</div>
-				{/if}
-			</header>
+			<CardPlateHeader {card} {heading} {identity} {language} {lightText} />
 		{/if}
 
 		<!-- The art window of a real card, about 87 % of its width and 41 % of its height: a recessed frame holding a borrowed illustration, the Pokémon's artwork,
@@ -128,7 +104,8 @@
 				class={[
 					`absolute bottom-[3cqw] left-1/2 -translate-x-1/2 rounded-full border border-white/15 bg-black/45 px-[3.5cqw] py-[1cqw] text-[3.5cqw] tracking-widest whitespace-nowrap text-white/65 uppercase
 					@max-[200px]:text-[5.5cqw]
-					@max-[120px]:static @max-[120px]:translate-x-0 @max-[120px]:border-none @max-[120px]:bg-transparent @max-[120px]:p-0 @max-[120px]:text-center @max-[120px]:text-[clamp(0.5rem,9cqw,0.85rem)] @max-[120px]:whitespace-normal @max-[120px]:text-white/45`,
+					@max-[120px]:static @max-[120px]:translate-x-0 @max-[120px]:border-none @max-[120px]:bg-transparent @max-[120px]:p-0 @max-[120px]:text-center @max-[120px]:text-[clamp(0.5rem,9cqw,0.85rem)] @max-[120px]:whitespace-normal`,
+					lightText ? '@max-[120px]:text-white/70' : '@max-[120px]:text-gray-950/70',
 					identity.label && '@min-[200px]:hidden',
 					scan && !identity.label && '@min-[120px]:hidden'
 				]}
@@ -148,7 +125,7 @@
 				<div class="flex flex-wrap items-center gap-[1.5cqw]">
 					{#each identity.typeNames as type (type)}
 						<span class={['flex items-center gap-[1.2cqw] rounded-full border px-[2.5cqw] py-[0.5cqw] text-[3.5cqw] tracking-wide uppercase', lightText ? 'border-white/25 bg-black/30' : 'border-gray-950/30 bg-white/45']}>
-							<TypeSymbol glyph="black" {type} />{type}
+							<TypeSymbol decorative glyph="black" {type} />{type}
 						</span>
 					{/each}
 				</div>
@@ -162,7 +139,7 @@
 						<SetLogo class="size-[5cqw] object-contain @max-[200px]:size-[7cqw]" set={symbolSet} />
 					{/if}
 					{number}
-					<RaritySymbol light={!lightText} rarity={card.rarity} />
+					<RaritySymbol decorative light={!lightText} rarity={card.rarity} />
 				</span>
 			</footer>
 		{/if}

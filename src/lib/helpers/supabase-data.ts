@@ -31,7 +31,7 @@ const CARD_COLUMNS = `
 `;
 
 /**
- * The columns a card list reads. `getCards` returns every card in the table, and nothing renders six of the columns
+ * The columns a card list reads. `getCards` returns every card in the table, and nothing renders four of the columns
  * (`legal_standard`, `regulation_mark`, `tcgdex_id`, `variants`), so they would only slow down the
  * payload the browser parses before the grid can paint. `hp`, `stage` and the art columns are read, but `toCard` only keeps them on cards with no scan.
  */
@@ -307,7 +307,7 @@ export async function getRandomCardCode(): Promise<string | null> {
 	return data?.[0]?.card_code ?? null;
 }
 
-/** One card with every column, for its own page: the catalogue reads leave out `hp`, `stage`, `variants` and the like. */
+/** One card with every column, for its own page: the list reads leave out `variants` and the like, and keep `hp` and `stage` only on cards with no scan. */
 export async function getCardDetails(language: Language, cardCode: string): Promise<FullCard | null> {
 	const { cards } = CATALOGUES[language].tables;
 	const { data } = await readWithRetry(`fetch ${cards} ${cardCode}`, () => supabase.from(cards).select(CARD_COLUMNS).eq('card_code', cardCode).maybeSingle<CardRow>());

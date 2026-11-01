@@ -101,12 +101,18 @@ const KIND_LABELS: Record<string, Record<Language, string>> = {
 	trainer: {en: 'Trainer', fr: 'Dresseur', ja: 'トレーナーズ'}
 };
 
-/** English and French set ids (`sv03`, `me01`, `svp`, `2023sv`, `30th`) and Japanese ones (`SV3`, `M2a`, `SV-P`, `M-P`, `MC`) of the Scarlet & Violet era and later. */
-const SILVER_BORDER_SETS = /^(?:20\d\dsv|30th|me|sv)|^m(?:\d|-p|c$|f)/i;
+/** English and French set ids (`sv03`, `me01`, `svp`, `2023sv`, `30th`) of the Scarlet & Violet era and later. */
+const SILVER_BORDER_SETS = /^(?:20\d\dsv|30th|me|sv)/i;
+/** Japanese set ids (`SV3`, `M2a`, `SV-P`, `M-P`, `MC`) of the same era. Case-sensitive: with the `i` flag `m(?:\d|-p|c$|f)` also matched the English `mfb` (My First Battle, 2016). */
+const SILVER_BORDER_JA_SETS = /^M(?:\d|-P|C$|F)/;
 
-/** The card border turned from yellow to silver with Scarlet & Violet (2023), so the plate frame follows the card's era. */
+/**
+ * The card border turned from yellow to silver with Scarlet & Violet (2023), so the plate frame follows the card's era.
+ * Each new era needs a new prefix in the two patterns above: an unlisted set id keeps the yellow border.
+ */
 export function hasSilverBorder(card: FullCard | undefined): boolean {
-	return SILVER_BORDER_SETS.test(card?.setId ?? '');
+	const setId = card?.setId ?? '';
+	return SILVER_BORDER_SETS.test(setId) || SILVER_BORDER_JA_SETS.test(setId);
 }
 
 function hashOf(text: string): number {
@@ -118,6 +124,18 @@ function hashOf(text: string): number {
 /** The mottled texture of a printed card body, one SVG per seed: a few seeds only, so every plate of a set shares one decoded image instead of rasterizing its own noise. */
 const TEXTURE_SEEDS = 16;
 
+const grayMatrix = (gain: number, alpha: number) => `${gain} 0 0 0 ${(0.5 - gain / 2).toFixed(2)} `.repeat(3) + `0 0 0 0 ${alpha}`;
+
+/** The 16 texture images as CSS `url()` values, built once at import so a plate only picks one instead of encoding an SVG on every mount. */
+const TEXTURE_URLS = Array.from({length: TEXTURE_SEEDS}, (_, seed) => {
+	const svg =
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420" preserveAspectRatio="none"><filter id="f" x="0" y="0" width="1" height="1">` +
+		`<feTurbulence baseFrequency=".011 .008" numOctaves="3" seed="${seed}" type="fractalNoise"/><feColorMatrix values="${grayMatrix(1.7, 1)}" result="a"/>` +
+		`<feTurbulence baseFrequency=".55" numOctaves="2" seed="${seed + 40}" type="fractalNoise"/><feColorMatrix values="${grayMatrix(1.8, 0.22)}"/>` +
+		`<feMerge><feMergeNode in="a"/><feMergeNode/></feMerge></filter><rect filter="url(#f)" height="420" width="300"/></svg>`;
+	return `url('data:image/svg+xml,${encodeURIComponent(svg).replaceAll("'", '%27')}')`;
+});
+
 /**
  * Inline custom properties for the plate body: a grayscale `feTurbulence` image (soft blotches plus fine speckles) that the stylesheet blends into the type color.
  * The seed comes from the set, so a set keeps one look like its printed cards, and a small per-card shift of the pattern comes from the card code.
@@ -125,15 +143,8 @@ const TEXTURE_SEEDS = 16;
  */
 export function plateTexture(card: FullCard | undefined): string {
 	if (!card) return '';
-	const seed = hashOf(card.setId) % TEXTURE_SEEDS;
 	const shift = hashOf(card.cardCode);
-	const gray = (gain: number, alpha: number) => `${gain} 0 0 0 ${(0.5 - gain / 2).toFixed(2)} `.repeat(3) + `0 0 0 0 ${alpha}`;
-	const svg =
-		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 420" preserveAspectRatio="none"><filter id="f" x="0" y="0" width="1" height="1">` +
-		`<feTurbulence baseFrequency=".011 .008" numOctaves="3" seed="${seed}" type="fractalNoise"/><feColorMatrix values="${gray(1.7, 1)}" result="a"/>` +
-		`<feTurbulence baseFrequency=".55" numOctaves="2" seed="${seed + 40}" type="fractalNoise"/><feColorMatrix values="${gray(1.8, 0.22)}"/>` +
-		`<feMerge><feMergeNode in="a"/><feMergeNode/></feMerge></filter><rect filter="url(#f)" height="420" width="300"/></svg>`;
-	return `--plate-texture: url('data:image/svg+xml,${encodeURIComponent(svg).replaceAll("'", '%27')}'); --plate-shift: ${shift % 100}% ${(shift >>> 9) % 100}%`;
+	return `--plate-texture: ${TEXTURE_URLS[hashOf(card.setId) % TEXTURE_SEEDS]}; --plate-shift: ${shift % 100}% ${(shift >>> 9) % 100}%`;
 }
 
 const LANGUAGE_NAMES = new Intl.DisplayNames('en', {type: 'language'});

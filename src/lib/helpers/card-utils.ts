@@ -67,8 +67,6 @@ export function cardPrice(price: PriceData | undefined): number | null {
 /**
  * The number as printed: uppercase like the card ("TG01", "R"), over the set total only when it is a plain number.
  * A lettered one sits outside that count: the 30th Celebration Mews read "R/RGB", never "R/128".
- */
-/**
  * A numeric number loses its leading zeros (`081` -> `81/162`), a lettered one (`TG05`, `SV033`) keeps its printed form.
  * `printed` keeps the zeros as the card prints them, the total padded to the same width (`05/48`), for the plate that imitates the card.
  */

@@ -308,7 +308,7 @@
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.typesCorrect)}`} title={getFeedbackHint('Type', guess.feedback.typesCorrect)}>
 							<span class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
 								{#each guess.feedback.typesValue.split(',').filter(Boolean) as type (type)}
-									<span class="inline-flex items-center gap-1"><TypeSymbol {type} />{type.trim()}</span>
+									<span class="inline-flex items-center gap-1"><TypeSymbol decorative {type} />{type.trim()}</span>
 								{/each}
 							</span>
 						</div>

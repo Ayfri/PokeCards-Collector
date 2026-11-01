@@ -152,7 +152,7 @@
 											href="{catalogue.gridRoute}?pokemontype={encodeURIComponent(type.trim())}"
 											title="View all {type.trim()} cards"
 										>
-											<TypeSymbol glyph="black" pale {type} />
+											<TypeSymbol decorative glyph="black" pale {type} />
 											{type}
 										</a>
 									{/each}
@@ -200,7 +200,7 @@
 									href="{catalogue.gridRoute}?rarity={encodeURIComponent(card.rarity.toLowerCase())}"
 									title="View all {card.rarity} cards"
 								>
-									<RaritySymbol class="text-base" rarity={card.rarity} />{card.rarity}
+									<RaritySymbol class="text-base" decorative rarity={card.rarity} />{card.rarity}
 								</a>
 							</dd>
 					</div>

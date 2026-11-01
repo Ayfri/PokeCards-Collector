@@ -17,10 +17,14 @@ export const TYPE_SYMBOLS: Record<string, string> = {
 	water: 'M99.4 3.8c.6-.2.4-1-.2-1C12.9 5.4 0 50.2 6 69.3 11.8 87 35.5 97.2 53.6 97.2c12.5 0 28-1.8 35.2-13.5C100 66 81 51.7 78.3 49.2a33 33 0 0 1-9.2-19.3c-.6-9.2 5.4-19.9 30.3-26M29.5 75q1.5-1.3 5.2-1.4c4 0 9.3 1.4 14.3 3.6 7.8 3.8 11.6 8.8 8.8 11.5Q56 90 52.6 90.2c-4 0-9.2-1.4-14.2-3.7-7.9-3.8-11.9-8.8-8.9-11.4',
 };
 
-/** The lowercase `ex` suffix logo of Scarlet & Violet cards, scaled to a height of 100 with its own width (it is a word, not a square symbol). */
+/**
+ * The lowercase `ex` suffix logo of Scarlet & Violet cards, scaled to a height of 100 with its own width (it is a word, not a square symbol).
+ * The font's glyph leaves its subpaths open and a gap between the letters: every subpath is closed so the outline goes all the way round,
+ * and the x is pulled 6.5 units left so it touches the e like on the printed logo.
+ */
 export const EX_LOGO = {
-	d: 'M98.2 33.8c0 15-5.5 24.7-5.5 24.7H44s-2.5 15.3 13 15.3c15.7 0 27.4-5.4 27.4-5.4l1 22.9S76.8 100 44 100C17.5 100 0 79 9 48 18.3 16.7 36.8 0 64.8 0c27.7 0 33.5 11.3 33.5 33.8m-33.5 3.3s4.8-14.2-5.4-14.2-12 14.2-12 14.2m128.3 13c9.1-5.7 30.2-7.6 33.5-50.1h-28.4c-3.2 19.6-8.7 25-12.7 26.2L160 0h-47.3l-5.4 21.8h14.9l7.3 23.7c-7.3 2.9-28.8 5-36.8 54.5h32.4c3.3-23 6.9-29.5 12-29.5l9 29.5H191',
-	width: 210,
+	d: 'M98.2 33.8c0 15-5.5 24.7-5.5 24.7H44s-2.5 15.3 13 15.3c15.7 0 27.4-5.4 27.4-5.4l1 22.9S76.8 100 44 100C17.5 100 0 79 9 48 18.3 16.7 36.8 0 64.8 0c27.7 0 33.5 11.3 33.5 33.8Zm-33.5 3.3s4.8-14.2-5.4-14.2-12 14.2-12 14.2Zm104.4 13c9-5.7 30.2-7.6 33.4-50.1h-28.3c-3.3 19.6-8.7 25-12.7 26.2l-8-26.2h-47.3l-5.5 21.8h15l7.2 23.7c-7.3 2.9-28.7 5-36.7 54.5h32.3c3.3-23 7-29.5 12-29.5l9.1 29.5h44.8Z',
+	width: 203,
 } as const;
 
 export const RARITY_SHAPES = {

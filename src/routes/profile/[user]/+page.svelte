@@ -294,7 +294,7 @@
 							{#each rarities as [rarity, count] (rarity)}
 								<li>
 									<div class="mb-1 flex justify-between gap-2 text-sm">
-										<span class="flex min-w-0 items-center gap-2 text-gray-300"><RaritySymbol rarity={rarity} /><span class="truncate">{rarity}</span></span>
+										<span class="flex min-w-0 items-center gap-2 text-gray-300"><RaritySymbol decorative rarity={rarity} /><span class="truncate">{rarity}</span></span>
 										<span class="text-gray-400 tabular-nums">{numberFormatter.format(count)}</span>
 									</div>
 									<div class="h-1.5 overflow-hidden rounded-full bg-white/5">

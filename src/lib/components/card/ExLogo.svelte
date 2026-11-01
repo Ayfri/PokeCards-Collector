@@ -10,12 +10,12 @@
 
 	const id = $props.id();
 	/** Room for the outline, which `paint-order` draws behind the fill and half outside the glyph. */
-	const PAD = 6;
+	const PAD = 4;
 </script>
 
 <svg
 	aria-label="ex"
-	class={['inline-block h-[1.15em] w-auto shrink-0 overflow-visible align-[-0.2em]', classNames]}
+	class={['inline-block h-[0.9em] w-auto shrink-0 overflow-visible align-[-0.1em]', classNames]}
 	role="img"
 	viewBox="{-PAD} {-PAD} {EX_LOGO.width + PAD * 2} {100 + PAD * 2}"
 >
@@ -26,5 +26,5 @@
 			<stop offset="1" stop-color="#8d939c" />
 		</linearGradient>
 	</defs>
-	<path d={EX_LOGO.d} fill="url(#{id}-silver)" paint-order="stroke" stroke="#111" stroke-linejoin="round" stroke-width="7" />
+	<path d={EX_LOGO.d} fill="url(#{id}-silver)" paint-order="stroke" stroke="#111" stroke-linejoin="round" stroke-width="4.5" />
 </svg>
