@@ -68,9 +68,12 @@
 				: `${lowResImageUrl} ${LOW_WIDTH}w, ${highResImageUrl} ${HIGH_WIDTH}w`
 	);
 	const sizesValue = $derived(sizes ?? (width ? `${width}px` : '(max-width: 768px) 50vw, 300px'));
-	/** Card art is 245x337, so a box with no explicit size still reserves the right space. */
+	/**
+	 * Card art is 245x337, so a box with no explicit size still reserves the right space, the lazy <img> included: without it the image is 0px tall
+	 * until it loads and every tile below jumps. `auto` hands over to the scan's own ratio once it has loaded.
+	 */
 	const boxStyle = $derived(
-		[style, width && `width: ${width}px`, height && `height: ${height}px`, !(width && height) && 'aspect-ratio: 245 / 337'].filter(Boolean).join('; ')
+		[style, width && `width: ${width}px`, height && `height: ${height}px`, !(width && height) && 'aspect-ratio: auto 245 / 337'].filter(Boolean).join('; ')
 	);
 
 	function handleError() {
@@ -79,7 +82,7 @@
 	}
 
 	/**
-	 * A recycled tile keeps its <img> element, so a cached src is already complete: the fade is skipped instead of flashing.
+	 * A recycled tile keeps its <img> element, so a cached src is already complete: the skeleton is skipped instead of flashing.
 	 * A server-rendered <img> can also fail before hydration attaches `onerror`, and only this check catches that.
 	 * `img` is read untracked: a failed load swaps it for the plate, and re-running on that swap would reset `error` and loop forever.
 	 */
@@ -101,7 +104,7 @@
 	<img
 		bind:this={img}
 		{alt}
-		class="transition-opacity duration-300 ease-in-out {classNames} {loaded ? '' : 'opacity-0'} {NO_IMAGES ? 'border border-gold-400/50' : ''}"
+		class="{classNames} {loaded ? '' : 'animate-pulse bg-gray-700/50'} {NO_IMAGES ? 'border border-gold-400/50' : ''}"
 		data-card-code={card?.cardCode}
 		decoding="async"
 		draggable="false"
@@ -113,7 +116,7 @@
 		sizes={sizesValue}
 		src={lowRes ? lowResImageUrl : highResImageUrl}
 		srcset={srcsetValue}
-		{style}
+		style={boxStyle}
 		{width}
 	/>
 {/if}
