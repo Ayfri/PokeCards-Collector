@@ -68,7 +68,7 @@ const duplicates = <T>(rows: readonly T[], key: (row: T) => string): string[] =>
 
 const subtypes = new Set<string>(SUBTYPE_SECTIONS.map(section => section.subtype));
 
-const priceColumns =(row: PriceRow) => Object.entries(row).filter(([column]) => column !== 'card_code');
+const priceColumns = (row: PriceRow) => Object.entries(row).filter(([column]) => column !== 'card_code');
 
 export async function checkDatabase(): Promise<CheckReport> {
 	const supabase = envClient();

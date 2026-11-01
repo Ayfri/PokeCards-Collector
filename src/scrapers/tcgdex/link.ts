@@ -3,7 +3,7 @@ import {inflateSync} from 'node:zlib';
 import {mapAll, withRetry, type TcgdexClient} from './client';
 import {catalogueSets, excludedSetIds} from './excluded';
 import {Http2Pool} from './http2-pool';
-import {mapCard, UNKNOWN_POKEMON, type JpTwin, type Language} from './mappers';
+import {pokemonNumber, UNKNOWN_POKEMON, type JpTwin, type Language} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
 
 /**
@@ -18,7 +18,7 @@ export const TWINS_FILE = 'src/scrapers/tcgdex/jp-twins.json';
 /** The file name carries the hash algorithm: change `hashArt` and bump the version, or old hashes would be compared with new ones. */
 const HASH_CACHE = '.cache/art-hashes-bun-v1.json';
 
-/** On trusted pairs the same print is at most 67 bits apart (median 15) and another print of the same Pokémon at least 98. */
+/** On trusted pairs the same print is at most 62 bits apart (median 14) and another print of the same Pokémon at least 101. */
 const SAME_PRINT = 80;
 /** A Trainer or Energy link needs a clearly closer best candidate, since only the artwork tells them apart. */
 const BEST_ART = 70;
@@ -87,7 +87,10 @@ function groupBy<T>(items: readonly T[], key: (item: T) => string | null): Map<s
 	const groups = new Map<string, T[]>();
 	for (const item of items) {
 		const value = key(item);
-		if (value !== null) groups.set(value, [...(groups.get(value) ?? []), item]);
+		if (value === null) continue;
+		const group = groups.get(value);
+		if (group) group.push(item);
+		else groups.set(value, [item]);
 	}
 	return groups;
 }
@@ -104,7 +107,7 @@ async function fetchCards(client: TcgdexClient, lang: Language): Promise<TcgdexC
 function dexesOf(lang: Language, cards: readonly TcgdexCard[]): Dexes {
 	const dexes: Dexes = new Map();
 	for (const card of cards) {
-		const dex = categoryOf(card) === 'Pokemon' ? mapCard(lang, card).pokemonNumber : undefined;
+		const dex = pokemonNumber(lang, card);
 		if (dex && dex !== UNKNOWN_POKEMON) dexes.set(card, dex);
 	}
 	return dexes;
@@ -154,6 +157,7 @@ function linkPokemon(ja: readonly TcgdexCard[], en: readonly TcgdexCard[], jaDex
 			const hits = [...sets].flatMap(setId => indexes[index].get(setId)?.get(wanted) ?? []);
 			if (hits.length === 1) {
 				links.set(card.id, {en: hits[0], method});
+				claimed.add(hits[0].id);
 				break;
 			}
 			/** Several prints of one art in the mapped sets: the one no other Japanese card has claimed, when exactly one is left. */
@@ -218,9 +222,17 @@ function pngLuma(png: Uint8Array): {height: number; luma: Float32Array; width: n
 			const a = x >= channels ? pixels[y * stride + x - channels] : 0;
 			const b = y > 0 ? pixels[(y - 1) * stride + x] : 0;
 			const c = x >= channels && y > 0 ? pixels[(y - 1) * stride + x - channels] : 0;
-			const [pa, pb, pc] = [Math.abs(b - c), Math.abs(a - c), Math.abs(a + b - 2 * c)];
-			const paeth = pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
-			pixels[y * stride + x] = (line[x] + [0, a, b, (a + b) >> 1, paeth][filter]) & 255;
+			let predictor = 0;
+			if (filter === 1) predictor = a;
+			else if (filter === 2) predictor = b;
+			else if (filter === 3) predictor = (a + b) >> 1;
+			else if (filter === 4) {
+				const pa = Math.abs(b - c);
+				const pb = Math.abs(a - c);
+				const pc = Math.abs(a + b - 2 * c);
+				predictor = pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+			}
+			pixels[y * stride + x] = (line[x] + predictor) & 255;
 		}
 	}
 	const luma = new Float32Array(width * height);
@@ -258,14 +270,18 @@ async function hashArt(base: string): Promise<string | null> {
 	return Array.from(words, word => word.toString(16).padStart(8, '0')).join('');
 }
 
-/** Artwork hashes by image base URL, persisted so a rerun does not refetch thousands of scans. A scan the CDN answers 4xx for is cached as `null`. */
+/**
+ * Artwork hashes by image base URL, persisted so a rerun does not refetch thousands of scans. A scan the CDN answers 4xx for is not cached:
+ * TCGdex lists a card's image URL before it uploads the scan, so a miss can turn into a hit and is probed again on the next run.
+ */
 class ArtHashes {
 	private readonly parsed = new Map<string, ArtHash | null>();
 
-	private constructor(private readonly cache: Record<string, string | null>) {}
+	private constructor(private readonly cache: Record<string, string>) {}
 
 	static async load(): Promise<ArtHashes> {
-		return new ArtHashes(await fs.readFile(HASH_CACHE, 'utf8').then(text => JSON.parse(text) as Record<string, string | null>, () => ({})));
+		const stored = await fs.readFile(HASH_CACHE, 'utf8').then(text => JSON.parse(text) as Record<string, string | null>, () => ({}));
+		return new ArtHashes(Object.fromEntries(Object.entries(stored).filter((entry): entry is [string, string] => entry[1] !== null)));
 	}
 
 	get(base: string | undefined): ArtHash | null {
@@ -279,7 +295,7 @@ class ArtHashes {
 		return hash;
 	}
 
-	/** Hashes every scan not cached yet, with bounded concurrency. A scan that keeps failing stays uncached and counts as missing for this run. */
+	/** Hashes every scan not cached yet, with bounded concurrency. A missing scan, or one that keeps failing, stays uncached and counts as missing for this run. */
 	async fill(bases: Iterable<string | undefined>, concurrency = 32): Promise<void> {
 		const missing = [...new Set(bases)].filter((base): base is string => !!base && !(base in this.cache));
 		console.log(`  art hashes: ${missing.length} scans to fetch`);
@@ -289,7 +305,8 @@ class ArtHashes {
 			while (next < missing.length) {
 				const base = missing[next++];
 				try {
-					this.cache[base] = await withRetry(() => hashArt(base), 3, 300);
+					const hash = await withRetry(() => hashArt(base), 3, 300);
+					if (hash) this.cache[base] = hash;
 				} catch {
 					failed++;
 				}

@@ -55,7 +55,7 @@ export async function deleteIn(supabase: SupabaseClient, table: string, column: 
 
 /**
  * Keeps the first row for each `key`, because an upsert fails when one statement carries the same key twice, and warns about every row it drops:
- * a silent drop once lost four real cards whose codes collided. Card rows carry `tcgdex_id`, which names the two cards in the warning.
+ * dropping a row silently can hide a real card whose code collides. Card rows carry `tcgdex_id`, which names the two cards in the warning.
  */
 export function deduplicate(rows: Record<string, unknown>[], key: string): Record<string, unknown>[] {
 	const byKey = new Map<unknown, Record<string, unknown>>();

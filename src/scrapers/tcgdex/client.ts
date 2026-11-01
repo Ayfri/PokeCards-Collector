@@ -1,6 +1,6 @@
 import {COMMUNITY_SET_IMAGES} from './community-images';
 import {jpTwinOf, type Language} from './mappers';
-import type {TcgdexCard, TcgdexCardBrief, TcgdexSet} from './types';
+import type {TcgdexCard, TcgdexSet} from './types';
 
 export const TCGDEX_ORIGIN = 'https://api.tcgdex.net';
 const TCGDEX_ASSETS = 'https://assets.tcgdex.net';
@@ -88,25 +88,28 @@ export class FetchClient implements TcgdexClient {
  * Card id -> English image base for the cards of the given sets that have no image in their own language. Many French sets
  * have no scan at all (every `dp*` set), so the English card with the same id stands in. A set missing from the English catalogue adds nothing.
  */
-export async function englishImages(client: TcgdexClient, sets: readonly (TcgdexSet | null)[]): Promise<Map<string, string>> {
-	const imageless = sets.filter(set => set?.cards?.some(card => !card.image));
-	const english = await mapAll(imageless, set => client.json<TcgdexSet>(`/v2/en/sets/${encodeURIComponent(set!.id)}`));
+export const englishImages = (client: TcgdexClient, sets: readonly (TcgdexSet | null)[]) =>
+	englishSetImages(client, sets.filter(set => set?.cards?.some(card => !card.image)).map(set => set!.id));
+
+/** Card id -> image base of every scanned card in the given English sets, one request per distinct set. */
+async function englishSetImages(client: TcgdexClient, setIds: Iterable<string>): Promise<Map<string, string>> {
+	const english = await mapAll([...new Set(setIds)], setId => client.json<TcgdexSet>(`/v2/en/sets/${encodeURIComponent(setId)}`));
 	return new Map(english.flatMap(set => set?.cards?.flatMap(card => card.image ? [[card.id, card.image] as const] : []) ?? []));
 }
 
 /**
  * Card id -> English image base for the cards of the given sets that have no scan of their own: a French card takes the English card
- * with the same id (`englishImages`), a Japanese card the English twin from `jp-twins.json`. Twin scans come from the one `/v2/en/cards`
- * list (2.4 MB, fetched only when a card needs it) rather than a request per twin, which would eat into a Worker step's subrequest cap.
+ * with the same id (`englishImages`), a Japanese card the English twin from `jp-twins.json`. A twin's scan comes from its English set
+ * (the twin id up to its last `-`), so a batch fetches only the sets its twins belong to rather than the 2.4 MB `/v2/en/cards` list.
  */
 export async function imageFallbacks(client: TcgdexClient, lang: Language, sets: readonly (TcgdexSet | null)[]): Promise<Map<string, string>> {
 	if (lang === 'fr') return englishImages(client, sets);
-	const twinOf = new Map(lang === 'ja' ? sets.flatMap(set => set?.cards?.flatMap(card => {
+	if (lang !== 'ja') return new Map();
+	const twinOf = new Map(sets.flatMap(set => set?.cards?.flatMap(card => {
 		const twin = card.image ? undefined : jpTwinOf(card.id);
 		return twin ? [[card.id, twin.en] as const] : [];
-	}) ?? []) : []);
-	if (!twinOf.size) return new Map();
-	const english = new Map((await client.json<TcgdexCardBrief[]>('/v2/en/cards'))?.flatMap(card => card.image ? [[card.id, card.image] as const] : []));
+	}) ?? []));
+	const english = await englishSetImages(client, [...twinOf.values()].map(twin => twin.slice(0, twin.lastIndexOf('-'))));
 	return new Map([...twinOf].flatMap(([id, twin]) => english.has(twin) ? [[id, english.get(twin)!] as const] : []));
 }
 

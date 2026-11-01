@@ -52,7 +52,7 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 	const produced = new Set<string>();
 	const crossCollisions = new Set<string>();
 	const knownTypes = new Set(read<string[]>(TYPES));
-	/** `LANGS` lists English first, so its ids are known when the Japanese file is checked. */
+	/** `LANGS` lists English first, so its ids are known when the Japanese file is checked. Empty without the English file, which skips the twin check. */
 	const englishIds = new Set<string>();
 
 	for (const {lang, cards: cardsPath, prices: pricesPath, sets: setsPath} of LANGS) {
@@ -87,7 +87,7 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 			distinct: distinct.size,
 			imageless: cards.filter(card => !card.image).length,
 			lang,
-			missingTwins: lang === 'ja' ? cards.flatMap(card => card.twinTcgdexId && !englishIds.has(card.twinTcgdexId) ? [`${card.tcgdexId} -> ${card.twinTcgdexId}`] : []) : [],
+			missingTwins: lang === 'ja' && englishIds.size ? cards.flatMap(card => card.twinTcgdexId && !englishIds.has(card.twinTcgdexId) ? [`${card.tcgdexId} -> ${card.twinTcgdexId}`] : []) : [],
 			priced: Object.keys(prices).length,
 			sharedSetNames: [...setNames].filter(([, count]) => count > 1).map(([name]) => name),
 			sets: sets.length,

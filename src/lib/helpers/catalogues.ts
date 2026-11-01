@@ -57,7 +57,7 @@ export type SetTable = CatalogueTables['sets'];
  */
 export type CardVersions = Partial<Record<Language, string>>;
 
-export const BY_ROUTE_CODE ={fr: CATALOGUES.fr, jp: CATALOGUES.ja};
+export const BY_ROUTE_CODE = {fr: CATALOGUES.fr, jp: CATALOGUES.ja};
 export const BY_GRID = {france: CATALOGUES.fr, japan: CATALOGUES.ja};
 
 /** The catalogue a URL path belongs to: its grid page or one of its card pages, English for everything else. */

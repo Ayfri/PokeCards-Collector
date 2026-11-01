@@ -3,7 +3,7 @@
 	import CardImage from '#components/card/CardImage.svelte';
 	import { loading } from '#stores/loading.svelte.ts';
 	import type { FullCard } from '#lib/types.js';
-	import type { TrainerGroupEntry } from '../../../routes/trainers/+page.server.ts';
+	import type { TrainerGroupEntry } from '#src/routes/trainers/+page.server.ts';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 
 	interface Props {
@@ -31,7 +31,7 @@
 	class="group bg-gray-800 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:-translate-y-1 focus:outline-hidden focus:ring-2 focus:ring-gold-400/75 p-3 flex flex-col items-center text-center border border-transparent hover:border-gold-400 [content-visibility:auto] [contain-intrinsic-size:auto_20rem]"
 	href={resolve('/card/[cardCode]', { cardCode: group.cardCode })}
 	onclick={() => (loading.navigation = true)}
-	title={`View the most valuable ${group.name} print`}
+	title={`View the ${group.name} prints`}
 >
 	<CardImage
 		alt={group.name}

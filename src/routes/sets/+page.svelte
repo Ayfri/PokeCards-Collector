@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import type { PageData } from './$types';
 	import { NO_IMAGES } from '#lib/images.ts';
@@ -30,10 +31,19 @@
 		totalPrice: (a, b) => a.totalPrice - b.totalPrice,
 	};
 
-	const setsSort = persistedRecord('sets-sort', {
+	const DEFAULT_SORT = {
 		direction: 'desc' as 'asc' | 'desc',
 		value: 'releaseDate' as SetSortValue,
-	});
+	};
+	const setsSort = persistedRecord('sets-sort', DEFAULT_SORT);
+
+	/**
+	 * The server renders `DEFAULT_SORT`, and hydration never patches an `img` `src`, so sorting by the saved value during hydration would pair
+	 * logos with another set's name. The saved sort applies once mounted.
+	 */
+	let mounted = $state(false);
+	onMount(() => { mounted = true; });
+	const shownSort = $derived(mounted ? setsSort : DEFAULT_SORT);
 
 	let searchTerm = $state('');
 
@@ -43,9 +53,9 @@
 		searchTerm = value;
 	}
 
-	const sortDirection = $derived(setsSort.direction === 'desc' ? -1 : 1);
+	const sortDirection = $derived(shownSort.direction === 'desc' ? -1 : 1);
 	/** localStorage can hold a sort value from an older build that `COMPARATORS` has no key for, so it falls back to `releaseDate`. */
-	const comparator = $derived(COMPARATORS[setsSort.value] ?? COMPARATORS.releaseDate);
+	const comparator = $derived(COMPARATORS[shownSort.value] ?? COMPARATORS.releaseDate);
 	const sortedSets = $derived([...(typedSets ?? [])].sort((a, b) => comparator(a, b) * sortDirection));
 
 	const filteredSets = $derived(searchTerm
@@ -64,7 +74,7 @@
 
 	/** Series are ordered by their first set, except when sorting by name, where the series name is what the user reads. */
 	const seriesKeys = $derived(Object.keys(groupedSets).sort((a, b) => {
-		if (setsSort.value === 'name') return a.localeCompare(b) * sortDirection;
+		if (shownSort.value === 'name') return a.localeCompare(b) * sortDirection;
 
 		const [firstSetA] = groupedSets[a];
 		const [firstSetB] = groupedSets[b];

@@ -36,7 +36,7 @@
 	/** The scan of another print or language whose illustration fills the window. Its own state, so a failed sprite never brings a failed scan back. */
 	let failedScan = $state<string>();
 	const scan = $derived(!NO_IMAGES && card?.artImage && card.artImage !== failedScan ? card.artImage : '');
-	const subtitle = $derived(card?.stage ?? (identity.kind === 'pokemon' ? card?.supertype : identity.label));
+	const subtitle = $derived(card?.stage || (identity.kind === 'pokemon' ? card?.supertype : identity.label));
 	const rarity = $derived(card && card.rarity !== 'None' ? card.rarity : '');
 	const number = $derived(card?.localId ? formatCardNumber(card.localId, set?.printedTotal) : '');
 	const artist = $derived(card && card.artist !== 'Unknown' ? card.artist : '');

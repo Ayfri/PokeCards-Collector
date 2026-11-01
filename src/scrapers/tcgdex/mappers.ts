@@ -135,7 +135,7 @@ export function resolveCardCode(lang: Language, tcgdexId: string, stored: string
  * TCGdex's dex id is trusted unless the English name names other species (it files the Tapu promos one species off
  * and swsh8-1 Caterpie as Celebi). With no dex id, the one in the card's override code is used.
  */
-function pokemonNumber(lang: Language, card: TcgdexCard): number | undefined {
+export function pokemonNumber(lang: Language, card: TcgdexCard): number | undefined {
 	if (card.category !== 'Pokemon') return undefined;
 	const dex = card.dexId?.map(Math.trunc) ?? [];
 	const named = lang === 'en' ? speciesInName(card.name) : [];
