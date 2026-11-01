@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from "./$types";
 	import CardImage from "#components/card/CardImage.svelte";
+	import RaritySymbol from "#components/card/RaritySymbol.svelte";
 	import SetLogo from "#components/SetLogo.svelte";
 	import CountUp from "#components/ui/CountUp.svelte";
 	import { page } from "$app/state";
@@ -487,8 +488,8 @@
 									{card.name}
 								</h3>
 								{#if card.rarity}
-									<p class="text-xs text-gray-400 mb-1">
-										{card.rarity}
+									<p class="text-xs text-gray-400 mb-1 flex items-center gap-1.5">
+										<RaritySymbol rarity={card.rarity} />{card.rarity}
 									</p>
 								{/if}
 								<p class="text-gold-400 font-bold text-sm">
@@ -550,8 +551,8 @@
 									{card.name}
 								</h3>
 								{#if card.rarity}
-									<p class="text-xs text-gray-400 mb-1">
-										{card.rarity}
+									<p class="text-xs text-gray-400 mb-1 flex items-center gap-1.5">
+										<RaritySymbol rarity={card.rarity} />{card.rarity}
 									</p>
 								{/if}
 								<p class="text-gold-400 font-bold text-sm">

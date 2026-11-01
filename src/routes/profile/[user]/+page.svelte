@@ -6,6 +6,7 @@
 	import SetLogo from '#components/SetLogo.svelte';
 	import Avatar from '#components/auth/Avatar.svelte';
 	import CardImage from '#components/card/CardImage.svelte';
+	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import BookOpen from '@lucide/svelte/icons/book-open';
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
@@ -293,7 +294,7 @@
 							{#each rarities as [rarity, count] (rarity)}
 								<li>
 									<div class="mb-1 flex justify-between gap-2 text-sm">
-										<span class="truncate text-gray-300">{rarity}</span>
+										<span class="flex min-w-0 items-center gap-2 text-gray-300"><RaritySymbol rarity={rarity} /><span class="truncate">{rarity}</span></span>
 										<span class="text-gray-400 tabular-nums">{numberFormatter.format(count)}</span>
 									</div>
 									<div class="h-1.5 overflow-hidden rounded-full bg-white/5">

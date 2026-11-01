@@ -1,6 +1,7 @@
 <script lang="ts">
 	import CardPlateArt from '#components/card/CardPlateArt.svelte';
 	import CardPlateEmblem from '#components/card/CardPlateEmblem.svelte';
+	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import SetLogo from '#components/SetLogo.svelte';
 	import { cardTypeTint } from '#helpers/card-images.ts';
@@ -116,7 +117,10 @@
 						</span>
 					{/each}
 					{#if rarity}
-						<span class="ml-auto truncate text-[3.5cqw] tracking-wide text-white/60 uppercase">{rarity}</span>
+						<span class="ml-auto flex min-w-0 items-center gap-[1.5cqw] text-[3.5cqw] tracking-wide text-white/60 uppercase">
+							<RaritySymbol class="text-[4.5cqw]" {rarity} />
+							<span class="truncate">{rarity}</span>
+						</span>
 					{/if}
 				</div>
 				<span class="truncate text-[4cqw] text-white/70">{card.setName}</span>

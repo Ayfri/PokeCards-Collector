@@ -3,6 +3,7 @@
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import Button from '#components/filters/Button.svelte';
 	import CardImage from '#components/card/CardImage.svelte';
+	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import Select from '#components/filters/Select.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
@@ -262,7 +263,7 @@
 								{#if fullCard}
 									<div class="truncate font-semibold">{fullCard.name}</div>
 									<div class="truncate">#{formatCardNumber(fullCard.localId || '?', set?.printedTotal)}</div>
-									<div class="truncate text-gray-300">{fullCard.rarity}</div>
+									<div class="flex items-center justify-center gap-1 truncate text-gray-300"><RaritySymbol rarity={fullCard.rarity} />{fullCard.rarity}</div>
 									<div class="truncate text-gold-400">{fullCard.price ? `${fullCard.price.toFixed(2)} €` : 'No price'}</div>
 								{:else}
 									<div class="truncate font-semibold">Imported from URL</div>

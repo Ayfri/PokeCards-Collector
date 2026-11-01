@@ -2,6 +2,8 @@
 	import PageTitle from '#components/PageTitle.svelte';
 	import type {FullCard, Pokemon, PriceData, Set} from '#lib/types.js';
 	import CardPrice from '#components/card/CardPrice.svelte';
+	import RaritySymbol from '#components/card/RaritySymbol.svelte';
+	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import { formatCardNumber } from '#helpers/card-utils.ts';
 	import { page } from '$app/state';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
@@ -144,8 +146,9 @@
 							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Energy type, or the card category for Trainer and Energy cards"><Sparkles size={14} /> Type:</dt>
 							<dd class="flex flex-wrap justify-end gap-1.5">
 								{#if card?.types}
-									{#each card.types.toLowerCase().split(',') as type}
-										<span class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${type} bg-(--type-color) text-white`}>
+									{#each card.types.toLowerCase().split(',') as type (type)}
+										<span class={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-sm font-medium capitalize ${type} bg-(--type-color) text-white`}>
+											<TypeSymbol {type} />
 											{type}
 										</span>
 									{/each}
@@ -183,7 +186,7 @@
 
 					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
 						<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="How scarce this print is"><Gem size={14} /> Rarity:</dt>
-						<dd class="text-white text-right">{card.rarity}</dd>
+						<dd class="flex items-center justify-end gap-2 text-white text-right"><RaritySymbol class="text-base" rarity={card.rarity} />{card.rarity}</dd>
 					</div>
 
 					<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">

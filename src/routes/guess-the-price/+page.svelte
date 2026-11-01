@@ -3,6 +3,7 @@
 	import type { Round } from './+page.server';
 	import { refreshAll } from '$app/navigation';
 	import CardImage from '#components/card/CardImage.svelte';
+	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import Numpad from '#lib/components/Numpad.svelte';
 	import PageTitle from '#lib/components/PageTitle.svelte';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
@@ -196,7 +197,7 @@
 						<h2 class="text-center text-xl font-semibold text-gold-300 sm:text-2xl">{round.card.name}</h2>
 						<div class="flex flex-wrap justify-center gap-1.5 text-xs text-gray-400">
 							<span class="flex items-center gap-1.5 rounded-full bg-gray-800/80 px-2.5 py-1" title="Set this card was printed in"><LibraryIcon size={13} /> {round.card.setName}</span>
-							<span class="flex items-center gap-1.5 rounded-full bg-gray-800/80 px-2.5 py-1" title="How scarce this print is"><GemIcon size={13} /> {round.card.rarity}</span>
+							<span class="flex items-center gap-1.5 rounded-full bg-gray-800/80 px-2.5 py-1" title="How scarce this print is"><GemIcon size={13} /> <RaritySymbol rarity={round.card.rarity} /> {round.card.rarity}</span>
 							<span class="flex items-center gap-1.5 rounded-full bg-gray-800/80 px-2.5 py-1" title="Release date of the set"><CalendarDaysIcon size={13} /> {releaseDate}</span>
 						</div>
 					</div>

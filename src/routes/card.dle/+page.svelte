@@ -6,6 +6,7 @@
 	import { getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
 	import Modal from '#components/ui/Modal.svelte';
 	import CardImage from '#components/card/CardImage.svelte';
+	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import Button from '#components/filters/Button.svelte';
 	import BouncyLoader from '#components/BouncyLoader.svelte';
@@ -304,7 +305,13 @@
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.artistCorrect)}`} title={getFeedbackHint('Artist', guess.feedback.artistCorrect)}>{guess.feedback.artistValue}</div>
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.setCorrect)}`} title={getFeedbackHint('Set', guess.feedback.setCorrect)}>{guess.feedback.setValue}</div>
 						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.supertypeCorrect)}`} title={getFeedbackHint('Supertype', guess.feedback.supertypeCorrect)}>{guess.feedback.supertypeValue}</div>
-						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.typesCorrect)}`} title={getFeedbackHint('Type', guess.feedback.typesCorrect)}>{guess.feedback.typesValue}</div>
+						<div class={`p-2 flex items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.typesCorrect)}`} title={getFeedbackHint('Type', guess.feedback.typesCorrect)}>
+							<span class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+								{#each guess.feedback.typesValue.split(',').filter(Boolean) as type (type)}
+									<span class="inline-flex items-center gap-1"><TypeSymbol {type} />{type.trim()}</span>
+								{/each}
+							</span>
+						</div>
 						<div class={`p-2 flex flex-col items-center justify-center text-center ${getFeedbackBgClass(guess.feedback.priceComparison === 'correct')}`} title={getPriceComparisonHint(guess.feedback.priceComparison)}>
 							<span class="flex items-center justify-center gap-1">
 								{#if guess.feedback.priceComparison === 'correct'}
