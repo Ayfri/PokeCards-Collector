@@ -3,6 +3,7 @@
 	import "#src/fonts/stylesheet.css";
 	import {onNavigate} from '$app/navigation';
 	import {page} from '$app/state';
+	import {untrack} from 'svelte';
 	import {NO_IMAGES} from '#lib/images.ts';
 	import {transitionNavigation} from '#helpers/view-transitions.ts';
 	import Header from '#components/Header.svelte';
@@ -20,10 +21,17 @@
 
 	let { children }: Props = $props();
 
-	/** The layout load returns both lists on every navigation, so the client stores follow the session. */
+	/**
+	 * The layout load returns both lists on every navigation, so the client stores follow the session. `replaceAll` reads the stores it
+	 * writes, so it runs untracked: tracked, a "+" would re-run this effect and reset the store to the load's list, hiding the new copy.
+	 */
 	$effect(() => {
-		wishlist.replaceAll(((page.data.wishlistItems ?? []) as UserWishlist[]).map(item => item.card_code));
-		collection.replaceAll(((page.data.collectionItems ?? []) as UserCollection[]).map(item => item.card_code));
+		const wishlistCodes = ((page.data.wishlistItems ?? []) as UserWishlist[]).map(item => item.card_code);
+		const collectionCodes = ((page.data.collectionItems ?? []) as UserCollection[]).map(item => item.card_code);
+		untrack(() => {
+			wishlist.replaceAll(wishlistCodes);
+			collection.replaceAll(collectionCodes);
+		});
 	});
 
 	/** Arms the loading bar as soon as an internal link is clicked, before SvelteKit starts the navigation. */
