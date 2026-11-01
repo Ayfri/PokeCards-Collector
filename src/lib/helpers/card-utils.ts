@@ -98,15 +98,15 @@ const SLUG_SYMBOLS: Record<string, string> = {
 /**
  * Lowercase letters and digits of any script joined by single hyphens, `Black & White` -> `black-and-white`, `Flabébé` -> `flabebe`.
  * Accents are stripped and the text is composed again, so Japanese `ガ` keeps its dakuten. `'` and `.` vanish instead of splitting (`farfetchd`, `mr-mime`).
- * `ex`, `gx` and `v` stay words (`charizard-ex`).
+ * `ex`, `gx` and `v` stay words (`charizard-ex`). French spells `&` as `et`, so French URLs read like the French names (`rouge-feu-et-vert-feuille`).
  */
-export function slugify(value: string): string {
+export function slugify(value: string, language: Language = 'en'): string {
 	return value
 		.normalize('NFKD')
 		.replace(/[\u0300-\u036f]/g, '')
 		.normalize('NFC')
 		.toLowerCase()
-		.replace(/[&δ☆★◇♀♂]/g, symbol => SLUG_SYMBOLS[symbol])
+		.replace(/[&δ☆★◇♀♂]/g, symbol => (symbol === '&' && language === 'fr' ? ' et ' : SLUG_SYMBOLS[symbol]))
 		.replace(/['’.]/g, '')
 		.replace(/[^\p{L}\p{N}]+/gu, '-')
 		.replace(/^-|-$/g, '');
@@ -126,7 +126,7 @@ export function cardSlugParts(card: CardLink, language: Language): [name: string
 	const number = /^\d+$/.test(card.localId)
 		? card.localId.replace(/^0+(?=\d)/, '')
 		: card.localId.replaceAll('!', ' exclamation ').replaceAll('?', ' question ');
-	return [slugify(card.name), slugify(language === 'ja' ? card.setId : card.setName), slugify(number)];
+	return [slugify(card.name, language), slugify(language === 'ja' ? card.setId : card.setName, language), slugify(number)];
 }
 
 /** The card page of a catalogue, percent-encoded for the Japanese names. No `paths.base`, so `goto` and `href` take it as is. */
@@ -136,7 +136,7 @@ export function cardPath(language: Language, card: CardLink): string {
 
 /** English and French sets use their name, Japanese ones add the set id (`ポケモンジャングル-pmcg2`) since their names repeat. */
 export function setSlug(set: Pick<CardSet, 'name' | 'setId'>, language: Language): string {
-	return [slugify(set.name), language === 'ja' ? slugify(set.setId) : ''].filter(Boolean).join('-');
+	return [slugify(set.name, language), language === 'ja' ? slugify(set.setId) : ''].filter(Boolean).join('-');
 }
 
 /** `/sets/<slug>` in English, `/france/sets/<slug>` and `/japan/sets/<slug>` in the other catalogues. */
