@@ -59,10 +59,11 @@
 	const previousPokemonCard = $derived(previousPokemon ? getRepresentativeCardForPokemon(previousPokemon.id, allCards, prices) : undefined);
 	const nextPokemonCard = $derived(nextPokemon ? getRepresentativeCardForPokemon(nextPokemon.id, allCards, prices) : undefined);
 
-	/** Deduplicated by `cardCode`, because `allCards` can list the same card more than once. */
-	const currentPokemonCards = $derived(currentPokemonId
-		? [...new Map(allCards.filter(c => c.pokemonNumber === currentPokemonId).map(c => [c.cardCode, c])).values()]
-		: []);
+	/**
+	 * Deduplicated by `cardCode`, because `allCards` can list the same card more than once.
+	 * A Trainer/Energy keeps the load's `pokemonCards`, because swapping to another print never leaves its group.
+	 */
+	const currentPokemonCards = $derived([...new Map((currentPokemonId ? allCards.filter(c => c.pokemonNumber === currentPokemonId) : pokemonCards).map(c => [c.cardCode, c])).values()]);
 
 	function handlePokemonImageError(event: Event) {
 		const img = event.currentTarget as HTMLImageElement;

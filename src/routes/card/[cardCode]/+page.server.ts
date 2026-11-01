@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { getCardDetails, getCards, getCardVersions, getPokemons, getPrices } from '#helpers/supabase-data.ts';
 import { processCardImage } from '#helpers/card-images.ts';
 import type { CardVersions } from '#helpers/catalogues.ts';
-import { cardPageCatalogue, cardPrice } from '#helpers/card-utils.ts';
+import { cardGroupKey, cardPageCatalogue, cardPrice } from '#helpers/card-utils.ts';
 import { article, breadcrumbs, cardSchema } from '#helpers/seo.ts';
 import type { FullCard, Pokemon } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
@@ -26,17 +26,9 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		associatedPokemon = allPokemons.find(p => p.id === targetCard.pokemonNumber);
 	}
 
-	/** Sibling cards: every print of the same Pokémon, or of the same trainer/energy name when the card has no dex number. */
-	let relevantCards: FullCard[] = [];
-
-	if (associatedPokemon) {
-		relevantCards = allCards.filter(c => c.pokemonNumber === associatedPokemon?.id && c.setName);
-	} else {
-		const normalizedTargetName = targetCard.name.toLowerCase();
-		relevantCards = allCards.filter(c =>
-			c.name.toLowerCase() === normalizedTargetName && c.setName
-		);
-	}
+	/** Sibling cards: every print of the same Pokémon, or of the same Trainer/Energy group (supertype and name, see `cardGroupKey`). */
+	const groupKey = cardGroupKey(targetCard);
+	let relevantCards: FullCard[] = allCards.filter(c => c.setName && cardGroupKey(c) === groupKey);
 
 	relevantCards.sort((a, b) => (cardPrice(prices[b.cardCode]) ?? 0) - (cardPrice(prices[a.cardCode]) ?? 0));
 	relevantCards = [targetCard, ...relevantCards.filter(c => c.cardCode !== cardCode)];

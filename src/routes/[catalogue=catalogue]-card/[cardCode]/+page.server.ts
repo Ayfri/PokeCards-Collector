@@ -4,7 +4,7 @@ import type { FullCard } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 import { error } from '@sveltejs/kit';
 import { processCardImage } from '#helpers/card-images.ts';
-import { cardPageCatalogue, cardPrice } from '#helpers/card-utils.ts';
+import { cardGroupKey, cardPageCatalogue, cardPrice } from '#helpers/card-utils.ts';
 import { breadcrumbs, cardSchema } from '#helpers/seo.ts';
 
 export const load: PageServerLoad = async ({ params }) => {
@@ -23,8 +23,9 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const pokemon = pokemons.find(p => p.id === card.pokemonNumber);
 
-	/** Every print of the same Pokémon, or of the same name for a Trainer or Energy, with this card first. */
-	const siblings = allCards.filter(c => c.cardCode !== cardCode && (card.pokemonNumber ? c.pokemonNumber === card.pokemonNumber : c.name === card.name));
+	/** Every print of the same Pokémon, or of the same Trainer/Energy group (see `cardGroupKey`), with this card first. */
+	const key = cardGroupKey(card);
+	const siblings = allCards.filter(c => c.cardCode !== cardCode && cardGroupKey(c) === key);
 	const pokemonCards: FullCard[] = [card, ...siblings];
 
 	const price = prices[card.cardCode];

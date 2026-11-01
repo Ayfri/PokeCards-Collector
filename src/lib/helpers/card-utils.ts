@@ -1,4 +1,16 @@
-import type { FullCard, Pokemon, PriceData } from '#lib/types.js';
+import type { Card, FullCard, Pokemon, PriceData } from '#lib/types.js';
+
+/** Display name of a Trainer/Energy group: a trailing letters-only parenthetical names the art's character ("Professor's Research (Professor Oak)"), while one with a digit is part of the card ("PokéDex (HANDY909)"). */
+export function cardGroupName(name: string): string {
+	return name.replace(/\s*\([\p{L}\s'’.]+\)$/u, '').trim();
+}
+
+/** The curly apostrophe is folded because both "Bill's Maintenance" and "Bill’s Maintenance" exist in the data. */
+export function cardGroupKey(card: Pick<Card, 'name' | 'pokemonNumber' | 'supertype'>): string {
+	if (card.supertype === 'Pokémon' && card.pokemonNumber) return `pokemon_${card.pokemonNumber}`;
+	const name = card.supertype === 'Pokémon' ? card.name : cardGroupName(card.name);
+	return `${card.supertype.toLowerCase()}_${name.toLowerCase().replaceAll('’', "'")}`;
+}
 
 /**
  * `supertype_pokemonId_setCode_cardNumber`, like `pokemon_6_sv3_125`. The set part is the legacy code, or `fr` + the TCGdex id for French cards.

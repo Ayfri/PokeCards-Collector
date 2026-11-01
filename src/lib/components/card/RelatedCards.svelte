@@ -6,7 +6,7 @@
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '#lib/images.ts';
-	import { cardPrice } from '#helpers/card-utils.ts';
+	import { cardGroupName, cardPrice } from '#helpers/card-utils.ts';
 	import { addCardToCollection, removeCardFromCollection } from '#lib/services/collections.ts';
 	import { addCardToWishlist, removeCardFromWishlist } from '#lib/services/wishlists.ts';
 	import { collection } from '#stores/collection.svelte.ts';
@@ -117,7 +117,7 @@
 
 	const titleName = $derived(pokemon
 		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
-		: (sortedCards[0]?.name || 'Related'));
+		: (cardGroupName(sortedCards[0]?.name ?? '') || 'Related'));
 
 	async function toggleWishlist(cardCode: string, event: MouseEvent) {
 		event.preventDefault();

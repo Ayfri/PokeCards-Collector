@@ -1,4 +1,5 @@
 import type { FullCard, GridPokemon, Set } from '#lib/types.js';
+import { cardGroupKey } from '#helpers/card-utils.ts';
 import { compareRarities, getRarityLevel } from '#helpers/rarity.ts';
 import type { ActiveFilters } from '#stores/filters.svelte.ts';
 import { CARD_SIZES, DEFAULT_CARD_SIZE } from '#stores/grid.svelte.ts';
@@ -18,14 +19,12 @@ export function getCardSet(card: Pick<FullCard, 'language' | 'setId'>, sets: Set
 	return setsByKey.get(setKey(card)) ?? null;
 }
 
-/** Groups Pokémon by dex number and other supertypes by name, keeping only the priciest card of each group. */
+/** Groups Pokémon by dex number and other supertypes by name (see `cardGroupKey`), keeping only the priciest card of each group. */
 export function keepMostExpensivePerGroup(cards: FullCard[]): FullCard[] {
 	const groups = new Map<string, FullCard>();
 
 	for (const card of cards) {
-		const groupKey = card.supertype === 'Pokémon' && card.pokemonNumber
-			? `pokemon_${card.pokemonNumber}`
-			: `${card.supertype.toLowerCase()}_${card.name.toLowerCase()}`;
+		const groupKey = cardGroupKey(card);
 
 		const existing = groups.get(groupKey);
 		if (!existing || (card.price ?? 0) > (existing.price ?? 0)) {
