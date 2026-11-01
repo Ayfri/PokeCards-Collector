@@ -6,7 +6,7 @@
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import SetLogo from '#components/SetLogo.svelte';
 	import { cardTypeTint, NO_IMAGES } from '#helpers/card-images.ts';
-	import { artNote, DARK_BODY_TYPES, FULL_ART_RARITIES, hasSilverBorder, plateIdentity, plateTexture } from '#helpers/card-plate.ts';
+	import { artNote, DARK_BODY_TYPES, FULL_ART_RARITIES, hasSilverBorder, plateIdentity, plateTexture, TRAINER_BODY } from '#helpers/card-plate.ts';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { formatCardNumber } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc } from '#helpers/pokemon-utils.ts';
@@ -34,8 +34,8 @@
 	const language = $derived(card?.language ?? catalogueOfPath(page.url.pathname).language);
 	/** A Trainer or Energy has no species to draw, so the plate shows an emblem of what it is instead of an artwork. */
 	const identity = $derived(plateIdentity(card, types, language));
-	/** 70% of the Japanese cards have no art, so the plate takes the card's energy colors for its body. */
-	const tintStyle = $derived(cardTypeTint(identity.tint));
+	/** 70% of the Japanese cards have no art, so the plate takes the card's energy colors for its body, or the silver of a printed Trainer. */
+	const tintStyle = $derived(identity.kind === 'trainer' ? TRAINER_BODY : cardTypeTint(identity.tint));
 	/** PokéAPI ships an artwork for every species, so a Pokémon card with no scan still shows what it depicts. */
 	const artUrl = $derived(!NO_IMAGES && card?.pokemonNumber ? getPokemonImageSrc(card.pokemonNumber) : '');
 	/** Keyed on the URL rather than a boolean, so a recycled tile showing another Pokémon retries its artwork. */
@@ -81,7 +81,7 @@
 			{#if scan && !fullArt}
 				<CardPlateArt base={scan} onerror={() => (failedScan = scan)} />
 			{:else if !scan && identity.kind !== 'pokemon'}
-				<CardPlateEmblem emblem={identity.emblem} kind={identity.kind} special={identity.special} />
+				<CardPlateEmblem accent={identity.accent} emblem={identity.emblem} kind={identity.kind} special={identity.special} />
 			{:else if !scan && artUrl && artUrl !== failedArt}
 				<img
 					alt=""

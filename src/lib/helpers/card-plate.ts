@@ -4,6 +4,10 @@ import type {FullCard} from '#lib/types.js';
 export type PlateKind = 'energy' | 'pokemon' | 'trainer';
 
 export interface PlateIdentity {
+	/** The energy color of a Trainer's kind pill and emblem (`water` for an Item), empty for other cards. */
+	accent: string;
+	/** The `TRAINER` banner a Trainer card prints in its top-left corner, in the card's language, empty for other cards. */
+	banner: string;
 	/** Key of the icon the plate draws: an energy type, a Trainer kind (`supporter`, `item`, `stadium`, `tool`, `trainer`) or a finer Trainer glyph (`ball`, `potion`, `fossil`, `machine`), empty for a Pokémon. */
 	emblem: string;
 	kind: PlateKind;
@@ -11,7 +15,7 @@ export interface PlateIdentity {
 	label: string;
 	/** True for a Special Energy, which gets a gold ring around its emblem. */
 	special: boolean;
-	/** Comma-separated energy types that color the plate through `cardTypeTint`, empty to keep the plain gray. */
+	/** Comma-separated energy types that color the plate through `cardTypeTint`, empty to keep the plain gray (or the silver of a Trainer). */
 	tint: string;
 	/** The energy types the footer lists. */
 	typeNames: string[];
@@ -21,8 +25,11 @@ const ENERGY_TYPES = ['colorless', 'darkness', 'dragon', 'fairy', 'fighting', 'f
 const ENERGY_TYPE = new RegExp(`\\b(${ENERGY_TYPES.join('|')})\\b`, 'i');
 const BASIC_ENERGY = new RegExp(`^(basic )?(${ENERGY_TYPES.join('|')}) energy$`, 'i');
 
-/** The Trainer kinds, each tinted with the energy color that reads best next to the others. */
-const TRAINER_TINTS: Record<string, string> = {item: 'water', stadium: 'grass', supporter: 'fire', tool: 'psychic', trainer: 'metal'};
+/** The Trainer kinds with the energy color of the pill a printed card names them in: Item blue, Stadium green, Supporter orange, Pokémon Tool purple. */
+const TRAINER_ACCENTS: Record<string, string> = {item: 'water', stadium: 'grass', supporter: 'fire', tool: 'psychic', trainer: 'metal'};
+
+/** A printed Trainer card has a silver body whatever its kind, with only its kind pill in color. */
+export const TRAINER_BODY = '--tint-a: #dfe2e6; --tint-b: #a9aeb6';
 
 /** The card's `subtype` (`Supporter`, `Item`, `Normal`, `Special`...) wins over the name guesses below, which only cover cards that have none. */
 function subtypeOf(card: FullCard): string {
@@ -43,7 +50,7 @@ const TRAINER_NAME_RULES: [RegExp, string, string][] = [
 ];
 
 function trainerKind(card: FullCard): {emblem: string; kind: string} {
-	const declared = Object.keys(TRAINER_TINTS).find(kind => subtypeOf(card).includes(kind));
+	const declared = Object.keys(TRAINER_ACCENTS).find(kind => subtypeOf(card).includes(kind));
 	const rule = TRAINER_NAME_RULES.find(([pattern]) => pattern.test(card.name));
 	if (declared) return {emblem: rule?.[1] === declared ? rule[2] : declared, kind: declared};
 	return rule ? {emblem: rule[2], kind: rule[1]} : {emblem: 'trainer', kind: 'trainer'};
@@ -165,6 +172,8 @@ export function plateIdentity(card: FullCard | undefined, types: string | undefi
 		const declared = subtypeOf(card);
 		const special = declared ? declared.includes('special') : !BASIC_ENERGY.test(card.name);
 		return {
+			accent: '',
+			banner: '',
 			emblem: energyType || 'rainbow',
 			kind: 'energy',
 			label: KIND_LABELS[special ? 'special' : 'basic'][language],
@@ -179,14 +188,16 @@ export function plateIdentity(card: FullCard | undefined, types: string | undefi
 		const declared = subtypeOf(card);
 		const labelKey = declared.includes('rocket') ? 'rocket' : declared.includes('technical machine') || emblem === 'machine' ? 'machine' : kind;
 		return {
+			accent: TRAINER_ACCENTS[kind] ?? 'metal',
+			banner: KIND_LABELS.trainer[language],
 			emblem,
 			kind: 'trainer',
 			label: KIND_LABELS[labelKey][language],
 			special: false,
-			tint: TRAINER_TINTS[kind] ?? '',
+			tint: '',
 			typeNames: []
 		};
 	}
 
-	return {emblem: '', kind: 'pokemon', label: '', special: false, tint: listed.join(', '), typeNames: listed};
+	return {accent: '', banner: '', emblem: '', kind: 'pokemon', label: '', special: false, tint: listed.join(', '), typeNames: listed};
 }

@@ -26,7 +26,10 @@
 	const EX_SUFFIX = /(?:[\s-]|(?<=[぀-ヿ一-鿿]))ex$/;
 	const exSuffix = $derived(EX_SUFFIX.test(heading));
 	const name = $derived(heading.replace(EX_SUFFIX, ''));
-	const subtitle = $derived(stageLabel(card.stage, language) || (identity.kind === 'pokemon' ? card.supertype : identity.label));
+	/** A Trainer names its kind in the colored pill of the banner row instead. */
+	const subtitle = $derived(identity.banner ? '' : stageLabel(card.stage, language) || (identity.kind === 'pokemon' ? card.supertype : identity.label));
+	/** A plain Trainer (no known kind) has only its banner: a pill would repeat the same word. */
+	const kindPill = $derived(identity.label !== identity.banner ? identity.label : '');
 
 	/** A name that does not fit is squeezed horizontally like on a printed card, never cut or wrapped; below this the text stops being legible. */
 	const MIN_SQUISH = 0.55;
@@ -68,6 +71,19 @@
 		};
 	}
 </script>
+
+<!-- A printed Trainer card opens with a dark slanted `TRAINER` tab against the left border and its kind in a colored pill on the right. -->
+{#if identity.banner}
+	<div class="-mb-[1cqw] -ml-[3.5cqw] -mr-[3cqw] flex items-center justify-between gap-[2cqw] @max-[200px]:hidden">
+		<span class="-skew-x-12 bg-gray-900 py-[0.4cqw] pr-[3cqw] pl-[3.5cqw] text-[3.4cqw] leading-tight font-bold tracking-wider text-white uppercase italic">{identity.banner}</span>
+		{#if kindPill}
+			<span
+				class="rounded-full px-[2.5cqw] py-[0.3cqw] text-[3cqw] leading-tight font-semibold whitespace-nowrap text-white italic shadow-[0_0.3cqw_0.8cqw_rgb(0_0_0/0.35)]"
+				style:background-color="color-mix(in oklab, var(--{identity.accent}) 55%, var(--{identity.accent}2))"
+			>{kindPill}</span>
+		{/if}
+	</div>
+{/if}
 
 <!-- Like on a real card the header has no box and its text is black, white (with a shadow) only over a full-art scan or a dark body.
      It starts under the card's left border, where a printed stage tab sits. -->
