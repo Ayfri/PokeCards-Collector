@@ -9,12 +9,12 @@
 </script>
 
 <!-- Rendered outside the `{#await}` that holds the grid: the cards stream in, but the heading and the lede are in
-     the first byte, which is all a crawler that does not run JavaScript ever sees of this page. It sits in the flex
-     column above the grid, which takes whatever height is left, so the lede never pushes the cards off-screen. -->
-<header class="mx-auto max-w-4xl shrink-0 px-4 pb-1 text-center">
-	<h1 class="text-xl font-bold text-gold-400 max-md:text-lg">{title}</h1>
-	<p class="text-xs text-balance text-gray-400 md:text-sm">{description}</p>
+     the first byte, which is all a crawler that does not run JavaScript ever sees of this page. It is one line above the
+     toolbar so the grid keeps the viewport: the lede is truncated on screen, while the full text stays in the markup. -->
+<header class="flex min-w-0 shrink-0 items-baseline gap-x-3 px-4 pb-1 max-md:flex-col max-md:items-center max-md:text-center lg:px-10">
+	<h1 class="shrink-0 text-lg font-bold text-gold-400">{title}</h1>
+	<p class="min-w-0 truncate text-xs text-gray-400 max-md:line-clamp-2 max-md:whitespace-normal" title={description}>{description}</p>
 	{#if note}
-		<p class="text-xs text-yellow-500">{note}</p>
+		<p class="shrink-0 text-xs text-gold-300">{note}</p>
 	{/if}
 </header>

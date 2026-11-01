@@ -51,7 +51,7 @@
 		</div>
 	{:then payload}
 		{@const sets = [...data.sets, ...payload.sets]}
-		<div class="flex min-h-0 grow flex-col py-8">
+		<div class="flex min-h-0 grow flex-col pt-2">
 			{#if data.isOwner}
 				<div class="mb-4 flex justify-end">
 					<button class="flex items-center gap-2 rounded-lg border border-gray-700 px-3 py-2 text-sm text-gray-300 hover:border-gold-400 hover:text-gold-400" onclick={() => (importing = true)} type="button">

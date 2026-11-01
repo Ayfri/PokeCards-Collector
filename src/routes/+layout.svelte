@@ -22,6 +22,10 @@
 
 	let { children }: Props = $props();
 
+	/** These pages scroll their card grid inside exactly one viewport, so the footer sits below the fold instead of taking the grid's height. */
+	const FULL_VIEWPORT_ROUTES = new Set(['/cards-list', '/[grid=catalogueGrid]', '/collection/[user]', '/wishlist/[user]']);
+	const fullViewport = $derived(FULL_VIEWPORT_ROUTES.has(page.route.id ?? ''));
+
 	/** A stable reference for "no list", so the derived arrays below only change when the layout load returns new ones. */
 	const EMPTY: readonly never[] = Object.freeze([]);
 
@@ -119,7 +123,7 @@
 <div class="flex flex-col min-h-screen">
 	<LoadingBar />
 	<Header />
-	<main class="flex min-h-0 grow flex-col pt-24 lg:pt-32">
+	<main class={['flex min-h-0 grow flex-col pt-24', fullViewport ? 'h-dvh shrink-0' : 'lg:pt-32']}>
 		{@render children?.()}
 	</main>
 	<!-- The Guess the Price board fills exactly one viewport, so a footer under it would only add a scrollbar. -->

@@ -148,7 +148,7 @@
 		<div
 			class="flex justify-between items-center p-4 border-b border-white/10"
 		>
-			<h2 class="m-0 text-xl text-[#FFB700] font-semibold">Filters</h2>
+			<h2 class="m-0 text-xl font-semibold text-gold-400">Filters</h2>
 			<button
 				class="bg-transparent border-none text-white p-1 rounded-sm hover:bg-white/10 transition-colors flex items-center justify-center"
 				onclick={() => (showFilters = false)}
@@ -165,14 +165,14 @@
 {/if}
 
 <div class="flex min-h-0 flex-1 flex-col">
-	<div class="flex flex-col md:flex-row justify-between items-center pb-3 px-4 lg:px-10 gap-1 md:gap-0 mb-0">
-		<div class="flex flex-col md:flex-row items-center md:ml-14">
+	<div class="flex flex-col items-center justify-between gap-1 px-4 pb-2 md:flex-row md:gap-0 lg:px-10">
+		<div class="flex flex-col items-center md:flex-row">
 			{#if pageTitle}
 				<PageTitle title={pageTitle} />
 			{/if}
 
-			<span class="text-gold-400 text-xs md:text-sm mt-1 md:mt-0 md:ml-3">
-				({uniquePokemonCount} Pokémon, {visibleCardsCount} cards)
+			<span class={['text-xs text-gray-400 tabular-nums md:text-sm', pageTitle && 'mt-1 md:mt-0 md:ml-3']}>
+				<span class="text-gold-400">{visibleCardsCount}</span> cards, <span class="text-gold-400">{uniquePokemonCount}</span> Pokémon
 			</span>
 			{#if selectedSetName || selectedArtistName}
 				<div class="flex flex-wrap gap-2 items-center ml-3">
@@ -186,7 +186,7 @@
 			{/if}
 		</div>
 
-		<div class="flex items-end gap-2">
+		<div class="flex items-center gap-2">
 			<div class="mr-3 ml-1 hidden md:block">
 				<SizeSlider />
 			</div>
@@ -195,6 +195,7 @@
 				<TextInput
 					id="name"
 					label="Name"
+					labelClass="sr-only"
 					bind:value={searchName}
 					placeholder="Search by name..."
 					debounceFunction={setFilterName}
@@ -211,7 +212,7 @@
 				</Button>
 				{#if filters.count > 0}
 					<span
-						class="absolute -bottom-1 -right-1 bg-[#FFB700] text-black text-xs font-bold flex items-center justify-center w-5 h-5 rounded-full pointer-events-none z-20"
+						class="absolute -bottom-1 -right-1 bg-gold-400 text-black text-xs font-bold flex items-center justify-center size-5 rounded-full pointer-events-none z-20"
 						in:fade={{ delay: 400, duration: 200 }}
 					>
 						{filters.count}

@@ -21,7 +21,7 @@
 
 </script>
 
-<main class="max-lg:px-0 text-white text-lg flex min-h-0 flex-col flex-1 lg:-mt-8">
+<div class="flex min-h-0 flex-1 flex-col text-lg text-white">
 	<GridHeading description={data.description} title={data.title} />
 
 	<!-- The loader is absolutely positioned so that during its out transition the grid mounts under it, not below it. -->
@@ -44,7 +44,7 @@
 				{lowRes}
 			/>
 		{:catch cardError}
-			<p class="text-red-500 p-4">Error loading cards: {cardError.message}</p>
+			<p class="p-4 text-red-400">Error loading cards: {cardError.message}</p>
 		{/await}
 	</div>
-</main>
+</div>

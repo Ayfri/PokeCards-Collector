@@ -31,11 +31,11 @@
 			<p class="mt-3 text-white">Loading cards...</p>
 		</div>
 	{:then cardDataResolved}
-		<main class="max-lg:px-0 text-white text-lg flex min-h-0 flex-col flex-1 lg:-mt-8">
+		<div class="flex min-h-0 flex-1 flex-col text-lg text-white">
 			<CardGrid cards={cardDataResolved.cards} {sets} rarities={cardDataResolved.rarities} types={cardDataResolved.types} artists={cardDataResolved.artists} pokemons={cardDataResolved.pokemons} pageTitle={null} selectedSetName={selectedSetName} selectedArtistName={artistName(cardDataResolved.artists)} />
-		</main>
+		</div>
 	{:catch error}
-		<p style="color: red">Error loading cards: {error.message}</p>
+		<p class="p-4 text-red-400">Error loading cards: {error.message}</p>
 	{/await}
 {/key}
 
