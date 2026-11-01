@@ -1,5 +1,5 @@
 import { BY_ROUTE_CODE } from '#helpers/catalogues.ts';
-import { countCards, getCards } from '#helpers/supabase-data.ts';
+import { countCards } from '#helpers/supabase-data.ts';
 import { SITEMAP_CHUNK, sitemapIndex, sitemapResponse } from '#helpers/sitemap.ts';
 
 /**
@@ -8,7 +8,7 @@ import { SITEMAP_CHUNK, sitemapIndex, sitemapResponse } from '#helpers/sitemap.t
  */
 export async function GET() {
 	const foreign = Object.entries(BY_ROUTE_CODE);
-	const [cards, ...foreignCounts] = await Promise.all([getCards(), ...foreign.map(([, { language }]) => countCards(language))]);
+	const [englishCount, ...foreignCounts] = await Promise.all([countCards('en'), ...foreign.map(([, { language }]) => countCards(language))]);
 
 	const chunks = (total: number, path: string) =>
 		Array.from({ length: Math.max(1, Math.ceil(total / SITEMAP_CHUNK)) }, (_, index) => ({
@@ -17,7 +17,7 @@ export async function GET() {
 
 	return sitemapResponse(sitemapIndex([
 		{ loc: '/sitemap-pages.xml' },
-		...chunks(cards.length, '/sitemap-cards'),
+		...chunks(englishCount,'/sitemap-cards'),
 		...foreign.flatMap(([routeCode], index) => chunks(foreignCounts[index], `/sitemap-${routeCode}-cards`)),
 	]));
 }

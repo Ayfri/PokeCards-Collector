@@ -13,11 +13,8 @@ export const load: PageServerLoad = async ({ parent }) => {
 	/** Cards are not deduplicated on `image`: TCGdex gives each card its own art URL, so that would only drop the real cards it has no art for. */
 	const processedAllCards = allCardsResolved.filter(card => Boolean(card.setName));
 
-	const latestSet = [...sets].sort((a, b) => {
-		const dateA = new Date(a.releaseDate).getTime();
-		const dateB = new Date(b.releaseDate).getTime();
-		return dateB - dateA;
-	})[0];
+	/** `sets[0]` seeds the reduce and is `undefined` only when there are no sets, where the callback never runs. */
+	const latestSet = sets.reduce((latest, set) => new Date(set.releaseDate) > new Date(latest.releaseDate) ? set : latest, sets[0]);
 
 	const latestSetCards = latestSet ? processedAllCards.filter(card => {
 		const cardSetName = card.setName?.toLowerCase();
@@ -95,9 +92,6 @@ export const load: PageServerLoad = async ({ parent }) => {
 			foreignCards: { fr: frenchCardCount, ja: japaneseCardCount },
 			totalCards: allCardsResolved.length,
 			uniquePokemon: pokemons.length,
-			pokemonCards: allCardsResolved.filter(card => card.supertype === 'Pokémon').length,
-			trainerCards: allCardsResolved.filter(card => card.supertype === 'Trainer').length,
-			energyCards: allCardsResolved.filter(card => card.supertype === 'Energy').length,
 		},
 		...pageSeoData
 	};

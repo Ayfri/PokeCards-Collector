@@ -1,15 +1,15 @@
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, setSchema } from '#helpers/seo.ts';
+import { getSets } from '#helpers/supabase-data.ts';
 
 /**
  * SEO only: the grid's cards, prices, pokemons and types come from `/api/cards-list` through `+page.ts`.
  * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends what it returns.
+ * The sets are not returned: the layout already sends them, and `getSets()` is memoized and ordered by name.
  */
 export const load: PageServerLoad = async ({ parent, url }) => {
-	const parentLayoutData = await parent();
-
-	const sets = [...(parentLayoutData.sets || [])];
-	sets.sort((a, b) => a.name.localeCompare(b.name));
+	/** `parent()` only supplies the fallback share image, so the sets load in parallel with it. */
+	const [{ image: parentImage }, sets] = await Promise.all([parent(), getSets()]);
 
 	const setParam = url.searchParams.get('set');
 	let ogImage = null;
@@ -35,10 +35,9 @@ export const load: PageServerLoad = async ({ parent, url }) => {
 	}
 
 	return {
-		sets,
 		title: ogTitle,
 		description: ogDescription,
-		image: ogImage ?? parentLayoutData.image,
+		image: ogImage ?? parentImage,
 		breadcrumbs: ogCrumbs,
 		keywords: ogKeywords,
 		schemas: ogSchemas,
