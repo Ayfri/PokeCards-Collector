@@ -43,14 +43,16 @@
 	});
 </script>
 
+<!-- On phones the header has no room for the real input, so this field-shaped button spans the free width and opens the search. -->
 <button
-	class="text-gray-400 hover:text-white rounded-full sm:hidden"
+	class="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-gray-700 bg-black px-3 py-1.5 text-left text-sm text-gray-400 transition-colors hover:border-gray-500 hover:text-white sm:hidden"
 	onclick={event => { event.stopPropagation(); toggleModal(); }}
 	aria-label="Open search"
 	title="Search cards and Pokémon"
 	bind:this={searchButton}
 >
-	<Search />
+	<Search class="shrink-0" size={16} />
+	<span class="truncate">Search cards…</span>
 </button>
 
 {#if isOpen}

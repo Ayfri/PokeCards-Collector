@@ -190,7 +190,7 @@
 
 		<span class="flex-1 hidden lg:block"></span>
 
-		<div class="flex items-center gap-2 xs:gap-4">
+		<div class="flex items-center gap-2 xs:gap-4 max-sm:min-w-0 max-sm:flex-1">
 			<a
 				href={discordInviteUrl}
 				target="_blank"
