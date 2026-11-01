@@ -108,7 +108,7 @@
 			{/if}
 			{#if identity.kind === 'pokemon'}
 				{#each identity.typeNames as type, index (type)}
-					<TypeSymbol class={[index > 0 && '@max-[200px]:hidden']} decorative glyph="black" pale {type} />
+					<TypeSymbol class={[index > 0 && '@max-[200px]:hidden']} decorative pale {type} />
 				{/each}
 			{/if}
 		</div>

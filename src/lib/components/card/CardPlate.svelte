@@ -124,7 +124,7 @@
 				<div class="flex flex-wrap items-center gap-[1.5cqw]">
 					{#each identity.typeNames as type (type)}
 						<span class={['flex items-center gap-[1.2cqw] rounded-full border px-[2.5cqw] py-[0.5cqw] text-[3.5cqw] tracking-wide uppercase', lightText ? 'border-white/25 bg-black/30' : 'border-gray-950/30 bg-white/45']}>
-							<TypeSymbol decorative glyph="black" {type} />{type}
+							<TypeSymbol decorative {type} />{type}
 						</span>
 					{/each}
 				</div>

@@ -149,7 +149,7 @@
 											href="{catalogue.gridRoute}?pokemontype={encodeURIComponent(type.trim())}"
 											title="View all {type.trim()} cards"
 										>
-											<TypeSymbol decorative glyph="black" pale {type} />
+											<TypeSymbol decorative pale {type} />
 											{type}
 										</a>
 									{/each}
