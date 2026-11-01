@@ -8,9 +8,8 @@
 
 	let { username, size = "size-8 text-lg", profileColor = null }: Props = $props();
 
-	/** Same as `gold-400` in the theme. */
-	const defaultColorStart = '#fbc54a';
-	const defaultColorEnd = '#c08e1a';
+	const defaultColorStart = 'var(--color-gold-400)';
+	const defaultColorEnd = 'var(--color-gold-600)';
 
 	function darkenHexColor(hex: string, percent: number): string {
 		hex = hex.replace(/^#/, '');

@@ -2,9 +2,6 @@
 
 @import 'tailwindcss';
 
-/* The site is dark only: `dark:` follows the `dark` class `app.html` sets on `<html>`, not the OS preference, which would turn the auth modal white. */
-@custom-variant dark (&:where(.dark, .dark *));
-
 @theme {
   --font-*: initial;
   --font-clash: Clash Display, sans-serif;
@@ -16,8 +13,18 @@
   --color-gold-500: #f6ae1e;
   --color-gold-600: #d8870e;
 
+  /* The whole gray scale is redeclared neutral: Tailwind's defaults are blue-tinted and clashed with the neutral 400 and 800 the site already used. */
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f4f4f4;
+  --color-gray-200: #e5e5e5;
+  --color-gray-300: #d4d4d4;
   --color-gray-400: #aeaeae;
+  --color-gray-500: #737373;
+  --color-gray-600: #525252;
+  --color-gray-700: #3a3a3a;
   --color-gray-800: #232323;
+  --color-gray-900: #171717;
+  --color-gray-950: #0a0a0a;
 
   --breakpoint-xs: 420px;
   --breakpoint-2xs: 350px;
@@ -77,9 +84,9 @@
 }
 
 /*
-  Tailwind CSS v4 defaults the border color to `currentcolor`. This restores the v3 default (gray-200) so borders
-  without an explicit color keep their look. Removing it means adding a border color utility to every element
-  that relies on the default.
+  Tailwind CSS v4 defaults the border color to `currentcolor`. This sets gray-700 instead, the divider tone on the dark
+  gray-800 surfaces, so a `border` without a color class stays quiet. Removing it means adding a border color utility
+  to every element that relies on the default.
 */
 @layer base {
   *,
@@ -87,7 +94,13 @@
   ::before,
   ::backdrop,
   ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
+    border-color: var(--color-gray-700, currentcolor);
+  }
+
+  /* No hover color: once `scrollbar-color` is set, Chrome ignores `::-webkit-scrollbar-thumb:hover`, and a gold thumb on `*:hover` would light up every ancestor. */
+  * {
+    scrollbar-color: var(--color-gray-600) transparent;
+    scrollbar-width: thin;
   }
 }
 
@@ -123,6 +136,42 @@
 	&:not(:disabled):active::before {
 		height: 100%;
 	}
+}
+
+/* Keyboard-only ring, so a mouse click on a button leaves no outline. */
+@utility focus-ring {
+	@apply focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900;
+}
+
+/* The three button kinds carry no width: add `w-full` where the button has to fill its row. */
+@utility btn-gold {
+	@apply focus-ring inline-flex items-center justify-center gap-2 rounded-lg bg-gold-400 px-4 py-2 font-bold text-black transition-colors duration-300 hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@utility btn-outline-gold {
+	@apply animated-hover-button focus-ring inline-flex items-center justify-center gap-2 rounded-md border-2 border-gold-400 px-4 py-2 text-sm font-medium text-gold-400;
+}
+
+@utility btn-secondary {
+	@apply focus-ring inline-flex items-center justify-center gap-2 rounded-lg bg-gray-700 px-4 py-2 font-bold text-white transition-colors duration-300 hover:bg-gray-600;
+}
+
+/* Padding stays per use. */
+@utility card-tile {
+	@apply rounded-lg border border-transparent bg-gray-800 shadow-lg transition duration-300 hover:-translate-y-1 hover:border-gold-400 hover:shadow-xl;
+}
+
+/* Margin stays per use. */
+@utility gold-rule {
+	@apply mx-auto h-1 w-full max-w-200 bg-linear-to-r from-transparent via-gold-400 to-transparent;
+}
+
+@utility form-label {
+	@apply mb-1 block text-sm font-medium text-gray-300;
+}
+
+@utility form-input {
+	@apply w-full rounded-md border border-gray-700/60 bg-gray-900/50 px-3 py-2 text-white placeholder:text-gray-500 focus:border-gold-400 focus:outline-hidden;
 }
 
 html {

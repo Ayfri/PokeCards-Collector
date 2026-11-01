@@ -3,7 +3,6 @@
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import PasswordField from './PasswordField.svelte';
 	import { finishSignIn, readJson, type ApiError } from '#helpers/utils.ts';
-	import { FORM_INPUT_CLASS, FORM_LABEL_CLASS, GOLD_BUTTON_CLASS } from '#src/constants.ts';
 
 	interface Props {
 		onSuccess?: () => void;
@@ -87,8 +86,8 @@
 	{/if}
 
 	<div>
-		<label for="email" class={FORM_LABEL_CLASS}>Email</label>
-		<input type="email" id="email" bind:value={email} class={FORM_INPUT_CLASS} placeholder="your@email.com" required />
+		<label for="email" class="form-label">Email</label>
+		<input type="email" id="email" bind:value={email} class="form-input"placeholder="your@email.com" required />
 	</div>
 
 	<div>
@@ -106,16 +105,16 @@
 
 	{#if showReset}
 		<div class="space-y-2">
-			<label for="reset-email" class={FORM_LABEL_CLASS}>Enter your email to reset password</label>
+			<label for="reset-email" class="form-label">Enter your email to reset password</label>
 			<input
 				type="email"
 				id="reset-email"
 				bind:value={resetEmail}
-				class={FORM_INPUT_CLASS}
+				class="form-input"
 				placeholder="your@email.com"
 				disabled={resetLoading}
 			/>
-			<button type="button" class={GOLD_BUTTON_CLASS} onclick={handlePasswordReset} disabled={resetLoading}>
+			<button type="button" class="btn-gold w-full"onclick={handlePasswordReset} disabled={resetLoading}>
 				{resetLoading ? 'Sending...' : 'Send reset email'}
 			</button>
 			{#if resetMessage}
@@ -124,7 +123,7 @@
 		</div>
 	{/if}
 
-	<button type="submit" disabled={loading} class={GOLD_BUTTON_CLASS}>
+	<button type="submit" disabled={loading} class="btn-gold w-full">
 		{#if loading}
 			<BouncyLoader size={20} gradientColorStart="#000000" gradientColorEnd="#000000" />
 			Logging in...

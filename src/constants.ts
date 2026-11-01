@@ -22,8 +22,3 @@ export const PASSWORD_CRITERIA = [
 export const PASSWORD_REQUIREMENTS = 'Password must be at least 8 characters long and include at least one number and one special character.';
 
 export const isStrongPassword = (password: string): boolean => PASSWORD_CRITERIA.every(criterion => criterion.test(password));
-
-/** Dark form styling shared by the auth forms and the password field, as class strings because Tailwind scans the sources and not the CSS. */
-export const FORM_LABEL_CLASS = 'mb-1 block text-sm font-medium text-gray-300';
-export const FORM_INPUT_CLASS = 'w-full rounded-md border border-gray-700/60 bg-gray-900/50 px-3 py-2 text-white placeholder-gray-500 focus:border-gold-400 focus:outline-hidden';
-export const GOLD_BUTTON_CLASS = 'flex w-full items-center justify-center gap-2 rounded-lg bg-gold-400 px-4 py-2 font-bold text-black transition-colors duration-300 hover:bg-gold-300 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-gold-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-900 disabled:cursor-not-allowed disabled:opacity-50';

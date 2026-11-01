@@ -48,19 +48,19 @@
 		<h4 class="text-lg text-gold-400 font-bold mb-2 flex items-center justify-center gap-2" title="Current Cardmarket listings for the normal print"><Tag size={16} /> Market Prices (€)</h4>
 		<div class="grid grid-cols-2 gap-3">
 			{#if cardPrices.simple}
-				<div class="price-item">
+				<div class="price-item bg-white/10">
 					<span class="font-semibold">Average Sell:</span>
 					<span>{cardPrices.simple}€</span>
 				</div>
 			{/if}
 			{#if cardPrices.low}
-				<div class="price-item">
+				<div class="price-item bg-white/10">
 					<span class="font-semibold">Low Price:</span>
 					<span>{cardPrices.low}€</span>
 				</div>
 			{/if}
 			{#if cardPrices.trend}
-				<div class="price-item">
+				<div class="price-item bg-white/10">
 					<span class="font-semibold">Trend Price:</span>
 					<span>{cardPrices.trend}€</span>
 				</div>
@@ -71,19 +71,19 @@
 			<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Prices for the reverse holo print"><Repeat2 size={16} /> Reverse Prices</h4>
 			<div class="grid grid-cols-2 gap-3">
 				{#if cardPrices.reverseSimple !== undefined && cardPrices.reverseSimple > 0}
-					<div class="price-item">
+					<div class="price-item bg-white/10">
 						<span class="font-semibold">Reverse Simple:</span>
 						<span>{cardPrices.reverseSimple}€</span>
 					</div>
 				{/if}
 				{#if cardPrices.reverseLow !== undefined && cardPrices.reverseLow > 0}
-					<div class="price-item">
+					<div class="price-item bg-white/10">
 						<span class="font-semibold">Reverse Low:</span>
 						<span>{cardPrices.reverseLow}€</span>
 					</div>
 				{/if}
 				{#if cardPrices.reverseTrend !== undefined && cardPrices.reverseTrend > 0}
-					<div class="price-item">
+					<div class="price-item bg-white/10">
 						<span class="font-semibold">Reverse Trend:</span>
 						<span>{cardPrices.reverseTrend}€</span>
 					</div>
@@ -94,19 +94,19 @@
 		<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Average sale price over the last days"><ChartLine size={16} /> Average Prices</h4>
 		<div class="grid grid-cols-2 gap-3">
 			{#if cardPrices.avg1 !== undefined}
-				<div class="price-item">
+				<div class="price-item bg-white/10">
 					<span class="font-semibold">Avg (1 day):</span>
 					<span>{cardPrices.avg1}€</span>
 				</div>
 			{/if}
 			{#if cardPrices.avg7 !== undefined}
-				<div class="price-item">
+				<div class="price-item bg-white/10">
 					<span class="font-semibold">Avg (7 days):</span>
 					<span>{cardPrices.avg7}€</span>
 				</div>
 			{/if}
 			{#if cardPrices.avg30 !== undefined}
-				<div class="price-item">
+				<div class="price-item bg-white/10">
 					<span class="font-semibold">Avg (30 days):</span>
 					<span>{cardPrices.avg30}€</span>
 				</div>
@@ -119,19 +119,19 @@
 			<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Average sale price of the reverse holo print"><Repeat2 size={16} /> Reverse Averages</h4>
 			<div class="grid grid-cols-2 gap-3">
 				{#if cardPrices.reverseAvg1 !== undefined && cardPrices.reverseAvg1 > 0}
-					<div class="price-item">
+					<div class="price-item bg-white/10">
 						<span class="font-semibold">R. Avg (1 day):</span>
 						<span>{cardPrices.reverseAvg1}€</span>
 					</div>
 				{/if}
 				{#if cardPrices.reverseAvg7 !== undefined && cardPrices.reverseAvg7 > 0}
-					<div class="price-item">
+					<div class="price-item bg-white/10">
 						<span class="font-semibold">R. Avg (7 days):</span>
 						<span>{cardPrices.reverseAvg7}€</span>
 					</div>
 				{/if}
 				{#if cardPrices.reverseAvg30 !== undefined && cardPrices.reverseAvg30 > 0}
-					<div class="price-item">
+					<div class="price-item bg-white/10">
 						<span class="font-semibold">R. Avg (30 days):</span>
 						<span>{cardPrices.reverseAvg30}€</span>
 					</div>
@@ -150,7 +150,6 @@
 		display: flex;
 		justify-content: space-between;
 		padding: 0.25rem 0.5rem;
-		background-color: rgba(255, 255, 255, 0.1);
 		border-radius: 0.5rem;
 		font-size: 0.9rem;
 	}
@@ -158,8 +157,6 @@
 	.detailed-prices {
 		max-height: 80vh;
 		overflow-y: auto;
-		scrollbar-width: thin;
-		scrollbar-color: var(--color-gold-400) transparent;
 		font-size: 0.95rem;
 		display: flex;
 		flex-direction: column;
@@ -168,30 +165,12 @@
 	.price-details-container {
 		max-height: 56vh;
 		overflow-y: auto;
-		scrollbar-width: thin;
-		scrollbar-color: var(--color-gold-400) transparent;
 	}
 
 	.detailed-prices h4 {
 		font-size: 1rem;
 	}
 
-	.detailed-prices::-webkit-scrollbar,
-	.price-details-container::-webkit-scrollbar {
-		width: 8px;
-	}
-
-	.detailed-prices::-webkit-scrollbar-track,
-	.price-details-container::-webkit-scrollbar-track {
-		background: transparent;
-	}
-
-	.detailed-prices::-webkit-scrollbar-thumb,
-	.price-details-container::-webkit-scrollbar-thumb {
-		background-color: var(--color-gold-400);
-		border-radius: 20px;
-	}
-	
 	.main-price-display:hover {
 		transform: none;
 	}

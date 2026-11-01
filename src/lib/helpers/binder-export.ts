@@ -16,8 +16,10 @@ const CARD_HEIGHT = 420;
 const GAP = 12;
 const PAGE_PADDING = 24;
 const HEADER_HEIGHT = 56;
-const BACKGROUND = '#0f1420';
-const SHEET = '#1b2130';
+/** Canvas can't read CSS variables: these are the theme's `gray-950`, `gray-900` and `gold-400`, kept in sync by hand. */
+const BACKGROUND = '#0a0a0a';
+const SHEET = '#171717';
+const GOLD = '#fbc54a';
 
 /**
  * A slot holds either an extensionless TCGdex base or, for a URL import, a ready image URL. Only the ready URL goes
@@ -71,7 +73,7 @@ export async function renderBinderImage({ columns, pages, rows, username }: Bind
 		roundedRect(ctx, 8, originY + 8, pageWidth - 16, pageHeight - 16, 18);
 		ctx.fill();
 
-		ctx.fillStyle = '#ffb700';
+		ctx.fillStyle = GOLD;
 		ctx.font = 'bold 26px "Clash Display", sans-serif';
 		ctx.textAlign = 'left';
 		ctx.textBaseline = 'middle';

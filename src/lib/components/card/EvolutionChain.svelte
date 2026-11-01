@@ -83,7 +83,7 @@
 </script>
 
 {#if uniqueChain.length > 1}
-	<div class="evolution-chain flex items-center justify-center gap-4 max-w-full overflow-x-auto px-4 py-2">
+	<div class="evolution-chain bg-gray-800/75 flex items-center justify-center gap-4 max-w-full overflow-x-auto px-4 py-2">
 		{#each uniqueChain as pokemon, i}
 			{@const representativeCard = getRepresentativeCardForPokemon(pokemon.id, allCards, prices)}
 			<div class="evolution-item flex flex-col items-center">
@@ -133,8 +133,7 @@
 
 <style>
 	.evolution-chain {
-		background-color: rgba(35, 35, 35, 0.75);
-		border-color: #f3d02c;
+		border-color: var(--color-gold-400);
 		border-radius: 1rem;
 		border-style: solid;
 		border-width: 2px;
@@ -156,7 +155,7 @@
 	}
 
 	.evolution-image-wrapper:hover {
-		background-color: rgba(243, 208, 44, 0.2);
+		background-color: color-mix(in oklab, var(--color-gold-400) 20%, transparent);
 	}
 
 	.evolution-image-wrapper:hover .evolution-image {
@@ -170,16 +169,16 @@
 	}
 
 	.current-marker {
-		box-shadow: 0 0 8px #f3d02c;
+		box-shadow: 0 0 8px var(--color-gold-400);
 	}
 
 	.evolution-arrow {
-		color: #f3d02c;
+		color: var(--color-gold-400);
 	}
 
 	.pokemon-number {
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 		font-weight: 600;
-		border: 1px solid #f3d02c;
+		border: 1px solid var(--color-gold-400);
 	}
 </style>

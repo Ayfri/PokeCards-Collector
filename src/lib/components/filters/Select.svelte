@@ -31,7 +31,7 @@
 		{id}
 		onchange={handleChange}
 		value={value}
-		class="bg-transparent border-2 cursor-pointer rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {activeCondition ? 'border-amber-400 text-amber-400' : 'border-white'}"
+		class="bg-transparent border-2 cursor-pointer rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-gold-400 {activeCondition ? 'border-gold-400 text-gold-400' : 'border-white'}"
 	>
 		{#if placeholder}
 			<option value="" selected disabled>{placeholder}</option>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { FORM_INPUT_CLASS, FORM_LABEL_CLASS, PASSWORD_CRITERIA } from '#src/constants.ts';
+	import { PASSWORD_CRITERIA } from '#src/constants.ts';
 	import EyeIcon from '@lucide/svelte/icons/eye';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 
@@ -23,12 +23,12 @@
 </script>
 
 <div>
-	<label class={FORM_LABEL_CLASS} for={id}>{label}</label>
+	<label class="form-label" for={id}>{label}</label>
 	<div class="relative">
 		<input
 			{autocomplete}
 			bind:value
-			class={[FORM_INPUT_CLASS, 'pr-10']}
+			class="form-input pr-10"
 			{id}
 			{name}
 			{placeholder}

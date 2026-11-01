@@ -37,7 +37,7 @@
 <div class="flex flex-col gap-1 min-w-32 flex-1">
 	<label for={id} class="text-xs text-gray-300 {labelClass}">{label}</label>
 	<input
-		class="bg-transparent border-2 rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
+		class="bg-transparent border-2 rounded-sm text-white h-8 px-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-gold-400 {value ? 'border-gold-400 text-gold-400' : 'border-white'} {className}"
 		{autocomplete}
 		{id}
 		{placeholder}

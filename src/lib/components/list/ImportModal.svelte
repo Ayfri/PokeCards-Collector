@@ -199,7 +199,7 @@
 			Preview
 		</button>
 		<button
-			class="rounded-lg bg-gold-400 px-4 py-2 font-medium text-gray-900 disabled:opacity-40"
+			class="rounded-lg bg-gold-400 px-4 py-2 font-medium text-black disabled:opacity-40"
 			disabled={busy || !summary || imported || summary.added === 0}
 			onclick={() => send(false)}
 			type="button"

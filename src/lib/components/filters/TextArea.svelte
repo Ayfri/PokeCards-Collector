@@ -43,7 +43,7 @@
 	<label for={id} class="text-xs text-gray-300">{label}</label>
 	<textarea
 		bind:this={textareaElement}
-		class="bg-transparent border-2 rounded-sm text-white p-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-amber-400 resize-none overflow-hidden {value ? 'border-amber-400 text-amber-400' : 'border-white'} {className}"
+		class="bg-transparent border-2 rounded-sm text-white p-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-gold-400 resize-none overflow-hidden {value ? 'border-gold-400 text-gold-400' : 'border-white'} {className}"
 		{id}
 		{placeholder}
 		{rows}

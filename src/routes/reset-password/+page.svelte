@@ -73,7 +73,7 @@
 			>
 				<span class="relative z-10 flex items-center gap-2">
 					{#if submitting}
-						<BouncyLoader gradientColorEnd="#fbc54a" gradientColorStart="#fbc54a" size={20} />
+						<BouncyLoader gradientColorEnd="var(--color-gold-400)" gradientColorStart="var(--color-gold-400)" size={20} />
 						Updating...
 					{:else}
 						<LockIcon size={16} />

@@ -2,7 +2,7 @@
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import PasswordField from './PasswordField.svelte';
 	import { finishSignIn, readJson, type ApiError } from '#helpers/utils.ts';
-	import { FORM_INPUT_CLASS, FORM_LABEL_CLASS, GOLD_BUTTON_CLASS, isStrongPassword, normalizeUsername, PASSWORD_REQUIREMENTS, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
+	import { isStrongPassword, normalizeUsername, PASSWORD_REQUIREMENTS, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
 
 	interface Props {
 		onSuccess?: () => void;
@@ -116,20 +116,20 @@
 	{/if}
 
 	<div>
-		<label for="email" class={FORM_LABEL_CLASS}>Email</label>
-		<input type="email" id="email" bind:value={email} class={FORM_INPUT_CLASS} placeholder="your@email.com" required />
+		<label for="email" class="form-label">Email</label>
+		<input type="email" id="email" bind:value={email} class="form-input"placeholder="your@email.com" required />
 	</div>
 
 	<div>
-		<label for="username" class={FORM_LABEL_CLASS}>Username</label>
-		<input type="text" id="username" bind:value={username} class={FORM_INPUT_CLASS} placeholder="username" required maxlength="20" />
+		<label for="username" class="form-label">Username</label>
+		<input type="text" id="username" bind:value={username} class="form-input"placeholder="username" required maxlength="20" />
 	</div>
 
 	<PasswordField autocomplete="new-password" id="password" label="Password" name="password" placeholder="Choose a strong password" strength bind:value={password} />
 
 	<PasswordField autocomplete="new-password" id="confirm-password" label="Confirm Password" name="confirm-password" placeholder="••••••••" bind:value={confirmPassword} />
 
-	<button type="submit" disabled={loading} class={GOLD_BUTTON_CLASS}>
+	<button type="submit" disabled={loading} class="btn-gold w-full">
 		{#if loading}
 			<BouncyLoader size={20} gradientColorStart="#000000" gradientColorEnd="#000000" />
 			Registering...

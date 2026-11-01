@@ -169,7 +169,7 @@
 			<div class="flex flex-wrap gap-4 mb-10 md:mb-0">
 				<a
 					href="/cards-list"
-					class="group px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-400 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900"
+					class="group px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-400 flex items-center gap-2 hover:bg-gold-300"
 				>
 					Explore Cards
 					<ArrowRight
@@ -511,7 +511,7 @@
 					</ul>
 					<a
 						href="/binder"
-						class="px-6 py-3 w-fit bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 mt-2 flex items-center gap-2"
+						class="px-6 py-3 w-fit bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 hover:bg-gold-300 mt-2 flex items-center gap-2"
 						title="Open the Binder Builder"
 					>
 						Try Binder Builder
@@ -589,7 +589,7 @@
 			<div class="flex flex-wrap justify-center gap-4">
 				<button
 					onclick={() => openAuthModal('login')}
-					class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:shadow-[0_0_10px_5px_rgba(255,215,0,1)] hover:shadow-gold-400/50 hover:text-yellow-900 focus:outline-hidden"
+					class="px-6 py-3 bg-gold-400 text-black font-bold rounded-lg transition-all duration-300 flex items-center gap-2 hover:bg-gold-300 focus:outline-hidden"
 					title="Sign in to your account"
 					type="button"
 				>

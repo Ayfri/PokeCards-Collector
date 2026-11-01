@@ -279,9 +279,3 @@
 	</div>
 </div>
 
-<style>
-	.overflow-y-auto::-webkit-scrollbar { width: 6px; }
-	.overflow-y-auto::-webkit-scrollbar-track { background: transparent; }
-	.overflow-y-auto::-webkit-scrollbar-thumb { background-color: #4a4a4a; border-radius: 20px; }
-	.overflow-y-auto::-webkit-scrollbar-thumb:hover { background-color: #FFB700; }
-</style>

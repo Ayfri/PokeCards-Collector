@@ -9,8 +9,8 @@
   let {
     size = 45,
     speed = 1.75,
-    gradientColorStart = '#fbc54a',
-    gradientColorEnd = '#ae8833'
+    gradientColorStart = 'var(--color-gold-400)',
+    gradientColorEnd = 'var(--color-gold-600)'
   }: Props = $props();
 </script>
 

@@ -70,23 +70,3 @@
 		</div>
 	</div>
 {/if}
-
-<style>
-	.modal-content::-webkit-scrollbar {
-		width: 6px;
-	}
-	
-	.modal-content::-webkit-scrollbar-track {
-		background: transparent;
-	}
-	
-	.modal-content::-webkit-scrollbar-thumb {
-		background-color: #4a4a4a;
-		border-radius: 20px;
-		border: 3px solid transparent;
-	}
-	
-	.modal-content::-webkit-scrollbar-thumb:hover {
-		background-color: #FFB700;
-	}
-</style> 
