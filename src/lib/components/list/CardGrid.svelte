@@ -27,6 +27,8 @@
 		rarities: string[];
 		types: string[];
 		artists?: string[];
+		/** A caveat about the catalogue (an incomplete one), shown next to the counts. */
+		note?: string;
 		pageTitle?: string | null;
 		selectedSetName?: string | null;
 		selectedArtistName?: string | null;
@@ -40,6 +42,7 @@
 		rarities,
 		types,
 		artists = [],
+		note,
 		pageTitle,
 		selectedSetName = null,
 		selectedArtistName = null,
@@ -174,6 +177,9 @@
 			<span class={['text-xs text-gray-400 tabular-nums md:text-sm', pageTitle && 'mt-1 md:mt-0 md:ml-3']}>
 				<span class="text-gold-400">{visibleCardsCount}</span> cards, <span class="text-gold-400">{uniquePokemonCount}</span> Pokémon
 			</span>
+			{#if note}
+				<span class="text-xs text-gold-300 max-md:text-center md:ml-6">{note}</span>
+			{/if}
 			{#if selectedSetName || selectedArtistName}
 				<div class="flex flex-wrap gap-2 items-center ml-3">
 					{#if selectedSetName}

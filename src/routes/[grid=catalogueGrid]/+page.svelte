@@ -18,11 +18,7 @@
 	const artistName = (artists: string[]) => filters.artist !== 'all' ? (artists.find(artist => artist.toLowerCase() === filters.artist) ?? null) : null;
 </script>
 
-<GridHeading
-	description={data.description}
-	note={data.note}
-	title={data.title}
-/>
+<GridHeading description={data.description} title={data.title} />
 
 {#key page.params.grid}
 	{#await data.streamed.cardData}
@@ -32,7 +28,7 @@
 		</div>
 	{:then cardDataResolved}
 		<div class="flex min-h-0 flex-1 flex-col text-lg text-white">
-			<CardGrid cards={cardDataResolved.cards} {sets} rarities={cardDataResolved.rarities} types={cardDataResolved.types} artists={cardDataResolved.artists} pokemons={cardDataResolved.pokemons} pageTitle={null} selectedSetName={selectedSetName} selectedArtistName={artistName(cardDataResolved.artists)} />
+			<CardGrid cards={cardDataResolved.cards} {sets} rarities={cardDataResolved.rarities} types={cardDataResolved.types} artists={cardDataResolved.artists} pokemons={cardDataResolved.pokemons} note={data.note} pageTitle={null} selectedSetName={selectedSetName} selectedArtistName={artistName(cardDataResolved.artists)} />
 		</div>
 	{:catch error}
 		<p class="p-4 text-red-400">Error loading cards: {error.message}</p>
