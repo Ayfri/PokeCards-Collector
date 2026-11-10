@@ -28,16 +28,16 @@ import { cardPrice, formatCardNumber, setCardCount } from '#helpers/card-utils.t
 import { CATALOGUES, LANGUAGES, type Language } from '#helpers/catalogues.ts';
 import { computeCollectionStats } from '#helpers/collection-stats.ts';
 import { formatEuros } from '#helpers/format.ts';
-import { cardOgVersion, OG_HEIGHT, OG_WIDTH, ogVersion, setOgVersion, setValue, type OgPage, type OgTarget, type OgUserKind } from '#helpers/og-image.ts';
+import { cardOgVersion, formatOgEuros, OG_HEIGHT, OG_WIDTH, ogPrice, ogVersion, setOgVersion, setValue, type OgPage, type OgTarget, type OgUserKind } from '#helpers/og-image.ts';
 import { readOwnedCatalogues } from '#helpers/owned-cards.ts';
 import { RARITY_SYMBOLS, type RarityTone } from '#helpers/rarity-symbols.ts';
-import { countCards, findCardByCode, getCardDetails, getCards, getCatalogue, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { countCards, getCardDetails, getCardPrice, getCards, getCatalogue, getPrices, getSets } from '#helpers/supabase-data.ts';
 import { RARITY_SHAPES, TYPE_SYMBOLS } from '#helpers/tcg-symbols.ts';
 import { getUserCollection } from '#lib/services/collections.ts';
 import { getProfileByUsername } from '#lib/services/profiles.ts';
 import { getUserWishlist } from '#lib/services/wishlists.ts';
 import { supabase } from '#lib/supabase.ts';
-import type { Card, PriceData, Set } from '#lib/types.js';
+import type { Card, FullCard, PriceData, Set } from '#lib/types.js';
 
 /**
  * Share previews are seen ~500px wide in Discord, X or iMessage, so every image is one focal point at sizes that survive a 2.4x
@@ -295,13 +295,32 @@ function plate(card: Card, height: number): Node {
 	});
 }
 
-/** The card's name, its set with the logo, its flag, energy types and rarity, the price in gold, and the scan. */
-async function cardImage(language: Language, code: string): Promise<Node | null> {
-	const [card, prices, sets] = await Promise.all([getCardDetails(language, code), getPrices(language), getSets(language)]);
-	if (!card) return null;
+/**
+ * The reads of one request. A card image needs its card and price twice, once for the `?v=` check and once to render, and each is one row
+ * read, never the catalogue: the isolate keeps no table for it.
+ */
+export class OgReads {
+	private readonly cards = new Map<string, Promise<{ card: FullCard; price: PriceData | null } | null>>();
 
+	card(language: Language, code: string): Promise<{ card: FullCard; price: PriceData | null } | null> {
+		const key = `${language}:${code}`;
+		let read = this.cards.get(key);
+		if (!read) {
+			read = Promise.all([getCardDetails(language, code), getCardPrice(language, code)]).then(([card, price]) => card && { card, price });
+			this.cards.set(key, read);
+		}
+		return read;
+	}
+}
+
+/** The card's name, its set with the logo, its flag, energy types and rarity, the price in gold, and the scan. */
+async function cardImage(language: Language, code: string, reads: OgReads): Promise<Node | null> {
+	const [found, sets] = await Promise.all([reads.card(language, code), getSets(language)]);
+	if (!found) return null;
+
+	const { card } = found;
 	const set = sets.find(entry => entry.setId === card.setId);
-	const price = cardPrice(prices[code]);
+	const price = ogPrice(cardPrice(found.price ?? undefined));
 	const number = card.localId && !borrowsScan(card, language) ? formatCardNumber(card.localId, set?.printedTotal) : '';
 	const types = card.types.split(',').map(type => type.trim()).filter(Boolean);
 	const rarity = card.rarity ? raritySymbol(card.rarity, 30) : null;
@@ -310,7 +329,7 @@ async function cardImage(language: Language, code: string): Promise<Node | null>
 		title(card.name, 620),
 		fact(set?.logo ? [image({ src: set.logo, tw: 'h-[50px] max-w-[140px] object-contain' })] : [icon(Library, 34)], card.setName),
 		fact([flag(language), ...types.map(type => typeSymbol(type, 36)), ...(rarity ? [rarity] : [])], [card.rarity, number].filter(Boolean).join('  ·  ')),
-		price ? hero(formatEuros(price), 620) : text({ text: 'No price yet', tw: `mt-2 text-[44px] font-semibold text-[${color('gray-400')}]` }),
+		price ? hero(formatOgEuros(price), 620) : text({ text: 'No price yet', tw: `mt-2 text-[44px] font-semibold text-[${color('gray-400')}]` }),
 	], card.image ? scan(ogScan(card.image), 540) : plate(card, 540));
 }
 
@@ -321,14 +340,14 @@ async function setImage(language: Language, setId: string): Promise<Node | null>
 	if (!set) return null;
 
 	const setCards = cards.filter(card => card.setId === setId);
-	const value = setValue(setId, cards, prices);
+	const value = ogPrice(setValue(setId, cards, prices));
 	const year = set.releaseDate.getUTCFullYear();
 
 	return canvas(480, [
 		...(set.logo ? [image({ src: set.logo, tw: 'h-[130px] max-w-[400px] object-contain object-left' })] : []),
 		title(set.name, 410, 80),
 		fact([flag(language)], [`${formatCount(setCardCount(set) || setCards.length)} cards`, year > 1995 ? String(year) : ''].filter(Boolean).join('  ·  ')),
-		...(value ? [hero(formatEuros(value), 400)] : []),
+		...(value ? [hero(formatOgEuros(value), 400)] : []),
 	], trioOrLogo(await scans(ranked(setCards, prices, language))));
 }
 
@@ -448,9 +467,9 @@ async function pageImage(name: OgPage): Promise<Node> {
 	}
 }
 
-function layout(target: OgTarget): Promise<Node | null> {
+function layout(target: OgTarget, reads: OgReads): Promise<Node | null> {
 	switch (target.kind) {
-		case 'card': return cardImage(target.language, target.code);
+		case 'card': return cardImage(target.language, target.code, reads);
 		case 'page': return pageImage(target.name);
 		case 'set': return setImage(target.language, target.setId);
 		default: return userImage(target.kind, target.username);
@@ -468,12 +487,12 @@ export interface OgRender {
  * `null` when the version cannot be known without more reads: a user image (the page loads derive it from the owner's rows and the
  * stats of the page), or a card or set that does not exist.
  */
-export async function expectedOgVersion(target: OgTarget): Promise<string | null> {
+export async function expectedOgVersion(target: OgTarget, reads: OgReads): Promise<string | null> {
 	switch (target.kind) {
 		case 'page': return ogVersion();
 		case 'card': {
-			const [card, prices] = await Promise.all([findCardByCode(target.language, target.code), getPrices(target.language)]);
-			return card ? ogVersion(...cardOgVersion(card, cardPrice(prices[target.code]))) : null;
+			const found = await reads.card(target.language, target.code);
+			return found ? ogVersion(...cardOgVersion(found.card, cardPrice(found.price ?? undefined))) : null;
 		}
 		case 'set': {
 			const { cards, prices, sets } = await getCatalogue(target.language);
@@ -485,8 +504,8 @@ export async function expectedOgVersion(target: OgTarget): Promise<string | null
 }
 
 /** The 1200x630 PNG of `target`, or `null` when the card or set does not exist. */
-export async function renderOgImage(target: OgTarget): Promise<OgRender | null> {
-	const [node, noto] = await Promise.all([layout(target), notoFonts()]);
+export async function renderOgImage(target: OgTarget, reads: OgReads): Promise<OgRender | null> {
+	const [node, noto] = await Promise.all([layout(target, reads), notoFonts()]);
 	if (!node) return null;
 
 	let complete = true;

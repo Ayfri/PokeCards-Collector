@@ -484,6 +484,13 @@ export async function getCardDetails(language: Language, cardCode: string): Prom
 	return data ? toCard(data) : null;
 }
 
+/** One price row, for the reads that need a single card's price without loading the price table. */
+export async function getCardPrice(language: Language, cardCode: string): Promise<PriceData | null> {
+	const { prices } = CATALOGUES[language].tables;
+	const { data } = await readWithRetry(`fetch ${prices} ${cardCode}`, () => supabase.from(prices).select('*').eq('card_code', cardCode).maybeSingle<PriceRow>());
+	return data ? toPrice(data) : null;
+}
+
 /**
  * The same card in the other catalogues. English and French cards share their TCGdex id, and a Japanese card stores the English id of
  * its twin in `twin_tcgdex_id`, so the English id is the key: a Japanese card reads it from its own row, the other two use their `tcgdex_id`.

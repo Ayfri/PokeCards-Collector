@@ -3,7 +3,7 @@ import { waitUntil } from 'cloudflare:workers';
 import { LANGUAGES, type Language } from '#helpers/catalogues.ts';
 import { edgeCache } from '#helpers/data-cache.ts';
 import { OG_PAGES, type OgPage, type OgTarget } from '#helpers/og-image.ts';
-import { expectedOgVersion, renderOgImage } from '#helpers/og-render.ts';
+import { expectedOgVersion, OgReads, renderOgImage } from '#helpers/og-render.ts';
 import type { RequestHandler } from './$types';
 
 const isLanguage = (value: string): value is Language => (LANGUAGES as readonly string[]).includes(value);
@@ -43,12 +43,15 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	const hit = await cache?.match(keyFor(user ? null : given));
 	if (hit) return hit;
 
-	const version = user ? null : await expectedOgVersion(target);
+	const reads = new OgReads();
+	const version = user ? null : await expectedOgVersion(target, reads);
 	if (version && given !== version) {
-		return new Response(null, { headers: { 'cache-control': 'public, max-age=300', location: `${url.pathname}?v=${version}` }, status: 302 });
+		/** A set version sums a whole table, so two isolates can disagree on it during a refresh: its redirect is never cached, or a browser could loop between them for 5 minutes. */
+		const cacheControl = target.kind === 'set' ? 'no-store' : 'public, max-age=300';
+		return new Response(null, { headers: { 'cache-control': cacheControl, location: `${url.pathname}?v=${version}` }, status: 302 });
 	}
 
-	const rendered = await renderOgImage(target);
+	const rendered = await renderOgImage(target, reads);
 	if (!rendered) error(404, 'Not found');
 
 	/** An image missing a scan is served for a minute only, so the next crawler fetch renders it again. */

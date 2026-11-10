@@ -1,12 +1,13 @@
 import { cardPrice } from '#helpers/card-utils.ts';
 import type { Catalogue, Language } from '#helpers/catalogues.ts';
+import { formatEuros } from '#helpers/format.ts';
 import type { Card, Image, PriceData, Set } from '#lib/types.js';
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
 
 /** Bumped whenever a layout in `og-render.ts` changes, so every cached share preview refreshes with the next deploy. */
-const OG_REVISION = 1;
+const OG_REVISION = 2;
 
 /** The pages with an image of their own that only depends on the catalogue, keyed by the name `/og/page/<name>.png` takes. */
 export const OG_PAGES = ['artists', 'binder', 'card.dle', 'cards-list', 'france', 'guess-the-price', 'home', 'japan', 'pokemons', 'sets', 'trainers', 'users'] as const;
@@ -41,11 +42,20 @@ type OgVersion = (number | string | null | undefined)[];
 /** The `?v=` of a share image from the facts it draws, so the URL changes with the data. */
 export const ogVersion = (...version: OgVersion): string => shortHash([OG_REVISION, ...version].join('|'));
 
-/** What a card image draws: its name, scan and price. The page loads and `/og/[...path]` both take their version from here. */
-export const cardOgVersion = (card: Pick<Card, 'image' | 'name'>, price: number | null): OgVersion => [card.name, card.image, price];
+/**
+ * The price a card or set share image prints, at 2 significant digits (4.37 is 4.4, 5477.52 is 5500). The `?v=` hashes this printed value,
+ * so a cent move changes neither the URL nor the PNG, and the image is not rendered again for a price nobody can read the difference of.
+ */
+export const ogPrice = (value: number | null): number | null => value ? Number(value.toPrecision(2)) : null;
 
-/** What a set image draws: the card count and the set value to the cent. */
-export const setOgVersion = (set: Pick<Set, 'totalCards'>, value: number): OgVersion => [set.totalCards, Math.round(value * 100)];
+/** The `ogPrice` as the image prints it: a tilde, and decimals only below 10 where they are still significant. */
+export const formatOgEuros = (value: number): string => `~${formatEuros(value, value < 1 ? 2 : value < 10 ? 1 : 0)}`;
+
+/** What a card image draws: its name, scan and price. The page loads and `/og/[...path]` both take their version from here. */
+export const cardOgVersion = (card: Pick<Card, 'image' | 'name'>, price: number | null): OgVersion => [card.name, card.image, ogPrice(price)];
+
+/** What a set image draws: the card count and the set value. */
+export const setOgVersion = (set: Pick<Set, 'totalCards'>, value: number): OgVersion => [set.totalCards, ogPrice(value)];
 
 export const setValue = (setId: string, cards: Card[], prices: Record<string, PriceData>): number =>
 	cards.reduce((sum, card) => card.setId === setId ? sum + (cardPrice(prices[card.cardCode]) ?? 0) : sum, 0);
