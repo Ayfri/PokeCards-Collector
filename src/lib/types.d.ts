@@ -15,7 +15,7 @@ export interface Card {
 	artSource?: string;
 	artist: string;
 	cardCode: string;
-	/** Only on a card read with `getCardDetails`: the list reads leave it out. */
+	/** Drawn on a card page, including a related print swapped in from the card list, so the list reads carry it; the grid payloads leave it out. */
 	cardMarketUpdatedAt?: string;
 	cardMarketUrl: string;
 	hp?: number;

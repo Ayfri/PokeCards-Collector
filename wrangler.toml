@@ -24,8 +24,10 @@ binding = "ASSETS"
 [observability]
 enabled = true
 
+# Traces keep 10% of invocations, each one whole; logs, errors and Issues stay complete. Set it back to 1.0 to trace every invocation while chasing a bug.
 [observability.traces]
 enabled = true
+head_sampling_rate = 0.1
 
 # Groups uncaught exceptions, 5xx responses and `console.error` calls into issues, with no SDK in the bundle.
 [observability.issues]

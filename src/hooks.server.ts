@@ -13,6 +13,7 @@ const PUBLIC_ROUTES = new Set([
 	'/api/binder',
 	'/api/card-dle/guess',
 	'/api/card-dle/suggestions',
+	'/api/card-versions',
 	'/api/cards-list',
 	'/api/image-proxy',
 	'/api/search',

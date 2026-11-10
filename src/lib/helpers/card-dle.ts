@@ -1,4 +1,4 @@
-import { cardPrice } from '#helpers/card-utils.ts';
+import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 import type { CardDleGuess, CardDleSuggestion, FullCard, PriceData } from '#lib/types.js';
 
 /** Cards priced below this are bulk nobody recognises, so they are never guessable and never the card of the day. */
@@ -114,12 +114,19 @@ function hash(text: string): number {
 	return value >>> 0;
 }
 
+/** Every guess and every page load asks for the same pick, so the 21k-card scan runs once per day and memoized tables, keyed on their identity (the card list and the price table). */
+const pickMemo = new WeakMap<object, unknown>();
+
 /**
  * Rendezvous hashing: the eligible card with the lowest hash of `date:cardCode` wins. A card's score depends only on
  * the date and its own code, so when the daily scrape adds or removes a card, the pick changes only if that card is
  * the winner. Two days never pick neighbouring codes. `date` is a UTC `YYYY-MM-DD`.
  */
 export function pickCardOfTheDay(date: string, cards: FullCard[], prices: Record<string, PriceData>): CardOfTheDay | null {
+	const days = memoizedOn(pickMemo, [cards, prices], () => new Map<string, CardOfTheDay | null>());
+	const known = days.get(date);
+	if (known !== undefined) return known;
+
 	let winner: CardOfTheDay | null = null;
 	let winnerHash = 0;
 
@@ -134,5 +141,6 @@ export function pickCardOfTheDay(date: string, cards: FullCard[], prices: Record
 		}
 	}
 
+	days.set(date, winner);
 	return winner;
 }
