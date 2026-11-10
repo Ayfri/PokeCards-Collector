@@ -29,7 +29,7 @@ import { cardPrice, formatCardNumber, setCardCount } from '#helpers/card-utils.t
 import { CATALOGUES, LANGUAGES, type Language } from '#helpers/catalogues.ts';
 import { computeCollectionStats } from '#helpers/collection-stats.ts';
 import { formatEuros } from '#helpers/format.ts';
-import { cardOgVersion, formatOgEuros, OG_HEIGHT, OG_WIDTH, ogPrice, ogVersion, setOgVersion, setValue, type OgPage, type OgTarget, type OgUserKind } from '#helpers/og-image.ts';
+import { formatOgEuros, OG_HEIGHT, OG_WIDTH, ogPrice, setValue, type OgPage, type OgTarget, type OgUserKind } from '#helpers/og-image.ts';
 import { readOwnedCatalogues } from '#helpers/owned-cards.ts';
 import { RARITY_SYMBOLS, type RarityTone } from '#helpers/rarity-symbols.ts';
 import { SET_IMAGE_DIR } from '#helpers/set-images.ts';
@@ -39,7 +39,7 @@ import { getUserCollection } from '#lib/services/collections.ts';
 import { getProfileByUsername } from '#lib/services/profiles.ts';
 import { getUserWishlist } from '#lib/services/wishlists.ts';
 import { supabase } from '#lib/supabase.ts';
-import type { Card, FullCard, PriceData, Set } from '#lib/types.js';
+import type { Card, PriceData, Set } from '#lib/types.js';
 
 /**
  * Share previews are seen ~500px wide in Discord, X or iMessage, so every image is one focal point at sizes that survive a 2.4x
@@ -305,32 +305,13 @@ function plate(card: Card, height: number): Node {
 	});
 }
 
-/**
- * The reads of one request. A card image needs its card and price twice, once for the `?v=` check and once to render, and each is one row
- * read, never the catalogue: the isolate keeps no table for it.
- */
-export class OgReads {
-	private readonly cards = new Map<string, Promise<{ card: FullCard; price: PriceData | null } | null>>();
+/** The card's name, its set with the logo, its flag, energy types and rarity, the price in gold, and the scan. A card and a price are one row read each, never the catalogue. */
+async function cardImage(language: Language, code: string): Promise<Node | null> {
+	const [card, priceData, sets] = await Promise.all([getCardDetails(language, code), getCardPrice(language, code), getSets(language)]);
+	if (!card) return null;
 
-	card(language: Language, code: string): Promise<{ card: FullCard; price: PriceData | null } | null> {
-		const key = `${language}:${code}`;
-		let read = this.cards.get(key);
-		if (!read) {
-			read = Promise.all([getCardDetails(language, code), getCardPrice(language, code)]).then(([card, price]) => card && { card, price });
-			this.cards.set(key, read);
-		}
-		return read;
-	}
-}
-
-/** The card's name, its set with the logo, its flag, energy types and rarity, the price in gold, and the scan. */
-async function cardImage(language: Language, code: string, reads: OgReads): Promise<Node | null> {
-	const [found, sets] = await Promise.all([reads.card(language, code), getSets(language)]);
-	if (!found) return null;
-
-	const { card } = found;
 	const set = sets.find(entry => entry.setId === card.setId);
-	const price = ogPrice(cardPrice(found.price ?? undefined));
+	const price = ogPrice(cardPrice(priceData ?? undefined));
 	const number = card.localId && !borrowsScan(card, language) ? formatCardNumber(card.localId, set?.printedTotal) : '';
 	const types = card.types.split(',').map(type => type.trim()).filter(Boolean);
 	const rarity = card.rarity ? raritySymbol(card.rarity, 30) : null;
@@ -477,9 +458,9 @@ async function pageImage(name: OgPage): Promise<Node> {
 	}
 }
 
-function layout(target: OgTarget, reads: OgReads): Promise<Node | null> {
+function layout(target: OgTarget): Promise<Node | null> {
 	switch (target.kind) {
-		case 'card': return cardImage(target.language, target.code, reads);
+		case 'card': return cardImage(target.language, target.code);
 		case 'page': return pageImage(target.name);
 		case 'set': return setImage(target.language, target.setId);
 		default: return userImage(target.kind, target.username);
@@ -492,36 +473,15 @@ export interface OgRender {
 	png: Uint8Array<ArrayBuffer>;
 }
 
-/**
- * The `?v=` the page loads publish for `target`, from the memoized catalogue reads and the same version functions they call.
- * `null` when the version cannot be known without more reads: a user image (the page loads derive it from the owner's rows and the
- * stats of the page), or a card or set that does not exist.
- */
-export async function expectedOgVersion(target: OgTarget, reads: OgReads): Promise<string | null> {
-	switch (target.kind) {
-		case 'page': return ogVersion();
-		case 'card': {
-			const found = await reads.card(target.language, target.code);
-			return found ? ogVersion(...cardOgVersion(found.card, cardPrice(found.price ?? undefined))) : null;
-		}
-		case 'set': {
-			const { cards, prices, sets } = await getCatalogue(target.language);
-			const set = sets.find(entry => entry.setId === target.setId);
-			return set ? ogVersion(...setOgVersion(set, setValue(set.setId, cards, prices))) : null;
-		}
-		default: return null;
-	}
-}
-
 /** The 1200x630 PNG of `target`, or `null` when the card or set does not exist. */
-export async function renderOgImage(target: OgTarget, reads: OgReads): Promise<OgRender | null> {
-	const [node, noto] = await Promise.all([layout(target, reads), notoFonts()]);
+export async function renderOgImage(target: OgTarget): Promise<OgRender | null> {
+	const [node, noto] = await Promise.all([layout(target), notoFonts()]);
 	if (!node) return null;
 
 	let complete = true;
 	/**
 	 * TCGdex drops the odd request under a burst (5 of 5 fan scans once failed locally), and a cached image would keep the blank cards for a
-	 * week, so a network error, a timeout or a 5xx is retried once, then flags the render as incomplete. A 4xx is a scan that does not exist, final.
+	 * day, so a network error, a timeout or a 5xx is retried once, then flags the render as incomplete. A 4xx is a scan that does not exist, final.
 	 */
 	const fetchImage = (input: string, init?: RequestInit): Promise<Response> => {
 		const attempt = async () => {

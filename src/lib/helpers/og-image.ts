@@ -6,8 +6,8 @@ import type { Card, Image, PriceData, Set } from '#lib/types.js';
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
 
-/** Bumped whenever a layout in `og-render.ts` changes, so every cached share preview refreshes with the next deploy. */
-const OG_REVISION = 2;
+/** Bumped whenever a layout in `og-render.ts` changes: it is part of the cache key of every share image, so they all render again after the next deploy. */
+export const OG_REVISION = 2;
 
 /** The pages with an image of their own that only depends on the catalogue, keyed by the name `/og/page/<name>.png` takes. */
 export const OG_PAGES = ['artists', 'binder', 'card.dle', 'cards-list', 'france', 'guess-the-price', 'home', 'japan', 'pokemons', 'sets', 'trainers', 'users'] as const;
@@ -39,19 +39,19 @@ function ogPath(target: OgTarget): string {
 
 type OgVersion = (number | string | null | undefined)[];
 
-/** The `?v=` of a share image from the facts it draws, so the URL changes with the data. */
-export const ogVersion = (...version: OgVersion): string => shortHash([OG_REVISION, ...version].join('|'));
+/** The `?v=` of a share image from the facts it draws, so the URL changes with the data. The route ignores it: it only busts the caches of Discord, X and Google. */
+const ogVersion = (...version: OgVersion): string => shortHash([OG_REVISION, ...version].join('|'));
 
 /**
  * The price a card or set share image prints, at 2 significant digits (4.37 is 4.4, 5477.52 is 5500). The `?v=` hashes this printed value,
- * so a cent move changes neither the URL nor the PNG, and the image is not rendered again for a price nobody can read the difference of.
+ * so a cent move changes neither the URL nor the PNG, and the preview is not fetched again for a price nobody can read the difference of.
  */
 export const ogPrice = (value: number | null): number | null => value ? Number(value.toPrecision(2)) : null;
 
 /** The `ogPrice` as the image prints it: a tilde, and decimals only below 10 where they are still significant. */
 export const formatOgEuros = (value: number): string => `~${formatEuros(value, value < 1 ? 2 : value < 10 ? 1 : 0)}`;
 
-/** What a card image draws: its name, scan and price. The page loads and `/og/[...path]` both take their version from here. */
+/** What a card image draws: its name, scan and price, for the `?v=` of the card pages. */
 export const cardOgVersion = (card: Pick<Card, 'image' | 'name'>, price: number | null): OgVersion => [card.name, card.image, ogPrice(price)];
 
 /** What a set image draws: the card count and the set value. */
@@ -62,9 +62,8 @@ export const setValue = (setId: string, cards: Card[], prices: Record<string, Pr
 
 /**
  * The share image of a page, rendered by `/og/[...path]`. `version` lists what the image draws (a price, a card count),
- * so the `?v=` key changes with the data and Discord, X or Slack fetch a fresh preview instead of their cached one.
- * The route recomputes the version of a card, set or catalogue page from the database and redirects any other `v` to it, so a forged URL
- * neither renders nor fills the cache. A user image ignores `v`: its version needs the owner's rows, so it is only a cache buster there.
+ * so the `?v=` changes with the data and Discord, X or Slack fetch a fresh preview instead of their cached one.
+ * The route ignores `v` and caches the image on its path alone, so `v` is only a cache buster for those scrapers: a forged one costs no render.
  */
 export function ogImage(target: OgTarget, alt: string, ...version: OgVersion): Image {
 	return {
