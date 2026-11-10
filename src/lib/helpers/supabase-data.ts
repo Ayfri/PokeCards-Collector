@@ -120,10 +120,11 @@ function toCard(card: CardRow): FullCard {
 		image: card.image || '',
 		localId: card.local_id || '',
 		name: card.name,
-		pokemonNumber: card.pokemon_id ?? undefined,
 		rarity: card.rarity || '',
 		setId: card.set_id || '',
 		setName: card.set_name || '',
+		/** Trainers and Energy have no Pokédex id, so they carry no `void 0` key. */
+		...(card.pokemon_id != null && { pokemonNumber: card.pokemon_id }),
 		/** Only a card drawn as a plate shows its HP, so the tiles with a scan skip it: 1251 numbers in the English grid payload instead of 17941. */
 		...(!card.image && card.hp != null && { hp: card.hp }),
 		/** The plate names the stage (`Basic`, `Stage1`) in its name bar like a real card, so only the cards drawn as plates carry it. */
@@ -150,21 +151,28 @@ function toCard(card: CardRow): FullCard {
 	};
 }
 
+const PRICE_COLUMNS: [column: Exclude<keyof PriceRow, 'card_code'>, key: keyof PriceData][] = [
+	['simple', 'simple'],
+	['low', 'low'],
+	['trend', 'trend'],
+	['avg1', 'avg1'],
+	['avg7', 'avg7'],
+	['avg30', 'avg30'],
+	['reverse_simple', 'reverseSimple'],
+	['reverse_low', 'reverseLow'],
+	['reverse_trend', 'reverseTrend'],
+	['reverse_avg1', 'reverseAvg1'],
+	['reverse_avg7', 'reverseAvg7'],
+	['reverse_avg30', 'reverseAvg30'],
+];
+
+/** A null column leaves its key off the record: devalue writes an undefined one as `void 0` into every document that carries prices. */
 function toPrice(price: PriceRow): PriceData {
-	return {
-		simple: price.simple ?? undefined,
-		low: price.low ?? undefined,
-		trend: price.trend ?? undefined,
-		avg1: price.avg1 ?? undefined,
-		avg7: price.avg7 ?? undefined,
-		avg30: price.avg30 ?? undefined,
-		reverseSimple: price.reverse_simple ?? undefined,
-		reverseLow: price.reverse_low ?? undefined,
-		reverseTrend: price.reverse_trend ?? undefined,
-		reverseAvg1: price.reverse_avg1 ?? undefined,
-		reverseAvg7: price.reverse_avg7 ?? undefined,
-		reverseAvg30: price.reverse_avg30 ?? undefined,
-	};
+	const data: PriceData = {};
+	for (const [column, key] of PRICE_COLUMNS) {
+		if (price[column] !== null) data[key] = price[column];
+	}
+	return data;
 }
 
 let staticFiles: Promise<ReadonlySet<string>> | undefined;
