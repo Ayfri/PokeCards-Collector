@@ -20,7 +20,9 @@
 </script>
 
 <svelte:head>
-	<link rel="preload" as="fetch" crossorigin="anonymous" href={payloadUrl(data.payload)} />
+	{#if data.preloadPayload}
+		<link rel="preload" as="fetch" crossorigin="anonymous" href={payloadUrl(data.payload)} />
+	{/if}
 </svelte:head>
 
 <GridHeading description={data.description} title={data.title} />

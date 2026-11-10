@@ -10,7 +10,7 @@ import type { PageLoad } from './$types';
  * does not stream 17 MB of JSON into the document.
  */
 export const load: PageLoad = ({ data, fetch }) => {
-	/** The page preloads this endpoint from its head, so the download starts with the document instead of after the scripts. */
+	/** A document request preloads this endpoint from the page head (`preloadPayload`), so the download starts with the document instead of after the scripts. */
 	const payload = '/api/cards-list';
 
 	/** On the server the promise never resolves: the grid does not render there, since `VirtualGrid` measures itself before drawing a tile. */

@@ -9,7 +9,7 @@ import { getCards, getPrices } from '#helpers/supabase-data.ts';
 /**
  * SEO only: the grid's cards, prices, pokemons and types come from `/api/cards-list` through `+page.ts`.
  * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends what it returns:
- * the sets come from `+layout.server.ts` for that reason.
+ * the sets come from `+layout.server.ts` for that reason, and `preloadPayload` is only true for the document request.
  */
 export const load: PageServerLoad = async ({ isDataRequest, parent, url }) => {
 	const { sets } = await parent();
@@ -46,6 +46,8 @@ export const load: PageServerLoad = async ({ isDataRequest, parent, url }) => {
 		image,
 		breadcrumbs: ogCrumbs,
 		keywords: ogKeywords,
+		/** A client navigation already starts the payload fetch from `+page.ts`, so only the document preloads it. */
+		preloadPayload: !isDataRequest,
 		type: 'CollectionPage' as const,
 	};
 }

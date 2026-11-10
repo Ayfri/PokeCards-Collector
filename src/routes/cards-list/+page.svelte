@@ -23,7 +23,9 @@
 </script>
 
 <svelte:head>
-	<link rel="preload" as="fetch" crossorigin="anonymous" href={payloadUrl(data.payload)} />
+	{#if data.preloadPayload}
+		<link rel="preload" as="fetch" crossorigin="anonymous" href={payloadUrl(data.payload)} />
+	{/if}
 </svelte:head>
 
 <div class="flex min-h-0 flex-1 flex-col text-lg text-white">
