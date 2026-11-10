@@ -25,9 +25,13 @@ export function timeAgo(date: string | Date): string {
 	return relativeTimeFormatter.format(-Math.floor(seconds / length), unit);
 }
 
-/** @example formatDate('2024-03-01') // "March 1, 2024" */
+/**
+ * A calendar date, which the database stores at UTC midnight: it prints in UTC so the day is the same west of UTC and in the server-rendered text.
+ * Every caller formats a set release date; a timestamp (a join date, "price updated at") must not go through it.
+ * @example formatDate('2024-03-01') // "March 1, 2024"
+ */
 export function formatDate(date: string | Date): string {
-	return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+	return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 }
 
 /** One formatter per precision: `toLocaleString` with options builds a new `Intl.NumberFormat` on every call, and grid tiles format a price each. */

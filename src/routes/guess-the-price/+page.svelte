@@ -6,6 +6,7 @@
 	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import SetLogo from '#components/SetLogo.svelte';
 	import PriceStatsModal from '#components/games/PriceStatsModal.svelte';
+	import { formatDate } from '#helpers/format.ts';
 	import { PRICE_TIERS, judgeGuess, type RoundScore } from '#helpers/price-game.ts';
 	import Numpad from '#lib/components/Numpad.svelte';
 	import PageTitle from '#lib/components/PageTitle.svelte';
@@ -58,7 +59,7 @@
 		hydrated = true;
 	});
 
-	const releaseDate = $derived(round?.releaseDate ? new Date(round.releaseDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unknown');
+	const releaseDate = $derived(round?.releaseDate ? formatDate(round.releaseDate) : 'Unknown');
 	const answered = $derived(verdict !== null);
 
 	const CHIP = 'flex shrink-0 items-center gap-2 rounded-full bg-gray-800/80 px-3 py-1.5 whitespace-nowrap';
