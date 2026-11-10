@@ -1,13 +1,18 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { PokemonListEntry } from './+page.server';
-	import { pascalCase } from '#helpers/format.ts';
+	import { formatEuros, pascalCase } from '#helpers/format.ts';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import PageTitle from '#components/PageTitle.svelte';
 	import ScrollButton from '#components/list/ScrollButton.svelte';
+	import Select from '#components/filters/Select.svelte';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
+	import TypeSymbol from '#components/card/TypeSymbol.svelte';
+	import TypeSymbolDefs from '#components/card/TypeSymbolDefs.svelte';
+	import { GENERATIONS } from '#src/constants.ts';
+	import { collection } from '#stores/collection.svelte.ts';
 
 	interface Props {
 		data: PageData;
@@ -18,22 +23,68 @@
 	/** The first two rows of a wide screen load their sprites right away, the rest wait until they scroll near. */
 	const EAGER_TILES = 12;
 
+	/** Tailwind sees these class names whole, so the glow colour of a type cannot be built from its name. */
+	const TYPE_GLOW: Record<string, string> = {
+		colorless: '[--glow:var(--colorless)]',
+		darkness: '[--glow:var(--darkness)]',
+		dragon: '[--glow:var(--dragon)]',
+		fairy: '[--glow:var(--fairy)]',
+		fighting: '[--glow:var(--fighting)]',
+		fire: '[--glow:var(--fire)]',
+		grass: '[--glow:var(--grass)]',
+		lightning: '[--glow:var(--lightning)]',
+		metal: '[--glow:var(--metal)]',
+		psychic: '[--glow:var(--psychic)]',
+		water: '[--glow:var(--water)]',
+	};
+
+	/** Totals reach five figures, so cents are noise and are dropped from 100 EUR up. */
+	const euros = (value: number) => formatEuros(value, value >= 100 ? 0 : 2);
+
 	let sortBy = $state('pokedex');
 	let sortOrder: 'asc' | 'desc' = $state('asc');
 	let searchTerm = $state('');
+	let typeFilter = $state('all');
+
+	const typeOptions = $derived([
+		{ value: 'all', label: 'All types' },
+		...[...new Set(data.pokemons.map(pokemon => pokemon.type).filter(Boolean))].sort().map(type => ({ value: type, label: pascalCase(type) })),
+	]);
 
 	const sortedPokemons = $derived.by(() => {
 		const term = searchTerm.toLowerCase();
-		const pokemons = data.pokemons.filter(pokemon => pokemon.name.toLowerCase().includes(term));
+		const pokemons = data.pokemons.filter(pokemon => pokemon.name.toLowerCase().includes(term) && (typeFilter === 'all' || pokemon.type === typeFilter));
 		const direction = sortOrder === 'asc' ? 1 : -1;
 
 		const compare: Record<string, (a: PokemonListEntry, b: PokemonListEntry) => number> = {
 			cardCount: (a, b) => a.cardCount - b.cardCount,
 			name: (a, b) => a.name.localeCompare(b.name),
 			pokedex: (a, b) => a.id - b.id,
+			price: (a, b) => a.price - b.price,
 		};
 
 		return pokemons.sort((a, b) => direction * (compare[sortBy] ?? compare.pokedex)(a, b));
+	});
+
+	/** Generation headers only make sense in Pokédex order over the whole list: any other sort or filter is one flat grid. */
+	const byGeneration = $derived(sortBy === 'pokedex' && !searchTerm.trim() && typeFilter === 'all');
+
+	/** Owned cards per Pokémon, capped at its card count; the map is empty for a logged-out visitor. The progress takes no space of its own (a longer count line and an absolute strip), so the collection loading moves nothing. */
+	const ownedPerPokemon = $derived(collection.ownedPerPokemon);
+	const ownedOf = (pokemon: PokemonListEntry) => Math.min(ownedPerPokemon.get(pokemon.id) ?? 0, pokemon.cardCount);
+
+	const sections = $derived.by(() => {
+		if (!byGeneration) return [{ cards: 0, generation: undefined, owned: 0, pokemons: sortedPokemons }];
+
+		const buckets = GENERATIONS.map(generation => ({ cards: 0, generation, owned: 0, pokemons: [] as PokemonListEntry[] }));
+		for (const pokemon of sortedPokemons) {
+			const index = GENERATIONS.findIndex(generation => pokemon.id <= generation.last);
+			const bucket = buckets[index === -1 ? buckets.length - 1 : index];
+			bucket.pokemons.push(pokemon);
+			bucket.cards += pokemon.cardCount;
+			bucket.owned += ownedOf(pokemon);
+		}
+		return sortOrder === 'asc' ? buckets : buckets.reverse();
 	});
 
 	let hasScrolled = $state(false);
@@ -79,7 +130,7 @@
 <svelte:window onscroll={handleScroll} />
 
 <div class="container mx-auto px-4 py-8 text-white">
-	<div class="flex justify-between items-center mb-4">
+	<div class="flex flex-wrap justify-between items-center gap-y-4 mb-4">
 		<div class="shrink-0">
 			<PageTitle title="All Pokémon" />
 		</div>
@@ -91,28 +142,51 @@
 				bind:value={searchTerm}
 				placeholder="Search Pokémon..."
 			/>
+			<Select id="pokemon-type" label="Type" bind:value={typeFilter} options={typeOptions} />
 			<SortControl
 				bind:sortValue={sortBy}
 				bind:sortDirection={sortOrder}
 				options={[
 					{ value: 'pokedex', label: 'Pokédex #' },
 					{ value: 'name', label: 'Name' },
-					{ value: 'cardCount', label: 'Card Count' }
+					{ value: 'cardCount', label: 'Card Count' },
+					{ value: 'price', label: 'Most Valuable' }
 				]}
 			/>
 		</div>
 	</div>
 	<div class="gold-rule my-6"></div>
 
-	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8 align-items-start align-content-start">
-		{#each sortedPokemons as pokemon, index (pokemon.id)}
+	<TypeSymbolDefs />
+
+	{#if byGeneration}
+		<nav aria-label="Generations" class="flex flex-wrap gap-2">
+			{#each GENERATIONS as generation (generation.region)}
+				<a class="btn-outline-gold" href="#gen-{generation.region.toLowerCase()}">{generation.region}</a>
+			{/each}
+		</nav>
+	{/if}
+
+	{#each sections as section, sectionIndex (section.generation?.region ?? 'all')}
+		<!-- The fixed header covers the top of the viewport, so `scroll-mt-28` lands a jump link's heading below it. -->
+		<section class="mt-8 scroll-mt-28" id={section.generation && `gen-${section.generation.region.toLowerCase()}`}>
+		{#if section.generation}
+			<h2 class="text-xl md:text-2xl font-bold text-gold-400">
+				{section.generation.region}
+				<span class="text-sm font-normal text-gray-400">#{section.generation.first} - #{section.generation.last}</span>
+			</h2>
+			<p class="mb-4 text-sm text-gray-400">{section.owned ? `${section.owned} / ` : ''}{section.cards.toLocaleString('en-US')} cards</p>
+		{/if}
+		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 align-items-start align-content-start">
+		{#each section.pokemons as pokemon, index (pokemon.id)}
+			{@const owned = ownedOf(pokemon)}
 			<!-- A real link, not a button calling `goto`: crawlers only follow `href`s, and this page is the one hub linking every Pokémon. -->
 			<a
 				href={pokemon.path || undefined}
-				class="card-tile focus-ring group p-3 flex flex-col items-center text-center [content-visibility:auto] [contain-intrinsic-size:auto_11rem]"
+				class="card-tile focus-ring group relative overflow-hidden p-3 flex flex-col items-center text-center [content-visibility:auto] [contain-intrinsic-size:auto_11rem]"
 				title={`View the most valuable ${pascalCase(pokemon.name)} card`}
 			>
-				<div class="relative w-24 h-24 md:w-28 md:h-28 mb-2">
+				<div class={['relative w-24 h-24 md:w-28 md:h-28 mb-2', pokemon.type && 'type-glow', TYPE_GLOW[pokemon.type]]}>
 					{#if !NO_IMAGES}
 						<img
 							src={getPokemonImageSrc(pokemon.id)}
@@ -121,7 +195,7 @@
 							onerror={(e) => handlePokemonImageError(e, pokemon.id, pokemon.fallbackImage)}
 							decoding="async"
 							height="112"
-							loading={index < EAGER_TILES ? 'eager' : 'lazy'}
+							loading={sectionIndex === 0 && index < EAGER_TILES ? 'eager' : 'lazy'}
 							width="112"
 						/>
 					{:else}
@@ -133,16 +207,27 @@
 						{pokemon.id}
 					</div>
 				</div>
-				<span class="text-sm md:text-base font-semibold group-hover:text-gold-400 transition-colors duration-200">
+				<span class="flex items-center justify-center gap-1.5 text-sm md:text-base font-semibold group-hover:text-gold-400 transition-colors duration-200">
 					{pascalCase(pokemon.name)}
+					{#if pokemon.type}
+						<TypeSymbol shared type={pokemon.type} />
+					{/if}
 				</span>
 				<span class="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-1" title="Cards featuring this Pokémon">
 					<span class="icon-layers size-3 shrink-0" aria-hidden="true"></span>
-					{pokemon.cardCount} card{pokemon.cardCount === 1 ? '' : 's'}
+					{owned ? `${owned} / ` : ''}{pokemon.cardCount} card{pokemon.cardCount === 1 ? '' : 's'}
 				</span>
+				{#if pokemon.price}
+					<span class="text-xs font-semibold text-green-400">{euros(pokemon.price)}</span>
+				{/if}
+				{#if owned}
+					<span class="absolute inset-x-0 bottom-0 h-0.5 bg-white/10" title="{owned} of {pokemon.cardCount} cards in your collection"><span class="block h-full bg-gold-400" style="width: {(owned / pokemon.cardCount) * 100}%"></span></span>
+				{/if}
 			</a>
 		{/each}
-	</div>
+		</div>
+		</section>
+	{/each}
 </div>
 
 <ScrollButton direction="up" onclick={scrollToTopPage} visible={hasScrolled} />

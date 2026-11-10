@@ -1,4 +1,16 @@
 export const POKEMONS_COUNT = 1025;
+/** The Pokédex ranges of the nine generations, in order: a Pokémon belongs to the first one whose `last` reaches its number. */
+export const GENERATIONS = [
+	{ first: 1, last: 151, region: 'Kanto' },
+	{ first: 152, last: 251, region: 'Johto' },
+	{ first: 252, last: 386, region: 'Hoenn' },
+	{ first: 387, last: 493, region: 'Sinnoh' },
+	{ first: 494, last: 649, region: 'Unova' },
+	{ first: 650, last: 721, region: 'Kalos' },
+	{ first: 722, last: 809, region: 'Alola' },
+	{ first: 810, last: 905, region: 'Galar' },
+	{ first: 906, last: 1025, region: 'Paldea' },
+] as const;
 export const BASE_URL = 'https://pokecards-collector.ayfri.com';
 export const SITE_NAME = 'PokéCards-Collector';
 /** Prefix of every CardTrader scan the catalogue stores: the scrapers write it, `processCardImage` recognizes it. It sits here because this file has no `$app` import. */

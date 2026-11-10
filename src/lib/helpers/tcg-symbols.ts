@@ -17,6 +17,9 @@ export const TYPE_SYMBOLS: Record<string, string> = {
 	water: 'M99.4 3.8c.6-.2.4-1-.2-1C12.9 5.4 0 50.2 6 69.3 11.8 87 35.5 97.2 53.6 97.2c12.5 0 28-1.8 35.2-13.5C100 66 81 51.7 78.3 49.2a33 33 0 0 1-9.2-19.3c-.6-9.2 5.4-19.9 30.3-26M29.5 75q1.5-1.3 5.2-1.4c4 0 9.3 1.4 14.3 3.6 7.8 3.8 11.6 8.8 8.8 11.5Q56 90 52.6 90.2c-4 0-9.2-1.4-14.2-3.7-7.9-3.8-11.9-8.8-8.9-11.4',
 };
 
+/** The glyph fills 74 % of the type's disc, like the printed symbol on a card. */
+export const TYPE_GLYPH_SCALE = 0.74;
+
 /**
  * The lowercase `ex` suffix logo of Scarlet & Violet cards, scaled to a height of 100 with its own width (it is a word, not a square symbol).
  * The font's glyph leaves its subpaths open and a gap between the letters: every subpath is closed so the outline goes all the way round,

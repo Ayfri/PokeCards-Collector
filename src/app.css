@@ -172,6 +172,11 @@
 	@apply rounded-lg border border-transparent bg-gray-800 shadow-lg transition duration-300 hover:-translate-y-1 hover:border-gold-400 hover:shadow-xl;
 }
 
+/* A soft glow in the colour of `--glow` (a type's `--fire`, `--water`...) fading to nothing at the edge of the box, for the sprite on the Pokémon page. */
+@utility type-glow {
+	background-image: radial-gradient(closest-side, color-mix(in oklab, var(--glow) 45%, transparent), transparent);
+}
+
 /*
  * The Sets page repeats these three icons on every tile, and inline Lucide SVGs weighed 425 kB of its HTML. A mask keeps the icon in the stylesheet
  * and tints it with `currentColor`. The paths are the `layers`, `circle-euro` and `calendar-days` icons of `@lucide/svelte`, stroked 2 on a 24 grid.

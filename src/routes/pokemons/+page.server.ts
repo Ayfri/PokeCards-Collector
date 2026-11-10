@@ -18,32 +18,51 @@ export interface PokemonListEntry {
 	name: string;
 	/** The page of the Pokémon's most valuable card, empty when it has none. */
 	path: string;
+	/** Cardmarket price of that card in EUR, 0 when no card of the Pokémon is priced. */
+	price: number;
+	/** The Pokémon's main TCG type, lowercase: the first type of most of its cards, empty when it has no card. */
+	type: string;
 }
 
 /** Keyed on the memoized tables: the pass over every card runs once per refreshed table instead of once per request. */
 const aggregates = new WeakMap<object, unknown>();
 
+/** The type a card is filed under: the first of its comma-separated types. */
+const mainTypeOf = (card: FullCard) => card.types.split(',', 1)[0]?.trim().toLowerCase() ?? '';
+
+/** The most frequent type; a tie goes to the type of the most valuable card, then to the first one met. */
+function mainType(counts: Map<string, number>, bestType: string): string {
+	let main = '';
+	for (const [type, count] of counts) {
+		const mainCount = counts.get(main) ?? 0;
+		if (count > mainCount || (count === mainCount && type === bestType)) main = type;
+	}
+	return main;
+}
+
 const aggregatePokemons = (pokemons: Pokemon[], allCards: FullCard[], prices: Record<string, PriceData>) => memoizedOn(aggregates, [pokemons, allCards, prices], (): PokemonListEntry[] => {
 	/** One pass over the 23546 cards: scanning all of them for each Pokémon would take 24M comparisons per render. */
-	const best = new Map<number, { card: CardLink; count: number; image: string; price: number }>();
+	const best = new Map<number, { bestType: string; card: CardLink; count: number; image: string; price: number; types: Map<string, number> }>();
 	for (const card of allCards) {
 		const pokemonId = card.pokemonNumber;
 		if (pokemonId === undefined) continue;
 
 		const price = cardPrice(prices[card.cardCode]) ?? 0;
-		const current = best.get(pokemonId);
+		const type = mainTypeOf(card);
+		let current = best.get(pokemonId);
 
 		if (!current) {
-			best.set(pokemonId, { card, count: 1, image: card.image, price });
-			continue;
-		}
-
-		current.count++;
-		if (price > current.price) {
+			current = { bestType: type, card, count: 0, image: card.image, price, types: new Map() };
+			best.set(pokemonId, current);
+		} else if (price > current.price) {
+			current.bestType = type;
 			current.card = card;
 			current.image = card.image;
 			current.price = price;
 		}
+
+		current.count++;
+		if (type) current.types.set(type, (current.types.get(type) ?? 0) + 1);
 	}
 
 	return pokemons.map(pokemon => {
@@ -54,6 +73,8 @@ const aggregatePokemons = (pokemons: Pokemon[], allCards: FullCard[], prices: Re
 			id: pokemon.id,
 			name: pokemon.name,
 			path: entry ? cardPath('en', entry.card) : '',
+			price: entry ? Math.round(entry.price * 100) / 100 : 0,
+			type: entry ? mainType(entry.types, entry.bestType) : '',
 		};
 	});
 });
