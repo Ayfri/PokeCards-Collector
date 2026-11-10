@@ -271,15 +271,16 @@ function ranked(cards: Card[], prices: Record<string, PriceData>, language?: Lan
 }
 
 /**
- * A scan from the CDN. A 4xx is a scan that does not exist (`null`); a network error, a timeout or a 5xx is retried once, then `undefined`.
+ * A scan from the CDN, headers and bytes. A 4xx is a scan that does not exist (`null`); a network error, a timeout, a 5xx or a body that dies is retried
+ * once, then `undefined`. The timeout covers the whole download of each attempt, and it never rejects, so one slow candidate cannot fail the render.
  * TCGdex drops the odd request under a burst (5 of 5 fan scans once failed locally).
  */
-async function fetchScan(url: string): Promise<Response | null | undefined> {
-	const attempt = async () => {
-		const response = await fetch(url, { signal: AbortSignal.timeout(IMAGE_TIMEOUT_MS) });
-		if (response.ok) return response;
+async function fetchScan(src: string, signal: AbortSignal): Promise<ImageSource | null | undefined> {
+	const attempt = async (): Promise<ImageSource | null> => {
+		const response = await fetch(src, { signal: AbortSignal.any([signal, AbortSignal.timeout(IMAGE_TIMEOUT_MS)]) });
+		if (response.ok) return { cache: 'none', data: await response.arrayBuffer(), src };
 		await response.body?.cancel();
-		if (response.status >= 500) throw new Error(`${response.status} for ${url}`);
+		if (response.status >= 500) throw new Error(`${response.status} for ${src}`);
 		return null;
 	};
 	return attempt().catch(attempt).catch(() => undefined);
@@ -289,23 +290,24 @@ async function fetchScan(url: string): Promise<Response | null | undefined> {
  * The scans of the first `count` entries the CDN has, at the `low` size, handed to the renderer under their URL with their bytes: one GET each
  * and no second download inside the renderer. A card can carry an `image` TCGdex has no file for (the French 30th Celebration Mews), which left an
  * empty card in the image, so twice as many candidates are requested in parallel and the first `count` that answered are kept, in rank order.
+ * The candidates are awaited in rank order and the rest are aborted as soon as `count` are kept, so a slow spare never holds the render back.
  * A candidate that failed after its retry flags the render as incomplete, unless `count` scans were found before it.
  */
 async function scans(entries: Ranked[], state: RenderState, count = 3, quality: ImageQuality = 'low'): Promise<string[]> {
-	const urls = entries.slice(0, count * 2).map(({ card }) => ogScan(card.image, quality));
-	const responses = await Promise.all(urls.map(fetchScan));
-	const kept: { response: Response; src: string }[] = [];
-	const unused: (Promise<void> | undefined)[] = [];
-	responses.forEach((response, index) => {
-		if (response === undefined && kept.length < count) state.complete = false;
-		if (response && kept.length < count) kept.push({ response, src: urls[index] });
-		else unused.push(response?.body?.cancel());
-	});
+	const controller = new AbortController();
+	const requests = entries.slice(0, count * 2).map(({ card }) => fetchScan(ogScan(card.image, quality), controller.signal));
+	const kept: ImageSource[] = [];
 
-	const loaded = await Promise.all(kept.map(async ({ response, src }): Promise<ImageSource> => ({ cache: 'none', data: await response.arrayBuffer(), src })));
-	await Promise.all(unused);
-	state.sources.push(...loaded);
-	return loaded.map(({ src }) => src);
+	for (const request of requests) {
+		if (kept.length === count) break;
+		const source = await request;
+		if (source) kept.push(source);
+		else if (source === undefined) state.complete = false;
+	}
+
+	controller.abort();
+	state.sources.push(...kept);
+	return kept.map(({ src }) => src);
 }
 
 const trioOrLogo = (urls: string[]) => (room: number): Node => urls.length ? trio(urls, room) : logoVisual();
