@@ -2,16 +2,13 @@
 	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import type { PageData } from './$types';
-	import { formatEuros } from '#helpers/format.ts';
+	import { formatDate, formatEuros } from '#helpers/format.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import PageTitle from '#components/PageTitle.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import type { SetWithPrice } from '#lib/types.js';
-	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
-	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
-	import LayersIcon from '@lucide/svelte/icons/layers';
 	import SetLogo from '#components/SetLogo.svelte';
 	import { CATALOGUES } from '#helpers/catalogues.ts';
 	import { groupSetTiles, setCardCount, setPath, type SetTile } from '#helpers/card-utils.ts';
@@ -139,7 +136,7 @@
 				<div class="mb-4">
 					<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
 						<h2 class="text-xl font-bold text-gold-400 md:text-2xl">{series}</h2>
-						<p class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-300" title="Release years"><CalendarDaysIcon size={14} /> {yearSpan(seriesSets)}</p>
+						<p class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-300" title="Release years"><span class="icon-calendar-days size-3.5 shrink-0" aria-hidden="true"></span> {yearSpan(seriesSets)}</p>
 						<p class="whitespace-nowrap text-sm text-gray-400">{seriesSets.length} sets</p>
 						<p class="ml-auto whitespace-nowrap text-sm text-gold-400">{formatEuros(seriesSets.reduce((acc, set) => acc + set.totalPrice, 0))}</p>
 					</div>
@@ -147,50 +144,48 @@
 				</div>
 				
 				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ y: 50, duration: 500, delay: 200 * index }}>
-					{#each groupedTiles[series] as tile (tile.set.setId)}
+					{#each groupedTiles[series] as tile, position (tile.set.setId)}
 						{@const set = tile.set}
-						<div in:fly={{ y: 20, duration: 300, delay: 50 }} class="h-full">
-							<div class="card-tile overflow-hidden h-full flex flex-col">
-								<!-- A kit has no set page of its own: its halves are linked by the chips, so the tile body is not a link. -->
-								<svelte:element
-									this={tile.kit ? 'div' : 'a'}
-									class="flex flex-1 flex-col"
-									href={tile.kit ? undefined : setPath(set, CATALOGUES.en)}
-									title={tile.kit ? undefined : `Browse every card in ${set.name}`}
-								>
-									<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
-										<SetLogo class="max-h-full object-contain" {set}>
-											{#snippet fallback()}<LayersIcon class="text-gray-600" size={56} />{/snippet}
-										</SetLogo>
+						<div class="card-tile overflow-hidden h-full flex flex-col">
+							<!-- A kit has no set page of its own: its halves are linked by the chips, so the tile body is not a link. -->
+							<svelte:element
+								this={tile.kit ? 'div' : 'a'}
+								class="flex flex-1 flex-col"
+								href={tile.kit ? undefined : setPath(set, CATALOGUES.en)}
+								title={tile.kit ? undefined : `Browse every card in ${set.name}`}
+							>
+								<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
+									<SetLogo class="max-h-full object-contain" eager={index === 0 && position < 4} {set}>
+										{#snippet fallback()}<span class="icon-layers size-14 text-gray-600" aria-hidden="true"></span>{/snippet}
+									</SetLogo>
+								</div>
+								<div class="p-4 flex-1 flex flex-col">
+									<h2 class="text-lg font-semibold text-white">{set.name}</h2>
+									<div class="flex justify-between mt-2 text-sm text-gray-400">
+										<span class="flex items-center gap-1.5" title="Cards in this set"><span class="icon-layers size-3.5 shrink-0" aria-hidden="true"></span> {setCardCount(set)} cards</span>
+										<span class="flex items-center gap-1.5 text-gold-400" title="Cardmarket value of a complete set"><span class="icon-circle-euro size-3.5 shrink-0" aria-hidden="true"></span> {formatEuros(set.totalPrice)}</span>
 									</div>
-									<div class="p-4 flex-1 flex flex-col">
-										<h2 class="text-lg font-semibold text-white">{set.name}</h2>
-										<div class="flex justify-between mt-2 text-sm text-gray-400">
-											<span class="flex items-center gap-1.5" title="Cards in this set"><LayersIcon size={14} /> {setCardCount(set)} cards</span>
-											<span class="flex items-center gap-1.5 text-gold-400" title="Cardmarket value of a complete set"><CircleEuroIcon size={14} /> {formatEuros(set.totalPrice)}</span>
-										</div>
-										<div class="flex justify-between mt-1 text-sm text-gray-400">
-											<span class="flex items-center gap-1.5" title="Release date"><CalendarDaysIcon size={14} /> {new Date(set.releaseDate).toLocaleDateString()}</span>
-											{#if set.ptcgoCode}
-												<span class="px-2 py-1 bg-gray-700 rounded-sm text-gold-400 text-xs" title="PTCGO set code">{set.ptcgoCode}</span>
-											{:else}
-												<span class="px-2 py-1 bg-transparent">&nbsp;</span>
-											{/if}
-										</div>
+									<div class="flex justify-between mt-1 text-sm text-gray-400">
+										<span class="flex items-center gap-1.5" title="Release date"><span class="icon-calendar-days size-3.5 shrink-0" aria-hidden="true"></span> {formatDate(set.releaseDate)}</span>
+										{#if set.ptcgoCode}
+											<span class="px-2 py-1 bg-gray-700 rounded-sm text-gold-400 text-xs" title="PTCGO set code">{set.ptcgoCode}</span>
+										{:else}
+											<span class="px-2 py-1 bg-transparent">&nbsp;</span>
+										{/if}
 									</div>
-								</svelte:element>
-								{#if tile.parts.length}
-									<div class="flex flex-wrap gap-2 px-4 pb-4">
-										{#each tile.parts as part (part.set.setId)}
-											<a
-												class="rounded-full border border-gold-500/40 bg-gray-700/60 px-2.5 py-0.5 text-xs text-gray-200 transition-colors hover:border-gold-400 hover:text-gold-300"
-												href={setPath(part.set, CATALOGUES.en)}
-												title={`Browse every card in ${part.set.name}`}
-											>{part.label} · {setCardCount(part.set)} cards</a>
-										{/each}
-									</div>
-								{/if}
-							</div>
+								</div>
+							</svelte:element>
+							{#if tile.parts.length}
+								<div class="flex flex-wrap gap-2 px-4 pb-4">
+									{#each tile.parts as part (part.set.setId)}
+										<a
+											class="rounded-full border border-gold-500/40 bg-gray-700/60 px-2.5 py-0.5 text-xs text-gray-200 transition-colors hover:border-gold-400 hover:text-gold-300"
+											href={setPath(part.set, CATALOGUES.en)}
+											title={`Browse every card in ${part.set.name}`}
+										>{part.label} · {setCardCount(part.set)} cards</a>
+									{/each}
+								</div>
+							{/if}
 						</div>
 					{/each}
 				</div>

@@ -2,19 +2,25 @@ import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
 import { breadcrumbs, setListSchema } from '#helpers/seo.ts';
-import type { SetWithPrice } from '#lib/types.js';
-import { cardPrice } from '#helpers/card-utils.ts';
+import type { FullCard, PriceData, Set as CardSet, SetWithPrice } from '#lib/types.js';
+import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 
-export const load: PageServerLoad = async () => {
-	const [cards, prices, sets] = await Promise.all([getCards(), getPrices(), getSets()]);
+/** Keyed on the memoized tables: the pass over every card runs once per refreshed table instead of once per request. */
+const totals = new WeakMap<object, unknown>();
 
+const withTotals = (cards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]) => memoizedOn(totals, [cards, prices, sets], (): SetWithPrice[] => {
 	const setPriceTotals = new Map<string, number>();
 	for (const card of cards) {
 		const price = cardPrice(prices[card.cardCode]);
 		if (price && card.setId) setPriceTotals.set(card.setId, (setPriceTotals.get(card.setId) ?? 0) + price);
 	}
 
-	const setsWithPrices: SetWithPrice[] = sets.map(set => ({ ...set, totalPrice: setPriceTotals.get(set.setId ?? '') ?? 0 }));
+	return sets.map(set => ({ ...set, totalPrice: setPriceTotals.get(set.setId ?? '') ?? 0 }));
+});
+
+export const load: PageServerLoad = async () => {
+	const [cards, prices, sets] = await Promise.all([getCards(), getPrices(), getSets()]);
+	const setsWithPrices = withTotals(cards, prices, sets);
 
 	const pageSeoData = {
 		breadcrumbs: breadcrumbs({ name: 'Sets', url: '/sets' }),
