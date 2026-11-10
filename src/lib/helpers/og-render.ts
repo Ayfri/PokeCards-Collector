@@ -1,7 +1,7 @@
 import { read } from '$app/server';
 import { env } from 'cloudflare:workers';
 import { render as renderComponent } from 'svelte/server';
-import { render } from 'takumi-js';
+import { render, type ImageSource } from 'takumi-js';
 import { container, googleFonts, image, text, type FontSubset, type Node } from 'takumi-js/helpers';
 import CalendarDays from '@lucide/svelte/icons/calendar-days';
 import CircleEuro from '@lucide/svelte/icons/circle-euro';
@@ -24,7 +24,7 @@ import clashMedium from '#src/fonts/ClashDisplay-Medium.ttf';
 import clashSemibold from '#src/fonts/ClashDisplay-Semibold.ttf';
 import colorsCss from '#src/styles/colors.css?raw';
 import { BASE_URL, CARDTRADER_IMAGES, POKEMONS_COUNT, SITE_NAME } from '#src/constants.ts';
-import { processCardImage } from '#helpers/card-images.ts';
+import { processCardImage, type ImageQuality } from '#helpers/card-images.ts';
 import { cardPrice, formatCardNumber, setCardCount } from '#helpers/card-utils.ts';
 import { CATALOGUES, LANGUAGES, type Language } from '#helpers/catalogues.ts';
 import { computeCollectionStats } from '#helpers/collection-stats.ts';
@@ -75,10 +75,15 @@ const CLASH_FONTS = ([[500, clashMedium], [600, clashSemibold], [700, clashBold]
 
 let fallbackFonts: Promise<FontSubset[]> | undefined;
 
-/** Google Fonts, the HEAD checks and the scan downloads each give up after this long, so a slow host cannot hold every render. */
+/** Google Fonts and the scan downloads each give up after this long, so a slow host cannot hold every render. */
 const FONT_TIMEOUT_MS = 5000;
-const HEAD_TIMEOUT_MS = 3000;
 const IMAGE_TIMEOUT_MS = 5000;
+
+/** What one render collects while its layout is built: the scans it fetched itself, and whether every image it needs arrived. */
+interface RenderState {
+	complete: boolean;
+	sources: ImageSource[];
+}
 
 /**
  * Clash Display only covers Latin, so Japanese names and symbols such as ♀ or ☆ fall back to Noto Sans JP. The CSS is read once per
@@ -253,8 +258,12 @@ interface Ranked {
  */
 const borrowsScan = (card: Card, language = card.language): boolean => language === 'ja' && card.image.startsWith('https://assets.tcgdex.net/en/');
 
-/** A scan is drawn at most ~400 px wide: a CardTrader one takes its 500 px `show_` variant, since the 868 px original costs ~2 MB decoded in a 128 MB isolate. */
-const ogScan = (image: string): string => processCardImage(image, image.startsWith(CARDTRADER_IMAGES) ? 'low' : 'high');
+/**
+ * The card hero is drawn ~393x540 and the hidden-price card 500 px high, so they take `high` (TCGdex 600 px). The trio of the set, user and page
+ * images is drawn at most 300 px wide, so it takes `low` (TCGdex 245 px, CardTrader `show_` 500 px). A CardTrader scan is `low` everywhere,
+ * since its 868 px original costs ~2 MB decoded in a 128 MB isolate.
+ */
+const ogScan = (image: string, quality: ImageQuality): string => processCardImage(image, image.startsWith(CARDTRADER_IMAGES) ? 'low' : quality);
 
 /** The cards that have a scan, most valuable first. */
 function ranked(cards: Card[], prices: Record<string, PriceData>, language?: Language): Ranked[] {
@@ -265,14 +274,41 @@ function ranked(cards: Card[], prices: Record<string, PriceData>, language?: Lan
 }
 
 /**
- * The scans of the first `count` entries the CDN has. A card can carry an `image` TCGdex has no file for (the French 30th Celebration
- * Mews), which left an empty card in the image, so twice as many candidates are checked with a HEAD request, in parallel. Only a 4xx
- * drops a card: a network error or a 5xx keeps it, so the render's own fetch retries it and flags the image as incomplete if it fails.
+ * A scan from the CDN. A 4xx is a scan that does not exist (`null`); a network error, a timeout or a 5xx is retried once, then `undefined`.
+ * TCGdex drops the odd request under a burst (5 of 5 fan scans once failed locally).
  */
-async function scans(entries: Ranked[], count = 3): Promise<string[]> {
-	const candidates = entries.slice(0, count * 2).map(({ card }) => ogScan(card.image));
-	const missing = await Promise.all(candidates.map(url => fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(HEAD_TIMEOUT_MS) }).then(response => response.status >= 400 && response.status < 500, () => false)));
-	return candidates.filter((_, index) => !missing[index]).slice(0, count);
+async function fetchScan(url: string): Promise<Response | null | undefined> {
+	const attempt = async () => {
+		const response = await fetch(url, { signal: AbortSignal.timeout(IMAGE_TIMEOUT_MS) });
+		if (response.ok) return response;
+		await response.body?.cancel();
+		if (response.status >= 500) throw new Error(`${response.status} for ${url}`);
+		return null;
+	};
+	return attempt().catch(attempt).catch(() => undefined);
+}
+
+/**
+ * The scans of the first `count` entries the CDN has, at the `low` size, handed to the renderer under their URL with their bytes: one GET each
+ * and no second download inside the renderer. A card can carry an `image` TCGdex has no file for (the French 30th Celebration Mews), which left an
+ * empty card in the image, so twice as many candidates are requested in parallel and the first `count` that answered are kept, in rank order.
+ * A candidate that failed after its retry flags the render as incomplete, unless `count` scans were found before it.
+ */
+async function scans(entries: Ranked[], state: RenderState, count = 3, quality: ImageQuality = 'low'): Promise<string[]> {
+	const urls = entries.slice(0, count * 2).map(({ card }) => ogScan(card.image, quality));
+	const responses = await Promise.all(urls.map(fetchScan));
+	const kept: { response: Response; src: string }[] = [];
+	const unused: (Promise<void> | undefined)[] = [];
+	responses.forEach((response, index) => {
+		if (response === undefined && kept.length < count) state.complete = false;
+		if (response && kept.length < count) kept.push({ response, src: urls[index] });
+		else unused.push(response?.body?.cancel());
+	});
+
+	const loaded = await Promise.all(kept.map(async ({ response, src }): Promise<ImageSource> => ({ cache: 'none', data: await response.arrayBuffer(), src })));
+	await Promise.all(unused);
+	state.sources.push(...loaded);
+	return loaded.map(({ src }) => src);
 }
 
 const trioOrLogo = (urls: string[]) => (room: number): Node => urls.length ? trio(urls, room) : logoVisual();
@@ -287,7 +323,7 @@ function plate(card: Card, height: number): Node {
 	const scale = Math.max(window.width / 0.84, window.height / 0.488);
 	const art = card.artImage
 		? image({
-			src: ogScan(card.artImage),
+			src: ogScan(card.artImage, 'high'),
 			width: Math.round(scale),
 			height: Math.round(scale * CARD_RATIO),
 			style: { left: window.width / 2 - scale / 2, position: 'absolute', top: window.height / 2 - scale * CARD_RATIO * (card.supertype === 'Trainer' ? 0.33 : 0.2925) },
@@ -321,11 +357,11 @@ async function cardImage(language: Language, code: string): Promise<Node | null>
 		fact(set?.logo ? [image({ src: absoluteImage(set.logo), tw: 'h-[50px] max-w-[140px] object-contain' })] : [icon(Library, 34)], card.setName),
 		fact([flag(language), ...types.map(type => typeSymbol(type, 36)), ...(rarity ? [rarity] : [])], [card.rarity, number].filter(Boolean).join('  ·  ')),
 		price ? hero(formatOgEuros(price), 620) : text({ text: 'No price yet', tw: `mt-2 text-[44px] font-semibold text-[${color('gray-400')}]` }),
-	], card.image ? scan(ogScan(card.image), 540) : plate(card, 540));
+	], card.image ? scan(ogScan(card.image, 'high'), 540) : plate(card, 540));
 }
 
 /** The set logo large, its name, its card count and year, its total value in gold, and its three most valuable cards. */
-async function setImage(language: Language, setId: string): Promise<Node | null> {
+async function setImage(language: Language, setId: string, state: RenderState): Promise<Node | null> {
 	const { cards, prices, sets } = await getCatalogue(language);
 	const set = sets.find(entry => entry.setId === setId);
 	if (!set) return null;
@@ -339,7 +375,7 @@ async function setImage(language: Language, setId: string): Promise<Node | null>
 		title(set.name, 410, 80),
 		fact([flag(language)], [`${formatCount(setCardCount(set) || setCards.length)} cards`, year > 1995 ? String(year) : ''].filter(Boolean).join('  ·  ')),
 		...(value ? [hero(formatOgEuros(value), 400)] : []),
-	], trioOrLogo(await scans(ranked(setCards, prices, language))));
+	], trioOrLogo(await scans(ranked(setCards, prices, language), state)));
 }
 
 /** A failed read throws so the route answers 500 uncached, instead of drawing an empty image that would be stored for a day. */
@@ -351,7 +387,7 @@ function readFailed(what: string, error: unknown): never {
  * Read with the anonymous client only, never with a visitor's session: row level security then shows public profiles and their rows alone,
  * so a cached image can never carry what only the owner sees. A private or unknown user gets the same image, which tells neither apart.
  */
-async function userImage(kind: OgUserKind, username: string): Promise<Node> {
+async function userImage(kind: OgUserKind, username: string, state: RenderState): Promise<Node> {
 	const { data: profile, error: profileError } = await getProfileByUsername(username, supabase);
 	/** `.single()` answers `PGRST116` for an unknown user, who gets the private image; any other error is a failed read, which must not be cached as that image. */
 	if (profileError && !(typeof profileError === 'object' && 'code' in profileError && profileError.code === 'PGRST116')) readFailed('profile', profileError);
@@ -370,7 +406,7 @@ async function userImage(kind: OgUserKind, username: string): Promise<Node> {
 			title(name, 400),
 			fact([icon(Heart, 34)], `${formatCount(rows?.length ?? 0)} cards wanted`),
 			...(value ? [hero(formatEuros(value), 390)] : []),
-		], trioOrLogo(await scans(wanted)));
+		], trioOrLogo(await scans(wanted, state)));
 	}
 
 	const [{ data: collection, error: collectionError }, { data: wishlist, error: wishlistError }] = await Promise.all([getUserCollection(name, supabase), kind === 'profile' ? getUserWishlist(name, supabase) : { data: [], error: null }]);
@@ -384,7 +420,7 @@ async function userImage(kind: OgUserKind, username: string): Promise<Node> {
 		title(name, 400),
 		fact([icon(Layers, 34)], stats.unique_cards ? `${formatCount(stats.unique_cards)} cards collected` : 'No cards yet'),
 		...(stats.total_value ? [hero(formatEuros(stats.total_value), 390)] : []),
-	], trioOrLogo(await scans(stats.top_cards.filter(({ card }) => card.image).map(({ card, price }) => ({ card, price })))));
+	], trioOrLogo(await scans(stats.top_cards.filter(({ card }) => card.image).map(({ card, price }) => ({ card, price })), state)));
 }
 
 /** Card.dle guess rows: tiles turning from red to green with the hint icons, the shape of a solved board without its card. */
@@ -418,17 +454,17 @@ function hiddenPrice(src: string): Node {
 	});
 }
 
-async function pageImage(name: OgPage): Promise<Node> {
+async function pageImage(name: OgPage, state: RenderState): Promise<Node> {
 	const language: Language = name === 'japan' ? 'ja' : name === 'france' ? 'fr' : 'en';
 	const [cards, prices, sets] = await Promise.all([getCards(language), getPrices(language), getSets(language)]);
-	const top = async (list: Card[]) => trioOrLogo(await scans(ranked(list, prices)));
+	const top = async (list: Card[]) => trioOrLogo(await scans(ranked(list, prices), state));
 	const page = async (heading: string, tagline: string, line: Node, list: Card[] = cards) => canvas(510, [title(heading, 440), pitch(tagline), line], await top(list));
 
 	switch (name) {
 		case 'card.dle':
 			return canvas(560, [title('Card.dle', 490), pitch('Guess the Pokémon card of the day from its hints.'), fact([icon(CalendarDays, 34)], 'A new card every day')], dleBoard());
 		case 'guess-the-price': {
-			const [first] = await scans(ranked(cards, prices), 1);
+			const [first] = await scans(ranked(cards, prices), state, 1, 'high');
 			return canvas(600, [title('Guess the Price', 530), pitch('How much is this card worth on Cardmarket?'), fact([icon(Flame, 34)], 'Streak combo up to x3')], first ? hiddenPrice(first) : logoVisual());
 		}
 		case 'home': {
@@ -458,12 +494,12 @@ async function pageImage(name: OgPage): Promise<Node> {
 	}
 }
 
-function layout(target: OgTarget): Promise<Node | null> {
+function layout(target: OgTarget, state: RenderState): Promise<Node | null> {
 	switch (target.kind) {
 		case 'card': return cardImage(target.language, target.code);
-		case 'page': return pageImage(target.name);
-		case 'set': return setImage(target.language, target.setId);
-		default: return userImage(target.kind, target.username);
+		case 'page': return pageImage(target.name, state);
+		case 'set': return setImage(target.language, target.setId, state);
+		default: return userImage(target.kind, target.username, state);
 	}
 }
 
@@ -475,13 +511,13 @@ export interface OgRender {
 
 /** The 1200x630 PNG of `target`, or `null` when the card or set does not exist. */
 export async function renderOgImage(target: OgTarget): Promise<OgRender | null> {
-	const [node, noto] = await Promise.all([layout(target), notoFonts()]);
+	const state: RenderState = { complete: true, sources: [] };
+	const [node, noto] = await Promise.all([layout(target, state), notoFonts()]);
 	if (!node) return null;
 
-	let complete = true;
 	/**
-	 * TCGdex drops the odd request under a burst (5 of 5 fan scans once failed locally), and a cached image would keep the blank cards for a
-	 * day, so a network error, a timeout or a 5xx is retried once, then flags the render as incomplete. A 4xx is a scan that does not exist, final.
+	 * The card hero and the logos the renderer fetches itself: a cached image would keep a blank card for a day, so a network error, a timeout
+	 * or a 5xx is retried once, then flags the render as incomplete. A 4xx is a scan that does not exist, final.
 	 */
 	const fetchImage = (input: string, init?: RequestInit): Promise<Response> => {
 		const attempt = async () => {
@@ -493,7 +529,7 @@ export async function renderOgImage(target: OgTarget): Promise<OgRender | null> 
 			return response;
 		};
 		return attempt().catch(attempt).catch((error: unknown) => {
-			complete = false;
+			state.complete = false;
 			throw error;
 		});
 	};
@@ -508,9 +544,10 @@ export async function renderOgImage(target: OgTarget): Promise<OgRender | null> 
 		/**
 		 * A scan or logo that fails to load is left out rather than failing the whole image. Scans are not kept decoded: takumi's 64 MiB
 		 * default cache would fill on a crawler burst inside the 128 MB isolate that also holds the catalogue memos, so only the logo stays.
+		 * The trio scans are in `sources`, matched by URL before any fetch.
 		 */
-		images: { cache: 'none', fetch: fetchImage, sources: [logoSource], throwOnError: false },
+		images: { cache: 'none', fetch: fetchImage, sources: [logoSource, ...state.sources], throwOnError: false },
 		width: OG_WIDTH,
 	});
-	return { complete, png };
+	return { complete: state.complete, png };
 }
