@@ -26,16 +26,19 @@ export interface ApiError {
 const payloads = new Map<string, Promise<unknown>>();
 
 /**
- * Fetches `url` as JSON once per session and shares the promise. A failed fetch is dropped so the next navigation retries it.
- * The URL carries the build version: the endpoints send `cache-control: max-age`, so without it a deploy that changes a payload's
- * shape kept serving the old JSON from the browser cache (card.dle sorted on a `setName` the cached suggestions lacked).
+ * The URL `cachedJson` requests for `url`, which carries the build version: the endpoints send `cache-control: max-age`, so without it a deploy
+ * that changes a payload's shape kept serving the old JSON from the browser cache (card.dle sorted on a `setName` the cached suggestions lacked).
+ * A `<link rel="preload" as="fetch" crossorigin="anonymous">` in a page's head uses it too: the browser only hands the preloaded response to a fetch
+ * with the same URL, and `crossorigin="anonymous"` matches the CORS mode and same-origin credentials SvelteKit's `fetch` uses.
  */
+export const payloadUrl = (url: string) => `${url}${url.includes('?') ? '&' : '?'}v=${encodeURIComponent(version)}`;
+
+/** Fetches `url` as JSON once per session and shares the promise. A failed fetch is dropped so the next navigation retries it. */
 export function cachedJson<T>(fetch: typeof globalThis.fetch, url: string): Promise<T> {
 	const cached = payloads.get(url) as Promise<T> | undefined;
 	if (cached) return cached;
 
-	const versioned = `${url}${url.includes('?') ? '&' : '?'}v=${encodeURIComponent(version)}`;
-	const payload = fetch(versioned).then(response => {
+	const payload = fetch(payloadUrl(url)).then(response => {
 		if (!response.ok) throw new Error(`${url} answered ${response.status}`);
 		return response.json() as Promise<T>;
 	});

@@ -10,8 +10,11 @@ import type { PageLoad } from './$types';
  * does not stream 17 MB of JSON into the document.
  */
 export const load: PageLoad = ({ data, fetch }) => {
-	/** On the server the promise never resolves: the grid does not render there, since `VirtualGrid` measures itself before drawing a tile. */
-	if (!browser) return { ...data, streamed: { grid: new Promise<GridPayload>(() => {}) } };
+	/** The page preloads this endpoint from its head, so the download starts with the document instead of after the scripts. */
+	const payload = '/api/cards-list';
 
-	return { ...data, streamed: { grid: cachedJson<GridPayload>(fetch, '/api/cards-list') } };
+	/** On the server the promise never resolves: the grid does not render there, since `VirtualGrid` measures itself before drawing a tile. */
+	if (!browser) return { ...data, payload, streamed: { grid: new Promise<GridPayload>(() => {}) } };
+
+	return { ...data, payload, streamed: { grid: cachedJson<GridPayload>(fetch, payload) } };
 };

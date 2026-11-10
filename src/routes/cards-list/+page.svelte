@@ -5,6 +5,7 @@
 	import GridHeading from '#lib/components/list/GridHeading.svelte';
 	import Loader from "#lib/components/Loader.svelte";
 	import { cardSize } from '#stores/grid.svelte.ts';
+	import { payloadUrl } from '#helpers/utils.ts';
 
 	interface Props {
 		data: PageData;
@@ -20,6 +21,10 @@
 	const selectedSetName = $derived(filters.set !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === filters.set)?.name ?? null) : null);
 
 </script>
+
+<svelte:head>
+	<link rel="preload" as="fetch" crossorigin="anonymous" href={payloadUrl(data.payload)} />
+</svelte:head>
 
 <div class="flex min-h-0 flex-1 flex-col text-lg text-white">
 	<GridHeading description={data.description} title={data.title} />

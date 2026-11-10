@@ -53,9 +53,6 @@
 	let clientWidth: number = $state(0);
 	let showFilters = $state(false);
 	let searchName = $derived(filters.name);
-	/** Cards above the fold skip lazy loading so the LCP candidate is requested with the document, not after layout. */
-	const eagerCards = 12;
-
 	/** Fixed height of the info container in Card.svelte, added to the card height to get the virtual grid's row size. */
 	const infoContainerHeight = 70;
 
@@ -260,7 +257,7 @@
 					card={item}
 					customHeight={cardDimensions.height}
 					customWidth={cardDimensions.width}
-					eager={index < eagerCards}
+					eager={index < cardDimensions.cardsPerRow}
 					{lowRes}
 					{pokemonMap}
 					{sets}
