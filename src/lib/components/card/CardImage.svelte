@@ -19,6 +19,8 @@
 		onerror?: () => void;
 		/** Marks the image as above the fold: eager + `fetchpriority="high"`, for the LCP candidate. */
 		priority?: boolean;
+		/** Width in px the plate drawn in place of a missing scan is laid out at before it is scaled into the box: a small slot keeps the full plate instead of the collapsed one. */
+		plateWidth?: number | undefined;
 		/** The card's set when the caller already holds it: the plate drawn in place of a missing scan shows its symbol and the card's `n/total` number. */
 		set?: PlateSet | undefined;
 		/** `sizes` value; defaults to the pixel width when one is given. */
@@ -41,6 +43,7 @@
 		lowRes = false,
 		onerror,
 		priority = false,
+		plateWidth = undefined,
 		set = undefined,
 		sizes = undefined,
 		style = undefined,
@@ -98,7 +101,7 @@
 
 {#if error || !imageUrl}
 	<!-- No art, or a URL TCGdex lists before the scan is uploaded (404): the plate stays still instead of pretending to load. -->
-	<CardPlate {alt} {card} class="rounded-lg {classNames}" {set} style={boxStyle} {title} {types} />
+	<CardPlate {alt} {card} class="rounded-lg {classNames}" {plateWidth} {set} style={boxStyle} {title} {types} />
 {:else}
 	<img
 		bind:this={img}

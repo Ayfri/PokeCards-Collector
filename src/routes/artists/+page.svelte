@@ -36,6 +36,9 @@
 	/** The tiles of the first row on a wide screen load their scans right away, the rest wait until they scroll near. */
 	const FIRST_ROW = 4;
 
+	/** Width the plate of a scanless card is laid out at, then scaled into the ~116 px slot: below 200 px the plate drops its details. */
+	const PLATE_WIDTH = 245;
+
 	/** Scans that failed to load: their card leaves the stack and the next candidate replaces it. */
 	const failedImages = new SvelteSet<string>();
 
@@ -133,6 +136,7 @@
 									lazy={artistIndex >= FIRST_ROW}
 									lowRes
 									onerror={() => failedImages.add(card.image)}
+									plateWidth={PLATE_WIDTH}
 									set={card.plate?.set}
 									types={card.types}
 									class="h-full w-auto max-w-none object-contain mx-auto transform-gpu"

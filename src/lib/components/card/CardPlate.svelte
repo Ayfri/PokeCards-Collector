@@ -19,6 +19,8 @@
 		/** The card the plate stands for: fills the name, HP, types, set, number and rarity when given. */
 		card?: PlateCard | undefined;
 		class?: string;
+		/** Lays the plate out at this width in px (the card ratio is kept) and scales it down to the box the caller's classes size, so a thumbnail shows every detail of a wide tile. */
+		plateWidth?: number | undefined;
 		/** The card's set, for the symbol and the `34/35` numbering: callers pass it only when they already hold it, so the plate never pulls the sets list in. */
 		set?: PlateSet | undefined;
 		style?: string;
@@ -28,7 +30,7 @@
 		types?: string | undefined;
 	}
 
-	let { alt, card = undefined, class: classNames = '', set = undefined, style = '', title = undefined, types = undefined }: Props = $props();
+	let { alt, card = undefined, class: classNames = '', plateWidth = undefined, set = undefined, style = '', title = undefined, types = undefined }: Props = $props();
 
 	/** The plate mimics a printed card, so its stage and kind labels use the language of the card's catalogue. */
 	const language = $derived(card?.language ?? catalogueOfPath(page.url.pathname).language);
@@ -64,7 +66,8 @@
 <!-- The layout of a real card, all scaled with the tile through `cqw`: border, name line, art window, text box, then a strip with the set, the illustrator,
      the set symbol and the number. The border is yellow or silver depending on the card's era. The `@max-*` variants drop details once they would shrink below reading size.
      The bottom padding never drops under 3.2rem, so the strip stays above the set badge and collection controls grids lay over the tile (fixed px, unlike the plate). -->
-<div aria-label={alt} class="card-plate @container overflow-hidden text-white select-none {classNames}" data-card-code={card?.cardCode} role="img" style="{style}; {tintStyle}; {plateTexture(card)}">
+{#snippet plate(classes: string, css: string)}
+<div aria-label={alt} class="card-plate @container overflow-hidden text-white select-none {classes}" data-card-code={card?.cardCode} role="img" style="{css}; {tintStyle}; {plateTexture(card)}">
 	<div class="relative isolate flex h-full flex-col gap-[2cqw] px-[6.5cqw] pt-[4cqw] pb-[max(3.2rem,16cqw)] @max-[200px]:pb-[max(3.2rem,22cqw)] @max-[120px]:justify-center @max-[120px]:p-[6cqw] @max-[120px]:pb-[6cqw]">
 		{#if scan && fullArt}
 			<CardPlateArt alt={artAlt} base={scan} full onerror={() => (failedScan = scan)} />
@@ -145,6 +148,17 @@
 		{/if}
 	</div>
 </div>
+{/snippet}
+
+<!-- The outer box is the size container and keeps the size of the caller's classes; the plate inside is `plateWidth` wide and its scale is the outer width over `plateWidth`,
+     computed in CSS: `atan2(100cqw, Npx)` divides two lengths into an angle and `tan` turns it back into the plain ratio. -->
+{#if plateWidth}
+	<div class="@container overflow-hidden {classNames}" style={style}>
+		{@render plate('origin-top-left', `width: ${plateWidth}px; aspect-ratio: 245 / 337; scale: tan(atan2(100cqw, ${plateWidth}px))`)}
+	</div>
+{:else}
+	{@render plate(classNames, style)}
+{/if}
 
 <style>
 	/* No scan exists for these cards, so the plate is a card face built from their energy colors, the way a real card body takes its type's color. */
