@@ -105,7 +105,8 @@
 			const gtagScript = document.createElement('script');
 			gtagScript.async = true;
 			gtagScript.src = 'https://www.googletagmanager.com/gtag/js?id=G-PS0GZ8MEB8';
-			document.head.appendChild(gtagScript);
+			/* Not into the head: a node added here sits among the head elements Svelte hydrates, which made hydration fail and the whole page render again. */
+			document.documentElement.appendChild(gtagScript);
 		}
 	</script>
 
