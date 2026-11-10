@@ -44,6 +44,12 @@ export interface Card {
 
 export type FullCard = Card;
 
+/** The fields of a card its plate reads, for a page that ships them for a scanless card without the rest of the card. */
+export type PlateCard = Pick<Card, 'artImage' | 'artSource' | 'artist' | 'cardCode' | 'hp' | 'language' | 'localId' | 'name' | 'pokemonNumber' | 'rarity' | 'setId' | 'setName' | 'stage' | 'subtype' | 'supertype' | 'types'>;
+
+/** What a plate reads of a set: the symbol and the `n/total` number of the card. */
+export type PlateSet = Pick<Set, 'name' | 'printedTotal' | 'symbol'>;
+
 export interface Pokemon {
 	id: number;
 	name: string;

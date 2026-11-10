@@ -10,17 +10,17 @@
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { formatCardNumber } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc } from '#helpers/pokemon-utils.ts';
-	import type { FullCard, Set } from '#lib/types.js';
+	import type { PlateCard, PlateSet } from '#lib/types.js';
 	import { page } from '$app/state';
 	import ImageOff from '@lucide/svelte/icons/image-off';
 
 	interface Props {
 		alt: string;
 		/** The card the plate stands for: fills the name, HP, types, set, number and rarity when given. */
-		card?: FullCard | undefined;
+		card?: PlateCard | undefined;
 		class?: string;
 		/** The card's set, for the symbol and the `34/35` numbering: callers pass it only when they already hold it, so the plate never pulls the sets list in. */
-		set?: Pick<Set, 'name' | 'printedTotal' | 'symbol'> | undefined;
+		set?: PlateSet | undefined;
 		style?: string;
 		/** The name printed in the header, for a caller that shows another one than `card.name` (the species name of a Japanese card): it defaults to the card's name. */
 		title?: string | undefined;

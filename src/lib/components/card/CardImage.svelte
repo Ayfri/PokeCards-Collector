@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { NO_IMAGES, processCardImage, scanWidths } from '#helpers/card-images.ts';
 	import CardPlate from '#components/card/CardPlate.svelte';
-	import type { FullCard, Set } from '#lib/types.js';
+	import type { PlateCard, PlateSet } from '#lib/types.js';
 	import { untrack } from 'svelte';
 
 	interface Props {
 		alt?: string;
 		/** The depicted card: the plate drawn in place of a missing scan shows its details. */
-		card?: FullCard | undefined;
+		card?: PlateCard | undefined;
 		class?: string;
 		height?: number | undefined;
 		/** The extensionless TCGdex image base, e.g. "https://assets.tcgdex.net/en/swsh/swsh3/136", or a CardTrader scan URL. */
@@ -20,7 +20,7 @@
 		/** Marks the image as above the fold: eager + `fetchpriority="high"`, for the LCP candidate. */
 		priority?: boolean;
 		/** The card's set when the caller already holds it: the plate drawn in place of a missing scan shows its symbol and the card's `n/total` number. */
-		set?: Pick<Set, 'name' | 'printedTotal' | 'symbol'> | undefined;
+		set?: PlateSet | undefined;
 		/** `sizes` value; defaults to the pixel width when one is given. */
 		sizes?: string | undefined;
 		style?: string | undefined;

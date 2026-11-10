@@ -3,11 +3,11 @@
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import { type PlateIdentity, stageLabel } from '#helpers/card-plate.ts';
 	import type { Language } from '#helpers/catalogues.ts';
-	import type { FullCard } from '#lib/types.js';
+	import type { PlateCard } from '#lib/types.js';
 	import type { Attachment } from 'svelte/attachments';
 
 	interface Props {
-		card: FullCard;
+		card: PlateCard;
 		/** The name to print: the card's, or the species name a caller passes for a Japanese card. */
 		heading: string;
 		identity: PlateIdentity;

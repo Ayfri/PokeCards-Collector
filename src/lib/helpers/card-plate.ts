@@ -1,5 +1,5 @@
 import type {Language} from '#helpers/catalogues.ts';
-import type {FullCard} from '#lib/types.js';
+import type {PlateCard} from '#lib/types.js';
 
 export type PlateKind = 'energy' | 'pokemon' | 'trainer';
 
@@ -32,7 +32,7 @@ const TRAINER_ACCENTS: Record<string, string> = {item: 'water', stadium: 'grass'
 export const TRAINER_BODY = '--tint-a: #dfe2e6; --tint-b: #a9aeb6';
 
 /** The card's `subtype` (`Supporter`, `Item`, `Normal`, `Special`...) wins over the name guesses below, which only cover cards that have none. */
-function subtypeOf(card: FullCard): string {
+function subtypeOf(card: PlateCard): string {
 	return card.subtype?.toLowerCase() ?? '';
 }
 
@@ -49,7 +49,7 @@ const TRAINER_NAME_RULES: [RegExp, string, string][] = [
 	[/\bstadium$/i, 'stadium', 'stadium']
 ];
 
-function trainerKind(card: FullCard): {emblem: string; kind: string} {
+function trainerKind(card: PlateCard): {emblem: string; kind: string} {
 	const declared = Object.keys(TRAINER_ACCENTS).find(kind => subtypeOf(card).includes(kind));
 	const rule = TRAINER_NAME_RULES.find(([pattern]) => pattern.test(card.name));
 	if (declared) return {emblem: rule?.[1] === declared ? rule[2] : declared, kind: declared};
@@ -117,7 +117,7 @@ const SILVER_BORDER_JA_SETS = /^M(?:\d|-P|C$|F)/;
  * The card border turned from yellow to silver with Scarlet & Violet (2023), so the plate frame follows the card's era.
  * Each new era needs a new prefix in the two patterns above: an unlisted set id keeps the yellow border.
  */
-export function hasSilverBorder(card: FullCard | undefined): boolean {
+export function hasSilverBorder(card: PlateCard | undefined): boolean {
 	const setId = card?.setId ?? '';
 	return SILVER_BORDER_SETS.test(setId) || SILVER_BORDER_JA_SETS.test(setId);
 }
@@ -148,7 +148,7 @@ const TEXTURE_URLS = Array.from({length: TEXTURE_SEEDS}, (_, seed) => {
  * The seed comes from the set, so a set keeps one look like its printed cards, and a small per-card shift of the pattern comes from the card code.
  * Both are hashes, so the server and the client render the same plate.
  */
-export function plateTexture(card: FullCard | undefined): string {
+export function plateTexture(card: PlateCard | undefined): string {
 	if (!card) return '';
 	const shift = hashOf(card.cardCode);
 	return `--plate-texture: ${TEXTURE_URLS[hashOf(card.setId) % TEXTURE_SEEDS]}; --plate-shift: ${shift % 100}% ${(shift >>> 9) % 100}%`;
@@ -164,7 +164,7 @@ export function artNote(source: string | undefined): string {
 }
 
 /** What the placeholder of a card with no scan shows: its kind, the icon standing for it and the color it takes. */
-export function plateIdentity(card: FullCard | undefined, types: string | undefined): PlateIdentity {
+export function plateIdentity(card: PlateCard | undefined, types: string | undefined): PlateIdentity {
 	const listed = (card?.types ?? types ?? '').split(',').map(type => type.trim()).filter(Boolean);
 
 	if (card?.supertype === 'Energy') {

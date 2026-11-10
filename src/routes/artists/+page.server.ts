@@ -1,20 +1,33 @@
 import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
-import type { FullCard } from '#lib/types.js';
+import type { FullCard, PlateCard, PlateSet, Set as CardSet, PriceData } from '#lib/types.js';
 import { breadcrumbs } from '#helpers/seo.ts';
-import { cardPrice } from '#helpers/card-utils.ts';
+import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 
-/** Candidates sent per artist: the preview stack draws three, and the spares replace a scan that fails to load in the browser. */
-const SHOWCASE_CANDIDATES = 5;
+/**
+ * Candidates sent per artist: the preview stack draws three, and the spare replaces a scan that fails to load in the browser.
+ * One spare is enough because a scan only fails when TCGdex lists it before the upload, and the top cards of an artist are the old, uploaded ones.
+ */
+const SHOWCASE_CANDIDATES = 4;
 
-/** The card fields the preview stack renders and nothing more, because 411 artists send ~2000 of these cards. */
+/** The card fields the preview stack renders and nothing more, because 411 artists send ~1600 of these cards. */
 interface ShowcaseCard {
 	cardCode: string;
 	image: string;
 	name: string;
+	/** Only on a card with no scan: the fields its plate draws in place of the scan, with the set it belongs to. */
+	plate?: { card: PlateCard; set?: PlateSet };
 	types: string;
 }
+
+const PLATE_FIELDS = ['artImage', 'artSource', 'artist', 'cardCode', 'hp', 'language', 'localId', 'name', 'pokemonNumber', 'rarity', 'setId', 'setName', 'stage', 'subtype', 'supertype', 'types'] as const satisfies readonly (keyof PlateCard)[];
+
+/** Copies the plate fields that are set: an absent column stays off the object instead of travelling as `void 0` in every document. */
+const plateOf = (card: FullCard, set: CardSet | undefined): NonNullable<ShowcaseCard['plate']> => ({
+	card: Object.fromEntries(PLATE_FIELDS.filter(field => card[field] !== undefined).map(field => [field, card[field]])) as PlateCard,
+	...(set && { set: { name: set.name, printedTotal: set.printedTotal, ...(set.symbol && { symbol: set.symbol }) } }),
+});
 
 export interface ArtistWithCards {
 	/** `totalValue` spread over the artist's cards, in EUR. */
@@ -29,9 +42,11 @@ export interface ArtistWithCards {
 	totalValue: number;
 }
 
-export const load: PageServerLoad = async () => {
-	const [allCards, prices, sets] = await Promise.all([getCards(), getPrices(), getSets()]);
+/** Keyed on the memoized tables: the regrouping of every card runs once per refreshed table instead of once per request. */
+const aggregates = new WeakMap<object, unknown>();
 
+/** Aggregated on the server: rebuilding these 411 rows in the browser needs all 23546 cards and 19819 prices, a ~26 MB document. */
+const aggregateArtists = (allCards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]) => memoizedOn(aggregates, [allCards, prices, sets], (): ArtistWithCards[] => {
 	const setsById = new Map(sets.map(set => [set.setId, set]));
 	const byArtist = new Map<string, FullCard[]>();
 
@@ -42,8 +57,7 @@ export const load: PageServerLoad = async () => {
 		else byArtist.set(card.artist, [card]);
 	}
 
-	/** Aggregated on the server: rebuilding these 411 rows in the browser needs all 23546 cards and 19819 prices, a ~26 MB document. */
-	const artists: ArtistWithCards[] = [...byArtist.entries()]
+	return [...byArtist.entries()]
 		.map(([name, artistCards]) => {
 			let totalValue = 0;
 			let firstReleaseYear = Number.POSITIVE_INFINITY;
@@ -77,6 +91,7 @@ export const load: PageServerLoad = async () => {
 					cardCode: card.cardCode,
 					image: card.image,
 					name: card.name,
+					...(!card.image && { plate: plateOf(card, setsById.get(card.setId)) }),
 					types: card.types,
 				})),
 				totalCards: artistCards.length,
@@ -84,6 +99,11 @@ export const load: PageServerLoad = async () => {
 			};
 		})
 		.sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
+});
+
+export const load: PageServerLoad = async () => {
+	const [allCards, prices, sets] = await Promise.all([getCards(), getPrices(), getSets()]);
+	const artists = aggregateArtists(allCards, prices, sets);
 
 	const pageSeoData = {
 		breadcrumbs: breadcrumbs({ name: 'Artists', url: '/artists' }),
