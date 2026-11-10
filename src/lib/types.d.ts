@@ -122,20 +122,6 @@ export interface UserProfile {
 /** A profile as shown to other visitors: the account id stays server side. */
 export type PublicProfile = Omit<UserProfile, 'auth_id'>;
 
-export interface UserCollection {
-	id: string;
-	username: string;
-	card_code: string;
-	created_at: string;
-}
-
-export interface UserWishlist {
-	id: string;
-	username: string;
-	card_code: string;
-	created_at: string;
-}
-
 export interface CollectionStats {
 	cards_by_rarity: Record<string, number>;
 	/** Keyed by `language:setId`: the same set name exists in several languages (and twice in Japanese), and each set is its own checklist. */

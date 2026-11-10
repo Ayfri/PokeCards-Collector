@@ -5,7 +5,7 @@ import { getSets } from '#helpers/supabase-data.ts';
 
 /**
  * SEO only. The catalogue comes from `/api/binder` through `+page.ts`, and the owned card codes come straight from
- * the layout's `collectionItems` / `wishlistItems`: resolving them into whole cards here would duplicate rows the
+ * the layout's `collectionCodes` / `wishlistCodes`: resolving them into whole cards here would duplicate rows the
  * document already carries.
  */
 export const load: PageServerLoad = async () => ({

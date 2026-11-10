@@ -13,7 +13,6 @@
 	import { loading } from '#stores/loading.svelte.ts';
 	import { wishlist } from '#stores/wishlist.svelte.ts';
 	import { collection } from '#stores/collection.svelte.ts';
-	import type { UserWishlist, UserCollection } from '#lib/types.js';
 	import pokestore from '#src/assets/pokecards-collector.png';
 	interface Props {
 		children?: import('svelte').Snippet;
@@ -33,15 +32,15 @@
 	 * `$derived`: it only re-runs when the load returned new lists, and a copy added with "+" survives navigation. `replaceAll` reads the stores
 	 * it writes, so it runs untracked: tracked, a "+" would re-run this effect and reset the store to the load's list.
 	 */
-	const wishlistItems = $derived((page.data.wishlistItems ?? EMPTY) as readonly UserWishlist[]);
-	const collectionItems = $derived((page.data.collectionItems ?? EMPTY) as readonly UserCollection[]);
+	const wishlistCodes = $derived((page.data.wishlistCodes ?? EMPTY) as readonly string[]);
+	const collectionCodes = $derived((page.data.collectionCodes ?? EMPTY) as readonly string[]);
 
 	$effect(() => {
-		const wishlistCodes = wishlistItems.map(item => item.card_code);
-		const collectionCodes = collectionItems.map(item => item.card_code);
+		const wishlisted = [...wishlistCodes];
+		const collected = [...collectionCodes];
 		untrack(() => {
-			wishlist.replaceAll(wishlistCodes);
-			collection.replaceAll(collectionCodes);
+			wishlist.replaceAll(wishlisted);
+			collection.replaceAll(collected);
 		});
 	});
 

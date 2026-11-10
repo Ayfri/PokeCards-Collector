@@ -59,12 +59,12 @@ export async function removeCardFromWishlist(username: string, cardCode: string,
 	}
 }
 
-/** Every wishlist row of the user, paged past the row cap. */
+/** Every card the user wishes for, only its card code, paged past the row cap. */
 export async function getUserWishlist(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
 		return await selectAll(() => client
 			.from('wishlists')
-			.select('*', { count: 'exact' })
+			.select('card_code', { count: 'exact' })
 			.eq('username', username)
 			.order('id'));
 	} catch (error) {

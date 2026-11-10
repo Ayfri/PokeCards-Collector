@@ -307,8 +307,8 @@
 
 	function addMyCardsToStorage() {
 		const codes: string[] = [];
-		if (includeCollection) codes.push(...data.collectionItems.map(item => item.card_code));
-		if (includeWishlist) codes.push(...data.wishlistItems.map(item => item.card_code));
+		if (includeCollection) codes.push(...data.collectionCodes);
+		if (includeWishlist) codes.push(...data.wishlistCodes);
 		binderStorage.add(codes);
 		toggleMyCardsModal();
 	}
@@ -436,12 +436,12 @@
 	<div class="mb-4 flex flex-col gap-4">
 		<Checkbox id="include-collection" bind:checked={includeCollection} disabled={!loggedIn} label="Include my collection" />
 		<p class="-mt-3 ml-6 text-xs text-gray-400">
-			{#if loggedIn}{data.collectionItems.length} cards in your collection{:else}You need to be logged in to access your collection{/if}
+			{#if loggedIn}{data.collectionCodes.length} cards in your collection{:else}You need to be logged in to access your collection{/if}
 		</p>
 
 		<Checkbox id="include-wishlist" bind:checked={includeWishlist} disabled={!loggedIn} label="Include my wishlist" />
 		<p class="-mt-3 ml-6 text-xs text-gray-400">
-			{#if loggedIn}{data.wishlistItems.length} cards in your wishlist{:else}You need to be logged in to access your wishlist{/if}
+			{#if loggedIn}{data.wishlistCodes.length} cards in your wishlist{:else}You need to be logged in to access your wishlist{/if}
 		</p>
 	</div>
 
