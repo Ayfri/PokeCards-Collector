@@ -4,15 +4,15 @@ import { breadcrumbs } from '#helpers/seo.ts';
 import { CATALOGUES } from '#helpers/catalogues.ts';
 import { setPath } from '#helpers/card-utils.ts';
 import { ogImage, setShareImage, setValue } from '#helpers/og-image.ts';
-import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { getCards, getPrices } from '#helpers/supabase-data.ts';
 
 /**
  * SEO only: the grid's cards, prices, pokemons and types come from `/api/cards-list` through `+page.ts`.
- * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends what it returns.
- * The sets come back with it, ordered by name: `getSets()` is memoized, and the layout does not send them.
+ * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends what it returns:
+ * the sets come from `+layout.server.ts` for that reason.
  */
-export const load: PageServerLoad = async ({ isDataRequest, url }) => {
-	const sets = await getSets();
+export const load: PageServerLoad = async ({ isDataRequest, parent, url }) => {
+	const { sets } = await parent();
 
 	const setParam = url.searchParams.get('set');
 	let image = ogImage({ kind: 'page', name: 'cards-list' }, 'Every English Pokémon TCG card on PokéCards-Collector: the card and set count, and the three most valuable cards');
@@ -41,7 +41,6 @@ export const load: PageServerLoad = async ({ isDataRequest, url }) => {
 
 	return {
 		canonical,
-		sets,
 		title: ogTitle,
 		description: ogDescription,
 		image,
