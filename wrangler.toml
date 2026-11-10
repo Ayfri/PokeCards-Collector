@@ -1,6 +1,9 @@
 name = "pokecards-collector"
 main = ".svelte-kit/cloudflare/_worker.js"
 compatibility_date = "2026-10-23"
+# Without it, esbuild picks up the root tsconfig, whose `strict` implies `alwaysStrict`. esbuild 0.28.2 then hoists block-level functions
+# out of their block as if the code were sloppy, so a minified snippet named `e` shadows Svelte's imported `e` and the home page 500s.
+tsconfig = "tsconfig.worker.json"
 
 # Deploying overwrites the dashboard settings with this file, so every setting has to live here.
 workers_dev = true
