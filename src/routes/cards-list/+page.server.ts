@@ -9,7 +9,7 @@ import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 /**
  * SEO only: the grid's cards, prices, pokemons and types come from `/api/cards-list` through `+page.ts`.
  * This load reads `?set=`, so SvelteKit reruns it on every set filter change and re-sends what it returns.
- * The sets are not returned: the layout already sends them, and `getSets()` is memoized and ordered by name.
+ * The sets come back with it, ordered by name: `getSets()` is memoized, and the layout does not send them.
  */
 export const load: PageServerLoad = async ({ isDataRequest, url }) => {
 	const sets = await getSets();
@@ -41,6 +41,7 @@ export const load: PageServerLoad = async ({ isDataRequest, url }) => {
 
 	return {
 		canonical,
+		sets,
 		title: ogTitle,
 		description: ogDescription,
 		image,

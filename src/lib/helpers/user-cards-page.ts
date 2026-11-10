@@ -3,7 +3,7 @@ import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
 import { breadcrumbs, profileSchema } from '#helpers/seo.ts';
 import { ogImage } from '#helpers/og-image.ts';
 import { readOwnedCatalogues } from '#helpers/owned-cards.ts';
-import { getCatalogue, getPokemons, getTypes } from '#helpers/supabase-data.ts';
+import { getCatalogue, getPokemons, getSets, getTypes } from '#helpers/supabase-data.ts';
 import { getProfileByUsername } from '#lib/services/profiles.ts';
 import { cardPrice, type CardLink } from '#helpers/card-utils.ts';
 import type { Language } from '#helpers/catalogues.ts';
@@ -18,7 +18,7 @@ interface UserCardsPayload {
 	cards: FullCard[];
 	pokemons: GridPokemon[];
 	rarities: string[];
-	/** The Japanese and French sets of the owned cards, to add to the English ones the layout carries. */
+	/** The Japanese and French sets of the owned cards, to add to the English ones the load carries. */
 	sets: Set[];
 	types: string[];
 }
@@ -114,7 +114,7 @@ async function buildPayload(itemCodes: string[]): Promise<{ payload: UserCardsPa
 			/** Only the Pokémon these cards name: the full table is 1025 rows with their Pokédex entries, just to look up a name. */
 			pokemons: pokemons.filter(pokemon => dexIds.has(pokemon.id)).map(({ id, name }) => ({ id, name })),
 			rarities: distinctRarities(userCards),
-			/** The English sets already come with the layout, so only the sets of the other catalogues' owned cards travel. */
+			/** The English sets come with the load itself, so only the sets of the other catalogues' owned cards travel. */
 			sets: catalogues.filter(({ language }) => language !== 'en').flatMap(({ language, owned, sets }) => {
 				const ownedSetIds = new Set(owned.map(card => card.setId));
 				return sets.filter(set => ownedSetIds.has(set.setId)).map(set => ({ ...set, language }));
@@ -171,6 +171,7 @@ export async function loadUserCardsPage({ client, fetchItems, kind, parent, requ
 			isPublic: false,
 			noindex: true,
 			schemas: [],
+			sets: [] as Set[],
 			streamed: { payload: buildPayload([]).then(({ payload }) => payload) },
 			summary: null as UserCardsSummary | null,
 			targetProfile: null as PublicProfile | null,
@@ -218,6 +219,8 @@ export async function loadUserCardsPage({ client, fetchItems, kind, parent, requ
 		/** Only a public profile's cards are public content, anything else (an empty public list included) is a shell the crawler must not index. */
 		noindex: !isPublic || !items.length,
 		schemas: isPublic ? [profileSchema(targetProfile, `/${kind}/${username}`)] : [],
+		/** The English sets the filters and the import dialog list. */
+		sets: await getSets(),
 		streamed: { payload: built.then(({ payload }) => payload) },
 		summary,
 		targetProfile,

@@ -1,4 +1,3 @@
-import { getSets } from '#helpers/supabase-data.ts';
 import { ogImage } from '#helpers/og-image.ts';
 import type { LayoutServerLoad } from './$types';
 import { getUserWishlist } from '#lib/services/wishlists.ts';
@@ -8,13 +7,10 @@ import type { UserCollection, UserWishlist } from '#lib/types.js';
 /**
  * The catalogue is deliberately not returned here. Everything a layout load returns is serialized into the document,
  * so returning `cards` and `prices` put 23546 cards and 19819 prices (a 24 MB document) on every page, even those
- * that only needed them server-side. Page loads call `getCards()` / `getPrices()` themselves; `cachedTable`
- * memoizes both, so the whole-table read still happens once per isolate.
+ * that only needed them server-side. The English sets stay out too (202 of them, 53 kB on every document): the pages that draw them return them from their own load.
+ * Page loads call `getCards()` / `getPrices()` / `getSets()` themselves; `cachedTable` memoizes each, so the whole-table read still happens once per isolate.
  */
 export const load: LayoutServerLoad = async ({ locals }) => {
-	/** Sets and the user's own rows are independent queries, so they run in parallel. */
-	const setsPromise = getSets();
-
 	let wishlistItems: UserWishlist[] = [];
 	let collectionItems: UserCollection[] = [];
 
@@ -40,7 +36,6 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	}
 
 	return {
-		sets: await setsPromise,
 		user: locals.user,
 		profile: locals.profile,
 		wishlistItems,

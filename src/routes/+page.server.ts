@@ -1,4 +1,4 @@
-import { countCards, getCards, getPokemons, getPrices } from '#helpers/supabase-data.ts';
+import { countCards, getCards, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
 import { cardListSchema, faqSchema } from '#helpers/seo.ts';
 import type { FullCard, PriceData, Set as CardSet } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
@@ -85,11 +85,8 @@ function buildHome(cards: FullCard[], prices: Record<string, PriceData>, sets: C
 	return home;
 }
 
-export const load: PageServerLoad = async ({ parent }) => {
-	/** Started before `parent()` so the catalogue reads run in parallel with the layout's auth and collection queries. */
-	const catalogue = Promise.all([getCards(), getPrices(), getPokemons(), countCards('ja'), countCards('fr')]);
-	const { sets = [] } = await parent();
-	const [allCardsResolved, pricesResolved, pokemons, japaneseCardCount, frenchCardCount] = await catalogue;
+export const load: PageServerLoad = async () => {
+	const [allCardsResolved, pricesResolved, pokemons, japaneseCardCount, frenchCardCount, sets] = await Promise.all([getCards(), getPrices(), getPokemons(), countCards('ja'), countCards('fr'), getSets()]);
 
 	const { artists, binderPreview, latestSet, latestSetStats, mostExpensiveCards, mostExpensiveLatestSetCards } = catalogueHome(allCardsResolved, pricesResolved, sets);
 
@@ -128,13 +125,14 @@ export const load: PageServerLoad = async ({ parent }) => {
 		title: 'PokéCards-Collector - Your Pokémon TCG Collection Manager',
 	};
 
-	/** The catalogue, prices and Pokédex stay on the server and the page gets only counts: sending them made the homepage a 24 MB document. `sets` comes from the layout. */
+	/** The catalogue, prices, Pokédex and set list stay on the server and the page gets only counts: sending them made the homepage a 24 MB document. */
 	return {
 		binderPreview,
 		latestSet,
 		latestSetStats,
 		mostExpensiveLatestSetCards,
 		mostExpensiveCards,
+		setCount: sets.length,
 		stats: {
 			artists,
 			foreignCards: { fr: frenchCardCount, ja: japaneseCardCount },

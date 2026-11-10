@@ -3,7 +3,7 @@ import { setCardCount, setPath } from '#helpers/card-utils.ts';
 import { setLanding } from '#helpers/grid-payload.ts';
 import { setShareImage } from '#helpers/og-image.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
-import { findSetBySlug, getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { findSetBySlug, getCards, getPrices } from '#helpers/supabase-data.ts';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -21,7 +21,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (found.canonical !== params.setSlug) redirect(301, setPath(found.set, catalogue));
 
 	const { set } = found;
-	const [cards, prices, sets] = await Promise.all([getCards(language), getPrices(language), getSets(language)]);
+	const [cards, prices] = await Promise.all([getCards(language), getPrices(language)]);
 	const landing = setLanding(set, cards, prices, catalogue);
 	const canonical = setPath(set, catalogue);
 	const total = setCardCount(set);
@@ -45,7 +45,5 @@ export const load: PageServerLoad = async ({ params }) => {
 		topCards: landing.topCards,
 		type: 'CollectionPage' as const,
 		value: landing.value,
-		/** The layout already returns the English sets, and a key set to `undefined` would erase them from `page.data`. */
-		...(routeCode ? { sets } : {}),
 	};
 };

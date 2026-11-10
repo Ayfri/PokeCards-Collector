@@ -1,14 +1,12 @@
-import { getCards, getPrices } from '#helpers/supabase-data.ts';
+import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
 import { breadcrumbs, setListSchema } from '#helpers/seo.ts';
 import type { SetWithPrice } from '#lib/types.js';
 import { cardPrice } from '#helpers/card-utils.ts';
 
-export const load: PageServerLoad = async ({ parent }) => {
-	const catalogue = Promise.all([getCards(), getPrices()]);
-	const { sets: setsFromParent = [] } = await parent();
-	const [cards, prices] = await catalogue;
+export const load: PageServerLoad = async () => {
+	const [cards, prices, sets] = await Promise.all([getCards(), getPrices(), getSets()]);
 
 	const setPriceTotals = new Map<string, number>();
 	for (const card of cards) {
@@ -16,7 +14,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 		if (price && card.setId) setPriceTotals.set(card.setId, (setPriceTotals.get(card.setId) ?? 0) + price);
 	}
 
-	const setsWithPrices: SetWithPrice[] = setsFromParent.map(set => ({ ...set, totalPrice: setPriceTotals.get(set.setId ?? '') ?? 0 }));
+	const setsWithPrices: SetWithPrice[] = sets.map(set => ({ ...set, totalPrice: setPriceTotals.get(set.setId ?? '') ?? 0 }));
 
 	const pageSeoData = {
 		breadcrumbs: breadcrumbs({ name: 'Sets', url: '/sets' }),

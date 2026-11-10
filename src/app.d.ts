@@ -1,5 +1,5 @@
 import type { SupabaseClient, User, Session } from '@supabase/supabase-js';
-import type { Breadcrumb, Image, SeoType, UserProfile, Set } from '#lib/types.js';
+import type { Breadcrumb, Image, SeoType, UserProfile } from '#lib/types.js';
 
 declare global {
 	namespace App {
@@ -21,7 +21,6 @@ declare global {
 			profile: UserProfile | null;
 			/** Extra JSON-LD nodes the page merges into the site `@graph`. */
 			schemas?: Record<string, unknown>[];
-			sets: Set[];
 			title: string;
 			type?: SeoType;
 			user: User | null;

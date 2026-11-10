@@ -1,4 +1,4 @@
-import { getCards, getPrices } from '#helpers/supabase-data.ts';
+import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
 import type { FullCard } from '#lib/types.js';
@@ -29,10 +29,8 @@ export interface ArtistWithCards {
 	totalValue: number;
 }
 
-export const load: PageServerLoad = async ({ parent }) => {
-	const catalogue = Promise.all([getCards(), getPrices()]);
-	const { sets = [] } = await parent();
-	const [allCards, prices] = await catalogue;
+export const load: PageServerLoad = async () => {
+	const [allCards, prices, sets] = await Promise.all([getCards(), getPrices(), getSets()]);
 
 	const setsById = new Map(sets.map(set => [set.setId, set]));
 	const byArtist = new Map<string, FullCard[]>();

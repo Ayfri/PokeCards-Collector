@@ -46,7 +46,7 @@
 			title: `Browse the ${catalogue.adjective} catalogue`,
 		})),
 		{ count: data.stats.uniquePokemon, duration: 3.5, href: '/cards-list?type=pokemon', icon: PokemonIcon, label: 'Pokémon', title: 'Browse the Pokemon cards' },
-		{ count: data.sets.length, duration: 2, href: '/sets', icon: SetIcon, label: 'Sets', title: 'Browse every set' },
+		{ count: data.setCount, duration: 2, href: '/sets', icon: SetIcon, label: 'Sets', title: 'Browse every set' },
 		{ count: data.stats.artists, duration: 2.5, href: '/artists', icon: PaintbrushIcon, label: 'Artists', title: 'Browse every illustrator' },
 	]);
 

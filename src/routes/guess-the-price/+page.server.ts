@@ -1,9 +1,11 @@
-import { getCards, getPrices } from '#helpers/supabase-data.ts';
+import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
 import { breadcrumbs, gameSchema } from '#helpers/seo.ts';
 import type { Card, Set } from '#lib/types.js';
-import { cardPrice } from '#helpers/card-utils.ts';
+import { cardPrice, setsById } from '#helpers/card-utils.ts';
+
+type RoundSet = Pick<Set, 'logo' | 'name' | 'setId' | 'symbol'>;
 
 /** One playable card: the art to show, the price to guess and the set date shown as a hint. */
 export interface Round {
@@ -28,10 +30,8 @@ const MIN_PRICE = 3;
 /** Rounds returned per load. Re-running the load re-reads every card and price, so one batch gives ~20 turns with no wait. */
 const BATCH_SIZE = 20;
 
-export const load: PageServerLoad = async ({ parent }) => {
-	const catalogue = Promise.all([getCards(), getPrices()]);
-	const sets: Set[] = (await parent()).sets || [];
-	const [allCards, prices] = await catalogue;
+export const load: PageServerLoad = async () => {
+	const [allCards, prices, sets] = await Promise.all([getCards(), getPrices(), getSets()]);
 
 	/** The game is guessing from the picture, so a card TCGdex has no art for cannot be played. */
 	const playable: { card: Card; price: number }[] = [];
@@ -43,7 +43,7 @@ export const load: PageServerLoad = async ({ parent }) => {
 	}
 
 	if (!playable.length) {
-		return { ...SEO, rounds: [], error: `No card with artwork and a price of ${MIN_PRICE} EUR or more.` };
+		return { ...SEO, rounds: [], error: `No card with artwork and a price of ${MIN_PRICE} EUR or more.`, sets: [] as RoundSet[] };
 	}
 
 	const releaseDates = new Map(sets.map(set => [set.name, set.releaseDate]));
@@ -57,5 +57,12 @@ export const load: PageServerLoad = async ({ parent }) => {
 		return { card, price, releaseDate: releaseDates.get(card.setName) ?? null };
 	});
 
-	return { ...SEO, rounds, error: null };
+	/** Only the sets of this batch travel: the page draws one logo per round. */
+	const byId = setsById(sets);
+	const roundSets = [...new Set(rounds.map(({ card }) => card.setId))].flatMap((setId): RoundSet[] => {
+		const set = byId.get(setId);
+		return set ? [{ logo: set.logo, name: set.name, setId: set.setId, symbol: set.symbol }] : [];
+	});
+
+	return { ...SEO, rounds, error: null, sets: roundSets };
 };
