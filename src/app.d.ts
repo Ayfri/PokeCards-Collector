@@ -28,6 +28,13 @@ declare global {
 		}
 	}
 
+	namespace Cloudflare {
+		interface Env {
+			/** The static assets of the Worker (`[assets] binding` in `wrangler.toml`); absent under `vite dev`. */
+			ASSETS?: Fetcher;
+		}
+	}
+
 	interface Window {
 		/** Loaded from a CDN script tag on the guess-the-price page only, so it is absent everywhere else. */
 		confetti?: (options: { origin?: { x?: number; y?: number }; particleCount?: number; spread?: number }) => void;

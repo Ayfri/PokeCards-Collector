@@ -15,6 +15,7 @@ const SET_IMAGE_HOSTS: Record<string, string> = {
  * so no manifest is needed: the server checks it against the build's static assets before using it.
  */
 export function mirrorPath(url: string): string | undefined {
+	if (!URL.canParse(url)) return undefined;
 	const {hostname, pathname} = new URL(url);
 	const folder = SET_IMAGE_HOSTS[hostname];
 	const path = pathname.replace(/\.(png|webp|jpe?g)$/i, '');

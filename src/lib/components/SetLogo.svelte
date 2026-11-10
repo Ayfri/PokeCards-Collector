@@ -16,9 +16,9 @@
 	const toWebp = (url: string) => url.startsWith('https://assets.tcgdex.net/') ? url.replace(/\.png$/, '.webp') : url;
 
 	/**
-	 * The scraper only stores a logo or symbol the CDN holds, PNG when it exists since Open Graph and the sitemap reuse it.
-	 * Its WebP twin is ~4.7x lighter (a logo PNG weighs up to 290 KB), so it goes first, with the stored file as the fallback
-	 * for the few TCGdex ships as PNG only. The symbol stands in for a set with no logo.
+	 * A mirrored set arrives with its same-origin `/set-images/` WebP, which passes through untouched. A set added after the mirror keeps the
+	 * remote URL the scraper stored (PNG when it exists): its TCGdex WebP twin is ~4.7x lighter, so it goes first, with the stored file as the
+	 * fallback for the few TCGdex ships as PNG only. The symbol stands in for a set with no logo.
 	 */
 	let failed = $state<string[]>([]);
 	const src = $derived(NO_IMAGES ? undefined : [...new Set([set.logo, set.symbol].flatMap(url => url ? [toWebp(url), url] : []))].find(url => !failed.includes(url)));

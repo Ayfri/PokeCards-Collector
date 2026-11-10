@@ -1,4 +1,5 @@
 import { read } from '$app/server';
+import { env } from 'cloudflare:workers';
 import { render as renderComponent } from 'svelte/server';
 import { render } from 'takumi-js';
 import { container, googleFonts, image, text, type FontSubset, type Node } from 'takumi-js/helpers';
@@ -31,6 +32,7 @@ import { formatEuros } from '#helpers/format.ts';
 import { cardOgVersion, formatOgEuros, OG_HEIGHT, OG_WIDTH, ogPrice, ogVersion, setOgVersion, setValue, type OgPage, type OgTarget, type OgUserKind } from '#helpers/og-image.ts';
 import { readOwnedCatalogues } from '#helpers/owned-cards.ts';
 import { RARITY_SYMBOLS, type RarityTone } from '#helpers/rarity-symbols.ts';
+import { SET_IMAGE_DIR } from '#helpers/set-images.ts';
 import { countCards, getCardDetails, getCardPrice, getCards, getCatalogue, getPrices, getSets } from '#helpers/supabase-data.ts';
 import { RARITY_SHAPES, TYPE_SYMBOLS } from '#helpers/tcg-symbols.ts';
 import { getUserCollection } from '#lib/services/collections.ts';
@@ -103,6 +105,14 @@ const logoSource = {
 	}),
 	src: logoUrl,
 };
+
+const MIRRORED_PREFIX = `${BASE_URL}/${SET_IMAGE_DIR}/`;
+
+/**
+ * The renderer only fetches absolute URLs, so a mirrored logo (`/set-images/...`) is given on the site origin, and `fetchImage` reads it from the
+ * assets binding instead of the Worker requesting its own public URL. Without the binding (dev) the plain `fetch` still tries that URL.
+ */
+const absoluteImage = (src: string) => src.startsWith('/') ? new URL(src, BASE_URL).href : src;
 
 const formatCount = (value: number) => value.toLocaleString('en-US');
 
@@ -327,7 +337,7 @@ async function cardImage(language: Language, code: string, reads: OgReads): Prom
 
 	return canvas(700, [
 		title(card.name, 620),
-		fact(set?.logo ? [image({ src: set.logo, tw: 'h-[50px] max-w-[140px] object-contain' })] : [icon(Library, 34)], card.setName),
+		fact(set?.logo ? [image({ src: absoluteImage(set.logo), tw: 'h-[50px] max-w-[140px] object-contain' })] : [icon(Library, 34)], card.setName),
 		fact([flag(language), ...types.map(type => typeSymbol(type, 36)), ...(rarity ? [rarity] : [])], [card.rarity, number].filter(Boolean).join('  ·  ')),
 		price ? hero(formatOgEuros(price), 620) : text({ text: 'No price yet', tw: `mt-2 text-[44px] font-semibold text-[${color('gray-400')}]` }),
 	], card.image ? scan(ogScan(card.image), 540) : plate(card, 540));
@@ -344,7 +354,7 @@ async function setImage(language: Language, setId: string): Promise<Node | null>
 	const year = set.releaseDate.getUTCFullYear();
 
 	return canvas(480, [
-		...(set.logo ? [image({ src: set.logo, tw: 'h-[130px] max-w-[400px] object-contain object-left' })] : []),
+		...(set.logo ? [image({ src: absoluteImage(set.logo), tw: 'h-[130px] max-w-[400px] object-contain object-left' })] : []),
 		title(set.name, 410, 80),
 		fact([flag(language)], [`${formatCount(setCardCount(set) || setCards.length)} cards`, year > 1995 ? String(year) : ''].filter(Boolean).join('  ·  ')),
 		...(value ? [hero(formatOgEuros(value), 400)] : []),
@@ -515,6 +525,9 @@ export async function renderOgImage(target: OgTarget, reads: OgReads): Promise<O
 	 */
 	const fetchImage = (input: string, init?: RequestInit): Promise<Response> => {
 		const attempt = async () => {
+			const mirrored = input.startsWith(MIRRORED_PREFIX) ? await env.ASSETS?.fetch(input) : undefined;
+			if (mirrored?.ok) return mirrored;
+			await mirrored?.body?.cancel();
 			const response = await fetch(input, { ...init, signal: AbortSignal.any([AbortSignal.timeout(IMAGE_TIMEOUT_MS), ...(init?.signal ? [init.signal] : [])]) });
 			if (response.status >= 500) throw new Error(`${response.status} for ${input}`);
 			return response;

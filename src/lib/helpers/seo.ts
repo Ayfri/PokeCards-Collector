@@ -93,7 +93,7 @@ export function setSchema(set: Set, catalogue: Catalogue = CATALOGUES.en): Schem
 		'@id': setNodeId(set, catalogue),
 		'@type': 'CreativeWorkSeries',
 		datePublished: isoDate(set.releaseDate),
-		image: set.logo || undefined,
+		image: set.logo ? new URL(set.logo, BASE_URL).href : undefined,
 		name: set.name,
 		numberOfItems: set.totalCards ?? set.printedTotal,
 		url: `${BASE_URL}${setPath(set, catalogue)}`,

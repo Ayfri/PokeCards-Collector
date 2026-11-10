@@ -4,6 +4,7 @@ import { cachedTable, keepAlive, PartialRows, STATIC_TTL, TABLE_TTL } from '#hel
 import { CATALOGUES, LANGUAGES, type CardTable, type CardVersions, type Language, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
 import type { CatalogueData } from '#helpers/owned-cards.ts';
 import { cardPath, cardSlug, cardSlugParts, memoizedOn, setSlug, type CardLink } from '#helpers/card-utils.ts';
+import { mirrorPath } from '#helpers/set-images.ts';
 
 /** Every card column, for the reads that need the details. Keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
 const CARD_COLUMNS = `
@@ -166,16 +167,34 @@ function toPrice(price: PriceRow): PriceData {
 	};
 }
 
-function toSet(set: SetRow): Set {
+let staticFiles: Promise<ReadonlySet<string>> | undefined;
+
+/**
+ * The static files of the build, `/`-prefixed. `$app/manifest` is imported on demand because a static import keeps its whole data module
+ * (every route and asset) in any client bundle that pulls this module in, through `user-cards-page.ts`. A failed import is forgotten so the next
+ * call retries, and meanwhile the sets keep their remote URLs, as an unmirrored set does.
+ */
+const buildStaticFiles = () => staticFiles ??= import('$app/manifest').then(({ assets }) => new Set(assets.map(asset => `/${asset.path}`)), () => {
+	staticFiles = undefined;
+	return new Set<string>();
+});
+
+/** A set logo or symbol is served from its mirror when the build holds the file, so a set added after the mirror keeps its remote URL. */
+function localImage(url: string | null, files: ReadonlySet<string>): string {
+	const path = url ? mirrorPath(url) : undefined;
+	return path && files.has(path) ? path : url || '';
+}
+
+function toSet(set: SetRow, files: ReadonlySet<string>): Set {
 	return {
 		name: set.name,
-		logo: set.logo || '',
+		logo: localImage(set.logo, files),
 		printedTotal: set.printed_total || 0,
 		ptcgoCode: set.ptcgo_code || '',
 		releaseDate: set.release_date ? new Date(set.release_date) : new Date('1995-01-01'),
 		series: set.series || '',
 		setId: set.set_id || '',
-		symbol: set.symbol || '',
+		symbol: localImage(set.symbol, files),
 		totalCards: set.total_cards || 0,
 	};
 }
@@ -538,7 +557,8 @@ function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
 
 export async function getSets(language: Language = 'en'): Promise<Set[]> {
 	const { sets } = CATALOGUES[language].tables;
-	return cachedTable(sets, TABLE_TTL, () => getAllData<SetRow>(sets, 'set_id', '*', { column: 'name', ascending: true }), rows => rows.map(toSet), await catalogueVersion(language));
+	const files = await buildStaticFiles();
+	return cachedTable(sets, TABLE_TTL, () => getAllData<SetRow>(sets, 'set_id', '*', { column: 'name', ascending: true }), rows => rows.map(set => toSet(set, files)), await catalogueVersion(language));
 }
 
 /** Keyed on the memoized set list, like `slugIndexes`. */

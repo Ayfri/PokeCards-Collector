@@ -52,7 +52,7 @@ export function urlset(entries: SitemapEntry[]): string {
 			entry.changefreq ? `\t\t<changefreq>${entry.changefreq}</changefreq>` : '',
 			entry.priority !== undefined ? `\t\t<priority>${entry.priority.toFixed(1)}</priority>` : '',
 			entry.image
-				? `\t\t<image:image><image:loc>${xmlEscape(entry.image.loc)}</image:loc>${entry.image.title ? `<image:title>${xmlEscape(entry.image.title)}</image:title>` : ''}</image:image>`
+				? `\t\t<image:image><image:loc>${xmlEscape(absolute(entry.image.loc))}</image:loc>${entry.image.title ? `<image:title>${xmlEscape(entry.image.title)}</image:title>` : ''}</image:image>`
 				: '',
 			'\t</url>',
 		].filter(Boolean).join('\n');
