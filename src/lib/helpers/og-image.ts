@@ -63,7 +63,8 @@ export const setValue = (setId: string, cards: Card[], prices: Record<string, Pr
 /**
  * The share image of a page, rendered by `/og/[...path]`. `version` lists what the image draws (a price, a card count),
  * so the `?v=` changes with the data and Discord, X or Slack fetch a fresh preview instead of their cached one.
- * The route ignores `v` and caches the image on its path alone, so `v` is only a cache buster for those scrapers: a forged one costs no render.
+ * The route never checks `v` against the database and caches one image per path: a `v` other than the cached one renders again only when that
+ * image is over an hour old, so a forged `v` costs at most one render per path, hour and colo.
  */
 export function ogImage(target: OgTarget, alt: string, ...version: OgVersion): Image {
 	return {

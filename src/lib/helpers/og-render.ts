@@ -377,7 +377,7 @@ async function setImage(language: Language, setId: string, state: RenderState): 
 	], trioOrLogo(await scans(ranked(setCards, prices, language), state)));
 }
 
-/** A failed read throws so the route answers 500 uncached, instead of drawing an empty image that would be stored for a day. */
+/** A failed read throws so the route answers 500 uncached, instead of drawing an empty image that would be stored for a day (user images) or a week (card and set images). */
 function readFailed(what: string, error: unknown): never {
 	throw new Error(`OG image: ${what} read failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
 }
@@ -510,7 +510,7 @@ export async function renderOgImage(target: OgTarget): Promise<OgRender | null> 
 	if (!node) return null;
 
 	/**
-	 * The card hero and the logos the renderer fetches itself: a cached image would keep a blank card for a day, so a network error, a timeout
+	 * The card hero and the logos the renderer fetches itself: a cached image would keep a blank card for a week, so a network error, a timeout
 	 * or a 5xx is retried once, then flags the render as incomplete. A 4xx is a scan that does not exist, final.
 	 */
 	const fetchImage = (input: string, init?: RequestInit): Promise<Response> => {
