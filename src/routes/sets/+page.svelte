@@ -92,7 +92,7 @@
 	}
 </script>
 
-<div class="container mx-auto px-4 py-8">
+<div class="container mx-auto px-4 pt-2 pb-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
 		<div transition:fly={{ y: 50, duration: 400, delay: 200 }}>
 			<PageTitle title="Pokémon TCG Sets" />
