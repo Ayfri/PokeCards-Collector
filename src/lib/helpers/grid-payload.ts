@@ -1,6 +1,7 @@
 import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
 import { CATALOGUES, type Catalogue } from '#helpers/catalogues.ts';
-import { cardPath, cardPrice, formatCardNumber, setPath } from '#helpers/card-utils.ts';
+import { cardPath, cardPrice, formatCardNumber, memoizedOn, setPath } from '#helpers/card-utils.ts';
+import { keepAlive } from '#helpers/data-cache.ts';
 import { cardListSchema, setSchema } from '#helpers/seo.ts';
 import type { Set as CardSet, FullCard, GridPokemon, Pokemon, PriceData } from '#lib/types.js';
 import { redirect } from '@sveltejs/kit';
@@ -72,20 +73,60 @@ export function redirectToSetPage(url: URL, isDataRequest: boolean, set: CardSet
 	redirect(301, `${setPath(set, catalogue)}${sort.size ? `?${sort}` : ''}`);
 }
 
-interface Serialized {
-	body: Uint8Array<ArrayBuffer>;
+/** The ETag hashes the JSON, and only the gzip bytes stay in memory: ~0.8 MB against 7.7 MB raw for the English grid. */
+export interface CompressedJson {
 	etag: string;
+	gzip: Uint8Array<ArrayBuffer>;
 }
 
-interface Entry {
-	pokemons: Pokemon[];
-	prices: Record<string, PriceData>;
-	serialized: Promise<Serialized>;
-	types: string[];
+/** gzip, since `CompressionStream` has no Brotli on Workers (`workers-types` declares gzip, deflate and deflate-raw). */
+async function compressJson(value: unknown): Promise<CompressedJson> {
+	const raw = new TextEncoder().encode(JSON.stringify(value));
+	const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', raw));
+	const gzip = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
+	return { etag: `"${Array.from(digest.subarray(0, 16), byte => byte.toString(16).padStart(2, '0')).join('')}"`, gzip };
 }
 
-/** Keyed on the memoized card list, so a body is rebuilt exactly when `cachedTable` hands out a fresh one. */
-const entries = new WeakMap<FullCard[], Entry>();
+const bodyMemos = { binder: new WeakMap<object, unknown>(), grid: new WeakMap<object, unknown>(), suggestions: new WeakMap<object, unknown>() };
+
+/**
+ * The compressed JSON `build` returns, built once per card list and rebuilt when any of the other memoized `inputs` (the price table, ...) is a fresh
+ * object. Keyed on their identity, so a body keeps none of them alive after a refresh. A failed build is forgotten, so the next request retries it.
+ */
+export function memoizedJson(name: keyof typeof bodyMemos, cards: FullCard[], inputs: readonly object[], build: () => unknown): Promise<CompressedJson> {
+	return memoizedOn(bodyMemos[name], [cards, ...inputs], () => {
+		const body = (async () => compressJson(build()))();
+		keepAlive(body);
+		return body;
+	});
+}
+
+function acceptsGzip(request: Request): boolean {
+	const weights = new Map(request.headers.get('accept-encoding')?.split(',').map(part => {
+		const [coding, quality] = part.split(';');
+		return [coding.trim().toLowerCase(), quality ? Number(quality.trim().replace(/^q=/, '')) : 1] as const;
+	}));
+
+	return (weights.get('gzip') ?? weights.get('*') ?? 0) > 0;
+}
+
+/**
+ * A cacheable JSON response with a strong `ETag`: a caller that already holds this body gets a `304`. The gzip bytes go out untouched
+ * (`encodeBody: 'manual'` keeps the runtime from compressing them again), and a client that does not accept gzip gets them unzipped.
+ */
+export function compressedJsonResponse(request: Request, body: CompressedJson, cacheControl = 'public, max-age=600'): Response {
+	const headers = { 'cache-control': cacheControl, etag: body.etag, vary: 'accept-encoding' };
+
+	if (request.headers.get('if-none-match')?.split(',').some(tag => tag.trim().replace(/^W\//, '') === body.etag)) {
+		return new Response(null, { headers, status: 304 });
+	}
+
+	if (acceptsGzip(request)) {
+		return new Response(body.gzip, { encodeBody: 'manual', headers: { ...headers, 'content-encoding': 'gzip', 'content-type': 'application/json' } });
+	}
+
+	return new Response(new Blob([body.gzip]).stream().pipeThrough(new DecompressionStream('gzip')), { headers: { ...headers, 'content-type': 'application/json' } });
+}
 
 function gridCards(cards: FullCard[], prices: Record<string, PriceData>) {
 	/** An artless card is still a real card, so cards are not deduplicated on `image`: that would hide 8899 of the 12781 Japanese cards. */
@@ -93,19 +134,16 @@ function gridCards(cards: FullCard[], prices: Record<string, PriceData>) {
 	return cards.filter(card => Boolean(card.setName)).map(({ cardMarketUpdatedAt, ...card }) => ({ ...card, price: cardPrice(prices[card.cardCode]) }));
 }
 
-async function serialize(cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[]): Promise<Serialized> {
+function gridPayload(cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[]): GridPayload {
 	const visibleCards = gridCards(cards, prices);
 
-	const body = new TextEncoder().encode(JSON.stringify({
+	return {
 		artists: distinctArtists(visibleCards),
 		cards: visibleCards,
 		pokemons: pokemons.map(({ id, name }) => ({ id, name })),
 		rarities: distinctRarities(visibleCards),
 		types,
-	} satisfies GridPayload));
-
-	const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', body));
-	return { body, etag: `"${Array.from(digest.subarray(0, 16), byte => byte.toString(16).padStart(2, '0')).join('')}"` };
+	};
 }
 
 /**
@@ -128,20 +166,7 @@ export function setGridResponse(cards: FullCard[], prices: Record<string, PriceD
 	} satisfies GridPayload, { headers: { 'cache-control': 'public, max-age=600' } });
 }
 
-/** The grid payload as a cacheable JSON response. It is serialized and hashed once per memoized table, and a caller that already has that body gets a `304`. */
+/** The grid payload as a cacheable JSON response. It is serialized, hashed and gzipped once per memoized table (see `compressedJsonResponse`). */
 export async function gridResponse(request: Request, cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[]): Promise<Response> {
-	let entry = entries.get(cards);
-	if (!entry || entry.prices !== prices || entry.pokemons !== pokemons || entry.types !== types) {
-		entry = { pokemons, prices, serialized: serialize(cards, prices, pokemons, types), types };
-		entries.set(cards, entry);
-	}
-
-	const { body, etag } = await entry.serialized;
-	const headers = { 'cache-control': 'public, max-age=600', etag };
-
-	if (request.headers.get('if-none-match')?.split(',').some(tag => tag.trim().replace(/^W\//, '') === etag)) {
-		return new Response(null, { headers, status: 304 });
-	}
-
-	return new Response(body, { headers: { ...headers, 'content-type': 'application/json' } });
+	return compressedJsonResponse(request, await memoizedJson('grid', cards, [prices, pokemons, types], () => gridPayload(cards, prices, pokemons, types)));
 }
