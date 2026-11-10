@@ -1,5 +1,5 @@
 import { CATALOGUES, type Catalogue, type Language } from '#helpers/catalogues.ts';
-import type { Card, FullCard, Pokemon, PriceData, Set as CardSet } from '#lib/types.js';
+import type { Card, FullCard, Pokemon, PriceData, Set as CardSet, SetWithPrice } from '#lib/types.js';
 
 /**
  * Memoizes `build` on the identity of `keys`, one `WeakMap` level per key, so a value derived from memoized tables never keeps one alive:
@@ -102,6 +102,93 @@ export function formatCardNumber(cardNumber: string, printedTotal?: number | nul
 
 /** How many cards a set holds: `printedTotal` is the numbering denominator, which TCGdex leaves at 0 on the promo sets. */
 export const setCardCount = (set: Pick<CardSet, 'printedTotal' | 'totalCards'>) => set.totalCards || set.printedTotal;
+
+/** TCGdex lists these inserts as sets of their own. The map is explicit because the ids follow no rule: `2023sv` would match a `sv` suffix. */
+const SUB_SET_PARENTS: Record<string, string> = {
+	'30th-c': '30th',
+	'cel25cc': 'cel25',
+	'sma': 'sm115',
+	'swsh10tg': 'swsh10',
+	'swsh11tg': 'swsh11',
+	'swsh12.5gg': 'swsh12.5',
+	'swsh12tg': 'swsh12',
+	'swsh4.5sv': 'swsh4.5',
+	'swsh9tg': 'swsh9',
+};
+
+/** One tile of the Sets page: a set with its sub-sets as chips, or the two halves of a trainer kit box. */
+export interface SetTile {
+	kit: boolean;
+	/** One chip each: the sub-sets of a parent, or the halves of a kit. */
+	parts: { label: string; set: SetWithPrice }[];
+	/** What the tile draws, sorts and links by. A kit tile carries the pair name, the summed card count and value and the logo of the first half that has one. */
+	set: SetWithPrice;
+	/** Every set the tile stands for, so series totals still count them all. */
+	sets: SetWithPrice[];
+}
+
+/** The part of a name left once the leading words it shares with its parent are dropped: `Brilliant Stars Trainer Gallery` gives `Trainer Gallery`. */
+function subSetLabel(name: string, parentName: string): string {
+	const words = name.split(' ');
+	const parentWords = parentName.split(' ');
+	let shared = 0;
+	while (shared < words.length - 1 && words[shared] === parentWords[shared]) shared++;
+	return words.slice(shared).join(' ');
+}
+
+/**
+ * Folds each sub-set into its parent's tile, and the trainer kits sold in one box (same id prefix and release date, `tk-xy-` + 2014-03-12) into a
+ * single tile. A sub-set whose parent is missing, and a kit with no partner, keep a tile of their own.
+ */
+export function groupSetTiles(sets: SetWithPrice[]): SetTile[] {
+	const ids = new Set(sets.map(set => set.setId));
+	const subSets = new Map<string, SetWithPrice[]>();
+	const kits = new Map<string, SetWithPrice[]>();
+	const parents: SetWithPrice[] = [];
+
+	for (const set of sets) {
+		const parent = SUB_SET_PARENTS[set.setId];
+		if (parent && ids.has(parent)) subSets.set(parent, [...subSets.get(parent) ?? [], set]);
+		else if (set.series === 'Trainer kits') {
+			const key = `${set.setId.split('-', 2).join('-')}|${new Date(set.releaseDate).getTime()}`;
+			kits.set(key, [...kits.get(key) ?? [], set]);
+		} else parents.push(set);
+	}
+
+	const tiles = parents.map((set): SetTile => {
+		const children = subSets.get(set.setId) ?? [];
+		return { kit: false, parts: children.map(child => ({ label: subSetLabel(child.name, set.name), set: child })), set, sets: [set, ...children] };
+	});
+
+	for (const group of kits.values()) {
+		const [first, ...rest] = group.toSorted((a, b) => a.setId.localeCompare(b.setId));
+		if (!rest.length) {
+			tiles.push({ kit: false, parts: [], set: first, sets: [first] });
+			continue;
+		}
+
+		const halves = [first, ...rest];
+		const labels = halves.map(half => /\(([^)]*)\)$/.exec(half.name)?.[1] ?? half.name);
+		const art = halves.find(half => half.logo || half.symbol) ?? first;
+		const cardCount = halves.reduce((sum, half) => sum + setCardCount(half), 0);
+		tiles.push({
+			kit: true,
+			parts: halves.map((half, index) => ({ label: labels[index], set: half })),
+			set: {
+				...first,
+				logo: art.logo,
+				name: `${first.name.split(' (')[0].replace('trainer Kit', 'Trainer Kit')}: ${labels.join(' & ')}`,
+				printedTotal: cardCount,
+				symbol: art.symbol,
+				totalCards: cardCount,
+				totalPrice: halves.reduce((sum, half) => sum + half.totalPrice, 0),
+			},
+			sets: halves,
+		});
+	}
+
+	return tiles;
+}
 
 /** The fields a card's public URL is built from; every card payload carries them, so a link needs no extra data. */
 export type CardLink = Pick<Card, 'localId' | 'name' | 'setId' | 'setName'>;

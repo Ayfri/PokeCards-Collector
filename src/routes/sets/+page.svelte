@@ -14,7 +14,7 @@
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import SetLogo from '#components/SetLogo.svelte';
 	import { CATALOGUES } from '#helpers/catalogues.ts';
-	import { setCardCount, setPath } from '#helpers/card-utils.ts';
+	import { groupSetTiles, setCardCount, setPath, type SetTile } from '#helpers/card-utils.ts';
 
 	interface Props {
 		data: PageData;
@@ -49,7 +49,7 @@
 
 	let searchTerm = $state('');
 
-	const typedSets = $derived(data.setsWithPrices);
+	const typedSets = $derived(data.setsWithPrices ?? []);
 
 	function setSearchTerm(value: string) {
 		searchTerm = value;
@@ -58,31 +58,35 @@
 	const sortDirection = $derived(shownSort.direction === 'desc' ? -1 : 1);
 	/** localStorage can hold a sort value from an older build that `COMPARATORS` has no key for, so it falls back to `releaseDate`. */
 	const comparator = $derived(COMPARATORS[shownSort.value] ?? COMPARATORS.releaseDate);
-	const sortedSets = $derived([...(typedSets ?? [])].sort((a, b) => comparator(a, b) * sortDirection));
 
-	const filteredSets = $derived(searchTerm
-		? sortedSets.filter(set =>
-				set.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-				(set.ptcgoCode && set.ptcgoCode.toLowerCase().includes(searchTerm.toLowerCase()))
-			)
-		: sortedSets);
+	/** Tiles are grouped before the search, so a sub-set found by name shows up as a chip of its parent's tile. A tile sorts by its own set (a kit's sums). */
+	const sortedTiles = $derived(groupSetTiles(typedSets).sort((a, b) => comparator(a.set, b.set) * sortDirection));
 
-	const groupedSets = $derived(filteredSets.reduce((acc, set) => {
-		const series = set.series || 'Other';
+	const filteredTiles = $derived.by(() => {
+		const term = searchTerm.toLowerCase();
+		return term
+			? sortedTiles.filter(tile => tile.sets.some(set => set.name.toLowerCase().includes(term) || set.ptcgoCode?.toLowerCase().includes(term)))
+			: sortedTiles;
+	});
+
+	const groupedTiles = $derived(filteredTiles.reduce((acc, tile) => {
+		const series = tile.set.series || 'Other';
 		acc[series] ??= [];
-		acc[series].push(set);
+		acc[series].push(tile);
 		return acc;
-	}, {} as Record<string, SetWithPrice[]>));
+	}, {} as Record<string, SetTile[]>));
 
 	/** Series are ordered by their first set, except when sorting by name, where the series name is what the user reads. */
-	const seriesKeys = $derived(Object.keys(groupedSets).sort((a, b) => {
+	const seriesKeys = $derived(Object.keys(groupedTiles).sort((a, b) => {
 		if (shownSort.value === 'name') return a.localeCompare(b) * sortDirection;
 
-		const [firstSetA] = groupedSets[a];
-		const [firstSetB] = groupedSets[b];
-		if (!firstSetA || !firstSetB) return 0;
-		return comparator(firstSetA, firstSetB) * sortDirection;
+		const [firstTileA] = groupedTiles[a];
+		const [firstTileB] = groupedTiles[b];
+		if (!firstTileA || !firstTileB) return 0;
+		return comparator(firstTileA.set, firstTileB.set) * sortDirection;
 	}));
+
+	const shownSetCount = $derived(filteredTiles.reduce((count, tile) => count + tile.sets.length, 0));
 
 	/** The release years a group spans, a single year when all its sets came out the same year. */
 	function yearSpan(sets: SetWithPrice[]): string {
@@ -125,27 +129,35 @@
 
 	<p class="text-gray-300 mb-6" transition:fade={{ duration: 400, delay: 250 }}>
 		Sets are collections of cards that are released together.<br>
-		<span class="text-sm">Showing {filteredSets.length} of {sortedSets.length} sets.</span>
+		<span class="text-sm">Showing {shownSetCount} of {typedSets.length} sets.</span>
 	</p>
 
 	<div transition:fly={{ y: 50, duration: 400, delay: 400 }}>
 		{#each seriesKeys as series, index (series)}
+			{@const seriesSets = groupedTiles[series].flatMap(tile => tile.sets)}
 			<div class="mb-8">
 				<div class="mb-4">
 					<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
 						<h2 class="text-xl font-bold text-gold-400 md:text-2xl">{series}</h2>
-						<p class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-300" title="Release years"><CalendarDaysIcon size={14} /> {yearSpan(groupedSets[series])}</p>
-						<p class="whitespace-nowrap text-sm text-gray-400">{groupedSets[series].length} sets</p>
-						<p class="ml-auto whitespace-nowrap text-sm text-gold-400">{formatEuros(groupedSets[series].reduce((acc, set) => acc + set.totalPrice, 0))}</p>
+						<p class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-300" title="Release years"><CalendarDaysIcon size={14} /> {yearSpan(seriesSets)}</p>
+						<p class="whitespace-nowrap text-sm text-gray-400">{seriesSets.length} sets</p>
+						<p class="ml-auto whitespace-nowrap text-sm text-gold-400">{formatEuros(seriesSets.reduce((acc, set) => acc + set.totalPrice, 0))}</p>
 					</div>
 					<hr class="w-full border-t border-gray-700 my-2" />
 				</div>
 				
 				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ y: 50, duration: 500, delay: 200 * index }}>
-					{#each groupedSets[series] as set (set.name)}
-						<div in:fly={{ y: 20, duration: 300, delay: 50 }}>
-							<a href={setPath(set, CATALOGUES.en)} class="block h-full" title={`Browse every card in ${set.name}`}>
-								<div class="card-tile overflow-hidden h-full flex flex-col">
+					{#each groupedTiles[series] as tile (tile.set.setId)}
+						{@const set = tile.set}
+						<div in:fly={{ y: 20, duration: 300, delay: 50 }} class="h-full">
+							<div class="card-tile overflow-hidden h-full flex flex-col">
+								<!-- A kit has no set page of its own: its halves are linked by the chips, so the tile body is not a link. -->
+								<svelte:element
+									this={tile.kit ? 'div' : 'a'}
+									class="flex flex-1 flex-col"
+									href={tile.kit ? undefined : setPath(set, CATALOGUES.en)}
+									title={tile.kit ? undefined : `Browse every card in ${set.name}`}
+								>
 									<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
 										<SetLogo class="max-h-full object-contain" {set}>
 											{#snippet fallback()}<LayersIcon class="text-gray-600" size={56} />{/snippet}
@@ -166,8 +178,19 @@
 											{/if}
 										</div>
 									</div>
-								</div>
-							</a>
+								</svelte:element>
+								{#if tile.parts.length}
+									<div class="flex flex-wrap gap-2 px-4 pb-4">
+										{#each tile.parts as part (part.set.setId)}
+											<a
+												class="rounded-full border border-gold-500/40 bg-gray-700/60 px-2.5 py-0.5 text-xs text-gray-200 transition-colors hover:border-gold-400 hover:text-gold-300"
+												href={setPath(part.set, CATALOGUES.en)}
+												title={`Browse every card in ${part.set.name}`}
+											>{part.label} · {setCardCount(part.set)} cards</a>
+										{/each}
+									</div>
+								{/if}
+							</div>
 						</div>
 					{/each}
 				</div>
