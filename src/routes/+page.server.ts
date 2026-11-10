@@ -2,7 +2,7 @@ import { countCards, getCards, getPokemons, getPrices } from '#helpers/supabase-
 import { cardListSchema, faqSchema } from '#helpers/seo.ts';
 import type { FullCard, PriceData, Set as CardSet } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
-import { cardPrice } from '#helpers/card-utils.ts';
+import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 import { getRarityLevel, RARITY_MAPPING } from '#helpers/rarity.ts';
 
 /** Page 2 holds 5 cards, so the preview reads as a binder in progress. */
@@ -18,19 +18,15 @@ interface CatalogueHome {
 	mostExpensiveLatestSetCards: FullCard[];
 }
 
-interface HomeEntry {
-	home: CatalogueHome;
-	prices: Record<string, PriceData>;
-	sets: CardSet[];
-}
+/**
+ * Keyed on the memoized tables like `grid-payload.ts`: the pass over the ~23.5k cards runs once per refreshed table, not once per request,
+ * and no entry keeps a replaced table alive.
+ */
+const homes = new WeakMap<object, unknown>();
 
-/** Keyed on the memoized card list like `grid-payload.ts`, so a pass over the ~23.5k cards runs once per refreshed table and not once per request. */
-const homes = new WeakMap<FullCard[], HomeEntry>();
+const catalogueHome = (cards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]) => memoizedOn(homes, [cards, prices, sets], () => buildHome(cards, prices, sets));
 
-function catalogueHome(cards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]): CatalogueHome {
-	const cached = homes.get(cards);
-	if (cached && cached.prices === prices && cached.sets === sets) return cached.home;
-
+function buildHome(cards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]): CatalogueHome {
 	/** Cards are not deduplicated on `image`: TCGdex gives each card its own art URL, so that would only drop the real cards it has no art for. */
 	const processedAllCards = cards.filter(card => Boolean(card.setName));
 
@@ -86,7 +82,6 @@ function catalogueHome(cards: FullCard[], prices: Record<string, PriceData>, set
 		mostExpensiveCards: topFive(processedAllCards),
 		mostExpensiveLatestSetCards: topFive(latestSetCards),
 	};
-	homes.set(cards, { home, prices, sets });
 	return home;
 }
 
