@@ -38,7 +38,7 @@
 			{/each}
 		</p>
 	{/if}
-	<SetChecklist entries={data.checklist} />
+	<SetChecklist entries={data.checklist} language={data.catalogueLanguage} set={data.set} />
 
 	<!-- The loader is absolutely positioned so that during its out transition the grid mounts under it, not below it. -->
 	<div class="relative flex min-h-0 flex-1 flex-col">

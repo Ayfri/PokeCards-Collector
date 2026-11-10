@@ -21,8 +21,6 @@ export interface ChecklistEntry {
 	cardCode: string;
 	localId: string;
 	name: string;
-	/** The card page, so the checklist links need no catalogue at render time. */
-	path: string;
 	price: number | null;
 }
 
@@ -43,9 +41,11 @@ export interface TopCard {
  */
 export function setLanding(set: CardSet, cards: FullCard[], prices: Record<string, PriceData>, catalogue: Catalogue = CATALOGUES.en) {
 	const setCards = cards.filter(card => card.setId === set.setId).sort((a, b) => a.localId.localeCompare(b.localId, 'en', { numeric: true }));
-	const checklist: ChecklistEntry[] = setCards.map(card => ({ cardCode: card.cardCode, localId: card.localId, name: card.name, path: cardPath(catalogue.language, card), price: cardPrice(prices[card.cardCode]) }));
-	const topCards: TopCard[] = checklist
-		.flatMap(({ cardCode, localId, name, path, price }) => price ? [{ cardCode, localId, name, path, price }] : [])
+	const priced = setCards.map(card => ({ card, price: cardPrice(prices[card.cardCode]) }));
+	/** An entry has no `path`: every card of the page shares its set, so `SetChecklist` builds each link from the entry and the set instead of the document carrying one per card. */
+	const checklist: ChecklistEntry[] = priced.map(({ card, price }) => ({ cardCode: card.cardCode, localId: card.localId, name: card.name, price }));
+	const topCards: TopCard[] = priced
+		.flatMap(({ card, price }) => price ? [{ cardCode: card.cardCode, localId: card.localId, name: card.name, path: cardPath(catalogue.language, card), price }] : [])
 		.sort((a, b) => b.price - a.price)
 		.slice(0, 6);
 	const [top] = topCards;
