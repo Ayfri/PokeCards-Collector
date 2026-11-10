@@ -60,7 +60,6 @@
 
 	const releaseDate = $derived(round?.releaseDate ? new Date(round.releaseDate).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Unknown');
 	const answered = $derived(verdict !== null);
-	const roundSet = $derived(round && data.sets.find(set => set.setId === round?.card.setId));
 
 	const CHIP = 'flex shrink-0 items-center gap-2 rounded-full bg-gray-800/80 px-3 py-1.5 whitespace-nowrap';
 
@@ -225,8 +224,8 @@
 						<div class="flex max-w-full flex-wrap justify-center-safe gap-2 text-sm text-gray-300 max-md:flex-nowrap max-md:overflow-x-auto scrollbar-hide">
 							<span class={CHIP} title="Set this card was printed in">
 								<LibraryIcon size={16} />
-								{#if roundSet}
-									<SetLogo class="h-5 w-auto max-w-12 shrink-0 object-contain" set={roundSet} />
+								{#if round.set}
+									<SetLogo class="h-5 w-auto max-w-12 shrink-0 object-contain" set={round.set} />
 								{/if}
 								{round.card.setName}
 							</span>

@@ -7,11 +7,12 @@ import { cardPrice, setsById } from '#helpers/card-utils.ts';
 
 type RoundSet = Pick<Set, 'logo' | 'name' | 'setId' | 'symbol'>;
 
-/** One playable card: the art to show, the price to guess and the set date shown as a hint. */
+/** One playable card: the art to show, the price to guess, the set date shown as a hint and the set fields the page draws, so a queued round needs no other list. */
 export interface Round {
 	card: Card;
 	price: number;
 	releaseDate: Date | null;
+	set: RoundSet | null;
 }
 
 /** Shared by both returns of the load, so a page with no playable card still has a full head. */
@@ -43,10 +44,11 @@ export const load: PageServerLoad = async () => {
 	}
 
 	if (!playable.length) {
-		return { ...SEO, rounds: [], error: `No card with artwork and a price of ${MIN_PRICE} EUR or more.`, sets: [] as RoundSet[] };
+		return { ...SEO, rounds: [], error: `No card with artwork and a price of ${MIN_PRICE} EUR or more.` };
 	}
 
 	const releaseDates = new Map(sets.map(set => [set.name, set.releaseDate]));
+	const byId = setsById(sets);
 	const picked = new Set<number>();
 	while (picked.size < Math.min(BATCH_SIZE, playable.length)) {
 		picked.add(Math.floor(Math.random() * playable.length));
@@ -54,15 +56,14 @@ export const load: PageServerLoad = async () => {
 
 	const rounds: Round[] = [...picked].map(index => {
 		const { card, price } = playable[index];
-		return { card, price, releaseDate: releaseDates.get(card.setName) ?? null };
+		const set = byId.get(card.setId);
+		return {
+			card,
+			price,
+			releaseDate: releaseDates.get(card.setName) ?? null,
+			set: set ? { logo: set.logo, name: set.name, setId: set.setId, symbol: set.symbol } : null,
+		};
 	});
 
-	/** Only the sets of this batch travel: the page draws one logo per round. */
-	const byId = setsById(sets);
-	const roundSets = [...new Set(rounds.map(({ card }) => card.setId))].flatMap((setId): RoundSet[] => {
-		const set = byId.get(setId);
-		return set ? [{ logo: set.logo, name: set.name, setId: set.setId, symbol: set.symbol }] : [];
-	});
-
-	return { ...SEO, rounds, error: null, sets: roundSets };
+	return { ...SEO, rounds, error: null };
 };
