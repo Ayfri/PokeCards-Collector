@@ -41,6 +41,14 @@ export async function upsertRows(supabase: SupabaseClient, table: string, rows: 
 	return rows.length;
 }
 
+/** Marks a catalogue as rewritten: the site re-reads a language's tables when its version differs from the one it holds. Returns the new version. */
+export async function bumpCatalogueVersion(supabase: SupabaseClient, lang: Language): Promise<string> {
+	const version = Date.now().toString(36);
+	const {error} = await supabase.from('catalogue_versions').upsert({language: lang, updated_at: new Date().toISOString(), version}, {onConflict: 'language'});
+	if (error) throw new Error(`Error bumping the ${lang} catalogue version: ${error.message}`);
+	return version;
+}
+
 /** Deletes the rows whose `column` is in `values` and returns how many went. Chunks keep the PostgREST query string short. */
 export async function deleteIn(supabase: SupabaseClient, table: string, column: string, values: readonly string[], chunkSize = 200): Promise<number> {
 	let deleted = 0;

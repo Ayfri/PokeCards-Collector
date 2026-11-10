@@ -1,7 +1,7 @@
 import {DurableObject, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep} from 'cloudflare:workers';
 import {LANGUAGES, type Language} from '#helpers/catalogues.ts';
 import {cardTraderImages, type CardTraderImages} from '#scrapers/cardtrader.ts';
-import {createSyncClient, dropSharedProducts, syncSetCards, syncSets, type SyncCardsResult} from '#scrapers/supabase_sync.ts';
+import {bumpCatalogueVersion, createSyncClient, dropSharedProducts, syncSetCards, syncSets, type SyncCardsResult} from '#scrapers/supabase_sync.ts';
 import {FetchClient} from '#scrapers/tcgdex/client.ts';
 
 interface Env {
@@ -82,18 +82,24 @@ export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 		await step.do('cardtrader: images', {retries: {limit: 2, delay: '1 minute', backoff: 'exponential'}, timeout: '10 minutes'}, () => reader.syncCardTraderImages());
 
 		for (const lang of LANGUAGES) {
-			const setIds = await step.do(`${lang}: sets`, () => reader.syncSets(lang));
+			/** The bump runs even when a step fails: the batches before it already wrote their rows, and the error still ends the run. */
+			try {
+				const setIds = await step.do(`${lang}: sets`, () => reader.syncSets(lang));
 
-			for (let index = 0; index < setIds.length; index += SETS_PER_STEP) {
-				const batch = setIds.slice(index, index + SETS_PER_STEP);
-				await step.do(
-					`${lang}: cards ${index / SETS_PER_STEP + 1} (${batch.join(', ')})`,
-					{retries: {limit: 5, delay: '30 seconds', backoff: 'exponential'}, timeout: '10 minutes'},
-					async (): Promise<SyncCardsResult> => reader.syncSetCards(lang, batch),
-				);
+				for (let index = 0; index < setIds.length; index += SETS_PER_STEP) {
+					const batch = setIds.slice(index, index + SETS_PER_STEP);
+					await step.do(
+						`${lang}: cards ${index / SETS_PER_STEP + 1} (${batch.join(', ')})`,
+						{retries: {limit: 5, delay: '30 seconds', backoff: 'exponential'}, timeout: '10 minutes'},
+						async (): Promise<SyncCardsResult> => reader.syncSetCards(lang, batch),
+					);
+				}
+
+				await step.do(`${lang}: shared products`, () => dropSharedProducts(supabase, lang));
+			} finally {
+				await step.do(`${lang}: version`, () => bumpCatalogueVersion(supabase, lang))
+					.catch((error: unknown) => console.error(`${lang}: catalogue version bump failed, the site keeps the previous one up to 25 h:`, error));
 			}
-
-			await step.do(`${lang}: shared products`, () => dropSharedProducts(supabase, lang));
 		}
 	}
 }

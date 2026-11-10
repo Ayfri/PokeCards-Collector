@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import { CATALOGUES, LANGUAGES } from '#helpers/catalogues.ts';
 import { envClient, FILES, POKEMONS, TYPES } from './cli-config';
 import { artRow, cardRow, priceRow, setRow } from './rows';
-import { deduplicate, deleteIn, readAll, upsertRows } from './supabase_sync';
+import { bumpCatalogueVersion, deduplicate, deleteIn, readAll, upsertRows } from './supabase_sync';
 import { resolveCardCode, type Language, type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
 
 const supabase = envClient();
@@ -70,7 +70,7 @@ function storedCodes(lang: Language, cards: readonly MappedCard[], rows: readonl
 }
 
 /** The scrape only keeps sets that hold a card, so a stored set missing from it was emptied or dropped by TCGdex. */
-export async function uploadSets(lang: Language): Promise<void> {
+export async function uploadSets(lang: Language, bump = true): Promise<void> {
 	const table = CATALOGUES[lang].tables.sets;
 	console.log(`📤 Uploading ${table}...`);
 	const sets = read<MappedSet[]>(FILES[lang].sets);
@@ -80,6 +80,7 @@ export async function uploadSets(lang: Language): Promise<void> {
 	const scraped = new Set(sets.map(set => set.setId));
 	const stored = await readAll<{set_id: string}>(supabase, table, 'set_id', 'set_id');
 	await deleteAll(table, 'set_id', stored.map(row => row.set_id).filter(setId => !scraped.has(setId)), 'sets the scrape no longer has');
+	if (bump) await bumpCatalogueVersion(supabase, lang);
 }
 
 /**
@@ -87,7 +88,7 @@ export async function uploadSets(lang: Language): Promise<void> {
  * and the old row of every card that changes code (their prices go with them), then upserts. `collections` and
  * `wishlists` are never touched: a code no card holds renders again once TCGdex fills the set in.
  */
-export async function uploadCards(lang: Language): Promise<void> {
+export async function uploadCards(lang: Language, bump = true): Promise<void> {
 	const table = CATALOGUES[lang].tables.cards;
 	console.log(`📤 Uploading ${table}...`);
 	const cards = read<MappedCard[]>(FILES[lang].cards);
@@ -105,10 +106,11 @@ export async function uploadCards(lang: Language): Promise<void> {
 
 	const rows = cards.map(card => ({ ...cardRow({ ...card, cardCode: codes.get(card.cardCode)! }, lang), ...artRow(card) }));
 	await upsertAll(table, rows, 'card_code');
+	if (bump) await bumpCatalogueVersion(supabase, lang);
 }
 
 /** Upserts the scraped prices under the stored card codes, and deletes the price of a scraped card that has none left. */
-export async function uploadPrices(lang: Language): Promise<void> {
+export async function uploadPrices(lang: Language, bump = true): Promise<void> {
 	const { cards: cardsTable, prices: table } = CATALOGUES[lang].tables;
 	console.log(`📤 Uploading ${table}...`);
 	const prices = read<Record<string, MappedPrice>>(FILES[lang].prices);
@@ -119,13 +121,21 @@ export async function uploadPrices(lang: Language): Promise<void> {
 	await upsertAll(table, rows, 'card_code');
 
 	await deleteAll(table, 'card_code', cards.filter(card => !prices[card.cardCode]).map(card => codes.get(card.cardCode)!), 'prices a card lost');
+	if (bump) await bumpCatalogueVersion(supabase, lang);
 }
 
-/** Cards go before prices because prices have a foreign key on `card_code`. */
+/**
+ * Cards go before prices because prices have a foreign key on `card_code`. The versions are bumped once per language at the end, even when an upload
+ * fails halfway, since the tables it already wrote have changed.
+ */
 export async function uploadAllData(): Promise<void> {
 	console.log('🚀 Starting full Supabase data upload...');
 	await uploadTypes();
 	await uploadPokemons();
-	for (const upload of [uploadSets, uploadCards, uploadPrices]) for (const lang of LANGUAGES) await upload(lang);
+	try {
+		for (const upload of [uploadSets, uploadCards, uploadPrices]) for (const lang of LANGUAGES) await upload(lang, false);
+	} finally {
+		for (const lang of LANGUAGES) await bumpCatalogueVersion(supabase, lang);
+	}
 	console.log('🎉 All data uploaded successfully to Supabase!');
 }
