@@ -1,12 +1,12 @@
-import type { SupabaseClient, User, Session } from '@supabase/supabase-js';
+import type { Session, SupabaseClient, User } from '@supabase/supabase-js';
 import type { Breadcrumb, Image, SeoType, UserProfile } from '#lib/types.js';
 
 declare global {
 	namespace App {
 		interface Locals {
+			profile: UserProfile | null;
 			supabase: SupabaseClient;
 			user: User | null;
-			profile: UserProfile | null;
 		}
 		/** Fields every load inherits from the root layout. The catalogue is not among them: grid pages stream it under `streamed` in their own data. */
 		interface PageData {
