@@ -195,9 +195,13 @@ export function mapCard(lang: Language, source: TcgdexCard): MappedCard {
 	};
 }
 
-/** Cardmarket link to a single product, built from `idProduct`, the only identifier TCGdex exposes. */
+/**
+ * Cardmarket link to a single product, built from `idProduct`, the only identifier TCGdex exposes. `/Products?idProduct=` redirects to the
+ * product page, while `/Products/Singles?idProduct=` ignores the id and lists every single. The product slug (`Umbreon-VMAX-V3`,
+ * `Charizard-V1-BS4`) cannot be built instead: Cardmarket freezes it per product, with its own set codes, some without any.
+ */
 function cardMarketUrl(idProduct: number | undefined): string {
-	return idProduct ? `https://www.cardmarket.com/en/Pokemon/Products/Singles?idProduct=${idProduct}` : '';
+	return idProduct ? `https://www.cardmarket.com/en/Pokemon/Products?idProduct=${idProduct}` : '';
 }
 
 /** Needs a set from `withProbedAssets`, whose logo and symbol are already full URLs of files that exist. */
