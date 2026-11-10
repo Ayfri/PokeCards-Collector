@@ -1,5 +1,5 @@
 import type {CardTraderImages} from '../cardtrader';
-import {COMMUNITY_SET_IMAGES} from './community-images';
+import {communityImages} from './community-images';
 import {jpTwinOf, type Language} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
 
@@ -21,13 +21,13 @@ async function firstExisting(urls: (string | undefined)[]): Promise<string | und
  * The API links every symbol under `univ/`, which the CDN answers 400 for (InvalidBucketName), while the same file sits
  * under each language, and English covers a language that lacks one. It also links logos it never uploaded and leaves
  * out some it did.
- * An English or French set that TCGdex has nothing for falls back to its community image from `community-images.ts`
- * (French set ids are the English ones), and a French logo falls back to the English one.
+ * A set that TCGdex has nothing for falls back to its community image from `community-images.ts` (French set ids are the English ones,
+ * a Japanese set only gets a symbol), and a French logo falls back to the English one.
  * `logo` and `symbol` are full URLs of files that exist, or undefined.
  */
 export async function withProbedAssets(set: TcgdexSet, lang: string): Promise<TcgdexSet> {
 	const at = (language: string, file: string) => set.serie && `${TCGDEX_ASSETS}/${language}/${set.serie.id}/${set.id}/${file}`;
-	const community = lang === 'ja' ? undefined : COMMUNITY_SET_IMAGES[set.id];
+	const community = communityImages(lang, set.id);
 	const [logo, symbol] = await Promise.all([
 		firstExisting([...formats(set.logo), ...formats(at(lang, 'logo')), ...(lang === 'fr' ? formats(at('en', 'logo')) : []), community?.logo]),
 		firstExisting([
