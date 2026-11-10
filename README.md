@@ -82,7 +82,7 @@ Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
 
 | Layer | What |
 | --- | --- |
-| Frontend | SvelteKit 2 + [Svelte 5 runes](https://svelte.dev/docs/svelte/what-are-runes), TypeScript, Tailwind CSS 4 (CSS-first, no config file), [Lucide icons](https://lucide.dev/) |
+| Frontend | SvelteKit 3 + [Svelte 5 runes](https://svelte.dev/docs/svelte/what-are-runes), TypeScript, Tailwind CSS 4 (CSS-first, no config file), [Lucide icons](https://lucide.dev/) |
 | Data | Supabase Postgres with row level security, [TCGdex](https://tcgdex.dev/) for cards/prices/sets, [PokéAPI](https://pokeapi.co/) for Pokédex entries |
 | Hosting | Cloudflare Workers with static assets, via `@sveltejs/adapter-cloudflare` |
 | Jobs | A second Worker holding a Cloudflare Workflow, scheduled daily |
@@ -95,8 +95,9 @@ Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
 
 - [Bun](https://bun.sh/docs/installation) 1.4 or later
 - A [Supabase](https://supabase.com/) project
+- A [CardTrader](https://www.cardtrader.com/) API token, for the card scans TCGdex has none for
 
-TCGdex needs no API key, so there is nothing else to sign up for.
+TCGdex needs no API key.
 </details>
 
 <details open>
@@ -127,6 +128,7 @@ TCGdex needs no API key, so there is nothing else to sign up for.
    PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
    SUPABASE_SECRET_KEY=sb_secret_...
    SCRAPER_TRIGGER_TOKEN=
+   CARDTRADER_TOKEN=
    PUBLIC_NO_IMAGES=false
    ```
    `SUPABASE_SECRET_KEY` bypasses row level security and must never carry the `PUBLIC_` prefix: SvelteKit
@@ -154,16 +156,17 @@ TCGdex needs no API key, so there is nothing else to sign up for.
 
 | Command | Description | Needs |
 | --- | --- | --- |
-| `all` | `scrape`, then `pokemons`, then `supabase all`, in dependency order. | Supabase credentials |
-| `scrape` | Fetch every card, price and set from TCGdex into `src/assets/`. `--lang en,ja,fr` picks the languages, all three by default. | Nothing |
+| `all` | `scrape`, then `pokemons`, then `supabase all`, in dependency order. | Supabase credentials and `CARDTRADER_TOKEN` |
+| `scrape` | Fetch every card, price and set from TCGdex into `src/assets/`, with the CardTrader scans for the cards TCGdex has none for. `--lang en,ja,fr` picks the languages, all three by default. | `CARDTRADER_TOKEN` |
 | `pokemons` | Fetch Pokédex names and descriptions from PokéAPI. | Nothing |
-| `audit` | Match every stored `card_code` to its TCGdex card, rebuild `set-aliases.json` and `card-code-overrides.json` (English and Japanese), report the owned codes pointing at no card and the French vocabulary missing from `french.ts`. | Supabase credentials |
+| `audit` | Match every stored `card_code` to its TCGdex card, rebuild `set-aliases.json` and `card-code-overrides.json` (English and Japanese) and `set-names.json` (the localized set names the collection import matches), report the owned codes pointing at no card and the French vocabulary missing from `french.ts`. | Supabase credentials |
+| `link` | Match every Japanese card to its English twin and write `src/scrapers/tcgdex/jp-twins.json`, and every Japanese set to its English set in `jp-set-twins.json` (artwork hashes are cached in `.cache/`). Rerun it after a scrape that adds Japanese sets. | Nothing |
 | `check` | Read-only sanity pass over the live catalogue: duplicates (card and set slugs included), orphans, unranked rarities, mismatched species, shared Cardmarket products, empty sets. | Supabase credentials |
 | `purge` | Delete the cards, prices and sets of an excluded serie (Pokémon TCG Pocket). | Supabase credentials |
 | `verify` | Check the scraped JSON for `card_code` collisions (within and across catalogues), card and set slug collisions, unknown values, shared set names and owned cards that no longer resolve. `--offline` skips Supabase. | `scrape` |
-| `supabase <target>` | Push one JSON file into its table: `all`, `cards`, `jp-cards`, `fr-cards`, `prices`, `jp-prices`, `fr-prices`, `sets`, `jp-sets`, `fr-sets`, `types`, `pokemons`. | `scrape` |
+| `supabase <target>` | Push one JSON file into its table: `all`, `cards`, `jp-cards`, `fr-cards`, `prices`, `jp-prices`, `fr-prices`, `sets`, `jp-sets`, `fr-sets`, `types`, `pokemons`. `--dry-run` only prints each table with the row count of its staged file. | `scrape` |
 
-Every command takes `--dry-run` (run without writing), `--json` (raw report), `-q` (summary only) and `--help`.
+`--dry-run` (run without writing to `src/assets/` or Supabase) is taken by `all`, `scrape`, `pokemons`, `audit`, `link`, `purge` and `supabase`, so `all --dry-run` writes nothing anywhere. `--json` (raw report) is taken by `scrape`, `link`, `verify`, `check` and `purge`. Every command takes `-q` (summary only) and `--help`.
 
 A full pass takes about 15 s for ~36 000 cards, the CLI going through an HTTP/2 connection pool. `supabase` needs
 the sets uploaded before the cards, and the cards before the prices; `all` already orders them. Run `verify`
@@ -175,9 +178,10 @@ between `scrape` and the upload to check the output.
 
 `src/workers/scraper.ts` is a second Worker holding the `ScrapeWorkflow` Cloudflare Workflow. It fires every
 day at 04:00 UTC, one Workflow step per batch of 4 sets so a failing batch retries alone, and writes TCGdex
-straight into Supabase with no staged JSON, for English, Japanese and French. A batch moves a card whose override gives it another code, deletes the
+straight into Supabase with no staged JSON, for English, Japanese and French. A first step rebuilds the Cardmarket product
+-> CardTrader scan map in the SQLite storage of the Durable Object, and the batches look their scans up there. A batch moves a card whose override gives it another code, deletes the
 cards and prices TCGdex dropped from its sets, and skips the sets TCGdex holds no card for; a last step per language
-clears the prices of cards sharing a Cardmarket product with a differently named card. Every delete is scoped to a
+clears the price, Cardmarket link and CardTrader scan of cards sharing a Cardmarket product with a differently named card. Every delete is scoped to a
 set TCGdex answered for, so a half-finished pass never removes rows it has not reached. The TCGdex reads run in a
 Durable Object pinned to Western Europe, since `api.tcgdex.net` is geo-DNS and its North American mirrors serve a
 stale build.
@@ -186,6 +190,7 @@ stale build.
 bun run deploy:scraper
 bunx wrangler secret put SUPABASE_SECRET_KEY -c wrangler.scraper.toml
 bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
+bunx wrangler secret put CARDTRADER_TOKEN -c wrangler.scraper.toml
 ```
 
 `SCRAPER_TRIGGER_TOKEN` is the bearer token for the manual `POST /run` on the scraper Worker.
@@ -194,10 +199,11 @@ bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
 <details>
 <summary><b>Card images</b></summary>
 
-Card art is served straight from `assets.tcgdex.net`, which is CDN-fronted, CORS-open and speaks HTTP/3, so there
-is no mirror and no proxy. A card's `image` field is an extensionless base such as
-`https://assets.tcgdex.net/en/swsh/swsh3/136`, and `processCardImage` appends `/{quality}.{extension}` -
-`high.webp` by default, about 89 KB against 344 KB for the same card as a PNG.
+Card art is served straight from `assets.tcgdex.net`, which is CDN-fronted, CORS-open and speaks HTTP/3, and, for the
+cards TCGdex has no scan for, from CardTrader (`www.cardtrader.com`), so there is no mirror. A card's `image` field is
+either an extensionless TCGdex base such as `https://assets.tcgdex.net/en/swsh/swsh3/136`, to which `processCardImage`
+appends `/{quality}.webp` - `high.webp`, about 89 KB against 344 KB for the same card as a PNG - or a CardTrader scan
+URL. Only the binder export goes through `/api/image-proxy`, since it draws the images on a canvas.
 
 Set `PUBLIC_NO_IMAGES=true` to render placeholders instead and develop without bandwidth.
 </details>
@@ -233,7 +239,7 @@ There is no test suite and no lint script. `svelte-check` is installed but not w
 │   │   ├── stores/          # Cross-component state, incl. localStorage-backed stores
 │   │   └── supabase.ts      # Browser Supabase client
 │   ├── routes/              # Pages and API endpoints
-│   ├── scrapers/            # TCGdex + PokéAPI scrapers and the Supabase uploaders
+│   ├── scrapers/            # TCGdex, CardTrader and PokéAPI scrapers and the Supabase uploaders
 │   ├── workers/scraper.ts   # The daily ScrapeWorkflow Worker
 │   ├── app.css              # Tailwind entry, holds the @theme block
 │   ├── hooks.server.ts      # Per-request Supabase client, user and profile on event.locals
