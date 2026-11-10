@@ -387,6 +387,9 @@ interface LinkRow {
 	set_name?: string | null;
 }
 
+/** What `card_versions` returns: the card itself, and for each other language its first print, null when it has none. The card's own language key is null. */
+type VersionRows = { own: LinkRow } & Partial<Record<Language, LinkRow | null>>;
+
 function linkOf(row: LinkRow): CardLink & { cardCode: string } {
 	return { cardCode: row.card_code, localId: row.local_id || '', name: row.name, setId: row.set_id || '', setName: row.set_name || '' };
 }
@@ -409,7 +412,6 @@ export async function getRandomCard(): Promise<(CardLink & { cardCode: string })
 }
 
 interface SlugIndex {
-	byCode: Map<string, FullCard>;
 	bySlug: Map<string, FullCard>;
 	/** `set-number` of the slug, only for a card that has both parts, so a URL with a wrong or stale name part still finds its card. */
 	byTail: Map<string, FullCard>;
@@ -433,12 +435,10 @@ function slugIndex(language: Language, cards: FullCard[]): SlugIndex {
 	const known = slugIndexes.get(cards);
 	if (known) return known;
 
-	const index: SlugIndex = { byCode: new Map(), bySlug: new Map(), byTail: new Map() };
+	const index: SlugIndex = { bySlug: new Map(), byTail: new Map() };
 	let collisions = 0;
 
 	for (const card of cards) {
-		if (!index.byCode.has(card.cardCode)) index.byCode.set(card.cardCode, card);
-
 		const slug = cardSlug(card, language);
 		if (keepLowest(index.bySlug, slug, card)) collisions++;
 
@@ -472,9 +472,11 @@ export async function findCardBySlug(language: Language, slug: string): Promise<
 	return card ? { card, canonical: cardSlug(card, language) } : null;
 }
 
-/** The list-field version of a card, found through the same memoized index as the slugs. Detail columns come from `getCardDetails`. */
-export async function findCardByCode(language: Language, cardCode: string): Promise<FullCard | null> {
-	return slugIndex(language, await getCards(language)).byCode.get(cardCode) ?? null;
+/** A card's URL fields by code, in one row read: the legacy `/card/<cardCode>` redirect needs no catalogue. */
+export async function findCardLinkByCode(language: Language, cardCode: string): Promise<(CardLink & { cardCode: string }) | null> {
+	const { cards } = CATALOGUES[language].tables;
+	const { data } = await readWithRetry(`fetch ${cards} ${cardCode} link`, () => supabase.from(cards).select(LINK_COLUMNS).eq('card_code', cardCode).maybeSingle<LinkRow>());
+	return data ? linkOf(data) : null;
 }
 
 /** One card with every column, for its own page: the list reads leave out `variants` and the like, and keep `hp` and `stage` only on cards with no scan. */
@@ -495,25 +497,19 @@ export async function getCardPrice(language: Language, cardCode: string): Promis
  * The same card in the other catalogues. English and French cards share their TCGdex id, and a Japanese card stores the English id of
  * its twin in `twin_tcgdex_id`, so the English id is the key: a Japanese card reads it from its own row, the other two use their `tcgdex_id`.
  * Several Japanese prints can share one English twin, and the first `card_code` stands for them so the link never changes between visits.
- * A card with no id, or a Japanese card with no twin, only has itself.
+ * A card with no id, or a Japanese card with no twin, only has itself. It is one database call (the `card_versions` SQL function) for the three languages.
  */
 export async function getCardVersions(language: Language, cardCode: string): Promise<CardVersions> {
-	const own = language === 'ja' ? 'twin_tcgdex_id' : 'tcgdex_id';
-
-	const { cards } = CATALOGUES[language].tables;
-	const { data } = await readWithRetry(`fetch ${cards} ${cardCode} ${own}`, () => supabase.from(cards).select(`${LINK_COLUMNS}, ${own}`).eq('card_code', cardCode).maybeSingle<LinkRow & Partial<Record<typeof own, string | null>>>());
+	const { data: result } = await readWithRetry(`call card_versions ${language} ${cardCode}`, () => supabase.rpc('card_versions', { p_card_code: cardCode, p_language: language }));
+	/** The untyped client reads every rpc result as a row array, and `overrideTypes` refuses to cast an array to the object this scalar function returns. */
+	const data = result as VersionRows | null;
 	if (!data) return {};
 
-	const versions: CardVersions = { [language]: cardPath(language, linkOf(data)) };
-	const tcgdexId = data[own];
-	if (!tcgdexId) return versions;
-
-	await Promise.all(LANGUAGES.filter(target => target !== language).map(async target => {
-		const table = CATALOGUES[target].tables.cards;
-		const column = target === 'ja' ? 'twin_tcgdex_id' : 'tcgdex_id';
-		const { data: twin } = await readWithRetry(`fetch ${table} ${column} ${tcgdexId}`, () => supabase.from(table).select(LINK_COLUMNS).eq(column, tcgdexId).order('card_code').limit(1).maybeSingle<LinkRow>());
+	const versions: CardVersions = { [language]: cardPath(language, linkOf(data.own)) };
+	for (const target of LANGUAGES) {
+		const twin = data[target];
 		if (twin) versions[target] = cardPath(target, linkOf(twin));
-	}));
+	}
 
 	return versions;
 }

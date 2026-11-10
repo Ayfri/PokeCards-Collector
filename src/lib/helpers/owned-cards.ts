@@ -20,8 +20,10 @@ export type CatalogueReader = (language: Language) => Promise<CatalogueData>;
 export const isFrenchCode = (code: string) => /^[^_]+_\d+_fr/.test(code);
 
 /**
- * Finds which catalogue holds each code, reading only the tables that can: French codes read `fr_*`, the rest read
- * the English and Japanese tables at once. A code held by both resolves to the English card (19 Japanese codes equal an English one).
+ * Finds which catalogue holds each code, reading only the tables that can: French codes read `fr_*`, the rest read the English table
+ * (next to the French one), then the Japanese table only for the codes English did not resolve. A collection whose codes all sit in the English
+ * table skips the Japanese catalogue; an orphan row no table carries still triggers that read. A code held by both resolves to the English card
+ * (19 Japanese codes equal an English one).
  * A catalogue that resolves nothing is left out. The result is ordered en, ja, fr.
  */
 export async function readOwnedCatalogues(codes: Iterable<string>, read: CatalogueReader): Promise<OwnedCatalogue[]> {
@@ -36,9 +38,9 @@ export async function readOwnedCatalogues(codes: Iterable<string>, read: Catalog
 	}
 
 	const [french, others] = [[...wanted].filter(isFrenchCode), [...wanted].filter(code => !isFrenchCode(code))];
-	const [english, japanese, frenchCatalogue] = await Promise.all([resolve('en', others), resolve('ja', others), resolve('fr', french)]);
+	const [english, frenchCatalogue] = await Promise.all([resolve('en', others), resolve('fr', french)]);
 	const inEnglish = new Set(english?.owned.map(card => card.cardCode));
-	const japaneseOnly = japanese && { ...japanese, owned: japanese.owned.filter(card => !inEnglish.has(card.cardCode)) };
+	const japanese = await resolve('ja', others.filter(code => !inEnglish.has(code)));
 
-	return [english, japaneseOnly?.owned.length ? japaneseOnly : null, frenchCatalogue].filter(catalogue => catalogue !== null);
+	return [english, japanese, frenchCatalogue].filter(catalogue => catalogue !== null);
 }
