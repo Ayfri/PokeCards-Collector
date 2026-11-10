@@ -8,13 +8,15 @@
 	import ScrollButton from '#components/list/ScrollButton.svelte';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
-	import LayersIcon from "@lucide/svelte/icons/layers";
 
 	interface Props {
 		data: PageData;
 	}
 
 	let { data }: Props = $props();
+
+	/** The first two rows of a wide screen load their sprites right away, the rest wait until they scroll near. */
+	const EAGER_TILES = 12;
 
 	let sortBy = $state('pokedex');
 	let sortOrder: 'asc' | 'desc' = $state('asc');
@@ -103,7 +105,7 @@
 	<div class="gold-rule my-6"></div>
 
 	<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 mt-8 align-items-start align-content-start">
-		{#each sortedPokemons as pokemon (pokemon.id)}
+		{#each sortedPokemons as pokemon, index (pokemon.id)}
 			<!-- A real link, not a button calling `goto`: crawlers only follow `href`s, and this page is the one hub linking every Pokémon. -->
 			<a
 				href={pokemon.path || undefined}
@@ -119,7 +121,7 @@
 							onerror={(e) => handlePokemonImageError(e, pokemon.id, pokemon.fallbackImage)}
 							decoding="async"
 							height="112"
-							loading="lazy"
+							loading={index < EAGER_TILES ? 'eager' : 'lazy'}
 							width="112"
 						/>
 					{:else}
@@ -135,7 +137,7 @@
 					{pascalCase(pokemon.name)}
 				</span>
 				<span class="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-1" title="Cards featuring this Pokémon">
-					<LayersIcon size={12} />
+					<span class="icon-layers size-3 shrink-0" aria-hidden="true"></span>
 					{pokemon.cardCount} card{pokemon.cardCount === 1 ? '' : 's'}
 				</span>
 			</a>

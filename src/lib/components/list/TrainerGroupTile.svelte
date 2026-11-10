@@ -3,7 +3,6 @@
 	import { loading } from '#stores/loading.svelte.ts';
 	import type { FullCard } from '#lib/types.js';
 	import type { TrainerGroupEntry } from '#src/routes/trainers/+page.server.ts';
-	import LayersIcon from '@lucide/svelte/icons/layers';
 
 	interface Props {
 		group: TrainerGroupEntry;
@@ -42,7 +41,7 @@
 	/>
 	<span class="flex grow items-center text-sm md:text-base font-semibold group-hover:text-gold-400 transition-colors duration-200">{group.name}</span>
 	<span class="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-1" title="Prints of this card">
-		<LayersIcon size={12} />
+		<span class="icon-layers size-3 shrink-0" aria-hidden="true"></span>
 		{group.cardCount} card{group.cardCount === 1 ? '' : 's'}
 	</span>
 </a>

@@ -4,7 +4,8 @@ import { getCards, getPokemons, getPrices } from '#helpers/supabase-data.ts';
 import { processCardImage } from '#helpers/card-images.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { BASE_URL, POKEMONS_COUNT } from '#src/constants.ts';
-import { cardPath, cardPrice, type CardLink } from '#helpers/card-utils.ts';
+import { cardPath, cardPrice, memoizedOn, type CardLink } from '#helpers/card-utils.ts';
+import type { FullCard, Pokemon, PriceData } from '#lib/types.js';
 
 /**
  * What one grid tile needs. The tiles only read a count, a link target and a fallback scan, so `cards` and `prices` stay
@@ -19,9 +20,10 @@ export interface PokemonListEntry {
 	path: string;
 }
 
-export const load: PageServerLoad = async () => {
-	const [pokemons, allCards, prices] = await Promise.all([getPokemons(), getCards(), getPrices()]);
+/** Keyed on the memoized tables: the pass over every card runs once per refreshed table instead of once per request. */
+const aggregates = new WeakMap<object, unknown>();
 
+const aggregatePokemons = (pokemons: Pokemon[], allCards: FullCard[], prices: Record<string, PriceData>) => memoizedOn(aggregates, [pokemons, allCards, prices], (): PokemonListEntry[] => {
 	/** One pass over the 23546 cards: scanning all of them for each Pokémon would take 24M comparisons per render. */
 	const best = new Map<number, { card: CardLink; count: number; image: string; price: number }>();
 	for (const card of allCards) {
@@ -44,7 +46,7 @@ export const load: PageServerLoad = async () => {
 		}
 	}
 
-	const entries: PokemonListEntry[] = pokemons.map(pokemon => {
+	return pokemons.map(pokemon => {
 		const entry = best.get(pokemon.id);
 		return {
 			cardCount: entry?.count ?? 0,
@@ -54,6 +56,11 @@ export const load: PageServerLoad = async () => {
 			path: entry ? cardPath('en', entry.card) : '',
 		};
 	});
+});
+
+export const load: PageServerLoad = async () => {
+	const [pokemons, allCards, prices] = await Promise.all([getPokemons(), getCards(), getPrices()]);
+	const entries = aggregatePokemons(pokemons, allCards, prices);
 
 	const withCards = entries.filter(entry => entry.cardCount > 0).length;
 

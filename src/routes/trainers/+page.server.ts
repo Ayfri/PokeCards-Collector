@@ -3,8 +3,8 @@ import { ogImage } from '#helpers/og-image.ts';
 import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { BASE_URL } from '#src/constants.ts';
-import { cardGroupKey, cardGroupName, cardPath, cardPrice, SUBTYPE_SECTIONS } from '#helpers/card-utils.ts';
-import type { Card, Set } from '#lib/types.js';
+import { cardGroupKey, cardGroupName, cardPath, cardPrice, memoizedOn, SUBTYPE_SECTIONS } from '#helpers/card-utils.ts';
+import type { Card, FullCard, PriceData, Set } from '#lib/types.js';
 
 /**
  * What one tile needs. `plate` is what the placeholder of a missing scan reads, so the cards and prices stay on the server: the kind and
@@ -34,9 +34,10 @@ const SECTION_ORDER = [
 	'Other Energy',
 ];
 
-export const load: PageServerLoad = async () => {
-	const [allCards, prices, sets] = await Promise.all([getCards(), getPrices(), getSets()]);
+/** Keyed on the memoized tables: the grouping of every Trainer and Energy card runs once per refreshed table instead of once per request. */
+const aggregates = new WeakMap<object, unknown>();
 
+const aggregateTrainers = (allCards: FullCard[], prices: Record<string, PriceData>, sets: Set[]) => memoizedOn(aggregates, [allCards, prices, sets], (): { groupCount: number; sections: TrainerSection[] } => {
 	/** One pass over the catalogue, keeping per group its tile print, its size and how its prints are subtyped. A scanned print beats a pricier one with no scan. */
 	const groups = new Map<string, { card: Card; count: number; price: number; subtypes: Map<string, number> }>();
 	for (const card of allCards) {
@@ -88,11 +89,17 @@ export const load: PageServerLoad = async () => {
 		.filter(label => bySection.has(label))
 		.map(label => ({ groups: bySection.get(label)!.sort((a, b) => a.name.localeCompare(b.name)), label }));
 
+	return { groupCount: groups.size, sections };
+});
+
+export const load: PageServerLoad = async () => {
+	const [allCards, prices, sets] = await Promise.all([getCards(), getPrices(), getSets()]);
+	const { groupCount, sections } = aggregateTrainers(allCards, prices, sets);
 	const first = sections.flatMap(section => section.groups).slice(0, 50);
 
 	return {
 		breadcrumbs: breadcrumbs({ name: 'Trainers & Energy', url: '/trainers' }),
-		description: `The ${groups.size} Trainer and Energy cards of the Pokémon TCG, each with all its prints grouped together: Supporters, Items, Stadiums, Tools and Energy. Open any one to compare its prints and prices.`,
+		description: `The ${groupCount} Trainer and Energy cards of the Pokémon TCG, each with all its prints grouped together: Supporters, Items, Stadiums, Tools and Energy. Open any one to compare its prints and prices.`,
 		keywords: ['Trainer cards', 'Energy cards', 'Pokémon Supporter cards', 'Pokémon Item cards', 'Pokémon Stadium cards', 'all Trainer cards'],
 		schemas: [{
 			'@type': 'ItemList',
@@ -103,7 +110,7 @@ export const load: PageServerLoad = async () => {
 				url: `${BASE_URL}${entry.path}`,
 			})),
 			name: 'Trainer and Energy cards of the Pokémon TCG',
-			numberOfItems: groups.size,
+			numberOfItems: groupCount,
 		}],
 		sections,
 		image: ogImage({ kind: 'page', name: 'trainers' }, 'Every Trainer and Energy card on PokéCards-Collector, with the most valuable ones'),
