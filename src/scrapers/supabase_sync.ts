@@ -1,7 +1,9 @@
 import {createClient, type SupabaseClient} from '@supabase/supabase-js';
 import {CATALOGUES} from '#helpers/catalogues.ts';
+import {CARDTRADER_IMAGES} from '#src/constants.ts';
+import type {CardTraderImages} from './cardtrader';
 import {cardRow, priceRow, setRow} from './rows';
-import {fileUnderListingSets, imageFallbacks, mapAll, withProbedAssets, type TcgdexClient} from './tcgdex/client';
+import {fileUnderListingSets, fillImage, imageFallbacks, mapAll, withProbedAssets, type TcgdexClient} from './tcgdex/client';
 import {listCatalogueSets} from './tcgdex/excluded';
 import {mapCard, mapPrice, mapSet, resolveCardCode, sharedProductCodes, type Language} from './tcgdex/mappers';
 import type {TcgdexCard, TcgdexSet} from './tcgdex/types';
@@ -109,7 +111,13 @@ async function storedCards(supabase: SupabaseClient, table: string, setIds: read
  * Deletes run first: a card TCGdex no longer lists, and the old row of a card whose code an override changes, since two
  * codes can swap within a set. Prices follow through `on delete cascade`. Collections are never touched.
  */
-export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClient, lang: Language, setIds: readonly string[]): Promise<SyncCardsResult> {
+export async function syncSetCards(
+	supabase: SupabaseClient,
+	client: TcgdexClient,
+	lang: Language,
+	setIds: readonly string[],
+	cardTrader: CardTraderImages,
+): Promise<SyncCardsResult> {
 	const tables = CATALOGUES[lang].tables;
 	const [details, stored] = await Promise.all([
 		mapAll(setIds, id => client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(id)}`)),
@@ -130,7 +138,7 @@ export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClien
 	const unpriced: string[] = [];
 	for (const card of fetched) {
 		if (!card) continue;
-		card.image ??= fallback.get(card.id);
+		fillImage(lang, card, fallback, cardTrader);
 		const mapped = mapCard(lang, card);
 		const previous = stored.get(card.id)?.code;
 		mapped.cardCode = resolveCardCode(lang, card.id, previous, mapped.cardCode);
@@ -151,7 +159,8 @@ export async function syncSetCards(supabase: SupabaseClient, client: TcgdexClien
 
 /**
  * Clears the price and Cardmarket link of every card that shares its product with a differently named card
- * (see `sharedProductCodes`). The groups span several sets, so this runs once over the whole table after the card pass.
+ * (see `sharedProductCodes`), and its CardTrader scan, since CardTrader maps the product to the one card Cardmarket sells. A scan of the card's
+ * own stays. The groups span several sets, so this runs once over the whole table after the card pass.
  */
 export async function dropSharedProducts(supabase: SupabaseClient, lang: Language): Promise<number> {
 	const tables = CATALOGUES[lang].tables;
@@ -159,8 +168,11 @@ export async function dropSharedProducts(supabase: SupabaseClient, lang: Languag
 	const codes = [...sharedProductCodes(rows.map(row => ({cardCode: row.card_code, cardMarketUrl: row.card_market_url ?? '', name: row.name})))];
 	await deleteIn(supabase, tables.prices, 'card_code', codes);
 	for (let index = 0; index < codes.length; index += 200) {
-		const {error} = await supabase.from(tables.cards).update({card_market_url: null}).in('card_code', codes.slice(index, index + 200));
+		const chunk = codes.slice(index, index + 200);
+		const {error} = await supabase.from(tables.cards).update({card_market_url: null}).in('card_code', chunk);
 		if (error) throw new Error(`Error clearing ${tables.cards} products at ${index}: ${error.message}`);
+		const {error: imageError} = await supabase.from(tables.cards).update({image: null}).in('card_code', chunk).like('image', `${CARDTRADER_IMAGES}%`);
+		if (imageError) throw new Error(`Error clearing ${tables.cards} CardTrader scans at ${index}: ${imageError.message}`);
 	}
 	return codes.length;
 }

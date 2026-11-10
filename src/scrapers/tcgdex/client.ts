@@ -1,3 +1,4 @@
+import type {CardTraderImages} from '../cardtrader';
 import {COMMUNITY_SET_IMAGES} from './community-images';
 import {jpTwinOf, type Language} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
@@ -45,7 +46,7 @@ export interface TcgdexClient {
 	close(): void;
 }
 
-/** A non-2xx answer from TCGdex. `withRetry` does not retry the permanent 4xx ones. */
+/** A non-2xx answer from TCGdex or CardTrader. `withRetry` does not retry the permanent 4xx ones. */
 export class HttpError extends Error {
 	constructor(readonly status: number, path: string) {
 		super(`${status} on ${path}`);
@@ -119,6 +120,18 @@ export async function imageFallbacks(client: TcgdexClient, lang: Language, sets:
 	}) ?? []));
 	const english = await englishSetImages(client, [...twinOf.values()].map(twin => twin.slice(0, twin.lastIndexOf('-'))));
 	return new Map([...twinOf].flatMap(([id, twin]) => english.has(twin) ? [[id, english.get(twin)!] as const] : []));
+}
+
+/**
+ * Gives a card with no scan of its own the best stand-in, matched through its Cardmarket product id for CardTrader. Both pipelines call it, so the CLI
+ * and the Worker cannot disagree on the order: English takes CardTrader; Japanese takes CardTrader (the exact Japanese print) before its English twin
+ * (English art of another number); French takes the English TCGdex scan of the same id (the same print as CardTrader's, as webp from the TCGdex CDN) before CardTrader.
+ */
+export function fillImage(lang: Language, card: TcgdexCard, fallback: ReadonlyMap<string, string>, cardTrader: CardTraderImages): void {
+	if (card.image) return;
+	const product = card.pricing?.cardmarket?.idProduct;
+	const traded = product === undefined ? undefined : cardTrader.get(product)?.url;
+	card.image = lang === 'ja' ? traded ?? fallback.get(card.id) : fallback.get(card.id) ?? traded;
 }
 
 /**

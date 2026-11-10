@@ -5,7 +5,7 @@ import type {TcgdexCardBrief} from './types';
 /** CLI only: the reprint search needs the whole catalogue of a language, which the Worker's batches of 4 sets never hold. */
 
 interface Art {
-	/** Extensionless TCGdex image base, like `MappedCard.image`. */
+	/** Like `MappedCard.image`: an extensionless TCGdex image base, or a CardTrader scan URL when the reprint it comes from carries one. */
 	image: string;
 	/** `lang:<language>`, `reprint:<tcgdex id>` or `energy:<tcgdex id>`. */
 	source: string;
@@ -39,7 +39,7 @@ const isBasicEnergy = (card: MappedCard) => card.supertype === 'Energy' && card.
 /**
  * Fallback artwork for every card without a scan, from the first source that has one: the scan of the same id in another language, a reprint (a scanned
  * card of the same category with the same name and illustrator, the newest one, ties broken by id), or a scanned basic Energy of the same type.
- * A reprint can itself carry a borrowed scan (the French English fallback, the Japanese twin), which is still a picture of the same art.
+ * A reprint can itself carry a borrowed scan (the French English fallback, the Japanese twin, a CardTrader scan), which is still a picture of the same art.
  */
 function findArt(cards: readonly MappedCard[], sets: readonly MappedSet[], scans: ReadonlyMap<string, ReadonlyMap<string, string>>): Map<string, Art> {
 	const released = new Map(sets.map(set => [set.setId, set.releaseDate]));

@@ -1,9 +1,11 @@
 import {DurableObject, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep} from 'cloudflare:workers';
 import {LANGUAGES, type Language} from '#helpers/catalogues.ts';
+import {cardTraderImages, type CardTraderImages} from '#scrapers/cardtrader.ts';
 import {createSyncClient, dropSharedProducts, syncSetCards, syncSets, type SyncCardsResult} from '#scrapers/supabase_sync.ts';
 import {FetchClient} from '#scrapers/tcgdex/client.ts';
 
 interface Env {
+	CARDTRADER_TOKEN?: string;
 	PUBLIC_SUPABASE_URL: string;
 	SCRAPER: Workflow;
 	SCRAPER_TRIGGER_TOKEN?: string;
@@ -22,13 +24,46 @@ const SETS_PER_STEP = 4;
 export class TcgdexReader extends DurableObject<Env> {
 	private readonly supabase = createSyncClient(this.env.PUBLIC_SUPABASE_URL, this.env.SUPABASE_SECRET_KEY);
 	private readonly client = new FetchClient();
+	/** Reads the map `syncCardTraderImages` stored, so the batch steps that run in this object hold no ~68k-entry map in memory. */
+	private readonly cardTrader: CardTraderImages = {
+		get: product => this.ctx.storage.sql.exec<{url: string}>('SELECT url FROM cardtrader_images WHERE product = ?', product).toArray()[0],
+	};
+
+	constructor(ctx: DurableObjectState, env: Env) {
+		super(ctx, env);
+		ctx.storage.sql.exec('CREATE TABLE IF NOT EXISTS cardtrader_images (product INTEGER PRIMARY KEY, expansion INTEGER NOT NULL, url TEXT NOT NULL)');
+	}
+
+	/**
+	 * Rebuilds the table in one transaction and returns its row count. The rows of an expansion whose export is not ready (404) are kept.
+	 * A missing token or a CardTrader failure keeps the stored rows and logs the error when there are some, so the cards keep their scans.
+	 * An empty table has nothing to fall back on, and syncing without it would null every CardTrader scan, so that case throws and the step fails.
+	 */
+	async syncCardTraderImages(): Promise<number> {
+		const count = () => this.ctx.storage.sql.exec<{count: number}>('SELECT COUNT(*) AS count FROM cardtrader_images').one().count;
+		try {
+			const token = this.env.CARDTRADER_TOKEN;
+			if (!token) throw new Error('CARDTRADER_TOKEN is not set');
+			const {notReady, products} = await cardTraderImages(token);
+			this.ctx.storage.transactionSync(() => {
+				this.ctx.storage.sql.exec('DELETE FROM cardtrader_images WHERE expansion NOT IN (SELECT value FROM json_each(?))', JSON.stringify(notReady));
+				for (const [product, {expansion, url}] of products) {
+					this.ctx.storage.sql.exec('INSERT OR REPLACE INTO cardtrader_images (product, expansion, url) VALUES (?, ?, ?)', product, expansion, url);
+				}
+			});
+		} catch (error) {
+			if (!count()) throw error;
+			console.error(`CardTrader images failed, the sync uses the ${count()} stored rows:`, error);
+		}
+		return count();
+	}
 
 	syncSets(lang: Language): Promise<string[]> {
 		return syncSets(this.supabase, this.client, lang);
 	}
 
 	syncSetCards(lang: Language, setIds: string[]): Promise<SyncCardsResult> {
-		return syncSetCards(this.supabase, this.client, lang, setIds);
+		return syncSetCards(this.supabase, this.client, lang, setIds, this.cardTrader);
 	}
 }
 
@@ -42,6 +77,9 @@ export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 		const supabase = createSyncClient(this.env.PUBLIC_SUPABASE_URL, this.env.SUPABASE_SECRET_KEY);
 		/** Cloudflare honours a location hint only when the object is first created, and only on a best-effort basis, so the fixed name `weur` reuses that one object. */
 		const reader = this.env.TCGDEX_READER.get(this.env.TCGDEX_READER.idFromName('weur'), {locationHint: 'weur'});
+
+		/** Not caught on purpose: the RPC only throws when no map is stored, and the batch steps would then null every CardTrader scan. */
+		await step.do('cardtrader: images', {retries: {limit: 2, delay: '1 minute', backoff: 'exponential'}, timeout: '10 minutes'}, () => reader.syncCardTraderImages());
 
 		for (const lang of LANGUAGES) {
 			const setIds = await step.do(`${lang}: sets`, () => reader.syncSets(lang));

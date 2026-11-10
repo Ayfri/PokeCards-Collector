@@ -2,6 +2,7 @@
 #   bun run deploy:scraper
 #   bunx wrangler secret put SUPABASE_SECRET_KEY -c wrangler.scraper.toml
 #   bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
+#   bunx wrangler secret put CARDTRADER_TOKEN -c wrangler.scraper.toml
 name = "pokecards-scraper"
 main = "src/workers/scraper.ts"
 compatibility_date = "2026-10-23"

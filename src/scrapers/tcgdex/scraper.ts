@@ -1,5 +1,7 @@
+import {CARDTRADER_IMAGES} from '#src/constants.ts';
+import type {CardTraderScans} from '../cardtrader';
 import {addFallbackArt} from './art';
-import {fileUnderListingSets, imageFallbacks, mapAll, withProbedAssets, type TcgdexClient} from './client';
+import {fileUnderListingSets, fillImage, imageFallbacks, mapAll, withProbedAssets, type TcgdexClient} from './client';
 import {listCatalogueSets} from './excluded';
 import {mapCard, mapPrice, mapSet, sharedProductCodes, type Language, type MappedCard, type MappedPrice, type MappedSet} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
@@ -15,7 +17,7 @@ export interface ScrapeResult {
  * The per-card REST call returns metadata and pricing together, so no second pricing pass is needed, and the
  * GraphQL endpoint (English-only, no prices) adds nothing.
  */
-export async function scrapeLanguage(client: TcgdexClient, lang: Language): Promise<ScrapeResult> {
+export async function scrapeLanguage(client: TcgdexClient, lang: Language, cardTrader: Promise<CardTraderScans>): Promise<ScrapeResult> {
 	const started = performance.now();
 	const {sets: setList, skipped} = await listCatalogueSets(client, lang);
 	console.log(`[${lang}] ${setList.length} sets${skipped ? ` (${skipped} skipped, excluded series or repeated id)` : ''}`);
@@ -34,11 +36,12 @@ export async function scrapeLanguage(client: TcgdexClient, lang: Language): Prom
 	const fetched = await mapAll(ids, id => client.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`), `[${lang}] cards`);
 	if (lang === 'fr') fileUnderListingSets(fetched, details);
 
+	const {notReady, products} = await cardTrader;
 	const cards: MappedCard[] = [];
 	const prices: Record<string, MappedPrice> = {};
 	for (const card of fetched) {
 		if (!card) continue;
-		card.image ??= fallback.get(card.id);
+		fillImage(lang, card, fallback, products);
 		const mapped = mapCard(lang, card);
 		cards.push(mapped);
 		const price = mapPrice(card.pricing);
@@ -49,12 +52,16 @@ export async function scrapeLanguage(client: TcgdexClient, lang: Language): Prom
 		if (!sharedProducts.has(card.cardCode)) continue;
 		card.cardMarketUrl = '';
 		delete prices[card.cardCode];
+		/** CardTrader maps a shared product to the one card Cardmarket sells, so the other card would show a foreign scan. `dropSharedProducts` does the same in the database. */
+		if (card.image.startsWith(CARDTRADER_IMAGES)) card.image = '';
 	}
+	/** After `fillImage` and the shared products, so a card with a CardTrader scan borrows no art and one that lost it does. */
 	await addFallbackArt(client, lang, cards, sets);
 	cards.sort((a, b) => a.name.localeCompare(b.name));
 
 	const elapsed = (performance.now() - started) / 1000;
-	console.log(`[${lang}] ${cards.length} cards, ${Object.keys(prices).length} priced, ${sets.length} sets in ${elapsed.toFixed(2)}s (${(ids.length / elapsed).toFixed(0)} req/s)`);
+	const scans = cards.filter(card => card.image.startsWith(CARDTRADER_IMAGES)).length;
+	console.log(`[${lang}] ${cards.length} cards, ${Object.keys(prices).length} priced, ${sets.length} sets, ${scans} CardTrader scans${notReady.length ? ` (CardTrader expansions not ready: ${notReady.join(', ')})` : ''} in ${elapsed.toFixed(2)}s (${(ids.length / elapsed).toFixed(0)} req/s)`);
 	return {cards, prices, sets};
 }
 
