@@ -4,14 +4,14 @@
 	import type { FullCard } from '#lib/types.js';
 
 	interface Props {
-		children?: import('svelte').Snippet<[{ item: FullCard; index: number }]>;
+		children?: import('svelte').Snippet<[{ index: number; item: FullCard; }]>;
 		empty?: import('svelte').Snippet;
 		forcedItemsPerRow?: number | null;
 		gapX?: number;
 		gapY?: number;
 		itemHeight: number;
-		itemWidth: number;
 		items: FullCard[];
+		itemWidth: number;
 		marginTop?: number;
 	}
 
@@ -22,21 +22,19 @@
 		gapX = 0,
 		gapY = 0,
 		itemHeight,
-		itemWidth,
 		items,
+		itemWidth,
 		marginTop = 0
 	}: Props = $props();
 
 	/** Rows rendered above and below the viewport so a fast scroll never shows a hole. */
 	const marginRows = 4;
-	const scrollDuration = 800;
 
 	let container = $state<HTMLDivElement>();
 	let containerWidth = $state(0);
 	let containerHeight = $state(0);
 	let scrollTop = $state(0);
 	let isInitialized = $state(false);
-	let scrollingTo = false;
 
 	const rowHeight = $derived(itemHeight + gapY);
 	const itemsPerRow = $derived(forcedItemsPerRow ?? Math.max(1, Math.floor(containerWidth / (itemWidth + gapX))));
@@ -77,48 +75,20 @@
 		if (scrollFrame || !container) return;
 		scrollFrame = requestAnimationFrame(() => {
 			scrollFrame = 0;
-			if (container && !scrollingTo) scrollTop = container.scrollTop;
+			if (container) scrollTop = container.scrollTop;
 		});
 	}
 
-	function smoothScroll(element: HTMLElement, targetPosition: number, duration: number) {
-		scrollingTo = true;
-		const startPosition = element.scrollTop;
-		const distance = targetPosition - startPosition;
-		const startTime = performance.now();
-
-		function scrollStep(timestamp: number) {
-			const elapsed = timestamp - startTime;
-			const progress = Math.min(elapsed / duration, 1);
-			const eased = progress < 0.5 ? 4 * progress ** 3 : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-
-			element.scrollTop = startPosition + distance * eased;
-			scrollTop = element.scrollTop;
-
-			if (progress < 1) {
-				requestAnimationFrame(scrollStep);
-			} else {
-				element.scrollTop = targetPosition;
-				scrollTop = targetPosition;
-				scrollingTo = false;
-			}
-		}
-
-		requestAnimationFrame(scrollStep);
-	}
-
 	function scrollToLast() {
-		if (!container) return;
-		smoothScroll(container, Math.max(0, totalHeight - containerHeight), scrollDuration);
+		container?.scrollTo({ behavior: 'smooth', top: Math.max(0, totalHeight - containerHeight) });
 	}
 
 	function scrollToTop() {
-		if (!container) return;
-		smoothScroll(container, 0, scrollDuration);
+		container?.scrollTo({ behavior: 'smooth', top: 0 });
 	}
 </script>
 
-<div bind:this={container} {@attach trackSize} class="virtual-grid-container relative min-h-0 flex-1 w-full overflow-y-scroll scrollbar-hide" onscroll={handleScroll}>
+<div {@attach trackSize} bind:this={container} class="relative min-h-0 flex-1 w-full overflow-y-scroll scrollbar-hide" onscroll={handleScroll}>
 	{#if items.length === 0 && isInitialized}
 		{@render empty?.()}
 	{:else}
@@ -130,7 +100,7 @@
 				class="absolute"
 				style="top: {Math.floor(index / itemsPerRow) * rowHeight + marginTop}px; left: {(index % itemsPerRow) * (itemWidth + gapX) + leftMargin}px; width: {itemWidth}px; height: {itemHeight}px;"
 			>
-				{@render children?.({ item, index })}
+				{@render children?.({ index, item })}
 			</div>
 		{/each}
 	{/if}

@@ -56,40 +56,28 @@
 		closeMenu();
 		loading.navigation = true;
 		try {
-			const response = await fetch('/api/auth/logout', {
-				method: 'POST',
-			});
-
+			const response = await fetch('/api/auth/logout', { method: 'POST' });
 			if (!response.ok) {
 				console.error('Logout failed:', response.statusText);
 				loading.navigation = false;
 				return;
 			}
-
-			await refreshAll();
-			const currentPath = page.url.pathname;
-			const currentSearch = page.url.search;
-			goto(currentPath + currentSearch);
-
 		} catch (error) {
 			console.error('An error occurred during sign out:', error);
 			loading.navigation = false;
-			await refreshAll();
-			const currentPath = page.url.pathname;
-			const currentSearch = page.url.search;
-			goto(currentPath + currentSearch);
 		}
+		await refreshAll();
+		goto(page.url.pathname + page.url.search);
 	}
-
 </script>
 
 <svelte:window onclickcapture={handleClickOutside} />
 
 <div class="relative">
-	<AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} />
+	<AuthModal onClose={closeAuthModal} open={isAuthModalOpen} />
 
 	<button
-		type="button"
+		aria-expanded={isMenuOpen}
 		class="flex items-center justify-center size-9 text-gray-400 hover:text-white rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-gold-400"
 		onclick={() => {
 			if (user && profile) {
@@ -98,12 +86,12 @@
 				openAuthModal();
 			}
 		}}
-		aria-expanded={isMenuOpen}
 		title={user && profile ? 'Open your account menu' : 'Sign in or create an account'}
+		type="button"
 	>
 		{#if user && profile}
 			<span class="sr-only">Open user menu</span>
-			<Avatar username={profile.username} profileColor={profile.profile_color} />
+			<Avatar profileColor={profile.profile_color} username={profile.username} />
 		{:else}
 			<span class="sr-only">Sign in</span>
 			<User size={24} />
@@ -112,13 +100,13 @@
 
 	{#if isMenuOpen}
 		<div
+			aria-labelledby="user-menu-button"
+			aria-orientation="vertical"
 			bind:this={menuElement}
-			transition:fly={{ y: -10, duration: 200 }}
 			class="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-lg bg-gray-800 shadow-lg ring-1 ring-white/10 focus:outline-hidden"
 			role="menu"
-			aria-orientation="vertical"
-			aria-labelledby="user-menu-button"
 			tabindex="-1"
+			transition:fly={{ duration: 200, y: -10 }}
 		>
 			{#if user && profile}
 				<div class="py-2 px-3 border-b border-gray-700">
@@ -127,54 +115,51 @@
 				</div>
 				<div class="py-1">
 					<a
-						href={resolve('/profile/[user]', { user: encodeURIComponent(profile.username) })}
-						target="_self"
-						title="Your public profile and collection stats"
 						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-						role="menuitem"
+						href={resolve('/profile/[user]', { user: encodeURIComponent(profile.username) })}
 						onclick={handleNavigation}
+						role="menuitem"
+						title="Your public profile and collection stats"
 					>
 						<User class="mr-3" size={16} />
 						My profile
 					</a>
 					<a
-						href={resolve('/collection/[user]', { user: encodeURIComponent(profile.username) })}
-						target="_self"
-						title="Every card you own"
 						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-						role="menuitem"
+						href={resolve('/collection/[user]', { user: encodeURIComponent(profile.username) })}
 						onclick={handleNavigation}
+						role="menuitem"
+						title="Every card you own"
 					>
 						<Library class="mr-3" size={16} />
 						My collection
 					</a>
 					<a
-						href={resolve('/wishlist/[user]', { user: encodeURIComponent(profile.username) })}
-						target="_self"
-						title="Every card you are after"
 						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-						role="menuitem"
+						href={resolve('/wishlist/[user]', { user: encodeURIComponent(profile.username) })}
 						onclick={handleNavigation}
+						role="menuitem"
+						title="Every card you are after"
 					>
 						<Heart class="mr-3" size={16} />
 						My wishlist
 					</a>
 					<a
-						href="/settings"
-						title="Account, appearance, privacy and security"
 						class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-						role="menuitem"
+						href="/settings"
 						onclick={handleNavigation}
+						role="menuitem"
+						title="Account, appearance, privacy and security"
 					>
 						<Settings class="mr-3" size={16} />
 						Settings
 					</a>
 					<button
-						type="button"
 						class="flex w-full items-center px-4 py-2 text-sm text-gray-300 hover:bg-gray-700"
-						role="menuitem"
 						onclick={handleSignOut}
+						role="menuitem"
 						title="Sign out of your account"
+						type="button"
 					>
 						<LogOut class="mr-3 text-red-400" size={16} />
 						Sign out

@@ -1,16 +1,16 @@
 <script lang="ts">
   interface Props {
+    gradientColorEnd?: string;
+    gradientColorStart?: string;
     size?: number;
     speed?: number;
-    gradientColorStart?: string;
-    gradientColorEnd?: string;
   }
 
   let {
-    size = 45,
-    speed = 1.75,
+    gradientColorEnd = 'var(--color-gold-600)',
     gradientColorStart = 'var(--color-gold-400)',
-    gradientColorEnd = 'var(--color-gold-600)'
+    size = 45,
+    speed = 1.75
   }: Props = $props();
 </script>
 
@@ -44,23 +44,16 @@
     background: linear-gradient(to bottom, var(--gradient-start), var(--gradient-end));
     transform-origin: center bottom;
     animation: morph var(--uib-speed) ease-in-out infinite;
-    transition: background 0.3s ease;
   }
-  
-  .cube:nth-child(2) {
+
+  .cube:nth-child(2),
+  .cube:nth-child(2) .cube__inner {
     animation-delay: calc(var(--uib-speed) * -0.36);
   }
 
-  .cube:nth-child(2) .cube__inner {
-      animation-delay: calc(var(--uib-speed) * -0.36);
-  }
-  
-  .cube:nth-child(3) {
-    animation-delay: calc(var(--uib-speed) * -0.2);
-  }
-
+  .cube:nth-child(3),
   .cube:nth-child(3) .cube__inner {
-      animation-delay: calc(var(--uib-speed) * -0.2);
+    animation-delay: calc(var(--uib-speed) * -0.2);
   }
   
   @keyframes jump {

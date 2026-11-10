@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { RequestHandler } from './$types';
 import { PUBLIC_SUPABASE_URL } from '$app/env/public';
 import { SUPABASE_SECRET_KEY } from '$app/env/private';
-import { readJson, type ApiError } from '#helpers/utils.ts';
+import { type ApiError, readJson } from '#helpers/utils.ts';
 import { isStrongPassword, normalizeUsername, PASSWORD_REQUIREMENTS, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
 
 interface SignupBody {
@@ -24,8 +24,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			userData = await request.json() as SignupBody;
 		} catch (parseError) {
 			return Response.json({
-				success: false,
-				error: 'Invalid JSON data'
+				error: 'Invalid JSON data',
+				success: false
 			}, { status: 400 });
 		}
 
@@ -33,8 +33,8 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		if (!email || !password || !username) {
 			return Response.json({
-				success: false,
-				error: 'Missing required fields'
+				error: 'Missing required fields',
+				success: false
 			}, { status: 400 });
 		}
 
@@ -42,15 +42,15 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		if (!USERNAME_PATTERN.test(normalizedUsername)) {
 			return Response.json({
-				success: false,
-				error: USERNAME_REQUIREMENTS
+				error: USERNAME_REQUIREMENTS,
+				success: false
 			}, { status: 400 });
 		}
 
 		if (!isStrongPassword(password)) {
 			return Response.json({
-				success: false,
-				error: PASSWORD_REQUIREMENTS
+				error: PASSWORD_REQUIREMENTS,
+				success: false
 			}, { status: 400 });
 		}
 
@@ -59,8 +59,8 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		if (!supabaseUrl || !supabaseSecretKey) {
 			return Response.json({
-				success: false,
-				error: 'Server configuration error'
+				error: 'Server configuration error',
+				success: false
 			}, { status: 500 });
 		}
 
@@ -69,41 +69,32 @@ export const POST: RequestHandler = async ({ request }) => {
 			supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey);
 		} catch (clientError) {
 			return Response.json({
-				success: false,
-				error: 'Failed to initialize database connection'
+				error: 'Failed to initialize database connection',
+				success: false
 			}, { status: 500 });
 		}
 
 		/** The lookup uses the normalized (lowercase) username because the column stores that form, which makes the check case-insensitive. */
 		let existingUser;
-		let usernameCheckError;
-
 		try {
 			const result = await supabaseAdmin
 				.from('profiles')
 				.select('username')
 				.eq('username', normalizedUsername);
 
+			if (result.error) throw result.error;
 			existingUser = result.data;
-			usernameCheckError = result.error;
 		} catch (checkError) {
 			return Response.json({
-				success: false,
-				error: 'Error checking username availability'
-			}, { status: 500 });
-		}
-
-		if (usernameCheckError) {
-			return Response.json({
-				success: false,
-				error: 'Error checking username availability'
+				error: 'Error checking username availability',
+				success: false
 			}, { status: 500 });
 		}
 
 		if (existingUser && existingUser.length > 0) {
 			return Response.json({
-				success: false,
-				error: 'Username already taken'
+				error: 'Username already taken',
+				success: false
 			}, { status: 400 });
 		}
 
@@ -113,17 +104,17 @@ export const POST: RequestHandler = async ({ request }) => {
 		try {
 			/** The admin REST endpoint is called directly because the JS client wraps it in a session flow this route does not want. */
 			const createUserResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'apikey': supabaseSecretKey,
-					'Authorization': `Bearer ${supabaseSecretKey}`
-				},
 				body: JSON.stringify({
 					email,
-					password,
-					email_confirm: true
-				})
+					email_confirm: true,
+					password
+				}),
+				headers: {
+					'apikey': supabaseSecretKey,
+					'Authorization': `Bearer ${supabaseSecretKey}`,
+					'Content-Type': 'application/json'
+				},
+				method: 'POST'
 			});
 
 			if (!createUserResponse.ok) {
@@ -139,8 +130,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				}
 
 				return Response.json({
-					success: false,
-					error: `Failed to create user: ${errorMessage}`
+					error: `Failed to create user: ${errorMessage}`,
+					success: false
 				}, { status: createUserResponse.status });
 			}
 
@@ -153,119 +144,106 @@ export const POST: RequestHandler = async ({ request }) => {
 			try {
 				const result = await supabaseAdmin.auth.signUp({
 					email,
-					password,
 					options: {
 						data: {
 							username: normalizedUsername
 						}
-					}
+					},
+					password
 				});
 
 				authData = result.data;
 				authError = result.error;
 			} catch (fallbackError) {
 				return Response.json({
-					success: false,
-					error: 'User creation failed after multiple attempts'
+					error: 'User creation failed after multiple attempts',
+					success: false
 				}, { status: 500 });
 			}
 		}
 
 		if (authError) {
 			return Response.json({
-				success: false,
-				error: authError.message
+				error: authError.message,
+				success: false
 			}, { status: 400 });
 		}
 
 		if (!authData.user) {
 			return Response.json({
-				success: false,
-				error: 'User could not be created'
+				error: 'User could not be created',
+				success: false
 			}, { status: 500 });
 		}
 
-
-		if (!authData || !authData.user || !authData.user.id) {
+		if (!authData.user.id) {
 			return Response.json({
-				success: false,
-				error: 'User data missing for profile creation'
+				error: 'User data missing for profile creation',
+				success: false
 			}, { status: 500 });
 		}
 
+		let profileError: string | null = null;
 		try {
 			const profileData = {
-				username: normalizedUsername,
 				auth_id: authData.user.id,
-				is_public: true,
 				created_at: new Date().toISOString(),
-				updated_at: new Date().toISOString()
+				is_public: true,
+				updated_at: new Date().toISOString(),
+				username: normalizedUsername
 			};
 
 			const profileResponse = await fetch(`${supabaseUrl}/rest/v1/profiles`, {
-				method: 'POST',
+				body: JSON.stringify(profileData),
 				headers: {
-					'Content-Type': 'application/json',
 					'apikey': supabaseSecretKey,
 					'Authorization': `Bearer ${supabaseSecretKey}`,
+					'Content-Type': 'application/json',
 					'Prefer': 'return=representation'
 				},
-				body: JSON.stringify(profileData)
+				method: 'POST'
 			});
 
 			if (!profileResponse.ok) {
 				const errorBody = await readJson<ApiError>(profileResponse, {});
-
-				/** A user with no profile row is unusable, so the auth user is deleted again. */
-				try {
-					await fetch(`${supabaseUrl}/auth/v1/admin/users/${authData.user.id}`, {
-						method: 'DELETE',
-						headers: {
-							'apikey': supabaseSecretKey,
-							'Authorization': `Bearer ${supabaseSecretKey}`
-						}
-					});
-				} catch (deleteError) {
-					/** Rollback is best effort: the original failure is the one reported. */
-				}
-
-				return Response.json({
-					success: false,
-					error: `Profile creation failed: ${errorBody.message || 'Unknown error'}`
-				}, { status: 500 });
+				profileError = `Profile creation failed: ${errorBody.message || 'Unknown error'}`;
 			}
 		} catch (insertError) {
+			profileError = 'Profile creation failed';
+		}
+
+		if (profileError) {
 			/** A user with no profile row is unusable, so the auth user is deleted again. */
 			try {
 				await fetch(`${supabaseUrl}/auth/v1/admin/users/${authData.user.id}`, {
-					method: 'DELETE',
 					headers: {
 						'apikey': supabaseSecretKey,
 						'Authorization': `Bearer ${supabaseSecretKey}`
-					}
+					},
+					method: 'DELETE'
 				});
 			} catch (deleteError) {
 				/** Rollback is best effort: the original failure is the one reported. */
 			}
 
 			return Response.json({
-				success: false,
-				error: 'Profile creation failed'
+				error: profileError,
+				success: false
 			}, { status: 500 });
 		}
 
 		return Response.json({
 			success: true,
 			user: {
-				id: authData.user.id,
-				email: authData.user.email
+				email: authData.user.email,
+				id: authData.user.id
 			}
 		});
 
 	} catch (error) {
 		return Response.json({
-			success: false,
-			error: 'An unexpected error occurred'
+			error: 'An unexpected error occurred',
+			success: false
 		}, { status: 500 });
 	}
 };

@@ -2,17 +2,16 @@
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
-	import {browser} from '$app/env';
 	import {onMount} from 'svelte';
 
 	interface Props {
-		/** Hex color, `#RRGGBB`. */
-		value: string;
 		/** Restored by the reset button. */
 		defaultValue: string;
+		/** Hex color, `#RRGGBB`. */
+		value: string;
 	}
 
-	let {value = $bindable(), defaultValue}: Props = $props();
+	let {defaultValue, value = $bindable()}: Props = $props();
 
 	/** Ready-made picks so the common case is one click instead of dragging the saturation square. */
 	const PRESETS = ['#fbc54a', '#ef4444', '#f97316', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#e5e7eb'];
@@ -33,7 +32,7 @@
 	}
 
 	async function copyHexValue() {
-		if (!browser || !navigator.clipboard) return;
+		if (!navigator.clipboard) return;
 		try {
 			await navigator.clipboard.writeText(value);
 			copied = true;

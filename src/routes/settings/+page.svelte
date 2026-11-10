@@ -106,11 +106,11 @@
 			Your profile could not be loaded. Try reloading the page.
 		</p>
 	{:else}
-		<div class="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_1fr]" in:fly={{y: 20, duration: 400}}>
+		<div class="grid grid-cols-1 gap-6 lg:grid-cols-[18rem_1fr]" in:fly={{duration: 400, y: 20}}>
 			<aside class="flex flex-col gap-4 lg:sticky lg:top-24 lg:self-start">
 				<div class="rounded-xl border border-gray-700/60 bg-linear-to-br from-gray-800 to-gray-900 p-5 shadow-xl">
 					<div class="flex items-center gap-4">
-						<Avatar profileColor={profileColor} size="size-14 text-2xl" username={profile.username || 'U'} />
+						<Avatar class="size-14 text-2xl" profileColor={profileColor} username={profile.username || 'U'} />
 						<div class="min-w-0">
 							<h2 class="truncate text-lg font-semibold text-gold-400">{profile.username}</h2>
 							<p class="truncate text-sm text-gray-400">{user?.email}</p>
@@ -181,7 +181,7 @@
 							}}
 						>
 							<div class="flex items-center gap-4 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4">
-								<Avatar profileColor={profileColor} size="size-16 text-3xl" username={profile.username || 'U'} />
+								<Avatar class="size-16 text-3xl" profileColor={profileColor} username={profile.username || 'U'} />
 								<div>
 									<p class="font-medium text-white">Live preview</p>
 									<p class="font-mono text-sm text-gray-400">{profileColor}</p>

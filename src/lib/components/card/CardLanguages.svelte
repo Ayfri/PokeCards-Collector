@@ -5,12 +5,12 @@
 
 	interface Props {
 		cardCode: string;
-		language: Language;
 		/** Versions the page load already started for its own card, so only a card swapped in the browser asks the endpoint. */
 		known: { cardCode: string; versions: Promise<LanguagePaths> };
+		language: Language;
 	}
 
-	let { cardCode, language, known }: Props = $props();
+	let { cardCode, known, language }: Props = $props();
 
 	const versions = $derived(cardCode === known.cardCode
 		? known.versions

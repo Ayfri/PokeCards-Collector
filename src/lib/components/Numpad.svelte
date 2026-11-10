@@ -21,6 +21,7 @@
 <div class="grid w-full grid-cols-3 gap-2 rounded-lg border border-gold-400/40 bg-gray-900 p-2 shadow-xl">
 	{#each KEYS as key (key)}
 		<button
+			aria-label={getKeyLabel(key)}
 			class={[
 				'flex aspect-3/2 max-h-10 items-center justify-center rounded-md border border-gray-700 bg-gray-800 text-xl font-semibold transition-all duration-150',
 				'focus-ring hover:border-gold-400 hover:bg-gray-700 active:scale-95 active:bg-gray-700 md:text-2xl',
@@ -28,7 +29,6 @@
 				key === 'C' || key === 'Backspace' ? 'text-gold-400 hover:text-gold-300' : 'text-gold-300'
 			]}
 			onclick={() => onKeyPress(key)}
-			aria-label={getKeyLabel(key)}
 			title={getKeyLabel(key)}
 			type="button"
 		>

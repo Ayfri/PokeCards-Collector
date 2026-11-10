@@ -1,7 +1,7 @@
 import { BASE_URL, SITE_NAME, SITE_TWITTER } from '#src/constants.ts';
 import { processCardImage } from '#helpers/card-images.ts';
-import { CATALOGUES, type Catalogue } from '#helpers/catalogues.ts';
-import { cardPath, cardPrice, setPath } from '#helpers/card-utils.ts';
+import { type Catalogue, CATALOGUES } from '#helpers/catalogues.ts';
+import { cardPath, cardPrice, setCardCount, setPath } from '#helpers/card-utils.ts';
 import type { Breadcrumb, Card, Pokemon, PriceData, PublicProfile, Set } from '#lib/types.js';
 
 /** Schema.org nodes are free-form JSON, so every builder returns the same opaque shape the `Seo` component inlines. */
@@ -64,7 +64,7 @@ export function cardSchema(card: Card, price: PriceData | undefined, pokemon?: P
 				url: card.cardMarketUrl || url,
 			},
 		}),
-		sku: card.tcgdexId ?? card.cardCode,
+		sku: card.tcgdexId || card.cardCode,
 		url,
 	};
 }
@@ -75,10 +75,10 @@ export function cardListSchema(cards: Card[], listUrl: string, name: string, lim
 		'@type': 'ItemList',
 		itemListElement: cards.slice(0, limit).map((card, index) => ({
 			'@type': 'ListItem',
+			image: processCardImage(card.image),
+			name: card.name,
 			position: index + 1,
 			url: `${BASE_URL}${cardPath(catalogue.language, card)}`,
-			name: card.name,
-			image: processCardImage(card.image),
 		})),
 		itemListOrder: 'https://schema.org/ItemListOrderAscending',
 		name,
@@ -95,7 +95,7 @@ export function setSchema(set: Set, catalogue: Catalogue = CATALOGUES.en): Schem
 		datePublished: isoDate(set.releaseDate),
 		image: set.logo ? new URL(set.logo, BASE_URL).href : undefined,
 		name: set.name,
-		numberOfItems: set.totalCards ?? set.printedTotal,
+		numberOfItems: setCardCount(set),
 		url: `${BASE_URL}${setPath(set, catalogue)}`,
 	};
 }
@@ -176,7 +176,7 @@ export function organizationSchema(): Schema {
 		'@type': 'Organization',
 		description: 'A free Pokémon TCG catalogue and collection tracker covering every English, Japanese and French set.',
 		founder: { '@type': 'Person', name: 'Pierre Roy', url: 'https://ayfri.com' },
-		logo: { '@type': 'ImageObject', url: `${BASE_URL}/favicon.png`, width: 485, height: 436 },
+		logo: { '@type': 'ImageObject', height: 436, url: `${BASE_URL}/favicon.png`, width: 485 },
 		name: SITE_NAME,
 		sameAs: ['https://github.com/Ayfri/PokeCards-Collector', 'https://ayfri.com', `https://x.com/${SITE_TWITTER.slice(1)}`],
 		url: BASE_URL,

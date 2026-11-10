@@ -19,8 +19,8 @@ export async function readJson<T>(response: Response, fallback: T): Promise<T> {
 
 /** Shape returned by the app's API routes when a request fails. */
 export interface ApiError {
-	message?: string;
 	error?: string;
+	message?: string;
 }
 
 const payloads = new Map<string, Promise<unknown>>();

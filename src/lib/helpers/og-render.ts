@@ -1,8 +1,8 @@
 import { read } from '$app/server';
 import { env } from 'cloudflare:workers';
 import { render as renderComponent } from 'svelte/server';
-import { render, type ImageSource } from 'takumi-js';
-import { container, googleFonts, image, text, type FontSubset, type Node } from 'takumi-js/helpers';
+import { type ImageSource, render } from 'takumi-js';
+import { container, type FontSubset, googleFonts, image, type Node, text } from 'takumi-js/helpers';
 import CalendarDays from '@lucide/svelte/icons/calendar-days';
 import CircleEuro from '@lucide/svelte/icons/circle-euro';
 import Flame from '@lucide/svelte/icons/flame';
@@ -24,11 +24,11 @@ import clashMedium from '#src/fonts/ClashDisplay-Medium.ttf';
 import clashSemibold from '#src/fonts/ClashDisplay-Semibold.ttf';
 import colorsCss from '#src/styles/colors.css?raw';
 import { BASE_URL, CARDTRADER_IMAGES, POKEMONS_COUNT, SITE_NAME } from '#src/constants.ts';
-import { processCardImage, type ImageQuality } from '#helpers/card-images.ts';
+import { type ImageQuality, processCardImage } from '#helpers/card-images.ts';
 import { cardPrice, formatCardNumber, setCardCount } from '#helpers/card-utils.ts';
-import { CATALOGUES, LANGUAGES, type Language } from '#helpers/catalogues.ts';
+import { CATALOGUES, type Language, LANGUAGES } from '#helpers/catalogues.ts';
 import { formatEuros } from '#helpers/format.ts';
-import { formatOgEuros, OG_HEIGHT, OG_WIDTH, ogPrice, setValue, type OgPage, type OgTarget, type OgUserKind } from '#helpers/og-image.ts';
+import { formatOgEuros, OG_HEIGHT, OG_WIDTH, type OgPage, ogPrice, type OgTarget, type OgUserKind, setValue } from '#helpers/og-image.ts';
 import { ownedTotals } from '#helpers/owned-cards.ts';
 import { RARITY_SYMBOLS, type RarityTone } from '#helpers/rarity-symbols.ts';
 import { SET_IMAGE_DIR } from '#helpers/set-images.ts';
@@ -36,7 +36,7 @@ import { countCards, getCardDetails, getCardPrice, getCards, getCatalogue, getOw
 import { RARITY_SHAPES, TYPE_SYMBOLS } from '#helpers/tcg-symbols.ts';
 import { getProfileByUsername } from '#lib/services/profiles.ts';
 import { supabase } from '#lib/supabase.ts';
-import type { Card, PriceData, Set } from '#lib/types.js';
+import type { Card, PriceData } from '#lib/types.js';
 
 /**
  * Share previews are seen ~500px wide in Discord, X or iMessage, so every image is one focal point at sizes that survive a 2.4x
@@ -134,9 +134,9 @@ type LucideIcon = typeof Library;
 const icon = (Icon: LucideIcon, size: number, stroke = color('gold-400')): Node => svg(renderComponent(Icon, { props: { color: stroke, size, strokeWidth: 2.25 } }).body, size);
 
 const flag = (language: Language, height = 32): Node => container({
-	tw: 'flex overflow-hidden rounded-[4px]',
-	style: { boxShadow: '0 0 0 1.5px rgb(255 255 255 / 0.25)' },
 	children: [svg(renderComponent(Flag, { props: { language } }).body, Math.round(height * 1.5), height)],
+	style: { boxShadow: '0 0 0 1.5px rgb(255 255 255 / 0.25)' },
+	tw: 'flex overflow-hidden rounded-[4px]',
 });
 
 /**
@@ -171,25 +171,25 @@ function title(value: string, width: number, max = 96): Node {
 	const oneLine = Math.floor(width / ems(value));
 	const longestWord = Math.max(...value.split(/\s+/).map(ems));
 	const size = oneLine >= 72 ? Math.min(oneLine, max) : Math.max(40, Math.min(80, Math.floor(oneLine * 1.9), Math.floor(width / longestWord)));
-	return text({ text: value, tw: 'font-bold leading-[1.05] text-white', style: { fontSize: size, lineClamp: 2, textOverflow: 'ellipsis' } });
+	return text({ style: { fontSize: size, lineClamp: 2, textOverflow: 'ellipsis' }, text: value, tw: 'font-bold leading-[1.05] text-white' });
 }
 
 /** A secondary fact: its symbols, then one line of text. */
 function fact(symbols: Node[], label: string): Node {
 	return container({
+		children: [...symbols, text({ style: { lineClamp: 1, textOverflow: 'ellipsis' }, text: label, tw: 'min-w-0' })],
 		tw: `flex items-center gap-3 text-[32px] font-medium text-[${color('gray-200')}]`,
-		children: [...symbols, text({ text: label, tw: 'min-w-0', style: { lineClamp: 1, textOverflow: 'ellipsis' } })],
 	});
 }
 
 /** The gold hero number, 80px unless the column is too narrow for it: Clash Display digits run ~0.56em ("5,477.52 €" wrapped at 80px in 416px). */
 const hero = (value: string, width: number): Node => text({
+	style: { fontSize: Math.min(80, Math.floor(width / ([...value].length * 0.56))) },
 	text: value,
 	tw: `mt-2 font-bold leading-none whitespace-nowrap text-[${color('gold-400')}]`,
-	style: { fontSize: Math.min(80, Math.floor(width / ([...value].length * 0.56))) },
 });
 
-const pitch = (value: string): Node => text({ text: value, tw: `text-[34px] font-medium leading-[1.25] text-[${color('gray-300')}]`, style: { lineClamp: 2 } });
+const pitch = (value: string): Node => text({ style: { lineClamp: 2 }, text: value, tw: `text-[34px] font-medium leading-[1.25] text-[${color('gray-300')}]` });
 
 /**
  * The canvas every image shares: the page black, the root layout's logo watermark, the brand in the top left corner and the domain
@@ -198,21 +198,21 @@ const pitch = (value: string): Node => text({ text: value, tw: `text-[34px] font
 function canvas(width: number, content: Node[], visual: Node | ((room: number) => Node)): Node {
 	const room = OG_WIDTH - width - 48;
 	return container({
-		tw: 'relative flex h-full w-full bg-black text-white',
-		style: { fontFamily: FONT_FAMILIES.map(name => `'${name}'`).join(', ') },
 		children: [
-			image({ src: logoUrl, width: 560, height: 504, style: { filter: 'grayscale(100%)', left: 320, opacity: 0.05, position: 'absolute', top: 100 } }),
+			image({ height: 504, src: logoUrl, style: { filter: 'grayscale(100%)', left: 320, opacity: 0.05, position: 'absolute', top: 100 }, width: 560 }),
 			container({
-				tw: 'flex h-full shrink-0 flex-col justify-between py-[44px]',
-				style: { paddingLeft: LEFT, width },
 				children: [
-					container({ tw: 'flex items-center gap-3', children: [image({ src: logoUrl, width: 50, height: 45 }), text({ text: SITE_NAME, tw: `text-[28px] font-semibold text-[${color('gray-300')}]` })] }),
-					container({ tw: 'flex flex-col gap-5', children: content }),
+					container({ children: [image({ height: 45, src: logoUrl, width: 50 }), text({ text: SITE_NAME, tw: `text-[28px] font-semibold text-[${color('gray-300')}]` })], tw: 'flex items-center gap-3' }),
+					container({ children: content, tw: 'flex flex-col gap-5' }),
 					text({ text: new URL(BASE_URL).host, tw: `text-[24px] font-medium text-[${color('gray-500')}]` }),
 				],
+				style: { paddingLeft: LEFT, width },
+				tw: 'flex h-full shrink-0 flex-col justify-between py-[44px]',
 			}),
-			container({ tw: 'flex flex-1 items-center justify-center pr-[48px]', children: [typeof visual === 'function' ? visual(room) : visual] }),
+			container({ children: [typeof visual === 'function' ? visual(room) : visual], tw: 'flex flex-1 items-center justify-center pr-[48px]' }),
 		],
+		style: { fontFamily: FONT_FAMILIES.map(name => `'${name}'`).join(', ') },
+		tw: 'relative flex h-full w-full bg-black text-white',
 	});
 }
 
@@ -220,10 +220,10 @@ const cardShadow = '0 24px 48px rgb(0 0 0 / 0.7)';
 
 /** A straight scan with the site's card radius, `rounded-xl` scaled to the card. */
 const scan = (src: string, height: number): Node => image({
-	src,
-	width: Math.round(height / CARD_RATIO),
 	height,
+	src,
 	style: { borderRadius: Math.round(height * 0.035), boxShadow: cardShadow },
+	width: Math.round(height / CARD_RATIO),
 });
 
 /** Three cards side by side, straight, overlapping a little with the middle one on top, as large as `room` allows. */
@@ -234,18 +234,16 @@ function trio(scans: string[], room: number): Node {
 	const step = width - overlap;
 	const order = scans.length === 3 ? [0, 2, 1] : scans.map((_, index) => index);
 	return container({
-		tw: 'relative flex',
+		children: order.map(index => container({ children: [scan(scans[index], height)], style: { left: index * step, top: 0 }, tw: 'absolute flex' })),
 		style: { height, width: width + step * (scans.length - 1) },
-		children: order.map(index => container({ tw: 'absolute flex', style: { left: index * step, top: 0 }, children: [scan(scans[index], height)] })),
+		tw: 'relative flex',
 	});
 }
 
-const logoVisual = (): Node => image({ src: logoUrl, width: 330, height: 297, style: { opacity: 0.9 } });
+const logoVisual = (): Node => image({ height: 297, src: logoUrl, style: { opacity: 0.9 }, width: 330 });
 
 interface Ranked {
 	card: Card;
-	/** The catalogue read stamps no `language` on its cards, only the owned-card pages do. */
-	language?: Language;
 	price: number;
 }
 
@@ -263,10 +261,10 @@ const borrowsScan = (card: Card, language = card.language): boolean => language 
 const ogScan = (image: string, quality: ImageQuality): string => processCardImage(image, image.startsWith(CARDTRADER_IMAGES) ? 'low' : quality);
 
 /** The cards that have a scan, most valuable first. */
-function ranked(cards: Card[], prices: Record<string, PriceData>, language?: Language): Ranked[] {
+function ranked(cards: Card[], prices: Record<string, PriceData>): Ranked[] {
 	return cards
 		.filter(card => card.image)
-		.map(card => ({ card, language, price: cardPrice(prices[card.cardCode]) ?? 0 }))
+		.map(card => ({ card, price: cardPrice(prices[card.cardCode]) ?? 0 }))
 		.sort((a, b) => b.price - a.price);
 }
 
@@ -322,21 +320,21 @@ function plate(card: Card, height: number): Node {
 	const scale = Math.max(window.width / 0.84, window.height / 0.488);
 	const art = card.artImage
 		? image({
-			src: ogScan(card.artImage, 'high'),
-			width: Math.round(scale),
 			height: Math.round(scale * CARD_RATIO),
+			src: ogScan(card.artImage, 'high'),
 			style: { left: window.width / 2 - scale / 2, position: 'absolute', top: window.height / 2 - scale * CARD_RATIO * (card.supertype === 'Trainer' ? 0.33 : 0.2925) },
+			width: Math.round(scale),
 		})
 		: image({ src: logoUrl, tw: 'h-[120px] w-[134px] opacity-50' });
 
 	return container({
-		tw: `flex shrink-0 flex-col items-center gap-5 border-[10px] border-[${color('gold-400')}] bg-[${color('gray-800')}] px-3 py-6`,
-		style: { borderRadius: Math.round(height * 0.035), boxShadow: cardShadow, height, width },
 		children: [
-			text({ text: card.name, tw: 'w-full text-[30px] font-bold', style: { lineClamp: 1, textOverflow: 'ellipsis' } }),
-			container({ tw: `relative flex items-center justify-center overflow-hidden rounded-[8px] bg-[${color('gray-900')}]`, style: window, children: [art] }),
+			text({ style: { lineClamp: 1, textOverflow: 'ellipsis' }, text: card.name, tw: 'w-full text-[30px] font-bold' }),
+			container({ children: [art], style: window, tw: `relative flex items-center justify-center overflow-hidden rounded-[8px] bg-[${color('gray-900')}]` }),
 			text({ text: card.artImage ? 'Art from another print' : 'No scan yet', tw: `text-[28px] text-[${color('gray-400')}]` }),
 		],
+		style: { borderRadius: Math.round(height * 0.035), boxShadow: cardShadow, height, width },
+		tw: `flex shrink-0 flex-col items-center gap-5 border-[10px] border-[${color('gold-400')}] bg-[${color('gray-800')}] px-3 py-6`,
 	});
 }
 
@@ -374,7 +372,7 @@ async function setImage(language: Language, setId: string, state: RenderState): 
 		title(set.name, 410, 80),
 		fact([flag(language)], [`${formatCount(setCardCount(set) || setCards.length)} cards`, year > 1995 ? String(year) : ''].filter(Boolean).join('  ·  ')),
 		...(value ? [hero(formatOgEuros(value), 400)] : []),
-	], trioOrLogo(await scans(ranked(setCards, prices, language), state)));
+	], trioOrLogo(await scans(ranked(setCards, prices), state)));
 }
 
 /** A failed read throws so the route answers 500 uncached, instead of drawing an empty image that would be stored for a day (user images) or a week (card and set images). */
@@ -398,7 +396,7 @@ async function userImage(kind: OgUserKind, username: string, state: RenderState)
 	if (kind === 'wishlist') {
 		const wishlist = await getOwnedCards(supabase, name, 'wishlist').catch((cause: unknown) => readFailed('wishlist', cause));
 		const { totalValue } = ownedTotals(wishlist);
-		const wanted = wishlist.cards.filter(({ image }) => image).map(card => ({ card, language: card.language, price: card.price ?? 0 })).sort((a, b) => b.price - a.price);
+		const wanted = wishlist.cards.filter(({ image }) => image).map(card => ({ card, price: card.price ?? 0 })).sort((a, b) => b.price - a.price);
 		return canvas(470, [
 			title(name, 400),
 			fact([icon(Heart, 34)], `${formatCount(wishlist.rows)} cards wanted`),
@@ -414,7 +412,7 @@ async function userImage(kind: OgUserKind, username: string, state: RenderState)
 		title(name, 400),
 		fact([icon(Layers, 34)], uniqueCards ? `${formatCount(uniqueCards)} cards collected` : 'No cards yet'),
 		...(totalValue ? [hero(formatEuros(totalValue), 390)] : []),
-	], trioOrLogo(await scans(top.filter(({ image }) => image).map(card => ({ card, language: card.language, price: card.price })), state)));
+	], trioOrLogo(await scans(top.filter(({ image }) => image).map(card => ({ card, price: card.price })), state)));
 }
 
 /** Card.dle guess rows: tiles turning from red to green with the hint icons, the shape of a solved board without its card. */
@@ -422,29 +420,29 @@ function dleBoard(): Node {
 	const hints: LucideIcon[] = [PawPrint, Paintbrush, Library, Gem, Layers, Sparkles, CircleEuro];
 	const rows = ['xxoxxox', 'oxooxoo', 'ooooooo'];
 	return container({
-		tw: 'flex flex-col gap-3',
 		children: rows.map(row => container({
-			tw: 'flex gap-3',
 			children: [...row].map((tile, position) => container({
-				tw: 'flex h-[72px] w-[72px] items-center justify-center rounded-[10px]',
-				style: { backgroundColor: tile === 'o' ? GREEN_600 : RED_600, boxShadow: '0 8px 20px rgb(0 0 0 / 0.5)' },
 				children: [icon(hints[position], 36, '#ffffff')],
+				style: { backgroundColor: tile === 'o' ? GREEN_600 : RED_600, boxShadow: '0 8px 20px rgb(0 0 0 / 0.5)' },
+				tw: 'flex h-[72px] w-[72px] items-center justify-center rounded-[10px]',
 			})),
+			tw: 'flex gap-3',
 		})),
+		tw: 'flex flex-col gap-3',
 	});
 }
 
 /** One card with the price the game hides, as a gold tag over its bottom edge. */
 function hiddenPrice(src: string): Node {
 	return container({
-		tw: 'relative flex flex-col items-center',
 		children: [
 			scan(src, 500),
 			container({
-				tw: `absolute bottom-[-18px] flex items-center rounded-full border-[6px] border-black bg-[${color('gold-400')}] px-10 py-2 text-[64px] font-bold text-black`,
 				children: [text('??? €')],
+				tw: `absolute bottom-[-18px] flex items-center rounded-full border-[6px] border-black bg-[${color('gold-400')}] px-10 py-2 text-[64px] font-bold text-black`,
 			}),
 		],
+		tw: 'relative flex flex-col items-center',
 	});
 }
 
@@ -497,7 +495,7 @@ function layout(target: OgTarget, state: RenderState): Promise<Node | null> {
 	}
 }
 
-export interface OgRender {
+interface OgRender {
 	/** False when a scan could not be fetched: the image is still served, but must not be cached. */
 	complete: boolean;
 	png: Uint8Array<ArrayBuffer>;

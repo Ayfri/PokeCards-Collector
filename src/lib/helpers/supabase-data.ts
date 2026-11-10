@@ -1,8 +1,8 @@
-import type { FullCard, Pokemon, PriceData, Set } from "#lib/types.js";
+import type { FullCard, Pokemon, PriceData, Set } from '#lib/types.js';
 import { supabase } from '#lib/supabase.ts';
 import { cachedTable, keepAlive, PartialRows, STATIC_TTL, TABLE_TTL } from '#helpers/data-cache.ts';
-import { CATALOGUES, LANGUAGES, type CardTable, type Language, type LanguagePaths, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
-import { cardPath, cardSlug, cardSlugParts, memoizedOn, setPath, setsById, setSlug, type CardLink } from '#helpers/card-utils.ts';
+import { type CardTable, CATALOGUES, type Language, type LanguagePaths, LANGUAGES, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
+import { type CardLink, cardPath, cardSlug, cardSlugParts, memoizedOn, setPath, setsById, setSlug } from '#helpers/card-utils.ts';
 import { mirrorPath } from '#helpers/set-images.ts';
 import setTwinsJson from '#scrapers/tcgdex/jp-set-twins.json' with { type: 'json' };
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -62,10 +62,10 @@ const CARD_LIST_COLUMNS = `
 `;
 
 interface CardRow {
-	card_code: string;
 	art_image: string | null;
 	art_source: string | null;
 	artist: string | null;
+	card_code: string;
 	card_market_updated_at?: string | null;
 	card_market_url: string | null;
 	hp?: number | null;
@@ -87,24 +87,24 @@ interface CardRow {
 }
 
 interface PriceRow {
-	card_code: string;
-	simple: number | null;
-	low: number | null;
-	trend: number | null;
 	avg1: number | null;
 	avg7: number | null;
 	avg30: number | null;
-	reverse_simple: number | null;
-	reverse_low: number | null;
-	reverse_trend: number | null;
+	card_code: string;
+	low: number | null;
 	reverse_avg1: number | null;
 	reverse_avg7: number | null;
 	reverse_avg30: number | null;
+	reverse_low: number | null;
+	reverse_simple: number | null;
+	reverse_trend: number | null;
+	simple: number | null;
+	trend: number | null;
 }
 
 interface SetRow {
-	name: string;
 	logo: string | null;
+	name: string;
 	printed_total: number | null;
 	ptcgo_code: string | null;
 	release_date: string | null;
@@ -199,8 +199,8 @@ function localImage(url: string | null, files: ReadonlySet<string>): string {
 
 function toSet(set: SetRow, files: ReadonlySet<string>): Set {
 	return {
-		name: set.name,
 		logo: localImage(set.logo, files),
+		name: set.name,
 		printedTotal: set.printed_total || 0,
 		ptcgoCode: set.ptcgo_code || '',
 		releaseDate: set.release_date ? new Date(set.release_date) : new Date('1995-01-01'),
@@ -259,7 +259,7 @@ async function getAllData<T>(
 	tableName: CardTable | PriceTable | SetTable | 'pokemons' | 'types',
 	keyColumn: string,
 	selectQuery: string = '*',
-	orderBy?: { column: string; ascending: boolean }
+	orderBy?: { ascending: boolean; column: string; }
 ): Promise<T[]> {
 	for (let attempt = 1; ; attempt++) {
 		const { count, rows } = await pageTable<T>(tableName, keyColumn, selectQuery, orderBy);
@@ -276,7 +276,7 @@ async function pageTable<T>(
 	tableName: CardTable | PriceTable | SetTable | 'pokemons' | 'types',
 	keyColumn: string,
 	selectQuery: string,
-	orderBy?: { column: string; ascending: boolean }
+	orderBy?: { ascending: boolean; column: string; }
 ): Promise<{ count: number; rows: T[] }> {
 	const batchSize = 5000;
 	const allData: T[] = [];
@@ -314,11 +314,15 @@ async function pageTable<T>(
 }
 
 export async function getPokemons(): Promise<Pokemon[]> {
-	return cachedTable('pokemons', STATIC_TTL, () => getAllData<Pokemon>('pokemons', 'id', '*', { column: 'id', ascending: true }), rows => rows);
+	return cachedTable('pokemons', STATIC_TTL, () => getAllData<Pokemon>('pokemons', 'id', '*', { ascending: true, column: 'id' }), rows => rows);
 }
 
+/**
+ * The name order stays although the grid sorts again in the browser: every stable sort and first-match loop downstream breaks its ties on it
+ * (price ties in the grid and the share images, the sitemap page boundaries, `getTwinPaths`, `bestCardByPokemon`, the import index, the search ranking).
+ */
 function cardListRows(table: CardTable): Promise<CardRow[]> {
-	return getAllData<CardRow>(table, 'card_code', CARD_LIST_COLUMNS, { column: 'name', ascending: true });
+	return getAllData<CardRow>(table, 'card_code', CARD_LIST_COLUMNS, { ascending: true, column: 'name' });
 }
 
 /** How long the versions read below is trusted: a day-old table is re-read within this delay of the sync that bumped its version. */
@@ -348,7 +352,7 @@ async function readVersions(): Promise<Map<Language, string>> {
 }
 
 /** The version the daily sync gave a language's tables, or null when there is none. One select per isolate every `VERSION_CHECK_MS`. */
-export async function catalogueVersion(language: Language): Promise<string | null> {
+async function catalogueVersion(language: Language): Promise<string | null> {
 	if (versions && versions.expires > Date.now()) return versions.byLanguage.get(language) ?? null;
 
 	if (!versionsInFlight) {
@@ -364,7 +368,7 @@ export async function getCards(language: Language = 'en'): Promise<FullCard[]> {
 }
 
 /** English and French cards share their `tcgdex_id`; a separate read keeps the column out of every card payload. */
-export async function getTcgdexIds(language: 'en' | 'fr'): Promise<Map<string, string>> {
+async function getTcgdexIds(language: 'en' | 'fr'): Promise<Map<string, string>> {
 	const { cards } = CATALOGUES[language].tables;
 	return cachedTable(`${cards}:tcgdex`, TABLE_TTL, () => getAllData<{ card_code: string; tcgdex_id: string | null }>(cards, 'card_code', 'card_code, tcgdex_id'), rows => {
 		const ids = new Map<string, string>();
@@ -373,7 +377,7 @@ export async function getTcgdexIds(language: 'en' | 'fr'): Promise<Map<string, s
 	}, await catalogueVersion(language), true);
 }
 
-export type TwinPaths = Record<'en' | 'fr', string>;
+type TwinPaths = Record<'en' | 'fr', string>;
 
 const twinPathsMemo = new WeakMap<object, unknown>();
 
@@ -492,7 +496,7 @@ const MAX_SLUG_NAME_TOKENS = 32;
  * Only a tail that is a real `set-number` matches, never a lone number or set, so a junk URL does not redirect to a card.
  * `canonical` is the card's own slug: the caller redirects to it when it differs from the one requested.
  */
-export async function findCardBySlug(language: Language, slug: string): Promise<{ card: FullCard; canonical: string } | null> {
+export async function findCardBySlug(language: Language, slug: string): Promise<{ canonical: string; card: FullCard; } | null> {
 	const { bySlug, byTail } = slugIndex(language, await getCards(language));
 	const wanted = slug.normalize('NFC').toLowerCase();
 	const parts = wanted.split('-');
@@ -500,7 +504,7 @@ export async function findCardBySlug(language: Language, slug: string): Promise<
 	let card = bySlug.get(wanted);
 	for (let start = 1; !card && start <= MAX_SLUG_NAME_TOKENS && start < parts.length - 1; start++) card = byTail.get(parts.slice(start).join('-'));
 
-	return card ? { card, canonical: cardSlug(card, language) } : null;
+	return card ? { canonical: cardSlug(card, language), card } : null;
 }
 
 /** A card's URL fields by code, in one row read: the legacy `/card/<cardCode>` redirect needs no catalogue. */
@@ -588,7 +592,7 @@ function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
 export async function getSets(language: Language = 'en'): Promise<Set[]> {
 	const { sets } = CATALOGUES[language].tables;
 	const files = await buildStaticFiles();
-	return cachedTable(sets, TABLE_TTL, () => getAllData<SetRow>(sets, 'set_id', '*', { column: 'name', ascending: true }), rows => rows.map(set => toSet(set, files)), await catalogueVersion(language));
+	return cachedTable(sets, TABLE_TTL, () => getAllData<SetRow>(sets, 'set_id', '*', { ascending: true, column: 'name' }), rows => rows.map(set => toSet(set, files)), await catalogueVersion(language));
 }
 
 /** Keyed on the memoized set list, like `slugIndexes`. */
@@ -621,7 +625,7 @@ export async function findSetBySlug(language: Language, slug: string): Promise<{
 	return set ? { canonical: setSlug(set, language), set } : null;
 }
 
-export type OwnedList = 'collection' | 'wishlist';
+type OwnedList = 'collection' | 'wishlist';
 
 /** An owned card with its copy count, the catalogue that resolved it and its `cardPrice()`. */
 export interface OwnedCard extends FullCard {
@@ -631,7 +635,7 @@ export interface OwnedCard extends FullCard {
 }
 
 /** The card count and summed price of one whole set. */
-export interface SetTotal {
+interface SetTotal {
 	cards: number;
 	language: Language;
 	set_id: string;
@@ -674,7 +678,7 @@ export async function getOwnedCards(client: SupabaseClient, username: string, li
 }
 
 /** What one catalogue holds: its card list, its price table and its sets. */
-export interface CatalogueData {
+interface CatalogueData {
 	cards: FullCard[];
 	prices: Record<string, PriceData>;
 	sets: Set[];
@@ -687,6 +691,6 @@ export async function getCatalogue(language: Language): Promise<CatalogueData> {
 }
 
 export async function getTypes(): Promise<string[]> {
-	return cachedTable('types', STATIC_TTL, () => getAllData<{ name: string }>('types', 'name', 'name', { column: 'name', ascending: true }), rows => rows.map(type => type.name));
+	return cachedTable('types', STATIC_TTL, () => getAllData<{ name: string }>('types', 'name', 'name', { ascending: true, column: 'name' }), rows => rows.map(type => type.name));
 }
 

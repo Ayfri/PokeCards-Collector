@@ -2,7 +2,7 @@
 	import CardImage from '#components/card/CardImage.svelte';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import X from '@lucide/svelte/icons/x';
-	import type { BinderCards } from '#lib/types.js';
+	import type { BinderSlot } from '#lib/types.js';
 
 	interface Props {
 		columns: number;
@@ -14,7 +14,7 @@
 		onSlotClick?: (pageIndex: number, position: number) => void;
 		pageIndex: number;
 		rows: number;
-		slots: Array<BinderCards | null>;
+		slots: Array<BinderSlot | null>;
 	}
 
 	let { columns, nextEmpty = -1, onDrop, onRemove, onSlotClick, pageIndex, rows, slots }: Props = $props();
@@ -56,20 +56,20 @@
 					class="group relative min-h-0 rounded-md border transition-colors
 						{dragOver === position ? 'border-gold-400 bg-gold-400/10' : isTarget ? 'border-gold-400/70 border-dashed bg-gold-400/5' : onDrop ? 'border-gray-700 hover:border-gray-500' : 'border-gray-700'}
 						{card ? 'bg-gray-900' : 'bg-gray-900/40'}"
+					ondragleave={onDrop && (() => { if (dragOver === position) dragOver = -1; })}
+					ondragover={onDrop && (event => { event.preventDefault(); dragOver = position; })}
+					ondrop={onDrop && (event => { event.preventDefault(); dragOver = -1; onDrop(pageIndex, position, event); })}
 					role="gridcell"
 					tabindex={onDrop ? 0 : undefined}
-					ondragover={onDrop && (event => { event.preventDefault(); dragOver = position; })}
-					ondragleave={onDrop && (() => { if (dragOver === position) dragOver = -1; })}
-					ondrop={onDrop && (event => { event.preventDefault(); dragOver = -1; onDrop(pageIndex, position, event); })}
 				>
 					{#if card}
 						<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 						<div
 							class={['absolute inset-0 flex items-center justify-center p-px', onDrop && 'cursor-grab active:cursor-grabbing']}
 							draggable={onDrop ? 'true' : undefined}
+							ondragstart={onDrop && (event => handleDragStart(event, position))}
 							role={onDrop ? 'button' : undefined}
 							tabindex={onDrop ? -1 : undefined}
-							ondragstart={onDrop && (event => handleDragStart(event, position))}
 						>
 							<CardImage
 								alt="Binder card, page {pageIndex + 1} slot {position + 1}"
@@ -92,9 +92,9 @@
 						<!-- The click handler only exists on the button variant. -->
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<svelte:element
-							this={onSlotClick ? 'button' : 'div'}
 							class="absolute inset-0 flex flex-col items-center justify-center gap-1 text-gray-600"
 							onclick={onSlotClick && (() => onSlotClick(pageIndex, position))}
+							this={onSlotClick ? 'button' : 'div'}
 							title={onSlotClick ? 'Place the selected card here' : undefined}
 						>
 							<span class="text-sm font-semibold tabular-nums">{pageIndex * slotsPerPage + position + 1}</span>

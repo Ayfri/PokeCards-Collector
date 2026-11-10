@@ -1,7 +1,7 @@
 <script lang="ts">
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import PasswordField from './PasswordField.svelte';
-	import { finishSignIn, readJson, type ApiError } from '#helpers/utils.ts';
+	import { type ApiError, finishSignIn, readJson } from '#helpers/utils.ts';
 	import { isStrongPassword, normalizeUsername, PASSWORD_REQUIREMENTS, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
 
 	interface Props {
@@ -26,7 +26,7 @@
 
 		try {
 			const response = await fetch(`/api/auth/username-available?username=${encodeURIComponent(username)}`);
-			const data = await readJson<{ success?: boolean; exists?: boolean }>(response, {});
+			const data = await readJson<{ exists?: boolean; success?: boolean; }>(response, {});
 
 			if (!data.success) {
 				errorMessage = 'Error checking username availability';
@@ -75,7 +75,7 @@
 			const signal = AbortSignal.timeout(15_000);
 			const headers = { 'Content-Type': 'application/json' };
 
-			const signupResponse = await fetch('/api/auth/signup', { method: 'POST', headers, body: JSON.stringify({ email, password, username }), signal });
+			const signupResponse = await fetch('/api/auth/signup', { body: JSON.stringify({ email, password, username }), headers, method: 'POST', signal });
 
 			if (!signupResponse.ok) {
 				const errorData = await readJson<ApiError>(signupResponse, {});
@@ -88,7 +88,7 @@
 				return;
 			}
 
-			const loginResponse = await fetch('/api/auth/login', { method: 'POST', headers, body: JSON.stringify({ email, password }), signal });
+			const loginResponse = await fetch('/api/auth/login', { body: JSON.stringify({ email, password }), headers, method: 'POST', signal });
 
 			if (!loginResponse.ok) {
 				console.error('Automatic sign in failed after signup:', loginResponse.status);
@@ -111,28 +111,28 @@
 	}
 </script>
 
-<form onsubmit={handleSubmit} class="space-y-4">
+<form class="space-y-4" onsubmit={handleSubmit}>
 	{#if errorMessage}
 		<div class="alert-error">{errorMessage}</div>
 	{/if}
 
 	<div>
-		<label for="email" class="form-label">Email</label>
-		<input type="email" id="email" bind:value={email} class="form-input" placeholder="your@email.com" required />
+		<label class="form-label" for="email">Email</label>
+		<input bind:value={email} class="form-input" id="email" placeholder="your@email.com" required type="email" />
 	</div>
 
 	<div>
-		<label for="username" class="form-label">Username</label>
-		<input type="text" id="username" bind:value={username} class="form-input" placeholder="username" required maxlength="20" />
+		<label class="form-label" for="username">Username</label>
+		<input bind:value={username} class="form-input" id="username" maxlength="20" placeholder="username" required type="text" />
 	</div>
 
-	<PasswordField autocomplete="new-password" id="password" label="Password" name="password" placeholder="Choose a strong password" strength bind:value={password} />
+	<PasswordField autocomplete="new-password" bind:value={password} id="password" label="Password" name="password" placeholder="Choose a strong password" strength />
 
-	<PasswordField autocomplete="new-password" id="confirm-password" label="Confirm Password" name="confirm-password" placeholder="••••••••" bind:value={confirmPassword} />
+	<PasswordField autocomplete="new-password" bind:value={confirmPassword} id="confirm-password" label="Confirm Password" name="confirm-password" placeholder="••••••••" />
 
-	<button type="submit" disabled={loading} class="btn-gold w-full">
+	<button class="btn-gold w-full" disabled={loading} type="submit">
 		{#if loading}
-			<BouncyLoader size={20} gradientColorStart="#000000" gradientColorEnd="#000000" />
+			<BouncyLoader gradientColorEnd="#000000" gradientColorStart="#000000" size={20} />
 			Registering...
 		{:else}
 			Register

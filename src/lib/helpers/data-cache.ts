@@ -33,7 +33,7 @@ export const TABLE_TTL = 60 * 60;
 export const STATIC_TTL = 24 * 60 * 60;
 
 /** A versioned table is re-read when its version moves, and at the latest a day after the daily sync plus an hour of slack. */
-export const VERSIONED_TTL = 25 * 60 * 60;
+const VERSIONED_TTL = 25 * 60 * 60;
 
 /** A refresh waits at most this long for the one before it, so a stuck read cannot block every later refresh. */
 const CHAIN_WAIT_MS = 20_000;

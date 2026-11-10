@@ -11,7 +11,7 @@
 	import type { SetWithPrice } from '#lib/types.js';
 	import SetLogo from '#components/SetLogo.svelte';
 	import LanguageSwitch from '#components/LanguageSwitch.svelte';
-	import { CATALOGUES, catalogueRoutes } from '#helpers/catalogues.ts';
+	import { catalogueRoutes, CATALOGUES } from '#helpers/catalogues.ts';
 	import { groupSetTiles, setCardCount, setPath, type SetTile } from '#helpers/card-utils.ts';
 
 	interface Props {
@@ -98,79 +98,79 @@
 
 <div class="container mx-auto px-4 pt-2 pb-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
-		<div class="flex flex-col items-center gap-2 sm:items-start xl:flex-row xl:items-center xl:gap-4" transition:fly={{ y: 50, duration: 400, delay: 200 }}>
+		<div class="flex flex-col items-center gap-2 sm:items-start xl:flex-row xl:items-center xl:gap-4" transition:fly={{ delay: 200, duration: 400, y: 50 }}>
 			<PageTitle title={`${catalogue.routeCode ? `${catalogue.adjective} ` : ''}Pokémon TCG Sets`} />
 			<LanguageSwitch language={data.catalogueLanguage} paths={catalogueRoutes('setsRoute')} />
 		</div>
 
-		<div class="flex items-center gap-2" transition:fly={{ y: 50, duration: 500, delay: 250 }}>
+		<div class="flex items-center gap-2" transition:fly={{ delay: 250, duration: 500, y: 50 }}>
 			<div class="w-48">
 				<TextInput
+					bind:value={searchTerm}
 					id="setSearch"
 					label="Search"
-					bind:value={searchTerm}
+					onDebouncedInput={setSearchTerm}
 					placeholder="Search sets..."
-					debounceFunction={setSearchTerm}
 				/>
 			</div>
 			<SortControl
 				bind:sortDirection={setsSort.direction}
 				bind:sortValue={setsSort.value}
 				options={[
-					{ value: 'code', label: 'Code' },
-					{ value: 'name', label: 'Name' },
-					{ value: 'cardCount', label: 'Total Cards' },
-					{ value: 'totalPrice', label: 'Total Value' },
-					{ value: 'releaseDate', label: 'Release Date' }
+					{ label: 'Code', value: 'code' },
+					{ label: 'Name', value: 'name' },
+					{ label: 'Total Cards', value: 'cardCount' },
+					{ label: 'Total Value', value: 'totalPrice' },
+					{ label: 'Release Date', value: 'releaseDate' }
 				]}
 			/>
 		</div>
 	</div>
-	<hr class="gold-rule my-4 border-0" transition:fade={{ duration: 400, delay: 250 }} />
+	<hr class="gold-rule my-4 border-0" transition:fade={{ delay: 250, duration: 400 }} />
 
-	<p class="text-gray-300 mb-6" transition:fade={{ duration: 400, delay: 250 }}>
+	<p class="text-gray-300 mb-6" transition:fade={{ delay: 250, duration: 400 }}>
 		Sets are collections of cards that are released together.<br>
 		<span class="text-sm">Showing {shownSetCount} of {typedSets.length} sets.</span>
 	</p>
 
-	<div transition:fly={{ y: 50, duration: 400, delay: 400 }}>
+	<div transition:fly={{ delay: 400, duration: 400, y: 50 }}>
 		{#each seriesKeys as series, index (series)}
 			{@const seriesSets = groupedTiles[series].flatMap(tile => tile.sets)}
 			<div class="mb-8">
 				<div class="mb-4">
 					<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
 						<h2 class="text-xl font-bold text-gold-400 md:text-2xl">{series}</h2>
-						<p class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-300" title="Release years"><span class="icon-calendar-days size-3.5 shrink-0" aria-hidden="true"></span> {yearSpan(seriesSets)}</p>
+						<p class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-300" title="Release years"><span aria-hidden="true" class="icon-calendar-days size-3.5 shrink-0"></span> {yearSpan(seriesSets)}</p>
 						<p class="whitespace-nowrap text-sm text-gray-400">{seriesSets.length} sets</p>
 						<p class="ml-auto whitespace-nowrap text-sm text-gold-400">{formatEuros(seriesSets.reduce((acc, set) => acc + set.totalPrice, 0))}</p>
 					</div>
 					<hr class="w-full border-t border-gray-700 my-2" />
 				</div>
 				
-				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ y: 50, duration: 500, delay: 200 * index }}>
+				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ delay: 200 * index, duration: 500, y: 50 }}>
 					{#each groupedTiles[series] as tile, position (tile.set.setId)}
 						{@const set = tile.set}
 						<div class="card-tile overflow-hidden h-full flex flex-col">
 							<!-- A kit has no set page of its own: its halves are linked by the chips, so the tile body is not a link. -->
 							<svelte:element
-								this={tile.kit ? 'div' : 'a'}
 								class="flex flex-1 flex-col"
 								href={tile.kit ? undefined : setPath(set, catalogue)}
+								this={tile.kit ? 'div' : 'a'}
 								title={tile.kit ? undefined : `Browse every card in ${set.name}`}
 							>
 								<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
 									<SetLogo class="max-h-full object-contain" eager={index === 0 && position < 4} {set}>
-										{#snippet fallback()}<span class="icon-layers size-14 text-gray-600" aria-hidden="true"></span>{/snippet}
+										{#snippet fallback()}<span aria-hidden="true" class="icon-layers size-14 text-gray-600"></span>{/snippet}
 									</SetLogo>
 								</div>
 								<div class="p-4 flex-1 flex flex-col">
 									<h2 class="text-lg font-semibold text-white">{set.name}</h2>
 									<div class="flex justify-between mt-2 text-sm text-gray-400">
-										<span class="flex items-center gap-1.5" title="Cards in this set"><span class="icon-layers size-3.5 shrink-0" aria-hidden="true"></span> {setCardCount(set)} cards</span>
-										<span class="flex items-center gap-1.5 text-gold-400" title="Cardmarket value of a complete set"><span class="icon-circle-euro size-3.5 shrink-0" aria-hidden="true"></span> {formatEuros(set.totalPrice)}</span>
+										<span class="flex items-center gap-1.5" title="Cards in this set"><span aria-hidden="true" class="icon-layers size-3.5 shrink-0"></span> {setCardCount(set)} cards</span>
+										<span class="flex items-center gap-1.5 text-gold-400" title="Cardmarket value of a complete set"><span aria-hidden="true" class="icon-circle-euro size-3.5 shrink-0"></span> {formatEuros(set.totalPrice)}</span>
 									</div>
 									<div class="flex justify-between mt-1 text-sm text-gray-400">
-										<span class="flex items-center gap-1.5" title="Release date"><span class="icon-calendar-days size-3.5 shrink-0" aria-hidden="true"></span> {formatDate(set.releaseDate)}</span>
+										<span class="flex items-center gap-1.5" title="Release date"><span aria-hidden="true" class="icon-calendar-days size-3.5 shrink-0"></span> {formatDate(set.releaseDate)}</span>
 										{#if set.ptcgoCode}
 											<span class="px-2 py-1 bg-gray-700 rounded-sm text-gold-400 text-xs" title="PTCGO set code">{set.ptcgoCode}</span>
 										{:else}

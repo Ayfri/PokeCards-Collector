@@ -2,21 +2,21 @@
 	import { onMount } from 'svelte';
 
 	interface Props {
+		class?: string;
 		id: string;
 		label: string;
-		value: string;
 		placeholder?: string;
 		rows?: number;
-		class?: string;
+		value: string;
 	}
 
 	let {
+		class: className = "",
 		id,
 		label,
-		value = $bindable(),
 		placeholder = "",
 		rows = 4,
-		class: className = ""
+		value = $bindable()
 	}: Props = $props();
     
 
@@ -40,14 +40,14 @@
 </script>
 
 <div class="flex flex-col gap-1 min-w-32 flex-1">
-	<label for={id} class="text-xs text-gray-300">{label}</label>
+	<label class="text-xs text-gray-300" for={id}>{label}</label>
 	<textarea
 		bind:this={textareaElement}
+		bind:value={value}
 		class="bg-transparent border-2 rounded-sm text-white p-2 text-sm w-full transition-all duration-200 focus:outline-hidden focus:border-gold-400 resize-none overflow-hidden {value ? 'border-gold-400 text-gold-400' : 'border-white'} {className}"
 		{id}
+		oninput={handleInput}
 		{placeholder}
 		{rows}
-		bind:value={value}
-		oninput={handleInput}
 	></textarea>
 </div>

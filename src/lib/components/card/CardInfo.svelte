@@ -5,7 +5,7 @@
 	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import { formatCardNumber, setPath } from '#helpers/card-utils.ts';
-	import { formatDate, pascalCase } from '#helpers/format.ts';
+	import { formatDate, titleCase } from '#helpers/format.ts';
 	import { page } from '$app/state';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { collection } from '#stores/collection.svelte.ts';
@@ -25,20 +25,18 @@
 	import { fly } from 'svelte/transition';
 
 	interface Props {
-		set: CardPageSet;
 		card: FullCard;
 		cardPrices?: PriceData | undefined;
 		pokemon?: Pokemon | undefined;
+		set: CardPageSet;
 	}
 
 	let {
-		set,
 		card,
 		cardPrices = undefined,
-		pokemon = undefined
+		pokemon = undefined,
+		set
 	}: Props = $props();
-
-	const cardNumber = $derived(card.localId);
 
 	const catalogue = $derived(catalogueOfPath(page.url.pathname));
 	const setHref = $derived(setPath(set, catalogue));
@@ -47,8 +45,8 @@
 	 * The page's h1, so it names the print ("Charizard ex", "Dark Charizard") the title and the searches name, not the species alone.
 	 * A Japanese card keeps the English species name, since its own name is in Japanese script on an English page.
 	 */
-	const displayName = $derived(pokemon && catalogue.language === 'ja' ? pascalCase(pokemon.name) : card.name);
-	const displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card?.name}`);
+	const displayName = $derived(pokemon && catalogue.language === 'ja' ? titleCase(pokemon.name) : card.name);
+	const displayDescription = $derived(pokemon ? pokemon.description : `Details for ${card.name}`);
 
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
@@ -61,7 +59,7 @@
 	async function toggleWishlist(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
-		if (!user || !profile || !card) return;
+		if (!user || !profile) return;
 		if (cardIsWishlisted) {
 			await removeCardFromWishlist(profile.username, card.cardCode);
 		} else {
@@ -71,38 +69,37 @@
 	async function handleAddCard(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
-		if (!user || !profile || !card) return;
+		if (!user || !profile) return;
 		if (collectionCount >= MAX_CARD_QUANTITY) return;
 		await addCardToCollection(profile.username, card.cardCode);
 	}
 	async function handleRemoveCard(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
-		if (!user || !profile || !card) return;
+		if (!user || !profile) return;
 		if (collectionCount === 0) return;
 		await removeCardFromCollection(profile.username, card.cardCode);
 	}
 </script>
 
-<div class="pokemon-info-container flex flex-col items-center gap-4 mt-6 lg:mt-12 max-lg:gap-0">
-	{#if card && user && profile}
+<div class="flex flex-col items-center gap-4 mt-6 lg:mt-12 max-lg:gap-0">
+	{#if user && profile}
 		<div class="flex items-center justify-center gap-2 mb-3">
 			<div class="flex items-center gap-1 rounded-full bg-gray-700/60 p-1 border border-gray-600 shadow-md">
 				{#if collectionCount > 0}
 					<button
 						aria-label="Remove one copy from collection"
 						class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+						in:fly={{ delay: 100, duration: 200, y: -5 }}
 						onclick={handleRemoveCard}
-						disabled={collectionCount === 0}
 						title="Remove one copy from collection"
-						in:fly={{ y: -5, duration: 200, delay: 100 }}
 					>
-						<Minus size={16} class="text-white" />
+						<Minus class="text-white" size={16} />
 					</button>
 					<span
 						class="text-md font-semibold text-green-400 px-1 min-w-[2ch] text-center select-none"
+						in:fly={{ delay: 150, duration: 200, y: -5 }}
 						title={`You have ${collectionCount} cop${collectionCount > 1 ? 'ies' : 'y'}`}
-						in:fly={{ y: -5, duration: 200, delay: 150 }}
 					>
 						{collectionCount}
 					</span>
@@ -110,12 +107,12 @@
 				<button
 					aria-label="Add one copy to collection"
 					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-					onclick={handleAddCard}
 					disabled={collectionCount >= MAX_CARD_QUANTITY}
+					in:fly={{ delay: collectionCount > 0 ? 200: 100, duration: 200, y: -5 }}
+					onclick={handleAddCard}
 					title={collectionCount >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
-					in:fly={{ y: -5, duration: 200, delay: collectionCount > 0 ? 200: 100 }}
 				>
-					<Plus size={16} class={collectionCount > 0 ? "text-green-400" : "text-white"} />
+					<Plus class={collectionCount > 0 ? "text-green-400" : "text-white"} size={16} />
 				</button>
 			</div>
 
@@ -125,11 +122,11 @@
 				<button
 					aria-label={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
 					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+					in:fly={{ delay: 250, duration: 200, y: -5 }}
 					onclick={toggleWishlist}
 					title={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-					in:fly={{ y: -5, duration: 200, delay: 250 }}
 				>
-					<Heart size={16} class={cardIsWishlisted ? 'text-red-500 fill-red-500' : 'text-white'} />
+					<Heart class={cardIsWishlisted ? 'text-red-500 fill-red-500' : 'text-white'} size={16} />
 				</button>
 			</div>
 		</div>
@@ -143,11 +140,11 @@
 				<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Details</h3>
 
 				<div class="space-y-2 grow">
-					{#if card?.types || card?.supertype}
+					{#if card.types || card.supertype}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
 							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Energy type, or the card category for Trainer and Energy cards"><Sparkles size={14} /> Type:</dt>
 							<dd class="flex flex-wrap justify-end gap-1.5">
-								{#if card?.types}
+								{#if card.types}
 									{#each card.types.toLowerCase().split(',') as type (type)}
 										<a
 											class={['inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-sm font-medium capitalize bg-(--type-color) transition hover:brightness-110 hover:ring-2 hover:ring-gold-400', type, type === 'colorless' ? 'text-gray-900' : 'text-white']}
@@ -158,7 +155,7 @@
 											{type}
 										</a>
 									{/each}
-								{:else if card?.supertype}
+								{:else if card.supertype}
 									<a
 										class={`inline-block px-2 py-0.5 rounded-full text-sm font-medium capitalize ${card.supertype.toLowerCase()} text-white transition hover:text-gold-400`}
 										href="{catalogue.gridRoute}?type={card.supertype.toLowerCase().replace('é', 'e')}"
@@ -176,8 +173,8 @@
 							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Illustrator of this card"><Paintbrush size={14} /> Artist:</dt>
 							<dd class="text-white text-right">
 								<a 
-									href="{catalogue.gridRoute}?artist={encodeURIComponent(card.artist.toLowerCase())}"
 									class="hover:text-gold-400 transition-colors underline group"
+									href="{catalogue.gridRoute}?artist={encodeURIComponent(card.artist.toLowerCase())}"
 									title="View all cards by this artist"
 								>
 									{card.artist}
@@ -187,10 +184,10 @@
 						</div>
 					{/if}
 
-					{#if cardNumber && set.printedTotal}
+					{#if card.localId && set.printedTotal}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
 							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Position of this card inside its set"><Hash size={14} /> Number:</dt>
-							<dd class="text-white text-right">{formatCardNumber(cardNumber, set.printedTotal)}</dd>
+							<dd class="text-white text-right">{formatCardNumber(card.localId, set.printedTotal)}</dd>
 						</div>
 					{/if}
 
@@ -211,8 +208,8 @@
 						<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Set this card was printed in"><Library size={14} /> Set:</dt>
 						<dd class="flex items-center gap-2 justify-end">
 							<a 
-								href={setHref}
 								class="text-white hover:text-gold-400 transition-colors underline group"
+								href={setHref}
 								title="View all cards in this set"
 							>
 								{set.name}

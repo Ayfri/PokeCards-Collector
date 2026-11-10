@@ -69,16 +69,16 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	return {
 		...cardPageData('en', targetCard, allCards, prices, allPokemons, sets),
+		breadcrumbs: pageBreadcrumbs,
 		/** Built from the card, so it never follows the request's percent-encoding of the slug. */
 		canonical: cardPath('en', targetCard),
-		neighbours: setNeighbourLinks('en', targetCard, allCards),
-		versions,
-		title: pageTitle,
 		description: pageDescription,
 		image: pageImage,
-		breadcrumbs: pageBreadcrumbs,
 		keywords: [targetCard.name, `${targetCard.name} price`, targetCard.setName, targetCard.rarity, targetCard.artist, 'Pokémon TCG'].filter(Boolean),
+		neighbours: setNeighbourLinks('en', targetCard, allCards),
 		schemas: [cardSchema(targetCard, price, associatedPokemon, set)],
+		title: pageTitle,
 		type: 'Product' as const,
+		versions,
 	};
 };

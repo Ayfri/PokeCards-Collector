@@ -11,7 +11,7 @@ const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
 	['second', 1],
 ];
 
-export function pascalCase(str: string): string {
+export function titleCase(str: string): string {
 	return str.replace(/(\w)(\w*)/g, (_, g1, g2) => g1.toUpperCase() + g2.toLowerCase());
 }
 
@@ -31,7 +31,7 @@ export function timeAgo(date: string | Date): string {
  * @example formatDate('2024-03-01') // "March 1, 2024"
  */
 export function formatDate(date: string | Date): string {
-	return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+	return new Date(date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', timeZone: 'UTC', year: 'numeric' });
 }
 
 /** One formatter per precision: `toLocaleString` with options builds a new `Intl.NumberFormat` on every call, and grid tiles format a price each. */

@@ -7,11 +7,13 @@
 	import EraserIcon from '@lucide/svelte/icons/eraser';
 	import PlusIcon from '@lucide/svelte/icons/plus';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
-	import type { BinderCards } from '#lib/types.js';
+	import type { BinderSlot } from '#lib/types.js';
 
 	interface Props {
 		columns: number;
 		currentPage: number;
+		/** Global index of the slot a click-to-place would fill, `-1` when nothing is armed. */
+		nextEmpty?: number;
 		onAddPage: () => void;
 		onClearPages: (pageIndices: number[]) => void;
 		onDeletePages: (pageIndices: number[]) => void;
@@ -20,10 +22,8 @@
 		onGoTo: (pageIndex: number) => void;
 		onRemove: (pageIndex: number, position: number) => void;
 		onSlotClick: (pageIndex: number, position: number) => void;
-		pages: Array<Array<BinderCards | null>>;
+		pages: Array<Array<BinderSlot | null>>;
 		rows: number;
-		/** Global index of the slot a click-to-place would fill, `-1` when nothing is armed. */
-		nextEmpty?: number;
 		/** Two facing pages at once, the way a real binder opens. */
 		spread: boolean;
 	}

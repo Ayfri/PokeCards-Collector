@@ -21,9 +21,10 @@
 		/** The catalogue keyed by card code, so a tile resolves its card without scanning 21066 of them. */
 		cards: Map<string, BinderCatalogueCard>;
 		onAutoFill: () => void;
-		onSelect: (item: string | null) => void;
+		onClear: () => void;
 		/** Dropping a binder card back here pulls it out of its slot. */
 		onDropFromBinder: (event: DragEvent) => void;
+		onSelect: (item: string | null) => void;
 		/** Codes and URLs already sitting in a binder slot, so the tile can flag them. */
 		placedItems: globalThis.Set<string>;
 		/** False until `/api/binder` lands, so a tile waiting on its card shows a placeholder rather than an error. */
@@ -31,7 +32,6 @@
 		/** Item armed for click-to-place, `null` when none. */
 		selected: string | null;
 		sets: Set[];
-		toggleClearStorageModal: () => void;
 		/** The list as displayed, so auto-fill pours cards in the order the user sorted them. */
 		visibleItems?: string[];
 	}
@@ -39,13 +39,13 @@
 	let {
 		cards,
 		onAutoFill,
+		onClear,
 		onDropFromBinder,
 		onSelect,
 		placedItems,
 		ready,
 		selected,
 		sets,
-		toggleClearStorageModal,
 		visibleItems = $bindable([])
 	}: Props = $props();
 
@@ -174,12 +174,12 @@
 </script>
 
 <div
+	aria-label="Card storage"
 	class="flex h-full flex-col rounded-2xl bg-gray-800 p-4 transition-colors {dropActive ? 'ring-2 ring-gold-400' : ''}"
-	ondragover={handleDragOver}
 	ondragleave={() => (dropActive = false)}
+	ondragover={handleDragOver}
 	ondrop={handleDrop}
 	role="region"
-	aria-label="Card storage"
 >
 	<div class="mb-1 flex items-center justify-between">
 		<h3 class="text-lg text-gold-400">Storage ({binderStorage.cards.length})</h3>
@@ -188,7 +188,7 @@
 				<Button class="border-gold-400 px-2 text-xs text-gold-400 disabled:opacity-50" disabled={!ready} onClick={onAutoFill} title="Pour the storage into the empty slots, in the order it is sorted">
 					<WandSparklesIcon size={14} /> Auto-fill
 				</Button>
-				<Button class="p-1" onClick={toggleClearStorageModal} title="Clear the whole storage"><TrashIcon size={14} /></Button>
+				<Button class="p-1" onClick={onClear} title="Clear the whole storage"><TrashIcon size={14} /></Button>
 			</div>
 		{/if}
 	</div>
@@ -199,12 +199,12 @@
 
 	{#if binderStorage.cards.length > 0}
 		<div class="mb-2 flex items-end gap-1">
-			<TextInput id="search-storage" label="Search storage:" bind:value={searchTerm} placeholder="Name, set, code..." />
+			<TextInput bind:value={searchTerm} id="search-storage" label="Search storage:" placeholder="Name, set, code..." />
 			<div class="w-32 shrink-0">
 				<Select
-					id="sort-storage"
 					activeCondition={view.sortBy !== 'type'}
 					bind:value={view.sortBy}
+					id="sort-storage"
 					label="Sort by:"
 					options={SORT_OPTIONS}
 				/>
@@ -233,7 +233,7 @@
 					{:else if isCardCode(item) && !fullCard}
 						<div class="relative flex aspect-2/3 items-center justify-center rounded-sm border-2 border-dashed border-red-700 p-1 text-center">
 							<span class="text-xs text-red-400">Data missing for {item}</span>
-							<button class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white" onclick={() => removeItem(item)} aria-label="Remove from storage" title="Remove from storage"><X size={14} /></button>
+							<button aria-label="Remove from storage" class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white" onclick={() => removeItem(item)} title="Remove from storage"><X size={14} /></button>
 						</div>
 					{:else}
 						{@const set = fullCard ? sets.find(s => s.setId === fullCard.setId) : undefined}
@@ -270,7 +270,7 @@
 									<div class="truncate font-semibold">Imported from URL</div>
 								{/if}
 							</div>
-							<button class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100" onclick={() => removeItem(item)} aria-label="Remove from storage" title="Remove from storage"><X size={14} /></button>
+							<button aria-label="Remove from storage" class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100" onclick={() => removeItem(item)} title="Remove from storage"><X size={14} /></button>
 						</div>
 					{/if}
 				{/each}

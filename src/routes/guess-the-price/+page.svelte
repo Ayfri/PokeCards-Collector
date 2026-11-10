@@ -7,7 +7,7 @@
 	import SetLogo from '#components/SetLogo.svelte';
 	import PriceStatsModal from '#components/games/PriceStatsModal.svelte';
 	import { formatDate } from '#helpers/format.ts';
-	import { PRICE_TIERS, judgeGuess, type RoundScore } from '#helpers/price-game.ts';
+	import { judgeGuess, PRICE_TIERS, type RoundScore } from '#helpers/price-game.ts';
 	import Numpad from '#lib/components/Numpad.svelte';
 	import PageTitle from '#lib/components/PageTitle.svelte';
 	import { priceGame } from '#stores/games.svelte.ts';
@@ -165,8 +165,8 @@
 <div class="mx-auto flex h-[calc(100dvh-6rem)] w-full max-w-6xl flex-col items-center gap-2 overflow-hidden px-3 pt-4 pb-3 md:gap-3 md:pt-7 lg:h-[calc(100dvh-8rem)] lg:gap-5">
 	<PageTitle title="Guess the Price!" />
 	<button
-		class="focus-ring flex h-7 w-full max-w-md shrink-0 items-center justify-center gap-3 rounded-full border border-gold-500/30 bg-gray-800/70 px-3 text-xs text-gray-300 tabular-nums transition-colors hover:border-gold-400"
 		aria-label="Your stats"
+		class="focus-ring flex h-7 w-full max-w-md shrink-0 items-center justify-center gap-3 rounded-full border border-gold-500/30 bg-gray-800/70 px-3 text-xs text-gray-300 tabular-nums transition-colors hover:border-gold-400"
 		id="price-stats"
 		onclick={() => (statsOpen = true)}
 		title="Your stats"
@@ -185,7 +185,7 @@
 				<StarIcon class="text-gold-400" size={14} />
 				{priceGame.stats.totalScore.toLocaleString('en-US')}
 			</span>
-			<span class="flex gap-1 max-2xs:hidden" aria-label="Last rounds" role="img">
+			<span aria-label="Last rounds" class="flex gap-1 max-2xs:hidden" role="img">
 				{#each priceGame.stats.history as tier, index (index)}
 					<span class={['size-2 rounded-full', PRICE_TIERS[tier].bar]}></span>
 				{/each}
@@ -206,7 +206,6 @@
 	{:else}
 		<!-- Stacked on mobile, only the art row may shrink, so the keypad is never clipped. -->
 		<section class="grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_auto] gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:grid-rows-1 lg:gap-8">
-			<!-- The art takes all the space the column has left. -->
 			<div class="flex min-h-0 flex-col items-center justify-center gap-2">
 				{#key round.card.cardCode}
 					<!-- `flex-initial`, not `flex-1`: the box shrinks when the column is short but never grows past the card, so the name sits right under it. -->
@@ -315,4 +314,4 @@
 	{/if}
 </div>
 
-<PriceStatsModal onClose={() => (statsOpen = false)} bind:open={statsOpen} />
+<PriceStatsModal bind:open={statsOpen} onClose={() => (statsOpen = false)} />

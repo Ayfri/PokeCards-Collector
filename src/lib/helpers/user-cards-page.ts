@@ -37,7 +37,7 @@ const SUMMARY_TOP_CARDS = 5;
 
 const cardCount = (count: number) => `${count.toLocaleString('en-US')} unique Pokémon TCG card${count === 1 ? '' : 's'}`;
 
-interface UserCardsCopy {
+interface UserCardsWording {
 	crumb: string;
 	emptyHint: string;
 	emptyOther: (username: string) => string;
@@ -53,7 +53,7 @@ interface UserCardsCopy {
 	publicTitle: (username: string) => string;
 }
 
-export const USER_CARDS_COPY = {
+export const USER_CARDS_WORDING = {
 	collection: {
 		crumb: 'Collection',
 		emptyHint: 'Add cards to your collection by browsing card pages.',
@@ -86,9 +86,9 @@ export const USER_CARDS_COPY = {
 			: `The Pokémon TCG cards ${username} is still hunting for, with Cardmarket prices in euros and the set each card belongs to.`,
 		publicTitle: username => `${username}'s Pokémon Card Wishlist`,
 	},
-} satisfies Record<'collection' | 'wishlist', UserCardsCopy>;
+} satisfies Record<'collection' | 'wishlist', UserCardsWording>;
 
-export type UserCardsKind = keyof typeof USER_CARDS_COPY;
+export type UserCardsKind = keyof typeof USER_CARDS_WORDING;
 
 const EMPTY_PAYLOAD: UserCardsPayload = { artists: [], cards: [], pokemons: [], rarities: [], sets: [], types: [] };
 
@@ -151,7 +151,7 @@ interface UserCardsPageOptions {
  * they print. The card payload is streamed, and no catalogue table is read for the cards: `getOwnedCards` resolves them in one call.
  */
 export async function loadUserCardsPage({ client, kind, parent, requestedUsername }: UserCardsPageOptions) {
-	const copy = USER_CARDS_COPY[kind];
+	const wording = USER_CARDS_WORDING[kind];
 	/** Read in parallel with the profile: row level security hands a visitor who may not see the list an empty one, so reading early leaks nothing. */
 	const ownedRead = getOwnedCards(client, requestedUsername, kind);
 	/** The not-found, redirect and private paths never read it, and a rejection nobody awaits would be logged as unhandled. */
@@ -162,7 +162,7 @@ export async function loadUserCardsPage({ client, kind, parent, requestedUsernam
 	if (profileError || !targetProfile) {
 		return {
 			breadcrumbs: breadcrumbs({ name: 'Collectors', url: '/users' }),
-			description: `${copy.label} for user ${requestedUsername} could not be found or user does not exist.`,
+			description: `${wording.label} for user ${requestedUsername} could not be found or user does not exist.`,
 			heading: 'User Not Found',
 			isOwner: false,
 			isPublic: false,
@@ -194,11 +194,11 @@ export async function loadUserCardsPage({ client, kind, parent, requestedUsernam
 		breadcrumbs: breadcrumbs(
 			{ name: 'Collectors', url: '/users' },
 			{ name: username, url: `/profile/${username}` },
-			{ name: copy.crumb, url: `/${kind}/${username}` }
+			{ name: wording.crumb, url: `/${kind}/${username}` }
 		),
-		description: canRead ? (isOwner ? copy.ownDescription : copy.publicDescription(username, summary)) : copy.privateDescription,
+		description: canRead ? (isOwner ? wording.ownDescription : wording.publicDescription(username, summary)) : wording.privateDescription,
 		/** `heading` is the short form shown on the page, `title` the long one the crawler indexes. */
-		heading: canRead ? (isOwner ? copy.ownTitle : `${username}'s ${copy.label}`) : copy.privateHeading,
+		heading: canRead ? (isOwner ? wording.ownTitle : `${username}'s ${wording.label}`) : wording.privateHeading,
 		/** Versioned on what the image draws (copies, unique cards, value in cents, top cards) of a public list only, so a private one never feeds what the owner sees into its URL. */
 		image: ogImage(
 			{ kind, username },
@@ -216,7 +216,7 @@ export async function loadUserCardsPage({ client, kind, parent, requestedUsernam
 		summary,
 		targetProfile,
 		targetUsername: username,
-		title: canRead ? (isOwner ? copy.ownTitle : copy.publicTitle(username)) : copy.privateTitle,
+		title: canRead ? (isOwner ? wording.ownTitle : wording.publicTitle(username)) : wording.privateTitle,
 		type: 'CollectionPage' as const,
 	};
 }

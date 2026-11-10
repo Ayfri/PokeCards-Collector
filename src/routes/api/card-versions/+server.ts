@@ -1,8 +1,6 @@
-import { LANGUAGES, type Language } from '#helpers/catalogues.ts';
+import { isLanguage } from '#helpers/catalogues.ts';
 import { getCardVersions } from '#helpers/supabase-data.ts';
 import type { RequestHandler } from './$types';
-
-const isLanguage = (value: string | null): value is Language => LANGUAGES.some(language => language === value);
 
 /** The same card in the other catalogues, for the language switcher of a card that was swapped in the browser without a page load. */
 export const GET: RequestHandler = async ({ url }) => {

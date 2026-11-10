@@ -1,9 +1,9 @@
 import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
-import { BY_GRID, CATALOGUES, type Catalogue } from '#helpers/catalogues.ts';
+import { BY_GRID, type Catalogue, CATALOGUES } from '#helpers/catalogues.ts';
 import { ogImage } from '#helpers/og-image.ts';
 import { breadcrumbs, setListSchema } from '#helpers/seo.ts';
-import type { FullCard, PriceData, Set as CardSet, SetWithPrice } from '#lib/types.js';
+import type { Set as CardSet, FullCard, PriceData, SetWithPrice } from '#lib/types.js';
 import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 
 /** Keyed on the memoized tables: the pass over every card runs once per refreshed table instead of once per request. */
@@ -32,14 +32,14 @@ export const load: PageServerLoad = async ({ params }) => {
 		breadcrumbs: breadcrumbs({ name: routeCode ? `${adjective} sets` : 'Sets', url: setsRoute }),
 		catalogueLanguage: language,
 		description: `All ${setsWithPrices.length} ${prefix}Pokémon TCG sets, from Base Set to the latest release, with release dates, card counts and the estimated total value of a complete set in euros.`,
-		keywords: [`${prefix}Pokémon TCG sets`, `${prefix}Pokémon set list`, `${prefix}Pokémon set value`, `${prefix}Pokémon card sets by release date`],
-		schemas: [setListSchema(setsWithPrices, catalogue)],
 		image: ogImage(
 			{ kind: 'page', name: params.grid ?? 'sets' },
 			routeCode
 				? `Every ${adjective} Pokémon TCG card on PokéCards-Collector: the card and set count, and the three most valuable cards`
 				: 'Every Pokémon TCG set on PokéCards-Collector, with the set and series count and the most valuable cards',
 		),
+		keywords: [`${prefix}Pokémon TCG sets`, `${prefix}Pokémon set list`, `${prefix}Pokémon set value`, `${prefix}Pokémon card sets by release date`],
+		schemas: [setListSchema(setsWithPrices, catalogue)],
 		title: `All ${prefix}Pokémon TCG Sets`,
 		type: 'CollectionPage' as const,
 	};

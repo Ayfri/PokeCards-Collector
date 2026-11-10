@@ -29,16 +29,15 @@ export async function addCardToCollection(username: string, cardCode: string, cl
 		const { data, error } = await client
 			.from('collections')
 			.insert({
-				username,
 				card_code: cardCode,
+				username,
 			})
 			.select('card_code')
 			.single();
 
 		if (!error && data) collection.add(data.card_code, 1);
 
-		/** Only the card code is returned, the caller handles the error. */
-		return { data: data ?{ card_code: data.card_code } : null, error };
+		return { data, error };
 	} catch (error) {
 		console.error('Error adding card instance to collection:', error);
 		return { data: null, error };
@@ -75,7 +74,6 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 
 		if (!deleteError) collection.add(cardCode, -1);
 
-		/** Only the card code is returned, the caller handles the error. */
 		return { data: !deleteError ? { card_code: cardCode } : null, error: deleteError }; 
 
 	} catch (error) {

@@ -1,9 +1,9 @@
 import type { RARITY_SHAPES } from '#helpers/tcg-symbols.ts';
 
-export type RarityShape = keyof typeof RARITY_SHAPES;
+type RarityShape = keyof typeof RARITY_SHAPES;
 export type RarityTone = 'gold' | 'ink' | 'pink' | 'silver';
 
-export interface RaritySymbolSpec {
+interface RaritySymbolSpec {
 	count: 1 | 2 | 3;
 	shape: RarityShape;
 	tone: RarityTone;

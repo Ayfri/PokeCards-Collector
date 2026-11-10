@@ -162,10 +162,10 @@
 				</div>
 
 				{#if summary.unmatchedCount > 0}
-					<details class="mt-4 border-t border-gray-700 pt-3">
+					<details class="group mt-4 border-t border-gray-700 pt-3">
 						<summary class="flex cursor-pointer list-none items-center gap-2 text-gray-300 hover:text-white">
 							<span class="grow">{summary.unmatchedCount} card{summary.unmatchedCount === 1 ? '' : 's'} we could not place</span>
-							<ChevronDownIcon class="chevron shrink-0" size={16} />
+							<ChevronDownIcon class="shrink-0 transition-transform duration-150 ease-[ease] group-open:rotate-180" size={16} />
 						</summary>
 						<p class="mt-2 text-xs text-gray-400">
 							Their sets are not in our catalogue yet, or your file spells them differently. Everything else imports normally.
@@ -213,13 +213,5 @@
 	/* The disclosure arrow is drawn by the icon, and it points up once the list is open. */
 	summary::-webkit-details-marker {
 		display: none;
-	}
-
-	summary :global(.chevron) {
-		transition: transform 150ms ease;
-	}
-
-	details[open] :global(.chevron) {
-		transform: rotate(180deg);
 	}
 </style>

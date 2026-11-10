@@ -77,7 +77,7 @@
 <!-- Wide rather than tall: on a laptop screen the whole rules sheet and its Got it button fit without scrolling. -->
 <Modal bind:open containerClass="max-w-5xl" {onClose}>
 	{#snippet header()}
-		<h2 id="modal-title" class="flex items-center gap-2 text-xl font-medium text-gold-400">
+		<h2 class="flex items-center gap-2 text-xl font-medium text-gold-400" id="modal-title">
 			<Gamepad2Icon size={20} /> How to play Card.dle
 		</h2>
 	{/snippet}
@@ -153,7 +153,7 @@
 	</div>
 
 	{#snippet footer()}
-		<Button onClick={onClose} class="px-4 py-2" title="Close the rules">
+		<Button class="px-4 py-2" onClick={onClose} title="Close the rules">
 			<CheckIcon size={16} /> Got it
 		</Button>
 	{/snippet}

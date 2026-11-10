@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { LANGUAGES, type Language } from '#helpers/catalogues.ts';
-import { buildCardIndex, buildSetKeys, MAX_IMPORT_ROWS, resolveRows, type Catalogue, type ImportRow } from '#helpers/collection-import.ts';
+import { type Language, LANGUAGES } from '#helpers/catalogues.ts';
+import { buildCardIndex, buildSetKeys, type ImportLookups, type ImportRow, MAX_IMPORT_ROWS, resolveRows } from '#helpers/collection-import.ts';
 import { getCards, getSets } from '#helpers/supabase-data.ts';
 import type { Card, Set } from '#lib/types.js';
 import type { RequestHandler } from './$types';
@@ -31,9 +31,9 @@ const SOURCES: Record<Language, CatalogueSource> = {
 };
 
 /** Rebuilt only when `getCards` returns a different array, which happens at most once an hour after the daily scrape. */
-const cached = new Map<CatalogueSource, { cards: Card[]; catalogue: Catalogue }>();
+const cached = new Map<CatalogueSource, { cards: Card[]; catalogue: ImportLookups }>();
 
-async function lookups(source: CatalogueSource): Promise<Catalogue> {
+async function lookups(source: CatalogueSource): Promise<ImportLookups> {
 	const [cards, sets] = await Promise.all([source.cards(), source.sets()]);
 	let entry = cached.get(source);
 	if (entry?.cards !== cards) {

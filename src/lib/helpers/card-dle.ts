@@ -103,7 +103,7 @@ export function shareText(date: string, guesses: CardDleGuess[], url: string, ea
 	return [`Card.dle ${date} - ${guesses.length} ${guesses.length === 1 ? 'guess' : 'guesses'}${easyUsed ? ' (easy mode)' : ''}`, ...rows, url].join('\n');
 }
 
-export interface CardOfTheDay extends FullCard {
+interface CardOfTheDay extends FullCard {
 	price: number;
 }
 

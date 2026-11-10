@@ -2,7 +2,7 @@ import { getSupabaseBrowserClient, supabase } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PublicProfile, SearchedUserWithStats, ServiceResponse, UsernameCheckResult } from '../types';
 
-export async function getProfileByAuthId(authId: string, client: SupabaseClient = getSupabaseBrowserClient()) {
+export async function getProfileByAuthId(authId: string, client: SupabaseClient) {
 	try {
 		const { data, error } = await client
 			.from('profiles')
@@ -18,7 +18,7 @@ export async function getProfileByAuthId(authId: string, client: SupabaseClient 
 }
 
 /** Every column but `auth_id`, so a profile read for another visitor never carries the owner's account id. */
-export async function getProfileByUsername(username: string, client: SupabaseClient = getSupabaseBrowserClient()): Promise<ServiceResponse<PublicProfile>> {
+export async function getProfileByUsername(username: string, client: SupabaseClient): Promise<ServiceResponse<PublicProfile>> {
 	try {
 		const { data, error } = await client
 			.from('profiles')
@@ -65,11 +65,11 @@ export async function isUsernameTaken(username: string, client: SupabaseClient):
 			.abortSignal(AbortSignal.timeout(5000))
 			.limit(1);
 
-		if (error) return { exists: false, error: error.message };
+		if (error) return { error: error.message, exists: false };
 
-		return { exists: (data?.length ?? 0) > 0, error: null };
+		return { error: null, exists: (data?.length ?? 0) > 0 };
 	} catch (error) {
-		return { exists: false, error: error instanceof Error ? error : String(error) };
+		return { error: error instanceof Error ? error : String(error), exists: false };
 	}
 }
 
@@ -80,8 +80,8 @@ export async function isUsernameTaken(username: string, client: SupabaseClient):
 export async function searchUsers(query: string, limit: number): Promise<ServiceResponse<SearchedUserWithStats[]>> {
 	try {
 		const { data, error } = await supabase.rpc('search_public_users_with_stats', {
-			p_query: query.toLowerCase().trim(),
-			p_limit: limit
+			p_limit: limit,
+			p_query: query.toLowerCase().trim()
 		});
 
 		if (error) {

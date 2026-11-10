@@ -22,7 +22,7 @@
 
 <svelte:head>
 	{#if data.preloadPayload}
-		<link rel="preload" as="fetch" crossorigin="anonymous" href={payloadUrl(data.payload)} />
+		<link as="fetch" crossorigin="anonymous" href={payloadUrl(data.payload)} rel="preload" />
 	{/if}
 </svelte:head>
 
@@ -36,7 +36,7 @@
 		</div>
 	{:then cardDataResolved}
 		<div class="flex min-h-0 flex-1 flex-col text-lg text-white">
-			<CardGrid cards={cardDataResolved.cards} {sets} rarities={cardDataResolved.rarities} types={cardDataResolved.types} artists={cardDataResolved.artists} pokemons={cardDataResolved.pokemons} note={data.note} pageTitle={null} selectedSetName={selectedSetName} selectedArtistName={artistName(cardDataResolved.artists)} />
+			<CardGrid artists={cardDataResolved.artists} cards={cardDataResolved.cards} note={data.note} pageTitle={null} pokemons={cardDataResolved.pokemons} rarities={cardDataResolved.rarities} selectedArtistName={artistName(cardDataResolved.artists)} selectedSetName={selectedSetName} {sets} types={cardDataResolved.types} />
 		</div>
 	{:catch error}
 		<p class="p-4 text-red-400">Error loading cards: {error.message}</p>

@@ -40,14 +40,14 @@ export const load: PageServerLoad = async ({ isDataRequest, parent, url }) => {
 	}
 
 	return {
+		breadcrumbs: ogCrumbs,
 		canonical,
-		title: ogTitle,
 		description: ogDescription,
 		image,
-		breadcrumbs: ogCrumbs,
 		keywords: ogKeywords,
 		/** A client navigation already starts the payload fetch from `+page.ts`, so only the document preloads it. */
 		preloadPayload: !isDataRequest,
+		title: ogTitle,
 		type: 'CollectionPage' as const,
 	};
 }

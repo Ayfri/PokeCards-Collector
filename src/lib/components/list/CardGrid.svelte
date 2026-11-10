@@ -1,56 +1,56 @@
 <script lang="ts">
-	import "#src/styles/colors.css";
-	import { filters } from "#stores/filters.svelte.ts";
-	import CardComponent from "#components/list/Card.svelte";
-	import Filters from "#components/list/Filters.svelte";
-	import VirtualGrid from "#components/list/VirtualGrid.svelte";
-	import PageTitle from "#components/PageTitle.svelte";
-	import SetLogo from "#components/SetLogo.svelte";
-	import ScrollProgress from "#components/list/ScrollProgress.svelte";
-	import TextInput from "#lib/components/filters/TextInput.svelte";
-	import { onMount } from "svelte";
-	import type { FullCard, Set, GridPokemon } from "#lib/types.js";
-	import { fade, fly } from "svelte/transition";
-	import XIcon from "@lucide/svelte/icons/x";
-	import SlidersHorizontalIcon from "@lucide/svelte/icons/sliders-horizontal";
-	import RotateCcwIcon from "@lucide/svelte/icons/rotate-ccw";
-	import Button from "#lib/components/filters/Button.svelte";
-	import { goto } from "$app/navigation";
-	import { page } from "$app/state";
-	import { filterCards, getCardDimensions, keepMostExpensivePerGroup, sortBySupertype, sortCards } from "#helpers/card-grid.ts";
-	import { cardSize } from "#stores/grid.svelte.ts";
-	import SizeSlider from "#lib/components/filters/SizeSlider.svelte";
+	import '#src/styles/colors.css';
+	import { filters } from '#stores/filters.svelte.ts';
+	import CardComponent from '#components/list/Card.svelte';
+	import Filters from '#components/list/Filters.svelte';
+	import VirtualGrid from '#components/list/VirtualGrid.svelte';
+	import PageTitle from '#components/PageTitle.svelte';
+	import SetLogo from '#components/SetLogo.svelte';
+	import ScrollProgress from '#components/list/ScrollProgress.svelte';
+	import TextInput from '#lib/components/filters/TextInput.svelte';
+	import { onMount } from 'svelte';
+	import type { FullCard, GridPokemon, Set } from '#lib/types.js';
+	import { fade, fly } from 'svelte/transition';
+	import XIcon from '@lucide/svelte/icons/x';
+	import SlidersHorizontalIcon from '@lucide/svelte/icons/sliders-horizontal';
+	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
+	import Button from '#lib/components/filters/Button.svelte';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { filterCards, getCardDimensions, keepMostExpensivePerGroup, sortBySupertype, sortCards } from '#helpers/card-grid.ts';
+	import { cardSize } from '#stores/grid.svelte.ts';
+	import SizeSlider from '#lib/components/filters/SizeSlider.svelte';
 
 	interface Props {
-		cards: FullCard[];
-		sets: Set[];
-		pokemons: GridPokemon[];
-		rarities: string[];
-		types: string[];
 		artists?: string[];
+		cards: FullCard[];
+		lowRes?: boolean;
 		/** A caveat about the catalogue (an incomplete one), shown next to the counts. */
 		note?: string;
 		pageTitle?: string | null;
-		selectedSetName?: string | null;
+		pokemons: GridPokemon[];
+		rarities: string[];
 		selectedArtistName?: string | null;
-		lowRes?: boolean;
+		selectedSetName?: string | null;
+		sets: Set[];
+		types: string[];
 	}
 
 	let {
-		cards,
-		sets,
-		pokemons,
-		rarities,
-		types,
 		artists = [],
+		cards,
+		lowRes = true,
 		note,
 		pageTitle,
-		selectedSetName = null,
+		pokemons,
+		rarities,
 		selectedArtistName = null,
-		lowRes = true
+		selectedSetName = null,
+		sets,
+		types
 	}: Props = $props();
 
-	let clientWidth: number = $state(0);
+	let windowWidth: number = $state(0);
 	let showFilters = $state(false);
 	let searchName = $derived(filters.name);
 	/** Fixed height of the info container in Card.svelte, added to the card height to get the virtual grid's row size. */
@@ -88,7 +88,7 @@
 	}
 
 	/** Clears the filters, the search box and every filter parameter, keeping only the `user` the page was opened for. */
-	function localResetFilters() {
+	function resetFilters() {
 		filters.reset();
 		searchName = "";
 
@@ -105,7 +105,7 @@
 			showFilters = false;
 		}
 	}
-	const cardDimensions = $derived(getCardDimensions(cardSize.current, clientWidth));
+	const cardDimensions = $derived(getCardDimensions(cardSize.current, windowWidth));
 	const selectedSet = $derived(selectedSetName ? sets.find(set => set.name === selectedSetName) : undefined);
 
 	const pokemonMap = $derived(new Map(pokemons.map(pokemon => [pokemon.id, pokemon])));
@@ -129,38 +129,38 @@
 
 </script>
 
-<svelte:window bind:innerWidth={clientWidth} onkeydown={handleKeydown} />
+<svelte:window bind:innerWidth={windowWidth} onkeydown={handleKeydown} />
 <svelte:body style:overflow={showFilters ? "hidden" : "auto"} />
 
 {#if showFilters}
 	<div
 		aria-hidden={!showFilters}
-		class="filter-overlay fixed inset-0 z-50 bg-black/70 transition-all duration-300"
-		transition:fade={{ duration: 200 }}
+		class="fixed inset-0 z-50 bg-black/70 transition-all duration-300"
 		onclick={() => (showFilters = false)}
 		onkeydown={handleKeydown}
+		transition:fade={{ duration: 200 }}
 	></div>
 	<div
 		class="fixed top-0 h-screen w-full md:w-112.5 bg-gray-800 z-60 shadow-lg flex flex-col {showFilters
 			? 'right-0'
 			: '-right-95'} transition-all duration-300 z-50"
-		transition:fly={{ x: 380, duration: 300 }}
+		transition:fly={{ duration: 300, x: 380 }}
 	>
 		<div
 			class="flex justify-between items-center p-4 border-b border-white/10"
 		>
 			<h2 class="m-0 text-xl font-semibold text-gold-400">Filters</h2>
 			<button
+				aria-label="Close filters"
 				class="focus-ring bg-transparent border-none text-white p-1 rounded-sm hover:bg-white/10 transition-colors flex items-center justify-center"
 				onclick={() => (showFilters = false)}
-				aria-label="Close filters"
 				title="Close filters"
 			>
 				<XIcon size={20} />
 			</button>
 		</div>
 		<div class="flex-1 overflow-y-auto p-6 pointer-events-auto">
-			<Filters {rarities} {sets} {types} {artists} />
+			<Filters {artists} {rarities} {sets} {types} />
 		</div>
 	</div>
 {/if}
@@ -200,19 +200,19 @@
 
 			<div class="w-48 hidden md:block">
 				<TextInput
+					bind:value={searchName}
 					id="name"
 					label="Name"
 					labelClass="sr-only"
-					bind:value={searchName}
+					onDebouncedInput={setFilterName}
 					placeholder="Search by name..."
-					debounceFunction={setFilterName}
 				/>
 			</div>
 			<div class="relative">
 				<Button
-					onClick={() => (showFilters = true)}
-					isActive={filters.count > 0}
 					class="px-4"
+					isActive={filters.count > 0}
+					onClick={() => (showFilters = true)}
 					title={filters.count > 0 ? `Open filters (${filters.count} active)` : 'Open filters'}
 				>
 					<SlidersHorizontalIcon size={16} /> Filters
@@ -228,9 +228,9 @@
 			</div>
 
 			<Button
-				onClick={localResetFilters}
-				disabled={filters.count === 0}
 				class="p-1.5"
+				disabled={filters.count === 0}
+				onClick={resetFilters}
 				title="Reset every filter and the sort order"
 			>
 				<RotateCcwIcon size={16} />
@@ -244,15 +244,15 @@
 
 	<div class="relative flex flex-1 flex-col">
 		<VirtualGrid
+			forcedItemsPerRow={cardDimensions.cardsPerRow}
 			gapX={cardDimensions.gapX}
 			gapY={cardDimensions.gapY}
 			itemHeight={cardDimensions.height + infoContainerHeight}
 			itemWidth={cardDimensions.width}
-			forcedItemsPerRow={cardDimensions.cardsPerRow}
 			items={filteredCards}
-			marginTop={clientWidth ? 20 : 50}
+			marginTop={windowWidth ? 20 : 50}
 		>
-			{#snippet children({ item, index })}
+			{#snippet children({ index, item })}
 				<CardComponent
 					card={item}
 					customHeight={cardDimensions.height}

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { browser } from '$app/env';
 	import PageTitle from '#components/PageTitle.svelte';
 	import Button from '#components/filters/Button.svelte';
 	import Checkbox from '#components/filters/Checkbox.svelte';
@@ -10,12 +9,12 @@
 	import BinderBoard from '#components/binder/BinderBoard.svelte';
 	import BinderStorage from '#components/binder/BinderStorage.svelte';
 	import BinderToolbar from '#components/binder/BinderToolbar.svelte';
-	import README from '#components/binder/README.svelte';
+	import BinderHelp from '#components/binder/BinderHelp.svelte';
 	import Modal from '#components/ui/Modal.svelte';
 	import HelpCircleIcon from '@lucide/svelte/icons/circle-question-mark';
 	import { downloadDataUrl, renderBinderImage } from '#helpers/binder-export.ts';
 	import { setCardCount } from '#helpers/card-utils.ts';
-	import type { BinderCards, BinderCatalogueCard } from '#lib/types.js';
+	import type { BinderCatalogueCard, BinderSlot } from '#lib/types.js';
 	import { binderStorage } from '#stores/binder.svelte.ts';
 	import type { PageData } from './$types';
 
@@ -36,7 +35,7 @@
 	let rows = $state(3);
 	let columns = $state(3);
 	/** Raw: every write replaces the page arrays (`updatePage` mutates a copy), none writes into one in place. */
-	let pages = $state.raw<Array<Array<BinderCards | null>>>([[]]);
+	let pages = $state.raw<Array<Array<BinderSlot | null>>>([[]]);
 	let currentPage = $state(0);
 	let spread = $state(true);
 
@@ -73,32 +72,24 @@
 		return -1;
 	});
 
-	function emptyPage(): Array<BinderCards | null> {
+	function emptyPage(): Array<BinderSlot | null> {
 		return Array(rows * columns).fill(null);
 	}
 
 	function saveToLocalStorage() {
-		if (!browser) return;
 		try {
 			window.localStorage.setItem('binderGridData', JSON.stringify({ columns, pages, rows, spread }));
 			window.localStorage.setItem('binderStoredCards', JSON.stringify(binderStorage.cards));
 		} catch (e) { console.error('Failed to save the binder:', e); }
 	}
 
-	/** Image URLs from the older storage format that had no card codes, matched to cards once the catalogue arrives. */
-	let legacyUrls: string[] = [];
-
 	function loadFromLocalStorage() {
-		if (!browser) return;
 		try {
 			const storedDataString = window.localStorage.getItem('binderStoredCards');
 			if (storedDataString) {
 				const parsed = JSON.parse(storedDataString);
 				if (Array.isArray(parsed)) {
-					if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0] !== null && 'url' in parsed[0]) {
-						/** The older storage format kept raw image URLs, which can only be matched to cards once the catalogue has arrived. */
-						legacyUrls = parsed.map(oldCard => oldCard.url).filter((url: unknown): url is string => typeof url === 'string');
-					} else if (parsed.every(item => typeof item === 'string')) {
+					if (parsed.every(item => typeof item === 'string')) {
 						binderStorage.cards = parsed;
 					} else {
 						console.warn('Invalid format found in binderStoredCards, resetting.');
@@ -122,9 +113,6 @@
 
 			if (Array.isArray(binderData.pages)) {
 				pages = binderData.pages.length ? binderData.pages : [emptyPage()];
-			} else if (Array.isArray(binderData.cards)) {
-				/** The older single-grid layout stored a flat `cards` array instead of `pages`. */
-				pages = [binderData.cards];
 			} else {
 				pages = [emptyPage()];
 			}
@@ -137,17 +125,10 @@
 
 	onMount(() => {
 		loadFromLocalStorage();
-		/** Saving waits while a URL migration is pending, so an empty storage never overwrites the legacy entry. */
-		if (!legacyUrls.length) loaded = true;
+		loaded = true;
 
 		data.catalogue.then(cards => {
 			catalogue = cards;
-			if (!legacyUrls.length) return;
-
-			const codesByImage = new Map(cards.map(card => [card.image, card.cardCode]));
-			binderStorage.cards = [...new Set(legacyUrls.map(url => codesByImage.get(url)).filter((code): code is string => Boolean(code)))];
-			legacyUrls = [];
-			loaded = true;
 		}).catch(error => console.error('Failed to load the card catalogue:', error));
 	});
 
@@ -160,7 +141,7 @@
 		const size = rows * columns;
 		if (pages.every(page => page.length === size)) return;
 		pages = pages.map(page => {
-			const resized: Array<BinderCards | null> = Array(size).fill(null);
+			const resized: Array<BinderSlot | null> = Array(size).fill(null);
 			page.forEach((card, index) => { if (card && index < size) resized[index] = { ...card, position: index }; });
 			return resized;
 		});
@@ -168,11 +149,11 @@
 
 	$effect(() => { if (currentPage > pages.length - 1) currentPage = Math.max(0, pages.length - 1); });
 
-	function updatePage(pageIndex: number, updater: (page: Array<BinderCards | null>) => Array<BinderCards | null>) {
+	function updatePage(pageIndex: number, updater: (page: Array<BinderSlot | null>) => Array<BinderSlot | null>) {
 		pages = pages.map((page, index) => (index === pageIndex ? updater([...page]) : page));
 	}
 
-	function makeSlot(url: string, cardCode: string | undefined, position: number): BinderCards {
+	function makeSlot(url: string, cardCode: string | undefined, position: number): BinderSlot {
 		return { cardCode, id: crypto.randomUUID(), position, url };
 	}
 
@@ -322,7 +303,6 @@
 	}
 
 	async function exportBinder(scope: 'page' | 'all') {
-		if (!browser) return;
 		toggleExportModal();
 		exporting = true;
 		try {
@@ -338,7 +318,7 @@
 	}
 </script>
 
-<README showHelp={showHelp} toggleHelp={toggleHelp} />
+<BinderHelp onClose={toggleHelp} open={showHelp} />
 
 <div class="-mt-6 flex flex-col gap-4 p-4 md:p-6 lg:-mt-12">
 	<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -390,16 +370,16 @@
 
 		<div class="h-[calc(100dvh-19rem)] min-h-[26rem] lg:col-span-4">
 			<BinderStorage
-				cards={cardsByCode}
 				bind:visibleItems={storageOrder}
+				cards={cardsByCode}
 				onAutoFill={autoFill}
+				onClear={toggleClearStorageModal}
 				onDropFromBinder={handleStorageDrop}
 				onSelect={item => (selectedItem = item)}
 				{placedItems}
 				ready={catalogueReady}
 				selected={selectedItem}
 				{sets}
-				{toggleClearStorageModal}
 			/>
 		</div>
 	</div>
@@ -410,8 +390,8 @@
 
 	<div class="mb-4">
 		<Select
-			id="set-select"
 			bind:value={selectedSet}
+			id="set-select"
 			label="Choose a set:"
 			options={data.sets
 				.slice()
@@ -434,12 +414,12 @@
 	<p class="mb-4 text-sm text-gray-300">Choose which cards to send to the storage.</p>
 
 	<div class="mb-4 flex flex-col gap-4">
-		<Checkbox id="include-collection" bind:checked={includeCollection} disabled={!loggedIn} label="Include my collection" />
+		<Checkbox bind:checked={includeCollection} disabled={!loggedIn} id="include-collection" label="Include my collection" />
 		<p class="-mt-3 ml-6 text-xs text-gray-400">
 			{#if loggedIn}{data.collectionCodes.length} cards in your collection{:else}You need to be logged in to access your collection{/if}
 		</p>
 
-		<Checkbox id="include-wishlist" bind:checked={includeWishlist} disabled={!loggedIn} label="Include my wishlist" />
+		<Checkbox bind:checked={includeWishlist} disabled={!loggedIn} id="include-wishlist" label="Include my wishlist" />
 		<p class="-mt-3 ml-6 text-xs text-gray-400">
 			{#if loggedIn}{data.wishlistCodes.length} cards in your wishlist{:else}You need to be logged in to access your wishlist{/if}
 		</p>
@@ -463,13 +443,13 @@
 		Paste image URLs to add them to the storage. URLs must start with 'http', and several can be separated by line breaks or semicolons.
 	</p>
 	<div class="mb-4">
-		<TextInput id="cardUrl" bind:value={cardUrl} label="Single card image URL" placeholder="https://assets.tcgdex.net/..." type="url" />
+		<TextInput bind:value={cardUrl} id="cardUrl" label="Single card image URL" placeholder="https://assets.tcgdex.net/..." type="url" />
 	</div>
 	<div class="mb-4">
 		<TextArea
-			id="multipleCardUrls"
 			bind:value={multipleCardUrls}
 			class="max-h-80 overflow-y-auto"
+			id="multipleCardUrls"
 			label="Or multiple URLs (one per line)"
 			placeholder={'https://example.com/card1.png\nhttps://example.com/card2.png'}
 			rows={4}

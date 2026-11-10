@@ -11,9 +11,9 @@ export interface CardVariants {
 export interface Card {
 	/** Extensionless TCGdex image base of the artwork a plate crops in place of a missing scan. Only on a card with no scan that has a source. */
 	artImage?: string;
+	artist: string;
 	/** Where `artImage` comes from: `lang:<language>`, `reprint:<tcgdex id>` or `energy:<tcgdex id>`. */
 	artSource?: string;
-	artist: string;
 	cardCode: string;
 	/** Drawn on a card page, including a related print swapped in from the card list, so the list reads carry it; the grid payloads leave it out. */
 	cardMarketUpdatedAt?: string;
@@ -28,7 +28,6 @@ export interface Card {
 	pokemonNumber?: number;
 	/** Set only on the cards a grid payload carries: `cardPrice()` of the card, so the grid needs no price record. */
 	price?: number | null;
-	ptcgoCode?: string;
 	rarity: string;
 	regulationMark?: string;
 	setId: string;
@@ -51,11 +50,11 @@ export type PlateCard = Pick<Card, 'artImage' | 'artSource' | 'artist' | 'cardCo
 export type PlateSet = Pick<Set, 'name' | 'printedTotal' | 'symbol'>;
 
 export interface Pokemon {
-	id: number;
-	name: string;
 	description: string;
 	evolves_from?: number;
 	evolves_to?: number[];
+	id: number;
+	name: string;
 }
 
 /** What a card page draws of a set: the tiles, the plate, the badge and the details panel. */
@@ -65,25 +64,25 @@ export type CardPageSet = Pick<Set, 'logo' | 'name' | 'printedTotal' | 'releaseD
 export type GridPokemon = Pick<Pokemon, 'id' | 'name'>;
 
 export interface PriceData {
-	simple?: number;
-	low?: number;
-	trend?: number;
 	avg1?: number;
 	avg7?: number;
 	avg30?: number;
-	reverseSimple?: number;
-	reverseLow?: number;
-	reverseTrend?: number;
+	low?: number;
 	reverseAvg1?: number;
 	reverseAvg7?: number;
 	reverseAvg30?: number;
+	reverseLow?: number;
+	reverseSimple?: number;
+	reverseTrend?: number;
+	simple?: number;
+	trend?: number;
 }
 
 export interface Set {
 	/** Set only on the non-English sets of the pages that mix catalogues: set ids repeat across languages (`base1`, `xy8`), so a lookup keys on both. */
 	language?: Language;
-	name: string;
 	logo: string;
+	name: string;
 	printedTotal: number;
 	ptcgoCode?: string;
 	releaseDate: Date;
@@ -96,18 +95,6 @@ export interface Set {
 
 export interface SetWithPrice extends Set {
 	totalPrice: number;
-}
-
-export interface User {
-	id: number;
-	username: string;
-	password: string;
-	email: string;
-}
-
-export interface PokemonStats {
-	cards: Card[];
-	name: string;
 }
 
 export interface UserProfile {
@@ -148,10 +135,10 @@ export interface CollectionStats {
 }
 
 export interface Image {
-	url: string;
 	alt: string;
 	/** Declared to the crawlers as `og:image:width` / `og:image:height`, so a scraper can lay the preview out without downloading it. */
 	height?: number;
+	url: string;
 	width?: number;
 }
 
@@ -176,15 +163,6 @@ export interface SeoData {
 
 export type SeoType = 'Article' | 'CollectionPage' | 'ItemPage' | 'ProfilePage' | 'Product' | 'WebPage' | 'WebSite';
 
-export interface SetLogoUrls {
-	logo: string | null;
-	symbol: string | null;
-}
-
-export type CardFilter = {
-	set?: string[];
-}
-
 /**
  * One catalogue card as the binder needs it: the fields the storage panel draws, sorts and searches on.
  * Serving whole cards plus the price table would put 11.4 MB into the binder document.
@@ -202,11 +180,11 @@ export interface BinderCatalogueCard {
 }
 
 /** One slot of a binder page. */
-export interface BinderCards {
-	id: string;
-	url: string;
-	position: number;
+export interface BinderSlot {
 	cardCode: string | undefined;
+	id: string;
+	position: number;
+	url: string;
 }
 
 export interface SearchedUser {
@@ -216,14 +194,14 @@ export interface SearchedUser {
 }
 
 export interface UsernameCheckResult {
-	exists: boolean;
 	error: Error | string | null;
+	exists: boolean;
 }
 
 export interface ServiceResponse<T> {
 	data: T | null;
 	/** Also accepts a Supabase `PostgrestError`, an object with `message`, `details`, `hint` and `code`. */
-	error: Error | { message: string; details?: string; hint?: string; code?: string; } | string | null;
+	error: Error | { code?: string; details?: string; hint?: string; message: string; } | string | null;
 }
 
 /** Per-attribute comparison between a card.dle guess and the card of the day. */
@@ -307,4 +285,4 @@ export interface SearchedUserWithStats extends SearchedUser {
 /** Response of `GET /api/search-users`. */
 export type SearchUsersResponse =
 	| { success: true; users: SearchedUserWithStats[] }
-	| { success?: false; error: string };
+	| { error: string; success?: false; };

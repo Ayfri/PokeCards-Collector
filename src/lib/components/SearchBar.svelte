@@ -9,7 +9,7 @@
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
 	import CardImage from '#components/card/CardImage.svelte';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
-	import { formatEuros, pascalCase } from '#helpers/format.ts';
+	import { formatEuros, titleCase } from '#helpers/format.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import type { FullCard } from '#lib/types.js';
 	import type { CardSearchResult, PokemonSearchResult } from '#helpers/card-search.ts';
@@ -19,15 +19,13 @@
 	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {
-		autoFocus?: boolean;
 		mobileMode?: boolean;
-		onToggleModal?: (() => void) | undefined;
+		onClose?: (() => void) | undefined;
 	}
 
 	let {
-		autoFocus = false,
 		mobileMode = false,
-		onToggleModal = undefined
+		onClose = undefined
 	}: Props = $props();
 
 	let inputElement = $state<HTMLInputElement>();
@@ -136,20 +134,14 @@
 	onMount(() => {
 		platformModifierKey = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'Cmd' : 'Ctrl';
 
-		if (autoFocus && inputElement) {
+		if (mobileMode && inputElement) {
 			/** The modal is still transitioning in, and focusing right away gets undone. */
-		setTimeout(() => inputElement?.focus(), 100);
+			setTimeout(() => inputElement?.focus(), 100);
 		}
 	});
 
 	const handleGlobalKeydown = (event: KeyboardEvent) => {
-		if (event.key === 'Escape') {
-			if (mobileMode && onToggleModal) {
-				onToggleModal();
-			} else {
-				showResults = false;
-			}
-		}
+		if (event.key === 'Escape') showResults = false;
 
 		if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
 			event.preventDefault();
@@ -162,25 +154,25 @@
 <svelte:document onclick={handleClickOutside} onkeydown={handleGlobalKeydown} />
 
 <div class="relative {mobileMode ? 'flex flex-col w-full' : ''}">
-	<div class="search-container relative">
+	<div class="relative">
 		<div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
 			<Search size={18} />
 		</div>
 		<input
 			bind:this={inputElement}
-			value={searchQuery}
 			class="bg-black border text-white px-4 py-2 rounded-full w-full outline-hidden pl-10 pr-10 {mobileMode ? '' : 'pr-24'} transition-all duration-300 ease-in-out {inputFocused ? 'ring-2 ring-gold-400 shadow-lg shadow-gold-400/20 border-transparent' : 'border border-gray-700 hover:border-gray-500'}"
-			oninput={event => handleInput(event.currentTarget.value)}
-			onfocus={handleInputFocus}
 			onblur={() => inputFocused = false}
+			onfocus={handleInputFocus}
+			oninput={event => handleInput(event.currentTarget.value)}
 			placeholder="Search cards or Pokémon..."
 			type="text"
+			value={searchQuery}
 		/>
 		{#if searchQuery.length > 0}
 			<button
-				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white z-10 flex items-center justify-center h-6 w-6"
-				onclick={handleClearSearch}
 				aria-label="Clear search"
+				class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white z-10 flex items-center justify-center h-6 w-6 [-webkit-tap-highlight-color:transparent]"
+				onclick={handleClearSearch}
 				title="Clear search"
 			>
 				<X size={18} />
@@ -211,22 +203,22 @@
 			{/if}
 			{#each pokemonResults as pokemon (pokemon.id)}
 				<a
-					href="/cards-list?pokemon={pokemon.id}"
 					class="flex items-center p-3 gap-4 hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700"
-					onclick={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
-					title="Browse every {pascalCase(pokemon.name)} card"
+					href="/cards-list?pokemon={pokemon.id}"
+					onclick={() => onClose?.()}
+					title="Browse every {titleCase(pokemon.name)} card"
 				>
 					{#if !NO_IMAGES}
 						<img
-							src={getPokemonImageSrc(pokemon.id)}
-							alt={pascalCase(pokemon.name)}
+							alt={titleCase(pokemon.name)}
 							class="size-14 object-contain shrink-0"
 							loading="lazy"
 							onerror={event => handlePokemonImageError(event, pokemon.id)}
+							src={getPokemonImageSrc(pokemon.id)}
 						/>
 					{/if}
 					<div class="grow min-w-0">
-						<p class="font-semibold text-white truncate">{pascalCase(pokemon.name)}</p>
+						<p class="font-semibold text-white truncate">{titleCase(pokemon.name)}</p>
 						<p class="text-sm text-gray-400">Pokémon #{pokemon.id} · {pokemon.cardCount} card{pokemon.cardCount === 1 ? '' : 's'}</p>
 					</div>
 				</a>
@@ -237,9 +229,9 @@
 				{@const isAdded = addedCards.has(card.cardCode)}
 
 				<a 
-					href={cardLink}
 					class="block hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700 last:border-b-0 relative"
-					onclick={() => { if (mobileMode && onToggleModal) onToggleModal(); }}
+					href={cardLink}
+					onclick={() => onClose?.()}
 				>
 					<div class="flex items-center p-3 relative">
 						<CardImage
@@ -266,20 +258,20 @@
 								{#if isBinderPage}
 									<div class="shrink-0 ml-2">
 										<button 
-											class="py-1 px-2 rounded-sm flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white hover:bg-gray-700'} hover:shadow-lg transform hover:-translate-y-px"
+											class="py-1 px-2 rounded-sm flex items-center gap-1 transition-all duration-300 ease-in-out {isAdded ? 'bg-green-700 text-white' : 'text-gold-400 hover:text-white hover:bg-gray-700'} hover:shadow-lg transform hover:-translate-y-px enabled:active:scale-95 [-webkit-tap-highlight-color:transparent]"
+											disabled={isAdded}
 											onclick={(e) => {
 												e.preventDefault();
 												e.stopPropagation();
 												if (!isAdded) addToBinderStorage(card);
 											}}
 											title={isAdded ? "Added to binder" : "Add to binder storage"}
-											disabled={isAdded}
 										>
 											{#if isAdded}
-												<div in:fly={{ y: 10, duration: 200 }}>
+												<div in:fly={{ duration: 200, y: 10 }}>
 													<Check size={14} />
 												</div>
-												<span class="text-xs" in:fly={{ x: 5, duration: 200 }}>Added</span>
+												<span class="text-xs" in:fly={{ duration: 200, x: 5 }}>Added</span>
 											{:else}
 												<PlusCircle size={14} />
 												<span class="text-xs">Add</span>
@@ -299,18 +291,3 @@
 		</div>
 	{/if}
 </div>
-
-<style>
-	button {
-		-webkit-tap-highlight-color: transparent;
-	}
-	
-	button:active:not(:disabled) {
-		transform: scale(0.95);
-	}
-	
-	/* Keeps the clear button from scaling down when clicked: it only needs its vertical centering. */
-	.search-container button:active:not(:disabled) {
-		transform: translateY(-50%);
-	}
-</style>

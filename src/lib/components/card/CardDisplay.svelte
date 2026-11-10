@@ -6,18 +6,19 @@
 	import {NO_IMAGES} from '#helpers/card-images.ts';
 	import {fade, fly} from 'svelte/transition';
 	import type {CardPageSet, FullCard, Pokemon, PriceData} from '#lib/types.js';
-	import { pascalCase } from '#helpers/format.ts';
+	import { titleCase } from '#helpers/format.ts';
 	import InteractiveCard from '#components/card/InteractiveCard.svelte';
 	import { flushSync } from 'svelte';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { catalogueOfPath, type LanguagePaths } from '#helpers/catalogues.ts';
-	import { cardPath, cardSlug, setPath, type SetNeighbourLinks } from '#helpers/card-utils.ts';
-	import { getPokemonImageSrc, getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
+	import { cardPath, cardSlug, type SetNeighbourLinks, setPath } from '#helpers/card-utils.ts';
+	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { morphCards } from '#helpers/view-transitions.ts';
 
 	
 	interface Props {
+		lowRes?: boolean;
 		neighbours: SetNeighbourLinks;
 		/** The path of each Pokémon in the chain and next to the shown one, by Pokédex id. */
 		pokemonPaths: Record<number, string>;
@@ -27,18 +28,17 @@
 		prints: FullCard[];
 		sets: CardPageSet[];
 		versions: Promise<LanguagePaths>;
-		lowRes?: boolean;
 	}
 
 	let {
+		lowRes = false,
 		neighbours,
 		pokemonPaths,
 		pokemons,
 		prices,
 		prints,
 		sets,
-		versions,
-		lowRes = false
+		versions
 	}: Props = $props();
 
 	const catalogue = $derived(catalogueOfPath(page.url.pathname));
@@ -59,24 +59,6 @@
 	const currentPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId) : undefined);
 	const previousPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId - 1) : undefined);
 	const nextPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId + 1) : undefined);
-
-	function handlePokemonImageError(event: Event) {
-		const img = event.currentTarget as HTMLImageElement;
-		const pokemonId = img.dataset.pokemonId;
-
-		if (!pokemonId) {
-			img.src = '/loading-spinner.svg';
-			img.onerror = null;
-			return;
-		}
-
-		if (img.src.includes('official-artwork')) {
-			img.src = getPokemonSpriteSrc(Number(pokemonId));
-		} else {
-			img.src = '/loading-spinner.svg';
-			img.onerror = null;
-		}
-	}
 
 	/** Swaps the displayed card without a navigation: the picked tile flies up into the big card while the page jumps back to the top. */
 	function handleCardSelect(selectedCard: FullCard) {
@@ -109,26 +91,28 @@
 {#snippet pokemonNav(pokemon: Pokemon | undefined, href: string | undefined, side: 'prev' | 'next', desktop: boolean)}
 	{#if pokemon && href}
 		<a
+			class={['flex-col items-center opacity-70 transition-[opacity,scale] duration-300 ease-[ease] hover:scale-110 hover:opacity-100', desktop ? 'hidden lg:flex w-48' : 'flex w-auto', desktop && (side === 'prev' ? 'order-1' : 'order-3')]}
 			{href}
-			class={['pokemon-nav flex-col items-center opacity-70 hover:opacity-100 transition-opacity', desktop ? 'hidden lg:flex w-48' : 'flex w-auto', desktop && (side === 'prev' ? 'order-1' : 'order-3')]}
-			title="{pascalCase(pokemon.name)} cards"
-			in:fly={{ x: side === 'prev' ? -50 : 50, duration: 400, delay: 400 }}
+			in:fly={{ delay: 400, duration: 400, x: side === 'prev' ? -50 : 50 }}
+			title="{titleCase(pokemon.name)} cards"
 		>
 			{#if !NO_IMAGES}
-				<img
-					src={getPokemonImageSrc(pokemon.id)}
-					alt={pascalCase(pokemon.name)}
-					class={['object-contain nav-pokemon-image', desktop ? 'size-24' : 'size-16']}
-					title={pascalCase(pokemon.name)}
-					onerror={handlePokemonImageError}
-					data-pokemon-id={pokemon.id}
-				/>
+				<!-- Keyed: the fallback marks the element it already retried, and a reused one would skip the sprite for the next Pokémon. -->
+				{#key pokemon.id}
+					<img
+						alt={titleCase(pokemon.name)}
+						class={['object-contain', desktop ? 'size-24' : 'size-16']}
+						onerror={event => handlePokemonImageError(event, pokemon.id)}
+						src={getPokemonImageSrc(pokemon.id)}
+						title={titleCase(pokemon.name)}
+					/>
+				{/key}
 			{:else}
 				<div class={['flex items-center justify-center text-white bg-gray-800 rounded-full', desktop ? 'size-24' : 'size-16 text-xs']}>
 					#{pokemon.id}
 				</div>
 			{/if}
-			<span class="mt-1 text-center text-xs font-bold">{pascalCase(pokemon.name)}</span>
+			<span class="mt-1 text-center text-xs font-bold">{titleCase(pokemon.name)}</span>
 			<span class="text-xs text-gray-400">#{pokemon.id}</span>
 		</a>
 	{:else}
@@ -138,35 +122,34 @@
 
 <div class="flex flex-col gap-1 lg:gap-4 items-center content-center">
 	{#if currentPokemon && currentCard}
-		<div in:fly={{ y: -30, duration: 400, delay: 100 }}>
+		<div in:fly={{ delay: 100, duration: 400, y: -30 }}>
 			<EvolutionChain card={currentCard} {pokemonPaths} {pokemons} {prints} />
 		</div>
 	{/if}
 
 	{#if currentPokemon && currentCard?.pokemonNumber}
-		<div class="pokedex-number-display relative text-center" in:fade={{ duration: 300, delay: 200 }}>
-			<div class="pokedex-number text-gold-400 bg-black/60 font-bold px-3 py-1 rounded-md inline-block z-10">
+		<div class="relative text-center" in:fade={{ delay: 200, duration: 300 }}>
+			<div class="text-gold-400 bg-black/60 font-bold px-3 py-1 rounded-md inline-block z-10">
 				#{currentCard.pokemonNumber}
 			</div>
 		</div>
 	{/if}
 
-	<div class="card-display-area w-full px-4 md:px-12 max-w-8xl mx-auto perspective-container flex flex-col items-center">
+	<div class="w-full px-4 md:px-12 max-w-8xl mx-auto perspective-[1000px] flex flex-col items-center lg:flex-row lg:justify-between">
 
 		<!-- The big card has no intro of its own: the page transition flies the opened card into it. -->
-		<div class="center-card-wrapper relative shrink-0 order-1 lg:order-2 perspective-container">
+		<div class="relative shrink-0 order-1 lg:order-2 perspective-[1000px]">
 			{#if currentPokemon && !NO_IMAGES}
-				<div class="card-aura {currentType}" id="card-aura"></div>
+				<div class="card-aura {currentType}"></div>
 			{/if}
 			<InteractiveCard
 				card={currentCard}
-				pokemon={currentPokemon}
-				currentType={currentType}
 				currentSet={currentSet}
+				pokemon={currentPokemon}
 			/>
 		</div>
 
-		<div class="mobile-nav-wrapper w-full flex justify-between items-center mt-4 lg:hidden order-2">
+		<div class="w-full flex justify-between items-center mt-4 lg:hidden order-2">
 			{@render pokemonNav(previousPokemon, previousPokemon && pokemonPaths[previousPokemon.id], 'prev', false)}
 			{@render pokemonNav(nextPokemon, nextPokemon && pokemonPaths[nextPokemon.id], 'next', false)}
 		</div>
@@ -198,33 +181,29 @@
 	{/if}
 
 	{#if currentCard}
-		<CardLanguages cardCode={currentCard.cardCode} language={catalogue.language} known={{ cardCode: prints[0].cardCode, versions }} />
+		<CardLanguages cardCode={currentCard.cardCode} known={{ cardCode: prints[0].cardCode, versions }} language={catalogue.language} />
 	{/if}
 
 	{#if currentCard && currentSet}
-		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 500 }}>
-			<CardInfo card={currentCard} set={currentSet} {cardPrices} pokemon={currentPokemon} />
+		<div class="w-full" in:fly={{ delay: 500, duration: 500, y: 50 }}>
+			<CardInfo card={currentCard} {cardPrices} pokemon={currentPokemon} set={currentSet} />
 		</div>
 	{/if}
 
-	<div class="gold-rule my-12" in:fade={{ duration: 600, delay: 600 }}></div>
+	<div class="gold-rule my-12" in:fade={{ delay: 600, duration: 600 }}></div>
 
 	{#if prints.length > 1}
-		<div class="w-full" in:fly={{ y: 50, duration: 500, delay: 700 }}>
-			<RelatedCards cards={prints} {pokemons} {sets} {prices} pokemon={currentPokemon} onCardSelect={handleCardSelect} {lowRes} />
+		<div class="w-full" in:fly={{ delay: 700, duration: 500, y: 50 }}>
+			<RelatedCards cards={prints} {lowRes} onCardSelect={handleCardSelect} pokemon={currentPokemon} {pokemons} {prices} {sets} />
 		</div>
 	{/if}
 </div>
 
 {#if currentPokemon && !NO_IMAGES}
-	<div class="filter {currentType}" id="filter" transition:fade></div>
+	<div class="filter {currentType}" transition:fade></div>
 {/if}
 
 <style>
-	.perspective-container {
-		perspective: 1000px;
-	}
-
 	.card-aura {
 		aspect-ratio: 1 / 1;
 		background-color: var(--type-color);
@@ -242,43 +221,13 @@
 	}
 
 	.filter {
-		background-image: url(/particles.png);
 		/* AVIF weighs 234 KB against 608 KB for the PNG, which only browsers without AVIF still fetch. */
 		background-image: image-set(url(/particles.avif) type('image/avif'), url(/particles.png) type('image/png'));
 		background-size: cover;
-		content: "";
 		filter: var(--filter);
-		height: 100%;
-		top: 0;
-		right: 0;
-		bottom: 0;
-		left: 0;
+		inset: 0;
 		position: fixed;
-		width: 100%;
 		z-index: -20;
-	}
-
-	.pokemon-nav {
-		cursor: pointer;
-		transition: transform 0.3s ease, opacity 0.3s ease;
-		opacity: 0.7;
-	}
-
-	.pokemon-nav:hover {
-		transform: scale(1.1);
-		opacity: 1;
-	}
-
-	.nav-pokemon-image {
-		transition: filter 0.3s ease;
-	}
-
-	@media (min-width: 1024px) {
-		.card-display-area {
-			flex-direction: row;
-			justify-content: space-between;
-			align-items: center;
-		}
 	}
 
 	@media (max-width: 1023px) {

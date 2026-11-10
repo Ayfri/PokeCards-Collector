@@ -1,21 +1,19 @@
 <script lang="ts">
 	import CardImage from '#components/card/CardImage.svelte';
 	import type { CardPageSet, FullCard, Pokemon } from '#lib/types.js';
-	import { pascalCase } from '#helpers/format.ts';
+	import { titleCase } from '#helpers/format.ts';
 	import { throttle } from '#helpers/utils.ts';
 
 	
 	interface Props {
 		card: FullCard | undefined;
 		currentSet: CardPageSet | undefined;
-		currentType: string;
 		pokemon: Pokemon | undefined;
 	}
 
 	let {
 		card,
 		currentSet,
-		currentType,
 		pokemon
 	}: Props = $props();
 
@@ -31,7 +29,6 @@
 			clientY >= rect.top && clientY <= rect.bottom;
 
 		if (isInCard) {
-			centerCard.classList.remove('inactive');
 			const l = clientX - rect.left;
 			const t = clientY - rect.top;
 			const h = rect.height;
@@ -41,40 +38,30 @@
 			centerCard.style.setProperty('--rx', `${rotateX.toFixed(2)}deg`);
 			centerCard.style.setProperty('--ry', `${rotateY.toFixed(2)}deg`);
 		} else {
-			if (!centerCard.classList.contains('inactive')) {
-				centerCard.classList.add('inactive');
-				centerCard.style.removeProperty('--rx');
-				centerCard.style.removeProperty('--ry');
-			}
+			centerCard.style.removeProperty('--rx');
+			centerCard.style.removeProperty('--ry');
 		}
 	}, 16);
-
-	function handleMouseMove(event: MouseEvent) {
-		const {clientX, clientY} = event;
-		throttledUpdateCardStyle(clientX, clientY);
-	}
 </script>
 
-<svelte:window onmousemove={handleMouseMove}/>
+<svelte:window onmousemove={event => throttledUpdateCardStyle(event.clientX, event.clientY)} />
 
 <div
-	class="w-84 h-116 sm:w-[20rem] sm:h-112 lg:w-92 lg:h-128 max-w-full mx-auto rounded-xl shadow-lg card-face interactive-card {pokemon ? '' : 'non-pokemon'}"
 	bind:this={centerCard}
+	class="w-84 h-116 sm:w-[20rem] sm:h-112 lg:w-92 lg:h-128 max-w-full mx-auto rounded-xl shadow-lg interactive-card"
 	data-card-hero={card?.cardCode}
-	data-card-id={currentSet?.name}
-	data-card-type={currentType}
 >
 	{#key card?.image}
 		{#if card}
 			<CardImage
-				alt="{pokemon ? pascalCase(pokemon.name) : card.name} - {card.setName}"
+				alt="{pokemon ? titleCase(pokemon.name) : card.name} - {card.setName}"
 				{card}
+				class="image size-full rounded-xl"
 				imageUrl={card.image}
+				lazy={false}
 				lowRes={false}
 				set={currentSet}
 				sizes="384px"
-				class="image size-full rounded-xl"
-				lazy={false}
 			/>
 		{/if}
 	{/key}

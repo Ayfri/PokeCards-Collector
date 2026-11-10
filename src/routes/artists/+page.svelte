@@ -77,49 +77,49 @@
 
 <div class="container mx-auto px-4 py-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
-		<div transition:fly={{ y: 50, duration: 400, delay: 200 }}>
+		<div transition:fly={{ delay: 200, duration: 400, y: 50 }}>
 			<PageTitle title="Card Artists" />
 		</div>
 
-		<div class="flex items-center gap-2" transition:fly={{ y: 50, duration: 500, delay: 250 }}>
+		<div class="flex items-center gap-2" transition:fly={{ delay: 250, duration: 500, y: 50 }}>
             <div class="w-48">
                 <TextInput
+                    bind:value={searchTerm}
                     id="artistSearch"
                     label="Search"
-                    bind:value={searchTerm}
+                    onDebouncedInput={setSearchTerm}
                     placeholder="Search artists..."
-                    debounceFunction={setSearchTerm}
                 />
             </div>
 			<SortControl
 				bind:sortDirection={artistsSort.direction}
 				bind:sortValue={artistsSort.value}
 				options={[
-					{ value: 'name', label: 'Name' },
-					{ value: 'totalCards', label: 'Total Cards' },
-					{ value: 'totalValue', label: 'Total Value' },
-					{ value: 'averageValue', label: 'Average Card Price' },
-					{ value: 'firstReleaseDate', label: 'First Release Date' },
-					{ value: 'lastReleaseDate', label: 'Last Release Date' }
+					{ label: 'Name', value: 'name' },
+					{ label: 'Total Cards', value: 'totalCards' },
+					{ label: 'Total Value', value: 'totalValue' },
+					{ label: 'Average Card Price', value: 'averageValue' },
+					{ label: 'First Release Date', value: 'firstReleaseDate' },
+					{ label: 'Last Release Date', value: 'lastReleaseDate' }
 				]}
 			/>
 		</div>
 	</div>
 
-	<hr class="gold-rule my-4 border-0" transition:fade={{ duration: 400, delay: 300 }} />
+	<hr class="gold-rule my-4 border-0" transition:fade={{ delay: 300, duration: 400 }} />
 
-	<p class="text-gray-300 mb-6" transition:fade={{ duration: 400, delay: 300 }}>
+	<p class="text-gray-300 mb-6" transition:fade={{ delay: 300, duration: 400 }}>
 		Artists are the creators of the cards, they are responsible for the design and artwork of the cards.<br>
 		<span class="text-sm">Showing {filteredArtists.length} of {sortedArtists.length} artists.</span>
 	</p>
 
-	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ y: 50, duration: 400, delay: 400 }}>
+	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ delay: 400, duration: 400, y: 50 }}>
 		{#each filteredArtists as artist, artistIndex (artist.name)}
 			<!-- Offscreen tiles skip style and layout work until they scroll near, since most of the 411 are below the fold. The tile carries the containment itself:
 			     on a wrapper, its paint clip would cut the tile's top border when the hover lifts it. -->
 			<a
-				href="/cards-list?artist={encodeURIComponent(artist.name.toLowerCase())}"
 				class="card-tile overflow-hidden flex flex-col [contain-intrinsic-size:auto_290px] [content-visibility:auto]"
+				href="/cards-list?artist={encodeURIComponent(artist.name.toLowerCase())}"
 				title={`Browse every card illustrated by ${artist.name}`}
 			>
 				<div class="bg-gray-900 p-2 {NO_IMAGES ? 'hidden' : ''}">
@@ -132,15 +132,15 @@
 								<CardImage
 									alt="{card.name} by {artist.name}"
 									card={card.plate?.card}
+									class="h-full w-auto max-w-none object-contain mx-auto transform-gpu"
 									imageUrl={card.image}
 									lazy={artistIndex >= FIRST_ROW}
 									lowRes
 									onerror={() => failedImages.add(card.image)}
 									plateWidth={PLATE_WIDTH}
 									set={card.plate?.set}
-									types={card.types}
-									class="h-full w-auto max-w-none object-contain mx-auto transform-gpu"
 									style="transform: rotate({index * 10}deg) translateY({index * -5}px); filter: drop-shadow({index * 2}px {index * 3}px 10px rgb(0 0 0 / {70 - index * 15}%))"
+									types={card.types}
 								/>
 							</div>
 						{/each}
@@ -149,11 +149,11 @@
 				<div class="p-4 flex-1 flex flex-col">
 					<h2 class="text-lg font-semibold text-white">{artist.name}</h2>
 					<div class="mt-2 text-sm text-gray-400 flex justify-between">
-						<span class="flex items-center gap-1.5 text-gold-400" title="Cards illustrated by this artist"><span class="icon-layers size-3.5 shrink-0" aria-hidden="true"></span> {artist.totalCards} {artist.totalCards === 1 ? "card" : "cards"}</span>
-						<span class="flex items-center gap-1.5" title="First and last year this artist was printed"><span class="icon-calendar-days size-3.5 shrink-0" aria-hidden="true"></span> {artist.firstReleaseYear} - {artist.lastReleaseYear}</span>
+						<span class="flex items-center gap-1.5 text-gold-400" title="Cards illustrated by this artist"><span aria-hidden="true" class="icon-layers size-3.5 shrink-0"></span> {artist.totalCards} {artist.totalCards === 1 ? "card" : "cards"}</span>
+						<span class="flex items-center gap-1.5" title="First and last year this artist was printed"><span aria-hidden="true" class="icon-calendar-days size-3.5 shrink-0"></span> {artist.firstReleaseYear} - {artist.lastReleaseYear}</span>
 					</div>
 					<div class="mt-1 text-sm text-gray-400 flex justify-between">
-						<span class="flex items-center gap-1.5 text-green-400 font-semibold" title="Cardmarket value of every card by this artist"><span class="icon-circle-euro size-3.5 shrink-0" aria-hidden="true"></span> {euros(artist.totalValue)}</span>
+						<span class="flex items-center gap-1.5 text-green-400 font-semibold" title="Cardmarket value of every card by this artist"><span aria-hidden="true" class="icon-circle-euro size-3.5 shrink-0"></span> {euros(artist.totalValue)}</span>
 						<span title="Average value of one card by this artist">{euros(artist.averageValue)} avg</span>
 					</div>
 				</div>

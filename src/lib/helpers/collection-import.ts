@@ -1,5 +1,5 @@
 import setNames from '#scrapers/tcgdex/set-names.json' with { type: 'json' };
-import { LANGUAGES, type Language } from '#helpers/catalogues.ts';
+import { type Language, LANGUAGES } from '#helpers/catalogues.ts';
 import type { Card, Set } from '#lib/types.js';
 
 /** One line of an imported file, already reduced to the things a card can be found by. */
@@ -16,7 +16,7 @@ export interface ImportRow {
 }
 
 /** Which column of the file feeds which field. `-1` means the file has no such column. */
-export interface ColumnMapping {
+interface ColumnMapping {
 	/** A `card_code` column, which is what this site's own export writes, and matches with no set lookup at all. */
 	code: number;
 	language: number;
@@ -137,7 +137,6 @@ export function buildSetKeys(sets: Set[], cards: Card[]): Map<string, string> {
 			byTcgdexId.set(normalize(card.setId), legacy);
 		}
 		if (card.setName) add(card.setName, legacy);
-		if (card.ptcgoCode) add(card.ptcgoCode, legacy);
 	}
 
 	/** A set with no card still resolves, so an unmatched line reports a missing card instead of an unknown set. */
@@ -147,6 +146,7 @@ export function buildSetKeys(sets: Set[], cards: Card[]): Map<string, string> {
 		const key = byTcgdexId.get(normalize(set.setId)) ?? normalize(set.setId);
 		add(set.setId, key);
 		if (set.name) add(set.name, key);
+		if (set.ptcgoCode) add(set.ptcgoCode, key);
 	}
 
 	/**
@@ -221,20 +221,20 @@ function setNameForms(value: string): string[] {
 	return forms;
 }
 
-export interface ImportMatch {
+interface ImportMatch {
 	cardCode: string;
 	/** The catalogue of the first line that matched this card. */
 	language: Language;
 	quantity: number;
 }
 
-export interface ImportResolution {
+interface ImportResolution {
 	matched: ImportMatch[];
 	unmatched: ImportRow[];
 }
 
 /** What a catalogue is searched with: its card index and the set aliases its cards are filed under. */
-export interface Catalogue {
+export interface ImportLookups {
 	index: Map<string, string>;
 	setKeys: Map<string, string>;
 }
@@ -245,7 +245,7 @@ export interface Catalogue {
  * writes the number and the name. A French line the French catalogue cannot place falls back to the English print,
  * because TCGdex France lacks a few sets and cards.
  */
-export function resolveRows(rows: ImportRow[], catalogues: Record<Language, Catalogue>, setOverride?: string): ImportResolution {
+export function resolveRows(rows: ImportRow[], catalogues: Record<Language, ImportLookups>, setOverride?: string): ImportResolution {
 	const matched = new Map<string, ImportMatch>();
 	const unmatched: ImportRow[] = [];
 

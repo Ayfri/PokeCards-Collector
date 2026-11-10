@@ -24,23 +24,23 @@
 	
 	interface Props {
 		cards: FullCard[];
+		lowRes?: boolean;
+		onCardSelect: (card: FullCard) => void;
+		pokemon?: Pokemon | undefined;
 		/** Looked up when a card is a Pokémon card. */
 		pokemons: Pokemon[];
 		prices: Record<string, PriceData>;
 		sets: CardPageSet[];
-		pokemon?: Pokemon | undefined;
-		onCardSelect: (card: FullCard) => void;
-		lowRes?: boolean;
 	}
 
 	let {
 		cards,
+		lowRes = false,
+		onCardSelect,
+		pokemon = undefined,
 		pokemons,
 		prices,
-		sets,
-		pokemon = undefined,
-		onCardSelect,
-		lowRes = false
+		sets
 	}: Props = $props();
 
 	const relatedSort = persistedRecord('related-cards-sort', { direction: 'asc' as 'asc' | 'desc', value: 'sort-set' });
@@ -169,11 +169,11 @@
 				bind:sortDirection={relatedSort.direction}
 				bind:sortValue={relatedSort.value}
 				options={[
-					{ value: 'sort-set', label: 'Set Name' },
-					{ value: 'sort-date', label: 'Release Date' },
-					{ value: 'sort-price', label: 'Price' },
-					{ value: 'sort-rarity', label: 'Rarity' },
-					{ value: 'sort-artist', label: 'Artist' }
+					{ label: 'Set Name', value: 'sort-set' },
+					{ label: 'Release Date', value: 'sort-date' },
+					{ label: 'Price', value: 'sort-price' },
+					{ label: 'Rarity', value: 'sort-rarity' },
+					{ label: 'Artist', value: 'sort-artist' }
 				]}
 			/>
 		</div>
@@ -205,23 +205,23 @@
 					<!-- Stretched link: covers the whole tile so the nested controls stay valid HTML. A plain click swaps the card in place,
 					     a modified one opens the print's own page like any link. -->
 					<a
+						aria-label={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
 						class="absolute inset-0 z-2 cursor-pointer"
 						href={cardPath(catalogue.language, card)}
 						onclick={(event) => selectCard(card, event)}
-						aria-label={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
 						title={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
 					></a>
 					<div class="relative rounded-lg overflow-hidden shadow-lg w-full" style="aspect-ratio: 63/88;">
 						{#if !NO_IMAGES}
 							<CardImage
-								imageUrl={card.image}
-								{card}
-								set={cardSet}
-								types={card.types}
 								alt="{cardPokemon ? cardPokemon.name : card.name} - {cardSet?.name ?? card.setName}"
+								{card}
 								class="card-image"
+								imageUrl={card.image}
 								lazy={true}
 								lowRes={lowRes}
+								set={cardSet}
+								types={card.types}
 							/>
 						{:else}
 							<div class="w-full h-full"></div>
@@ -236,10 +236,9 @@
 										aria-label="Remove one copy from collection"
 										class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 										onclick={(e) => handleRemoveCard(card.cardCode, e)}
-										disabled={collection.count(card.cardCode) === 0}
 										title="Remove one copy from collection"
 									>
-										<Minus size={16} class="text-white" />
+										<Minus class="text-white" size={16} />
 									</button>
 									<span
 										class="text-sm font-semibold text-green-400 px-1 min-w-[1.5ch] text-center select-none"
@@ -251,11 +250,11 @@
 								<button
 									aria-label="Add one copy to collection"
 									class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-									onclick={(e) => handleAddCard(card.cardCode, e)}
 									disabled={collection.count(card.cardCode) >= MAX_CARD_QUANTITY}
+									onclick={(e) => handleAddCard(card.cardCode, e)}
 									title={collection.count(card.cardCode) >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 								>
-									<Plus size={16} class={collection.count(card.cardCode) > 0 ? 'text-green-400' : 'text-white'} />
+									<Plus class={collection.count(card.cardCode) > 0 ? 'text-green-400' : 'text-white'} size={16} />
 								</button>
 								<div class="w-px h-5 bg-white/30 mx-1"></div>
 								<button
@@ -264,7 +263,7 @@
 									onclick={(e) => toggleWishlist(card.cardCode, e)}
 									title={wishlist.has(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
 								>
-									<Heart size={16} class={wishlist.has(card.cardCode) ? 'text-red-500 fill-red-500' : 'text-white'} />
+									<Heart class={wishlist.has(card.cardCode) ? 'text-red-500 fill-red-500' : 'text-white'} size={16} />
 								</button>
 							</div>
 						{/if}
@@ -274,11 +273,11 @@
 						<div class="flex items-center justify-center">
 							{#if card.cardMarketUrl && price}
 								<a
-									href={card.cardMarketUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="relative z-10 hover:text-gold-300 transition-colors duration-200 text-center"
 									aria-label="View on Cardmarket"
+									class="relative z-10 hover:text-gold-300 transition-colors duration-200 text-center"
+									href={card.cardMarketUrl}
+									rel="noopener noreferrer"
+									target="_blank"
 									title="Open this card on Cardmarket (new tab)"
 								>
 									<div class="flex items-center justify-center whitespace-nowrap">
@@ -287,9 +286,9 @@
 										</span>
 										<span class="mx-1 text-sm">-</span>
 										<span class="text-gold-400 font-bold underline text-sm flex items-center">
-											<CardmarketLogo size={12} class="mr-1 shrink-0" />
+											<CardmarketLogo class="mr-1 shrink-0" size={12} />
 											Cardmarket
-											<ExternalLink size={10} class="ml-1" />
+											<ExternalLink class="ml-1" size={10} />
 										</span>
 									</div>
 								</a>

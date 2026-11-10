@@ -1,12 +1,11 @@
 import { error } from '@sveltejs/kit';
 import { waitUntil } from 'cloudflare:workers';
-import { LANGUAGES, type Language } from '#helpers/catalogues.ts';
+import { isLanguage } from '#helpers/catalogues.ts';
 import { edgeCache } from '#helpers/data-cache.ts';
 import { OG_PAGES, OG_REVISION, type OgPage, type OgTarget } from '#helpers/og-image.ts';
 import { renderOgImage } from '#helpers/og-render.ts';
 import type { RequestHandler } from './$types';
 
-const isLanguage = (value: string): value is Language => (LANGUAGES as readonly string[]).includes(value);
 const isPage = (value: string): value is OgPage => (OG_PAGES as readonly string[]).includes(value);
 
 /** The inverse of `ogPath` in `og-image.ts`: `card/en/<code>.png`, `set/ja/<id>.png`, `profile/<user>.png`, `page/<name>.png`. */

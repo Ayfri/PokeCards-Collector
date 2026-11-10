@@ -13,10 +13,11 @@ export const load: PageServerLoad = async () => {
 	if (error) console.error('Error preparing featured users:', error);
 
 	return {
-		featuredUsers,
-		featuredUsersError,
 		breadcrumbs: breadcrumbs({ name: 'Collectors', url: '/users' }),
 		description: 'Browse the public Pokémon TCG collections on PokéCards-Collector. See the collectors holding the most unique cards, and search for a collector by name.',
+		featuredUsers,
+		featuredUsersError,
+		image: ogImage({ kind: 'page', name: 'users' }, 'The Pokémon TCG collectors sharing their collections on PokéCards-Collector'),
 		keywords: ['Pokémon TCG collectors', 'public Pokémon collections', 'Pokémon card collection ranking'],
 		schemas: [{
 			'@type': 'ItemList',
@@ -29,7 +30,6 @@ export const load: PageServerLoad = async () => {
 			name: 'Featured Pokémon TCG collectors',
 			numberOfItems: featuredUsers.length,
 		}],
-		image: ogImage({ kind: 'page', name: 'users' }, 'The Pokémon TCG collectors sharing their collections on PokéCards-Collector'),
 		title: 'Pokémon TCG Collectors',
 		type: 'CollectionPage' as const,
 	};

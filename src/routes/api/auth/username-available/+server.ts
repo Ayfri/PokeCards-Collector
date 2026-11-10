@@ -14,25 +14,25 @@ export const GET: RequestHandler = async ({ url }) => {
 	const username = normalizeUsername(url.searchParams.get('username') ?? '');
 
 	if (!username) {
-		return Response.json({ success: false, error: 'Missing username' }, { status: 400 });
+		return Response.json({ error: 'Missing username', success: false }, { status: 400 });
 	}
 
 	if (!USERNAME_PATTERN.test(username)) {
-		return Response.json({ success: false, error: USERNAME_REQUIREMENTS }, { status: 400 });
+		return Response.json({ error: USERNAME_REQUIREMENTS, success: false }, { status: 400 });
 	}
 
 	if (!SUPABASE_SECRET_KEY) {
 		console.error('Username availability check is missing SUPABASE_SECRET_KEY');
-		return Response.json({ success: false, error: 'Could not check username availability' }, { status: 500 });
+		return Response.json({ error: 'Could not check username availability', success: false }, { status: 500 });
 	}
 
 	const admin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY);
-	const { exists, error } = await isUsernameTaken(username, admin);
+	const { error, exists } = await isUsernameTaken(username, admin);
 
 	if (error) {
 		console.error('Username availability check failed:', error);
-		return Response.json({ success: false, error: 'Could not check username availability' }, { status: 500 });
+		return Response.json({ error: 'Could not check username availability', success: false }, { status: 500 });
 	}
 
-	return Response.json({ success: true, exists });
+	return Response.json({ exists, success: true });
 };

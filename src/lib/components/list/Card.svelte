@@ -12,7 +12,7 @@
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import Heart from '@lucide/svelte/icons/heart';
 	import { getCardSet } from '#helpers/card-grid.ts';
-	import { CATALOGUES, catalogueOfPath } from '#helpers/catalogues.ts';
+	import { catalogueOfPath, CATALOGUES } from '#helpers/catalogues.ts';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Minus from '@lucide/svelte/icons/minus';
 	import SetBadge from '#components/SetBadge.svelte';
@@ -132,15 +132,15 @@
 		: (card.name ? card.name.charAt(0).toUpperCase() + card.name.slice(1) : 'Unknown'));
 </script>
 
-<div class="card-pokecards-collector group relative flex flex-col items-center w-fit cursor-pointer text-white transition-transform duration-300 ease-out hover:scale-[1.025] z-1 hover:z-10">
+<div class="group relative flex flex-col items-center w-fit cursor-pointer text-white transition-transform duration-300 ease-out hover:scale-[1.025] z-1 hover:z-10">
 	<!-- Stretched link: covers the whole card so nested links stay valid HTML. -->
 	<a
 		aria-label={`Go to the card page of ${cardName}`}
-		title={`Go to the card page of ${cardName}`}
 		class="absolute inset-0 z-2"
 		draggable="false"
 		href={cardLink}
 		rel="dofollow"
+		title={`Go to the card page of ${cardName}`}
 	></a>
 	{#if !NO_IMAGES}
 		<div
@@ -156,13 +156,13 @@
 					<button
 						aria-label="Remove one copy from collection"
 						class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-						onclick={handleRemoveCard}
 						disabled={isUpdatingCollection}
+						onclick={handleRemoveCard}
 						title="Remove one copy from collection"
 					>
 						<Minus
-							size={controlIconSize}
 							class="text-white"
+							size={controlIconSize}
 						/>
 					</button>
 					<span
@@ -175,13 +175,13 @@
 				<button
 					aria-label="Add one copy to collection"
 					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-					onclick={handleAddCard}
 					disabled={isUpdatingCollection || isCollectionLimitReached}
+					onclick={handleAddCard}
 					title={isCollectionLimitReached ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 				>
 					<Plus
-						size={controlIconSize}
 						class={collectionCount > 0 ? 'text-green-400' : 'text-white'}
+						size={controlIconSize}
 					/>
 				</button>
 
@@ -190,38 +190,38 @@
 				<button
 					aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
 					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-					onclick={toggleWishlist}
 					disabled={isUpdatingWishlist}
+					onclick={toggleWishlist}
 					title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
 				>
 					<Heart
-						size={controlIconSize}
 						class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'}
+						size={controlIconSize}
 					/>
 				</button>
 			</div>
 		{/if}
 		<CardImage
 			alt="{cardName} - {card.setName}"
-			class="rounded-lg absolute top-0 left-0"
-			style="width: {width}px; height: {height}px; max-width: 100%;"
-			imageUrl={card.image}
 			{card}
+			class="rounded-lg absolute top-0 left-0"
+			height={height}
+			imageUrl={card.image}
+			lazy={!eager}
+			{lowRes}
+			priority={eager}
 			set={set ?? undefined}
+			style="width: {width}px; height: {height}px; max-width: 100%;"
 			title={cardName}
 			{types}
-			{lowRes}
-			lazy={!eager}
-			priority={eager}
 			width={width}
-			height={height}
 		/>
 
 		{#if set}
 			<SetBadge language={card.language} {set} style="bottom: {controlInset}px; left: {controlInset}px;" />
 		{/if}
 	</div>
-	<div class="card-info-container h-[70px] bg-black/30 backdrop-blur-xs rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
+	<div class="h-[70px] bg-black/30 backdrop-blur-xs rounded-lg p-2 mt-1 flex flex-col justify-center" style="width: {width}px; max-width: 100%;">
 		<h2 class="text-center font-bold text-md lg:text-lg text-pretty leading-none flex flex-wrap gap-x-2 items-center justify-center">
 			{cardName}
 			{#if set?.ptcgoCode}
@@ -232,18 +232,18 @@
 		<div class="flex items-center justify-center gap-2 mt-1">
 			{#if card.cardMarketUrl && price}
 				<a
-					href={card.cardMarketUrl}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="relative z-10 text-center text-sm lg:text-base hover:text-gold-300 transition-colors duration-200"
 					aria-label="View on Cardmarket"
+					class="relative z-10 text-center text-sm lg:text-base hover:text-gold-300 transition-colors duration-200"
+					href={card.cardMarketUrl}
+					rel="noopener noreferrer"
+					target="_blank"
 				>
 					<div class="flex items-center justify-center whitespace-nowrap">
 						<span>{price ? formatEuros(price) : 'Priceless'}</span>
 						<span class="mx-1">-</span>
 						<span class="text-gold-400 font-bold underline flex items-center">
 							Cardmarket
-							<ExternalLink size={Math.min(12, Math.floor(width/25))} class="ml-1"/>
+							<ExternalLink class="ml-1" size={Math.min(12, Math.floor(width/25))}/>
 						</span>
 					</div>
 				</a>

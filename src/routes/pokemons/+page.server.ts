@@ -4,7 +4,7 @@ import { getCards, getPokemons, getPrices } from '#helpers/supabase-data.ts';
 import { processCardImage } from '#helpers/card-images.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { BASE_URL, POKEMONS_COUNT } from '#src/constants.ts';
-import { cardPath, cardPrice, memoizedOn, type CardLink } from '#helpers/card-utils.ts';
+import { type CardLink, cardPath, cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 import type { FullCard, Pokemon, PriceData } from '#lib/types.js';
 
 /**
@@ -88,6 +88,7 @@ export const load: PageServerLoad = async () => {
 	return {
 		breadcrumbs: breadcrumbs({ name: 'Pokémon', url: '/pokemons' }),
 		description: `Every one of the ${POKEMONS_COUNT} Pokémon and the TCG cards that depict them. ${withCards} of them have at least one card in the catalogue - open any Pokémon to see its full card list with prices.`,
+		image: ogImage({ kind: 'page', name: 'pokemons' }, 'Every Pokémon and its cards on PokéCards-Collector, with the most valuable Pokémon cards'),
 		keywords: ['Pokémon list', 'Pokémon cards by Pokémon', 'Pokédex TCG', 'all Pokémon cards'],
 		pokemons: entries,
 		schemas: [{
@@ -101,7 +102,6 @@ export const load: PageServerLoad = async () => {
 			name: 'Pokémon covered by the Pokémon TCG',
 			numberOfItems: entries.length,
 		}],
-		image: ogImage({ kind: 'page', name: 'pokemons' }, 'Every Pokémon and its cards on PokéCards-Collector, with the most valuable Pokémon cards'),
 		title: 'All Pokémon and Their Cards',
 		type: 'CollectionPage' as const,
 	};

@@ -35,7 +35,7 @@
 		<use href="#type-symbol-{glyph ? key : 'colorless'}" />
 	{:else}
 		<defs>
-			<radialGradient id={gradientId} cx=".3" cy=".25" r=".85">
+			<radialGradient cx=".3" cy=".25" id={gradientId} r=".85">
 				<stop offset="0" style="stop-color: var(--type-a)" />
 				<stop offset="1" style="stop-color: var(--type-b)" />
 			</radialGradient>

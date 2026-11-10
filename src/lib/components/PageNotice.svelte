@@ -17,20 +17,20 @@
 	let { children, icon: Icon, iconClass = 'text-gold-400', showSearchUsers = false, title }: Props = $props();
 </script>
 
-<main class="flex grow flex-col items-center justify-center space-y-5 p-6 text-center" in:fade={{ duration: 300, delay: 100 }}>
-	<div class="mb-4" in:fly={{ y: 20, duration: 400, delay: 200 }}>
+<main class="flex grow flex-col items-center justify-center space-y-5 p-6 text-center" in:fade={{ delay: 100, duration: 300 }}>
+	<div class="mb-4" in:fly={{ delay: 200, duration: 400, y: 20 }}>
 		<Icon class={`mx-auto ${iconClass}`} size={64} />
 	</div>
 
-	<div in:fly={{ y: 20, duration: 400, delay: 300 }}>
+	<div in:fly={{ delay: 300, duration: 400, y: 20 }}>
 		<PageTitle {title} />
 	</div>
 
-	<p class="max-w-md text-lg text-gray-300" in:fly={{ y: 20, duration: 400, delay: 400 }}>
+	<p class="max-w-md text-lg text-gray-300" in:fly={{ delay: 400, duration: 400, y: 20 }}>
 		{@render children()}
 	</p>
 
-	<div class="mt-4 flex flex-col items-center justify-center gap-4 sm:flex-row" in:fly={{ y: 20, duration: 400, delay: 500 }}>
+	<div class="mt-4 flex flex-col items-center justify-center gap-4 sm:flex-row" in:fly={{ delay: 500, duration: 400, y: 20 }}>
 		<a class="btn-outline-gold" href="/" title="Back to the home page">
 			<House size={18} />
 			Return to Home

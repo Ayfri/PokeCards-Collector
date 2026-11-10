@@ -39,7 +39,7 @@ export function sitemapResponse(body: string, maxAge = 3600): Response {
 
 /** The English and French pages of one card, as the alternates both entries carry. */
 export function twinAlternates(twin: Record<'en' | 'fr', string> | undefined): SitemapEntry['alternates'] {
-	return twin && [{ hreflang: 'en', href: twin.en }, { hreflang: 'fr', href: twin.fr }];
+	return twin && [{ href: twin.en, hreflang: 'en' }, { href: twin.fr, hreflang: 'fr' }];
 }
 
 export function urlset(entries: SitemapEntry[]): string {

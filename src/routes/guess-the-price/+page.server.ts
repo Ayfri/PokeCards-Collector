@@ -19,9 +19,9 @@ export interface Round {
 const SEO = {
 	breadcrumbs: breadcrumbs({ name: 'Guess the Price', url: '/guess-the-price' }),
 	description: 'Guess what a Pokémon card is worth on Cardmarket. Real cards, real euro prices, a new set of rounds every time. Free and playable without an account.',
+	image: ogImage({ kind: 'page', name: 'guess-the-price' }, 'Guess the Price, the Pokémon card price game: a valuable card with its price hidden under a ??? € tag'),
 	keywords: ['guess the price', 'Pokémon card price game', 'Pokémon TCG game', 'card value quiz'],
 	schemas: [gameSchema('Guess the Price', 'A Pokémon TCG price guessing game: estimate the Cardmarket value of a real card and score on how close you land.', '/guess-the-price')],
-	image: ogImage({ kind: 'page', name: 'guess-the-price' }, 'Guess the Price, the Pokémon card price game: a valuable card with its price hidden under a ??? € tag'),
 	title: 'Guess the Price - Pokémon Card Price Game',
 };
 
@@ -44,7 +44,7 @@ export const load: PageServerLoad = async () => {
 	}
 
 	if (!playable.length) {
-		return { ...SEO, rounds: [], error: `No card with artwork and a price of ${MIN_PRICE} EUR or more.` };
+		return { ...SEO, error: `No card with artwork and a price of ${MIN_PRICE} EUR or more.`, rounds: [] };
 	}
 
 	const releaseDates = new Map(sets.map(set => [set.name, set.releaseDate]));
@@ -65,5 +65,5 @@ export const load: PageServerLoad = async () => {
 		};
 	});
 
-	return { ...SEO, rounds, error: null };
+	return { ...SEO, error: null, rounds };
 };

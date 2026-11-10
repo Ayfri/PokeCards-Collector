@@ -1,6 +1,6 @@
-import { isHttpError, error as svelteKitError, type RequestHandler } from '@sveltejs/kit';
+import { isHttpError, type RequestHandler, error as svelteKitError } from '@sveltejs/kit';
 
-export const POST: RequestHandler = async ({ request, locals }) => {
+export const POST: RequestHandler = async ({ locals, request }) => {
 	try {
 		const { email, password } = await request.json() as { email?: string; password?: string };
 
@@ -24,7 +24,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		/** The session is not returned in the body: the SSR helper already stored it in cookies, which is where the client reads it. */
-		return Response.json({ success: true, message: 'Login successful' });
+		return Response.json({ message: 'Login successful', success: true });
 
 	} catch (err) {
 		if (isHttpError(err)) throw err;

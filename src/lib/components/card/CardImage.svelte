@@ -17,10 +17,10 @@
 		lowRes?: boolean;
 		/** Called when the image fails to load, including a failure that happened before hydration. */
 		onerror?: () => void;
-		/** Marks the image as above the fold: eager + `fetchpriority="high"`, for the LCP candidate. */
-		priority?: boolean;
 		/** Width in px the plate drawn in place of a missing scan is laid out at before it is scaled into the box: a small slot keeps the full plate instead of the collapsed one. */
 		plateWidth?: number | undefined;
+		/** Marks the image as above the fold: eager + `fetchpriority="high"`, for the LCP candidate. */
+		priority?: boolean;
 		/** The card's set when the caller already holds it: the plate drawn in place of a missing scan shows its symbol and the card's `n/total` number. */
 		set?: PlateSet | undefined;
 		/** `sizes` value; defaults to the pixel width when one is given. */
@@ -42,8 +42,8 @@
 		lazy = true,
 		lowRes = false,
 		onerror,
-		priority = false,
 		plateWidth = undefined,
+		priority = false,
 		set = undefined,
 		sizes = undefined,
 		style = undefined,
@@ -104,8 +104,8 @@
 	<CardPlate {alt} {card} class="rounded-lg {classNames}" {plateWidth} {set} style={boxStyle} {title} {types} />
 {:else}
 	<img
-		bind:this={img}
 		{alt}
+		bind:this={img}
 		class="transition-opacity duration-300 ease-in-out {classNames} {loaded ? '' : 'opacity-0'} {NO_IMAGES ? 'border border-gold-400/50' : ''}"
 		data-card-code={card?.cardCode}
 		decoding="async"

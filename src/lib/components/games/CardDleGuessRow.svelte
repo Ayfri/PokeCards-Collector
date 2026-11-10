@@ -61,7 +61,7 @@
 
 <div class={['grid gap-1.5 rounded-xl border border-gray-700 bg-gray-800/60 p-2 md:border-0 md:bg-transparent md:p-0', GUESS_COLUMNS]}>
 	<div class={['flex min-w-0 items-center gap-2', !feedback && 'opacity-75']}>
-		<CardImage card={guess.plate} class="h-12 w-auto rounded-sm md:h-20" imageUrl={guess.image} alt="Card: {guess.name}" lazy lowRes />
+		<CardImage alt="Card: {guess.name}" card={guess.plate} class="h-12 w-auto rounded-sm md:h-20" imageUrl={guess.image} lazy lowRes />
 		<span class="text-xs text-gray-500">#{index}</span>
 		<span class="line-clamp-2 text-sm font-semibold">{guess.name}</span>
 	</div>
@@ -71,7 +71,7 @@
 			<div class={tile(isPokemon ? feedback.pokemonCorrect : undefined)} style:animation-delay={delay(0)} title={hint('Pokémon', isPokemon ? feedback.pokemonCorrect : undefined)}>
 				<PawPrintIcon class="md:hidden" size={12} />
 				{#if 'pokemonNumber' in guess && guess.pokemonNumber && isPokemon}
-					<img class="size-10 object-contain md:size-14" alt="Sprite for {feedback.pokemonValue}" src={getPokemonSpriteSrc(guess.pokemonNumber)} />
+					<img alt="Sprite for {feedback.pokemonValue}" class="size-10 object-contain md:size-14" src={getPokemonSpriteSrc(guess.pokemonNumber)} />
 				{/if}
 				<span>{feedback.pokemonValue}</span>
 			</div>

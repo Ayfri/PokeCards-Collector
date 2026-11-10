@@ -21,8 +21,8 @@ export async function addCardToWishlist(username: string, cardCode: string, clie
 			const { data, error } = await client
 				.from('wishlists')
 				.insert({
-					username,
 					card_code: cardCode,
+					username,
 				})
 				.select();
 

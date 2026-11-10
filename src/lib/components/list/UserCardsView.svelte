@@ -10,7 +10,7 @@
 	import type { Set } from '#lib/types.js';
 	import { cardPath, formatCardNumber } from '#helpers/card-utils.ts';
 	import { formatEuros } from '#helpers/format.ts';
-	import { USER_CARDS_COPY, type UserCardsKind, type UserCardsPageData } from '#helpers/user-cards-page.ts';
+	import { USER_CARDS_WORDING, type UserCardsKind, type UserCardsPageData } from '#helpers/user-cards-page.ts';
 	import { filters } from '#stores/filters.svelte.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
@@ -22,7 +22,7 @@
 
 	let { data, kind }: Props = $props();
 
-	const copy = $derived(USER_CARDS_COPY[kind]);
+	const wording = $derived(USER_CARDS_WORDING[kind]);
 	const isMissing = $derived(!data.targetProfile);
 	const isPrivate = $derived(!!data.targetProfile && !data.isPublic && !data.isOwner);
 	const summary = $derived(data.summary);
@@ -50,7 +50,7 @@
 		The user <strong class="text-gold-400">"{data.targetUsername}"</strong> could not be found. They may have changed their username or the account no longer exists.
 	</PageNotice>
 {:else if isPrivate}
-	<PageNotice icon={ShieldAlert} showSearchUsers title={copy.privateHeading}>
+	<PageNotice icon={ShieldAlert} showSearchUsers title={wording.privateHeading}>
 		The {kind} for <strong class="text-gold-400">"{data.targetUsername}"</strong> is set to private. You cannot view {kind === 'collection' ? 'their cards' : 'it'} at this time.
 	</PageNotice>
 {:else}
@@ -95,15 +95,15 @@
 
 			{#if payload.cards.length === 0}
 				<div class="mt-8 p-8 text-center">
-					<p class="text-lg text-gray-400">{data.isOwner ? copy.emptyOwn : copy.emptyOther(data.targetUsername)}</p>
+					<p class="text-lg text-gray-400">{data.isOwner ? wording.emptyOwn : wording.emptyOther(data.targetUsername)}</p>
 					{#if data.isOwner}
-						<p class="mt-2 text-gray-500">{copy.emptyHint}</p>
+						<p class="mt-2 text-gray-500">{wording.emptyHint}</p>
 					{/if}
 				</div>
 			{/if}
 		</div>
 	{:catch error}
-		<PageNotice icon={ShieldAlert} iconClass="text-red-400" title={`Error Loading ${copy.label}`}>
+		<PageNotice icon={ShieldAlert} iconClass="text-red-400" title={`Error Loading ${wording.label}`}>
 			There was an error loading the {kind} data: {error.message}
 		</PageNotice>
 	{/await}

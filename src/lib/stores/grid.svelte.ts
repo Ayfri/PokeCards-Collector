@@ -1,6 +1,6 @@
 import { Persisted } from './persisted.svelte';
 
-export interface CardGridSize {
+interface CardGridSize {
 	name: string;
 	width: number;
 }

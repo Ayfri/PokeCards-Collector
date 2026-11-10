@@ -62,8 +62,8 @@
 	</div>
 
 	<div class="flex w-40 items-end gap-2">
-		<NumberInput id="rows" bind:value={rows} label="Rows:" max={8} min={1} />
-		<NumberInput id="columns" bind:value={columns} label="Columns:" max={8} min={1} />
+		<NumberInput bind:value={rows} id="rows" label="Rows:" max={8} min={1} />
+		<NumberInput bind:value={columns} id="columns" label="Columns:" max={8} min={1} />
 	</div>
 
 	<Button isActive={spread} onClick={() => (spread = !spread)} title="Show both facing pages, the way the binder opens">

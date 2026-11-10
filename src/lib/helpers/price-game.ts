@@ -1,4 +1,4 @@
-export interface PriceTier {
+interface PriceTier {
 	/** Background for history dots and distribution bars, a full literal so Tailwind sees it. */
 	bar: string;
 	/** Text colour of the headline. */

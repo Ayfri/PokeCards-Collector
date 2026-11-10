@@ -3,7 +3,7 @@ import { persistedRecord } from './persisted.svelte';
 
 type SortOrder = 'asc' | 'desc';
 
-/** The lowercased values `isVisible` tests a card against. */
+/** The lowercased values `filterCards` tests a card against. */
 export interface ActiveFilters {
 	artist: string;
 	name: string;
@@ -15,24 +15,24 @@ export interface ActiveFilters {
 }
 
 export const SORT_OPTIONS = [
-	{ value: 'sort-artist', label: 'Illustrator' },
-	{ value: 'sort-id', label: 'ID' },
-	{ value: 'sort-name', label: 'Name' },
-	{ value: 'sort-pokedex', label: 'Pokédex' },
-	{ value: 'sort-price', label: 'Price' },
-	{ value: 'sort-rarity', label: 'Rarity' },
-	{ value: 'sort-release-date', label: 'Release Date' },
+	{ label: 'Illustrator', value: 'sort-artist' },
+	{ label: 'ID', value: 'sort-id' },
+	{ label: 'Name', value: 'sort-name' },
+	{ label: 'Pokédex', value: 'sort-pokedex' },
+	{ label: 'Price', value: 'sort-price' },
+	{ label: 'Rarity', value: 'sort-rarity' },
+	{ label: 'Release Date', value: 'sort-release-date' },
 ];
 
 export const SUPERTYPE_OPTIONS = [
-	{ value: 'all', label: 'All supertypes' },
-	{ value: 'pokémon', label: 'Pokémon' },
-	{ value: 'trainer', label: 'Trainer' },
-	{ value: 'energy', label: 'Energy' },
+	{ label: 'All supertypes', value: 'all' },
+	{ label: 'Pokémon', value: 'pokémon' },
+	{ label: 'Trainer', value: 'trainer' },
+	{ label: 'Energy', value: 'energy' },
 ];
 
 /** `?type=` carries the accent-free supertype, the filter itself holds the lowercased catalogue value. */
-const SUPERTYPE_PARAMS: Record<string, string> = { 'pokémon': 'pokemon', trainer: 'trainer', energy: 'energy' };
+const SUPERTYPE_PARAMS: Record<string, string> = { energy: 'energy', 'pokémon': 'pokemon', trainer: 'trainer' };
 const SUPERTYPES_BY_PARAM = new Map(Object.entries(SUPERTYPE_PARAMS).map(([supertype, param]) => [param, supertype]));
 
 const DEFAULTS = {

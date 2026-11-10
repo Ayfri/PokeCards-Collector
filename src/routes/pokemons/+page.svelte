@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { PokemonListEntry } from './+page.server';
-	import { formatEuros, pascalCase } from '#helpers/format.ts';
+	import { formatEuros, titleCase } from '#helpers/format.ts';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import PageTitle from '#components/PageTitle.svelte';
@@ -47,8 +47,8 @@
 	let typeFilter = $state('all');
 
 	const typeOptions = $derived([
-		{ value: 'all', label: 'All types' },
-		...[...new Set(data.pokemons.map(pokemon => pokemon.type).filter(Boolean))].sort().map(type => ({ value: type, label: pascalCase(type) })),
+		{ label: 'All types', value: 'all' },
+		...[...new Set(data.pokemons.map(pokemon => pokemon.type).filter(Boolean))].sort().map(type => ({ label: titleCase(type), value: type })),
 	]);
 
 	const sortedPokemons = $derived.by(() => {
@@ -87,47 +87,10 @@
 		return sortOrder === 'asc' ? buckets : buckets.reverse();
 	});
 
-	let hasScrolled = $state(false);
-	const scrollThreshold = 100;
-	const scrollDuration = 500;
-
-	function smoothScroll(targetPosition: number, duration: number) {
-		const startPosition = window.scrollY;
-		const distance = targetPosition - startPosition;
-		let startTime: number | null = null;
-
-		function scrollStep(timestamp: number) {
-			if (!startTime) startTime = timestamp;
-			const timeElapsed = timestamp - startTime;
-			const progress = Math.min(timeElapsed / duration, 1);
-			const easeInOutCubic = (p: number) => p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
-
-			window.scrollTo(0, startPosition + distance * easeInOutCubic(progress));
-
-			if (timeElapsed < duration) {
-				window.requestAnimationFrame(scrollStep);
-			} else {
-				window.scrollTo(0, targetPosition);
-			}
-		}
-		window.requestAnimationFrame(scrollStep);
-	}
-
-	function scrollToTopPage() {
-		smoothScroll(0, scrollDuration);
-		setTimeout(() => { hasScrolled = false; }, scrollDuration);
-	}
-
-	function scrollToBottomPage() {
-		smoothScroll(document.body.scrollHeight - window.innerHeight, scrollDuration);
-	}
-
-	function handleScroll() {
-		hasScrolled = window.scrollY > scrollThreshold;
-	}
+	let scrollY = $state(0);
 </script>
 
-<svelte:window onscroll={handleScroll} />
+<svelte:window bind:scrollY />
 
 <div class="container mx-auto px-4 py-8 text-white">
 	<div class="flex flex-wrap justify-between items-center gap-y-4 mb-4">
@@ -136,21 +99,21 @@
 		</div>
 		<div class="flex items-end gap-4">
 			<TextInput
+				bind:value={searchTerm}
 				id="pokemon-search"
 				label="Search Pokémon"
 				labelClass="sr-only"
-				bind:value={searchTerm}
 				placeholder="Search Pokémon..."
 			/>
-			<Select id="pokemon-type" label="Type" bind:value={typeFilter} options={typeOptions} />
+			<Select bind:value={typeFilter} id="pokemon-type" label="Type" options={typeOptions} />
 			<SortControl
-				bind:sortValue={sortBy}
 				bind:sortDirection={sortOrder}
+				bind:sortValue={sortBy}
 				options={[
-					{ value: 'pokedex', label: 'Pokédex #' },
-					{ value: 'name', label: 'Name' },
-					{ value: 'cardCount', label: 'Card Count' },
-					{ value: 'price', label: 'Most Valuable' }
+					{ label: 'Pokédex #', value: 'pokedex' },
+					{ label: 'Name', value: 'name' },
+					{ label: 'Card Count', value: 'cardCount' },
+					{ label: 'Most Valuable', value: 'price' }
 				]}
 			/>
 		</div>
@@ -177,25 +140,25 @@
 			</h2>
 			<p class="mb-4 text-sm text-gray-400">{section.owned ? `${section.owned} / ` : ''}{section.cards.toLocaleString('en-US')} cards</p>
 		{/if}
-		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 align-items-start align-content-start">
+		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
 		{#each section.pokemons as pokemon, index (pokemon.id)}
 			{@const owned = ownedOf(pokemon)}
 			<!-- A real link, not a button calling `goto`: crawlers only follow `href`s, and this page is the one hub linking every Pokémon. -->
 			<a
-				href={pokemon.path || undefined}
 				class="card-tile focus-ring group relative overflow-hidden p-3 flex flex-col items-center text-center [content-visibility:auto] [contain-intrinsic-size:auto_11rem]"
-				title={`View the most valuable ${pascalCase(pokemon.name)} card`}
+				href={pokemon.path || undefined}
+				title={`View the most valuable ${titleCase(pokemon.name)} card`}
 			>
 				<div class={['relative w-24 h-24 md:w-28 md:h-28 mb-2', pokemon.type && 'type-glow', TYPE_GLOW[pokemon.type]]}>
 					{#if !NO_IMAGES}
 						<img
-							src={getPokemonImageSrc(pokemon.id)}
-							alt={pascalCase(pokemon.name)}
+							alt={titleCase(pokemon.name)}
 							class="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300 ease-in-out"
-							onerror={(e) => handlePokemonImageError(e, pokemon.id, pokemon.fallbackImage)}
 							decoding="async"
 							height="112"
 							loading={sectionIndex === 0 && index < EAGER_TILES ? 'eager' : 'lazy'}
+							onerror={(e) => handlePokemonImageError(e, pokemon.id, pokemon.fallbackImage)}
+							src={getPokemonImageSrc(pokemon.id)}
 							width="112"
 						/>
 					{:else}
@@ -208,13 +171,13 @@
 					</div>
 				</div>
 				<span class="flex items-center justify-center gap-1.5 text-sm md:text-base font-semibold group-hover:text-gold-400 transition-colors duration-200">
-					{pascalCase(pokemon.name)}
+					{titleCase(pokemon.name)}
 					{#if pokemon.type}
 						<TypeSymbol shared type={pokemon.type} />
 					{/if}
 				</span>
 				<span class="flex items-center justify-center gap-1.5 text-xs text-gray-400 mt-1" title="Cards featuring this Pokémon">
-					<span class="icon-layers size-3 shrink-0" aria-hidden="true"></span>
+					<span aria-hidden="true" class="icon-layers size-3 shrink-0"></span>
 					{owned ? `${owned} / ` : ''}{pokemon.cardCount} card{pokemon.cardCount === 1 ? '' : 's'}
 				</span>
 				{#if pokemon.price}
@@ -230,5 +193,5 @@
 	{/each}
 </div>
 
-<ScrollButton direction="up" onclick={scrollToTopPage} visible={hasScrolled} />
-<ScrollButton direction="down" onclick={scrollToBottomPage} />
+<ScrollButton direction="up" onclick={() => window.scrollTo({ behavior: 'smooth', top: 0 })} visible={scrollY > 100} />
+<ScrollButton direction="down" onclick={() => window.scrollTo({ behavior: 'smooth', top: document.documentElement.scrollHeight })} />

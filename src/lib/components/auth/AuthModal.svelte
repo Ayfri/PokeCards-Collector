@@ -6,9 +6,9 @@
 	type Tab = 'login' | 'register';
 
 	interface Props {
-		isOpen?: boolean;
-		onClose?: () => void;
 		initialMode?: Tab;
+		onClose?: () => void;
+		open?: boolean;
 	}
 
 	const TABS: { id: Tab; label: string }[] = [
@@ -16,21 +16,21 @@
 		{ id: 'register', label: 'Register' },
 	];
 
-	let { isOpen = $bindable(false), onClose, initialMode = 'login' }: Props = $props();
+	let { initialMode = 'login', onClose, open = $bindable(false) }: Props = $props();
 
 	let activeTab = $state<Tab>('login');
 
 	$effect(() => {
-		if (isOpen) activeTab = initialMode;
+		if (open) activeTab = initialMode;
 	});
 
 	function closeModal() {
-		isOpen = false;
+		open = false;
 		onClose?.();
 	}
 </script>
 
-<Modal open={isOpen} onClose={closeModal} title={activeTab === 'login' ? 'Sign in' : 'Create an account'} containerClass="mx-4 max-w-md">
+<Modal containerClass="mx-4 max-w-md" onClose={closeModal} {open} title={activeTab === 'login' ? 'Sign in' : 'Create an account'}>
 	<div class="mb-4 flex gap-1 rounded-lg bg-gray-900/50 p-1">
 		{#each TABS as tab (tab.id)}
 			<button

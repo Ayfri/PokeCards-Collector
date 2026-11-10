@@ -1,6 +1,6 @@
 import { countCards, getCards, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
 import { cardListSchema, faqSchema } from '#helpers/seo.ts';
-import type { FullCard, PriceData, Set as CardSet } from '#lib/types.js';
+import type { Set as CardSet, FullCard, PriceData } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 import { getRarityLevel, RARITY_MAPPING } from '#helpers/rarity.ts';
@@ -101,24 +101,24 @@ export const load: PageServerLoad = async () => {
 			cardListSchema(mostExpensiveCards, '/cards-list?sortby=sort-price&sortorder=desc', 'Most expensive Pokémon cards', 5),
 			faqSchema([
 				{
-					question: 'How many Pokémon cards can I browse on PokéCards-Collector?',
 					answer: `The catalogue covers ${cardTotal} English cards across ${setTotal} sets, plus ${japaneseCardCount.toLocaleString('en-US')} Japanese and ${frenchCardCount.toLocaleString('en-US')} French cards, refreshed from TCGdex every day.`,
+					question: 'How many Pokémon cards can I browse on PokéCards-Collector?',
 				},
 				{
-					question: 'Where do the Pokémon card prices come from?',
 					answer: 'Every price is the Cardmarket value in euros, pulled from TCGdex and refreshed daily. Both the standard and the reverse-holo values are stored for each card.',
+					question: 'Where do the Pokémon card prices come from?',
 				},
 				{
-					question: 'Is PokéCards-Collector free?',
 					answer: 'Yes. Browsing the catalogue needs no account, and tracking a collection, a wishlist and a binder only needs a free account.',
+					question: 'Is PokéCards-Collector free?',
 				},
 				{
-					question: 'Are Japanese Pokémon cards included?',
 					answer: 'Yes. Japanese sets, cards and prices live under the /japan section with their own card pages.',
+					question: 'Are Japanese Pokémon cards included?',
 				},
 				{
-					question: 'Are French Pokémon cards included?',
 					answer: 'Yes. French sets, cards and prices live under the /france section with their own card pages. A card with no French scan shows the English one.',
+					question: 'Are French Pokémon cards included?',
 				},
 			]),
 		],
@@ -130,8 +130,8 @@ export const load: PageServerLoad = async () => {
 		binderPreview,
 		latestSet,
 		latestSetStats,
-		mostExpensiveLatestSetCards,
 		mostExpensiveCards,
+		mostExpensiveLatestSetCards,
 		setCount: sets.length,
 		stats: {
 			artists,

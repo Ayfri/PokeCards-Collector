@@ -61,18 +61,18 @@
 		</div>
 		<div class="flex items-end gap-4 w-full md:w-auto">
 			<TextInput
+				bind:value={view.search}
 				id="trainer-search"
 				label="Search Trainer and Energy cards"
 				labelClass="sr-only"
-				bind:value={view.search}
 				placeholder="Search Trainers & Energy..."
 			/>
 			<SortControl
-				bind:sortValue={view.sortBy}
 				bind:sortDirection={view.sortOrder}
+				bind:sortValue={view.sortBy}
 				options={[
-					{ value: 'name', label: 'Name' },
-					{ value: 'cardCount', label: 'Card Count' }
+					{ label: 'Name', value: 'name' },
+					{ label: 'Card Count', value: 'cardCount' }
 				]}
 			/>
 		</div>
@@ -82,7 +82,7 @@
 	{#each sections as section (section.label)}
 		<!-- A native `<details>`: folding needs no state, and a folded section's tiles are not rendered by the browser.
 		     Its group is named, since a bare `group` would fire every tile's `group-hover` on hovering the section. -->
-		<details class="group/section mt-8" open={!shown.folded.includes(section.label)} ontoggle={event => toggleSection(section.label, event.currentTarget.open)}>
+		<details class="group/section mt-8" ontoggle={event => toggleSection(section.label, event.currentTarget.open)} open={!shown.folded.includes(section.label)}>
 			<summary class="mb-4 flex cursor-pointer list-none items-center gap-2 select-none [&::-webkit-details-marker]:hidden">
 				<ChevronDownIcon class="size-6 shrink-0 -rotate-90 text-gold-400 transition-transform group-open/section:rotate-0" />
 				<h2 class="text-xl md:text-2xl font-bold text-gold-400">
@@ -90,7 +90,7 @@
 					<span class="text-sm font-normal text-gray-400">({section.groups.length})</span>
 				</h2>
 			</summary>
-			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 align-items-start align-content-start">
+			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
 				{#each section.groups as group (group.cardCode)}
 					<TrainerGroupTile {group} />
 				{/each}

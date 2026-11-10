@@ -15,23 +15,23 @@ export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
 	if (error) {
 		console.error('Error fetching profile:', error);
 		return {
-			user,
+			noindex: true,
 			profile: null,
-			noindex: true
+			user
 		};
 	}
 
 	return {
 		description: 'Manage your PokéCards-Collector account: username, profile colour and collection visibility.',
 		noindex: true,
+		profile: profileData,
 		title: 'Settings',
-		user,
-		profile: profileData
+		user
 	};
 };
 
 export const actions: Actions = {
-	updateProfile: async ({ request, locals: { supabase, user } }) => {
+	updateProfile: async ({ locals: { supabase, user }, request }) => {
 		if (!user) {
 			throw redirect(303, '/login');
 		}
@@ -41,8 +41,8 @@ export const actions: Actions = {
 
 		if (!/^#[0-9A-Fa-f]{6}$/.test(profileColor)) {
 			return fail(400, {
-				profileColor,
 				error: 'Invalid hex color format. Please use #RRGGBB.',
+				profileColor,
 				success: false
 			});
 		}
@@ -55,20 +55,20 @@ export const actions: Actions = {
 		if (error) {
 			console.error('Error updating profile color:', error);
 			return fail(500, {
-				profileColor,
 				error: 'Server error. Could not update profile color.',
+				profileColor,
 				success: false
 			});
 		}
 
 		return {
-			success: true,
 			message: 'Profile color updated successfully!',
-			profileColor
+			profileColor,
+			success: true
 		};
 	},
 
-	updateVisibility: async ({ request, locals: { supabase, user } }) => {
+	updateVisibility: async ({ locals: { supabase, user }, request }) => {
 		if (!user) {
 			throw redirect(303, '/');
 		}

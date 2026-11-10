@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import CardDisplay from "#components/card/CardDisplay.svelte";
+	import CardDisplay from '#components/card/CardDisplay.svelte';
 	import { fade } from 'svelte/transition';
 
 	interface Props {
@@ -15,14 +15,14 @@
 		{#key data.prints[0].cardCode}
 			<div in:fade={{ duration: 300 }}>
 				<CardDisplay
+					lowRes={true}
+					neighbours={data.neighbours}
 					pokemonPaths={data.pokemonPaths}
 					pokemons={data.pokemons}
 					prices={data.prices}
 					prints={data.prints}
 					sets={data.sets}
-					neighbours={data.neighbours}
 					versions={data.versions}
-					lowRes={true}
 				/>
 			</div>
 		{/key}

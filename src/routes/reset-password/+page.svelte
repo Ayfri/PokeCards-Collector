@@ -49,7 +49,7 @@
 				};
 			}}
 		>
-			<PasswordField autocomplete="new-password" id="password" label="New password" name="password" placeholder="••••••••" strength bind:value={password} />
+			<PasswordField autocomplete="new-password" bind:value={password} id="password" label="New password" name="password" placeholder="••••••••" strength />
 			<PasswordField autocomplete="new-password" id="confirm-password" label="Confirm new password" name="confirmPassword" placeholder="••••••••" />
 
 			<button

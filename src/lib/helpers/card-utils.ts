@@ -1,5 +1,5 @@
-import { CATALOGUES, type Catalogue, type Language } from '#helpers/catalogues.ts';
-import type { Card, CardPageSet, FullCard, Pokemon, PriceData, Set as CardSet, SetWithPrice } from '#lib/types.js';
+import { type Catalogue, CATALOGUES, type Language } from '#helpers/catalogues.ts';
+import type { Card, CardPageSet, Set as CardSet, FullCard, Pokemon, PriceData, SetWithPrice } from '#lib/types.js';
 
 /**
  * Memoizes `build` on the identity of `keys`, one `WeakMap` level per key, so a value derived from memoized tables never keeps one alive:
@@ -54,7 +54,7 @@ export function cardGroupKey(card: Pick<Card, 'name' | 'pokemonNumber' | 'supert
  */
 export function generateUniqueCardCode(
 	pokemonId: number | string,
-	urlCode: string | undefined,
+	setCode: string | undefined,
 	cardNumber: string | undefined,
 	supertype: string = 'pokemon'
 ): string {
@@ -66,7 +66,7 @@ export function generateUniqueCardCode(
 	/** Maps "pokmon", what `Pokémon` becomes when the `é` is dropped instead of decomposed, back to "pokemon". */
 	const finalSupertype = normalizedSupertype === "pokmon" ? "pokemon" : normalizedSupertype;
 
-	const normalizedUrlCode = (urlCode || '')
+	const normalizedSetCode = (setCode || '')
 		.toLowerCase()
 		.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 		.replace(/[^a-z0-9]/g, '');
@@ -77,7 +77,7 @@ export function generateUniqueCardCode(
 		.normalize("NFD").replace(/[̀-ͯ]/g, "")
 		.replace(/[^a-z0-9]/g, '');
 
-	return `${finalSupertype}_${pokemonId}_${normalizedUrlCode}_${normalizedCardNumber}`;
+	return `${finalSupertype}_${pokemonId}_${normalizedSetCode}_${normalizedCardNumber}`;
 }
 
 /** A card's price in EUR: the Cardmarket average, else its trend, 30-day average or lowest listing. `null` when none is above 0. */
@@ -108,12 +108,12 @@ const SUB_SET_PARENTS: Record<string, string> = {
 	'30th-c': '30th',
 	'cel25cc': 'cel25',
 	'sma': 'sm115',
+	'swsh4.5sv': 'swsh4.5',
+	'swsh9tg': 'swsh9',
 	'swsh10tg': 'swsh10',
 	'swsh11tg': 'swsh11',
 	'swsh12.5gg': 'swsh12.5',
 	'swsh12tg': 'swsh12',
-	'swsh4.5sv': 'swsh4.5',
-	'swsh9tg': 'swsh9',
 };
 
 /** One tile of the Sets page: a set with its sub-sets as chips, or the two halves of a trainer kit box. */
@@ -195,12 +195,12 @@ export type CardLink = Pick<Card, 'localId' | 'name' | 'setId' | 'setName'>;
 
 const SLUG_SYMBOLS: Record<string, string> = {
 	'&': ' and ',
-	'δ': ' delta ',
-	'☆': ' star ',
-	'★': ' star ',
 	'◇': ' prism-star ',
+	'★': ' star ',
+	'☆': ' star ',
 	'♀': ' female ',
 	'♂': ' male ',
+	'δ': ' delta ',
 };
 
 /**
@@ -208,7 +208,7 @@ const SLUG_SYMBOLS: Record<string, string> = {
  * Accents are stripped and the text is composed again, so Japanese `ガ` keeps its dakuten. `'` and `.` vanish instead of splitting (`farfetchd`, `mr-mime`).
  * `ex`, `gx` and `v` stay words (`charizard-ex`). French spells `&` as `et`, so French URLs read like the French names (`rouge-feu-et-vert-feuille`).
  */
-export function slugify(value: string, language: Language = 'en'): string {
+function slugify(value: string, language: Language = 'en'): string {
 	return value
 		.normalize('NFKD')
 		.replace(/[\u0300-\u036f]/g, '')
@@ -259,7 +259,7 @@ const byLocalId = (a: FullCard, b: FullCard) => a.localId.localeCompare(b.localI
 const setOrders = new WeakMap<FullCard[], Map<string, FullCard[]>>();
 
 /** The cards printed just before and after this one in its set. `cards` may list a card twice, so the set is deduplicated by `cardCode`. */
-export function setNeighbours(card: Pick<FullCard, 'cardCode' | 'setId'>, cards: FullCard[]): { next?: FullCard; previous?: FullCard } {
+function setNeighbours(card: Pick<FullCard, 'cardCode' | 'setId'>, cards: FullCard[]): { next?: FullCard; previous?: FullCard } {
 	let orders = setOrders.get(cards);
 	if (!orders) setOrders.set(cards, orders = new Map());
 	let order = orders.get(card.setId);
@@ -272,7 +272,7 @@ export function setNeighbours(card: Pick<FullCard, 'cardCode' | 'setId'>, cards:
 }
 
 /** A neighbouring card as the card page links it: `name`, printed `number` (`66`, `TG01`) and `path`. */
-export interface NeighbourLink {
+interface NeighbourLink {
 	name: string;
 	number: string;
 	path: string;
@@ -291,7 +291,6 @@ export function setNeighbourLinks(language: Language, card: Pick<FullCard, 'card
 
 /** A heuristic, not a parse: a card code contains `_` and a URL starts with `http`. */
 export function isCardCode(item: string): boolean {
-	if (!item) return false;
 	return item.includes('_') && !item.startsWith('http');
 }
 
@@ -303,7 +302,7 @@ const setMemo = new WeakMap<object, unknown>();
  * The prints of each Pokémon, Trainer or Energy group (`cardGroupKey`), built once per card list. A card without a set name is not a print,
  * and a card the list holds twice counts once, since the card page keys its tiles on `cardCode`.
  */
-export function cardGroups(cards: FullCard[]): Map<string, FullCard[]> {
+function cardGroups(cards: FullCard[]): Map<string, FullCard[]> {
 	return memoizedOn(groupMemo, [cards], () => {
 		const groups = new Map<string, FullCard[]>();
 		const seen = new Set<string>();
@@ -320,7 +319,7 @@ export function cardGroups(cards: FullCard[]): Map<string, FullCard[]> {
 }
 
 /** The card a Pokémon's neighbours link to: its priciest print, the first listed on a tie. Built once per card and price table. */
-export function bestCardByPokemon(cards: FullCard[], prices: Record<string, PriceData>): Map<number, FullCard> {
+function bestCardByPokemon(cards: FullCard[], prices: Record<string, PriceData>): Map<number, FullCard> {
 	return memoizedOn(bestMemo, [cards, prices], () => {
 		const best = new Map<number, FullCard>();
 		const worth = new Map<number, number>();
@@ -341,7 +340,7 @@ export function setsById(sets: CardSet[]): Map<string, CardSet> {
 }
 
 /** What a card page ships: the prints of the shown card and their prices and sets, the chain's Pokédex rows and one link per neighbouring Pokémon. */
-export interface CardPageData {
+interface CardPageData {
 	/** The path of each Pokémon in the evolution chain and its dex neighbours: their priciest print. */
 	pokemonPaths: Record<number, string>;
 	pokemons: Pokemon[];

@@ -1,11 +1,11 @@
 import { CARDTRADER_IMAGES } from '#src/constants.ts';
 import { processCardImage } from '#helpers/card-images.ts';
-import type { BinderCards } from '#lib/types.js';
+import type { BinderSlot } from '#lib/types.js';
 
-export interface BinderExportOptions {
+interface BinderExportOptions {
 	columns: number;
 	/** Pages to draw, in order. Each entry holds `rows * columns` slots. */
-	pages: Array<Array<BinderCards | null>>;
+	pages: Array<Array<BinderSlot | null>>;
 	rows: number;
 	/** Stamped in the corner box, falls back to the site name. */
 	username?: string;

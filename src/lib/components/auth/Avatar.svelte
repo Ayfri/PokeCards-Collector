@@ -1,44 +1,24 @@
 <script lang="ts">
+	import type { ClassValue } from 'svelte/elements';
+
 	interface Props {
-		username: string;
-		size?: string;
+		/** Tailwind classes that size the circle and its initial, e.g. `size-16 text-2xl`. */
+		class?: ClassValue;
 		/** Hex color, `#RRGGBB`. Anything else falls back to the gold default. */
 		profileColor?: string | null;
+		username: string;
 	}
 
-	let { username, size = "size-8 text-lg", profileColor = null }: Props = $props();
+	let { class: className = 'size-8 text-lg', profileColor = null, username }: Props = $props();
 
-	const defaultColorStart = 'var(--color-gold-400)';
-	const defaultColorEnd = 'var(--color-gold-600)';
-
-	function darkenHexColor(hex: string, percent: number): string {
-		hex = hex.replace(/^#/, '');
-		let r = parseInt(hex.substring(0, 2), 16);
-		let g = parseInt(hex.substring(2, 4), 16);
-		let b = parseInt(hex.substring(4, 6), 16);
-
-		r = Math.max(0, Math.floor(r * (1 - percent / 100)));
-		g = Math.max(0, Math.floor(g * (1 - percent / 100)));
-		b = Math.max(0, Math.floor(b * (1 - percent / 100)));
-
-		return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-	}
-
-	const gradientStyle = $derived((() => {
-		let startColor = defaultColorStart;
-		let endColor = defaultColorEnd;
-
-		if (profileColor && /^#[0-9A-Fa-f]{6}$/.test(profileColor)) {
-			startColor = profileColor;
-			/** The end stop is 45% darker, otherwise the gradient would not show. */
-			endColor = darkenHexColor(profileColor, 45);
-		}
-		return `background-image: linear-gradient(to bottom right, ${startColor}, ${endColor});`;
-	})());
+	/** The end stop is 45% darker, otherwise the gradient would not show. */
+	const gradientStyle = $derived(profileColor && /^#[0-9A-Fa-f]{6}$/.test(profileColor)
+		? `background-image: linear-gradient(to bottom right, ${profileColor}, color-mix(in srgb, ${profileColor} 55%, black));`
+		: 'background-image: linear-gradient(to bottom right, var(--color-gold-400), var(--color-gold-600));');
 </script>
 
 <div
-	class="{size} rounded-full flex items-center justify-center text-white uppercase font-bold"
+	class={[className, 'rounded-full flex items-center justify-center text-white uppercase font-bold']}
 	style={gradientStyle}
 >
 	{username.charAt(0)}

@@ -2,7 +2,7 @@
 	import { supabase } from '../../supabase';
 	import BouncyLoader from '../BouncyLoader.svelte';
 	import PasswordField from './PasswordField.svelte';
-	import { finishSignIn, readJson, type ApiError } from '#helpers/utils.ts';
+	import { type ApiError, finishSignIn, readJson } from '#helpers/utils.ts';
 
 	interface Props {
 		onSuccess?: () => void;
@@ -32,9 +32,9 @@
 
 		try {
 			const response = await fetch('/api/auth/login', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ email, password }),
+				headers: { 'Content-Type': 'application/json' },
+				method: 'POST',
 				signal: AbortSignal.timeout(15_000),
 			});
 
@@ -80,23 +80,23 @@
 	}
 </script>
 
-<form onsubmit={handleSubmit} class="space-y-4">
+<form class="space-y-4" onsubmit={handleSubmit}>
 	{#if errorMessage}
 		<div class="alert-error">{errorMessage}</div>
 	{/if}
 
 	<div>
-		<label for="email" class="form-label">Email</label>
-		<input type="email" id="email" bind:value={email} class="form-input" placeholder="your@email.com" required />
+		<label class="form-label" for="email">Email</label>
+		<input bind:value={email} class="form-input" id="email" placeholder="your@email.com" required type="email" />
 	</div>
 
 	<div>
-		<PasswordField autocomplete="current-password" id="password" label="Password" name="password" placeholder="Enter your password" bind:value={password} />
+		<PasswordField autocomplete="current-password" bind:value={password} id="password" label="Password" name="password" placeholder="Enter your password" />
 		<div class="mt-2 text-right">
 			<button
-				type="button"
 				class="rounded-sm text-xs text-gold-400 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-gold-400"
 				onclick={() => { showReset = !showReset; resetMessage = ''; }}
+				type="button"
 			>
 				{showReset ? 'Cancel' : 'Forgot password?'}
 			</button>
@@ -105,16 +105,16 @@
 
 	{#if showReset}
 		<div class="space-y-2">
-			<label for="reset-email" class="form-label">Enter your email to reset password</label>
+			<label class="form-label" for="reset-email">Enter your email to reset password</label>
 			<input
-				type="email"
-				id="reset-email"
 				bind:value={resetEmail}
 				class="form-input"
-				placeholder="your@email.com"
 				disabled={resetLoading}
+				id="reset-email"
+				placeholder="your@email.com"
+				type="email"
 			/>
-			<button type="button" class="btn-gold w-full" onclick={handlePasswordReset} disabled={resetLoading}>
+			<button class="btn-gold w-full" disabled={resetLoading} onclick={handlePasswordReset} type="button">
 				{resetLoading ? 'Sending...' : 'Send reset email'}
 			</button>
 			{#if resetMessage}
@@ -123,9 +123,9 @@
 		</div>
 	{/if}
 
-	<button type="submit" disabled={loading} class="btn-gold w-full">
+	<button class="btn-gold w-full" disabled={loading} type="submit">
 		{#if loading}
-			<BouncyLoader size={20} gradientColorStart="#000000" gradientColorEnd="#000000" />
+			<BouncyLoader gradientColorEnd="#000000" gradientColorStart="#000000" size={20} />
 			Logging in...
 		{:else}
 			Log in

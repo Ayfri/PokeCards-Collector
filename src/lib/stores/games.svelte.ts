@@ -1,9 +1,9 @@
 import { shiftDay } from '#helpers/card-dle.ts';
-import { PRICE_TIERS, scoreRound, type RoundScore } from '#helpers/price-game.ts';
+import { PRICE_TIERS, type RoundScore, scoreRound } from '#helpers/price-game.ts';
 import type { CardDleGuess } from '#lib/types.js';
 import { persistedRecord } from '#stores/persisted.svelte.ts';
 
-export interface PriceGameStats {
+interface PriceGameStats {
 	bestRound: number;
 	bestStreak: number;
 	/** Rounds per tier, indexed like PRICE_TIERS (exact first). */

@@ -44,7 +44,7 @@
 	<div class="relative flex min-h-0 flex-1 flex-col">
 		{#await data.streamed.grid}
 			<div class="absolute inset-x-0 top-32 flex justify-center">
-				<Loader message="Loading cards..." />
+				<Loader />
 			</div>
 		{:then grid}
 			<CardGrid

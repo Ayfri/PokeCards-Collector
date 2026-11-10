@@ -1,7 +1,7 @@
 import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
-import type { FullCard, PlateCard, PlateSet, Set as CardSet, PriceData } from '#lib/types.js';
+import type { Set as CardSet, FullCard, PlateCard, PlateSet, PriceData } from '#lib/types.js';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 
@@ -108,6 +108,7 @@ export const load: PageServerLoad = async () => {
 	const pageSeoData = {
 		breadcrumbs: breadcrumbs({ name: 'Artists', url: '/artists' }),
 		description: `The ${artists.length} illustrators behind the Pokémon Trading Card Game. Open an artist to see every card they have drawn, with prices and set information.`,
+		image: ogImage({ kind: 'page', name: 'artists' }, 'Every Pokémon TCG illustrator on PokéCards-Collector, with the artist count and the most valuable cards'),
 		keywords: ['Pokémon card artists', 'Pokémon TCG illustrators', 'Pokémon card artwork'],
 		schemas: [{
 			'@type': 'ItemList',
@@ -119,7 +120,6 @@ export const load: PageServerLoad = async () => {
 			name: 'Pokémon TCG illustrators',
 			numberOfItems: artists.length,
 		}],
-		image: ogImage({ kind: 'page', name: 'artists' }, 'Every Pokémon TCG illustrator on PokéCards-Collector, with the artist count and the most valuable cards'),
 		title: 'Pokémon TCG Card Artists',
 		type: 'CollectionPage' as const,
 	};

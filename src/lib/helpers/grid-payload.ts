@@ -1,5 +1,5 @@
 import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
-import { CATALOGUES, type Catalogue } from '#helpers/catalogues.ts';
+import { type Catalogue, CATALOGUES } from '#helpers/catalogues.ts';
 import { cardPath, cardPrice, formatCardNumber, memoizedOn, setPath } from '#helpers/card-utils.ts';
 import { keepAlive } from '#helpers/data-cache.ts';
 import { cardListSchema, setSchema } from '#helpers/seo.ts';
@@ -25,7 +25,7 @@ export interface ChecklistEntry {
 }
 
 /** A priced card of a set, as the set page's "most valuable" line links it. */
-export interface TopCard {
+interface TopCard {
 	/** The `{#each}` key: two cards can share a slug, never a code. */
 	cardCode: string;
 	localId: string;
@@ -74,7 +74,7 @@ export function redirectToSetPage(url: URL, isDataRequest: boolean, set: CardSet
 }
 
 /** The ETag hashes the JSON, and only the gzip bytes stay in memory: ~0.8 MB against 7.7 MB raw for the English grid. */
-export interface CompressedJson {
+interface CompressedJson {
 	etag: string;
 	gzip: Uint8Array<ArrayBuffer>;
 }

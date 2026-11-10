@@ -1,29 +1,29 @@
 <script lang="ts">
-	import type { PageData } from "./$types";
-	import BinderPage from "#components/binder/BinderPage.svelte";
-	import CardImage from "#components/card/CardImage.svelte";
-	import RaritySymbol from "#components/card/RaritySymbol.svelte";
-	import SetLogo from "#components/SetLogo.svelte";
-	import CountUp from "#components/ui/CountUp.svelte";
-	import { cardPath, setPath } from "#helpers/card-utils.ts";
-	import { CATALOGUES } from "#helpers/catalogues.ts";
-	import { formatDate, formatEuros } from "#helpers/format.ts";
-	import { NO_IMAGES } from "#helpers/card-images.ts";
+	import type { PageData } from './$types';
+	import BinderPage from '#components/binder/BinderPage.svelte';
+	import CardImage from '#components/card/CardImage.svelte';
+	import RaritySymbol from '#components/card/RaritySymbol.svelte';
+	import SetLogo from '#components/SetLogo.svelte';
+	import CountUp from '#components/ui/CountUp.svelte';
+	import { cardPath, setPath } from '#helpers/card-utils.ts';
+	import { CATALOGUES } from '#helpers/catalogues.ts';
+	import { formatDate, formatEuros } from '#helpers/format.ts';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
-	import GiftIcon from "@lucide/svelte/icons/gift";
-	import Tag from "@lucide/svelte/icons/tag";
-	import ArrowRight from "@lucide/svelte/icons/arrow-right";
-	import PokemonIcon from "@lucide/svelte/icons/gamepad-2";
-	import SetIcon from "@lucide/svelte/icons/layers";
-	import GridIcon from "@lucide/svelte/icons/layout-grid";
-	import PaintbrushIcon from "@lucide/svelte/icons/paintbrush";
-	import ChartIcon from "@lucide/svelte/icons/chart-column";
-	import HeartIcon from "@lucide/svelte/icons/heart";
-	import SearchIcon from "@lucide/svelte/icons/search";
-	import BookOpenCheckIcon from "@lucide/svelte/icons/book-open-check";
-	import LogInIcon from "@lucide/svelte/icons/log-in";
-	import UserPlusIcon from "@lucide/svelte/icons/user-plus";
+	import GiftIcon from '@lucide/svelte/icons/gift';
+	import Tag from '@lucide/svelte/icons/tag';
+	import ArrowRight from '@lucide/svelte/icons/arrow-right';
+	import PokemonIcon from '@lucide/svelte/icons/gamepad-2';
+	import SetIcon from '@lucide/svelte/icons/layers';
+	import GridIcon from '@lucide/svelte/icons/layout-grid';
+	import PaintbrushIcon from '@lucide/svelte/icons/paintbrush';
+	import ChartIcon from '@lucide/svelte/icons/chart-column';
+	import HeartIcon from '@lucide/svelte/icons/heart';
+	import SearchIcon from '@lucide/svelte/icons/search';
+	import BookOpenCheckIcon from '@lucide/svelte/icons/book-open-check';
+	import LogInIcon from '@lucide/svelte/icons/log-in';
+	import UserPlusIcon from '@lucide/svelte/icons/user-plus';
 	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import PuzzleIcon from '@lucide/svelte/icons/puzzle';
 	import Flag from '#components/Flag.svelte';
@@ -36,13 +36,13 @@
 	let { data }: Props = $props();
 
 	const tiles = $derived([
-		{ count: data.stats.totalCards, duration: 4, href: '/cards-list', language: 'en' as const, label: 'EN Cards', title: 'Browse every English card' },
+		{ count: data.stats.totalCards, duration: 4, href: '/cards-list', label: 'EN Cards', language: 'en' as const, title: 'Browse every English card' },
 		...[CATALOGUES.ja, CATALOGUES.fr].map(catalogue => ({
 			count: data.stats.foreignCards[catalogue.language],
 			duration: 4,
 			href: catalogue.gridRoute,
-			language: catalogue.language,
 			label: `${catalogue.routeCode.toUpperCase()} Cards`,
+			language: catalogue.language,
 			title: `Browse the ${catalogue.adjective} catalogue`,
 		})),
 		{ count: data.stats.uniquePokemon, duration: 3.5, href: '/cards-list?type=pokemon', icon: PokemonIcon, label: 'Pokémon', title: 'Browse the Pokemon cards' },
@@ -101,13 +101,13 @@
 					{title}
 				</h2>
 				<a
-					{href}
 					class="text-gold-400 hover:underline flex items-center gap-1 group"
+					{href}
 				>
 					View all cards
 					<ArrowRight
-						size={16}
 						class="group-hover:translate-x-1 transition-all duration-300"
+						size={16}
 					/>
 				</a>
 			</div>
@@ -117,15 +117,15 @@
 					<div
 						class="card-tile overflow-hidden flex flex-col"
 					>
-						<a href={cardPath('en', card)} class="block">
+						<a class="block" href={cardPath('en', card)}>
 							<div class="relative pt-[140%]">
 								<CardImage
-									imageUrl={card.image}
-									{card}
-									types={card.types}
 									alt={card.name}
+									{card}
 									class="absolute inset-0 w-full h-full object-cover"
+									imageUrl={card.image}
 									lazy={i > 1}
+									types={card.types}
 								/>
 							</div>
 
@@ -165,8 +165,8 @@
 			<div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4 mb-10">
 				{#each tiles as tile (tile.href)}
 					<a
-						href={tile.href}
 						class="card-tile p-4 text-center overflow-hidden"
+						href={tile.href}
 						title={tile.title}
 					>
 						{#if !NO_IMAGES}
@@ -174,16 +174,16 @@
 								{#if tile.language}
 									<Flag class="h-5 w-7.5 rounded-xs ring-1 ring-white/20" language={tile.language} />
 								{:else if tile.icon}
-									<tile.icon size={24} class="text-gold-400" />
+									<tile.icon class="text-gold-400" size={24} />
 								{/if}
 							</div>
 						{/if}
 						<div class="flex items-center justify-center w-full">
-							<ChevronRight size={12} class="text-gold-400 shrink-0 mr-1 animate-bounce-right" />
+							<ChevronRight class="text-gold-400 shrink-0 mr-1 animate-bounce-right" size={12} />
 							<span class="text-xl md:text-2xl font-bold text-gold-400">
-								<CountUp end={tile.count} duration={tile.duration} />
+								<CountUp duration={tile.duration} end={tile.count} />
 							</span>
-							<ChevronLeft size={12} class="text-gold-400 shrink-0 ml-1 animate-bounce-left" />
+							<ChevronLeft class="text-gold-400 shrink-0 ml-1 animate-bounce-left" size={12} />
 						</div>
 						<p class="text-sm text-gray-400">{tile.label}</p>
 					</a>
@@ -192,13 +192,13 @@
 
 			<div class="flex flex-wrap gap-4 mb-10 md:mb-0">
 				<a
-					href="/cards-list"
 					class="btn-gold group"
+					href="/cards-list"
 				>
 					Explore Cards
 					<ArrowRight
-						size={18}
 						class="group-hover:translate-x-1 transition-all duration-300"
+						size={18}
 					/>
 				</a>
 			</div>
@@ -208,8 +208,8 @@
 			{#if data.latestSet}
 				<h2 class="text-lg font-semibold uppercase tracking-[0.2em] text-gold-400">Latest set</h2>
 				<a
-					href={latestSetPath}
 					class="relative w-full max-w-lg transform transition-all duration-300 hover:scale-105 block"
+					href={latestSetPath}
 				>
 					<SetLogo class="w-[95%] mb-2 object-contain mx-auto rounded-lg shadow-md" set={data.latestSet}>
 						{#snippet fallback()}
@@ -250,8 +250,8 @@
 				class="flex flex-col sm:flex-row justify-between items-center mb-8"
 			>
 				<a
-					href={latestSetPath}
 					class="text-gold-400 hover:text-gold-300 transition-colors"
+					href={latestSetPath}
 				>
 					<h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
 						{#if !NO_IMAGES}
@@ -261,21 +261,21 @@
 					</h2>
 				</a>
 				<a
-					href={latestSetPath}
 					class="text-gold-400 hover:underline flex items-center gap-1 group"
+					href={latestSetPath}
 				>
 					View all cards in this set
 					<ArrowRight
-						size={16}
 						class="group-hover:translate-x-1 transition-all duration-300"
+						size={16}
 					/>
 				</a>
 			</div>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
 				<a
-					href={latestSetPath}
 					class="card-tile block p-6"
+					href={latestSetPath}
 				>
 					<div class="flex flex-col sm:flex-row gap-6 items-center">
 						<SetLogo class="w-32 h-32 object-contain" set={data.latestSet}>
@@ -325,7 +325,7 @@
 						class="text-xl font-bold text-gold-400 mb-4 flex items-center gap-2"
 					>
 						{#if !NO_IMAGES}
-							<ChartIcon size={20} class="text-gold-400" />
+							<ChartIcon class="text-gold-400" size={20} />
 						{/if}
 						Set Statistics
 					</h3>
@@ -334,8 +334,8 @@
 						<div class="bg-gray-700 p-3 rounded-sm text-center">
 							<p class="text-lg font-bold text-gold-400">
 								<CountUp
-									end={data.latestSetStats.pokemonCards}
 									duration={3}
+									end={data.latestSetStats.pokemonCards}
 								/>
 							</p>
 							<p class="text-xs text-gray-300">Pokémon Cards</p>
@@ -343,8 +343,8 @@
 						<div class="bg-gray-700 p-3 rounded-sm text-center">
 							<p class="text-lg font-bold text-gold-400">
 								<CountUp
-									end={data.latestSetStats.trainerCards}
 									duration={2}
+									end={data.latestSetStats.trainerCards}
 								/>
 							</p>
 							<p class="text-xs text-gray-300">Trainer Cards</p>
@@ -352,8 +352,8 @@
 						<div class="bg-gray-700 p-3 rounded-sm text-center">
 							<p class="text-lg font-bold text-gold-400">
 								<CountUp
-									end={data.latestSetStats.energyCards}
 									duration={2}
+									end={data.latestSetStats.energyCards}
 								/>
 							</p>
 							<p class="text-xs text-gray-300">Energy Cards</p>
@@ -365,8 +365,8 @@
 							<span class="text-gray-400">Completion value:</span>
 							<span class="text-gold-400">
 								<CountUp
-									end={data.latestSetStats.totalValue}
 									duration={2}
+									end={data.latestSetStats.totalValue}
 									options={{ decimalPlaces: 2, suffix: " €" }}
 								/>
 							</span>
@@ -404,8 +404,8 @@
 				{#if !NO_IMAGES}
 					<div class="flex justify-center mb-4">
 						<BookOpenCheckIcon
-							size={40}
 							class="text-gold-400"
+							size={40}
 						/>
 					</div>
 				{/if}
@@ -418,15 +418,15 @@
 				</p>
 				{#if data.profile}
 					<a
-						href="/collection"
 						class="text-gold-400 hover:underline mt-4 inline-block"
+						href="/collection"
 					>
 						My Collection
 					</a>
 				{:else}
 					<button
-						onclick={() => openAuthModal('login')}
 						class="focus-ring text-gold-400 hover:underline mt-4 inline-block"
+						onclick={() => openAuthModal('login')}
 						title="Sign in to track your collection"
 						type="button"
 					>
@@ -437,7 +437,7 @@
 			<div class={FEATURE_CARD_CLASS}>
 				{#if !NO_IMAGES}
 					<div class="flex justify-center mb-4">
-						<HeartIcon size={40} class="text-gold-400" />
+						<HeartIcon class="text-gold-400" size={40} />
 					</div>
 				{/if}
 				<h3 class="text-xl font-semibold mb-2">Build Wishlist</h3>
@@ -447,15 +447,15 @@
 				</p>
 				{#if data.profile}
 					<a
-						href="/wishlist"
 						class="text-gold-400 hover:underline mt-4 inline-block"
+						href="/wishlist"
 					>
 						My Wishlist
 					</a>
 				{:else}
 					<button
-						onclick={() => openAuthModal('register')}
 						class="focus-ring text-gold-400 hover:underline mt-4 inline-block"
+						onclick={() => openAuthModal('register')}
 						title="Create an account to build a wishlist"
 						type="button"
 					>
@@ -466,7 +466,7 @@
 			<div class={FEATURE_CARD_CLASS}>
 				{#if !NO_IMAGES}
 					<div class="flex justify-center mb-4">
-						<SearchIcon size={40} class="text-gold-400" />
+						<SearchIcon class="text-gold-400" size={40} />
 					</div>
 				{/if}
 				<h3 class="text-xl font-semibold mb-2">Explore & Search</h3>
@@ -475,8 +475,8 @@
 					sets.
 				</p>
 				<a
-					href="/cards-list"
 					class="text-gold-400 hover:underline mt-4 inline-block"
+					href="/cards-list"
 				>
 					Find Cards
 				</a>
@@ -532,8 +532,8 @@
 						</li>
 					</ul>
 					<a
-						href="/binder"
 						class="btn-gold mt-2 w-fit"
+						href="/binder"
 						title="Open the Binder Builder"
 					>
 						Try Binder Builder
@@ -610,8 +610,8 @@
 			</p>
 			<div class="flex flex-wrap justify-center gap-4">
 				<a
-					href="/collection"
 					class="btn-gold"
+					href="/collection"
 				>
 					Go to Collection
 					{#if !NO_IMAGES}
@@ -619,8 +619,8 @@
 					{/if}
 				</a>
 				<a
-					href="/wishlist"
 					class="btn-secondary"
+					href="/wishlist"
 				>
 					View Wishlist
 					{#if !NO_IMAGES}
@@ -638,8 +638,8 @@
 			</p>
 			<div class="flex flex-wrap justify-center gap-4">
 				<button
-					onclick={() => openAuthModal('login')}
 					class="btn-gold"
+					onclick={() => openAuthModal('login')}
 					title="Sign in to your account"
 					type="button"
 				>
@@ -647,8 +647,8 @@
 					{#if !NO_IMAGES}<LogInIcon size={18} />{/if}
 				</button>
 				<button
-					onclick={() => openAuthModal('register')}
 					class="btn-secondary"
+					onclick={() => openAuthModal('register')}
 					title="Create a new account"
 					type="button"
 				>
@@ -661,7 +661,7 @@
 		{/if}
 	</section>
 
-	<AuthModal isOpen={isAuthModalOpen} onClose={closeAuthModal} initialMode={authMode} />
+	<AuthModal initialMode={authMode} onClose={closeAuthModal} open={isAuthModalOpen} />
 </div>
 
 <style>

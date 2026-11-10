@@ -10,12 +10,12 @@ import { getSets } from '#helpers/supabase-data.ts';
  * the 19819-entry price table into the document.
  */
 export const load: PageServerLoad = async () => ({
-	image: ogImage({ kind: 'page', name: 'card.dle' }, 'Card.dle, the daily Pokémon card guessing game, with rows of hint tiles turning from red to green'),
-	title: 'Card.dle - Daily Pokémon Card Guessing Game',
-	description: 'Guess the mystery Pokémon card of the day. Every guess compares the Pokémon, artist, set, rarity, supertype, type and price with the mystery card. One card a day, the same for everyone, free and without an account.',
 	breadcrumbs: breadcrumbs({ name: 'Card.dle', url: '/card.dle' }),
+	description: 'Guess the mystery Pokémon card of the day. Every guess compares the Pokémon, artist, set, rarity, supertype, type and price with the mystery card. One card a day, the same for everyone, free and without an account.',
+	image: ogImage({ kind: 'page', name: 'card.dle' }, 'Card.dle, the daily Pokémon card guessing game, with rows of hint tiles turning from red to green'),
 	keywords: ['Pokémon wordle', 'card.dle', 'daily Pokémon card game', 'guess the Pokémon card'],
 	schemas: [gameSchema('Card.dle', "A daily Pokémon TCG guessing game: find the mystery card of the day from Pokémon, artist, set, rarity, supertype, type and price hints.", '/card.dle')],
 	sets: await getSets(),
+	title: 'Card.dle - Daily Pokémon Card Guessing Game',
 	today: utcDay(),
 });

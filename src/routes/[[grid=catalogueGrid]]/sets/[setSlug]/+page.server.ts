@@ -1,4 +1,4 @@
-import { BY_GRID, CATALOGUES, type Catalogue, type LanguagePaths } from '#helpers/catalogues.ts';
+import { BY_GRID, type Catalogue, CATALOGUES, type LanguagePaths } from '#helpers/catalogues.ts';
 import { setCardCount, setPath } from '#helpers/card-utils.ts';
 import { setLanding } from '#helpers/grid-payload.ts';
 import { setShareImage } from '#helpers/og-image.ts';

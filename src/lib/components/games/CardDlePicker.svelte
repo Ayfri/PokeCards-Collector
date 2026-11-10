@@ -6,7 +6,7 @@
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import SetLogo from '#components/SetLogo.svelte';
-	import { hasEasyFilters, matchesEasyFilters, withoutPrice, type EasyFilters } from '#helpers/card-dle.ts';
+	import { type EasyFilters, hasEasyFilters, matchesEasyFilters, withoutPrice } from '#helpers/card-dle.ts';
 	import { formatEuros } from '#helpers/format.ts';
 	import type { CardDleSuggestion, Set as CardSet } from '#lib/types.js';
 	import LayersIcon from '@lucide/svelte/icons/layers';
@@ -136,8 +136,6 @@
 			<SearchIcon class="shrink-0 text-gold-400" size={18} />
 			<label class="sr-only" for="{listId}-input">Search a Pokémon or card name</label>
 			<input
-				id="{listId}-input"
-				class="h-full min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-gray-500"
 				aria-activedescendant={showList && current >= 0 ? `${listId}-${current}` : undefined}
 				aria-autocomplete="list"
 				aria-busy={disabled}
@@ -145,6 +143,8 @@
 				aria-expanded={showList && visible.length > 0}
 				autocomplete="off"
 				bind:value={query}
+				class="h-full min-w-0 flex-1 bg-transparent text-base text-white outline-none placeholder:text-gray-500"
+				id="{listId}-input"
 				onclick={() => (open = true)}
 				onfocus={() => (open = true)}
 				oninput={() => {
@@ -172,20 +172,20 @@
 						<span>{matches.length} cards</span>
 						<div class="w-48"><SortControl bind:sortDirection bind:sortValue options={SORT_OPTIONS} /></div>
 					</div>
-					<ul id={listId} class="max-h-[min(32rem,60dvh)] overflow-y-auto" role="listbox">
+					<ul class="max-h-[min(32rem,60dvh)] overflow-y-auto" id={listId} role="listbox">
 						{#each visible as suggestion, index (suggestion.cardCode)}
 							{@const set = setsById.get(suggestion.setId)}
 							<!-- The options are driven from the combobox input (arrows and Enter), so they take no key handler of their own. -->
 							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<li
-								id="{listId}-{index}"
-								class={['flex items-center gap-3 px-3 py-2', disabled ? 'cursor-wait' : 'cursor-pointer', index === current && 'bg-gray-700']}
 								aria-selected={index === current}
+								class={['flex items-center gap-3 px-3 py-2', disabled ? 'cursor-wait' : 'cursor-pointer', index === current && 'bg-gray-700']}
+								id="{listId}-{index}"
 								onclick={() => pick(suggestion)}
 								onpointerenter={() => (active = index)}
 								role="option"
 							>
-								<CardImage card={suggestion.plate} class="h-20 w-auto rounded-sm" imageUrl={suggestion.image} alt={suggestion.name} lazy lowRes />
+								<CardImage alt={suggestion.name} card={suggestion.plate} class="h-20 w-auto rounded-sm" imageUrl={suggestion.image} lazy lowRes />
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-base font-semibold text-white">{suggestion.name}</p>
 									<p class="flex items-center gap-1.5 text-sm text-gray-400">
@@ -210,8 +210,8 @@
 	{#if hydrated}
 		<div class="flex flex-wrap items-center gap-1.5 text-xs">
 			<button
-				class="focus-ring flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 font-semibold text-gray-200 transition-colors hover:bg-gray-700"
 				aria-checked={easy}
+				class="focus-ring flex items-center gap-2 rounded-full border border-gray-700 bg-gray-800 px-2.5 py-1 font-semibold text-gray-200 transition-colors hover:bg-gray-700"
 				onclick={() => onEasyChange(!easy)}
 				role="switch"
 				title="Narrows the list to the cards that fit every hint found so far: the Pokémon, artist, set, rarity, supertype, type and price bounds"

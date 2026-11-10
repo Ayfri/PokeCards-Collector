@@ -3,7 +3,6 @@ import {CARDTRADER_IMAGES} from '#src/constants.ts';
 import type {FullCard} from '#lib/types.js';
 
 export type ImageQuality = 'high' | 'low';
-export type ImageExtension = 'webp' | 'png';
 
 /** Dev switch: renders placeholders instead of card art so a local run costs no bandwidth. */
 export const NO_IMAGES = PUBLIC_NO_IMAGES === 'true';
@@ -19,12 +18,12 @@ export function getCardImageForPokemon(pokemonId: number, cards: FullCard[]): st
 /**
  * Turns a stored image into a URL. A TCGdex extensionless base becomes `https://assets.tcgdex.net/en/swsh/swsh3/136` -> `.../136/high.webp`:
  * WebP is ~4x lighter than PNG, and the TCGdex CDN serves it over HTTP/3, so no mirror sits in front of it.
- * A CardTrader scan is a full URL with a file extension of its own (`extension` does not apply): `low` is its `show_` variant (500 px), `high` the original (868 px).
+ * A CardTrader scan is a full URL with a file extension of its own: `low` is its `show_` variant (500 px), `high` the original (868 px).
  */
-export function processCardImage(imageUrl: string, quality: ImageQuality = 'high', extension: ImageExtension = 'webp'): string {
+export function processCardImage(imageUrl: string, quality: ImageQuality = 'high'): string {
 	if (NO_IMAGES) return PLACEHOLDER;
 	if (imageUrl.startsWith(CARDTRADER_IMAGES)) return quality === 'low' ? imageUrl.replace(/[^/]+$/, 'show_$&') : imageUrl;
-	return imageUrl ? `${imageUrl}/${quality}.${extension}` : '';
+	return imageUrl ? `${imageUrl}/${quality}.webp` : '';
 }
 
 /** Intrinsic widths of the `low` and `high` URLs `processCardImage` returns, for `srcset` descriptors: the browser's DPR maths picks the wrong variant on any other number. */

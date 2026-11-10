@@ -67,9 +67,9 @@
 
 <div
 	class="flex flex-col items-center gap-3 rounded-2xl border border-green-500/40 bg-green-500/10 p-4 text-center sm:flex-row sm:text-left"
-	in:fly={{ y: 12, delay: delayed && !prefersReducedMotion.current ? 900 : 0, duration: prefersReducedMotion.current ? 0 : 300 }}
+	in:fly={{ delay: delayed && !prefersReducedMotion.current ? 900 : 0, duration: prefersReducedMotion.current ? 0 : 300, y: 12 }}
 >
-	<CardImage card={winner.plate} class="h-28 w-auto rounded-sm" imageUrl={winner.image} alt="Card: {winner.name}" lowRes />
+	<CardImage alt="Card: {winner.name}" card={winner.plate} class="h-28 w-auto rounded-sm" imageUrl={winner.image} lowRes />
 
 	<div class="flex min-w-0 flex-1 flex-col items-center gap-1.5 sm:items-start">
 		<h2 class="flex items-center gap-2 text-lg font-bold text-green-400">

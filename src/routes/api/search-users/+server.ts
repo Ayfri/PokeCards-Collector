@@ -15,7 +15,7 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	if (error) {
 		console.error('Search users API error:', error);
-		return Response.json({ success: false, error: 'Could not search users' }, { status: 500 });
+		return Response.json({ error: 'Could not search users', success: false }, { status: 500 });
 	}
 
 	return Response.json({ success: true, users: data ?? [] });

@@ -93,52 +93,50 @@
 	}
 
 	const artistOptions = $derived([
-		{ value: 'all', label: 'All illustrators' },
-		...artists.map(artist => ({ value: artist.toLowerCase(), label: artist })),
+		{ label: 'All illustrators', value: 'all' },
+		...artists.map(artist => ({ label: artist, value: artist.toLowerCase() })),
 	]);
 
 	const rarityOptions = $derived([
-		{ value: 'all', label: 'All rarities' },
-		...rarities.map(rarity => ({ value: rarity.toLowerCase(), label: rarity })),
+		{ label: 'All rarities', value: 'all' },
+		...rarities.map(rarity => ({ label: rarity, value: rarity.toLowerCase() })),
 	]);
 
 	const setOptions = $derived([
-		{ value: 'all', label: 'All sets' },
+		{ label: 'All sets', value: 'all' },
 		/** A set name shared by two languages (`151`, `Jungle`) is one entry: the filter matches on the name. */
-		...[...new Map(sets.map(set => [set.name.toLowerCase(), set.name]))].map(([value, label]) => ({ value, label })),
+		...[...new Map(sets.map(set => [set.name.toLowerCase(), set.name]))].map(([value, label]) => ({ label, value })),
 	]);
 
 	const typeOptions = $derived([
-		{ value: 'all', label: 'All types' },
-		...types.map(type => ({ value: type.toLowerCase(), label: type })),
+		{ label: 'All types', value: 'all' },
+		...types.map(type => ({ label: type, value: type.toLowerCase() })),
 	]);
 </script>
 
 <div class="w-full">
-	<Section title="Basic Filters" bind:isOpen={filterSections.basic}>
+	<Section bind:isOpen={filterSections.basic} title="Basic Filters">
 		<div class="flex flex-col gap-2 md:gap-4">
 			<div class="flex flex-wrap gap-4">
 				<div class="flex flex-col gap-1 min-w-32 flex-1">
-					<label for="sort" class="text-xs text-gray-300">Sort by</label>
+					<label class="text-xs text-gray-300" for="sort">Sort by</label>
 					<div class="flex items-center gap-2">
 						<Button
-							class="relative overflow-hidden flex items-center justify-center bg-transparent border-2 border-white text-white rounded-sm text-sm h-8 w-10 min-w-10 transition-all duration-300 z-0"
+							class="rounded-sm w-10 min-w-10"
 							onClick={toggleSortDirection}
 						>
-							<span class="relative z-10">
-								{#if filters.sortOrder === 'asc'}
-									<ArrowUp size={16} />
-								{:else}
-									<ArrowDown size={16} />
-								{/if}
-							</span>
+							{#if filters.sortOrder === 'asc'}
+								<ArrowUp size={16} />
+							{:else}
+								<ArrowDown size={16} />
+							{/if}
 						</Button>
 						<Select
 							activeCondition={false}
+							bind:value={() => filters.sortBy, selectSort}
 							id="sort"
 							label=""
 							options={SORT_OPTIONS}
-							bind:value={() => filters.sortBy, selectSort}
 						/>
 					</div>
 				</div>
@@ -146,24 +144,24 @@
 
 			<div class="flex flex-wrap gap-4 sm:flex-row flex-col md:hidden">
 				<TextInput
+					bind:value={searchName}
 					id="name"
 					label="Name"
-					bind:value={searchName}
+					onDebouncedInput={value => (filters.name = value)}
 					placeholder="Search by name..."
-					debounceFunction={value => (filters.name = value)}
 				/>
 			</div>
 
 			<div class="flex flex-wrap gap-4 sm:flex-row flex-col">
 				<TextInput
+					bind:value={searchNumero}
 					id="numero"
 					label="Pokémon ID"
-					bind:value={searchNumero}
-					placeholder="Enter Pokémon ID..."
-					debounceFunction={value => {
+					onDebouncedInput={value => {
 						filters.numero = value.trim();
 						applyFilterParam('pokemon', filters.numero || null);
 					}}
+					placeholder="Enter Pokémon ID..."
 				/>
 			</div>
 
@@ -179,45 +177,45 @@
 		</div>
 	</Section>
 
-	<Section title="Type Filters" bind:isOpen={filterSections.type}>
+	<Section bind:isOpen={filterSections.type} title="Type Filters">
 		<div class="flex flex-wrap gap-2 md:gap-4 sm:flex-row flex-col">
 			<Select
+				bind:value={() => filters.supertype, selectSupertype}
 				id="supertype"
 				label="Card Type"
 				options={SUPERTYPE_OPTIONS}
-				bind:value={() => filters.supertype, selectSupertype}
 			/>
 
 			<Select
+				bind:value={() => filters.type, selectType}
 				id="pokemontype"
 				label="Pokémon Type"
 				options={typeOptions}
-				bind:value={() => filters.type, selectType}
 			/>
 
 			<Select
+				bind:value={() => filters.rarity, selectRarity}
 				id="rarity"
 				label="Rarity"
 				options={rarityOptions}
-				bind:value={() => filters.rarity, selectRarity}
 			/>
 		</div>
 	</Section>
 
-	<Section title="Collection Filters" bind:isOpen={filterSections.collection}>
+	<Section bind:isOpen={filterSections.collection} title="Collection Filters">
 		<div class="flex flex-wrap gap-2 md:gap-4 sm:flex-row flex-col">
 			<Select
+				bind:value={() => filters.set, selectSet}
 				id="set"
 				label="Set"
 				options={setOptions}
-				bind:value={() => filters.set, selectSet}
 			/>
 
 			<Select
+				bind:value={() => filters.artist, selectArtist}
 				id="artist"
 				label="Illustrator"
 				options={artistOptions}
-				bind:value={() => filters.artist, selectArtist}
 			/>
 		</div>
 	</Section>

@@ -11,11 +11,11 @@
 	import WandSparklesIcon from '@lucide/svelte/icons/wand-sparkles';
 
 	interface Props {
-		showHelp: boolean;
-		toggleHelp: () => void;
+		onClose: () => void;
+		open: boolean;
 	}
 
-	let { showHelp, toggleHelp }: Props = $props();
+	let { onClose, open }: Props = $props();
 
 	const STEPS = [
 		{ icon: GripIcon, text: 'Pick your pocket layout: 4, 9, 12 or 16.' },
@@ -34,10 +34,10 @@
 </script>
 
 <Modal
-	open={showHelp}
-	onClose={toggleHelp}
-	title="Binder Builder"
 	containerClass="max-w-lg lg:max-w-2xl"
+	{onClose}
+	{open}
+	title="Binder Builder"
 >
 	<div class="flex flex-col gap-5 text-sm text-gray-200">
 		<div class="grid gap-2 sm:grid-cols-2">

@@ -27,12 +27,12 @@
 	<div class="flex items-center relative gap-1 bg-gray-700 rounded-full p-0.5">
 		{#each presets as { name, size } (size)}
 			<button
-				type="button"
-				onclick={() => setSize(size)}
-				class={['relative z-10 w-6 h-6 rounded-full transition-colors duration-200 flex items-center justify-center', cardSize.current === size ? 'bg-gold-400 text-black' : 'text-gray-400 hover:bg-gray-600']}
 				aria-label={`Set grid size to ${name}`}
 				aria-pressed={cardSize.current === size}
+				class={['relative z-10 w-6 h-6 rounded-full transition-colors duration-200 flex items-center justify-center', cardSize.current === size ? 'bg-gold-400 text-black' : 'text-gray-400 hover:bg-gray-600']}
+				onclick={() => setSize(size)}
 				title={`Set grid size to ${name}`}
+				type="button"
 			>
 				<span class="text-xs font-medium">{name}</span>
 			</button>

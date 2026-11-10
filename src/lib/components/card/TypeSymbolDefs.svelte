@@ -8,7 +8,7 @@
 <svg aria-hidden="true" class="pointer-events-none absolute size-0">
 	<defs>
 		{#each Object.entries(TYPE_SYMBOLS) as [key, glyph] (key)}
-			<radialGradient id="type-gradient-{key}" cx=".3" cy=".25" r=".85">
+			<radialGradient cx=".3" cy=".25" id="type-gradient-{key}" r=".85">
 				<stop offset="0" style="stop-color: var(--{key})" />
 				<stop offset="1" style="stop-color: var(--{key}2)" />
 			</radialGradient>

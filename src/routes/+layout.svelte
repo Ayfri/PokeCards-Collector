@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '#src/app.css';
-	import "#src/fonts/stylesheet.css";
+	import '#src/fonts/stylesheet.css';
 	import {onNavigate} from '$app/navigation';
 	import {page} from '$app/state';
 	import {untrack} from 'svelte';
@@ -13,7 +13,7 @@
 	import { loading } from '#stores/loading.svelte.ts';
 	import { wishlist } from '#stores/wishlist.svelte.ts';
 	import { collection } from '#stores/collection.svelte.ts';
-	import pokestore from '#src/assets/pokecards-collector.png';
+	import pokecardsCollector from '#src/assets/pokecards-collector.png';
 	interface Props {
 		children?: import('svelte').Snippet;
 	}
@@ -86,8 +86,8 @@
 	<link href="/sitemap.xml" rel="sitemap"/>
 
 	<!-- Card art, sprites and analytics sit on third-party origins that the first paint needs, so the connections open early. -->
-	<link href="https://assets.tcgdex.net" rel="preconnect" crossorigin="anonymous"/>
-	<link href="https://cdn.jsdelivr.net" rel="preconnect" crossorigin="anonymous"/>
+	<link crossorigin="anonymous" href="https://assets.tcgdex.net" rel="preconnect"/>
+	<link crossorigin="anonymous" href="https://cdn.jsdelivr.net" rel="preconnect"/>
 	<link href="https://www.googletagmanager.com" rel="dns-prefetch"/>
 
 	<!-- About 97% of the Google Analytics users of Sep-Oct 2026 were headless browsers from AWS data centres, so gtag never loads when `navigator.webdriver` is set. -->
@@ -140,6 +140,6 @@
 	{/if}
 	<div class="fixed top-[15%] [filter:grayscale(100%)_opacity(0.05)_contrast(3)_brightness(0.5)] -z-50 flex place-content-center h-lvh w-[95%] max-lg:left-[2.5%] lg:w-full {NO_IMAGES ? 'hidden' : ''}">
 		<!-- A watermark at 5% opacity: it carries no content, so an empty alt keeps it out of the accessibility tree. -->
-		<img src={pokestore} alt="" aria-hidden="true" class="absolute w-1/2" />
+		<img alt="" aria-hidden="true" class="absolute w-1/2" src={pokecardsCollector} />
 	</div>
 </div>

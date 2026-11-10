@@ -3,24 +3,24 @@
 	import { slide } from 'svelte/transition';
 
 	interface Props {
-		title: string;
-		isOpen: boolean;
 		children?: import('svelte').Snippet;
+		isOpen: boolean;
+		title: string;
 	}
 
-	let { title, isOpen = $bindable(), children }: Props = $props();
+	let { children, isOpen = $bindable(), title }: Props = $props();
 
-	const panelId = `section-panel-${Math.random().toString(36).substring(2, 9)}`;
+	const panelId = $props.id();
 </script>
 
 <div class="mb-2">
 	<button
-		type="button"
+		aria-controls={panelId}
+		aria-expanded={isOpen}
 		class="flex justify-between items-center w-full px-4 py-2 cursor-pointer bg-black/30 hover:bg-black/40 rounded-md border border-white/10 {isOpen ? 'rounded-b-none' : ''}"
 		onclick={() => (isOpen = !isOpen)}
-		aria-expanded={isOpen}
-		aria-controls={panelId}
 		title={isOpen ? `Collapse ${title}` : `Expand ${title}`}
+		type="button"
 	>
 		<h3 class="text-sm font-semibold m-0 text-gold-400">{title}</h3>
 		<div class={['transition-transform duration-300', isOpen && 'rotate-180']}>
@@ -31,9 +31,9 @@
 	{#if isOpen}
 		<div
 			class="p-3 border border-t-0 border-white/10 rounded-b-md bg-black/20 overflow-hidden"
-			transition:slide={{ duration: 300 }}
 			id={panelId}
 			role="region"
+			transition:slide={{ duration: 300 }}
 		>
 			{@render children?.()}
 		</div>

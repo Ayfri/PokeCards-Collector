@@ -28,21 +28,21 @@ export const POST: RequestHandler = async ({ request }) => {
 		}
 
 		const feedback = {
-			pokemonCorrect: guessedCard.name === cardOfTheDay.name,
-			pokemonValue: guessedCard.name,
 			artistCorrect: guessedCard.artist === cardOfTheDay.artist,
 			artistValue: guessedCard.artist,
-			setCorrect: guessedCard.setName === cardOfTheDay.setName,
-			setValue: guessedCard.setName,
+			pokemonCorrect: guessedCard.name === cardOfTheDay.name,
+			pokemonValue: guessedCard.name,
+			priceComparison: guessedPrice > cardOfTheDay.price ? 'higher' :
+							guessedPrice < cardOfTheDay.price ? 'lower' : 'correct',
+			priceValue: guessedPrice,
 			rarityCorrect: guessedCard.rarity === cardOfTheDay.rarity,
 			rarityValue: guessedCard.rarity,
+			setCorrect: guessedCard.setName === cardOfTheDay.setName,
+			setValue: guessedCard.setName,
 			supertypeCorrect: guessedCard.supertype === cardOfTheDay.supertype,
 			supertypeValue: guessedCard.supertype,
 			typesCorrect: guessedCard.types === cardOfTheDay.types,
 			typesValue: guessedCard.types,
-			priceComparison: guessedPrice > cardOfTheDay.price ? 'higher' :
-							guessedPrice < cardOfTheDay.price ? 'lower' : 'correct',
-			priceValue: guessedPrice,
 		};
 
 		const isCorrectGuess = feedback.pokemonCorrect &&
@@ -54,11 +54,11 @@ export const POST: RequestHandler = async ({ request }) => {
 							   feedback.priceComparison === 'correct';
 
 		return Response.json({
-			success: true,
 			date,
-			guessedCard,
 			feedback,
-			isCorrectGuess
+			guessedCard,
+			isCorrectGuess,
+			success: true
 		});
 
 	} catch (error) {

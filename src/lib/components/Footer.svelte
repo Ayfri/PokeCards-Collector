@@ -15,14 +15,13 @@
 	import pokecardsCollector from '#src/assets/pokecards-collector.png';
 
 	interface FooterLink {
-		href: string;
-		name: string;
 		/** Drawn in place of `icon` for the catalogue entries. */
 		flag?: Language;
+		href: string;
 		icon?: LucideIcon;
+		name: string;
 	}
 
-	/** Same routes and icons as the header's Browse menu. */
 	const exploreLinks: FooterLink[] = [
 		{ href: '/cards-list', icon: CardStackIcon, name: 'Cards' },
 		{ href: '/sets', icon: LibraryIcon, name: 'Sets' },

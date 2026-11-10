@@ -39,6 +39,7 @@
 
 	const numberFormatter = new Intl.NumberFormat('en-US');
 
+	/** In the order the sort buttons are drawn, not alphabetical. */
 	const SET_SORTS = {
 		completion: { compare: (a: SetEntry, b: SetEntry) => b.percentage - a.percentage || b.count - a.count, label: 'Completion' },
 		value: { compare: (a: SetEntry, b: SetEntry) => b.collectedValue - a.collectedValue, label: 'Value' },
@@ -151,7 +152,7 @@
 		<div class="relative flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between md:p-8">
 			<div class="flex min-w-0 items-center gap-5">
 				<div class="shrink-0 rounded-full p-1 shadow-lg" style="background: linear-gradient(135deg, var(--accent), transparent)">
-					<Avatar profileColor={accent} size="size-20 text-4xl md:size-24 md:text-5xl" {username} />
+					<Avatar class="size-20 text-4xl md:size-24 md:text-5xl" profileColor={accent} {username} />
 				</div>
 				<div class="min-w-0">
 					<h1 class="truncate text-3xl font-bold md:text-4xl">{username}</h1>
@@ -197,11 +198,11 @@
 					</a>
 					{#if isOwnProfile}
 						<button
-							type="button"
 							class="focus-ring flex items-center gap-2 rounded-lg border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold transition-colors duration-300 hover:border-gold-400 hover:text-gold-400 disabled:cursor-not-allowed disabled:opacity-50"
 							disabled={isLoading}
 							onclick={handleToggleVisibility}
 							title={isPublic ? 'Hide your collection and wishlist from other users' : 'Let other users browse your collection and wishlist'}
+							type="button"
 						>
 							{#if isLoading}
 								<LoaderCircle class="animate-spin" size={16} />
@@ -227,10 +228,10 @@
 	</section>
 
 	{#if successMessage}
-		<p class="alert-success" in:fly={{ y: -20, duration: 300 }}>{successMessage}</p>
+		<p class="alert-success" in:fly={{ duration: 300, y: -20 }}>{successMessage}</p>
 	{/if}
 	{#if errorMessage}
-		<p class="alert-error" in:fly={{ y: -20, duration: 300 }}>{errorMessage}</p>
+		<p class="alert-error" in:fly={{ duration: 300, y: -20 }}>{errorMessage}</p>
 	{/if}
 
 	{#if !isPublic && !isOwnProfile}
@@ -327,13 +328,13 @@
 					<span class="text-sm font-normal text-gray-400">{setEntries.length} sets</span>
 				</h2>
 				{#if setEntries.length > 1}
-					<div class="flex rounded-lg border border-white/10 bg-black/20 p-0.5 text-sm" role="group" aria-label="Sort sets">
+					<div aria-label="Sort sets" class="flex rounded-lg border border-white/10 bg-black/20 p-0.5 text-sm" role="group">
 						{#each Object.entries(SET_SORTS) as [key, sort] (key)}
 							<button
-								type="button"
 								aria-pressed={setSort === key}
 								class="rounded-md px-3 py-1 transition-colors {setSort === key ? 'bg-gold-400 font-semibold text-black' : 'text-gray-300 hover:text-white'}"
 								onclick={() => setSort = key as SetSort}
+								type="button"
 							>
 								{sort.label}
 							</button>

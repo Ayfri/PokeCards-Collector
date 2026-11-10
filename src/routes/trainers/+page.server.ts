@@ -100,6 +100,7 @@ export const load: PageServerLoad = async () => {
 	return {
 		breadcrumbs: breadcrumbs({ name: 'Trainers & Energy', url: '/trainers' }),
 		description: `The ${groupCount} Trainer and Energy cards of the Pokémon TCG, each with all its prints grouped together: Supporters, Items, Stadiums, Tools and Energy. Open any one to compare its prints and prices.`,
+		image: ogImage({ kind: 'page', name: 'trainers' }, 'Every Trainer and Energy card on PokéCards-Collector, with the most valuable ones'),
 		keywords: ['Trainer cards', 'Energy cards', 'Pokémon Supporter cards', 'Pokémon Item cards', 'Pokémon Stadium cards', 'all Trainer cards'],
 		schemas: [{
 			'@type': 'ItemList',
@@ -113,7 +114,6 @@ export const load: PageServerLoad = async () => {
 			numberOfItems: groupCount,
 		}],
 		sections,
-		image: ogImage({ kind: 'page', name: 'trainers' }, 'Every Trainer and Energy card on PokéCards-Collector, with the most valuable ones'),
 		title: 'All Trainer and Energy Cards',
 		type: 'CollectionPage' as const,
 	};

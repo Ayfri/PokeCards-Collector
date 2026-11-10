@@ -1,4 +1,4 @@
-<script module lang="ts">
+<script lang="ts" module>
 	/** Exported so the footer draws the same Discord mark. */
 	export { discordLogo };
 </script>
@@ -32,46 +32,46 @@
 	import { slide } from 'svelte/transition';
 
 	interface NavLink {
-		href?: string;
-		name: string;
-		icon: LucideIcon | null;
+		children?: NavLink[];
+		description?: string;
 		/** Drawn in place of `icon` for the catalogue entries. */
 		flag?: Language;
-		description?: string;
+		href?: string;
+		icon: LucideIcon | null;
 		isDropdown?: boolean;
-		children?: NavLink[];
+		name: string;
 	}
 
 	const navLinks: NavLink[] = [
-		{ href: '/', name: 'PCC', icon: null, description: 'PokéCards-Collector home' },
+		{ description: 'PokéCards-Collector home', href: '/', icon: null, name: 'PCC' },
 		{
-			name: 'Browse',
-			icon: SearchIcon,
+			children: [
+				{ description: 'Every Pokémon and its cards', href: '/pokemons', icon: PokedexIcon, name: 'Pokémons' },
+				{ description: 'Every Trainer and Energy card, grouped', href: '/trainers', icon: TrainersIcon, name: 'Trainers & Energy' },
+				{ description: 'Browse and filter every card', href: '/cards-list', icon: CardStackIcon, name: 'Cards' },
+				{ description: 'Every set, grouped by series', href: '/sets', icon: LibraryIcon, name: 'Sets' },
+				{ description: 'Every card illustrator', href: '/artists', icon: ArtistIcon, name: 'Artists' },
+				{ description: 'The Japanese catalogue', flag: 'ja', href: '/japan', icon: null, name: 'Japan' },
+				{ description: 'The French catalogue', flag: 'fr', href: '/france', icon: null, name: 'France' },
+				{ description: 'Jump to a random card', href: '/random', icon: ShuffleIcon, name: 'Random Card' },
+			],
 			description: 'Browse the card database',
+			icon: SearchIcon,
 			isDropdown: true,
-			children: [
-				{ href: '/pokemons', name: 'Pokémons', icon: PokedexIcon, description: 'Every Pokémon and its cards' },
-				{ href: '/trainers', name: 'Trainers & Energy', icon: TrainersIcon, description: 'Every Trainer and Energy card, grouped' },
-				{ href: '/cards-list', name: 'Cards', icon: CardStackIcon, description: 'Browse and filter every card' },
-				{ href: '/sets', name: 'Sets', icon: LibraryIcon, description: 'Every set, grouped by series' },
-				{ href: '/artists', name: 'Artists', icon: ArtistIcon, description: 'Every card illustrator' },
-				{ href: '/japan', name: 'Japan', icon: null, flag: 'ja', description: 'The Japanese catalogue' },
-				{ href: '/france', name: 'France', icon: null, flag: 'fr', description: 'The French catalogue' },
-				{ href: '/random', name: 'Random Card', icon: ShuffleIcon, description: 'Jump to a random card' },
-			]
+			name: 'Browse'
 		},
 		{
-			name: 'Games',
-			icon: GamepadIcon,
-			description: 'Daily card games',
-			isDropdown: true,
 			children: [
-				{ href: '/card.dle', name: 'Card.dle', icon: PuzzleIcon, description: 'Guess the daily mystery card' },
-				{ href: '/guess-the-price', name: 'Guess The Price', icon: PriceGameIcon, description: 'Guess what a card is worth' },
-			]
+				{ description: 'Guess the daily mystery card', href: '/card.dle', icon: PuzzleIcon, name: 'Card.dle' },
+				{ description: 'Guess what a card is worth', href: '/guess-the-price', icon: PriceGameIcon, name: 'Guess The Price' },
+			],
+			description: 'Daily card games',
+			icon: GamepadIcon,
+			isDropdown: true,
+			name: 'Games'
 		},
-		{ href: '/binder', name: 'Binder', icon: BinderIcon, description: 'Lay out a digital binder page' },
-		{ href: '/users', name: 'Users', icon: SearchUsersIcon, description: 'Find other collectors' },
+		{ description: 'Lay out a digital binder page', href: '/binder', icon: BinderIcon, name: 'Binder' },
+		{ description: 'Find other collectors', href: '/users', icon: SearchUsersIcon, name: 'Users' },
 	];
 
 	let isMobileMenuOpen = $state(false);
@@ -114,17 +114,17 @@
 
 {#snippet logo(className: string)}
 	{#if !NO_IMAGES}
-		<img alt="PokéCards-Collector Logo" loading="eager" class={['object-contain aspect-square', className]} src={pokecardsCollector} />
+		<img alt="PokéCards-Collector Logo" class={['object-contain aspect-square', className]} loading="eager" src={pokecardsCollector} />
 	{/if}
 {/snippet}
 
 {#snippet discordLink(className: string)}
 	<a
-		href={discordInviteUrl}
-		target="_blank"
-		rel="noopener noreferrer"
 		aria-label="Join our Discord community"
 		class={['items-center justify-center text-gray-400 hover:text-indigo-400 transition-colors duration-200 mr-1', className]}
+		href={discordInviteUrl}
+		rel="noopener noreferrer"
+		target="_blank"
 		title="Join our Discord community"
 	>
 		{@render discordLogo(28)}
@@ -136,9 +136,9 @@
 		<div class="flex items-center gap-2">
 			<button
 				aria-label="Toggle menu"
+				bind:this={mobileMenuButton}
 				class="lg:hidden text-gray-400 hover:text-gold-400 transition-colors duration-200 p-1 -ml-1"
 				onclick={event => { event.stopPropagation(); isMobileMenuOpen = !isMobileMenuOpen; }}
-				bind:this={mobileMenuButton}
 				title={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
 			>
 				{#if isMobileMenuOpen}
@@ -159,27 +159,27 @@
 				{:else if link.isDropdown && link.children}
 					<div class="relative">
 						<button
+							aria-expanded={openDropdown === link.name}
 							class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1"
 							onclick={event => { event.stopPropagation(); toggleDropdown(link.name); }}
-							aria-expanded={openDropdown === link.name}
 							title={link.description}
 						>
 							{#if !NO_IMAGES && link.icon}
 								<link.icon size={16} />
 							{/if}
 							{link.name}
-							<ChevronDownIcon size={14} class="transition-transform duration-200 {openDropdown === link.name ? 'rotate-180' : ''}" />
+							<ChevronDownIcon class="transition-transform duration-200 {openDropdown === link.name ? 'rotate-180' : ''}" size={14} />
 						</button>
 
 						{#if openDropdown === link.name}
 							<div
 								class="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-2 min-w-48 z-10"
-								transition:slide={{ duration: 200, axis: 'y' }}
+								transition:slide={{ axis: 'y', duration: 200 }}
 							>
 								{#each link.children as child (child.name)}
 									<a
-										href={child.href}
 										class="flex items-center gap-2 whitespace-nowrap px-4 py-2 text-gray-300 hover:text-gold-400 hover:bg-gray-700 transition-colors duration-200"
+										href={child.href}
 										title={child.description}
 									>
 										{#if child.flag}
@@ -220,17 +220,17 @@
 
 	{#if isMobileMenuOpen}
 		<div
+			aria-modal="true"
+			bind:this={mobileMenuNav}
 			class="absolute top-3/4 left-0 right-0 mt-1 mx-2 p-4 rounded-xl shadow-lg bg-gray-800 lg:hidden z-50"
 			role="dialog"
-			aria-modal="true"
-			transition:slide={{ duration: 150, axis: 'y' }}
-			bind:this={mobileMenuNav}
 			tabindex="-1"
+			transition:slide={{ axis: 'y', duration: 150 }}
 		>
 			<nav class="flex flex-col gap-3">
 				{#each navLinks as link (link.name)}
 					{#if link.href === '/'}
-						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href} title={link.description}>
+						<a class="text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href} title={link.description}>
 							{@render logo('h-7 w-7')}
 							<span class="font-bold text-lg">{link.name}</span>
 						</a>
@@ -243,7 +243,7 @@
 								{link.name}
 							</div>
 							{#each link.children as child (child.name)}
-								<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 pl-6 rounded-sm hover:bg-gray-600" href={child.href} title={child.description}>
+								<a class="text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 pl-6 rounded-sm hover:bg-gray-600" href={child.href} title={child.description}>
 									{#if child.flag}
 										<Flag class="h-3 w-[18px] shrink-0 rounded-[2px]" language={child.flag} />
 									{:else if !NO_IMAGES && child.icon}
@@ -254,7 +254,7 @@
 							{/each}
 						</div>
 					{:else}
-						<a class="mobile-nav-link text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href} title={link.description}>
+						<a class="text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href} title={link.description}>
 							{#if !NO_IMAGES && link.icon}
 								<link.icon size={20} />
 							{/if}
@@ -267,34 +267,24 @@
 	{/if}
 </header>
 
-<style lang="postcss">
+<style>
 	.nav-link {
 		position: relative;
 	}
 
-	.nav-link:hover::after {
-		content: '';
-		position: absolute;
-		bottom: -4px;
-		left: 0;
-		width: 100%;
-		height: 2px;
-		background-color: var(--color-gold-400);
-		transform-origin: center;
-		transform: scaleX(1);
-		transition: transform 0.3s ease;
-	}
-
 	.nav-link::after {
-		content: '';
-		position: absolute;
-		bottom: -4px;
-		left: 0;
-		width: 100%;
-		height: 2px;
 		background-color: var(--color-gold-400);
-		transform-origin: center;
+		bottom: -4px;
+		content: '';
+		height: 2px;
+		left: 0;
+		position: absolute;
 		transform: scaleX(0);
 		transition: transform 0.3s ease;
+		width: 100%;
+	}
+
+	.nav-link:hover::after {
+		transform: scaleX(1);
 	}
 </style>

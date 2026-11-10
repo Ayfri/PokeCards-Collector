@@ -16,7 +16,7 @@ export type OgPage = (typeof OG_PAGES)[number];
 export type OgUserKind = 'collection' | 'profile' | 'wishlist';
 
 export type OgTarget =
-	| { kind: 'card'; code: string; language: Language }
+	| { code: string; kind: 'card'; language: Language }
 	| { kind: 'page'; name: OgPage }
 	| { kind: 'set'; language: Language; setId: string }
 	| { kind: OgUserKind; username: string };
@@ -55,7 +55,7 @@ export const formatOgEuros = (value: number): string => `~${formatEuros(value, v
 export const cardOgVersion = (card: Pick<Card, 'image' | 'name'>, price: number | null): OgVersion => [card.name, card.image, ogPrice(price)];
 
 /** What a set image draws: the card count and the set value. */
-export const setOgVersion = (set: Pick<Set, 'totalCards'>, value: number): OgVersion => [set.totalCards, ogPrice(value)];
+const setOgVersion = (set: Pick<Set, 'totalCards'>, value: number): OgVersion => [set.totalCards, ogPrice(value)];
 
 export const setValue = (setId: string, cards: Card[], prices: Record<string, PriceData>): number =>
 	cards.reduce((sum, card) => card.setId === setId ? sum + (cardPrice(prices[card.cardCode]) ?? 0) : sum, 0);

@@ -35,14 +35,14 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 	}
 
 	return {
-		user: locals.user,
-		profile: locals.profile,
-		/** The viewer's card codes, one entry per copy in the collection: the stores and the binder need nothing else of a row. */
-		wishlistCodes,
 		collectionCodes,
-		/** SEO defaults. `page.data` merges layout and page data, so a page only returns the fields it changes and the rest fall back to these. */
-		title: 'PokéCards-Collector',
 		description: 'Explore the Pokémon TCG universe. Discover the latest set, check out the prices of the rarest cards, and manage your collection.',
 		image: ogImage({ kind: 'page', name: 'home' }, 'PokéCards-Collector, a Pokémon TCG catalogue and collection tracker: its card count in English, Japanese and French, and three of the most valuable cards'),
+		profile: locals.profile,
+		/** SEO defaults. `page.data` merges layout and page data, so a page only returns the fields it changes and the rest fall back to these. */
+		title: 'PokéCards-Collector',
+		user: locals.user,
+		/** The viewer's card codes, one entry per copy in the collection: the stores and the binder need nothing else of a row. */
+		wishlistCodes,
 	};
 };

@@ -48,7 +48,7 @@ interface SortValues {
 	supertype: string;
 }
 
-const SUPERTYPE_ORDER: Record<string, number> = { 'Pokémon': 1, Trainer: 2, Energy: 3 };
+const SUPERTYPE_ORDER: Record<string, number> = { Energy: 3, 'Pokémon': 1, Trainer: 2 };
 
 
 /** Sort keys are computed once per card up front, so the comparator only does lookups. */

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { resolve } from '$app/paths';
 	import AlertTriangleIcon from '@lucide/svelte/icons/triangle-alert';
 	import CrownIcon from '@lucide/svelte/icons/crown';
 	import SearchIcon from '@lucide/svelte/icons/search';
@@ -75,14 +74,6 @@
 		}
 	}
 
-	function handleSearchInput() {
-		performSearchUsers();
-	}
-
-	function viewProfile(username: string) {
-		goto(resolve('/profile/[user]', { user: encodeURIComponent(username) }));
-	}
-
 	onMount(() => {
 		const urlParams = new URLSearchParams(window.location.search);
 		const queryParam = urlParams.get('q');
@@ -103,8 +94,7 @@
 	</div>
 
 	<section aria-labelledby="search-users-title" class="sticky top-0 z-30 py-4 -mx-4 px-4 shadow-lg rounded-b-xl mb-6">
-		<h2 id="search-users-title" class="text-xl md:text-2xl font-semibold text-white flex items-center gap-2 mb-3 sr-only">
-			<SearchIcon class="text-blue-400" size={28} />
+		<h2 class="text-xl md:text-2xl font-semibold text-white flex items-center gap-2 mb-3 sr-only" id="search-users-title">
 			Find a Specific User
 		</h2>
 		<div class="max-w-xl mx-auto">
@@ -113,14 +103,14 @@
 					<SearchIcon size={20} />
 				</div>
 				<TextInput
+					aria-label="Search users by username"
+					bind:value={searchQuery}
+					class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-gold-400 text-white shadow-xs placeholder-gray-500 h-auto!"
 					id="user-search"
 					label="Search users by username"
 					labelClass="sr-only"
+					onDebouncedInput={performSearchUsers}
 					placeholder="Search public users by username..."
-					bind:value={searchQuery}
-					debounceFunction={handleSearchInput}
-					class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-gold-400 text-white shadow-xs placeholder-gray-500 h-auto!"
-					aria-label="Search users by username"
 				/>
 			</div>
 		</div>
@@ -128,12 +118,12 @@
 
 	{#if isLoadingSearch}
 		<div class="flex justify-center items-center pt-6">
-			<BouncyLoader size={30} gradientColorStart="#FFFFFF" gradientColorEnd="#FFFFFF" />
+			<BouncyLoader gradientColorEnd="#FFFFFF" gradientColorStart="#FFFFFF" size={30} />
 			<span class="ml-3 text-white">Searching users...</span>
 		</div>
 	{:else if searchErrorMessage}
 		<div class="alert-error text-center max-w-md mx-auto">
-			<AlertTriangleIcon size={36} class="mx-auto mb-2 text-red-400" />
+			<AlertTriangleIcon class="mx-auto mb-2 text-red-400" size={36} />
 			<h3 class="text-xl font-semibold text-white mb-1">Search Error</h3>
 			<p class="text-gray-300 mb-3 text-sm px-4">{searchErrorMessage}</p>
 			<button
@@ -151,18 +141,13 @@
 				<h3 class="text-xl font-semibold text-white mb-3">Search Results ({searchResults.length})</h3>
 				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
 					{#each searchResults as user (user.username)}
-						<UserCard 
-							{user} 
-							highlightClass="text-gold-400 group-hover:text-gold-300"
-							hoverBorderClass="hover:border-gold-400/70"
-							hoverShadowClass="hover:shadow-gold-400/30"
-						/>
+						<UserCard {user} />
 					{/each}
 				</div>
 			</div>
 		{:else if searchQuery.trim() !== ''}
 			<div class="text-center py-8 bg-gray-800/70 backdrop-blur-xs rounded-lg border border-gray-700 max-w-md mx-auto shadow-lg">
-				<UserXIcon size={40} class="mx-auto mb-3 text-gray-400" />
+				<UserXIcon class="mx-auto mb-3 text-gray-400" size={40} />
 				<h3 class="text-xl font-semibold text-white mb-1">No Users Found</h3>
 				<p class="text-gray-400 px-4">No public users match <strong class="text-gold-400">"{searchQuery}"</strong>. Try a different search term.</p>
 			</div>
@@ -172,30 +157,25 @@
 	{/if}
 
 	<section aria-labelledby="featured-users-title" class="space-y-4">
-		<h2 id="featured-users-title" class="text-xl md:text-2xl font-bold text-gold-400 flex items-center gap-3">
+		<h2 class="text-xl md:text-2xl font-bold text-gold-400 flex items-center gap-3" id="featured-users-title">
 			<CrownIcon size={28} />
 			Featured Collectors
 		</h2>
 		{#if featuredUsersError}
 			<div class="alert-error text-center my-6">
-				<AlertTriangleIcon size={40} class="mx-auto mb-3 text-red-400" />
+				<AlertTriangleIcon class="mx-auto mb-3 text-red-400" size={40} />
 				<h3 class="text-xl font-semibold text-white mb-1">Error Loading Featured Collectors</h3>
 				<p class="text-gray-300">{featuredUsersError}</p>
 			</div>
 		{:else if featuredUsers.length > 0}
 			<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
 				{#each featuredUsers as user (user.username)}
-					<UserCard
-						{user}
-						highlightClass="text-gold-400 group-hover:text-gold-300"
-						hoverBorderClass="hover:border-gold-400/70"
-						hoverShadowClass="hover:shadow-gold-400/30"
-					/>
+					<UserCard {user} />
 				{/each}
 			</div>
 		{:else}
 			<div class="text-center my-6 p-5 bg-gray-800/70 backdrop-blur-xs rounded-lg border border-gray-700 shadow-lg">
-				<TrendingUpIcon size={40} class="mx-auto mb-3 text-gray-400" />
+				<TrendingUpIcon class="mx-auto mb-3 text-gray-400" size={40} />
 				<h3 class="text-xl font-semibold text-white mb-1">No Featured Collectors Yet</h3>
 				<p class="text-gray-400 mb-2">Check back later to see top collectors!</p>
 				<p class="text-sm text-gray-500">To appear here, make your profile public and add cards to your collection.</p>
@@ -204,7 +184,7 @@
 	</section>
 
 	<div class="text-center p-3 bg-gray-800/50 rounded-lg border border-gray-700/50 flex items-center justify-center gap-2 text-sm text-gray-400">
-		<InfoIcon size={16} class="shrink-0" />
+		<InfoIcon class="shrink-0" size={16} />
 		<span>Want to be featured? Make your profile public and grow your collection!</span>
 	</div>
 </div>

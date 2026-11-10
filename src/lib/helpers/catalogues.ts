@@ -1,5 +1,6 @@
 export const LANGUAGES = ['en', 'ja', 'fr'] as const;
 export type Language = (typeof LANGUAGES)[number];
+export const isLanguage = (value: string | null): value is Language => LANGUAGES.some(language => language === value);
 
 export interface Catalogue {
 	adjective: string;
@@ -24,17 +25,6 @@ export const CATALOGUES = {
 		speciesTitles: true,
 		tables: {cards: 'cards', prices: 'prices', sets: 'sets'},
 	},
-	ja: {
-		adjective: 'Japanese',
-		cardRoute: '/jp-card',
-		gridRoute: '/japan',
-		language: 'ja',
-		note: 'Japanese catalogue still incomplete. Cards with no Japanese scan show the English one of the same print.',
-		routeCode: 'jp',
-		setsRoute: '/japan/sets',
-		speciesTitles: true,
-		tables: {cards: 'jp_cards', prices: 'jp_prices', sets: 'jp_sets'},
-	},
 	fr: {
 		adjective: 'French',
 		cardRoute: '/fr-card',
@@ -46,9 +36,20 @@ export const CATALOGUES = {
 		speciesTitles: false,
 		tables: {cards: 'fr_cards', prices: 'fr_prices', sets: 'fr_sets'},
 	},
+	ja: {
+		adjective: 'Japanese',
+		cardRoute: '/jp-card',
+		gridRoute: '/japan',
+		language: 'ja',
+		note: 'Japanese catalogue still incomplete. Cards with no Japanese scan show the English one of the same print.',
+		routeCode: 'jp',
+		setsRoute: '/japan/sets',
+		speciesTitles: true,
+		tables: {cards: 'jp_cards', prices: 'jp_prices', sets: 'jp_sets'},
+	},
 } as const satisfies Record<Language, Catalogue>;
 
-export type CatalogueTables = (typeof CATALOGUES)[Language]['tables'];
+type CatalogueTables = (typeof CATALOGUES)[Language]['tables'];
 export type CardTable = CatalogueTables['cards'];
 export type PriceTable = CatalogueTables['prices'];
 export type SetTable = CatalogueTables['sets'];

@@ -1,4 +1,4 @@
-import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY } from '$app/env/public';
+import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$app/env/public';
 import { createServerClient } from '@supabase/ssr';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { getProfileByAuthId } from '#lib/services/profiles.ts';
@@ -20,10 +20,9 @@ const PUBLIC_ROUTES = new Set([
 	'/api/search-users',
 	'/api/set-cards',
 	'/[catalogue=catalogue]-card/[code=cardCode]',
+	'/[sitemap=cardSitemap]/[page]',
 	'/card/[code=cardCode]',
 	'/og/[...path]',
-	'/sitemap-[catalogue=catalogue]-cards/[page]',
-	'/sitemap-cards/[page]',
 	'/sitemap-pages.xml',
 	'/sitemap.xml',
 ]);
@@ -38,7 +37,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			cookies: {
 				getAll: () => event.cookies.getAll(),
 				setAll: (cookiesToSet, headers) => {
-					cookiesToSet.forEach(({ name, value, options }) => {
+					cookiesToSet.forEach(({ name, options, value }) => {
 						event.cookies.set(name, value, { ...options, path: '/' });
 					});
 					/** The library sends `no-store` headers with auth cookies, so a CDN never shares one user's session. `setHeaders` throws if called twice. */

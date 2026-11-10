@@ -6,13 +6,13 @@
 		message?: string;
 	}
 
-	let { message = "Loading..." }: Props = $props();
+	let { message = 'Loading cards...' }: Props = $props();
 </script>
 
 <div
 	class="flex items-center justify-center w-full h-64"
 	in:fade={{ duration: 200 }}
-	out:fly={{ y: -20, duration: 300, easing: (t) => t * t }}
+	out:fly={{ duration: 300, easing: (t) => t * t, y: -20 }}
 >
 	<div class="flex flex-col items-center">
 		<div class="mb-4">

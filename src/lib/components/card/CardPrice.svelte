@@ -28,10 +28,17 @@
 	});
 </script>
 
-<div class="detailed-prices bg-gray-800 border-2 border-gold-400 rounded-xl p-4 w-full max-w-125 h-full">
+{#snippet priceItem(label: string, value: number | undefined)}
+	<div class="price-item bg-white/10">
+		<span class="font-semibold">{label}</span>
+		<span>{value}€</span>
+	</div>
+{/snippet}
+
+<div class="flex max-h-[80vh] flex-col overflow-y-auto text-[0.95rem] bg-gray-800 border-2 border-gold-400 rounded-xl p-4 w-full max-w-125 h-full">
 	{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
-		<a href={card.cardMarketUrl} target="_blank" rel="noopener noreferrer" class="text-gold-400 font-bold text-xl mb-3 flex items-center justify-center gap-2 hover:text-gold-300 transition-colors duration-200" title="Open this card on Cardmarket (new tab)">
-			<CardmarketLogo size={24} class="shrink-0" />
+		<a class="text-gold-400 font-bold text-xl mb-3 flex items-center justify-center gap-2 hover:text-gold-300 transition-colors duration-200" href={card.cardMarketUrl} rel="noopener noreferrer" target="_blank" title="Open this card on Cardmarket (new tab)">
+			<CardmarketLogo class="shrink-0" size={24} />
 			Cardmarket Prices
 			<ExternalLink size={18} />
 		</a>
@@ -39,105 +46,45 @@
 		<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Prices</h3>
 	{/if}
 
-	<div class="main-price-display bg-gray-900 border-2 border-gold-400 rounded-lg p-3 mb-4 text-center">
+	<div class="bg-gray-900 border-2 border-gold-400 rounded-lg p-3 mb-4 text-center">
 		<span class="text-2xl font-bold">
 			{mainPrice ? formatEuros(mainPrice) : 'Priceless'}
 		</span>
 		<span class="text-sm text-gray-400 block">Main Price</span>
 	</div>
 
-	<div class="price-details-container grow overflow-y-auto">
-		<h4 class="text-lg text-gold-400 font-bold mb-2 flex items-center justify-center gap-2" title="Current Cardmarket listings for the normal print"><Tag size={16} /> Market Prices (€)</h4>
+	<div class="grow overflow-y-auto max-h-[56vh]">
+		<h4 class="text-base text-gold-400 font-bold mb-2 flex items-center justify-center gap-2" title="Current Cardmarket listings for the normal print"><Tag size={16} /> Market Prices (€)</h4>
 		<div class="grid grid-cols-2 gap-3">
-			{#if cardPrices.simple}
-				<div class="price-item bg-white/10">
-					<span class="font-semibold">Average Sell:</span>
-					<span>{cardPrices.simple}€</span>
-				</div>
-			{/if}
-			{#if cardPrices.low}
-				<div class="price-item bg-white/10">
-					<span class="font-semibold">Low Price:</span>
-					<span>{cardPrices.low}€</span>
-				</div>
-			{/if}
-			{#if cardPrices.trend}
-				<div class="price-item bg-white/10">
-					<span class="font-semibold">Trend Price:</span>
-					<span>{cardPrices.trend}€</span>
-				</div>
-			{/if}
+			{#if cardPrices.simple}{@render priceItem('Average Sell:', cardPrices.simple)}{/if}
+			{#if cardPrices.low}{@render priceItem('Low Price:', cardPrices.low)}{/if}
+			{#if cardPrices.trend}{@render priceItem('Trend Price:', cardPrices.trend)}{/if}
 		</div>
 
 		{#if cardPrices.reverseSimple !== undefined && cardPrices.reverseSimple > 0}
-			<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Prices for the reverse holo print"><Repeat2 size={16} /> Reverse Prices</h4>
+			<h4 class="text-base text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Prices for the reverse holo print"><Repeat2 size={16} /> Reverse Prices</h4>
 			<div class="grid grid-cols-2 gap-3">
-				{#if cardPrices.reverseSimple !== undefined && cardPrices.reverseSimple > 0}
-					<div class="price-item bg-white/10">
-						<span class="font-semibold">Reverse Simple:</span>
-						<span>{cardPrices.reverseSimple}€</span>
-					</div>
-				{/if}
-				{#if cardPrices.reverseLow !== undefined && cardPrices.reverseLow > 0}
-					<div class="price-item bg-white/10">
-						<span class="font-semibold">Reverse Low:</span>
-						<span>{cardPrices.reverseLow}€</span>
-					</div>
-				{/if}
-				{#if cardPrices.reverseTrend !== undefined && cardPrices.reverseTrend > 0}
-					<div class="price-item bg-white/10">
-						<span class="font-semibold">Reverse Trend:</span>
-						<span>{cardPrices.reverseTrend}€</span>
-					</div>
-				{/if}
+				{@render priceItem('Reverse Simple:', cardPrices.reverseSimple)}
+				{#if cardPrices.reverseLow !== undefined && cardPrices.reverseLow > 0}{@render priceItem('Reverse Low:', cardPrices.reverseLow)}{/if}
+				{#if cardPrices.reverseTrend !== undefined && cardPrices.reverseTrend > 0}{@render priceItem('Reverse Trend:', cardPrices.reverseTrend)}{/if}
 			</div>
 		{/if}
 
-		<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Average sale price over the last days"><ChartLine size={16} /> Average Prices</h4>
+		<h4 class="text-base text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Average sale price over the last days"><ChartLine size={16} /> Average Prices</h4>
 		<div class="grid grid-cols-2 gap-3">
-			{#if cardPrices.avg1 !== undefined}
-				<div class="price-item bg-white/10">
-					<span class="font-semibold">Avg (1 day):</span>
-					<span>{cardPrices.avg1}€</span>
-				</div>
-			{/if}
-			{#if cardPrices.avg7 !== undefined}
-				<div class="price-item bg-white/10">
-					<span class="font-semibold">Avg (7 days):</span>
-					<span>{cardPrices.avg7}€</span>
-				</div>
-			{/if}
-			{#if cardPrices.avg30 !== undefined}
-				<div class="price-item bg-white/10">
-					<span class="font-semibold">Avg (30 days):</span>
-					<span>{cardPrices.avg30}€</span>
-				</div>
-			{/if}
+			{#if cardPrices.avg1 !== undefined}{@render priceItem('Avg (1 day):', cardPrices.avg1)}{/if}
+			{#if cardPrices.avg7 !== undefined}{@render priceItem('Avg (7 days):', cardPrices.avg7)}{/if}
+			{#if cardPrices.avg30 !== undefined}{@render priceItem('Avg (30 days):', cardPrices.avg30)}{/if}
 		</div>
 
 		{#if (cardPrices.reverseAvg1 !== undefined && cardPrices.reverseAvg1 > 0) ||
 			(cardPrices.reverseAvg7 !== undefined && cardPrices.reverseAvg7 > 0) ||
 			(cardPrices.reverseAvg30 !== undefined && cardPrices.reverseAvg30 > 0)}
-			<h4 class="text-lg text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Average sale price of the reverse holo print"><Repeat2 size={16} /> Reverse Averages</h4>
+			<h4 class="text-base text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Average sale price of the reverse holo print"><Repeat2 size={16} /> Reverse Averages</h4>
 			<div class="grid grid-cols-2 gap-3">
-				{#if cardPrices.reverseAvg1 !== undefined && cardPrices.reverseAvg1 > 0}
-					<div class="price-item bg-white/10">
-						<span class="font-semibold">R. Avg (1 day):</span>
-						<span>{cardPrices.reverseAvg1}€</span>
-					</div>
-				{/if}
-				{#if cardPrices.reverseAvg7 !== undefined && cardPrices.reverseAvg7 > 0}
-					<div class="price-item bg-white/10">
-						<span class="font-semibold">R. Avg (7 days):</span>
-						<span>{cardPrices.reverseAvg7}€</span>
-					</div>
-				{/if}
-				{#if cardPrices.reverseAvg30 !== undefined && cardPrices.reverseAvg30 > 0}
-					<div class="price-item bg-white/10">
-						<span class="font-semibold">R. Avg (30 days):</span>
-						<span>{cardPrices.reverseAvg30}€</span>
-					</div>
-				{/if}
+				{#if cardPrices.reverseAvg1 !== undefined && cardPrices.reverseAvg1 > 0}{@render priceItem('R. Avg (1 day):', cardPrices.reverseAvg1)}{/if}
+				{#if cardPrices.reverseAvg7 !== undefined && cardPrices.reverseAvg7 > 0}{@render priceItem('R. Avg (7 days):', cardPrices.reverseAvg7)}{/if}
+				{#if cardPrices.reverseAvg30 !== undefined && cardPrices.reverseAvg30 > 0}{@render priceItem('R. Avg (30 days):', cardPrices.reverseAvg30)}{/if}
 			</div>
 		{/if}
 	</div>
@@ -154,27 +101,6 @@
 		padding: 0.25rem 0.5rem;
 		border-radius: 0.5rem;
 		font-size: 0.9rem;
-	}
-
-	.detailed-prices {
-		max-height: 80vh;
-		overflow-y: auto;
-		font-size: 0.95rem;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.price-details-container {
-		max-height: 56vh;
-		overflow-y: auto;
-	}
-
-	.detailed-prices h4 {
-		font-size: 1rem;
-	}
-
-	.main-price-display:hover {
-		transform: none;
 	}
 
 	@media (max-width: 768px) {
