@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { NO_IMAGES, processCardImage } from '#helpers/card-images.ts';
+	import { NO_IMAGES, processCardImage, scanWidths } from '#helpers/card-images.ts';
 	import CardPlate from '#components/card/CardPlate.svelte';
 	import type { FullCard, Set } from '#lib/types.js';
 	import { untrack } from 'svelte';
@@ -10,10 +10,10 @@
 		card?: FullCard | undefined;
 		class?: string;
 		height?: number | undefined;
-		/** The extensionless TCGdex image base, e.g. "https://assets.tcgdex.net/en/swsh/swsh3/136". */
+		/** The extensionless TCGdex image base, e.g. "https://assets.tcgdex.net/en/swsh/swsh3/136", or a CardTrader scan URL. */
 		imageUrl: string;
 		lazy?: boolean;
-		/** Caps the candidates at the 245px variant, whatever the layout asks for. */
+		/** Caps the candidates at the low variant (245 px, or 500 px for a CardTrader scan), whatever the layout asks for. */
 		lowRes?: boolean;
 		/** Called when the image fails to load, including a failure that happened before hydration. */
 		onerror?: () => void;
@@ -49,25 +49,22 @@
 		width = undefined
 	}: Props = $props();
 
-	/** Intrinsic widths of the two TCGdex variants: 245x337 (~15 KiB) and 600x825 (~66 KiB). */
-	const LOW_WIDTH = 245;
-	const HIGH_WIDTH = 600;
-
 	let img = $state<HTMLImageElement>();
 	let loaded = $state(false);
 	let error = $state(false);
 
-	/** `assets.tcgdex.net` sends `Access-Control-Allow-Origin: *`, so the images need no proxy. */
+	/** A plain <img> without `crossorigin` loads cross-origin images with no CORS headers, so neither host needs a proxy here. */
 	const lowResImageUrl = $derived(processCardImage(imageUrl, 'low'));
 	const highResImageUrl = $derived(processCardImage(imageUrl, 'high'));
 
-	/** Descriptors must be the real intrinsic widths, otherwise the browser's DPR maths picks the wrong variant. */
+	/** Descriptors must be the real intrinsic widths (245 and 600 for TCGdex, 500 and 868 for CardTrader), otherwise the browser's DPR maths picks the wrong variant. */
+	const [lowWidth, highWidth] = $derived(scanWidths(imageUrl));
 	const srcsetValue = $derived(
 		NO_IMAGES || !imageUrl
 			? undefined
 			: lowRes
-				? `${lowResImageUrl} ${LOW_WIDTH}w`
-				: `${lowResImageUrl} ${LOW_WIDTH}w, ${highResImageUrl} ${HIGH_WIDTH}w`
+				? `${lowResImageUrl} ${lowWidth}w`
+				: `${lowResImageUrl} ${lowWidth}w, ${highResImageUrl} ${highWidth}w`
 	);
 	const sizesValue = $derived(sizes ?? (width ? `${width}px` : '(max-width: 768px) 50vw, 300px'));
 	/**

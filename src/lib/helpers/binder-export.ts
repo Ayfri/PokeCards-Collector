@@ -1,3 +1,4 @@
+import { CARDTRADER_IMAGES } from '#src/constants.ts';
 import { processCardImage } from '#helpers/card-images.ts';
 import type { BinderCards } from '#lib/types.js';
 
@@ -22,10 +23,12 @@ const SHEET = '#171717';
 const GOLD = '#fbc54a';
 
 /**
- * A slot holds either an extensionless TCGdex base or, for a URL import, a ready image URL. Only the ready URL goes
- * through the proxy, because `assets.tcgdex.net` already sends `Access-Control-Allow-Origin: *`.
+ * A slot holds an extensionless TCGdex base, a CardTrader scan URL or, for a URL import, a ready image URL. The last two go through the
+ * proxy, because `assets.tcgdex.net` sends `Access-Control-Allow-Origin: *` while `www.cardtrader.com` does not. A CardTrader scan is
+ * proxied as its 500 px `show_` variant, which is plenty for a 300 px slot.
  */
 function resolveExportUrl(url: string): string {
+	if (url.startsWith(CARDTRADER_IMAGES)) return `/api/image-proxy?url=${encodeURIComponent(processCardImage(url, 'low'))}`;
 	const lastSegment = url.split('/').pop() ?? '';
 	if (!lastSegment.includes('.')) return processCardImage(url);
 	return `/api/image-proxy?url=${encodeURIComponent(url)}`;

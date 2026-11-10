@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { processCardImage } from '#helpers/card-images.ts';
+	import { processCardImage, scanWidths } from '#helpers/card-images.ts';
 
 	interface Props {
 		alt: string;
-		/** Extensionless TCGdex image base of the scan whose illustration box fills the window. */
+		/** Extensionless TCGdex image base, or CardTrader scan URL, of the scan whose illustration box fills the window. */
 		base: string;
 		/** Covers the whole plate instead of the window: the full-art cards, whose illustration is the card. */
 		full?: boolean;
@@ -13,13 +13,16 @@
 	}
 
 	let { alt, base, full = false, onerror, trainer = false }: Props = $props();
+
+	const [lowWidth, highWidth] = $derived(scanWidths(base));
+	const srcset = $derived(`${processCardImage(base, 'low')} ${lowWidth}w, ${processCardImage(base)} ${highWidth}w`);
 </script>
 
 <!-- The crop needs a `relative` parent, the art window of `CardPlate`; `full` needs the plate's body, which it fills from behind its content.
      The illustration box spans 8-92 % of a scan's width and 11.5-47 % of its height, which starts under the header bar and stops above the Pokédex
      line printed under the art (centered at 50 % and 29.25 %, 33 % on a Trainer whose `TRAINER` line sits above the name), so the scan is scaled to the larger of the two widths that cover the window, then shifted to put that center
      on the window's center. The wrapper is a size container, so `cqw` / `cqh` here are the window's own size, whatever its height.
-     `sizes="auto"` lets the browser pick the 245px or the 600px scan from the rendered width, which is why the image is lazy. -->
+     `sizes="auto"` lets the browser pick the low or the high scan (`scanWidths`) from the rendered width, which is why the image is lazy. -->
 {#if full}
 	<img
 		{alt}
@@ -30,7 +33,7 @@
 		{onerror}
 		sizes="auto"
 		src={processCardImage(base, 'low')}
-		srcset="{processCardImage(base, 'low')} 245w, {processCardImage(base)} 600w"
+		{srcset}
 	/>
 {:else}
 	<div class="absolute inset-0 overflow-hidden rounded-[inherit] [container-type:size] @max-[120px]:hidden">
@@ -43,7 +46,7 @@
 			{onerror}
 			sizes="auto"
 			src={processCardImage(base, 'low')}
-			srcset="{processCardImage(base, 'low')} 245w, {processCardImage(base)} 600w"
+			{srcset}
 		/>
 	</div>
 {/if}

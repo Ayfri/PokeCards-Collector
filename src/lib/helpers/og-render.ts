@@ -22,7 +22,7 @@ import clashBold from '#src/fonts/ClashDisplay-Bold.ttf';
 import clashMedium from '#src/fonts/ClashDisplay-Medium.ttf';
 import clashSemibold from '#src/fonts/ClashDisplay-Semibold.ttf';
 import colorsCss from '#src/styles/colors.css?raw';
-import { BASE_URL, POKEMONS_COUNT, SITE_NAME } from '#src/constants.ts';
+import { BASE_URL, CARDTRADER_IMAGES, POKEMONS_COUNT, SITE_NAME } from '#src/constants.ts';
 import { processCardImage } from '#helpers/card-images.ts';
 import { cardPrice, formatCardNumber, setCardCount } from '#helpers/card-utils.ts';
 import { CATALOGUES, LANGUAGES, type Language } from '#helpers/catalogues.ts';
@@ -243,6 +243,9 @@ interface Ranked {
  */
 const borrowsScan = (card: Card, language = card.language): boolean => language === 'ja' && card.image.startsWith('https://assets.tcgdex.net/en/');
 
+/** A scan is drawn at most ~400 px wide: a CardTrader one takes its 500 px `show_` variant, since the 868 px original costs ~2 MB decoded in a 128 MB isolate. */
+const ogScan = (image: string): string => processCardImage(image, image.startsWith(CARDTRADER_IMAGES) ? 'low' : 'high');
+
 /** The cards that have a scan, most valuable first. */
 function ranked(cards: Card[], prices: Record<string, PriceData>, language?: Language): Ranked[] {
 	return cards
@@ -257,7 +260,7 @@ function ranked(cards: Card[], prices: Record<string, PriceData>, language?: Lan
  * drops a card: a network error or a 5xx keeps it, so the render's own fetch retries it and flags the image as incomplete if it fails.
  */
 async function scans(entries: Ranked[], count = 3): Promise<string[]> {
-	const candidates = entries.slice(0, count * 2).map(({ card }) => processCardImage(card.image));
+	const candidates = entries.slice(0, count * 2).map(({ card }) => ogScan(card.image));
 	const missing = await Promise.all(candidates.map(url => fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(HEAD_TIMEOUT_MS) }).then(response => response.status >= 400 && response.status < 500, () => false)));
 	return candidates.filter((_, index) => !missing[index]).slice(0, count);
 }
@@ -274,7 +277,7 @@ function plate(card: Card, height: number): Node {
 	const scale = Math.max(window.width / 0.84, window.height / 0.488);
 	const art = card.artImage
 		? image({
-			src: processCardImage(card.artImage),
+			src: ogScan(card.artImage),
 			width: Math.round(scale),
 			height: Math.round(scale * CARD_RATIO),
 			style: { left: window.width / 2 - scale / 2, position: 'absolute', top: window.height / 2 - scale * CARD_RATIO * (card.supertype === 'Trainer' ? 0.33 : 0.2925) },
@@ -308,7 +311,7 @@ async function cardImage(language: Language, code: string): Promise<Node | null>
 		fact(set?.logo ? [image({ src: set.logo, tw: 'h-[50px] max-w-[140px] object-contain' })] : [icon(Library, 34)], card.setName),
 		fact([flag(language), ...types.map(type => typeSymbol(type, 36)), ...(rarity ? [rarity] : [])], [card.rarity, number].filter(Boolean).join('  ·  ')),
 		price ? hero(formatEuros(price), 620) : text({ text: 'No price yet', tw: `mt-2 text-[44px] font-semibold text-[${color('gray-400')}]` }),
-	], card.image ? scan(processCardImage(card.image), 540) : plate(card, 540));
+	], card.image ? scan(ogScan(card.image), 540) : plate(card, 540));
 }
 
 /** The set logo large, its name, its card count and year, its total value in gold, and its three most valuable cards. */

@@ -28,8 +28,8 @@ const capBytes = (limit: number) => {
 };
 
 /**
- * Proxies the user-supplied image URLs a binder draws on its canvas, and nothing else. Card art needs no proxy
- * because `assets.tcgdex.net` is CORS-open.
+ * Proxies the image URLs a binder draws on its canvas that are not CORS-open: the user-supplied ones and the CardTrader scans
+ * (`www.cardtrader.com`). TCGdex card art needs no proxy because `assets.tcgdex.net` is CORS-open.
  *
  * The endpoint is public, so it is an image proxy, not a URL proxy: HTTPS only, never our own origin, and the
  * upstream `content-type` must be a known raster image before any byte is returned. Forwarding it as-is would let

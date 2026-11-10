@@ -1,6 +1,8 @@
 export const POKEMONS_COUNT = 1025;
 export const BASE_URL = 'https://pokecards-collector.ayfri.com';
 export const SITE_NAME = 'PokéCards-Collector';
+/** Prefix of every CardTrader scan the catalogue stores: the scrapers write it, `processCardImage` recognizes it. It sits here because this file has no `$app` import. */
+export const CARDTRADER_IMAGES = 'https://www.cardtrader.com/uploads/blueprints/image/';
 /** Credited as `twitter:site` / `twitter:creator`, which is what turns a shared link into an attributed X card. */
 export const SITE_TWITTER = '@ayfri_';
 
