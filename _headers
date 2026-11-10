@@ -1,0 +1,3 @@
+# The set image mirror is generated once and its paths carry no hash, so 30 days rather than immutable: a re-encoded file keeps its path.
+/set-images/*
+  Cache-Control: public, max-age=2592000
