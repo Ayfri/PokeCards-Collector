@@ -1,41 +1,25 @@
 /** Subset of the TCGdex v2 schema the pipeline consumes. */
 
 export interface TcgdexCardMarketPricing {
-	updated?: string;
-	unit?: string;
-	idProduct?: number;
 	avg?: number | null;
-	low?: number | null;
-	trend?: number | null;
 	avg1?: number | null;
-	avg7?: number | null;
-	avg30?: number | null;
-	'avg-holo'?: number | null;
-	'low-holo'?: number | null;
-	'trend-holo'?: number | null;
 	'avg1-holo'?: number | null;
+	avg7?: number | null;
 	'avg7-holo'?: number | null;
+	avg30?: number | null;
 	'avg30-holo'?: number | null;
-}
-
-export interface TcgdexTcgPlayerVariantPricing {
-	productId?: number;
-	lowPrice?: number;
-	midPrice?: number;
-	highPrice?: number;
-	marketPrice?: number;
-	directLowPrice?: number;
-}
-
-export interface TcgdexTcgPlayerPricing {
+	'avg-holo'?: number | null;
+	idProduct?: number;
+	low?: number | null;
+	'low-holo'?: number | null;
+	trend?: number | null;
+	'trend-holo'?: number | null;
 	unit?: string;
 	updated?: string;
-	[variant: string]: TcgdexTcgPlayerVariantPricing | string | undefined;
 }
 
 export interface TcgdexPricing {
 	cardmarket?: TcgdexCardMarketPricing | null;
-	tcgplayer?: TcgdexTcgPlayerPricing | null;
 }
 
 export interface TcgdexVariants {
@@ -47,34 +31,34 @@ export interface TcgdexVariants {
 }
 
 export interface TcgdexCardCount {
-	official?: number;
-	total?: number;
+	firstEd?: number;
 	holo?: number;
 	normal?: number;
+	official?: number;
 	reverse?: number;
-	firstEd?: number;
+	total?: number;
 }
 
 export interface TcgdexSetBrief {
-	id: string;
-	name: string;
-	logo?: string;
-	symbol?: string;
 	cardCount?: TcgdexCardCount;
+	id: string;
+	logo?: string;
+	name: string;
+	symbol?: string;
 }
 
 export interface TcgdexSet extends TcgdexSetBrief {
 	abbreviation?: {official?: string; short?: string};
+	cards?: TcgdexCardBrief[];
 	releaseDate?: string;
 	serie?: {id: string; name: string};
-	cards?: TcgdexCardBrief[];
 }
 
 export interface TcgdexCardBrief {
 	id: string;
+	image?: string;
 	localId: string;
 	name: string;
-	image?: string;
 }
 
 export interface TcgdexAttack {
@@ -86,24 +70,24 @@ export interface TcgdexCard extends TcgdexCardBrief {
 	/** `abilities`, `attacks`, `resistances`, `retreat` and `weaknesses` are only read by `link.ts`, which matches Japanese cards to English ones on them. */
 	abilities?: unknown[];
 	attacks?: TcgdexAttack[];
-	resistances?: {type: string}[];
-	retreat?: number;
-	weaknesses?: {type: string}[];
 	category?: string;
-	illustrator?: string;
-	rarity?: string;
-	set?: TcgdexSetBrief;
-	variants?: TcgdexVariants;
 	dexId?: number[];
-	hp?: number;
-	types?: string[];
-	stage?: string;
 	/** Only on Energy cards. */
 	energyType?: string;
+	hp?: number;
+	illustrator?: string;
+	legal?: {expanded?: boolean; standard?: boolean};
+	pricing?: TcgdexPricing | null;
+	rarity?: string;
+	regulationMark?: string;
+	resistances?: {type: string}[];
+	retreat?: number;
+	set?: TcgdexSetBrief;
+	stage?: string;
 	/** Only on Trainer cards. */
 	trainerType?: string;
-	regulationMark?: string;
-	legal?: {standard?: boolean; expanded?: boolean};
+	types?: string[];
 	updated?: string;
-	pricing?: TcgdexPricing | null;
+	variants?: TcgdexVariants;
+	weaknesses?: {type: string}[];
 }

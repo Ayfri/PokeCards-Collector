@@ -18,8 +18,8 @@ export interface JpTwin {
 export interface MappedCard {
 	/** Artwork borrowed for a card with no scan (see `art.ts`): an image base and where it came from. Set by the CLI scrape only, absent otherwise. */
 	artImage?: string;
-	artSource?: string;
 	artist: string;
+	artSource?: string;
 	cardCode: string;
 	cardMarketUpdatedAt: string;
 	cardMarketUrl: string;
@@ -58,18 +58,18 @@ export interface MappedSet {
 }
 
 export interface MappedPrice {
-	simple?: number | null;
-	low?: number | null;
-	trend?: number | null;
 	avg1?: number | null;
 	avg7?: number | null;
 	avg30?: number | null;
-	reverseSimple?: number | null;
-	reverseLow?: number | null;
-	reverseTrend?: number | null;
+	low?: number | null;
 	reverseAvg1?: number | null;
 	reverseAvg7?: number | null;
 	reverseAvg30?: number | null;
+	reverseLow?: number | null;
+	reverseSimple?: number | null;
+	reverseTrend?: number | null;
+	simple?: number | null;
+	trend?: number | null;
 }
 
 export const jpTwinOf = (tcgdexId: string): JpTwin | undefined => (jpTwins as Record<string, JpTwin>)[tcgdexId];
@@ -107,19 +107,11 @@ export function speciesInName(name: string): number[] {
 	return found;
 }
 
-const overrideCode = (lang: Language, tcgdexId: string): string | undefined => (cardCodeOverrides as Partial<Record<Language, Record<string, string>>>)[lang]?.[tcgdexId];
+const OVERRIDES = cardCodeOverrides as Partial<Record<Language, Record<string, string>>>;
+const overrideCode = (lang: Language, tcgdexId: string): string | undefined => OVERRIDES[lang]?.[tcgdexId];
 
-const overrideOwners = new Map<Language, Map<string, string>>();
-
-/** Override code -> the TCGdex id it pins, built on first use for each language. */
-function overrideOwner(lang: Language, code: string): string | undefined {
-	let owners = overrideOwners.get(lang);
-	if (!owners) {
-		owners = new Map(Object.entries((cardCodeOverrides as Partial<Record<Language, Record<string, string>>>)[lang] ?? {}).map(([id, pinned]) => [pinned, id]));
-		overrideOwners.set(lang, owners);
-	}
-	return owners.get(code);
-}
+/** Override code -> the TCGdex id it pins, per language. */
+const OVERRIDE_OWNERS = new Map(Object.entries(OVERRIDES).map(([lang, codes]) => [lang, new Map(Object.entries(codes ?? {}).map(([id, pinned]) => [pinned, id]))] as const));
 
 /**
  * A card's code never changes on its own. TCGdex adding a dex id would change the built code, so the stored code wins and only an override moves a card.
@@ -127,7 +119,7 @@ function overrideOwner(lang: Language, code: string): string | undefined {
  * still stored as the `pokemon_6_cel25c_4` that now belongs to CC002), and keeping it would make two cards share one row.
  */
 export function resolveCardCode(lang: Language, tcgdexId: string, stored: string | undefined, built: string): string {
-	const owner = stored && overrideOwner(lang, stored);
+	const owner = stored && OVERRIDE_OWNERS.get(lang)?.get(stored);
 	return overrideCode(lang, tcgdexId) ?? (owner && owner !== tcgdexId ? undefined : stored) ?? built;
 }
 
@@ -158,11 +150,6 @@ function buildCardCode(lang: Language, card: TcgdexCard): string {
 	return generateUniqueCardCode(species, codeSetOf[lang]?.get(setId) ?? setId, card.localId, card.category ?? 'Pokemon');
 }
 
-/** The DB and the filter UI use the accented `Pokémon`, while TCGdex says `Pokemon`. */
-function toSupertype(category: string | undefined): string {
-	return category === 'Pokemon' ? 'Pokémon' : (category ?? 'Pokémon');
-}
-
 export function mapCard(lang: Language, source: TcgdexCard): MappedCard {
 	const card = lang === 'fr' ? toEnglish(source) : source;
 	const cardmarket = card.pricing?.cardmarket;
@@ -187,7 +174,8 @@ export function mapCard(lang: Language, source: TcgdexCard): MappedCard {
 		stage: card.stage ?? '',
 		/** Read by category: TCGdex gives 9 ecard1 Pokémon a stray trainerType and the Trainer ex8-86 Energy Charge an energyType. */
 		subtype: (card.category === 'Trainer' ? card.trainerType : card.category === 'Energy' ? card.energyType : undefined) ?? '',
-		supertype: toSupertype(card.category),
+		/** The DB and the filter UI use the accented `Pokémon`, while TCGdex says `Pokemon`. */
+		supertype: card.category === 'Pokemon' ? 'Pokémon' : (card.category ?? 'Pokémon'),
 		tcgdexId: card.id,
 		...(lang === 'ja' && {twinMethod: twin?.method ?? '', twinTcgdexId: twin?.en ?? ''}),
 		types: card.types?.join(', ') ?? '',
@@ -223,6 +211,7 @@ export function mapSet(set: TcgdexSet): MappedSet {
 export function mapPrice(pricing: TcgdexPricing | null | undefined): MappedPrice | null {
 	const cardmarket = pricing?.cardmarket;
 	if (!cardmarket) return null;
+	/** Not alphabetical: this is the key order of every entry of the staged `*prices.json`, and a new order would rewrite those files whole. */
 	const price: MappedPrice = {
 		simple: cardmarket.avg,
 		low: cardmarket.low,
@@ -253,9 +242,7 @@ interface ProductCard {
  * are kept: they are prints of one card that Cardmarket may well sell as a single product.
  */
 export function sharedProductCodes(cards: Iterable<ProductCard>): Set<string> {
-	const byProduct = new Map<string, ProductCard[]>();
-	for (const card of cards) if (card.cardMarketUrl) (byProduct.get(card.cardMarketUrl) ?? byProduct.set(card.cardMarketUrl, []).get(card.cardMarketUrl)!).push(card);
 	const codes = new Set<string>();
-	for (const group of byProduct.values()) if (new Set(group.map(card => card.name)).size > 1) for (const card of group) codes.add(card.cardCode);
+	for (const [product, group] of Map.groupBy(cards, card => card.cardMarketUrl)) if (product && new Set(group.map(card => card.name)).size > 1) for (const card of group) codes.add(card.cardCode);
 	return codes;
 }

@@ -31,19 +31,19 @@ export const FRENCH = {
 		'Un Diamant': 'One Diamond',
 		'Une Étoile': 'One Star',
 	},
-	stage: {'Bébé': 'Baby', 'Base': 'Basic', 'MÉGA': 'MEGA', 'Niveau 1': 'Stage1', 'Niveau 2': 'Stage2', 'Niveau Sup': 'LEVEL-UP', 'Restauré': 'RESTORED', 'TURBO': 'BREAK'},
+	stage: {'Base': 'Basic', 'Bébé': 'Baby', 'MÉGA': 'MEGA', 'Niveau 1': 'Stage1', 'Niveau 2': 'Stage2', 'Niveau Sup': 'LEVEL-UP', 'Restauré': 'RESTORED', 'TURBO': 'BREAK'},
 	trainerType: {'Machine Technique': 'Technical Machine', Objet: 'Item', Outil: 'Tool', Stade: 'Stadium'},
 	type: {
 		Combat: 'Fighting',
 		Eau: 'Water',
-		Feu: 'Fire',
+		Électrique: 'Lightning',
 		Fée: 'Fairy',
+		Feu: 'Fire',
 		Incolore: 'Colorless',
 		Métal: 'Metal',
 		Obscurité: 'Darkness',
 		Plante: 'Grass',
 		Psy: 'Psychic',
-		Électrique: 'Lightning',
 	},
 } satisfies Record<string, Record<string, string>>;
 

@@ -10,25 +10,27 @@ interface SearchResults {
 	}[];
 }
 
-interface PokemonData {
+/** The `/pokemon-species/{id}` response, reduced to the fields read. */
+interface SpeciesResponse {
+	evolves_from_species?: {
+		name: string;
+		url: string;
+	};
 	flavor_text_entries: {
 		flavor_text: string;
 		language: {
 			name: string;
 		};
 	}[];
-	evolves_from_species?: {
-		name: string;
-		url: string;
-	};
 }
 
-interface PokemonExtractedData {
-	id: number;
-	name: string;
+/** One entry of `pokemons-full.json`. */
+export interface PokedexEntry {
 	description: string;
 	evolves_from?: number;
 	evolves_to?: number[];
+	id: number;
+	name: string;
 }
 
 /** A failure after the retries aborts the run: a skipped species would silently leave a hole in the Pokédex. */
@@ -38,16 +40,18 @@ const getJson = <T>(url: string) => withRetry(async () => {
 	return await response.json() as T;
 }, 5, 500, true);
 
-export async function fetchPokemons() {
+/** `write: false` runs the whole pass without writing `pokemons-full.json`. */
+export async function fetchPokemons(write: boolean) {
 	const json = await getJson<SearchResults>(`https://pokeapi.co/api/v2/pokemon-species?limit=${POKEMONS_COUNT}`);
 	console.log(`Fetched ${json.results.length} pokémons, fetching additional data...`);
 
-	const pokemons = await Promise.all(json.results.map(async (pokemon, index): Promise<PokemonExtractedData> => {
-		const data = await getJson<PokemonData>(pokemon.url);
+	const pokemons = await Promise.all(json.results.map(async (pokemon, index): Promise<PokedexEntry> => {
+		const data = await getJson<SpeciesResponse>(pokemon.url);
 		console.log(`Fetching ${index + 1}/${json.results.length} ${pokemon.name}`);
 
 		const evolvesFromRaw = data.evolves_from_species?.url.replace(/.+\/(\d+)\/$/, '$1');
 
+		/** Not alphabetical: this is the key order of every entry of `pokemons-full.json`. */
 		return {
 			id: index + 1,
 			name: pokemon.name,
@@ -63,5 +67,5 @@ export async function fetchPokemons() {
 		if (previous) (previous.evolves_to ??= []).push(pokemon.id);
 	}
 
-	await writeFile(POKEMONS, JSON.stringify(pokemons));
+	if (write) await writeFile(POKEMONS, JSON.stringify(pokemons));
 }

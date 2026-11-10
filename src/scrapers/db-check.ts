@@ -1,8 +1,8 @@
-import {cardSlug, SUBTYPE_SECTIONS, setSlug} from '#helpers/card-utils.ts';
+import {cardSlug, setSlug, SUBTYPE_SECTIONS} from '#helpers/card-utils.ts';
 import {RARITY_MAPPING} from '#helpers/rarity.ts';
-import {CATALOGUES, LANGUAGES, type Language} from '#helpers/catalogues.ts';
+import {CATALOGUES, type Language, LANGUAGES} from '#helpers/catalogues.ts';
 import {envClient} from './cli-config';
-import {ownedCardCodes, readAll} from './supabase_sync';
+import {ownedCardCodes, readAll} from './supabase-sync';
 import {EXCLUDED_SERIES} from './tcgdex/excluded';
 import {sharedProductCodes, speciesInName} from './tcgdex/mappers';
 
@@ -15,16 +15,16 @@ import {sharedProductCodes, speciesInName} from './tcgdex/mappers';
 const ABSURD_PRICE = 100_000;
 const SAMPLE = 5;
 
-export type Severity = 'error' | 'warn' | 'info';
+type Severity = 'error' | 'warn' | 'info';
 
-export interface Check {
+interface Check {
 	count: number;
 	name: string;
 	sample: string[];
 	severity: Severity;
 }
 
-export interface CheckReport {
+interface CheckReport {
 	checks: Check[];
 	errors: number;
 	warnings: number;
@@ -48,8 +48,8 @@ interface CardRow {
 }
 
 interface PriceRow {
-	card_code: string;
 	[column: string]: string | number | null;
+	card_code: string;
 }
 
 interface SetRow {

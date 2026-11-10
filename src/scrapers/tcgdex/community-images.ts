@@ -3,7 +3,7 @@
  * community settled on. Newer sets use scrydex, its image host, with no file extension. They are only tried after the TCGdex
  * CDN, so an upload there takes over. pokemontcg.io gives the 2011-2021 McDonald's collections the same arches logo, so the
  * 2023 and 2024 ones it does not list reuse it. An entry may fill only one of the two. French set ids are the English ones, so these also serve French.
- * Japanese sets only get a symbol (`japaneseCommunityImages`), never a logo.
+ * Japanese sets only get a symbol (`LIMITLESS_JAPANESE_SETS`), never a logo.
  */
 const MCDONALDS_LOGO = 'https://images.pokemontcg.io/mcd21/logo.png';
 
@@ -27,6 +27,7 @@ export function communityImages(lang: string, setId: string): CommunityImages | 
 }
 
 const COMMUNITY_SET_IMAGES: Record<string, CommunityImages> = {
+	'30th-c': {logo: 'https://images.scrydex.com/pokemon/me55c-logo/logo', symbol: 'https://images.scrydex.com/pokemon/me55c-symbol/symbol'},
 	'2011bw': {logo: 'https://images.pokemontcg.io/mcd11/logo.png', symbol: 'https://images.pokemontcg.io/mcd11/symbol.png'},
 	'2012bw': {logo: 'https://images.pokemontcg.io/mcd12/logo.png', symbol: 'https://images.pokemontcg.io/mcd12/symbol.png'},
 	'2014xy': {logo: 'https://images.pokemontcg.io/mcd14/logo.png', symbol: 'https://images.pokemontcg.io/mcd14/symbol.png'},
@@ -40,26 +41,25 @@ const COMMUNITY_SET_IMAGES: Record<string, CommunityImages> = {
 	'2023sv': {logo: MCDONALDS_LOGO},
 	'2024sv': {logo: MCDONALDS_LOGO},
 	'base1': {symbol: 'https://images.pokemontcg.io/base1/symbol.png'},
+	'bog': {logo: 'https://images.pokemontcg.io/bp/logo.png', symbol: 'https://images.pokemontcg.io/bp/symbol.png'},
+	'cel25cc': {logo: 'https://images.pokemontcg.io/cel25c/logo.png', symbol: 'https://images.pokemontcg.io/cel25c/symbol.png'},
 	'me05': {symbol: 'https://images.scrydex.com/pokemon/me5-symbol/symbol'},
 	'me06': {logo: 'https://images.scrydex.com/pokemon/me6-logo/logo', symbol: 'https://images.scrydex.com/pokemon/me6-symbol/symbol'},
+	'sm3.5': {logo: 'https://images.pokemontcg.io/sm35/logo.png', symbol: 'https://images.pokemontcg.io/sm35/symbol.png'},
+	'sm7.5': {logo: 'https://images.pokemontcg.io/sm75/logo.png', symbol: 'https://images.pokemontcg.io/sm75/symbol.png'},
 	'sma': {logo: 'https://images.pokemontcg.io/sma/logo.png', symbol: 'https://images.pokemontcg.io/sma/symbol.png'},
 	'sv05': {logo: 'https://images.pokemontcg.io/sv5/logo.png', symbol: 'https://images.pokemontcg.io/sv5/symbol.png'},
 	'sv07': {symbol: 'https://images.pokemontcg.io/sv7/symbol.png'},
 	'sv08': {symbol: 'https://images.pokemontcg.io/sv8/symbol.png'},
 	'sv08.5': {symbol: 'https://images.pokemontcg.io/sv8pt5/symbol.png'},
-	'30th-c': {logo: 'https://images.scrydex.com/pokemon/me55c-logo/logo', symbol: 'https://images.scrydex.com/pokemon/me55c-symbol/symbol'},
-	'bog': {logo: 'https://images.pokemontcg.io/bp/logo.png', symbol: 'https://images.pokemontcg.io/bp/symbol.png'},
-	'cel25cc': {logo: 'https://images.pokemontcg.io/cel25c/logo.png', symbol: 'https://images.pokemontcg.io/cel25c/symbol.png'},
-	'sm3.5': {logo: 'https://images.pokemontcg.io/sm35/logo.png', symbol: 'https://images.pokemontcg.io/sm35/symbol.png'},
-	'sm7.5': {logo: 'https://images.pokemontcg.io/sm75/logo.png', symbol: 'https://images.pokemontcg.io/sm75/symbol.png'},
 	'sve': {logo: 'https://images.pokemontcg.io/sve/logo.png', symbol: 'https://images.pokemontcg.io/sve/symbol.png'},
 	'svp': {logo: 'https://images.pokemontcg.io/svp/logo.png', symbol: 'https://images.pokemontcg.io/svp/symbol.png'},
 	'swsh4.5sv': {logo: 'https://images.pokemontcg.io/swsh45sv/logo.png', symbol: 'https://images.pokemontcg.io/swsh45sv/symbol.png'},
 	'swsh9tg': {logo: 'https://images.pokemontcg.io/swsh9tg/logo.png', symbol: 'https://images.pokemontcg.io/swsh9tg/symbol.png'},
 	'swsh10tg': {logo: 'https://images.pokemontcg.io/swsh10tg/logo.png', symbol: 'https://images.pokemontcg.io/swsh10tg/symbol.png'},
 	'swsh11tg': {logo: 'https://images.pokemontcg.io/swsh11tg/logo.png', symbol: 'https://images.pokemontcg.io/swsh11tg/symbol.png'},
-	'swsh12tg': {logo: 'https://images.pokemontcg.io/swsh12tg/logo.png', symbol: 'https://images.pokemontcg.io/swsh12tg/symbol.png'},
 	'swsh12.5gg': {logo: 'https://images.pokemontcg.io/swsh12pt5gg/logo.png', symbol: 'https://images.pokemontcg.io/swsh12pt5gg/symbol.png'},
+	'swsh12tg': {logo: 'https://images.pokemontcg.io/swsh12tg/logo.png', symbol: 'https://images.pokemontcg.io/swsh12tg/symbol.png'},
 	'tk-ex-latia': {logo: 'https://images.pokemontcg.io/tk1a/logo.png', symbol: 'https://images.pokemontcg.io/tk1a/symbol.png'},
 	'tk-ex-latio': {logo: 'https://images.pokemontcg.io/tk1b/logo.png', symbol: 'https://images.pokemontcg.io/tk1b/symbol.png'},
 	'tk-ex-m': {logo: 'https://images.pokemontcg.io/tk2b/logo.png', symbol: 'https://images.pokemontcg.io/tk2b/symbol.png'},

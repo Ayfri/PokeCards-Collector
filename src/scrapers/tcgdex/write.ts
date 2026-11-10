@@ -1,22 +1,17 @@
 import * as fs from 'node:fs/promises';
 import {Http2Pool} from './http2-pool';
-import {LANGUAGES} from '#helpers/catalogues.ts';
-import {envCardTraderImages, FILES, TYPES} from '../cli-config';
+import {envCardTraderScans, FILES, TYPES} from '../cli-config';
 import type {Language} from './mappers';
-import {scrapeLanguage, scrapeTypes, type ScrapeResult} from './scraper';
-
-export interface ScrapeOptions {
-	/** `false` runs the whole pass without writing to `src/assets/`, to diff or time it. */
-	write?: boolean;
-}
+import {scrapeLanguage, type ScrapeResult} from './scraper';
 
 async function writeJson(path: string, value: unknown): Promise<void> {
 	await fs.writeFile(path, JSON.stringify(value));
 	console.log(`  wrote ${path}`);
 }
 
-export async function scrapeToFiles(langs: readonly Language[] = LANGUAGES, {write = true}: ScrapeOptions = {}): Promise<Record<Language, ScrapeResult>> {
-	const cardTrader = envCardTraderImages();
+/** `write: false` runs the whole pass without writing to `src/assets/`, to diff or time it. */
+export async function scrapeToFiles(langs: readonly Language[], write: boolean): Promise<Record<Language, ScrapeResult>> {
+	const cardTrader = envCardTraderScans();
 	/** Marks the rejection as handled so a CardTrader failure during the first TCGdex pass does not crash Bun; `scrapeLanguage` still throws it when it awaits the map. */
 	cardTrader.catch(() => {});
 	const pool = new Http2Pool();
@@ -29,7 +24,7 @@ export async function scrapeToFiles(langs: readonly Language[] = LANGUAGES, {wri
 			const files = FILES[lang];
 			await Promise.all([writeJson(files.cards, cards), writeJson(files.prices, prices), writeJson(files.sets, sets)]);
 		}
-		if (write) await writeJson(TYPES, (await scrapeTypes(pool)) ?? []);
+		if (write) await writeJson(TYPES, (await pool.json<string[]>('/v2/en/types')) ?? []);
 	} finally {
 		pool.close();
 	}

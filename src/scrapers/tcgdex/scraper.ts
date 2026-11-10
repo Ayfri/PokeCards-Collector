@@ -1,9 +1,9 @@
 import {CARDTRADER_IMAGES} from '#src/constants.ts';
 import type {CardTraderScans} from '../cardtrader';
 import {addFallbackArt} from './art';
-import {fileUnderListingSets, fillImage, imageFallbacks, mapAll, withProbedAssets, type TcgdexClient} from './client';
+import {fileUnderListingSets, fillImage, imageFallbacks, mapAll, type TcgdexClient, withProbedAssets} from './client';
 import {listCatalogueSets} from './excluded';
-import {mapCard, mapPrice, mapSet, sharedProductCodes, type Language, type MappedCard, type MappedPrice, type MappedSet} from './mappers';
+import {type Language, mapCard, type MappedCard, type MappedPrice, type MappedSet, mapPrice, mapSet, sharedProductCodes} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
 
 export interface ScrapeResult {
@@ -64,5 +64,3 @@ export async function scrapeLanguage(client: TcgdexClient, lang: Language, cardT
 	console.log(`[${lang}] ${cards.length} cards, ${Object.keys(prices).length} priced, ${sets.length} sets, ${scans} CardTrader scans${notReady.length ? ` (CardTrader expansions not ready: ${notReady.join(', ')})` : ''} in ${elapsed.toFixed(2)}s (${(ids.length / elapsed).toFixed(0)} req/s)`);
 	return {cards, prices, sets};
 }
-
-export const scrapeTypes = (client: TcgdexClient) => client.json<string[]>('/v2/en/types');

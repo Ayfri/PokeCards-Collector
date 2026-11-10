@@ -3,7 +3,7 @@ import {communityImages} from './community-images';
 import {jpTwinOf, type Language} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
 
-const TCGDEX_ORIGIN = 'https://api.tcgdex.net';
+export const TCGDEX_ORIGIN = 'https://api.tcgdex.net';
 const TCGDEX_ASSETS = 'https://assets.tcgdex.net';
 
 /** All sets are probed at once, so the image host may reset a connection. Resets are retried, and only an answered non-2xx means the file is missing. */
@@ -43,7 +43,6 @@ export async function withProbedAssets(set: TcgdexSet, lang: string): Promise<Tc
 /** Anything the scraper can read TCGdex JSON through. `null` means the entity does not exist (404). */
 export interface TcgdexClient {
 	json<T>(path: string): Promise<T | null>;
-	close(): void;
 }
 
 /** A non-2xx answer from TCGdex or CardTrader. `withRetry` does not retry the permanent 4xx ones. */
@@ -70,16 +69,15 @@ export async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5, baseDel
 /** `fetch` client for Workers: their `fetch` already speaks HTTP/2. Node's stays on HTTP/1.1 and Bun 1.4's h2 `fetch` is opt-in and experimental, so the CLI keeps the h2 pool. */
 export class FetchClient implements TcgdexClient {
 	private inflight = 0;
+	private readonly maxConcurrency = 50;
 	private readonly queue: (() => void)[] = [];
-
-	constructor(private readonly origin: string = TCGDEX_ORIGIN, private readonly maxConcurrency = 50) {}
 
 	async json<T>(path: string): Promise<T | null> {
 		if (this.inflight >= this.maxConcurrency) await new Promise<void>(resolve => this.queue.push(resolve));
 		this.inflight++;
 		try {
 			return await withRetry(async () => {
-				const response = await fetch(`${this.origin}${path}`, {headers: {accept: 'application/json'}});
+				const response = await fetch(`${TCGDEX_ORIGIN}${path}`, {headers: {accept: 'application/json'}});
 				if (response.status === 404) return null;
 				if (!response.ok) throw new HttpError(response.status, path);
 				return await response.json() as T;
@@ -89,8 +87,6 @@ export class FetchClient implements TcgdexClient {
 			this.queue.shift()?.();
 		}
 	}
-
-	close(): void {}
 }
 
 /**
@@ -146,12 +142,12 @@ export function fileUnderListingSets(cards: readonly (TcgdexCard | null)[], sets
 	}
 }
 
-/** Runs `worker` over every item at once, relying on the client's own queue for back-pressure, and logs progress every `logEvery` items. */
-export async function mapAll<T, R>(items: readonly T[], worker: (item: T, index: number) => Promise<R>, label?: string, logEvery = 2000): Promise<R[]> {
+/** Runs `worker` over every item at once, relying on the client's own queue for back-pressure, and logs progress every 2000 items. */
+export async function mapAll<T, R>(items: readonly T[], worker: (item: T) => Promise<R>, label?: string): Promise<R[]> {
 	let done = 0;
-	return Promise.all(items.map(async (item, index) => {
-		const result = await worker(item, index);
-		if (label && ++done % logEvery === 0) console.log(`  ${label}: ${done}/${items.length}`);
+	return Promise.all(items.map(async item => {
+		const result = await worker(item);
+		if (label && ++done % 2000 === 0) console.log(`  ${label}: ${done}/${items.length}`);
 		return result;
 	}));
 }

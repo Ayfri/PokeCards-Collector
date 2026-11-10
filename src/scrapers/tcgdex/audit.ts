@@ -4,12 +4,12 @@ import {RARITY_MAPPING} from '#helpers/rarity.ts';
 import {CATALOGUES} from '#helpers/catalogues.ts';
 import {isFrenchCode} from '#helpers/owned-cards.ts';
 import {envClient} from '../cli-config';
-import {ownedCardCodes, readAll} from '../supabase_sync';
+import {ownedCardCodes, readAll} from '../supabase-sync';
 import {mapAll} from './client';
 import {listCatalogueSets} from './excluded';
 import {FRENCH} from './french';
 import {Http2Pool} from './http2-pool';
-import {speciesInName, UNKNOWN_POKEMON, type Language} from './mappers';
+import {type Language, speciesInName, UNKNOWN_POKEMON} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
 
 /**
@@ -23,7 +23,6 @@ const LANGS: readonly Language[] = ['en', 'ja'];
 
 /** The languages a collection export can name its sets in. TCGdex has fewer sets in each than in English, and none in any other language. */
 const NAME_LANGS = ['fr', 'de', 'es', 'it', 'pt'] as const;
-const HERE = new URL('.', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
 const norm = (value: string) => value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
 /** Compares card numbers ignoring zero padding: "001" is "1", but "H01" stays "h01". */
@@ -85,11 +84,7 @@ export async function auditTcgdex(write = true) {
 		}
 
 		const codeSetOf = new Map(Object.entries(langAliases).map(([code, setId]) => [setId, code]));
-		const bySet = new Map<string, TcgdexCard[]>();
-		for (const card of await allCards(pool, lang, sets)) {
-			const setCode = norm(codeSetOf.get(card.set?.id ?? '') ?? card.set?.id ?? '');
-			(bySet.get(setCode) ?? bySet.set(setCode, []).get(setCode)!).push(card);
-		}
+		const bySet = Map.groupBy(await allCards(pool, lang, sets), card => norm(codeSetOf.get(card.set?.id ?? '') ?? card.set?.id ?? ''));
 
 		const sameSpecies = (dex: number, card: TcgdexCard) => card.dexId?.some(id => Math.trunc(id) === dex) || (lang === 'en' && speciesInName(card.name).includes(dex));
 		/** Nothing rules the pair out: same supertype, and the dex ids agree unless one side has none. */
@@ -160,9 +155,9 @@ export async function auditTcgdex(write = true) {
 	const setNames = await localizedSetNames(pool);
 
 	if (write) {
-		fs.writeFileSync(`${HERE}set-aliases.json`, `${JSON.stringify(aliases, null, '\t')}\n`);
-		fs.writeFileSync(`${HERE}set-names.json`, `${JSON.stringify(setNames, null, '\t')}\n`);
-		fs.writeFileSync(`${HERE}card-code-overrides.json`, `${JSON.stringify(overrides, null, '\t')}\n`);
+		fs.writeFileSync(new URL('set-aliases.json', import.meta.url), `${JSON.stringify(aliases, null, '\t')}\n`);
+		fs.writeFileSync(new URL('set-names.json', import.meta.url), `${JSON.stringify(setNames, null, '\t')}\n`);
+		fs.writeFileSync(new URL('card-code-overrides.json', import.meta.url), `${JSON.stringify(overrides, null, '\t')}\n`);
 	}
 	pool.close();
 }

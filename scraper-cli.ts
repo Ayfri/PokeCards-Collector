@@ -1,13 +1,14 @@
 #!/usr/bin/env bun
 
 import { select } from '@inquirer/prompts';
-import { parseArgs } from 'node:util';
-import { styleText } from 'node:util';
+import { readFile } from 'node:fs/promises';
+import { parseArgs, styleText } from 'node:util';
+import { CATALOGUES, type Language, LANGUAGES } from './src/lib/helpers/catalogues.js';
+import { FILES, POKEMONS, TYPES } from './src/scrapers/cli-config.js';
 import { checkDatabase } from './src/scrapers/db-check.js';
-import { fetchPokemons } from './src/scrapers/pokemon_scraper.js';
+import { fetchPokemons } from './src/scrapers/pokemon-scraper.js';
 import { purgeExcludedSeries } from './src/scrapers/purge.js';
 import { auditTcgdex } from './src/scrapers/tcgdex/audit.js';
-import { LANGUAGES, type Language } from './src/lib/helpers/catalogues.js';
 import { verifyFiles } from './src/scrapers/tcgdex/verify.js';
 import { scrapeToFiles } from './src/scrapers/tcgdex/write.js';
 
@@ -21,9 +22,9 @@ interface Options {
 }
 
 interface Command {
-	name: string;
 	description: string;
 	flags?: string;
+	name: string;
 	run: (options: Options) => Promise<unknown>;
 }
 
@@ -42,6 +43,7 @@ function row(label: string, value: string | number): void {
 const SUPABASE_TARGETS = ['all', 'types', 'pokemons', 'sets', 'jp-sets', 'fr-sets', 'cards', 'jp-cards', 'fr-cards', 'prices', 'jp-prices', 'fr-prices'] as const;
 type SupabaseTarget = (typeof SUPABASE_TARGETS)[number];
 
+/** In upload order like `SUPABASE_TARGETS`, not alphabetical: the sets go before the cards, and the cards before the prices. */
 const SUPABASE_UPLOADERS: Record<SupabaseTarget, readonly [uploader: string, language?: Language]> = {
 	'all': ['uploadAllData'],
 	'types': ['uploadTypes'],
@@ -57,13 +59,31 @@ const SUPABASE_UPLOADERS: Record<SupabaseTarget, readonly [uploader: string, lan
 	'fr-prices': ['uploadPrices', 'fr'],
 };
 
+/**
+ * The table each target writes and the staged file it reads, for `supabase --dry-run`: that path never loads the uploader, which builds its
+ * Supabase client when imported, so a dry run needs no credentials. In upload order, which is the order the dry run prints.
+ */
+const SUPABASE_STAGED: Record<Exclude<SupabaseTarget, 'all'>, readonly [table: string, file: string]> = {
+	'types': ['types', TYPES],
+	'pokemons': ['pokemons', POKEMONS],
+	'sets': [CATALOGUES.en.tables.sets, FILES.en.sets],
+	'jp-sets': [CATALOGUES.ja.tables.sets, FILES.ja.sets],
+	'fr-sets': [CATALOGUES.fr.tables.sets, FILES.fr.sets],
+	'cards': [CATALOGUES.en.tables.cards, FILES.en.cards],
+	'jp-cards': [CATALOGUES.ja.tables.cards, FILES.ja.cards],
+	'fr-cards': [CATALOGUES.fr.tables.cards, FILES.fr.cards],
+	'prices': [CATALOGUES.en.tables.prices, FILES.en.prices],
+	'jp-prices': [CATALOGUES.ja.tables.prices, FILES.ja.prices],
+	'fr-prices': [CATALOGUES.fr.tables.prices, FILES.fr.prices],
+};
+
 const commands: Command[] = [
 	{
-		name: 'scrape',
 		description: 'Fetch cards, prices and sets from TCGdex into src/assets/',
-		flags: `--lang ${LANGUAGES.join(',')}  --dry-run`,
+		flags: `--lang ${LANGUAGES.join(',')}  --dry-run  --json`,
+		name: 'scrape',
 		run: async ({ dryRun, langs }) => {
-			const results = await scrapeToFiles(langs, { write: !dryRun });
+			const results = await scrapeToFiles(langs, !dryRun);
 			heading('scrape');
 			for (const [lang, result] of Object.entries(results)) {
 				row(`${lang} cards`, `${result.cards.length} ${dim(`(${Object.keys(result.prices).length} priced, ${result.sets.length} sets)`)}`);
@@ -73,21 +93,21 @@ const commands: Command[] = [
 		},
 	},
 	{
-		name: 'audit',
-		description: 'Rebuild set-aliases.json / card-code-overrides.json and report what stops resolving',
+		description: 'Rebuild set-aliases.json / set-names.json / card-code-overrides.json and report what stops resolving',
 		flags: '--dry-run',
+		name: 'audit',
 		run: async ({ dryRun }) => {
 			heading('audit');
 			await auditTcgdex(!dryRun);
 		},
 	},
 	{
-		name: 'link',
-		description: 'Match every Japanese card to its English twin and write jp-twins.json',
+		description: 'Match every Japanese card and set to its English twin and write jp-twins.json / jp-set-twins.json',
 		flags: '--dry-run  --json',
+		name: 'link',
 		run: async ({ dryRun }) => {
 			const { linkTwins } = await import('./src/scrapers/tcgdex/link.js');
-			const report = await linkTwins({ write: !dryRun });
+			const report = await linkTwins(!dryRun);
 			heading('link');
 			row('linked', `${report.linked} of ${report.jaCards} Japanese cards`);
 			for (const [method, categories] of Object.entries(report.byMethod).sort()) {
@@ -101,9 +121,9 @@ const commands: Command[] = [
 		},
 	},
 	{
-		name: 'verify',
 		description: 'Check the scraped JSON for card_code collisions and unresolved owned cards',
 		flags: '--offline  --json',
+		name: 'verify',
 		run: async ({ offline }) => {
 			const report = await verifyFiles(!offline);
 			heading('verify');
@@ -127,9 +147,9 @@ const commands: Command[] = [
 		},
 	},
 	{
-		name: 'check',
 		description: 'Read-only sanity pass over the live Supabase catalogue',
 		flags: '--json',
+		name: 'check',
 		run: async () => {
 			const report = await checkDatabase();
 			heading('check');
@@ -145,9 +165,9 @@ const commands: Command[] = [
 		},
 	},
 	{
-		name: 'purge',
 		description: 'Delete every card, price and set of an excluded serie (Pokémon TCG Pocket) from Supabase',
 		flags: '--dry-run  --json',
+		name: 'purge',
 		run: async ({ dryRun }) => {
 			const report = await purgeExcludedSeries(dryRun);
 			heading(dryRun ? 'purge (dry run)' : 'purge');
@@ -164,33 +184,46 @@ const commands: Command[] = [
 		},
 	},
 	{
-		name: 'pokemons',
 		description: 'Fetch Pokédex names and descriptions from PokéAPI',
-		run: async () => {
-			await fetchPokemons();
+		flags: '--dry-run',
+		name: 'pokemons',
+		run: async ({ dryRun }) => {
+			await fetchPokemons(!dryRun);
+			if (dryRun) console.log(dim('  dry run: pokemons-full.json untouched'));
 		},
 	},
 	{
-		name: 'supabase',
 		description: `Upload scraped JSON to Supabase (${SUPABASE_TARGETS.join(', ')})`,
-		flags: '<target>',
-		run: async ({ target }) => {
+		flags: '<target>  --dry-run',
+		name: 'supabase',
+		run: async ({ dryRun, target }) => {
 			const chosen = (target ?? 'all') as SupabaseTarget;
 			if (!SUPABASE_TARGETS.includes(chosen)) throw new Error(`Unknown supabase target "${chosen}". Expected one of: ${SUPABASE_TARGETS.join(', ')}`);
-			heading(`supabase ${chosen}`);
-			const uploaders = await import('./src/scrapers/supabase_uploader.js') as Record<string, (language?: Language) => Promise<void>>;
+			heading(dryRun ? `supabase ${chosen} (dry run)` : `supabase ${chosen}`);
+			if (dryRun) {
+				for (const [name, [table, file]] of Object.entries(SUPABASE_STAGED)) {
+					if (chosen !== 'all' && name !== chosen) continue;
+					const staged = JSON.parse(await readFile(file, 'utf8')) as unknown[] | Record<string, unknown>;
+					row(table, `${Array.isArray(staged) ? staged.length : Object.keys(staged).length} rows ${dim(`from ${file}`)}`);
+				}
+				console.log(dim('  dry run: Supabase untouched'));
+				return;
+			}
+			const uploaders = await import('./src/scrapers/supabase-uploader.js') as Record<string, (language?: Language) => Promise<void>>;
 			const [uploader, language] = SUPABASE_UPLOADERS[chosen];
 			await uploaders[uploader](language);
 		},
 	},
 	{
-		name: 'all',
 		description: 'scrape, then pokemons, then push everything to Supabase',
 		flags: `--lang ${LANGUAGES.join(',')}  --dry-run`,
+		name: 'all',
 		run: async options => {
 			for (const name of ['scrape', 'pokemons', 'supabase']) {
 				const command = commands.find(entry => entry.name === name)!;
 				await runCommand(command, { ...options, target: 'all' });
+				/** A failed step ends the run: uploading after a failed scrape would push half-refreshed files and delete the sets missing from them. */
+				if (process.exitCode) return;
 			}
 		},
 	},
@@ -208,7 +241,7 @@ ${commands.map(command => `  ${accent(command.name.padEnd(10))} ${command.descri
 
 ${bold('Options')}
   ${accent('--lang <list>')}   languages to scrape, comma separated ${dim(`(default: ${LANGUAGES.join(',')})`)}
-  ${accent('--dry-run')}       run everything but write no file
+  ${accent('--dry-run')}       run everything but write nothing: no file, no Supabase row
   ${accent('--offline')}       skip the Supabase round-trip in ${accent('verify')}
   ${accent('--json')}          print the raw report instead of the pretty one
   ${accent('--quiet, -q')}     only print the final summary
@@ -216,7 +249,7 @@ ${bold('Options')}
 `);
 }
 
-async function runCommand(command: Command, options: Options): Promise<unknown> {
+async function runCommand(command: Command, options: Options): Promise<void> {
 	const started = performance.now();
 	const log = console.log;
 	if (options.quiet) console.log = () => {};
@@ -225,7 +258,6 @@ async function runCommand(command: Command, options: Options): Promise<unknown> 
 		console.log = log;
 		if (options.json && result !== undefined) console.log(JSON.stringify(result, null, '\t'));
 		else console.log(dim(`  done in ${((performance.now() - started) / 1000).toFixed(1)}s`));
-		return result;
 	} catch (error) {
 		console.log = log;
 		console.error(`${styleText(['bgRed', 'white', 'bold'], ` ${command.name} failed `)} ${(error as Error).message}`);
@@ -234,15 +266,15 @@ async function runCommand(command: Command, options: Options): Promise<unknown> 
 }
 
 async function main(): Promise<void> {
-	const { values, positionals } = parseArgs({
+	const { positionals, values } = parseArgs({
 		allowPositionals: true,
 		options: {
-			'dry-run': { type: 'boolean', default: false },
-			'help': { type: 'boolean', short: 'h', default: false },
-			'json': { type: 'boolean', default: false },
-			'lang': { type: 'string', default: LANGUAGES.join(',') },
-			'offline': { type: 'boolean', default: false },
-			'quiet': { type: 'boolean', short: 'q', default: false },
+			'dry-run': { default: false, type: 'boolean' },
+			'help': { default: false, short: 'h', type: 'boolean' },
+			'json': { default: false, type: 'boolean' },
+			'lang': { default: LANGUAGES.join(','), type: 'string' },
+			'offline': { default: false, type: 'boolean' },
+			'quiet': { default: false, short: 'q', type: 'boolean' },
 		},
 	});
 
@@ -262,8 +294,8 @@ async function main(): Promise<void> {
 	};
 
 	const name = positionals[0] ?? await select({
-		message: 'Choose a command:',
 		choices: commands.map(command => ({ name: `${accent(command.name)} ${dim('-')} ${command.description}`, value: command.name })),
+		message: 'Choose a command:',
 	});
 
 	const command = commands.find(entry => entry.name === name);

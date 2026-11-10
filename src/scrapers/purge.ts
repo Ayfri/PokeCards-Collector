@@ -1,7 +1,7 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
-import {CATALOGUES, LANGUAGES, type Language} from '#helpers/catalogues.ts';
+import {CATALOGUES, type Language, LANGUAGES} from '#helpers/catalogues.ts';
 import {envClient} from './cli-config';
-import {bumpCatalogueVersion, deleteIn, ownedCardCodes} from './supabase_sync';
+import {bumpCatalogueVersion, deleteIn, ownedCardCodes} from './supabase-sync';
 import {Http2Pool} from './tcgdex/http2-pool';
 import {EXCLUDED_SERIES, excludedSetIds} from './tcgdex/excluded';
 
@@ -13,7 +13,7 @@ import {EXCLUDED_SERIES, excludedSetIds} from './tcgdex/excluded';
 
 const CHUNK = 200;
 
-export interface PurgeLangReport {
+interface PurgeLangReport {
 	cards: number;
 	lang: Language;
 	orphanedOwned: string[];
@@ -21,7 +21,7 @@ export interface PurgeLangReport {
 	sets: string[];
 }
 
-export interface PurgeReport {
+interface PurgeReport {
 	dryRun: boolean;
 	langs: PurgeLangReport[];
 }

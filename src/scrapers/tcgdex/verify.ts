@@ -1,11 +1,11 @@
 import * as fs from 'node:fs';
-import {cardSlug, SUBTYPE_SECTIONS, setSlug} from '#helpers/card-utils.ts';
+import {cardSlug, setSlug, SUBTYPE_SECTIONS} from '#helpers/card-utils.ts';
 import {RARITY_MAPPING} from '#helpers/rarity.ts';
 import {envClient, FILES, TYPES} from '../cli-config';
-import {ownedCardCodes} from '../supabase_sync';
+import {ownedCardCodes} from '../supabase-sync';
 import type {MappedCard, MappedPrice, MappedSet} from './mappers';
 
-export interface FileReport {
+interface FileReport {
 	cards: number;
 	collisions: number;
 	distinct: number;
@@ -14,9 +14,9 @@ export interface FileReport {
 	/** Japanese only: twin ids (`twinTcgdexId`) that no English card carries, so the twin link would lead nowhere. */
 	missingTwins: string[];
 	priced: number;
+	sets: number;
 	/** Set names used by more than one set. */
 	sharedSetNames: string[];
-	sets: number;
 	/** Card slugs (`cardSlug`) shared by several `card_code`s and set slugs (`setSlug`, prefixed `set:`) shared by several set ids: their public URLs would collide. */
 	slugCollisions: string[];
 	/** Rarities missing from `RARITY_MAPPING`, supertypes outside Pokémon/Trainer/Energy, subtypes outside `SUBTYPE_SECTIONS` and types missing from `types.json`. */
@@ -24,7 +24,7 @@ export interface FileReport {
 	unpriced: string[];
 }
 
-export interface VerifyReport {
+interface VerifyReport {
 	/** Card codes produced by more than one language. */
 	crossCollisions: string[];
 	files: FileReport[];
@@ -96,8 +96,8 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 			lang,
 			missingTwins: lang === 'ja' && englishIds.size ? cards.flatMap(card => card.twinTcgdexId && !englishIds.has(card.twinTcgdexId) ? [`${card.tcgdexId} -> ${card.twinTcgdexId}`] : []) : [],
 			priced: Object.keys(prices).length,
-			sharedSetNames: [...setNames].filter(([, count]) => count > 1).map(([name]) => name),
 			sets: sets.length,
+			sharedSetNames: [...setNames].filter(([, count]) => count > 1).map(([name]) => name),
 			slugCollisions: [
 				...sharedSlugs(cards.map((card): [string, string] => [cardSlug(card, lang), card.cardCode])),
 				...sharedSlugs(sets.map((set): [string, string] => [setSlug(set, lang), set.setId])).map(slug => `set:${slug}`),

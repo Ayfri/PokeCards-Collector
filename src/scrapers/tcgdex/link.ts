@@ -1,9 +1,9 @@
 import * as fs from 'node:fs/promises';
 import {inflateSync} from 'node:zlib';
-import {mapAll, withRetry, type TcgdexClient} from './client';
+import {mapAll, type TcgdexClient, withRetry} from './client';
 import {listCatalogueSets} from './excluded';
 import {Http2Pool} from './http2-pool';
-import {pokemonNumber, UNKNOWN_POKEMON, type JpTwin, type Language} from './mappers';
+import {type JpTwin, type Language, pokemonNumber, UNKNOWN_POKEMON} from './mappers';
 import type {TcgdexCard, TcgdexSet} from './types';
 
 /**
@@ -27,12 +27,7 @@ const BEST_ART = 70;
 const MIN_VOTES = 3;
 const MIN_VOTE_SHARE = 0.25;
 
-export interface LinkOptions {
-	/** `false` runs the whole pass without writing `jp-twins.json` and `jp-set-twins.json`. */
-	write?: boolean;
-}
-
-export interface LinkReport {
+interface LinkReport {
 	/** Links per method, then per category. */
 	byMethod: Record<string, Record<string, number>>;
 	/** Pokémon links the guards dropped: a Pokédex number that differs, and artwork of another print. */
@@ -86,18 +81,6 @@ const PASS_2_KEYS: [method: string, key: Key][] = [
 	['dex+hp+attacks', (card, dexes) => dexes.has(card) ? `${dexes.get(card)}|${card.hp}|${attacksOf(card)}` : null],
 ];
 
-function groupBy<T>(items: readonly T[], key: (item: T) => string | null): Map<string, T[]> {
-	const groups = new Map<string, T[]>();
-	for (const item of items) {
-		const value = key(item);
-		if (value === null) continue;
-		const group = groups.get(value);
-		if (group) group.push(item);
-		else groups.set(value, [item]);
-	}
-	return groups;
-}
-
 async function fetchCards(client: TcgdexClient, lang: Language): Promise<TcgdexCard[]> {
 	const sets = await mapAll((await listCatalogueSets(client, lang)).sets, set => client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`));
 	const ids = sets.flatMap(set => set?.cards?.map(card => card.id) ?? []);
@@ -129,7 +112,7 @@ async function linkPokemon(
 	hashes: ArtHashes,
 ): Promise<{links: Map<string, Link>; mappedSets: Map<string, Set<string>>}> {
 	const links = new Map<string, Link>();
-	const strong = groupBy(en, strongKey);
+	const strong = Map.groupBy(en, strongKey);
 	const strongHits = (card: TcgdexCard) => strong.get(strongKey(card) ?? '') ?? [];
 	for (const card of ja) {
 		const hits = strongHits(card);
@@ -143,7 +126,7 @@ async function linkPokemon(
 	}
 
 	/** Mechanics-only unique matches whose Pokédex number agrees vote too, so the old Japanese sets with no illustrator still get mapped. */
-	const byMechanics = groupBy(en, mechanicsKey);
+	const byMechanics = Map.groupBy(en, mechanicsKey);
 	const votes = new Map<string, Map<string, number>>();
 	const vote = (japanese: TcgdexCard, english: TcgdexCard) => {
 		const setVotes = votes.get(japanese.set?.id ?? '') ?? new Map<string, number>();
@@ -166,7 +149,7 @@ async function linkPokemon(
 	}
 
 	const enBySet = Map.groupBy(en, card => card.set?.id ?? '');
-	const indexes = PASS_2_KEYS.map(([, key]) => new Map([...enBySet].map(([setId, cards]) => [setId, groupBy(cards, card => key(card, enDexes))] as const)));
+	const indexes = PASS_2_KEYS.map(([, key]) => new Map([...enBySet].map(([setId, cards]) => [setId, Map.groupBy(cards, card => key(card, enDexes))] as const)));
 	const claimed = new Set([...links.values()].map(link => link.en.id));
 	const hitsOf = (card: TcgdexCard, index: number, sets: Set<string>) => {
 		const wanted = PASS_2_KEYS[index][1](card, jaDexes);
@@ -340,12 +323,12 @@ class ArtHashes {
 	}
 
 	/** Hashes every scan not cached yet, with bounded concurrency. A missing scan, or one that keeps failing, stays uncached and counts as missing for this run. */
-	async fill(bases: Iterable<string | undefined>, concurrency = 32): Promise<void> {
+	async fill(bases: Iterable<string | undefined>): Promise<void> {
 		const missing = [...new Set(bases)].filter((base): base is string => !!base && !(base in this.cache));
 		console.log(`  art hashes: ${missing.length} scans to fetch`);
 		let next = 0;
 		let failed = 0;
-		await Promise.all(Array.from({length: concurrency}, async () => {
+		await Promise.all(Array.from({length: 32}, async () => {
 			while (next < missing.length) {
 				const base = missing[next++];
 				try {
@@ -373,7 +356,7 @@ function closestArt(card: TcgdexCard, candidates: readonly TcgdexCard[], hashes:
 	const ranked = candidates.flatMap(candidate => {
 		const hash = hashes.get(candidate.image);
 		if (!hash) hashes.unhashedCandidates++;
-		return hash ? [{candidate, bits: distance(art, hash)}] : [];
+		return hash ? [{bits: distance(art, hash), candidate}] : [];
 	}).sort((a, b) => a.bits - b.bits);
 	return ranked[0] && ranked[0].bits <= BEST_ART && !(ranked[1] && ranked[1].bits <= SAME_PRINT) ? ranked[0].candidate : null;
 }
@@ -434,7 +417,8 @@ async function writeTwins(twins: Record<string, JpTwin>): Promise<void> {
 	console.log(`  wrote ${SET_TWINS_FILE}`);
 }
 
-export async function linkTwins({write = true}: LinkOptions = {}): Promise<LinkReport> {
+/** `write: false` runs the whole pass without writing `jp-twins.json` and `jp-set-twins.json`. */
+export async function linkTwins(write: boolean): Promise<LinkReport> {
 	const pool = new Http2Pool();
 	const [ja, en] = await Promise.all([fetchCards(pool, 'ja'), fetchCards(pool, 'en')]).finally(() => pool.close());
 	console.log(`[link] ${ja.length} Japanese and ${en.length} English cards`);

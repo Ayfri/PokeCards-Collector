@@ -1,19 +1,12 @@
 import * as fs from 'node:fs';
 import { CATALOGUES, LANGUAGES } from '#helpers/catalogues.ts';
 import { envClient, FILES, POKEMONS, TYPES } from './cli-config';
+import type { PokedexEntry } from './pokemon-scraper';
 import { artRow, cardRow, priceRow, setRow } from './rows';
-import { bumpCatalogueVersion, deduplicate, deleteIn, readAll, upsertRows } from './supabase_sync';
-import { resolveCardCode, type Language, type MappedCard, type MappedPrice, type MappedSet } from './tcgdex/mappers';
+import { bumpCatalogueVersion, deduplicate, deleteIn, readAll, upsertRows } from './supabase-sync';
+import { type Language, type MappedCard, type MappedPrice, type MappedSet, resolveCardCode } from './tcgdex/mappers';
 
 const supabase = envClient();
-
-interface PokemonData {
-	id: number;
-	name: string;
-	description: string;
-	evolves_to?: number[];
-	evolves_from?: number;
-}
 
 const read = <T>(path: string): T => {
 	if (!fs.existsSync(path)) throw new Error(`File not found: ${path}`);
@@ -44,14 +37,14 @@ export async function uploadTypes(): Promise<void> {
 
 export async function uploadPokemons(): Promise<void> {
 	console.log('📤 Uploading Pokémon data...');
-	const pokemons = read<PokemonData[]>(POKEMONS);
+	const pokemons = read<PokedexEntry[]>(POKEMONS);
 
 	await upsertAll('pokemons', pokemons.map(pokemon => ({
+		description: pokemon.description,
+		evolves_from: pokemon.evolves_from ?? null,
+		evolves_to: pokemon.evolves_to ?? null,
 		id: pokemon.id,
 		name: pokemon.name,
-		description: pokemon.description,
-		evolves_to: pokemon.evolves_to ?? null,
-		evolves_from: pokemon.evolves_from ?? null,
 	})), 'id');
 }
 

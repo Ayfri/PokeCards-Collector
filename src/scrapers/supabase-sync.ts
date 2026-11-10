@@ -3,9 +3,9 @@ import {CATALOGUES} from '#helpers/catalogues.ts';
 import {CARDTRADER_IMAGES} from '#src/constants.ts';
 import type {CardTraderImages} from './cardtrader';
 import {cardRow, priceRow, setRow} from './rows';
-import {fileUnderListingSets, fillImage, imageFallbacks, mapAll, withProbedAssets, type TcgdexClient} from './tcgdex/client';
+import {fileUnderListingSets, fillImage, imageFallbacks, mapAll, type TcgdexClient, withProbedAssets} from './tcgdex/client';
 import {listCatalogueSets} from './tcgdex/excluded';
-import {mapCard, mapPrice, mapSet, resolveCardCode, sharedProductCodes, type Language} from './tcgdex/mappers';
+import {type Language, mapCard, mapPrice, mapSet, resolveCardCode, sharedProductCodes} from './tcgdex/mappers';
 import type {TcgdexCard, TcgdexSet} from './tcgdex/types';
 
 /** Workers-safe half of the scraper: no `node:fs` and no staged JSON, it maps TCGdex straight into Supabase. */
@@ -28,7 +28,7 @@ export async function readAll<T>(supabase: SupabaseClient, table: string, column
 
 /** Card codes users own. The binder lives in localStorage, so only the collections and wishlists tables hold owned cards. */
 export async function ownedCardCodes(supabase: SupabaseClient): Promise<Set<string>> {
-	const tables = await Promise.all(['collections', 'wishlists'].map(table => readAll<{id: string; card_code: string}>(supabase, table, 'id,card_code', 'id')));
+	const tables = await Promise.all(['collections', 'wishlists'].map(table => readAll<{card_code: string; id: string}>(supabase, table, 'id,card_code', 'id')));
 	return new Set(tables.flat().map(row => row.card_code));
 }
 

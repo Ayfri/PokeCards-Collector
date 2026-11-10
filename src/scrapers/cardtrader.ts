@@ -72,7 +72,7 @@ export interface CardTraderScans {
  * Cardmarket product id -> scan of that exact print, from every Pokémon expansion of CardTrader (~50 s). Unlike TCGdex, it has real Japanese scans.
  * A product shared by several blueprints keeps the first one in expansion id order, so two runs agree.
  */
-export async function cardTraderImages(token: string): Promise<CardTraderScans> {
+export async function fetchCardTraderScans(token: string): Promise<CardTraderScans> {
 	const client = new CardTraderClient(token);
 	const expansions = ((await client.json<Expansion[]>('/expansions')) ?? []).filter(expansion => expansion.game_id === POKEMON_GAME).sort((a, b) => a.id - b.id);
 	/** Each response is reduced to its pairs as soon as it arrives, so the parsed blueprints (~100 kB per expansion) are not all alive at once. */

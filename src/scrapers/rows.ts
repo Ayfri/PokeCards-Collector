@@ -1,4 +1,4 @@
-import {UNKNOWN_POKEMON, type Language, type MappedCard, type MappedPrice, type MappedSet} from './tcgdex/mappers';
+import {type Language, type MappedCard, type MappedPrice, type MappedSet, UNKNOWN_POKEMON} from './tcgdex/mappers';
 
 /** Row shapes shared by the CLI uploader and the scheduled Worker, so both write identical columns. */
 

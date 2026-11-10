@@ -1,7 +1,7 @@
 import {DurableObject, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep} from 'cloudflare:workers';
-import {LANGUAGES, type Language} from '#helpers/catalogues.ts';
-import {cardTraderImages, type CardTraderImages} from '#scrapers/cardtrader.ts';
-import {bumpCatalogueVersion, createSyncClient, dropSharedProducts, syncSetCards, syncSets, type SyncCardsResult} from '#scrapers/supabase_sync.ts';
+import {type Language, LANGUAGES} from '#helpers/catalogues.ts';
+import {type CardTraderImages, fetchCardTraderScans} from '#scrapers/cardtrader.ts';
+import {bumpCatalogueVersion, createSyncClient, dropSharedProducts, type SyncCardsResult, syncSetCards, syncSets} from '#scrapers/supabase-sync.ts';
 import {FetchClient} from '#scrapers/tcgdex/client.ts';
 
 interface Env {
@@ -44,7 +44,7 @@ export class TcgdexReader extends DurableObject<Env> {
 		try {
 			const token = this.env.CARDTRADER_TOKEN;
 			if (!token) throw new Error('CARDTRADER_TOKEN is not set');
-			const {notReady, products} = await cardTraderImages(token);
+			const {notReady, products} = await fetchCardTraderScans(token);
 			this.ctx.storage.transactionSync(() => {
 				this.ctx.storage.sql.exec('DELETE FROM cardtrader_images WHERE expansion NOT IN (SELECT value FROM json_each(?))', JSON.stringify(notReady));
 				for (const [product, {expansion, url}] of products) {
@@ -79,7 +79,7 @@ export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 		const reader = this.env.TCGDEX_READER.get(this.env.TCGDEX_READER.idFromName('weur'), {locationHint: 'weur'});
 
 		/** Not caught on purpose: the RPC only throws when no map is stored, and the batch steps would then null every CardTrader scan. */
-		await step.do('cardtrader: images', {retries: {limit: 2, delay: '1 minute', backoff: 'exponential'}, timeout: '10 minutes'}, () => reader.syncCardTraderImages());
+		await step.do('cardtrader: images', {retries: {backoff: 'exponential', delay: '1 minute', limit: 2}, timeout: '10 minutes'}, () => reader.syncCardTraderImages());
 
 		for (const lang of LANGUAGES) {
 			/** The bump runs even when a step fails: the batches before it already wrote their rows, and the error still ends the run. */
@@ -90,7 +90,7 @@ export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 					const batch = setIds.slice(index, index + SETS_PER_STEP);
 					await step.do(
 						`${lang}: cards ${index / SETS_PER_STEP + 1} (${batch.join(', ')})`,
-						{retries: {limit: 5, delay: '30 seconds', backoff: 'exponential'}, timeout: '10 minutes'},
+						{retries: {backoff: 'exponential', delay: '30 seconds', limit: 5}, timeout: '10 minutes'},
 						async (): Promise<SyncCardsResult> => reader.syncSetCards(lang, batch),
 					);
 				}

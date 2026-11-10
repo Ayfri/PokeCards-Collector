@@ -1,8 +1,6 @@
 import http2 from 'node:http2';
 import {gunzipSync, inflateSync} from 'node:zlib';
-import {HttpError, withRetry, type TcgdexClient} from './client';
-
-const API_ORIGIN = 'https://api.tcgdex.net';
+import {HttpError, TCGDEX_ORIGIN, type TcgdexClient, withRetry} from './client';
 
 /**
  * HTTP/2 client pool for the scraper CLI. The API caps concurrent streams per connection, so a few connections
@@ -11,24 +9,18 @@ const API_ORIGIN = 'https://api.tcgdex.net';
  * code uses `FetchClient`, where `fetch` already speaks HTTP/2.
  */
 export class Http2Pool implements TcgdexClient {
-	private readonly sessions: (http2.ClientHttp2Session | null)[];
+	private readonly connections = 4;
+	private readonly maxConcurrency = 100;
+	private readonly sessions: (http2.ClientHttp2Session | null)[] = Array.from({length: this.connections}, () => null);
 	private cursor = 0;
 	private inflight = 0;
 	private readonly queue: (() => void)[] = [];
-
-	constructor(
-		private readonly origin: string = API_ORIGIN,
-		readonly connections: number = 4,
-		readonly maxConcurrency: number = 100,
-	) {
-		this.sessions = Array.from({length: connections}, () => null);
-	}
 
 	private session(index: number): http2.ClientHttp2Session {
 		const existing = this.sessions[index];
 		if (existing && !existing.closed && !existing.destroyed) return existing;
 
-		const session = http2.connect(this.origin, {settings: {enablePush: false}});
+		const session = http2.connect(TCGDEX_ORIGIN,{settings: {enablePush: false}});
 		session.setMaxListeners(0);
 		session.on('error', () => { this.sessions[index] = null; });
 		session.on('close', () => { if (this.sessions[index] === session) this.sessions[index] = null; });

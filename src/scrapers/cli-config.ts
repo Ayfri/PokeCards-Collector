@@ -1,15 +1,15 @@
 import type {Language} from '#helpers/catalogues.ts';
-import {cardTraderImages, type CardTraderScans} from './cardtrader';
-import {createSyncClient} from './supabase_sync';
+import {type CardTraderScans, fetchCardTraderScans} from './cardtrader';
+import {createSyncClient} from './supabase-sync';
 
 /** CLI only: it reads `process.env`, which the Worker bundle never has. */
 export const envClient = () => createSyncClient(process.env.PUBLIC_SUPABASE_URL ?? '', process.env.SUPABASE_SECRET_KEY ?? '');
 
 /** Throws before returning the promise, so a missing token stops the run before any scraping: without the map, uploading would null every scan CardTrader supplies. */
-export function envCardTraderImages(): Promise<CardTraderScans> {
+export function envCardTraderScans(): Promise<CardTraderScans> {
 	const token = process.env.CARDTRADER_TOKEN;
 	if (!token) throw new Error('Missing CARDTRADER_TOKEN');
-	return cardTraderImages(token);
+	return fetchCardTraderScans(token);
 }
 
 export const POKEMONS = 'src/assets/pokemons-full.json';
