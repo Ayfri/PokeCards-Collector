@@ -1,4 +1,4 @@
-import { BY_ROUTE_CODE, type CardVersions } from '#helpers/catalogues.ts';
+import { BY_ROUTE_CODE, type LanguagePaths } from '#helpers/catalogues.ts';
 import { findCardBySlug, getCardDetails, getCards, getCardVersions, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
@@ -23,7 +23,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const { cardCode } = found.card;
 	/** Streamed, not awaited: the language switcher is decorative, so a slow or failed read never holds back or breaks the page. */
-	const versions = getCardVersions(language, cardCode).catch((): CardVersions => ({ [language]: cardPath(language, found.card) }));
+	const versions = getCardVersions(language, cardCode).catch((): LanguagePaths => ({ [language]: cardPath(language, found.card) }));
 	const card = await getCardDetails(language, cardCode);
 
 	if (!card) {

@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import { findCardBySlug, getCardDetails, getCards, getCardVersions, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
-import { CATALOGUES, type CardVersions } from '#helpers/catalogues.ts';
+import { CATALOGUES, type LanguagePaths } from '#helpers/catalogues.ts';
 import { formatEuros } from '#helpers/format.ts';
 import { cardOgVersion, ogImage } from '#helpers/og-image.ts';
 import { cardPageData, cardPath, cardPrice, formatCardNumber, setNeighbourLinks, setPath, setsById } from '#helpers/card-utils.ts';
@@ -22,7 +22,7 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const { cardCode } = found.card;
 	/** Streamed, not awaited: the language switcher is decorative, so a slow or failed read never holds back or breaks the page. */
-	const versions = getCardVersions('en', cardCode).catch((): CardVersions => ({ en: cardPath('en', found.card) }));
+	const versions = getCardVersions('en', cardCode).catch((): LanguagePaths => ({ en: cardPath('en', found.card) }));
 	const targetCard = await getCardDetails('en', cardCode);
 
 	if (!targetCard) {

@@ -3,8 +3,9 @@
 	import type { PageData } from './$types';
 	import { filters } from '#stores/filters.svelte.ts';
 	import GridHeading from '#lib/components/list/GridHeading.svelte';
-	import Loader from "#lib/components/Loader.svelte";
+	import Loader from '#lib/components/Loader.svelte';
 	import { cardSize } from '#stores/grid.svelte.ts';
+	import { catalogueRoutes } from '#helpers/catalogues.ts';
 	import { payloadUrl } from '#helpers/utils.ts';
 
 	interface Props {
@@ -29,7 +30,7 @@
 </svelte:head>
 
 <div class="flex min-h-0 flex-1 flex-col text-lg text-white">
-	<GridHeading description={data.description} title={data.title} />
+	<GridHeading description={data.description} language="en" paths={catalogueRoutes('gridRoute')} title={data.title} />
 
 	<!-- The loader is absolutely positioned so that during its out transition the grid mounts under it, not below it. -->
 	<div class="relative flex min-h-0 flex-1 flex-col">

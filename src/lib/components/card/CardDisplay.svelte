@@ -11,7 +11,7 @@
 	import { flushSync } from 'svelte';
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { catalogueOfPath, type CardVersions } from '#helpers/catalogues.ts';
+	import { catalogueOfPath, type LanguagePaths } from '#helpers/catalogues.ts';
 	import { cardPath, cardSlug, setPath, type SetNeighbourLinks } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc, getPokemonSpriteSrc } from '#helpers/pokemon-utils.ts';
 	import { morphCards } from '#helpers/view-transitions.ts';
@@ -26,7 +26,7 @@
 		/** The shown card first, then its other prints. */
 		prints: FullCard[];
 		sets: CardPageSet[];
-		versions: Promise<CardVersions>;
+		versions: Promise<LanguagePaths>;
 		lowRes?: boolean;
 	}
 

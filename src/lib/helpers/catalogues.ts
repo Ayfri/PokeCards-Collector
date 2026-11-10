@@ -8,6 +8,7 @@ export interface Catalogue {
 	language: Language;
 	note?: string;
 	routeCode: 'fr' | 'jp' | null;
+	setsRoute: string;
 	speciesTitles: boolean;
 	tables: {cards: string; prices: string; sets: string};
 }
@@ -19,6 +20,7 @@ export const CATALOGUES = {
 		gridRoute: '/cards-list',
 		language: 'en',
 		routeCode: null,
+		setsRoute: '/sets',
 		speciesTitles: true,
 		tables: {cards: 'cards', prices: 'prices', sets: 'sets'},
 	},
@@ -29,6 +31,7 @@ export const CATALOGUES = {
 		language: 'ja',
 		note: 'Japanese catalogue still incomplete. Cards with no Japanese scan show the English one of the same print.',
 		routeCode: 'jp',
+		setsRoute: '/japan/sets',
 		speciesTitles: true,
 		tables: {cards: 'jp_cards', prices: 'jp_prices', sets: 'jp_sets'},
 	},
@@ -39,6 +42,7 @@ export const CATALOGUES = {
 		language: 'fr',
 		note: 'Cards with no French scan show the English one.',
 		routeCode: 'fr',
+		setsRoute: '/france/sets',
 		speciesTitles: false,
 		tables: {cards: 'fr_cards', prices: 'fr_prices', sets: 'fr_sets'},
 	},
@@ -50,15 +54,19 @@ export type PriceTable = CatalogueTables['prices'];
 export type SetTable = CatalogueTables['sets'];
 
 /**
+ * Language -> page path of the same card, set or page in each catalogue that has it.
  * Language -> card page path (`cardPath`) of the same card in each catalogue that carries it.
  * English and French share TCGdex ids, so the twin is found by id. Japanese ids are separate products that collide by accident
  * (`neo4-109` is Shining Mewtwo in English and a Trainer in Japanese), so a Japanese print is linked through `jp_cards.twin_tcgdex_id`,
  * which `bun run scrapers link` fills by matching language-independent traits.
  */
-export type CardVersions = Partial<Record<Language, string>>;
+export type LanguagePaths = Partial<Record<Language, string>>;
 
 export const BY_ROUTE_CODE = {fr: CATALOGUES.fr, jp: CATALOGUES.ja};
 export const BY_GRID = {france: CATALOGUES.fr, japan: CATALOGUES.ja};
+
+/** The same page in the three catalogues, for the language switch of the grids and of the set lists. */
+export const catalogueRoutes = (route: 'gridRoute' | 'setsRoute'): LanguagePaths => ({ en: CATALOGUES.en[route], fr: CATALOGUES.fr[route], ja: CATALOGUES.ja[route] });
 
 /** The catalogue a URL path belongs to: its grid page, its set pages (`/france/sets/x`) or one of its card pages, English for everything else. */
 export const catalogueOfPath = (pathname: string): Catalogue =>

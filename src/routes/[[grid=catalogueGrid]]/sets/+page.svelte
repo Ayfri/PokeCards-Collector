@@ -10,7 +10,8 @@
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import type { SetWithPrice } from '#lib/types.js';
 	import SetLogo from '#components/SetLogo.svelte';
-	import { CATALOGUES } from '#helpers/catalogues.ts';
+	import LanguageSwitch from '#components/LanguageSwitch.svelte';
+	import { CATALOGUES, catalogueRoutes } from '#helpers/catalogues.ts';
 	import { groupSetTiles, setCardCount, setPath, type SetTile } from '#helpers/card-utils.ts';
 
 	interface Props {
@@ -18,6 +19,8 @@
 	}
 
 	let { data }: Props = $props();
+
+	const catalogue = $derived(CATALOGUES[data.catalogueLanguage]);
 
 	type SetSortValue = 'cardCount' | 'code' | 'name' | 'releaseDate' | 'totalPrice';
 
@@ -95,8 +98,9 @@
 
 <div class="container mx-auto px-4 pt-2 pb-8">
 	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
-		<div transition:fly={{ y: 50, duration: 400, delay: 200 }}>
-			<PageTitle title="Pokémon TCG Sets" />
+		<div class="flex flex-col items-center gap-2 sm:items-start xl:flex-row xl:items-center xl:gap-4" transition:fly={{ y: 50, duration: 400, delay: 200 }}>
+			<PageTitle title={`${catalogue.routeCode ? `${catalogue.adjective} ` : ''}Pokémon TCG Sets`} />
+			<LanguageSwitch language={data.catalogueLanguage} paths={catalogueRoutes('setsRoute')} />
 		</div>
 
 		<div class="flex items-center gap-2" transition:fly={{ y: 50, duration: 500, delay: 250 }}>
@@ -151,7 +155,7 @@
 							<svelte:element
 								this={tile.kit ? 'div' : 'a'}
 								class="flex flex-1 flex-col"
-								href={tile.kit ? undefined : setPath(set, CATALOGUES.en)}
+								href={tile.kit ? undefined : setPath(set, catalogue)}
 								title={tile.kit ? undefined : `Browse every card in ${set.name}`}
 							>
 								<div class="h-36 bg-gray-900 flex items-center justify-center p-4 {NO_IMAGES ? 'hidden' : ''}">
@@ -180,7 +184,7 @@
 									{#each tile.parts as part (part.set.setId)}
 										<a
 											class="rounded-full border border-gold-500/40 bg-gray-700/60 px-2.5 py-0.5 text-xs text-gray-200 transition-colors hover:border-gold-400 hover:text-gold-300"
-											href={setPath(part.set, CATALOGUES.en)}
+											href={setPath(part.set, catalogue)}
 											title={`Browse every card in ${part.set.name}`}
 										>{part.label} · {setCardCount(part.set)} cards</a>
 									{/each}

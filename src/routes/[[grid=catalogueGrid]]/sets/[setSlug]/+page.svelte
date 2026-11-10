@@ -21,7 +21,7 @@
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col text-lg text-white">
-	<GridHeading description={data.description} title={data.title} />
+	<GridHeading description={data.description} language={data.catalogueLanguage} paths={data.versions} title={data.title} />
 
 	<!-- The facts and the priciest cards are plain text in the document, which is all a crawler without JavaScript reads of the grid below. -->
 	<p class="mx-4 mb-1 flex shrink-0 flex-wrap gap-x-4 text-xs text-gray-300 lg:mx-10">

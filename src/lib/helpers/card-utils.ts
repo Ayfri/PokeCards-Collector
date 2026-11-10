@@ -149,7 +149,7 @@ export function groupSetTiles(sets: SetWithPrice[]): SetTile[] {
 	for (const set of sets) {
 		const parent = SUB_SET_PARENTS[set.setId];
 		if (parent && ids.has(parent)) subSets.set(parent, [...subSets.get(parent) ?? [], set]);
-		else if (set.series === 'Trainer kits') {
+		else if (set.series === 'Trainer kits' || set.series === 'Kits du dresseur') {
 			const key = `${set.setId.split('-', 2).join('-')}|${new Date(set.releaseDate).getTime()}`;
 			kits.set(key, [...kits.get(key) ?? [], set]);
 		} else parents.push(set);
@@ -249,7 +249,7 @@ export function setSlug(set: Pick<CardSet, 'name' | 'setId'>, language: Language
 
 /** `/sets/<slug>` in English, `/france/sets/<slug>` and `/japan/sets/<slug>` in the other catalogues. */
 export function setPath(set: Pick<CardSet, 'name' | 'setId'>, catalogue: Catalogue): string {
-	return `${catalogue.routeCode ? catalogue.gridRoute : ''}/sets/${encodeURIComponent(setSlug(set, catalogue.language))}`;
+	return `${catalogue.setsRoute}/${encodeURIComponent(setSlug(set, catalogue.language))}`;
 }
 
 /** The order a set is printed in: numeric numbers by value, lettered ones (`TG01`, `GG05`) after their prefix, the same order `setLanding` lists. */

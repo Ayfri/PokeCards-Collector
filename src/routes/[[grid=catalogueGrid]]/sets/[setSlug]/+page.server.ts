@@ -1,9 +1,9 @@
-import { BY_GRID, CATALOGUES, type Catalogue } from '#helpers/catalogues.ts';
+import { BY_GRID, CATALOGUES, type Catalogue, type LanguagePaths } from '#helpers/catalogues.ts';
 import { setCardCount, setPath } from '#helpers/card-utils.ts';
 import { setLanding } from '#helpers/grid-payload.ts';
 import { setShareImage } from '#helpers/og-image.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
-import { findSetBySlug, getCards, getPrices } from '#helpers/supabase-data.ts';
+import { findSetBySlug, getCards, getPrices, getSetVersions } from '#helpers/supabase-data.ts';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
@@ -14,14 +14,14 @@ import type { PageServerLoad } from './$types';
  */
 export const load: PageServerLoad = async ({ params }) => {
 	const catalogue: Catalogue = params.grid ? BY_GRID[params.grid] : CATALOGUES.en;
-	const { adjective, gridRoute, language, routeCode } = catalogue;
+	const { adjective, language, routeCode } = catalogue;
 
 	const found = await findSetBySlug(language, params.setSlug);
 	if (!found) error(404, 'Set not found');
 	if (found.canonical !== params.setSlug) redirect(301, setPath(found.set, catalogue));
 
 	const { set } = found;
-	const [cards, prices] = await Promise.all([getCards(language), getPrices(language)]);
+	const [cards, prices, versions] = await Promise.all([getCards(language), getPrices(language), getSetVersions(language, set).catch((): LanguagePaths => ({}))]);
 	const landing = setLanding(set, cards, prices, catalogue);
 	const canonical = setPath(set, catalogue);
 	const total = setCardCount(set);
@@ -29,9 +29,7 @@ export const load: PageServerLoad = async ({ params }) => {
 	const kind = routeCode ? `${adjective} Pokémon TCG` : 'Pokémon TCG';
 
 	return {
-		breadcrumbs: routeCode
-			? breadcrumbs({ name: `${adjective} cards`, url: gridRoute }, { name: set.name, url: canonical })
-			: breadcrumbs({ name: 'Sets', url: '/sets' }, { name: set.name, url: canonical }),
+		breadcrumbs: breadcrumbs({ name: routeCode ? `${adjective} sets` : 'Sets', url: catalogue.setsRoute }, { name: set.name, url: canonical }),
 		canonical,
 		catalogueLanguage: language,
 		checklist: landing.checklist,
@@ -45,5 +43,6 @@ export const load: PageServerLoad = async ({ params }) => {
 		topCards: landing.topCards,
 		type: 'CollectionPage' as const,
 		value: landing.value,
+		versions,
 	};
 };

@@ -15,6 +15,7 @@ import type {TcgdexCard, TcgdexSet} from './types';
  */
 
 const TWINS_FILE = 'src/scrapers/tcgdex/jp-twins.json';
+const SET_TWINS_FILE = 'src/scrapers/tcgdex/jp-set-twins.json';
 /** The file name carries the hash algorithm: change `hashArt` and bump the version, or old hashes would be compared with new ones. */
 const HASH_CACHE = '.cache/art-hashes-bun-v1.json';
 
@@ -27,7 +28,7 @@ const MIN_VOTES = 3;
 const MIN_VOTE_SHARE = 0.25;
 
 export interface LinkOptions {
-	/** `false` runs the whole pass without writing `jp-twins.json`. */
+	/** `false` runs the whole pass without writing `jp-twins.json` and `jp-set-twins.json`. */
 	write?: boolean;
 }
 
@@ -394,11 +395,43 @@ function linkByArt(ja: readonly TcgdexCard[], en: readonly TcgdexCard[], mappedS
 	return links;
 }
 
+/**
+ * Japanese set -> the English set holding at least half and `MIN_VOTES` of its twins, English set -> the Japanese set among those that sends it
+ * the most, so a promo set whose twins scatter maps nowhere. A card id is `<set id>-<local id>` and no local id holds a `-`, while set ids can (`M-P`, `30th-c`).
+ */
+function setTwins(twins: Record<string, JpTwin>): Record<'en' | 'ja', Record<string, string>> {
+	const setOf = (id: string) => id.slice(0, id.lastIndexOf('-'));
+	const votes = new Map<string, Map<string, number>>();
+	for (const [id, twin] of Object.entries(twins)) {
+		const setVotes = votes.get(setOf(id)) ?? new Map<string, number>();
+		setVotes.set(setOf(twin.en), (setVotes.get(setOf(twin.en)) ?? 0) + 1);
+		votes.set(setOf(id), setVotes);
+	}
+
+	const ja: Record<string, string> = {};
+	const best: Record<string, {count: number; ja: string}> = {};
+	for (const jaSet of [...votes.keys()].sort()) {
+		const setVotes = [...votes.get(jaSet)!].sort(([a, x], [b, y]) => y - x || a.localeCompare(b));
+		const total = setVotes.reduce((sum, [, count]) => sum + count, 0);
+		const [enSet, count] = setVotes[0];
+		if (count < MIN_VOTES || count * 2 < total) continue;
+		ja[jaSet] = enSet;
+		if (count > (best[enSet]?.count ?? 0)) best[enSet] = {count, ja: jaSet};
+	}
+
+	return {
+		en: Object.fromEntries(Object.entries(best).sort(([a], [b]) => a.localeCompare(b)).map(([enSet, {ja: jaSet}]) => [enSet, jaSet])),
+		ja,
+	};
+}
+
 /** Writes one entry per line under a one-tab indent, since the default indent would spread each of the ~8000 links over four lines. */
 async function writeTwins(twins: Record<string, JpTwin>): Promise<void> {
 	const lines = Object.keys(twins).sort().map(id => `\t${JSON.stringify(id)}: ${JSON.stringify(twins[id])}`);
 	await fs.writeFile(TWINS_FILE, lines.length ? `{\n${lines.join(',\n')}\n}\n` : '{}\n');
 	console.log(`  wrote ${TWINS_FILE}`);
+	await fs.writeFile(SET_TWINS_FILE, `${JSON.stringify(setTwins(twins), null, '\t')}\n`);
+	console.log(`  wrote ${SET_TWINS_FILE}`);
 }
 
 export async function linkTwins({write = true}: LinkOptions = {}): Promise<LinkReport> {

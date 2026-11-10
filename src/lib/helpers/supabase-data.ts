@@ -1,10 +1,13 @@
 import type { FullCard, Pokemon, PriceData, Set } from "#lib/types.js";
 import { supabase } from '#lib/supabase.ts';
 import { cachedTable, keepAlive, PartialRows, STATIC_TTL, TABLE_TTL } from '#helpers/data-cache.ts';
-import { CATALOGUES, LANGUAGES, type CardTable, type CardVersions, type Language, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
-import { cardPath, cardSlug, cardSlugParts, memoizedOn, setSlug, type CardLink } from '#helpers/card-utils.ts';
+import { CATALOGUES, LANGUAGES, type CardTable, type Language, type LanguagePaths, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
+import { cardPath, cardSlug, cardSlugParts, memoizedOn, setPath, setsById, setSlug, type CardLink } from '#helpers/card-utils.ts';
 import { mirrorPath } from '#helpers/set-images.ts';
+import setTwinsJson from '#scrapers/tcgdex/jp-set-twins.json' with { type: 'json' };
 import type { SupabaseClient } from '@supabase/supabase-js';
+
+const SET_TWINS: Record<'en' | 'ja', Partial<Record<string, string>>> = setTwinsJson;
 
 /** Every card column, for the reads that need the details. Keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
 const CARD_COLUMNS = `
@@ -527,17 +530,35 @@ export async function getCardPrice(language: Language, cardCode: string): Promis
  * Several Japanese prints can share one English twin, and the first `card_code` stands for them so the link never changes between visits.
  * A card with no id, or a Japanese card with no twin, only has itself. It is one database call (the `card_versions` SQL function) for the three languages.
  */
-export async function getCardVersions(language: Language, cardCode: string): Promise<CardVersions> {
+export async function getCardVersions(language: Language, cardCode: string): Promise<LanguagePaths> {
 	const { data: result } = await readWithRetry(`call card_versions ${language} ${cardCode}`, () => supabase.rpc('card_versions', { p_card_code: cardCode, p_language: language }));
 	/** The untyped client reads every rpc result as a row array, and `overrideTypes` refuses to cast an array to the object this scalar function returns. */
 	const data = result as VersionRows | null;
 	if (!data) return {};
 
-	const versions: CardVersions = { [language]: cardPath(language, linkOf(data.own)) };
+	const versions: LanguagePaths = { [language]: cardPath(language, linkOf(data.own)) };
 	for (const target of LANGUAGES) {
 		const twin = data[target];
 		if (twin) versions[target] = cardPath(target, linkOf(twin));
 	}
+
+	return versions;
+}
+
+/**
+ * The same set in the other catalogues. English and French share TCGdex set ids, and a Japanese set is paired with an English one through
+ * `jp-set-twins.json` (`bun run scrapers link`), French following the English id. A language with no such set is left out.
+ */
+export async function getSetVersions(language: Language, set: Set): Promise<LanguagePaths> {
+	const english = language === 'ja' ? SET_TWINS.ja[set.setId] : set.setId;
+	const ids: Record<Language, string | undefined> = { en: english, fr: english, ja: language === 'ja' ? set.setId : english && SET_TWINS.en[english] };
+	const versions: LanguagePaths = {};
+
+	await Promise.all(LANGUAGES.map(async target => {
+		const id = ids[target];
+		const other = id ? setsById(await getSets(target)).get(id) : undefined;
+		if (other) versions[target] = setPath(other, CATALOGUES[target]);
+	}));
 
 	return versions;
 }

@@ -101,17 +101,17 @@ export function setSchema(set: Set, catalogue: Catalogue = CATALOGUES.en): Schem
 }
 
 /** The set list as an `ItemList` of `CreativeWorkSeries`, so each set is an entity rather than a row of text. */
-export function setListSchema(sets: Set[], limit = 50): Schema {
+export function setListSchema(sets: Set[], catalogue: Catalogue, limit = 50): Schema {
 	return {
 		'@type': 'ItemList',
 		itemListElement: sets.slice(0, limit).map((set, index) => ({
 			'@type': 'ListItem',
-			item: setSchema(set),
+			item: setSchema(set, catalogue),
 			position: index + 1,
 		})),
-		name: 'Pokémon TCG sets',
+		name: `${catalogue.routeCode ? `${catalogue.adjective} ` : ''}Pokémon TCG sets`,
 		numberOfItems: sets.length,
-		url: `${BASE_URL}/sets`,
+		url: `${BASE_URL}${catalogue.setsRoute}`,
 	};
 }
 

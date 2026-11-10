@@ -6,6 +6,7 @@
 	import GridHeading from '#lib/components/list/GridHeading.svelte';
 	import BouncyLoader from '#components/BouncyLoader.svelte';
 	import { payloadUrl } from '#helpers/utils.ts';
+	import { catalogueOfPath, catalogueRoutes } from '#helpers/catalogues.ts';
 
 	interface Props {
 		data: PageData;
@@ -25,7 +26,7 @@
 	{/if}
 </svelte:head>
 
-<GridHeading description={data.description} title={data.title} />
+<GridHeading description={data.description} language={catalogueOfPath(page.url.pathname).language} paths={catalogueRoutes('gridRoute')} title={data.title} />
 
 {#key page.params.grid}
 	{#await data.streamed.cardData}

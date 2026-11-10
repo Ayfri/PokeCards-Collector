@@ -17,6 +17,8 @@ export async function GET() {
 		{ changefreq: 'weekly', loc: '/trainers', priority: 0.8 },
 		{ changefreq: 'weekly', loc: '/japan', priority: 0.8 },
 		{ changefreq: 'weekly', loc: '/france', priority: 0.8 },
+		{ changefreq: 'weekly', loc: '/france/sets', priority: 0.7 },
+		{ changefreq: 'weekly', loc: '/japan/sets', priority: 0.7 },
 		{ changefreq: 'weekly', loc: '/artists', priority: 0.7 },
 		{ changefreq: 'daily', loc: '/card.dle', priority: 0.7 },
 		{ changefreq: 'daily', loc: '/guess-the-price', priority: 0.7 },
