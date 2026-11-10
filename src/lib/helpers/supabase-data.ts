@@ -130,7 +130,7 @@ function toCard(card: CardRow): FullCard {
 		/** The plate names the stage (`Basic`, `Stage1`) in its name bar like a real card, so only the cards drawn as plates carry it. */
 		...(!card.image && card.stage && { stage: card.stage }),
 		/** A card with a scan never draws its plate, so a stale borrowed artwork (the scan arrived after the CLI stored it) stays off the object. */
-		...(!card.image && card.art_image && { artImage: card.art_image, artSource: card.art_source ?? undefined }),
+		...(!card.image && card.art_image && { artImage: card.art_image, ...(card.art_source && { artSource: card.art_source }) }),
 		/** Only Trainer and Energy cards have one, so the 17k Pokémon carry no empty key. */
 		...(card.subtype && { subtype: card.subtype }),
 		supertype: card.supertype || '',
@@ -142,7 +142,8 @@ function toCard(card: CardRow): FullCard {
 
 	return {
 		...listCard,
-		hp: card.hp ?? undefined,
+		/** A null HP stays off the object like the other optional keys: devalue writes an undefined one as `void 0`. */
+		...(card.hp != null && { hp: card.hp }),
 		legalStandard: card.legal_standard ?? false,
 		regulationMark: card.regulation_mark || '',
 		stage: card.stage || '',

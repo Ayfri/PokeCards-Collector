@@ -72,7 +72,6 @@ export const load: PageServerLoad = async ({ params }) => {
 		/** Built from the card, so it never follows the request's percent-encoding of the slug. */
 		canonical: cardPath('en', targetCard),
 		neighbours: setNeighbourLinks('en', targetCard, allCards),
-		pokemon: associatedPokemon,
 		versions,
 		title: pageTitle,
 		description: pageDescription,
