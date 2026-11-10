@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PageTitle from '#components/PageTitle.svelte';
-	import type {FullCard, Pokemon, PriceData, Set} from '#lib/types.js';
+	import type {CardPageSet, FullCard, Pokemon, PriceData} from '#lib/types.js';
 	import CardPrice from '#components/card/CardPrice.svelte';
 	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
@@ -25,7 +25,7 @@
 	import { fly } from 'svelte/transition';
 
 	interface Props {
-		set: Set;
+		set: CardPageSet;
 		card: FullCard;
 		cardPrices?: PriceData | undefined;
 		pokemon?: Pokemon | undefined;

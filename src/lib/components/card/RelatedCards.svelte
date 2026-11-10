@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type {FullCard, Pokemon, PriceData, Set} from '#lib/types.js';
+	import type {CardPageSet, FullCard, Pokemon, PriceData} from '#lib/types.js';
 	import CardImage from '#components/card/CardImage.svelte';
 	import CardmarketLogo from '#components/card/CardmarketLogo.svelte';
 	import {fade} from 'svelte/transition';
@@ -27,7 +27,7 @@
 		/** Looked up when a card is a Pokémon card. */
 		pokemons: Pokemon[];
 		prices: Record<string, PriceData>;
-		sets: Set[];
+		sets: CardPageSet[];
 		pokemon?: Pokemon | undefined;
 		onCardSelect: (card: FullCard) => void;
 		lowRes?: boolean;

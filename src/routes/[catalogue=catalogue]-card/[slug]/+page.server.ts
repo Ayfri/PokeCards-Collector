@@ -1,17 +1,16 @@
 import { BY_ROUTE_CODE, type CardVersions } from '#helpers/catalogues.ts';
 import { findCardBySlug, getCardDetails, getCards, getCardVersions, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
-import type { FullCard } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { formatEuros } from '#helpers/format.ts';
 import { cardOgVersion, ogImage } from '#helpers/og-image.ts';
-import { cardGroupKey, cardPageCatalogue, cardPath, cardPrice, formatCardNumber, setNeighbourLinks, setPath } from '#helpers/card-utils.ts';
+import { cardPageData, cardPath, cardPrice, formatCardNumber, setNeighbourLinks, setPath, setsById } from '#helpers/card-utils.ts';
 import { breadcrumbs, cardSchema } from '#helpers/seo.ts';
 
 export const load: PageServerLoad = async ({ params }) => {
 	const catalogue = BY_ROUTE_CODE[params.catalogue];
 	const { adjective, language } = catalogue;
-	/** Each catalogue has its own prices and sets; only the English ones come from the layout. The slug lookup shares the memoized card list. */
+	/** Each catalogue has its own prices and sets. The slug lookup shares the memoized card list. */
 	const [found, allCards, prices, pokemons, sets] = await Promise.all([findCardBySlug(language, params.slug), getCards(language), getPrices(language), getPokemons(), getSets(language)]);
 
 	if (!found) {
@@ -33,14 +32,9 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const pokemon = pokemons.find(p => p.id === card.pokemonNumber);
 
-	/** Every print of the same Pokémon, or of the same Trainer/Energy group (see `cardGroupKey`), with this card first. */
-	const key = cardGroupKey(card);
-	const siblings = allCards.filter(c => c.cardCode !== cardCode && cardGroupKey(c) === key);
-	const pokemonCards: FullCard[] = [card, ...siblings];
-
 	const price = prices[card.cardCode];
 	const value = cardPrice(price);
-	const set = sets.find(s => s.setId === card.setId);
+	const set = setsById(sets).get(card.setId);
 	/** The printed number, as on the English page: "Dracaufeu-ex 125/197" is how a card is searched. */
 	const numbering = card.localId ? ` ${formatCardNumber(card.localId, set?.printedTotal)}` : '';
 
@@ -68,16 +62,12 @@ export const load: PageServerLoad = async ({ params }) => {
 		type: 'Product' as const,
 	};
 
-	/** The layout returns the English `sets`; this page overrides them with the catalogue's own list. */
 	return {
-		...cardPageCatalogue(card.pokemonNumber, pokemonCards, allCards, pokemons, prices),
-		card,
+		...cardPageData(language, card, allCards, prices, pokemons, sets),
 		/** Built from the card, so it never follows the request's percent-encoding of the slug. */
 		canonical: cardPath(language, card),
 		neighbours: setNeighbourLinks(language, card, allCards),
 		pokemon,
-		pokemonCards,
-		sets,
 		versions,
 		...pageSeoData
 	};

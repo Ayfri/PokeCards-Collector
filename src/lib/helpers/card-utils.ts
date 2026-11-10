@@ -1,5 +1,5 @@
 import { CATALOGUES, type Catalogue, type Language } from '#helpers/catalogues.ts';
-import type { Card, FullCard, Pokemon, PriceData, Set as CardSet, SetWithPrice } from '#lib/types.js';
+import type { Card, CardPageSet, FullCard, Pokemon, PriceData, Set as CardSet, SetWithPrice } from '#lib/types.js';
 
 /**
  * Memoizes `build` on the identity of `keys`, one `WeakMap` level per key, so a value derived from memoized tables never keeps one alive:
@@ -295,19 +295,75 @@ export function isCardCode(item: string): boolean {
 	return item.includes('_') && !item.startsWith('http');
 }
 
-export function getRepresentativeCardForPokemon(pokemonId: number, allCards: FullCard[], prices: Record<string, PriceData>): FullCard | undefined {
-	const filteredCards = allCards.filter(c => c.pokemonNumber === pokemonId);
-	if (filteredCards.length === 0) return undefined;
+const groupMemo = new WeakMap<object, unknown>();
+const bestMemo = new WeakMap<object, unknown>();
+const setMemo = new WeakMap<object, unknown>();
 
-	return [...filteredCards].sort((a, b) => (cardPrice(prices[b.cardCode]) ?? 0) - (cardPrice(prices[a.cardCode]) ?? 0))[0];
+/**
+ * The prints of each Pokémon, Trainer or Energy group (`cardGroupKey`), built once per card list. A card without a set name is not a print,
+ * and a card the list holds twice counts once, since the card page keys its tiles on `cardCode`.
+ */
+export function cardGroups(cards: FullCard[]): Map<string, FullCard[]> {
+	return memoizedOn(groupMemo, [cards], () => {
+		const groups = new Map<string, FullCard[]>();
+		const seen = new Set<string>();
+		for (const card of cards) {
+			if (!card.setName || seen.has(card.cardCode)) continue;
+			seen.add(card.cardCode);
+			const key = cardGroupKey(card);
+			const group = groups.get(key);
+			if (group) group.push(card);
+			else groups.set(key, [card]);
+		}
+		return groups;
+	});
+}
+
+/** The card a Pokémon's neighbours link to: its priciest print, the first listed on a tie. Built once per card and price table. */
+export function bestCardByPokemon(cards: FullCard[], prices: Record<string, PriceData>): Map<number, FullCard> {
+	return memoizedOn(bestMemo, [cards, prices], () => {
+		const best = new Map<number, FullCard>();
+		const worth = new Map<number, number>();
+		for (const card of cards) {
+			if (card.pokemonNumber === undefined) continue;
+			const value = cardPrice(prices[card.cardCode]) ?? 0;
+			if (!best.has(card.pokemonNumber) || value > worth.get(card.pokemonNumber)!) {
+				best.set(card.pokemonNumber, card);
+				worth.set(card.pokemonNumber, value);
+			}
+		}
+		return best;
+	});
+}
+
+export function setsById(sets: CardSet[]): Map<string, CardSet> {
+	return memoizedOn(setMemo, [sets], () => new Map(sets.map(set => [set.setId, set])));
+}
+
+/** What a card page ships: the prints of the shown card and their prices and sets, the chain's Pokédex rows and one link per neighbouring Pokémon. */
+export interface CardPageData {
+	/** The path of each Pokémon in the evolution chain and its dex neighbours: their priciest print. */
+	pokemonPaths: Record<number, string>;
+	pokemons: Pokemon[];
+	prices: Record<string, PriceData>;
+	/** The shown card first, then its other prints by price, highest first. */
+	prints: FullCard[];
+	sets: CardPageSet[];
 }
 
 /**
- * The slice of the catalogue a card page reads: the cards, Pokédex rows and prices of the card's Pokémon, its dex
- * neighbours and two evolution stages either way, plus the page's sibling cards. Sending the whole tables would make the document 11.5 MB.
+ * The slice of the catalogue a card page reads, so the document carries one card group instead of the tables (11.5 MB when sent whole).
+ * The shown card drops the columns only `cardSchema` reads on the server. A neighbouring Pokémon needs a link and no card, so it ships a path.
  */
-export function cardPageCatalogue(pokemonNumber: number | undefined, siblings: FullCard[], allCards: FullCard[], pokemons: Pokemon[], prices: Record<string, PriceData>) {
+export function cardPageData(language: Language, shown: FullCard, cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], sets: CardSet[]): CardPageData {
+	const { legalStandard, regulationMark, tcgdexId, variants, ...print } = shown;
+	const others = (cardGroups(cards).get(cardGroupKey(shown)) ?? [])
+		.filter(card => card.cardCode !== shown.cardCode)
+		.sort((a, b) => (cardPrice(prices[b.cardCode]) ?? 0) - (cardPrice(prices[a.cardCode]) ?? 0));
+	const prints = [print, ...others];
+
 	const ids = new Set<number>();
+	const pokemonNumber = shown.pokemonNumber;
 	if (pokemonNumber) {
 		const byId = new Map(pokemons.map(pokemon => [pokemon.id, pokemon]));
 		const current = byId.get(pokemonNumber);
@@ -324,12 +380,23 @@ export function cardPageCatalogue(pokemonNumber: number | undefined, siblings: F
 		}
 	}
 
-	const siblingCodes = new Set(siblings.map(card => card.cardCode));
-	const cards = allCards.filter(card => siblingCodes.has(card.cardCode) || (card.pokemonNumber !== undefined && ids.has(card.pokemonNumber)));
+	const best = bestCardByPokemon(cards, prices);
+	const pokemonPaths: Record<number, string> = {};
+	for (const id of ids) {
+		const card = best.get(id);
+		if (card) pokemonPaths[id] = cardPath(language, card);
+	}
 
+	const setById = setsById(sets);
+	const printSets = new Set(prints.map(card => card.setId));
 	return {
-		allCards: cards,
+		pokemonPaths,
 		pokemons: pokemons.filter(pokemon => ids.has(pokemon.id)),
-		prices: Object.fromEntries(cards.flatMap(card => prices[card.cardCode] ? [[card.cardCode, prices[card.cardCode]]] : [])) as Record<string, PriceData>,
+		prices: Object.fromEntries(prints.flatMap(card => prices[card.cardCode] ? [[card.cardCode, prices[card.cardCode]]] : [])),
+		prints,
+		sets: [...printSets].flatMap(setId => {
+			const set = setById.get(setId);
+			return set ? [{ logo: set.logo, name: set.name, printedTotal: set.printedTotal, releaseDate: set.releaseDate, setId: set.setId, symbol: set.symbol }] : [];
+		}),
 	};
 }

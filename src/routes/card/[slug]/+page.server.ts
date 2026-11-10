@@ -1,16 +1,16 @@
 import { error, redirect } from '@sveltejs/kit';
-import { findCardBySlug, getCardDetails, getCards, getCardVersions, getPokemons, getPrices } from '#helpers/supabase-data.ts';
+import { findCardBySlug, getCardDetails, getCards, getCardVersions, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
 import { CATALOGUES, type CardVersions } from '#helpers/catalogues.ts';
 import { formatEuros } from '#helpers/format.ts';
 import { cardOgVersion, ogImage } from '#helpers/og-image.ts';
-import { cardGroupKey, cardPageCatalogue, cardPath, cardPrice, formatCardNumber, setNeighbourLinks, setPath } from '#helpers/card-utils.ts';
+import { cardPageData, cardPath, cardPrice, formatCardNumber, setNeighbourLinks, setPath, setsById } from '#helpers/card-utils.ts';
 import { article, breadcrumbs, cardSchema } from '#helpers/seo.ts';
-import type { FullCard, Pokemon } from '#lib/types.js';
+import type { Pokemon } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params, parent }) => {
-	/** Started together so the slug lookup, the sibling cards and the prices load in parallel; the slug lookup shares the memoized card list. */
-	const [found, allCards, prices, allPokemons] = await Promise.all([findCardBySlug('en', params.slug), getCards(), getPrices(), getPokemons()]);
+export const load: PageServerLoad = async ({ params }) => {
+	/** Started together so the slug lookup, the sibling cards, the prices and the sets load in parallel; the slug lookup shares the memoized card list. */
+	const [found, allCards, prices, allPokemons, sets] = await Promise.all([findCardBySlug('en', params.slug), getCards(), getPrices(), getPokemons(), getSets()]);
 
 	if (!found) {
 		throw error(404, 'Card not found');
@@ -21,15 +21,9 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 	}
 
 	const { cardCode } = found.card;
-	/** Started before `parent()` so the card row and the versions run in parallel with the layout's auth and collection queries. */
-	const details = getCardDetails('en', cardCode);
-	/** If `parent()` throws, `details` is never awaited and its rejection would go unhandled; the later `await` still throws it. */
-	details.catch(() => undefined);
 	/** Streamed, not awaited: the language switcher is decorative, so a slow or failed read never holds back or breaks the page. */
 	const versions = getCardVersions('en', cardCode).catch((): CardVersions => ({ en: cardPath('en', found.card) }));
-	const parentData = await parent();
-	const targetCard = await details;
-	const sets = parentData.sets || [];
+	const targetCard = await getCardDetails('en', cardCode);
 
 	if (!targetCard) {
 		throw error(404, 'Card not found');
@@ -40,14 +34,7 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		associatedPokemon = allPokemons.find(p => p.id === targetCard.pokemonNumber);
 	}
 
-	/** Sibling cards: every print of the same Pokémon, or of the same Trainer/Energy group (supertype and name, see `cardGroupKey`). */
-	const groupKey = cardGroupKey(targetCard);
-	let relevantCards: FullCard[] = allCards.filter(c => c.setName && cardGroupKey(c) === groupKey);
-
-	relevantCards.sort((a, b) => (cardPrice(prices[b.cardCode]) ?? 0) - (cardPrice(prices[a.cardCode]) ?? 0));
-	relevantCards = [targetCard, ...relevantCards.filter(c => c.cardCode !== cardCode)];
-
-	const set = sets.find(s => s.setId === targetCard.setId);
+	const set = setsById(sets).get(targetCard.setId);
 	const price = prices[targetCard.cardCode];
 	const value = cardPrice(price);
 
@@ -80,15 +67,12 @@ export const load: PageServerLoad = async ({ params, parent }) => {
 		{ name: targetCard.name, url: cardPath('en', targetCard) },
 	);
 
-	/** The layout already returns `sets`, and the page only needs the cards, Pokémon and prices around this one. */
 	return {
-		...cardPageCatalogue(targetCard.pokemonNumber, relevantCards, allCards, allPokemons, prices),
+		...cardPageData('en', targetCard, allCards, prices, allPokemons, sets),
 		/** Built from the card, so it never follows the request's percent-encoding of the slug. */
 		canonical: cardPath('en', targetCard),
 		neighbours: setNeighbourLinks('en', targetCard, allCards),
 		pokemon: associatedPokemon,
-		pokemonCards: relevantCards,
-		targetCard,
 		versions,
 		title: pageTitle,
 		description: pageDescription,

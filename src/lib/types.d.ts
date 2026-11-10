@@ -52,6 +52,9 @@ export interface Pokemon {
 	evolves_to?: number[];
 }
 
+/** What a card page draws of a set: the tiles, the plate, the badge and the details panel. */
+export type CardPageSet = Pick<Set, 'logo' | 'name' | 'printedTotal' | 'releaseDate' | 'setId' | 'symbol'>;
+
 /** What the card grid reads of a Pokémon: the Pokédex entry text stays out of its payloads. */
 export type GridPokemon = Pick<Pokemon, 'id' | 'name'>;
 

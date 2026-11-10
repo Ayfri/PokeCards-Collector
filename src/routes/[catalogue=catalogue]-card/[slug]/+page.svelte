@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import CardDisplay from "#components/card/CardDisplay.svelte";
-	import type { FullCard, Pokemon, Set, PriceData } from "#lib/types.js";
 	import { fade } from 'svelte/transition';
 
 	interface Props {
@@ -9,32 +8,22 @@
 	}
 
 	let { data }: Props = $props();
-
-	const allCards = $derived(data.allCards as FullCard[]);
-	const pokemonCards = $derived(data.pokemonCards as FullCard[]);
-	const pokemons = $derived(data.pokemons as Pokemon[]);
-	const sets = $derived(data.sets as Set[]);
-	const prices = $derived((data.prices as Record<string, PriceData> | undefined) || {});
 </script>
 
 <div class="max-w-[100vw] p-4 mb-4 text-lg text-white">
 	<div class="mt-4 mx-auto flex flex-col gap-8 w-[90%] -z-10">
-		{#if !pokemonCards || pokemonCards.length === 0}
-			<p class="text-center text-lg">Loading...</p>
-		{:else}
-			{#key data.card.cardCode}
-				<div in:fade={{ duration: 300 }}>
-					<CardDisplay
-						allCards={allCards}
-						pokemonCards={pokemonCards}
-						{pokemons}
-						{sets}
-						{prices}
-						neighbours={data.neighbours}
-						versions={data.versions}
-					/>
-				</div>
-			{/key}
-		{/if}
+		{#key data.prints[0].cardCode}
+			<div in:fade={{ duration: 300 }}>
+				<CardDisplay
+					pokemonPaths={data.pokemonPaths}
+					pokemons={data.pokemons}
+					prices={data.prices}
+					prints={data.prints}
+					sets={data.sets}
+					neighbours={data.neighbours}
+					versions={data.versions}
+				/>
+			</div>
+		{/key}
 	</div>
 </div>

@@ -2,28 +2,23 @@
 	import { pascalCase } from '#helpers/format.ts';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { getCardImageForPokemon, NO_IMAGES } from '#helpers/card-images.ts';
-	import type { FullCard, Pokemon, PriceData } from '#lib/types.js';
-	import { cardPath, getRepresentativeCardForPokemon } from '#helpers/card-utils.ts';
-	import { catalogueOfPath } from '#helpers/catalogues.ts';
-	import { page } from '$app/state';
+	import type { FullCard, Pokemon } from '#lib/types.js';
 
 	interface Props {
-		allCards: FullCard[];
-		pokemons: Pokemon[];
-		pokemonCards: FullCard[];
-		prices: Record<string, PriceData>;
 		card: FullCard;
+		/** The path of each Pokémon of the chain that has a card, by Pokédex id. */
+		pokemonPaths: Record<number, string>;
+		pokemons: Pokemon[];
+		/** The prints of the shown Pokémon: the sprite falls back to their scan. */
+		prints: FullCard[];
 	}
 
 	let {
-		allCards,
+		card,
+		pokemonPaths,
 		pokemons,
-		pokemonCards,
-		prices,
-		card
+		prints
 	}: Props = $props();
-	
-	const catalogue = $derived(catalogueOfPath(page.url.pathname));
 
 	function buildEvolutionChain(card: FullCard) {
 		const currentPokemon = pokemons.find(p => p.id === card.pokemonNumber);
@@ -78,11 +73,10 @@
 {#if uniqueChain.length > 1}
 	<div class="evolution-chain bg-gray-800/75 flex items-center justify-center gap-4 max-w-full overflow-x-auto px-4 py-2">
 		{#each uniqueChain as pokemon, i (pokemon.id)}
-			{@const representativeCard = getRepresentativeCardForPokemon(pokemon.id, allCards, prices)}
 			<div class="evolution-item flex flex-col items-center">
 				<!-- A real link so crawlers follow the evolution line from card to card. A Pokémon with no card in the catalogue has nothing to open. -->
 				<a
-					href={representativeCard ? cardPath(catalogue.language, representativeCard) : undefined}
+					href={pokemonPaths[pokemon.id]}
 					class="evolution-image-wrapper relative"
 					title="{pascalCase(pokemon.name)} cards"
 				>
@@ -96,7 +90,7 @@
 						alt={pokemon.name}
 						class="evolution-image w-16 h-16 object-contain"
 						title={pascalCase(pokemon.name)}
-						onerror={(e) => handlePokemonImageError(e, pokemon.id, getCardImageForPokemon(pokemon.id, pokemonCards))}
+						onerror={(e) => handlePokemonImageError(e, pokemon.id, getCardImageForPokemon(pokemon.id, prints))}
 						data-pokemon-id={pokemon.id}
 					/>
 					{:else}
