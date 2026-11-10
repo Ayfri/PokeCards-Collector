@@ -1,4 +1,3 @@
-import { getUserCollection } from '#lib/services/collections.ts';
 import { loadUserCardsPage } from '#helpers/user-cards-page.ts';
 import type { PageServerLoad } from './$types';
 
@@ -8,7 +7,6 @@ import type { PageServerLoad } from './$types';
  */
 export const load: PageServerLoad = ({ locals, params, parent }) => loadUserCardsPage({
 	client: locals.supabase,
-	fetchItems: getUserCollection,
 	kind: 'collection',
 	parent,
 	requestedUsername: params.user,

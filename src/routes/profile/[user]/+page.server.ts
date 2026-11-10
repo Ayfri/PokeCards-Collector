@@ -1,13 +1,10 @@
 import { LANGUAGES } from '#helpers/catalogues.ts';
-import { countCards, getCatalogue } from '#helpers/supabase-data.ts';
+import { countCards, getOwnedCards, getSets } from '#helpers/supabase-data.ts';
 import { redirect } from '@sveltejs/kit';
-import { computeCollectionStats } from '#helpers/collection-stats.ts';
 import { formatEuros } from '#helpers/format.ts';
 import { ogImage } from '#helpers/og-image.ts';
-import { readOwnedCatalogues } from '#helpers/owned-cards.ts';
-import { getUserCollection } from '#lib/services/collections.ts';
+import { collectionStats as buildCollectionStats } from '#helpers/owned-cards.ts';
 import { getProfileByUsername } from '#lib/services/profiles.ts';
-import { getUserWishlist } from '#lib/services/wishlists.ts';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs, profileSchema } from '#helpers/seo.ts';
 import type { CollectionStats } from '#lib/types.js';
@@ -17,7 +14,14 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	/** The profile lookup runs in parallel with the layout load instead of waiting for it. */
 	const profilePromise = getProfileByUsername(requestedUsername, locals.supabase);
 	/** Read in parallel with the profile: row level security already hides a private collection, so reading early leaks nothing. */
-	const rowsPromise = Promise.all([getUserCollection(requestedUsername, locals.supabase), getUserWishlist(requestedUsername, locals.supabase)]);
+	const collectionRead = getOwnedCards(locals.supabase, requestedUsername, 'collection', true);
+	/** A redirect or a private profile never awaits it, and a rejection nobody awaits would be logged as unhandled. */
+	collectionRead.catch(() => {});
+	/** A failed wishlist read leaves the wishlist figures at zero instead of dropping the collection stats. */
+	const wishlistRead = getOwnedCards(locals.supabase, requestedUsername, 'wishlist').catch((cause: unknown) => {
+		console.error(`Error fetching the wishlist stats of ${requestedUsername}:`, cause);
+		return { cards: [], codes: 0, rows: 0, sets: [] };
+	});
 	const { profile: loggedInUserProfile } = await parent();
 	const isOwnProfile = loggedInUserProfile?.username === requestedUsername;
 
@@ -34,15 +38,17 @@ export const load: PageServerLoad = async ({ locals, params, parent }) => {
 	let description = `This user's profile is private.`;
 
 	if (isPublic || isOwnProfile) {
-		const [[{ data: collectionRows, error: collectionError }, { data: wishlistRows, error: wishlistError }], counts] = await Promise.all([rowsPromise, Promise.all(LANGUAGES.map(countCards))]);
+		const [counts, collection, wishlist] = await Promise.all([Promise.all(LANGUAGES.map(countCards)), collectionRead.catch((cause: unknown) => {
+			console.error(`Error fetching collection stats for ${targetProfile.username}:`, cause);
+			return null;
+		}), wishlistRead]);
 		totalCards = counts.reduce((total, count) => total + count, 0);
 
-		if (collectionError || !collectionRows) console.error(`Error fetching collection stats for ${targetProfile.username}:`, collectionError);
-		else {
-			const wishlist = wishlistError ? [] : wishlistRows ?? [];
-			/** The catalogues only feed the stats and are never returned: returning them would put 23546 cards in the document just for a card count. */
-			const catalogues = await readOwnedCatalogues([...collectionRows, ...wishlist].map(row => row.card_code), getCatalogue);
-			collectionStats = computeCollectionStats(collectionRows, wishlist, catalogues);
+		if (collection) {
+			/** Only the set lists of the languages the collection touches, never the cards: the stats come from `owned_cards`. */
+			const languages = [...new Set(collection.sets.map(({ language }) => language))];
+			const sets = Object.fromEntries(await Promise.all(languages.map(async language => [language, await getSets(language)] as const)));
+			collectionStats = buildCollectionStats(collection, wishlist, sets);
 		}
 
 		title = isOwnProfile ? 'My Profile' : `${targetProfile.username}'s Pokémon Card Collection`;

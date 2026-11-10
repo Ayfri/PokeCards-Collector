@@ -2,9 +2,9 @@ import type { FullCard, Pokemon, PriceData, Set } from "#lib/types.js";
 import { supabase } from '#lib/supabase.ts';
 import { cachedTable, keepAlive, PartialRows, STATIC_TTL, TABLE_TTL } from '#helpers/data-cache.ts';
 import { CATALOGUES, LANGUAGES, type CardTable, type CardVersions, type Language, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
-import type { CatalogueData } from '#helpers/owned-cards.ts';
 import { cardPath, cardSlug, cardSlugParts, memoizedOn, setSlug, type CardLink } from '#helpers/card-utils.ts';
 import { mirrorPath } from '#helpers/set-images.ts';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Every card column, for the reads that need the details. Keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
 const CARD_COLUMNS = `
@@ -597,6 +597,65 @@ export async function findSetBySlug(language: Language, slug: string): Promise<{
 
 	const set = index.get(slug.normalize('NFC').toLowerCase());
 	return set ? { canonical: setSlug(set, language), set } : null;
+}
+
+export type OwnedList = 'collection' | 'wishlist';
+
+/** An owned card with its copy count, the catalogue that resolved it and its `cardPrice()`. */
+export interface OwnedCard extends FullCard {
+	copies: number;
+	language: Language;
+	price: number | null;
+}
+
+/** The card count and summed price of one whole set. */
+export interface SetTotal {
+	cards: number;
+	language: Language;
+	set_id: string;
+	value: number;
+}
+
+/** `rows` and `codes` count the orphan rows too (codes no table carries), which `cards` never holds. `sets` is filled by `withSets` only. */
+export interface OwnedCards {
+	cards: OwnedCard[];
+	codes: number;
+	rows: number;
+	sets: SetTotal[];
+}
+
+/** What `owned_cards` returns: `jsonb_strip_nulls` leaves the null columns off a card, and `toCard` reads a missing key like a null. */
+interface OwnedRows extends Omit<OwnedCards, 'cards'> {
+	cards: (Partial<CardRow> & Pick<CardRow, 'card_code' | 'name'> & { copies: number; language: Language; price?: number })[];
+}
+
+/**
+ * One user's collection or wishlist resolved against the three catalogues, in one database call (the `owned_cards` SQL function): no table is loaded.
+ * Pass `locals.supabase` or the anonymous client, never a service-role one: row level security is the privacy gate, a private list comes back empty.
+ * Cards come ordered en, ja, fr, each by name then code. Orphan rows count in `rows` and `codes` but never come back as cards.
+ */
+export async function getOwnedCards(client: SupabaseClient, username: string, list: OwnedList, withSets = false): Promise<OwnedCards> {
+	const { data: result } = await readWithRetry(`call owned_cards ${list} ${username}`, () => client.rpc('owned_cards', { p_list: list, p_username: username, p_with_sets: withSets }));
+	/** The untyped client reads every rpc result as a row array, like in `getCardVersions`. */
+	const { cards, codes, rows, sets } = result as OwnedRows;
+
+	return {
+		cards: cards.map(({ copies, language, price, ...row }) => {
+			const card = toCard(row as CardRow);
+			delete card.cardMarketUpdatedAt;
+			return { ...card, copies, language, price: price ?? null };
+		}),
+		codes,
+		rows,
+		sets,
+	};
+}
+
+/** What one catalogue holds: its card list, its price table and its sets. */
+export interface CatalogueData {
+	cards: FullCard[];
+	prices: Record<string, PriceData>;
+	sets: Set[];
 }
 
 /** The three reads of one language, memoized like each of them. */

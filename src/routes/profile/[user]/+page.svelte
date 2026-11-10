@@ -361,7 +361,7 @@
 
 			{#if sortedSets.length}
 				<div class="grid max-h-160 grid-cols-1 gap-3 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
-					{#each sortedSets as entry (`${entry.language}:${entry.name}`)}
+					{#each sortedSets as entry (`${entry.language}:${entry.set.setId}`)}
 						{@const complete = entry.count === entry.total}
 						<a
 							class="group flex items-center gap-4 rounded-xl border p-3 transition-colors {complete ? 'border-gold-400/60 bg-gold-400/10' : 'border-white/5 bg-white/3 hover:border-gold-400/50'}"

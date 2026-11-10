@@ -138,7 +138,7 @@ export interface UserWishlist {
 
 export interface CollectionStats {
 	cards_by_rarity: Record<string, number>;
-	/** Keyed by `language:name`: the same set name exists in several languages and each is its own checklist. */
+	/** Keyed by `language:setId`: the same set name exists in several languages (and twice in Japanese), and each set is its own checklist. */
 	set_completion: Record<
 		string,
 		{

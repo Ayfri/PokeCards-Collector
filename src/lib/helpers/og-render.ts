@@ -27,17 +27,14 @@ import { BASE_URL, CARDTRADER_IMAGES, POKEMONS_COUNT, SITE_NAME } from '#src/con
 import { processCardImage, type ImageQuality } from '#helpers/card-images.ts';
 import { cardPrice, formatCardNumber, setCardCount } from '#helpers/card-utils.ts';
 import { CATALOGUES, LANGUAGES, type Language } from '#helpers/catalogues.ts';
-import { computeCollectionStats } from '#helpers/collection-stats.ts';
 import { formatEuros } from '#helpers/format.ts';
 import { formatOgEuros, OG_HEIGHT, OG_WIDTH, ogPrice, setValue, type OgPage, type OgTarget, type OgUserKind } from '#helpers/og-image.ts';
-import { readOwnedCatalogues } from '#helpers/owned-cards.ts';
+import { ownedTotals } from '#helpers/owned-cards.ts';
 import { RARITY_SYMBOLS, type RarityTone } from '#helpers/rarity-symbols.ts';
 import { SET_IMAGE_DIR } from '#helpers/set-images.ts';
-import { countCards, getCardDetails, getCardPrice, getCards, getCatalogue, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { countCards, getCardDetails, getCardPrice, getCards, getCatalogue, getOwnedCards, getPrices, getSets } from '#helpers/supabase-data.ts';
 import { RARITY_SHAPES, TYPE_SYMBOLS } from '#helpers/tcg-symbols.ts';
-import { getUserCollection } from '#lib/services/collections.ts';
 import { getProfileByUsername } from '#lib/services/profiles.ts';
-import { getUserWishlist } from '#lib/services/wishlists.ts';
 import { supabase } from '#lib/supabase.ts';
 import type { Card, PriceData, Set } from '#lib/types.js';
 
@@ -397,30 +394,25 @@ async function userImage(kind: OgUserKind, username: string, state: RenderState)
 
 	const name = profile.username;
 	if (kind === 'wishlist') {
-		const { data: rows, error: wishlistError } = await getUserWishlist(name, supabase);
-		if (wishlistError) readFailed('wishlist', wishlistError);
-		const catalogues = await readOwnedCatalogues((rows ?? []).map(row => row.card_code), getCatalogue);
-		const wanted = catalogues.flatMap(({ language, owned, prices }) => ranked(owned, prices, language)).sort((a, b) => b.price - a.price);
-		const value = catalogues.reduce((sum, { owned, prices }) => owned.reduce((total, card) => total + (cardPrice(prices[card.cardCode]) ?? 0), sum), 0);
+		const wishlist = await getOwnedCards(supabase, name, 'wishlist').catch((cause: unknown) => readFailed('wishlist', cause));
+		const { totalValue } = ownedTotals(wishlist);
+		const wanted = wishlist.cards.filter(({ image }) => image).map(card => ({ card, language: card.language, price: card.price ?? 0 })).sort((a, b) => b.price - a.price);
 		return canvas(470, [
 			title(name, 400),
-			fact([icon(Heart, 34)], `${formatCount(rows?.length ?? 0)} cards wanted`),
-			...(value ? [hero(formatEuros(value), 390)] : []),
+			fact([icon(Heart, 34)], `${formatCount(wishlist.rows)} cards wanted`),
+			...(totalValue ? [hero(formatEuros(totalValue), 390)] : []),
 		], trioOrLogo(await scans(wanted, state)));
 	}
 
-	const [{ data: collection, error: collectionError }, { data: wishlist, error: wishlistError }] = await Promise.all([getUserCollection(name, supabase), kind === 'profile' ? getUserWishlist(name, supabase) : { data: [], error: null }]);
-	if (collectionError) readFailed('collection', collectionError);
-	if (wishlistError) readFailed('wishlist', wishlistError);
-	const rows = collection ?? [];
-	const catalogues = await readOwnedCatalogues([...rows, ...(wishlist ?? [])].map(row => row.card_code), getCatalogue);
-	const stats = computeCollectionStats(rows, wishlist ?? [], catalogues);
+	/** The profile image draws nothing from the wishlist, so it reads the collection alone. */
+	const collection = await getOwnedCards(supabase, name, 'collection').catch((cause: unknown) => readFailed('collection', cause));
+	const { top, totalValue, uniqueCards } = ownedTotals(collection);
 
 	return canvas(470, [
 		title(name, 400),
-		fact([icon(Layers, 34)], stats.unique_cards ? `${formatCount(stats.unique_cards)} cards collected` : 'No cards yet'),
-		...(stats.total_value ? [hero(formatEuros(stats.total_value), 390)] : []),
-	], trioOrLogo(await scans(stats.top_cards.filter(({ card }) => card.image).map(({ card, price }) => ({ card, price })), state)));
+		fact([icon(Layers, 34)], uniqueCards ? `${formatCount(uniqueCards)} cards collected` : 'No cards yet'),
+		...(totalValue ? [hero(formatEuros(totalValue), 390)] : []),
+	], trioOrLogo(await scans(top.filter(({ image }) => image).map(card => ({ card, language: card.language, price: card.price })), state)));
 }
 
 /** Card.dle guess rows: tiles turning from red to green with the hint icons, the shape of a solved board without its card. */
