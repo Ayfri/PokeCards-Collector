@@ -14,12 +14,16 @@
 
 	let { class: classNames = '', eager = false, fallback, set }: Props = $props();
 
+	/** Only TCGdex ships WebP twins; a community image from pokemontcg.io is PNG only. */
+	const candidates = (url: string | null | undefined) => url?.startsWith('https://assets.tcgdex.net/') ? [url.replace(/\.png$/, '.webp'), url] : url ? [url] : [];
+
 	/**
-	 * A set arrives with its same-origin `/set-images/` WebP once the mirror holds it, so the logo and the symbol are tried as given. A set added
-	 * after the mirror keeps the remote URL the scraper stored. The symbol stands in for a set with no logo, or whose logo fails to load.
+	 * A mirrored set arrives with its same-origin `/set-images/` WebP, which is tried as given. A set added after the mirror keeps the remote URL
+	 * the scraper stored (PNG when it exists): its TCGdex WebP twin is ~4.7x lighter (up to 290 kB for the PNG), so it goes first, with the stored
+	 * file as the fallback for the few TCGdex ships as PNG only. The symbol stands in for a set with no logo, or whose logo fails to load.
 	 */
 	let failed = $state<string[]>([]);
-	const src = $derived(NO_IMAGES ? undefined : [set.logo, set.symbol].find(url => url && !failed.includes(url)));
+	const src = $derived(NO_IMAGES ? undefined : [set.logo, set.symbol].flatMap(candidates).find(url => !failed.includes(url)));
 </script>
 
 {#if src}
