@@ -2,6 +2,7 @@
 	import type { FullCard, PriceData } from '#lib/types.js';
 	import { cardPrice } from '#helpers/card-utils.ts';
 	import { formatEuros } from '#helpers/format.ts';
+	import CardmarketLogo from '#components/card/CardmarketLogo.svelte';
 	import ChartLine from '@lucide/svelte/icons/chart-line';
 	import Clock from '@lucide/svelte/icons/clock';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
@@ -29,9 +30,10 @@
 
 <div class="detailed-prices bg-gray-800 border-2 border-gold-400 rounded-xl p-4 w-full max-w-125 h-full">
 	{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
-		<a href={card.cardMarketUrl} target="_blank" rel="noopener noreferrer" class="text-gold-400 font-bold text-xl mb-3 flex items-center justify-center hover:text-gold-300 transition-colors duration-200" title="Open this card on Cardmarket (new tab)">
+		<a href={card.cardMarketUrl} target="_blank" rel="noopener noreferrer" class="text-gold-400 font-bold text-xl mb-3 flex items-center justify-center gap-2 hover:text-gold-300 transition-colors duration-200" title="Open this card on Cardmarket (new tab)">
+			<CardmarketLogo size={24} class="shrink-0" />
 			Cardmarket Prices
-			<ExternalLink size={18} class="ml-1" />
+			<ExternalLink size={18} />
 		</a>
 	{:else}
 		<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Prices</h3>

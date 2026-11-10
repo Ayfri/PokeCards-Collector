@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type {FullCard, Pokemon, PriceData, Set} from '#lib/types.js';
 	import CardImage from '#components/card/CardImage.svelte';
+	import CardmarketLogo from '#components/card/CardmarketLogo.svelte';
 	import {fade} from 'svelte/transition';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
@@ -286,6 +287,7 @@
 										</span>
 										<span class="mx-1 text-sm">-</span>
 										<span class="text-gold-400 font-bold underline text-sm flex items-center">
+											<CardmarketLogo size={12} class="mr-1 shrink-0" />
 											Cardmarket
 											<ExternalLink size={10} class="ml-1" />
 										</span>
