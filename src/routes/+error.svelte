@@ -3,12 +3,6 @@
 	import PageNotice from '#components/PageNotice.svelte';
 	import SearchX from '@lucide/svelte/icons/search-x';
 	import TriangleAlert from '@lucide/svelte/icons/triangle-alert';
-	import { onMount } from 'svelte';
-
-	let ready = $state(false);
-	onMount(() => {
-		ready = true;
-	});
 
 	const errorStatus = $derived(page.status);
 	const errorMessage = $derived(page.error?.message);
@@ -19,8 +13,6 @@
 		: errorMessage || 'Something went wrong on our end. Please try again later.');
 </script>
 
-{#if ready}
-	<PageNotice icon={errorStatus === 404 ? SearchX : TriangleAlert} title={displayTitle}>
-		{displayMessage}
-	</PageNotice>
-{/if}
+<PageNotice icon={errorStatus === 404 ? SearchX : TriangleAlert} title={displayTitle}>
+	{displayMessage}
+</PageNotice>
