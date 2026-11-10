@@ -9,10 +9,12 @@
 		<meta name="application-name" content="PokéCards" />
 		<meta name="apple-mobile-web-app-title" content="PokéCards" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black" />
-		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.png" type="image/png" />
-		<link rel="apple-touch-icon" href="%sveltekit.assets%/icons/apple-touch-icon.png" />
-		<link rel="search" href="%sveltekit.assets%/opensearch.xml" type="application/opensearchdescription+xml" title="PokéCards" />
+		<!-- Root-absolute, not `%sveltekit.assets%`: Kit renders that one relative to the document (`..`), and these links outlive a client
+		     navigation, so the browser then asked `/sets/manifest.webmanifest` and got a 404. -->
+		<link rel="manifest" href="/manifest.webmanifest" />
+		<link rel="icon" href="/favicon.png" type="image/png" />
+		<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+		<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="PokéCards" />
 		<!-- The title, the canonical, every Open Graph tag and the JSON-LD graph come from `Seo.svelte`, never from here:
 		     a second copy in this shell would ship duplicated tags on every page. -->
 		%sveltekit.head%
