@@ -2,6 +2,27 @@ import { CATALOGUES, type Catalogue, type Language } from '#helpers/catalogues.t
 import type { Card, FullCard, Pokemon, PriceData, Set as CardSet } from '#lib/types.js';
 
 /**
+ * Memoizes `build` on the identity of `keys`, one `WeakMap` level per key, so a value derived from memoized tables never keeps one alive:
+ * when any table is replaced by a refresh, its entry goes with it. The value must not reference a key. A rejected promise is forgotten, so the next call retries.
+ */
+export function memoizedOn<T>(memo: WeakMap<object, unknown>, keys: readonly object[], build: () => T): T {
+	let level = memo;
+	for (const key of keys.slice(0, -1)) {
+		let next = level.get(key) as WeakMap<object, unknown> | undefined;
+		if (!next) level.set(key, next = new WeakMap());
+		level = next;
+	}
+
+	const last = keys[keys.length - 1];
+	if (level.has(last)) return level.get(last) as T;
+
+	const value = build();
+	level.set(last, value);
+	if (value instanceof Promise) value.catch(() => level.get(last) === value && level.delete(last));
+	return value;
+}
+
+/**
  * The Trainer and Energy sections a card's `subtype` can fill, in display order. They are TCGdex's English `trainerType` / `energyType` values:
  * its basic Energy is `Normal`, not `Basic`. `verify` and `check` flag any other subtype so a new TCGdex value or an untranslated one shows up.
  */

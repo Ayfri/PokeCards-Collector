@@ -1,9 +1,9 @@
 import type { FullCard, Pokemon, PriceData, Set } from "#lib/types.js";
 import { supabase } from '#lib/supabase.ts';
-import { cachedTable, PartialRows, STATIC_TTL, TABLE_TTL } from '#helpers/data-cache.ts';
+import { cachedTable, keepAlive, PartialRows, STATIC_TTL, TABLE_TTL } from '#helpers/data-cache.ts';
 import { CATALOGUES, LANGUAGES, type CardTable, type CardVersions, type Language, type PriceTable, type SetTable } from '#helpers/catalogues.ts';
 import type { CatalogueData } from '#helpers/owned-cards.ts';
-import { cardPath, cardSlug, cardSlugParts, setSlug, type CardLink } from '#helpers/card-utils.ts';
+import { cardPath, cardSlug, cardSlugParts, memoizedOn, setSlug, type CardLink } from '#helpers/card-utils.ts';
 
 /** Every card column, for the reads that need the details. Keep it in sync with the `cards` / `jp_cards` / `fr_cards` schema. */
 const CARD_COLUMNS = `
@@ -290,9 +290,46 @@ function cardListRows(table: CardTable): Promise<CardRow[]> {
 	return getAllData<CardRow>(table, 'card_code', CARD_LIST_COLUMNS, { column: 'name', ascending: true });
 }
 
+/** How long the versions read below is trusted: a day-old table is re-read within this delay of the sync that bumped its version. */
+const VERSION_CHECK_MS = 5 * 60_000;
+const VERSION_READ_TIMEOUT_MS = 3000;
+
+let versions: { byLanguage: Map<Language, string>; expires: number } | null = null;
+let versionsInFlight: Promise<Map<Language, string>> | null = null;
+
+async function readVersions(): Promise<Map<Language, string>> {
+	let byLanguage = versions?.byLanguage ?? new Map<Language, string>();
+
+	/**
+	 * No retry: a failed read keeps the last known versions (none: the plain TTL applies) and the next check comes in `VERSION_CHECK_MS`.
+	 * The deadline keeps a hung select from holding `versionsInFlight`, and with it every table read.
+	 */
+	try {
+		const { data, error } = await supabase.from('catalogue_versions').select('language, version').abortSignal(AbortSignal.timeout(VERSION_READ_TIMEOUT_MS));
+		if (error) throw new Error(error.message);
+		byLanguage = new Map(data.filter((row): row is { language: Language; version: string } => LANGUAGES.includes(row.language)).map(row => [row.language, row.version]));
+	} catch (cause) {
+		console.warn('Failed to read catalogue_versions, keeping the previous versions:', cause);
+	}
+
+	versions = { byLanguage, expires: Date.now() + VERSION_CHECK_MS };
+	return byLanguage;
+}
+
+/** The version the daily sync gave a language's tables, or null when there is none. One select per isolate every `VERSION_CHECK_MS`. */
+export async function catalogueVersion(language: Language): Promise<string | null> {
+	if (versions && versions.expires > Date.now()) return versions.byLanguage.get(language) ?? null;
+
+	if (!versionsInFlight) {
+		versionsInFlight = readVersions().finally(() => versionsInFlight = null);
+		keepAlive(versionsInFlight);
+	}
+	return (await versionsInFlight).get(language) ?? null;
+}
+
 export async function getCards(language: Language = 'en'): Promise<FullCard[]> {
 	const { cards } = CATALOGUES[language].tables;
-	return cachedTable(cards, TABLE_TTL, () => cardListRows(cards), rows => rows.map(toCard));
+	return cachedTable(cards, TABLE_TTL, () => cardListRows(cards), rows => rows.map(toCard), await catalogueVersion(language), true);
 }
 
 /** English and French cards share their `tcgdex_id`; a separate read keeps the column out of every card payload. */
@@ -302,44 +339,41 @@ export async function getTcgdexIds(language: 'en' | 'fr'): Promise<Map<string, s
 		const ids = new Map<string, string>();
 		for (const row of rows) if (row.tcgdex_id) ids.set(row.card_code, row.tcgdex_id);
 		return ids;
-	});
+	}, await catalogueVersion(language), true);
 }
 
 export type TwinPaths = Record<'en' | 'fr', string>;
 
-const twinPathsMemo = new WeakMap<FullCard[], { inputs: object[]; twins: Map<string, TwinPaths> }>();
+const twinPathsMemo = new WeakMap<object, unknown>();
 
 /**
- * The page paths of an English card and its French twin, by `cardCode` of `language`, for the cards that have one. Memoized on the card list,
- * and rebuilt when any of the four reads behind it (both card lists, both id maps) is a fresh object, since each one expires on its own clock.
+ * The page paths of an English card and its French twin, by `cardCode` of `language`, for the cards that have one. Memoized on the identity of the
+ * four reads behind it (both card lists, both id maps), since each one expires on its own clock, and the memo keeps none of them alive.
  */
 export async function getTwinPaths(language: 'en' | 'fr'): Promise<Map<string, TwinPaths>> {
 	const other = language === 'en' ? 'fr' : 'en';
 	const [cards, otherCards, ids, otherIds] = await Promise.all([getCards(language), getCards(other), getTcgdexIds(language), getTcgdexIds(other)]);
 
-	const inputs = [otherCards, ids, otherIds];
-	const known = twinPathsMemo.get(cards);
-	if (known && known.inputs.every((input, index) => input === inputs[index])) return known.twins;
+	return memoizedOn(twinPathsMemo, [cards, otherCards, ids, otherIds], () => {
+		const otherById = new Map<string, FullCard>();
+		for (const card of otherCards) {
+			const id = otherIds.get(card.cardCode);
+			if (id && !otherById.has(id)) otherById.set(id, card);
+		}
 
-	const otherById = new Map<string, FullCard>();
-	for (const card of otherCards) {
-		const id = otherIds.get(card.cardCode);
-		if (id && !otherById.has(id)) otherById.set(id, card);
-	}
+		const twins = new Map<string, TwinPaths>();
+		for (const card of cards) {
+			const id = ids.get(card.cardCode);
+			const twin = id && otherById.get(id);
+			if (!twin) continue;
 
-	const twins = new Map<string, TwinPaths>();
-	for (const card of cards) {
-		const id = ids.get(card.cardCode);
-		const twin = id && otherById.get(id);
-		if (!twin) continue;
+			twins.set(card.cardCode, language === 'en'
+				? { en: cardPath('en', card), fr: cardPath('fr', twin) }
+				: { en: cardPath('en', twin), fr: cardPath('fr', card) });
+		}
 
-		twins.set(card.cardCode, language === 'en'
-			? { en: cardPath('en', card), fr: cardPath('fr', twin) }
-			: { en: cardPath('en', twin), fr: cardPath('fr', card) });
-	}
-
-	twinPathsMemo.set(cards, { inputs, twins });
-	return twins;
+		return twins;
+	});
 }
 
 /** The columns a card's URL is built from, for the reads that find a card without loading the whole list. */
@@ -483,12 +517,12 @@ export async function countCards(language: Language): Promise<number> {
 	return cachedTable(`${cards}:count`, TABLE_TTL, async () => {
 		const { count } = await readWithRetry(`count ${cards}`, () => supabase.from(cards).select('*', { count: 'exact', head: true }));
 		return count ?? 0;
-	}, count => count);
+	}, count => count, await catalogueVersion(language));
 }
 
 export async function getPrices(language: Language = 'en'): Promise<Record<string, PriceData>> {
 	const { prices } = CATALOGUES[language].tables;
-	return cachedTable(prices, TABLE_TTL, () => getAllData<PriceRow>(prices, 'card_code'), pricesByCardCode);
+	return cachedTable(prices, TABLE_TTL, () => getAllData<PriceRow>(prices, 'card_code'), pricesByCardCode, await catalogueVersion(language), true);
 }
 
 function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
@@ -501,7 +535,7 @@ function pricesByCardCode(rows: PriceRow[]): Record<string, PriceData> {
 
 export async function getSets(language: Language = 'en'): Promise<Set[]> {
 	const { sets } = CATALOGUES[language].tables;
-	return cachedTable(sets, TABLE_TTL, () => getAllData<SetRow>(sets, 'set_id', '*', { column: 'name', ascending: true }), rows => rows.map(toSet));
+	return cachedTable(sets, TABLE_TTL, () => getAllData<SetRow>(sets, 'set_id', '*', { column: 'name', ascending: true }), rows => rows.map(toSet), await catalogueVersion(language));
 }
 
 /** Keyed on the memoized set list, like `slugIndexes`. */

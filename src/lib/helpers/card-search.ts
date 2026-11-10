@@ -22,18 +22,21 @@ interface SearchEntry {
 	setNameLower: string;
 }
 
-/** The index resolves each card's set and lowercases its fields once per catalogue, so a search is a plain loop over it. */
-let searchIndex: SearchEntry[] = [];
+/**
+ * The index resolves each card's set and lowercases its fields once per catalogue, so a search is a plain loop over it.
+ * Keyed on the card list, so a list replaced by a refresh takes its index with it instead of being kept alive.
+ */
+const searchIndexes = new WeakMap<FullCard[], { index: SearchEntry[]; sets: Set[] }>();
 
 /** TCGdex zero-pads numbers ("043") but people type "43", so both sides drop the leading zeros. */
 const numberKey = (value: string) => value.replace(/^0+(?=\d)/, '');
-let indexedCards: FullCard[] | null = null;
 
 function buildSearchIndex(cards: FullCard[], sets: Set[]): SearchEntry[] {
-	if (indexedCards === cards) return searchIndex;
+	const known = searchIndexes.get(cards);
+	if (known?.sets === sets) return known.index;
 
 	const setsById = new Map(sets.map(set => [set.setId, set]));
-	searchIndex = cards.map(card => {
+	const index = cards.map((card): SearchEntry => {
 		const set = setsById.get(card.setId);
 		const cardNumber = card.localId;
 		return {
@@ -47,8 +50,8 @@ function buildSearchIndex(cards: FullCard[], sets: Set[]): SearchEntry[] {
 			setNameLower: set?.name.toLowerCase() ?? '',
 		};
 	});
-	indexedCards = cards;
-	return searchIndex;
+	searchIndexes.set(cards, { index, sets });
+	return index;
 }
 
 /** The per-query work (splitting on `/` and on spaces) done once, so `scoreEntry` does not repeat it for each of the 23546 entries. */
@@ -182,22 +185,28 @@ export interface PokemonSearchResult {
 /** PokeAPI slugs ("mr-mime", "farfetchd", "flabebe") against what people type ("Mr. Mime", "Farfetch'd", "Flabébé"). */
 const pokemonKey = (value: string) => value.normalize('NFD').replace(/[̀-ͯ'’]/g, '').replace(/[-.\s]+/g, ' ').trim();
 
-let indexedPokemons: { cardCount: number; key: string; pokemon: Pokemon }[] = [];
-let indexedPokemonSources: [Pokemon[], FullCard[]] | null = null;
+interface PokemonEntry {
+	cardCount: number;
+	key: string;
+	pokemon: Pokemon;
+}
+
+const pokemonIndexes = new WeakMap<FullCard[], { index: PokemonEntry[]; pokemons: Pokemon[] }>();
 
 /** Species with at least one card, keyed for matching; rebuilt only when either cached table changes. */
-function buildPokemonIndex(pokemons: Pokemon[], cards: FullCard[]) {
-	if (indexedPokemonSources?.[0] === pokemons && indexedPokemonSources[1] === cards) return indexedPokemons;
+function buildPokemonIndex(pokemons: Pokemon[], cards: FullCard[]): PokemonEntry[] {
+	const known = pokemonIndexes.get(cards);
+	if (known?.pokemons === pokemons) return known.index;
 
 	const counts = new Map<number, number>();
 	for (const card of cards) {
 		if (card.pokemonNumber) counts.set(card.pokemonNumber, (counts.get(card.pokemonNumber) ?? 0) + 1);
 	}
-	indexedPokemons = pokemons
+	const index = pokemons
 		.filter(pokemon => counts.has(pokemon.id))
 		.map(pokemon => ({ cardCount: counts.get(pokemon.id)!, key: pokemonKey(pokemon.name), pokemon }));
-	indexedPokemonSources = [pokemons, cards];
-	return indexedPokemons;
+	pokemonIndexes.set(cards, { index, pokemons });
+	return index;
 }
 
 /** Species whose name matches `query` (exact, then prefix, then substring) or whose Pokédex number it is. */
