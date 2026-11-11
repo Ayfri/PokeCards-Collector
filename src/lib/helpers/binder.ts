@@ -18,22 +18,35 @@ export interface BinderView {
 	sortOrder: 'asc' | 'desc';
 	tab: BinderTab;
 }
+/** A published share and the account that owns it: a share belongs to one account, so the entries of another account are ignored. */
+export interface BinderShareRef { id: string; username: string }
 export interface BinderRecord {
 	activeId: string;
 	binders: readonly StoredBinder[];
-	/** Binder id to its published share id, outside the undo history since the share lives on the server. */
-	shares: Readonly<Record<string, string>>;
+	/** Binder id to its published share, outside the undo history since the share lives on the server. */
+	shares: Readonly<Record<string, BinderShareRef>>;
 	spread: boolean;
 	version: 1;
 	view: BinderView;
 }
 export interface SlotRef { page: number; position: number }
 export type BinderDrag = { key: string; kind: 'card' } | { index: number; kind: 'page' } | { kind: 'slot'; page: number; position: number };
+/** What a published share keeps of a binder: its pages as catalogue card codes, never an image URL. */
+export interface BinderShareInput { name: string; pages: BinderSlot[][]; pocketColumns: number; pocketRows: number }
 
 export const MAX_POCKETS = 8;
 export const MAX_HISTORY = 100;
 export const MAX_FILL = 1000;
 export const MAX_NAME = 60;
+/** The table's check constraint enforces the same limits (50 pages, 64 kB), since a signed-in user can insert through PostgREST without the endpoint. */
+export const MAX_SHARE_PAGES = 50;
+export const MAX_SHARE_BYTES = 60_000;
+export const MAX_SHARES_PER_USER = 20;
+/**
+ * A published pocket is a catalogue card code: lower-case letters, digits and underscores, so never a URL, a path or a backslash host. It mirrors the like_regex
+ * of the table's `binder_shares_pages_shape` check, so the endpoint, the dialog and the database accept the same pockets.
+ */
+const SHARE_SLOT = /^[a-z0-9]{1,30}_[a-z0-9_]{1,49}$/;
 export const BINDER_RECORD_KEY = `${STORAGE_PREFIX}binder`;
 export const BINDER_BACKUP_KEY = `${STORAGE_PREFIX}binder-backup`;
 export const DRAG_TYPE = 'application/x-pokecards-binder';
@@ -50,7 +63,7 @@ export const DEFAULT_VIEW: BinderView = {
 	tab: 'tray'
 };
 
-const DEFAULT_NAME = 'My binder';
+export const DEFAULT_NAME = 'My binder';
 const DEFAULT_POCKETS = 3;
 const SORTS: readonly BinderSort[] = ['name', 'natural', 'number', 'price', 'set'];
 const TABS: readonly BinderTab[] = ['all', 'mine', 'sets', 'tray'];
@@ -59,7 +72,7 @@ const isString = (value: unknown): value is string => typeof value === 'string';
 const asRecord = (value: unknown): Record<string, unknown> | null => (typeof value === 'object' && value !== null && !Array.isArray(value) ? (value as Record<string, unknown>) : null);
 const flag = (value: unknown, fallback: boolean) => (typeof value === 'boolean' ? value : fallback);
 const pick = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T => allowed.find(option => option === value) ?? fallback;
-const clampPockets = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? Math.min(MAX_POCKETS, Math.max(1, Math.round(value))) : DEFAULT_POCKETS);
+export const clampPockets = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? Math.min(MAX_POCKETS, Math.max(1, Math.round(value))) : DEFAULT_POCKETS);
 const storedPockets = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? Math.max(1, Math.round(value)) : DEFAULT_POCKETS);
 /** An empty string is no card, whatever stored it, so a slot or a tray key is either a non-empty string or nothing. */
 const slotKey = (value: unknown): BinderSlot => (isString(value) && value ? value : null);
@@ -89,7 +102,7 @@ function parseView(value: unknown): BinderView {
 }
 
 /** Every sheet is cut or padded to `size`, so a stored page can never disagree with the layout. At least one sheet is returned. */
-function parsePages(value: unknown, size: number, slotOf: (slot: unknown) => BinderSlot): BinderSheet[] {
+export function parsePages(value: unknown, size: number, slotOf: (slot: unknown) => BinderSlot): BinderSheet[] {
 	if (!Array.isArray(value) || !value.length) return [emptySheet(size)];
 	return value.map(sheet => Array.from({ length: size }, (_, index) => (Array.isArray(sheet) ? slotOf(sheet[index]) : null)));
 }
@@ -130,7 +143,10 @@ export function parseRecord(raw: string): { dropped: number; record: BinderRecor
 		record: {
 			activeId: binders.find(binder => binder.id === source.activeId)?.id ?? binders[0].id,
 			binders,
-			shares: Object.fromEntries(Object.entries(asRecord(source.shares) ?? {}).flatMap(([id, share]): [string, string][] => (isString(share) ? [[id, share]] : []))),
+			shares: Object.fromEntries(Object.entries(asRecord(source.shares) ?? {}).flatMap(([binderId, value]): [string, BinderShareRef][] => {
+				const share = asRecord(value);
+				return isString(share?.id) && isString(share.username) ? [[binderId, { id: share.id, username: share.username }]] : [];
+			})),
 			spread: flag(source.spread, true),
 			version: 1,
 			view: parseView(source.view)
@@ -158,8 +174,15 @@ export function migrateLegacy(storage: Pick<Storage, 'getItem'>): BinderRecord {
 
 	const columns = clampPockets(grid?.columns);
 	const rows = clampPockets(grid?.rows);
-	/** The old page accepted more than 8 pockets per side (the input's `max` does not stop typing), so its sheets are read at the stored size, then reflowed into the clamped one. */
-	const storedSize = storedPockets(grid?.columns) * storedPockets(grid?.rows);
+	/**
+	 * The old page accepted more than 8 pockets per side (the input's `max` does not stop typing), so its sheets are read at the stored size, then reflowed into the clamped one.
+	 * Only an absurd size (a typed 100000, above `MAX_POCKETS ** 2`) falls back to the longest stored sheet: a larger one would only pad the sheets, and building them would throw
+	 * on every visit. A normal layout keeps its declared size even when its sheets are shorter, so the page boundaries stay where the old page drew them.
+	 */
+	const stored: unknown = grid?.pages;
+	const longest = Array.isArray(stored) ? stored.reduce<number>((max, sheet) => Math.max(max, Array.isArray(sheet) ? sheet.length : 0), 0) : 0;
+	const declared = storedPockets(grid?.columns) * storedPockets(grid?.rows);
+	const storedSize = declared <= MAX_POCKETS ** 2 ? declared : Math.max(1, longest);
 	const pages = parsePages(grid?.pages, storedSize, slot => {
 		const source = asRecord(slot);
 		return slotKey(source?.cardCode ?? source?.url);
@@ -304,4 +327,45 @@ export function dragLeft(event: DragEvent & { currentTarget: HTMLElement }): boo
 
 export function isEditableTarget(target: EventTarget | null): boolean {
 	return target instanceof HTMLElement && (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable);
+}
+
+/** `isCardCode` alone accepts `//host/x_y`, `ftp://x_y` and `\\host_x`: a published pocket is a catalogue code, never something a visitor's browser could be sent to. */
+export const isShareSlot = (slot: unknown): slot is BinderSlot => slot === null || (isString(slot) && SHARE_SLOT.test(slot));
+
+const isPocketCount = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 1 && value <= MAX_POCKETS;
+
+/** A pocket holding an image URL is emptied and counted in `dropped`, so the caller can tell the user how many cards the share leaves out. */
+export function toShareInput(binder: StoredBinder): { dropped: number; input: BinderShareInput } {
+	let dropped = 0;
+	const pages = binder.pages.map(sheet => sheet.map(slot => {
+		if (isShareSlot(slot)) return slot;
+		dropped++;
+		return null;
+	}));
+	const used = Math.max(1, pages.findLastIndex(sheet => sheet.some(slot => slot !== null)) + 1);
+	return { dropped, input: { name: binder.name, pages: pages.slice(0, used), pocketColumns: binder.columns, pocketRows: binder.rows } };
+}
+
+/** Checks an untrusted body. The returned string is the message for the visitor, so every rule reads as one. */
+export function parseShareInput(value: unknown): BinderShareInput | string {
+	const source = asRecord(value);
+	const name = isString(source?.name) ? source.name.trim() : '';
+	if (!name || name.length > MAX_NAME) return `The binder name must hold 1 to ${MAX_NAME} characters.`;
+
+	const pages = source?.pages;
+	const pocketColumns = source?.pocketColumns;
+	const pocketRows = source?.pocketRows;
+	if (!isPocketCount(pocketColumns) || !isPocketCount(pocketRows)) return `Rows and columns must be whole numbers from 1 to ${MAX_POCKETS}.`;
+	if (!Array.isArray(pages) || !pages.length) return 'A shared binder needs at least one page.';
+	if (pages.length > MAX_SHARE_PAGES) return `A shared binder holds up to ${MAX_SHARE_PAGES} pages.`;
+
+	const size = pocketColumns * pocketRows;
+	if (!pages.every(sheet => Array.isArray(sheet) && sheet.length === size)) return `Every page must hold ${size} pockets.`;
+	const slots: unknown[] = pages.flat();
+	if (!slots.every(isShareSlot)) return 'A pocket must be empty or hold a catalogue card code.';
+	if (!slots.some(slot => slot !== null)) return 'Place at least one card before sharing.';
+	if (JSON.stringify(pages).length > MAX_SHARE_BYTES) return 'This binder is too large to share. Split it into smaller binders.';
+
+	/** Every page and slot was checked above, which `every` cannot express to the compiler on a nested array. */
+	return { name, pages: pages as BinderSlot[][], pocketColumns, pocketRows };
 }

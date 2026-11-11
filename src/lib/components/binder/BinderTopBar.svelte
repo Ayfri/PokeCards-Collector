@@ -1,4 +1,6 @@
 <script lang="ts">
+	import BinderSwitcher from '#components/binder/BinderSwitcher.svelte';
+	import ShareDialog from '#components/binder/ShareDialog.svelte';
 	import Button from '#components/filters/Button.svelte';
 	import NumberInput from '#components/filters/NumberInput.svelte';
 	import Popover, { ITEM } from '#components/ui/Popover.svelte';
@@ -18,7 +20,7 @@
 	import Undo2Icon from '@lucide/svelte/icons/undo-2';
 
 	interface Props {
-		/** Stamped in the corner of the exported image. */
+		/** Stamped in the corner of the exported image, and the author a shared binder is published under. Absent when signed out, which turns sharing off. */
 		username?: string;
 	}
 
@@ -43,6 +45,7 @@
 		rowsDraft = binder.rows;
 	}
 
+	let showShare = $state(false);
 	let exporting = $state(false);
 	let exportError = $state<string | null>(null);
 
@@ -70,6 +73,7 @@
 </script>
 
 <div class="flex flex-wrap items-center gap-2">
+	<BinderSwitcher onShare={() => (showShare = true)} {username} />
 	<Button class="px-2" disabled={!binder.canUndo} onClick={() => binder.undo()} title="Undo (Ctrl+Z)">
 		<Undo2Icon size={16} />
 	</Button>
@@ -140,7 +144,7 @@
 
 	<Popover label="Download the binder as a PNG">
 		{#snippet trigger()}
-			{#if exporting}<LoaderCircleIcon class="animate-spin" size={16} />{:else}<DownloadIcon size={16} />{/if}
+			{#if exporting}<LoaderCircleIcon class="motion-safe:animate-spin" size={16} />{:else}<DownloadIcon size={16} />{/if}
 			<span class="max-sm:sr-only">Export</span>
 		{/snippet}
 		{#snippet children(close)}
@@ -179,3 +183,8 @@
 		{/snippet}
 	</Popover>
 </div>
+
+<!-- Outside the row: the dialog is fixed to the viewport and must outlive the switcher's popover, which closes when its item is chosen. -->
+{#if username}
+	<ShareDialog onClose={() => (showShare = false)} open={showShare} {username} />
+{/if}

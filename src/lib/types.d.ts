@@ -219,6 +219,25 @@ export interface BinderTile {
 	types?: string;
 }
 
+/** A row of `binder_shares`: a published snapshot holding catalogue card codes only. */
+export interface BinderShareRow {
+	created_at: string;
+	id: string;
+	name: string;
+	pages: (string | null)[][];
+	pocket_columns: number;
+	pocket_rows: number;
+	username: string;
+}
+
+/** One line of the owner's share list: the page count is computed from `pages`, which the list never sends. */
+export interface BinderShareSummary {
+	createdAt: string;
+	id: string;
+	name: string;
+	pageCount: number;
+}
+
 export interface SearchedUser {
 	is_public: boolean;
 	profile_color?: string;

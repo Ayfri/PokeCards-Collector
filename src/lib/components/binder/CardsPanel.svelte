@@ -73,16 +73,23 @@
 
 	/** How the list is displayed, kept across visits since the binder is built over several sessions. */
 	const view = $derived(binder.view);
+	/** `setView` builds a new `view` each time, so what feeds the 21k-card list is read as plain values: an object read would redo the sort and the search on a toggle that left them alone. */
 	const tab = $derived(view.tab);
+	const sortBy = $derived(view.sortBy);
+	const sortOrder = $derived(view.sortOrder);
+	const hidePlaced = $derived(view.hidePlaced);
+	const showCollection = $derived(view.mine.collection);
+	const showWishlist = $derived(view.mine.wishlist);
 	const pickingSet = $derived(tab === 'sets' && openSet === null);
 	const set = $derived(openSet === null ? undefined : binderCards.setsById.get(openSet));
 
 	const unresolved = (key: string): BinderCard => ({ cardCode: key, image: '', localId: '', name: key, price: null, rarity: '', setId: '', setName: '', types: '' });
 
-	/** The viewer's lists, collection first, each card once: the two lists can hold the same card. */
+	/** The viewer's lists, collection first, each card once: the two lists can hold the same card. Empty when signed out, whatever the store still holds. */
 	const mine = $derived.by(() => {
+		if (!loggedIn) return [];
 		const { collection = [], wishlist = [] } = binderCards.owned ?? {};
-		return [...new Map([...(view.mine.collection ? collection : []), ...(view.mine.wishlist ? wishlist : [])].map(card => [card.cardCode, card])).values()];
+		return [...new Map([...(showCollection ? collection : []), ...(showWishlist ? wishlist : [])].map(card => [card.cardCode, card])).values()];
 	});
 
 	/** The tray holds each key once (`parseRecord` and `addToTray` see to it): a duplicate would make the virtual grid throw. */
@@ -92,12 +99,12 @@
 		if (tab === 'sets') return openSet === null ? [] : binderCards.bySet.get(openSet) ?? [];
 		return binder.tray.map(key => binderCards.get(key) ?? unresolved(key));
 	});
-	const sorted = $derived(sortBinderCards(source, view.sortBy, view.sortOrder));
+	const sorted = $derived(sortBinderCards(source, sortBy, sortOrder));
 
 	/** The list as displayed, so Fill pours cards in the order the user sorted them. */
 	const shown = $derived.by(() => {
 		const found = searchCards(sorted, term);
-		return view.hidePlaced ? found.filter(card => !binder.placed.has(card.cardCode)) : found;
+		return hidePlaced ? found.filter(card => !binder.placed.has(card.cardCode)) : found;
 	});
 
 	/** `shown` holds each key once, so this is what `binder.fill` will place. */
@@ -126,13 +133,22 @@
 		binder.setView({ mine: { ...view.mine, [list]: !view.mine[list] } });
 	}
 
-	function handleTabKeys(event: KeyboardEvent) {
-		const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
-		if (!step) return;
-		event.preventDefault();
-		const next = TABS[(TABS.findIndex(item => item.id === tab) + step + TABS.length) % TABS.length].id;
+	/** Focus follows the selection: the tile that switched the tab is destroyed with the empty list, which would drop focus to the page. */
+	function selectTab(next: BinderTab) {
 		binder.setView({ tab: next });
 		document.getElementById(`cards-tab-${next}`)?.focus();
+	}
+
+	function handleTabKeys(event: KeyboardEvent) {
+		const current = TABS.findIndex(item => item.id === tab);
+		let next: number;
+		if (event.key === 'ArrowRight') next = current + 1;
+		else if (event.key === 'ArrowLeft') next = current - 1 + TABS.length;
+		else if (event.key === 'Home') next = 0;
+		else if (event.key === 'End') next = TABS.length - 1;
+		else return;
+		event.preventDefault();
+		selectTab(TABS[next % TABS.length].id);
 	}
 
 	/** Only a card dragged out of a slot lights the panel: a tile of the list dragged over it, or a page, has nothing to send back. */
@@ -244,13 +260,13 @@
 							{#if nothing.action === 'signIn'}
 								<Button onClick={onSignIn}>Sign in</Button>
 							{:else if nothing.action === 'retry'}
-								<Button onClick={() => binderCards.loadOwned()}>Try again</Button>
+								<Button onClick={() => binderCards.loadOwned(binderCards.owner, true)}>Try again</Button>
 							{:else if nothing.action === 'sources'}
 								<div class="grid w-full grid-cols-3 gap-2">
 									{#each SOURCES as { icon: Icon, label, tab: target } (target)}
 										<button
 											class="focus-ring flex flex-col items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-900/60 px-1 py-3 text-xs text-gray-200 transition-all hover:border-gold-400 hover:text-gold-400 motion-safe:hover:-translate-y-0.5"
-											onclick={() => binder.setView({ tab: target })}
+											onclick={() => selectTab(target)}
 											type="button"
 										>
 											<Icon size={20} />

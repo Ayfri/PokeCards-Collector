@@ -488,6 +488,14 @@ function slugIndex(language: Language, cards: FullCard[]): SlugIndex {
 	return index;
 }
 
+const cardIndexMemo = new WeakMap<object, unknown>();
+
+/** Keyed on the memoized list like `slugIndexes`, so the map goes with a refreshed table (rule 2). For a read that resolves many codes without a scan each. */
+export async function getCardIndex(language: Language): Promise<ReadonlyMap<string, FullCard>> {
+	const cards = await getCards(language);
+	return memoizedOn(cardIndexMemo, [cards], () => new Map(cards.map(card => [card.cardCode, card])));
+}
+
 /** A card name has a handful of words, so a slug is never searched past this many leading tokens: a crafted URL stays cheap. */
 const MAX_SLUG_NAME_TOKENS = 32;
 

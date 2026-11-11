@@ -2,13 +2,20 @@ import { MediaQuery } from 'svelte/reactivity';
 import {
 	BINDER_BACKUP_KEY,
 	BINDER_RECORD_KEY,
+	clampPockets,
+	DEFAULT_NAME,
 	DEFAULT_VIEW,
 	emptySheet,
 	fillSlots,
+	isShareSlot,
 	MAX_FILL,
 	MAX_HISTORY,
+	MAX_NAME,
 	MAX_POCKETS,
+	MAX_SHARE_PAGES,
 	migrateLegacy,
+	newBinder,
+	parsePages,
 	parseRecord,
 	reflow,
 	shiftSlots,
@@ -49,6 +56,7 @@ class BinderStore {
 	#past = $state.raw<readonly Snapshot[]>([]);
 	#future = $state.raw<readonly Snapshot[]>([]);
 	#lastAction = $state<string | null>(null);
+	#lastEditFilled = $state(false);
 	#notice = $state<string | null>(null);
 	#saveError = $state<string | null>(null);
 	#wide = new MediaQuery('min-width: 48rem');
@@ -104,6 +112,8 @@ class BinderStore {
 	get view() { return this.#record.view; }
 	get loaded() { return this.#loaded; }
 	get lastAction() { return this.#lastAction; }
+	/** True from a fill until the next change of any other kind, so the board staggers the cards the fill placed and nothing after it. */
+	get lastEditFilled() { return this.#lastEditFilled; }
 	get notice() { return this.#notice; }
 	get saveError() { return this.#saveError; }
 
@@ -147,6 +157,7 @@ class BinderStore {
 
 		this.#raw = raw;
 		this.#record = parsed.record;
+		this.#lastEditFilled = false;
 		this.#past = [];
 		this.#future = [];
 		this.armed = null;
@@ -267,6 +278,7 @@ class BinderStore {
 		if (!fresh.length || fresh.length > MAX_FILL) return;
 		this.armed = null;
 		this.#edit(binder => ({ ...binder, pages: fillSlots(binder.pages, fresh, this.slotsPerPage) }), `${fresh.length} card${fresh.length > 1 ? 's' : ''} placed`);
+		this.#lastEditFilled = this.#loaded;
 	}
 
 	/** Appends the codes that are not in the tray yet, keeping the order the user built. */
@@ -286,6 +298,104 @@ class BinderStore {
 		if (!this.tray.length) return;
 		this.armed = null;
 		this.#edit(binder => ({ ...binder, tray: [] }), 'Tray cleared');
+	}
+
+	/** The new binder takes the layout of the active one, so a user who owns 4 x 4 sheets does not have to set it again. */
+	createBinder() {
+		let number = this.binders.length + 1;
+		while (this.binders.some(binder => binder.name === `Binder ${number}`)) number++;
+		const created = newBinder(`Binder ${number}`, { columns: this.columns, rows: this.rows });
+		this.#commit([...this.binders, created], 'Binder created', created.id);
+		this.#open();
+	}
+
+	/** An empty or unchanged name is ignored, and a long one is cut, like the names read back from the storage. */
+	renameBinder(id: string, name: string) {
+		const trimmed = name.trim().slice(0, MAX_NAME);
+		if (!trimmed || this.binders.find(binder => binder.id === id)?.name === trimmed) return;
+		this.#commit(this.binders.map(binder => (binder.id === id ? { ...binder, name: trimmed } : binder)), 'Binder renamed');
+	}
+
+	duplicateBinder(id: string) {
+		const index = this.binders.findIndex(binder => binder.id === id);
+		if (index === -1) return;
+		const source = this.binders[index];
+		const copy: StoredBinder = { ...source, id: crypto.randomUUID(), name: `${source.name} copy`.slice(0, MAX_NAME) };
+		this.#commit(this.binders.toSpliced(index + 1, 0, copy), 'Binder duplicated', copy.id);
+		this.#open();
+	}
+
+	/**
+	 * The share of a deleted binder stays in `shares`: it still exists on the server until it is unpublished, and an undo brings the binder back.
+	 * Deleting the last binder leaves a fresh one, so the page always has a binder to draw.
+	 */
+	deleteBinder(id: string) {
+		const index = this.binders.findIndex(binder => binder.id === id);
+		if (index === -1) return;
+		const kept = this.binders.filter(binder => binder.id !== id);
+		const binders = kept.length ? kept : [newBinder(DEFAULT_NAME)];
+		const wasActive = id === this.activeId;
+		this.#commit(binders, 'Binder deleted', wasActive ? binders[Math.min(index, binders.length - 1)].id : this.activeId);
+		if (wasActive) this.#open();
+	}
+
+	/** Undoing across binders would restore another binder's pages under the active one, so a switch starts a new history. */
+	switchBinder(id: string) {
+		const target = this.binders.find(binder => binder.id === id);
+		if (!this.#loaded || !target || id === this.activeId) return;
+		this.#past = [];
+		this.#future = [];
+		this.#update({ activeId: id });
+		this.#open();
+		this.#lastAction = `Switched to ${target.name}`;
+	}
+
+	/**
+	 * Adds a binder from elsewhere, such as a shared one, and opens it. It starts a new history like `switchBinder`, since the active binder changes.
+	 * A share row is attacker-controlled (a signed-in user can insert through PostgREST directly), so the layout is clamped like a stored one, the pages are
+	 * rebuilt at the clamped size and cut at `MAX_SHARE_PAGES`, and a slot that is not a catalogue code becomes an empty pocket.
+	 */
+	importBinder(binder: Pick<StoredBinder, 'columns' | 'name' | 'pages' | 'rows'>) {
+		if (!this.#loaded) return;
+		const columns = clampPockets(binder.columns);
+		const rows = clampPockets(binder.rows);
+		const imported: StoredBinder = {
+			columns,
+			id: crypto.randomUUID(),
+			name: binder.name.trim().slice(0, MAX_NAME) || DEFAULT_NAME,
+			pages: parsePages(binder.pages.slice(0, MAX_SHARE_PAGES), columns * rows, slot => (isShareSlot(slot) ? slot : null)),
+			rows,
+			tray: []
+		};
+		this.#past = [];
+		this.#future = [];
+		this.#update({ activeId: imported.id, binders: [...this.binders, imported] });
+		this.#open();
+		this.#lastAction = `Imported ${imported.name}`;
+	}
+
+	/** The share id of a binder when it belongs to `username`: an entry another account left in this browser is ignored. */
+	shareOf(binderId: string, username: string | undefined): string | undefined {
+		const share = this.shares[binderId];
+		return share && share.username === username ? share.id : undefined;
+	}
+
+	/** Outside the history: the share lives on the server, so an undo cannot publish or unpublish anything. */
+	setShare(binderId: string, id: string, username: string) {
+		this.#update({ shares: { ...this.shares, [binderId]: { id, username } } });
+	}
+
+	/** Forgets every binder entry of an unpublished share, whichever binder or account it was recorded under. */
+	clearShare(id: string) {
+		const kept = Object.entries(this.shares).filter(([, share]) => share.id !== id);
+		if (kept.length !== Object.keys(this.shares).length) this.#update({ shares: Object.fromEntries(kept) });
+	}
+
+	/** The binder that became active starts on its first page, with nothing armed or held from the previous one. */
+	#open() {
+		this.currentPage = 0;
+		this.armed = null;
+		this.held = null;
 	}
 
 	#snapshot(): Snapshot {
@@ -326,6 +436,7 @@ class BinderStore {
 
 	#update(patch: Partial<BinderRecord>) {
 		if (!this.#loaded) return;
+		this.#lastEditFilled = false;
 		this.#record = { ...this.#record, ...patch };
 		this.#save();
 	}

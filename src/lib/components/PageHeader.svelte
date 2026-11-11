@@ -25,11 +25,13 @@
 		hideLedeOnPhone?: boolean;
 		/** Real text in the server HTML: one sentence of about 100 characters that says what the page is for, so it stays on one line from `xl`. */
 		lede: string;
+		/** A line of icons and facts between the lede and the stats, such as an author and a date. */
+		meta?: Snippet;
 		stats?: readonly PageStat[];
 		title: string;
 	}
 
-	let { class: classNames, controls, extras, hideLedeOnPhone = false, lede, stats, title }: Props = $props();
+	let { class: classNames, controls, extras, hideLedeOnPhone = false, lede, meta, stats, title }: Props = $props();
 </script>
 
 <!-- The negative margin pulls the header into the empty band the layout's `<main>` padding leaves under the fixed nav pill (74 px tall on desktop):
@@ -41,6 +43,7 @@
 			{@render extras?.()}
 		</div>
 		<p class={['mt-1 text-sm text-gray-300', hideLedeOnPhone && 'max-md:sr-only']}>{lede}</p>
+		{@render meta?.()}
 		{#if stats?.length}
 			<ul class="mt-2.5 flex list-none flex-wrap gap-2 p-0" role="list">
 				{#each stats as { icon: Icon, label, title: hover, value } (label)}

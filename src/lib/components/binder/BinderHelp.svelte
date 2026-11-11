@@ -11,8 +11,10 @@
 	import KeyboardIcon from '@lucide/svelte/icons/keyboard';
 	import LayersIcon from '@lucide/svelte/icons/layers';
 	import LayoutGridIcon from '@lucide/svelte/icons/layout-grid';
+	import LinkIcon from '@lucide/svelte/icons/link';
 	import MenuIcon from '@lucide/svelte/icons/menu';
 	import MousePointerClickIcon from '@lucide/svelte/icons/mouse-pointer-click';
+	import NotebookIcon from '@lucide/svelte/icons/notebook';
 	import SaveIcon from '@lucide/svelte/icons/save';
 	import Undo2Icon from '@lucide/svelte/icons/undo-2';
 	import WandSparklesIcon from '@lucide/svelte/icons/wand-sparkles';
@@ -32,6 +34,8 @@
 	];
 
 	const TIPS = [
+		{ icon: NotebookIcon, text: 'The binder menu at the start of the header switches between your binders, and renames, duplicates, deletes or adds one. Each has its own pages and tray, and a deleted binder comes back with Ctrl+Z until you switch to another.' },
+		{ icon: LinkIcon, text: 'Share link, in that menu and for signed-in users, publishes a public read-only copy: anyone can find and open it, listed with your username, not only through its link. Cards added from an image URL are left out. Publish again replaces the link, and Unpublish removes it for good. The dialog lists all your shares.' },
 		{ icon: EllipsisIcon, text: 'The ... menu on each page duplicates, empties, moves or deletes that page.' },
 		{ icon: GripIcon, text: 'The strip under the sheets lists every page: click one to open it, drag one to reorder.' },
 		{ icon: MenuIcon, text: 'Click a placed card, or right-click it, to open its menu: open the card page, move it to another slot, send it back to the tray, insert an empty slot or close the gap.' },
@@ -43,7 +47,7 @@
 		{ icon: BookOpenIcon, text: 'Spread shows both facing pages, the way the binder opens. Phones show one page at a time.' },
 		{ icon: HashIcon, text: 'Empty slots are numbered across the whole binder: that is the sleeving order.' },
 		{ icon: EyeOffIcon, text: 'The eye button hides the cards already placed.' },
-		{ icon: SaveIcon, text: 'Pages and the tray stay in your browser.' }
+		{ icon: SaveIcon, text: 'Pages and the tray stay in your browser, apart from a binder you share.' }
 	];
 </script>
 

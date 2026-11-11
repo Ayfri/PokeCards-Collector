@@ -25,6 +25,19 @@
 		binderCards.ownedCodes = data.profile ? new Set(data.collectionCodes) : null;
 	});
 
+	/**
+	 * Sign-in, sign-out and account switches call `refreshAll()` and never remount the page, so the lists follow the viewer from here, and an
+	 * edit of the collection or wishlist elsewhere refreshes them. Both lists are compared through their length and ends, which an edit
+	 * almost always moves, rather than hashing 10k codes. The first run always refreshes: an edit made on another page while this one was away left no trace here.
+	 */
+	let seenCodes = '';
+	$effect(() => {
+		const codes = [data.collectionCodes, data.wishlistCodes].map(list => `${list.length}:${list.at(0)}:${list.at(-1)}`).join('|');
+		const edited = codes !== seenCodes;
+		seenCodes = codes;
+		binderCards.loadOwned(data.profile?.auth_id ?? null, edited);
+	});
+
 	let showAuth = $state(false);
 	let showHelp = $state(false);
 
@@ -33,7 +46,6 @@
 
 	onMount(() => {
 		binder.load();
-		if (data.profile) binderCards.loadOwned();
 
 		data.catalogue.then(({ cards, sets }) => {
 			binderCards.catalogue = cards;
@@ -43,6 +55,8 @@
 
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.defaultPrevented || isEditableTarget(event.target) || !(event.ctrlKey || event.metaKey)) return;
+		/** `Modal` moves focus into its dialog, so a key pressed behind an open modal lands inside it. */
+		if (event.target instanceof Element && event.target.closest('[role="dialog"]')) return;
 		const key = event.key.toLowerCase();
 		if (key === 'z') {
 			event.preventDefault();

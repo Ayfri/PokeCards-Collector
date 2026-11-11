@@ -52,7 +52,7 @@
 		wasLoaded = binder.loaded;
 		if (key === lastKey) return;
 		lastKey = key;
-		const filling = untrack(() => /^\d+ cards placed$/.test(binder.lastAction ?? ''));
+		const filling = untrack(() => binder.lastEditFilled);
 		pop = settled && key ? { delay: filling ? Math.min(at.position * 25, 220) : 0, key } : null;
 	});
 
@@ -112,7 +112,6 @@
 	style:anchor-name={menuOpen ? '--binder-slot' : undefined}
 >
 	<button
-		aria-haspopup={tile ? 'true' : undefined}
 		aria-label={tile ? `Slot ${number}, ${tile.name}` : `Empty slot ${number}`}
 		class={['focus-ring absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-md p-px', tile ? 'cursor-grab active:cursor-grabbing' : 'text-gray-600']}
 		onclick={handleClick}

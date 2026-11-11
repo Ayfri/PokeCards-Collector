@@ -17,7 +17,7 @@
 	import LayoutGridIcon from '@lucide/svelte/icons/layout-grid';
 	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import UserRoundIcon from '@lucide/svelte/icons/user-round';
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 
 	interface Props {
 		/** Called when a first-run tile opens a source, so a phone can flip to the cards panel. */
@@ -58,8 +58,14 @@
 	/** One slot menu for the whole board, anchored on the pocket it is open on. Raw: it holds a reference that is only ever replaced. */
 	let menuAt = $state.raw<SlotRef | null>(null);
 
-	/** The keys of a text field, an open popover, a dialog and the cards panel's tabs belong to them: the page keys would fight their own. */
-	function handleKeydown(event: KeyboardEvent) {
+	let root = $state<HTMLDivElement>();
+
+	/**
+	 * The keys of a text field, an open popover, a dialog and the cards panel's tabs belong to them: the page keys would fight their own.
+	 * Escape disarms from anywhere, since the armed card is picked in the panel. The page keys only act when focus is on the board or on nothing,
+	 * so the list of the cards panel scrolls with them, and not while the board is hidden behind the panel on a phone.
+	 */
+	async function handleKeydown(event: KeyboardEvent) {
 		if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || isEditableTarget(event.target)) return;
 		if (event.target instanceof Element && event.target.closest(':popover-open, [role="dialog"], [role="tablist"]')) return;
 
@@ -69,17 +75,32 @@
 			return;
 		}
 
+		const board = root;
 		const direction = PAGE_KEYS[event.key];
-		if (!direction) return;
+		if (!direction || !board?.checkVisibility()) return;
+		if (event.target !== document.body && !(event.target instanceof Node && board.contains(event.target))) return;
 		event.preventDefault();
+
+		/**
+		 * The focused pocket belongs to a page that the turn destroys, so focus would fall to the page: it moves to the same position on the same side of the
+		 * new spread, left staying left and right staying right. The last spread of an odd page count has no right page, so the left one takes the focus.
+		 */
+		const [page, position] = (event.target instanceof Element ? event.target.closest<HTMLElement>('[data-slot]') : null)?.dataset.slot?.split('-') ?? [];
+		const side = Math.max(0, binder.visiblePages.indexOf(Number(page)));
+		const before = binder.visiblePages[0];
 		binder.goBy(direction);
+		if (position === undefined || binder.visiblePages[0] === before) return;
+
+		await tick();
+		const target = binder.visiblePages[side] ?? binder.visiblePages.at(-1);
+		board.querySelector<HTMLElement>(`[data-slot="${target}-${position}"] button`)?.focus();
 	}
 </script>
 
 <!-- A cancelled drag never leaves the sheets with a `dragleave`, so its end, which bubbles up from the source, clears the flag too. -->
 <svelte:window onkeydown={handleKeydown} ondragend={() => (dragging = false)} />
 
-<div class="flex min-h-0 flex-1 flex-col gap-3">
+<div bind:this={root} class="flex min-h-0 flex-1 flex-col gap-3">
 	<!-- The sheets sit on a dark cover, split by a ringed spine when both facing pages show. -->
 	<div
 		class="relative flex min-h-0 flex-1 justify-center rounded-2xl bg-gray-900 p-3 ring-1 ring-white/5 inset-shadow-sm"
@@ -145,9 +166,12 @@
 						{#each STARTS as { icon: Icon, label, tab } (tab)}
 							<button
 								class="pointer-events-auto focus-ring flex flex-col items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-800 px-1 py-3 text-xs text-gray-200 transition-all hover:border-gold-400 hover:text-gold-400 motion-safe:hover:-translate-y-0.5"
-								onclick={() => {
+								onclick={async () => {
 									binder.setView({ tab });
 									onBrowse?.();
+									/** On a phone the panel only shows after the update. */
+									await tick();
+									document.getElementById(`cards-tab-${tab}`)?.focus();
 								}}
 								type="button"
 							>

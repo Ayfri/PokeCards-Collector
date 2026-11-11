@@ -19,6 +19,11 @@ class BinderCards {
 
 	ownedStatus = $state<'error' | 'idle' | 'loading' | 'ready'>('idle');
 
+	/** The account `owned` belongs to, `null` when signed out. Not reactive: only `loadOwned` and the retry button read it. */
+	owner: string | null = null;
+
+	#request = 0;
+
 	/** The codes of the viewer's collection, from the layout so an edit made elsewhere reaches the overlay. `null` when signed out. */
 	ownedCodes = $state.raw<ReadonlySet<string> | null>(null);
 
@@ -64,16 +69,34 @@ class BinderCards {
 		return { cardCode: key, image: key, localId: '', name: 'Card from a URL', price: null, rarity: '', setId: '', setName: '', types: '' };
 	}
 
-	async loadOwned(): Promise<void> {
-		if (this.ownedStatus === 'loading' || this.ownedStatus === 'ready') return;
+	/**
+	 * Loads the lists of `owner`, the stable id of the signed-in account, or empties them for `null`. The store outlives the page and sign-in,
+	 * sign-out and account switches never remount it, so another owner drops the previous lists at once rather than showing them until the answer lands.
+	 * The same owner refetches only with `refresh`, and keeps its lists on screen meanwhile.
+	 */
+	async loadOwned(owner: string | null, refresh = false): Promise<void> {
+		const changed = owner !== this.owner;
+		if (!changed && !refresh) return;
+
+		/** Every call that changes what is loaded takes a new number, so an answer that comes back after a later call is dropped, whoever it was for. */
+		const request = ++this.#request;
+		this.owner = owner;
+		if (changed) this.owned = null;
+		if (owner === null) {
+			this.ownedStatus = 'idle';
+			return;
+		}
 		this.ownedStatus = 'loading';
 
 		try {
 			const response = await fetch('/api/binder/owned');
 			if (!response.ok) throw new Error(`/api/binder/owned answered ${response.status}`);
-			this.owned = await response.json() as BinderOwnedPayload;
+			const payload = await response.json() as BinderOwnedPayload;
+			if (request !== this.#request) return;
+			this.owned = payload;
 			this.ownedStatus = 'ready';
 		} catch (error) {
+			if (request !== this.#request) return;
 			console.error('Failed to load your cards:', error);
 			this.ownedStatus = 'error';
 		}

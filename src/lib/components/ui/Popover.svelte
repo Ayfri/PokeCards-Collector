@@ -19,11 +19,13 @@
 		class?: ClassValue;
 		/** Tooltip of the trigger, and its accessible name when the trigger holds only an icon. */
 		label: string;
+		/** Called each time the panel opens or closes, so a menu with a draft can reset it. */
+		onToggle?: () => void;
 		trigger: Snippet;
 		triggerClass?: ClassValue;
 	}
 
-	let { children, class: classNames, label, trigger, triggerClass }: Props = $props();
+	let { children, class: classNames, label, onToggle, trigger, triggerClass }: Props = $props();
 
 	const id = $props.id();
 	let panel = $state<HTMLDivElement>();
@@ -48,6 +50,7 @@
 	{id}
 	bind:this={panel}
 	class={[PANEL, 'supports-[position-area:bottom]:[position-area:bottom_span-left]', classNames]}
+	ontoggle={onToggle}
 	popover="auto"
 	style:position-anchor="--{id}"
 >
