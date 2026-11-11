@@ -320,6 +320,7 @@ export async function getPokemons(): Promise<Pokemon[]> {
 /**
  * The name order stays although the grid sorts again in the browser: every stable sort and first-match loop downstream breaks its ties on it
  * (price ties in the grid and the share images, the sitemap page boundaries, `getTwinPaths`, `bestCardByPokemon`, the import index, the search ranking).
+ * Each card table has a `(name, card_code)` index for it: without one every batch sorts the whole table into a 5 MB temp file.
  */
 function cardListRows(table: CardTable): Promise<CardRow[]> {
 	return getAllData<CardRow>(table, 'card_code', CARD_LIST_COLUMNS, { ascending: true, column: 'name' });
