@@ -2,6 +2,9 @@
 	import type { PageData } from './$types';
 	import type { TrainerGroupEntry } from './+page.server.ts';
 	import PageTitle from '#components/PageTitle.svelte';
+	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
+	import FilterBar from '#components/filters/FilterBar.svelte';
+	import SearchIcon from '@lucide/svelte/icons/search';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import TrainerGroupTile from '#components/list/TrainerGroupTile.svelte';
@@ -26,7 +29,12 @@
 	 * tiles with another tile's scan. The saved view applies once mounted.
 	 */
 	let mounted = $state(false);
-	onMount(() => { mounted = true; });
+	/** Starts empty like the server's field and takes the saved search once mounted, so the clear button does not flip during hydration. */
+	let searchInput = $state('');
+	onMount(() => {
+		mounted = true;
+		searchInput = view.search;
+	});
 	const shown = $derived(mounted ? view : DEFAULT_VIEW);
 
 	function toggleSection(label: string, open: boolean) {
@@ -38,18 +46,37 @@
 		name: (a, b) => a.name.localeCompare(b.name),
 	};
 
-	/** Sections the search empties are dropped, and every other one is sorted on its own. */
+	/** The field shows every keystroke, the saved and applied search follows the debounced value: each change redraws the tiles and writes localStorage. */
+	function setSearch(value: string) {
+		view.search = value;
+	}
+
+	/** Every section is sorted on its own, on a sort change only: the search keeps that order, since filtering drops groups without moving any. */
+	const sortedSections = $derived.by(() => {
+		const direction = shown.sortOrder === 'asc' ? 1 : -1;
+		const compareBy = compare[shown.sortBy] ?? compare.name;
+
+		return data.sections.map(section => ({
+			groups: section.groups.toSorted((a, b) => direction * compareBy(a, b)),
+			label: section.label,
+		}));
+	});
+
+	/** Lowercased once per data, not once per group per search. */
+	const lowerNames = $derived(new Map(data.sections.flatMap(section => section.groups).map(group => [group, group.name.toLowerCase()])));
+
+	/** Sections the search empties are dropped. */
 	const sections = $derived.by(() => {
 		const term = shown.search.trim().toLowerCase();
-		const direction = shown.sortOrder === 'asc' ? 1 : -1;
 
-		return data.sections
-			.map(section => ({
-				groups: section.groups.filter(group => group.name.toLowerCase().includes(term)).sort((a, b) => direction * (compare[shown.sortBy] ?? compare.name)(a, b)),
-				label: section.label,
-			}))
+		return sortedSections
+			.map(section => ({ groups: section.groups.filter(group => lowerNames.get(group)?.includes(term)), label: section.label }))
 			.filter(section => section.groups.length > 0);
 	});
+
+	const totalGroups = $derived(data.sections.reduce((count, section) => count + section.groups.length, 0));
+	const shownGroups = $derived(sections.reduce((count, section) => count + section.groups.length, 0));
+	const countHint = $derived(shownGroups === totalGroups ? undefined : `${shownGroups.toLocaleString('en-US')} of ${totalGroups.toLocaleString('en-US')}`);
 </script>
 
 <svelte:window bind:scrollY />
@@ -59,22 +86,33 @@
 		<div class="shrink-0">
 			<PageTitle title="Trainers & Energy" />
 		</div>
-		<div class="flex items-end gap-4 w-full md:w-auto">
-			<TextInput
-				bind:value={view.search}
-				id="trainer-search"
-				label="Search Trainer and Energy cards"
-				labelClass="sr-only"
-				placeholder="Search Trainers & Energy..."
-			/>
-			<SortControl
-				bind:sortDirection={view.sortOrder}
-				bind:sortValue={view.sortBy}
-				options={[
-					{ label: 'Name', value: 'name' },
-					{ label: 'Card Count', value: 'cardCount' }
-				]}
-			/>
+		<div class="max-sm:w-full">
+			<FilterBar>
+				{#snippet search()}
+					<TextInput
+						applyOnMount
+						bind:value={searchInput}
+						clearable
+						hint={countHint}
+						icon={SearchIcon}
+						id="trainer-search"
+						label="Search"
+						onDebouncedInput={setSearch}
+						placeholder="Search cards..."
+					/>
+				{/snippet}
+				{#snippet sort()}
+					<SortControl
+						bind:sortDirection={view.sortOrder}
+						bind:sortValue={view.sortBy}
+						icon={ArrowUpDownIcon}
+						options={[
+							{ label: 'Name', value: 'name' },
+							{ label: 'Card Count', value: 'cardCount' }
+						]}
+					/>
+				{/snippet}
+			</FilterBar>
 		</div>
 	</div>
 	<div class="gold-rule my-6"></div>

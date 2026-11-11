@@ -4,6 +4,9 @@
 	import type { PageData } from './$types';
 	import { formatDate, formatEuros } from '#helpers/format.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
+	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
+	import FilterBar from '#components/filters/FilterBar.svelte';
+	import SearchIcon from '@lucide/svelte/icons/search';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import PageTitle from '#components/PageTitle.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
@@ -47,6 +50,8 @@
 	onMount(() => { mounted = true; });
 	const shownSort = $derived(mounted ? setsSort : DEFAULT_SORT);
 
+	/** The field shows every keystroke, the filter only follows the debounced `searchTerm`: each change redraws the tiles and their logos. */
+	let searchInput = $state('');
 	let searchTerm = $state('');
 
 	const typedSets = $derived(data.setsWithPrices ?? []);
@@ -59,14 +64,18 @@
 	/** localStorage can hold a sort value from an older build that `COMPARATORS` has no key for, so it falls back to `releaseDate`. */
 	const comparator = $derived(COMPARATORS[shownSort.value] ?? COMPARATORS.releaseDate);
 
-	/** Tiles are grouped before the search, so a sub-set found by name shows up as a chip of its parent's tile. A tile sorts by its own set (a kit's sums). */
-	const sortedTiles = $derived(groupSetTiles(typedSets).sort((a, b) => comparator(a.set, b.set) * sortDirection));
+	/** Tiles are grouped before the search, so a sub-set found by name shows up as a chip of its parent's tile. Grouping runs once per data, not per sort. */
+	const tiles = $derived(groupSetTiles(typedSets));
+
+	/** One lowercase text per tile, built once per data; a name and a code are joined by a newline, which a search term cannot hold. */
+	const haystacks = $derived(new Map(tiles.map(tile => [tile, tile.sets.map(set => `${set.name}\n${set.ptcgoCode ?? ''}`).join('\n').toLowerCase()])));
+
+	/** A tile sorts by its own set (a kit's sums). */
+	const sortedTiles = $derived(tiles.toSorted((a, b) => comparator(a.set, b.set) * sortDirection));
 
 	const filteredTiles = $derived.by(() => {
 		const term = searchTerm.toLowerCase();
-		return term
-			? sortedTiles.filter(tile => tile.sets.some(set => set.name.toLowerCase().includes(term) || set.ptcgoCode?.toLowerCase().includes(term)))
-			: sortedTiles;
+		return term ? sortedTiles.filter(tile => haystacks.get(tile)?.includes(term)) : sortedTiles;
 	});
 
 	const groupedTiles = $derived(filteredTiles.reduce((acc, tile) => {
@@ -97,33 +106,41 @@
 </script>
 
 <div class="container mx-auto px-4 pt-2 pb-8">
-	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
+	<div class="mb-8 flex flex-col sm:flex-row sm:flex-wrap sm:gap-4 items-center justify-between">
 		<div class="flex flex-col items-center gap-2 sm:items-start xl:flex-row xl:items-center xl:gap-4" transition:fly={{ delay: 200, duration: 400, y: 50 }}>
 			<PageTitle title={`${catalogue.routeCode ? `${catalogue.adjective} ` : ''}Pokémon TCG Sets`} />
 			<LanguageSwitch language={data.catalogueLanguage} paths={catalogueRoutes('setsRoute')} />
 		</div>
 
-		<div class="flex items-center gap-2" transition:fly={{ delay: 250, duration: 500, y: 50 }}>
-			<div class="w-48">
-				<TextInput
-					bind:value={searchTerm}
-					id="setSearch"
-					label="Search"
-					onDebouncedInput={setSearchTerm}
-					placeholder="Search sets..."
-				/>
-			</div>
-			<SortControl
-				bind:sortDirection={setsSort.direction}
-				bind:sortValue={setsSort.value}
-				options={[
-					{ label: 'Code', value: 'code' },
-					{ label: 'Name', value: 'name' },
-					{ label: 'Total Cards', value: 'cardCount' },
-					{ label: 'Total Value', value: 'totalPrice' },
-					{ label: 'Release Date', value: 'releaseDate' }
-				]}
-			/>
+		<div class="max-sm:w-full" transition:fly={{ delay: 250, duration: 500, y: 50 }}>
+			<FilterBar>
+				{#snippet search()}
+					<TextInput
+						applyOnMount
+						bind:value={searchInput}
+						clearable
+						icon={SearchIcon}
+						id="setSearch"
+						label="Search"
+						onDebouncedInput={setSearchTerm}
+						placeholder="Search sets..."
+					/>
+				{/snippet}
+				{#snippet sort()}
+					<SortControl
+						bind:sortDirection={setsSort.direction}
+						bind:sortValue={setsSort.value}
+						icon={ArrowUpDownIcon}
+						options={[
+							{ label: 'Code', value: 'code' },
+							{ label: 'Name', value: 'name' },
+							{ label: 'Total Cards', value: 'cardCount' },
+							{ label: 'Total Value', value: 'totalPrice' },
+							{ label: 'Release Date', value: 'releaseDate' }
+						]}
+					/>
+				{/snippet}
+			</FilterBar>
 		</div>
 	</div>
 	<hr class="gold-rule my-4 border-0" transition:fade={{ delay: 250, duration: 400 }} />

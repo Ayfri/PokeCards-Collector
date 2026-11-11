@@ -3,6 +3,7 @@
 	import CardImage from '#components/card/CardImage.svelte';
 	import CardmarketLogo from '#components/card/CardmarketLogo.svelte';
 	import {fade} from 'svelte/transition';
+	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import SortControl from '#components/filters/SortControl.svelte';
@@ -168,6 +169,7 @@
 			<SortControl
 				bind:sortDirection={relatedSort.direction}
 				bind:sortValue={relatedSort.value}
+				icon={ArrowUpDownIcon}
 				options={[
 					{ label: 'Set Name', value: 'sort-set' },
 					{ label: 'Release Date', value: 'sort-date' },

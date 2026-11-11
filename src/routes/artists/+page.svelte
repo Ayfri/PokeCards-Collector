@@ -3,10 +3,11 @@
 
 	type ArtistsSortValue = 'averageValue' | 'firstReleaseDate' | 'lastReleaseDate' | 'name' | 'totalCards' | 'totalValue';
 
-	const artistsSort = persistedRecord('artists-sort', {
+	const DEFAULT_SORT = {
 		direction: 'asc' as 'asc' | 'desc',
 		value: 'name' as ArtistsSortValue,
-	});
+	};
+	const artistsSort = persistedRecord('artists-sort', DEFAULT_SORT);
 </script>
 
 <script lang="ts">
@@ -14,10 +15,14 @@
 	import type { ArtistWithCards } from './+page.server';
 	import { formatEuros } from '#helpers/format.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
+	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
+	import FilterBar from '#components/filters/FilterBar.svelte';
+	import SearchIcon from '@lucide/svelte/icons/search';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import PageTitle from '#components/PageTitle.svelte';
 	import CardImage from '#components/card/CardImage.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
+	import { onMount } from 'svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { SvelteSet } from 'svelte/reactivity';
 
@@ -48,6 +53,8 @@
 		return loadable.length ? loadable : artist.showcaseCards.slice(0, SHOWCASE_SIZE).map(card => ({ ...card, image: '' }));
 	}
 
+	/** The field shows every keystroke, the filter only follows the debounced `searchTerm`: each change redraws up to 411 tiles with three scans each. */
+	let searchInput = $state('');
 	let searchTerm = $state('');
 
 	function setSearchTerm(value: string) {
@@ -65,44 +72,63 @@
 		});
 	}
 
+	/** Lowercased once per data, not once per artist per search. */
+	const lowerNames = $derived(new Map(data.artists.map(artist => [artist, artist.name.toLowerCase()])));
+
 	function filterArtistList(artists: ArtistWithCards[], term: string): ArtistWithCards[] {
 		if (!term.trim()) return artists;
 		const lowerCaseTerm = term.toLowerCase();
-		return artists.filter(artist => artist.name.toLowerCase().includes(lowerCaseTerm));
+		return artists.filter(artist => lowerNames.get(artist)?.includes(lowerCaseTerm));
 	}
 
-	const sortedArtists = $derived(sortArtistList(data.artists, artistsSort.value, artistsSort.direction));
+	/**
+	 * The server renders `DEFAULT_SORT`, and hydration never patches an `img` `src`, so sorting by the saved value during hydration would pair
+	 * scans with another artist's name. The saved sort applies once mounted.
+	 */
+	let mounted = $state(false);
+	onMount(() => { mounted = true; });
+	const shownSort = $derived(mounted ? artistsSort : DEFAULT_SORT);
+
+	const sortedArtists = $derived(sortArtistList(data.artists, shownSort.value, shownSort.direction));
 	const filteredArtists = $derived(filterArtistList(sortedArtists, searchTerm));
 </script>
 
 <div class="container mx-auto px-4 py-8">
-	<div class="mb-8 flex flex-col sm:flex-row items-center justify-between">
+	<div class="mb-8 flex flex-col sm:flex-row sm:flex-wrap sm:gap-4 items-center justify-between">
 		<div transition:fly={{ delay: 200, duration: 400, y: 50 }}>
 			<PageTitle title="Card Artists" />
 		</div>
 
-		<div class="flex items-center gap-2" transition:fly={{ delay: 250, duration: 500, y: 50 }}>
-            <div class="w-48">
-                <TextInput
-                    bind:value={searchTerm}
-                    id="artistSearch"
-                    label="Search"
-                    onDebouncedInput={setSearchTerm}
-                    placeholder="Search artists..."
-                />
-            </div>
-			<SortControl
-				bind:sortDirection={artistsSort.direction}
-				bind:sortValue={artistsSort.value}
-				options={[
-					{ label: 'Name', value: 'name' },
-					{ label: 'Total Cards', value: 'totalCards' },
-					{ label: 'Total Value', value: 'totalValue' },
-					{ label: 'Average Card Price', value: 'averageValue' },
-					{ label: 'First Release Date', value: 'firstReleaseDate' },
-					{ label: 'Last Release Date', value: 'lastReleaseDate' }
-				]}
-			/>
+		<div class="max-sm:w-full" transition:fly={{ delay: 250, duration: 500, y: 50 }}>
+			<FilterBar>
+				{#snippet search()}
+					<TextInput
+						applyOnMount
+						bind:value={searchInput}
+						clearable
+						icon={SearchIcon}
+						id="artistSearch"
+						label="Search"
+						onDebouncedInput={setSearchTerm}
+						placeholder="Search artists..."
+					/>
+				{/snippet}
+				{#snippet sort()}
+					<SortControl
+						bind:sortDirection={artistsSort.direction}
+						bind:sortValue={artistsSort.value}
+						icon={ArrowUpDownIcon}
+						options={[
+							{ label: 'Name', value: 'name' },
+							{ label: 'Total Cards', value: 'totalCards' },
+							{ label: 'Total Value', value: 'totalValue' },
+							{ label: 'Average Card Price', value: 'averageValue' },
+							{ label: 'First Release Date', value: 'firstReleaseDate' },
+							{ label: 'Last Release Date', value: 'lastReleaseDate' }
+						]}
+					/>
+				{/snippet}
+			</FilterBar>
 		</div>
 	</div>
 

@@ -41,7 +41,11 @@
 		goto(url, { replace: true, shallow: true });
 	}
 
+	/** Numbers each search: a slow response that lands after a newer search or a clear is dropped instead of restoring old results and `?q=`. */
+	let latestSearch = 0;
+
 	async function performSearchUsers() {
+		const search = ++latestSearch;
 		isLoadingSearch = true;
 		isInitialSearchState = false;
 		searchErrorMessage = '';
@@ -54,23 +58,27 @@
 				return;
 			}
 
-			const response = await fetch(`/api/search-users?q=${encodeURIComponent(searchQuery)}&limit=12`);
+			const query = searchQuery;
+			const response = await fetch(`/api/search-users?q=${encodeURIComponent(query)}&limit=12`);
 			const responseData = await readJson<SearchUsersResponse>(response, { error: 'Invalid server response' });
+			/** The field already changed: the debounced search for its new text is on its way, and this answer is for the old one. */
+			if (search !== latestSearch || query !== searchQuery) return;
 
 			if (responseData.success) {
 				searchResults = responseData.users;
-				updateUrlWithoutNavigating(searchQuery);
+				updateUrlWithoutNavigating(query);
 			} else {
 				console.error('Error searching users:', responseData.error);
 				searchErrorMessage = 'Failed to search users. Please try again later.';
 				searchResults = [];
 			}
 		} catch (error) {
+			if (search !== latestSearch) return;
 			console.error('Failed to search users:', error);
 			searchErrorMessage = 'An unexpected error occurred. Please try again later.';
 			searchResults = [];
 		} finally {
-			isLoadingSearch = false;
+			if (search === latestSearch) isLoadingSearch = false;
 		}
 	}
 
@@ -98,21 +106,20 @@
 			Find a Specific User
 		</h2>
 		<div class="max-w-xl mx-auto">
-			<div class="relative">
-				<div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-400">
-					<SearchIcon size={20} />
-				</div>
-				<TextInput
-					aria-label="Search users by username"
-					bind:value={searchQuery}
-					class="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-gold-400 text-white shadow-xs placeholder-gray-500 h-auto!"
-					id="user-search"
-					label="Search users by username"
-					labelClass="sr-only"
-					onDebouncedInput={performSearchUsers}
-					placeholder="Search public users by username..."
-				/>
-			</div>
+			<TextInput
+				applyOnMount
+				aria-label="Search users by username"
+				bind:value={searchQuery}
+				class="w-full pl-11! py-3 bg-gray-800 border border-gray-700 rounded-xl focus:border-gold-400 text-white shadow-xs placeholder-gray-500 h-auto!"
+				clearable
+				icon={SearchIcon}
+				iconClass="left-4"
+				id="user-search"
+				label="Search users by username"
+				labelClass="sr-only"
+				onDebouncedInput={performSearchUsers}
+				placeholder="Search public users by username..."
+			/>
 		</div>
 	</section>
 

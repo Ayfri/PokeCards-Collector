@@ -6,7 +6,10 @@
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import PageTitle from '#components/PageTitle.svelte';
 	import ScrollButton from '#components/list/ScrollButton.svelte';
-	import Select from '#components/filters/Select.svelte';
+	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
+	import Chip from '#components/filters/Chip.svelte';
+	import FilterBar from '#components/filters/FilterBar.svelte';
+	import SearchIcon from '@lucide/svelte/icons/search';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
@@ -41,30 +44,43 @@
 	/** Totals reach five figures, so cents are noise and are dropped from 100 EUR up. */
 	const euros = (value: number) => formatEuros(value, value >= 100 ? 0 : 2);
 
+	const COMPARATORS: Record<string, (a: PokemonListEntry, b: PokemonListEntry) => number> = {
+		cardCount: (a, b) => a.cardCount - b.cardCount,
+		name: (a, b) => a.name.localeCompare(b.name),
+		pokedex: (a, b) => a.id - b.id,
+		price: (a, b) => a.price - b.price,
+	};
+
 	let sortBy = $state('pokedex');
 	let sortOrder: 'asc' | 'desc' = $state('asc');
+	/** The field shows every keystroke, the filter only follows the debounced `searchTerm`: each change redraws up to 1025 tiles. */
+	let searchInput = $state('');
 	let searchTerm = $state('');
 	let typeFilter = $state('all');
 
-	const typeOptions = $derived([
-		{ label: 'All types', value: 'all' },
-		...[...new Set(data.pokemons.map(pokemon => pokemon.type).filter(Boolean))].sort().map(type => ({ label: titleCase(type), value: type })),
-	]);
+	const types = $derived([...new Set(data.pokemons.map(pokemon => pokemon.type).filter(Boolean))].sort());
 
+	/** Sorted on a sort change only: the search and the type filter keep that order, since the sort is stable and filtering drops entries without moving any. */
 	const sortedPokemons = $derived.by(() => {
-		const term = searchTerm.toLowerCase();
-		const pokemons = data.pokemons.filter(pokemon => pokemon.name.toLowerCase().includes(term) && (typeFilter === 'all' || pokemon.type === typeFilter));
 		const direction = sortOrder === 'asc' ? 1 : -1;
-
-		const compare: Record<string, (a: PokemonListEntry, b: PokemonListEntry) => number> = {
-			cardCount: (a, b) => a.cardCount - b.cardCount,
-			name: (a, b) => a.name.localeCompare(b.name),
-			pokedex: (a, b) => a.id - b.id,
-			price: (a, b) => a.price - b.price,
-		};
-
-		return pokemons.sort((a, b) => direction * (compare[sortBy] ?? compare.pokedex)(a, b));
+		const compare = COMPARATORS[sortBy] ?? COMPARATORS.pokedex;
+		return data.pokemons.toSorted((a, b) => direction * compare(a, b));
 	});
+
+	/** Lowercased once per data, not once per Pokémon per search. */
+	const lowerNames = $derived(new Map(data.pokemons.map(pokemon => [pokemon, pokemon.name.toLowerCase()])));
+
+	const filteredPokemons = $derived.by(() => {
+		const term = searchTerm.trim().toLowerCase();
+		if (!term && typeFilter === 'all') return sortedPokemons;
+		return sortedPokemons.filter(pokemon => lowerNames.get(pokemon)?.includes(term) && (typeFilter === 'all' || pokemon.type === typeFilter));
+	});
+
+	function setSearchTerm(value: string) {
+		searchTerm = value;
+	}
+
+	const countHint = $derived(filteredPokemons.length === data.pokemons.length ? undefined : `${filteredPokemons.length.toLocaleString('en-US')} of ${data.pokemons.length.toLocaleString('en-US')}`);
 
 	/** Generation headers only make sense in Pokédex order over the whole list: any other sort or filter is one flat grid. */
 	const byGeneration = $derived(sortBy === 'pokedex' && !searchTerm.trim() && typeFilter === 'all');
@@ -74,10 +90,10 @@
 	const ownedOf = (pokemon: PokemonListEntry) => Math.min(ownedPerPokemon.get(pokemon.id) ?? 0, pokemon.cardCount);
 
 	const sections = $derived.by(() => {
-		if (!byGeneration) return [{ cards: 0, generation: undefined, owned: 0, pokemons: sortedPokemons }];
+		if (!byGeneration) return [{ cards: 0, generation: undefined, owned: 0, pokemons: filteredPokemons }];
 
 		const buckets = GENERATIONS.map(generation => ({ cards: 0, generation, owned: 0, pokemons: [] as PokemonListEntry[] }));
-		for (const pokemon of sortedPokemons) {
+		for (const pokemon of filteredPokemons) {
 			const index = GENERATIONS.findIndex(generation => pokemon.id <= generation.last);
 			const bucket = buckets[index === -1 ? buckets.length - 1 : index];
 			bucket.pokemons.push(pokemon);
@@ -97,26 +113,46 @@
 		<div class="shrink-0">
 			<PageTitle title="All Pokémon" />
 		</div>
-		<div class="flex items-end gap-4">
-			<TextInput
-				bind:value={searchTerm}
-				id="pokemon-search"
-				label="Search Pokémon"
-				labelClass="sr-only"
-				placeholder="Search Pokémon..."
-			/>
-			<Select bind:value={typeFilter} id="pokemon-type" label="Type" options={typeOptions} />
-			<SortControl
-				bind:sortDirection={sortOrder}
-				bind:sortValue={sortBy}
-				options={[
-					{ label: 'Pokédex #', value: 'pokedex' },
-					{ label: 'Name', value: 'name' },
-					{ label: 'Card Count', value: 'cardCount' },
-					{ label: 'Most Valuable', value: 'price' }
-				]}
-			/>
+		<div class="max-sm:w-full">
+			<FilterBar>
+				{#snippet search()}
+					<TextInput
+						applyOnMount
+						bind:value={searchInput}
+						clearable
+						hint={countHint}
+						icon={SearchIcon}
+						id="pokemon-search"
+						label="Search"
+						onDebouncedInput={setSearchTerm}
+						placeholder="Search Pokémon..."
+					/>
+				{/snippet}
+				{#snippet sort()}
+					<SortControl
+						bind:sortDirection={sortOrder}
+						bind:sortValue={sortBy}
+						icon={ArrowUpDownIcon}
+						options={[
+							{ label: 'Pokédex #', value: 'pokedex' },
+							{ label: 'Name', value: 'name' },
+							{ label: 'Card Count', value: 'cardCount' },
+							{ label: 'Most Valuable', value: 'price' }
+						]}
+					/>
+				{/snippet}
+			</FilterBar>
 		</div>
+	</div>
+
+	<!-- A single scrolling row on a phone so the grid stays close to the top, a wrapping one from `md`. The padding keeps the focus ring of a chip from being clipped by the scroller. -->
+	<div aria-label="Filter by type" class="-mx-4 flex gap-1.5 overflow-x-auto px-4 py-1 scrollbar-hide [&>button]:shrink-0 md:mx-0 md:flex-wrap md:overflow-visible md:px-0" role="group">
+		<Chip isActive={typeFilter === 'all'} onClick={() => (typeFilter = 'all')}><span class="px-1.5">All types</span></Chip>
+		{#each types as type (type)}
+			<Chip isActive={typeFilter === type} onClick={() => (typeFilter = typeFilter === type ? 'all' : type)}>
+				<span class="flex items-center gap-1.5 px-1.5"><TypeSymbol class="text-sm" decorative shared {type} />{titleCase(type)}</span>
+			</Chip>
+		{/each}
 	</div>
 	<div class="gold-rule my-6"></div>
 
