@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { LucideIcon } from '@lucide/svelte';
+	import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
 	import type { Snippet } from 'svelte';
 
 	interface Option {
@@ -58,14 +59,16 @@
 			<select
 				class={[
 					selectClass,
-					'[appearance:base-select] [&::picker(select)]:[appearance:base-select] [&::picker(select)]:mt-1 [&::picker(select)]:max-h-72 [&::picker(select)]:rounded-md [&::picker(select)]:border [&::picker(select)]:border-white/15 [&::picker(select)]:bg-gray-900 [&::picker(select)]:p-1 [&::picker(select)]:shadow-lg',
+					'items-center [appearance:base-select] [&::picker-icon]:hidden [&::picker(select)]:[appearance:base-select] [&::picker(select)]:mt-1 [&::picker(select)]:max-h-72 [&::picker(select)]:rounded-md [&::picker(select)]:border [&::picker(select)]:border-white/15 [&::picker(select)]:bg-gray-900 [&::picker(select)]:p-1 [&::picker(select)]:shadow-lg',
 				]}
 				{id}
 				onchange={handleChange}
 				value={value}
 			>
-				<button class="flex w-full items-center gap-2 text-left" type="button">
-					<selectedcontent></selectedcontent>
+				<!-- The chevron replaces the `::picker-icon` triangle and sits in the button, which only a browser with the customizable select draws, so the native arrow of the others is never doubled. -->
+				<button class="flex min-w-0 flex-1 items-center gap-2 text-left" type="button">
+					<selectedcontent class="flex min-w-0 flex-1 items-center gap-2"></selectedcontent>
+					<ChevronDownIcon class="-mr-1 shrink-0" size={14} strokeWidth={3} />
 				</button>
 				{#if placeholder}
 					<option disabled selected value="">{placeholder}</option>
