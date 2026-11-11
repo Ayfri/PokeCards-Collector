@@ -1,9 +1,80 @@
+import type { CardLink } from '#helpers/card-utils.ts';
 import type { Language } from '#helpers/catalogues.ts';
+import { formatEuros } from '#helpers/format.ts';
 import type { OwnedCard, OwnedCards } from '#helpers/supabase-data.ts';
 import type { CollectionStats, Set } from '#lib/types.js';
 
 /** Number of owned cards the profile showcases, most valuable first. */
 const SHOWCASE_SIZE = 6;
+
+/** The numbers and top cards the server draws into the HTML, since the grid itself streams in after the first byte. */
+export interface UserCardsSummary {
+	/** Duplicates included, equal to `uniqueCards` on a wishlist. */
+	copies: number;
+	/** The few most valuable owned cards, carrying what `cardPath` needs and the `cardCode` that keys them, since two cards can share a slug. */
+	topCards: (CardLink & { cardCode: string; language: Language; price: number })[];
+	totalValue: number;
+	uniqueCards: number;
+}
+
+const cardCount = (count: number) => `${count.toLocaleString('en-US')} unique Pokémon TCG card${count === 1 ? '' : 's'}`;
+
+interface UserCardsWording {
+	crumb: string;
+	emptyHint: string;
+	emptyOther: (username: string) => string;
+	emptyOwn: string;
+	label: string;
+	ownDescription: string;
+	ownTitle: string;
+	privateDescription: string;
+	privateHeading: string;
+	privateTitle: string;
+	/** `summary` is null for an empty list, which is not indexed anyway. */
+	publicDescription: (username: string, summary: UserCardsSummary | null) => string;
+	publicTitle: (username: string) => string;
+}
+
+/**
+ * Lives here and not in `user-cards-page.ts` because `UserCardsView` reads it in the browser: a value import of that module puts
+ * `supabase-data.ts` and its `cloudflare:workers` import in the client chunk, which no browser can load, so the page hydrates into an error 500.
+ */
+export const USER_CARDS_WORDING = {
+	collection: {
+		crumb: 'Collection',
+		emptyHint: 'Add cards to your collection by browsing card pages.',
+		emptyOther: username => `"${username}" collection is empty.`,
+		emptyOwn: 'Your collection is empty.',
+		label: 'Collection',
+		ownDescription: 'Your Pokémon TCG card collection.',
+		ownTitle: 'My Collection',
+		privateDescription: `This user's collection is private.`,
+		privateHeading: 'Collection is Private',
+		privateTitle: 'Private Collection',
+		publicDescription: (username, summary) => summary
+			? `${username} owns ${cardCount(summary.uniqueCards)} worth about ${formatEuros(summary.totalValue)}, with Cardmarket prices in euros, set completion and filtering by set, rarity and type.`
+			: `Every Pokémon TCG card ${username} owns, with Cardmarket prices in euros, set completion and filtering by set, rarity and type.`,
+		publicTitle: username => `${username}'s Pokémon Card Collection`,
+	},
+	wishlist: {
+		crumb: 'Wishlist',
+		emptyHint: 'Add cards to your wishlist by browsing card pages.',
+		emptyOther: username => `"${username}" wishlist is empty.`,
+		emptyOwn: 'Your wishlist is empty.',
+		label: 'Wishlist',
+		ownDescription: 'Your Pokémon TCG card wishlist.',
+		ownTitle: 'My Wishlist',
+		privateDescription: `This user's wishlist is private.`,
+		privateHeading: 'Wishlist is Private',
+		privateTitle: 'Private Wishlist',
+		publicDescription: (username, summary) => summary
+			? `${username} is still hunting for ${cardCount(summary.uniqueCards)} worth about ${formatEuros(summary.totalValue)}, with Cardmarket prices in euros and the set each card belongs to.`
+			: `The Pokémon TCG cards ${username} is still hunting for, with Cardmarket prices in euros and the set each card belongs to.`,
+		publicTitle: username => `${username}'s Pokémon Card Wishlist`,
+	},
+} satisfies Record<'collection' | 'wishlist', UserCardsWording>;
+
+export type UserCardsKind = keyof typeof USER_CARDS_WORDING;
 
 const roundCents = (value: number) => Math.round(value * 100) / 100;
 

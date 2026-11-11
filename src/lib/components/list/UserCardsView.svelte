@@ -10,7 +10,8 @@
 	import type { Set } from '#lib/types.js';
 	import { cardPath, formatCardNumber } from '#helpers/card-utils.ts';
 	import { formatEuros } from '#helpers/format.ts';
-	import { USER_CARDS_WORDING, type UserCardsKind, type UserCardsPageData } from '#helpers/user-cards-page.ts';
+	import { USER_CARDS_WORDING, type UserCardsKind } from '#helpers/owned-cards.ts';
+	import type { UserCardsPageData } from '#helpers/user-cards-page.ts';
 	import { filters } from '#stores/filters.svelte.ts';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';

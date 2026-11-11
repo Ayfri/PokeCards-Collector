@@ -9,7 +9,7 @@
 	import { refreshAll } from '$app/navigation';
 	import { parseDelimited } from '#helpers/csv.ts';
 	import type { Set as CardSet } from '#lib/types.js';
-	import type { UserCardsKind } from '#helpers/user-cards-page.ts';
+	import type { UserCardsKind } from '#helpers/owned-cards.ts';
 
 	interface Summary {
 		added: number;

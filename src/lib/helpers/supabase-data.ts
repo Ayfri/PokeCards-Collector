@@ -183,7 +183,7 @@ let staticFiles: Promise<ReadonlySet<string>> | undefined;
 
 /**
  * The static files of the build, `/`-prefixed. `$app/manifest` is imported on demand because a static import keeps its whole data module
- * (every route and asset) in any client bundle that pulls this module in, through `user-cards-page.ts`. A failed import is forgotten so the next
+ * (every route and asset) in any client bundle that pulls this module in. A failed import is forgotten so the next
  * call retries, and meanwhile the sets keep their remote URLs, as an unmirrored set does.
  */
 const buildStaticFiles = () => staticFiles ??= import('$app/manifest').then(({ assets }) => new Set(assets.map(asset => `/${asset.path}`)), () => {
