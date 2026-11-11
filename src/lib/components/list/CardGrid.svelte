@@ -147,9 +147,12 @@
 		transition:fly={{ duration: 300, x: 380 }}
 	>
 		<div
-			class="flex justify-between items-center p-4 border-b border-white/10"
+			class="flex justify-between items-center px-4 py-3 border-b border-white/10"
 		>
-			<h2 class="m-0 text-xl font-semibold text-gold-400">Filters</h2>
+			<h2 class="m-0 flex items-center gap-2 text-xl font-semibold text-gold-400">
+				<SlidersHorizontalIcon size={20} />
+				Filters
+			</h2>
 			<button
 				aria-label="Close filters"
 				class="focus-ring bg-transparent border-none text-white p-1 rounded-sm hover:bg-white/10 transition-colors flex items-center justify-center"
@@ -159,8 +162,21 @@
 				<XIcon size={20} />
 			</button>
 		</div>
-		<div class="flex-1 overflow-y-auto p-6 pointer-events-auto">
-			<Filters {artists} {rarities} {sets} {types} />
+		<div class="flex-1 overflow-y-auto p-4 pointer-events-auto">
+			<Filters {artists} {pokemons} {rarities} {sets} {types} />
+		</div>
+		<div class="flex items-center gap-3 border-t border-white/10 px-4 py-3">
+			<Button
+				class="h-10 px-4"
+				disabled={filters.count === 0}
+				onClick={resetFilters}
+				title="Reset every filter and the sort order"
+			>
+				<RotateCcwIcon size={16} /> Reset
+			</Button>
+			<button class="btn-gold flex-1 tabular-nums" onclick={() => (showFilters = false)} type="button">
+				Show {visibleCardsCount} {visibleCardsCount === 1 ? 'card' : 'cards'}
+			</button>
 		</div>
 	</div>
 {/if}

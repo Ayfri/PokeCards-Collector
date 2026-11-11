@@ -25,7 +25,7 @@ export const SORT_OPTIONS = [
 ];
 
 export const SUPERTYPE_OPTIONS = [
-	{ label: 'All supertypes', value: 'all' },
+	{ label: 'All', value: 'all' },
 	{ label: 'Pokémon', value: 'pokémon' },
 	{ label: 'Trainer', value: 'trainer' },
 	{ label: 'Energy', value: 'energy' },
@@ -99,10 +99,22 @@ class CardFilters {
 		|| [this.artist, this.rarity, this.set, this.supertype, this.type].some(value => value !== 'all'),
 	);
 
-	/** Badge count on the filters button, sort included since resetting also restores it. */
+	/** Whether the sort key left its default, which the sort select shows. */
+	readonly sortKeyChanged = $derived(this.sortBy !== DEFAULTS.sortBy);
+
+	/**
+	 * Active filters per section of the filter drawer, keyed like `filterSections`. The name search is not in `basic`: on desktop it
+	 * lives in the page header and the drawer input is mobile only. The sort counts once, key or direction.
+	 */
+	readonly sectionCounts = $derived({
+		basic: [this.numero, this.mostExpensiveOnly, this.sortKeyChanged || this.sortOrder !== DEFAULTS.sortOrder].filter(Boolean).length,
+		collection: [this.set, this.artist].filter(value => value !== 'all').length,
+		type: [this.supertype, this.type, this.rarity].filter(value => value !== 'all').length,
+	});
+
+	/** Badge count on the filters button: every section plus the name search, sort included since resetting also restores it. */
 	readonly count = $derived(
-		[this.name, this.numero, this.mostExpensiveOnly, this.sortBy !== DEFAULTS.sortBy].filter(Boolean).length
-		+ [this.artist, this.rarity, this.set, this.supertype, this.type].filter(value => value !== 'all').length,
+		this.sectionCounts.basic + this.sectionCounts.collection + this.sectionCounts.type + (this.name ? 1 : 0),
 	);
 
 	/** The URL parameter matching the current supertype, `null` when every supertype is shown. */

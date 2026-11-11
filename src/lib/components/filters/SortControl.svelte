@@ -1,16 +1,20 @@
 <script lang="ts">
+	import type { LucideIcon } from '@lucide/svelte';
 	import ArrowUp from '@lucide/svelte/icons/arrow-up';
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
 	import Select from '#components/filters/Select.svelte';
 	import Button from '#components/filters/Button.svelte';
 
 	interface Props {
+		/** Whether the select is drawn gold; by default it always is. */
+		active?: boolean;
+		icon?: LucideIcon;
 		options: { label: string; value: string; }[];
 		sortDirection: 'asc' | 'desc';
 		sortValue: string;
 	}
 
-	let { options, sortDirection = $bindable(), sortValue = $bindable() }: Props = $props();
+	let { active, icon, options, sortDirection = $bindable(), sortValue = $bindable() }: Props = $props();
 
 	function toggleSortDirection() {
 		sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
@@ -32,7 +36,9 @@
 			{/if}
 		</Button>
 		<Select
+			activeCondition={active}
 			bind:value={sortValue}
+			{icon}
 			id="sort"
 			label=""
 			options={options}
