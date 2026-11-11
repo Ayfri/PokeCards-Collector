@@ -4,6 +4,8 @@
 		label: string;
 		max?: number | undefined;
 		min?: number | undefined;
+		/** Fires on blur, Enter and the spinner arrows, not on every keystroke, so a caller can commit one finished edit. */
+		onChange?: () => void;
 		value?: number | undefined;
 	}
 
@@ -12,6 +14,7 @@
 		label,
 		max = undefined,
 		min = undefined,
+		onChange = undefined,
 		value = $bindable(undefined)
 	}: Props = $props();
 </script>
@@ -24,6 +27,7 @@
 		{id}
 		{max}
 		{min}
+		onchange={onChange}
 		type="number"
 	/>
 </div>

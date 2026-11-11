@@ -14,7 +14,7 @@
 	import type { FullCard } from '#lib/types.js';
 	import type { CardSearchResult, PokemonSearchResult } from '#helpers/card-search.ts';
 	import { page } from '$app/state';
-	import { binderStorage } from '#stores/binder.svelte.ts';
+	import { binder } from '#stores/binder.svelte.ts';
 	import { debounce } from '#helpers/utils.ts';
 	import { SvelteSet } from 'svelte/reactivity';
 
@@ -43,9 +43,9 @@
 
 	const isBinderPage = $derived(page.url.pathname === '/binder');
 
-	/** Drops a searched card into the binder page's storage row and flashes the button for a moment. */
-	function addToBinderStorage(card: FullCard) {
-		binderStorage.add([card.cardCode]);
+	/** Drops a searched card into the binder page's tray and flashes the button for a moment. */
+	function addToBinderTray(card: FullCard) {
+		binder.addToTray([card.cardCode]);
 		addedCards.add(card.cardCode);
 		
 		setTimeout(() => {
@@ -264,9 +264,9 @@
 											onclick={(e) => {
 												e.preventDefault();
 												e.stopPropagation();
-												if (!isAdded) addToBinderStorage(card);
+												if (!isAdded) addToBinderTray(card);
 											}}
-											title={isAdded ? "Added to binder" : "Add to binder storage"}
+											title={isAdded ? "Added to the binder tray" : "Add to the binder tray"}
 										>
 											{#if isAdded}
 												<div in:fly={{ duration: 200, y: 10 }}>

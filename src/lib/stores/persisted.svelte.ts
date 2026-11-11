@@ -1,23 +1,23 @@
 import { browser } from '$app/env';
 
-const PREFIX = 'pokecards-collector-';
+export const STORAGE_PREFIX = 'pokecards-collector-';
 
 function read<T>(key: string): T | null {
 	if (!browser) return null;
 
-	const stored = localStorage.getItem(PREFIX + key);
+	const stored = localStorage.getItem(STORAGE_PREFIX + key);
 	if (stored === null) return null;
 
 	try {
 		return JSON.parse(stored) as T;
 	} catch {
-		localStorage.removeItem(PREFIX + key);
+		localStorage.removeItem(STORAGE_PREFIX + key);
 		return null;
 	}
 }
 
 function write(key: string, value: unknown) {
-	if (browser) localStorage.setItem(PREFIX + key, JSON.stringify(value));
+	if (browser) localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
 }
 
 /** A reactive value restored from localStorage at startup and written back on every assignment. */

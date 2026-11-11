@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { formatEuros } from '#helpers/format.ts';
-	import { binderStorage } from '#stores/binder.svelte.ts';
+	import { binderCards } from '#stores/binder-cards.svelte.ts';
+	import { DRAG_TYPE, MAX_FILL, readDrag, setDrag } from '#helpers/binder.ts';
+	import { binder } from '#stores/binder.svelte.ts';
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import Button from '#components/filters/Button.svelte';
 	import CardImage from '#components/card/CardImage.svelte';
@@ -9,45 +11,28 @@
 	import TextInput from '#components/filters/TextInput.svelte';
 	import ArrowDown from '@lucide/svelte/icons/arrow-down';
 	import ArrowUp from '@lucide/svelte/icons/arrow-up';
+	import BookUserIcon from '@lucide/svelte/icons/book-user';
 	import CheckIcon from '@lucide/svelte/icons/check';
 	import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+	import LayersIcon from '@lucide/svelte/icons/layers';
+	import LinkIcon from '@lucide/svelte/icons/link';
 	import WandSparklesIcon from '@lucide/svelte/icons/wand-sparkles';
 	import TrashIcon from '@lucide/svelte/icons/trash';
 	import X from '@lucide/svelte/icons/x';
 	import { formatCardNumber, isCardCode } from '#helpers/card-utils.ts';
-	import type { BinderCatalogueCard, Set } from '#lib/types.js';
+	import type { Set } from '#lib/types.js';
 
 	interface Props {
-		/** The catalogue keyed by card code, so a tile resolves its card without scanning 21066 of them. */
-		cards: Map<string, BinderCatalogueCard>;
-		onAutoFill: () => void;
+		onAddSet: () => void;
+		onAddUrl: () => void;
+		/** Called when a tile gets armed, so a phone can flip back to the board. */
+		onArm?: () => void;
 		onClear: () => void;
-		/** Dropping a binder card back here pulls it out of its slot. */
-		onDropFromBinder: (event: DragEvent) => void;
-		onSelect: (item: string | null) => void;
-		/** Codes and URLs already sitting in a binder slot, so the tile can flag them. */
-		placedItems: globalThis.Set<string>;
-		/** False until `/api/binder` lands, so a tile waiting on its card shows a placeholder rather than an error. */
-		ready: boolean;
-		/** Item armed for click-to-place, `null` when none. */
-		selected: string | null;
+		onMyCards: () => void;
 		sets: Set[];
-		/** The list as displayed, so auto-fill pours cards in the order the user sorted them. */
-		visibleItems?: string[];
 	}
 
-	let {
-		cards,
-		onAutoFill,
-		onClear,
-		onDropFromBinder,
-		onSelect,
-		placedItems,
-		ready,
-		selected,
-		sets,
-		visibleItems = $bindable([])
-	}: Props = $props();
+	let { onAddSet, onAddUrl, onArm, onClear, onMyCards, sets }: Props = $props();
 
 	let searchTerm = $state('');
 
@@ -55,15 +40,15 @@
 	const view = persistedRecord('binder-storage-view', { hidePlaced: false, sortBy: 'type', sortOrder: 'asc' });
 
 	const filteredCardCodes = $derived.by(() => {
-		let filtered = [...binderStorage.cards];
+		let filtered = [...binder.tray];
 
-		if (view.hidePlaced) filtered = filtered.filter(item => !placedItems.has(item));
+		if (view.hidePlaced) filtered = filtered.filter(item => !binder.placed.has(item));
 
 		if (searchTerm.trim()) {
 			const term = searchTerm.toLowerCase();
 			filtered = filtered.filter(item => {
 				if (isCardCode(item)) {
-					const fullCard = cards.get(item);
+					const fullCard = binderCards.byCode.get(item);
 					return item.toLowerCase().includes(term) ||
 						fullCard?.name.toLowerCase().includes(term) ||
 						fullCard?.setName.toLowerCase().includes(term);
@@ -81,8 +66,8 @@
 
 			let comparison = 0;
 			if (isCodeA && isCodeB) {
-				const cardA = cards.get(itemA);
-				const cardB = cards.get(itemB);
+				const cardA = binderCards.byCode.get(itemA);
+				const cardB = binderCards.byCode.get(itemB);
 				const byNumber = () => (cardA?.localId ?? '').localeCompare(cardB?.localId ?? '', undefined, {numeric: true});
 				if (view.sortBy === 'number') {
 					comparison = byNumber();
@@ -105,40 +90,13 @@
 		return filtered;
 	});
 
-	$effect(() => { visibleItems = filteredCardCodes; });
-
-	const placedCount = $derived(binderStorage.cards.filter(item => placedItems.has(item)).length);
-
-	function onDragStart(e: DragEvent, item: string) {
-		if (!e.dataTransfer) return;
-
-		if (isCardCode(item)) {
-			const fullCard = cards.get(item);
-			if (!fullCard) {
-				console.error(`Cannot start drag, card details not found for code: ${item}`);
-				e.preventDefault();
-				return;
-			}
-			/** Firefox only starts a drag when `text/plain` data is set. */
-			e.dataTransfer.setData('text/plain', crypto.randomUUID());
-			e.dataTransfer.setData('cardCode', item);
-			e.dataTransfer.setData('cardUrl', fullCard.image);
-			e.dataTransfer.setData('source-type', 'storage');
-		} else {
-			e.dataTransfer.setData('text/plain', crypto.randomUUID());
-			e.dataTransfer.setData('cardUrl', item);
-			e.dataTransfer.setData('source-type', 'storage-url');
-		}
-		e.dataTransfer.effectAllowed = 'copy';
-	}
-
-	function removeItem(itemToRemove: string) {
-		if (selected === itemToRemove) onSelect(null);
-		binderStorage.remove(itemToRemove);
-	}
+	/** The list as displayed, so auto-fill pours cards in the order the user sorted them. */
+	const unplacedCount = $derived(filteredCardCodes.filter(item => !binder.placed.has(item)).length);
+	const placedCount = $derived(binder.tray.length - binder.trayLeft);
 
 	function toggleSelect(item: string) {
-		onSelect(selected === item ? null : item);
+		binder.armed = binder.armed === item ? null : item;
+		if (binder.armed) onArm?.();
 	}
 
 	const SORT_OPTIONS = [
@@ -156,16 +114,18 @@
 	let dropActive = $state(false);
 
 	function handleDragOver(event: DragEvent) {
-		if (!event.dataTransfer?.types.includes('source-type')) return;
+		if (!event.dataTransfer?.types.includes(DRAG_TYPE)) return;
 		event.preventDefault();
 		event.dataTransfer.dropEffect = 'move';
 		dropActive = true;
 	}
 
+	/** Dropping a binder card back here pulls it out of its slot. */
 	function handleDrop(event: DragEvent) {
 		event.preventDefault();
 		dropActive = false;
-		onDropFromBinder(event);
+		const payload = readDrag(event);
+		if (payload?.kind === 'slot') binder.remove({ page: payload.page, position: payload.position });
 	}
 
 	function toggleHidePlaced() {
@@ -182,22 +142,33 @@
 	role="region"
 >
 	<div class="mb-1 flex items-center justify-between">
-		<h3 class="text-lg text-gold-400">Storage ({binderStorage.cards.length})</h3>
-		{#if binderStorage.cards.length > 0}
+		<h3 class="text-lg text-gold-400">Storage ({binder.tray.length})</h3>
+		{#if binder.tray.length > 0}
 			<div class="flex items-center gap-1">
-				<Button class="border-gold-400 px-2 text-xs text-gold-400 disabled:opacity-50" disabled={!ready} onClick={onAutoFill} title="Pour the storage into the empty slots, in the order it is sorted">
+				<Button class="border-gold-400 px-2 text-xs text-gold-400 disabled:opacity-50" disabled={!binderCards.ready || !unplacedCount || unplacedCount > MAX_FILL} onClick={() => binder.fill(filteredCardCodes)} title="Pour the storage into the empty slots, in the order it is sorted">
 					<WandSparklesIcon size={14} /> Auto-fill
 				</Button>
 				<Button class="p-1" onClick={onClear} title="Clear the whole storage"><TrashIcon size={14} /></Button>
 			</div>
 		{/if}
 	</div>
+	<div class="mb-2 flex flex-wrap gap-1">
+		<Button class="px-2 text-xs" onClick={onAddSet} title="Send a whole set to the storage">
+			<LayersIcon size={14} /> Add set
+		</Button>
+		<Button class="px-2 text-xs" onClick={onMyCards} title="Send your collection or wishlist to the storage">
+			<BookUserIcon size={14} /> My cards
+		</Button>
+		<Button class="px-2 text-xs" onClick={onAddUrl} title="Add cards from image URLs">
+			<LinkIcon size={14} /> URL
+		</Button>
+	</div>
 	<p class="mb-2 text-xs text-gray-400">
 		Click a card to arm it, then click a binder slot - or drag it straight onto the page. Drag a card back here to pull it out of its slot.
 		{#if placedCount > 0}<span class="text-gray-300">{placedCount} already placed.</span>{/if}
 	</p>
 
-	{#if binderStorage.cards.length > 0}
+	{#if binder.tray.length > 0}
 		<div class="mb-2 flex items-end gap-1">
 			<TextInput bind:value={searchTerm} id="search-storage" label="Search storage:" placeholder="Name, set, code..." />
 			<div class="w-32 shrink-0">
@@ -219,34 +190,34 @@
 	{/if}
 
 	<div class="-mr-1 min-h-0 flex-1 overflow-y-auto pr-1">
-		{#if binderStorage.cards.length === 0}
+		{#if binder.tray.length === 0}
 			<p class="py-4 text-center text-sm text-gray-500">No cards in storage yet - add a set, your collection, or search from the header.</p>
 		{:else if filteredCardCodes.length === 0}
 			<p class="py-4 text-center text-sm text-gray-500">No items match your search/filters.</p>
 		{:else}
 			<div class="grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-2" role="list">
 				{#each filteredCardCodes as item (item)}
-					{@const fullCard = isCardCode(item) ? cards.get(item) : undefined}
-					{@const isPlaced = placedItems.has(item)}
-					{#if isCardCode(item) && !fullCard && !ready}
+					{@const fullCard = isCardCode(item) ? binderCards.byCode.get(item) : undefined}
+					{@const isPlaced = binder.placed.has(item)}
+					{#if isCardCode(item) && !fullCard && !binderCards.ready}
 						<div class="aspect-2/3 animate-pulse rounded-sm border-2 border-gray-700 bg-gray-700/50"></div>
 					{:else if isCardCode(item) && !fullCard}
 						<div class="relative flex aspect-2/3 items-center justify-center rounded-sm border-2 border-dashed border-red-700 p-1 text-center">
 							<span class="text-xs text-red-400">Data missing for {item}</span>
-							<button aria-label="Remove from storage" class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white" onclick={() => removeItem(item)} title="Remove from storage"><X size={14} /></button>
+							<button aria-label="Remove from storage" class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white" onclick={() => binder.removeFromTray(item)} title="Remove from storage"><X size={14} /></button>
 						</div>
 					{:else}
 						{@const set = fullCard ? sets.find(s => s.setId === fullCard.setId) : undefined}
 						<div
-							class="group relative aspect-2/3 rounded-sm border-2 transition-all duration-200 {selected === item ? 'border-gold-400 ring-2 ring-gold-400/50' : 'border-gray-700 hover:border-gold-400'} {isPlaced ? 'opacity-60' : ''}"
+							class="group relative aspect-2/3 rounded-sm border-2 transition-all duration-200 {binder.armed === item ? 'border-gold-400 ring-2 ring-gold-400/50' : 'border-gray-700 hover:border-gold-400'} {isPlaced ? 'opacity-60' : ''}"
 							draggable="true"
-							ondragstart={e => onDragStart(e, item)}
+							ondragstart={event => setDrag(event, { key: item, kind: 'card' })}
 							role="listitem"
 						>
 							<button
 								class="absolute inset-0 h-full w-full cursor-pointer"
 								onclick={() => toggleSelect(item)}
-								title={selected === item ? 'Armed - click a slot to place it, or click again to cancel' : 'Arm this card for the next slot you click'}
+								title={binder.armed === item ? 'Armed - click a slot to place it, or click again to cancel' : 'Arm this card for the next slot you click'}
 							>
 								<CardImage
 									alt={fullCard?.name ?? 'Imported from URL'}
@@ -260,7 +231,7 @@
 								<span class="absolute top-1 left-1 rounded-full bg-green-600 p-0.5 text-white" title="Already placed in the binder"><CheckIcon size={12} /></span>
 							{/if}
 			<!-- Arming a card also reveals its details, which is the only way to read them without a hover on touch screens. -->
-							<div class="pointer-events-none absolute right-0 bottom-0 left-0 bg-black/75 p-1 text-center text-[0.6rem] leading-tight text-white transition-opacity group-hover:opacity-100 {selected === item ? 'opacity-100' : 'opacity-0'}">
+							<div class="pointer-events-none absolute right-0 bottom-0 left-0 bg-black/75 p-1 text-center text-[0.6rem] leading-tight text-white transition-opacity group-hover:opacity-100 {binder.armed === item ? 'opacity-100' : 'opacity-0'}">
 								{#if fullCard}
 									<div class="truncate font-semibold">{fullCard.name}</div>
 									<div class="truncate">#{formatCardNumber(fullCard.localId || '?', set?.printedTotal)}</div>
@@ -270,7 +241,7 @@
 									<div class="truncate font-semibold">Imported from URL</div>
 								{/if}
 							</div>
-							<button aria-label="Remove from storage" class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100" onclick={() => removeItem(item)} title="Remove from storage"><X size={14} /></button>
+							<button aria-label="Remove from storage" class="absolute top-1 right-1 rounded-full bg-red-500 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100" onclick={() => binder.removeFromTray(item)} title="Remove from storage"><X size={14} /></button>
 						</div>
 					{/if}
 				{/each}

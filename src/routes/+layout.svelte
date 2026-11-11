@@ -20,8 +20,8 @@
 
 	let { children }: Props = $props();
 
-	/** These pages scroll their card grid inside exactly one viewport, so the footer sits below the fold instead of taking the grid's height. */
-	const FULL_VIEWPORT_ROUTES = new Set(['/cards-list', '/[grid=catalogueGrid]', '/[[grid=catalogueGrid]]/sets/[setSlug]', '/collection/[user]', '/wishlist/[user]']);
+	/** These pages fit their card grid or the binder builder inside exactly one viewport, so the footer sits below the fold instead of taking their height. */
+	const FULL_VIEWPORT_ROUTES = new Set(['/binder', '/cards-list', '/[grid=catalogueGrid]', '/[[grid=catalogueGrid]]/sets/[setSlug]', '/collection/[user]', '/wishlist/[user]']);
 	const fullViewport = $derived(FULL_VIEWPORT_ROUTES.has(page.route.id ?? ''));
 
 	/** A stable reference for "no list", so the derived arrays below only change when the layout load returns new ones. */

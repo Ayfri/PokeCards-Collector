@@ -1,6 +1,6 @@
 import { countCards, getCards, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
 import { cardListSchema, faqSchema } from '#helpers/seo.ts';
-import type { Set as CardSet, FullCard, PriceData } from '#lib/types.js';
+import type { BinderTile, Set as CardSet, FullCard, PriceData } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 import { getRarityLevel, RARITY_MAPPING } from '#helpers/rarity.ts';
@@ -11,7 +11,7 @@ const BINDER_PREVIEW_SIZE = BINDER_PAGE_SLOTS + 5;
 
 interface CatalogueHome {
 	artists: number;
-	binderPreview: { cardCode: string; id: string; position: number; url: string }[];
+	binderPreview: BinderTile[];
 	latestSet: CardSet;
 	latestSetStats: { energyCards: number; pokemonCards: number; totalValue: number; trainerCards: number };
 	mostExpensiveCards: FullCard[];
@@ -67,7 +67,7 @@ function buildHome(cards: FullCard[], prices: Record<string, PriceData>, sets: C
 		})
 		.sort((a, b) => (releaseTime.get(b.card.setId) ?? 0) - (releaseTime.get(a.card.setId) ?? 0) || b.level - a.level || b.price - a.price)
 		.slice(0, BINDER_PREVIEW_SIZE)
-		.map(({ card }, index) => ({ cardCode: card.cardCode, id: card.cardCode, position: index % BINDER_PAGE_SLOTS, url: card.image }));
+		.map(({ card }): BinderTile => ({ image: card.image, key: card.cardCode, name: card.name, types: card.types }));
 
 	const home: CatalogueHome = {
 		artists: new Set(cards.map(card => card.artist).filter(Boolean)).size,

@@ -7,15 +7,16 @@
 	import TextArea from '#components/filters/TextArea.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import BinderBoard from '#components/binder/BinderBoard.svelte';
+	import BinderStatus from '#components/binder/BinderStatus.svelte';
 	import BinderStorage from '#components/binder/BinderStorage.svelte';
-	import BinderToolbar from '#components/binder/BinderToolbar.svelte';
+	import BinderTopBar from '#components/binder/BinderTopBar.svelte';
 	import BinderHelp from '#components/binder/BinderHelp.svelte';
 	import Modal from '#components/ui/Modal.svelte';
 	import HelpCircleIcon from '@lucide/svelte/icons/circle-question-mark';
-	import { downloadDataUrl, renderBinderImage } from '#helpers/binder-export.ts';
+	import { BINDER_RECORD_KEY, isEditableTarget } from '#helpers/binder.ts';
 	import { setCardCount } from '#helpers/card-utils.ts';
-	import type { BinderCatalogueCard, BinderSlot } from '#lib/types.js';
-	import { binderStorage } from '#stores/binder.svelte.ts';
+	import { binderCards } from '#stores/binder-cards.svelte.ts';
+	import { binder } from '#stores/binder.svelte.ts';
 	import type { PageData } from './$types';
 
 	interface Props {
@@ -26,29 +27,11 @@
 
 	const sets = $derived(data.sets);
 
-	/** Fetched from `/api/binder` rather than sent in the document, so the page paints before the catalogue arrives. */
-	let catalogue = $state.raw<BinderCatalogueCard[]>([]);
-	const cardsByCode = $derived(new Map(catalogue.map(card => [card.cardCode, card])));
 	const loggedIn = $derived(Boolean(data.profile));
-	const catalogueReady = $derived(catalogue.length > 0);
-
-	let rows = $state(3);
-	let columns = $state(3);
-	/** Raw: every write replaces the page arrays (`updatePage` mutates a copy), none writes into one in place. */
-	let pages = $state.raw<Array<Array<BinderSlot | null>>>([[]]);
-	let currentPage = $state(0);
-	let spread = $state(true);
-
-	let selectedItem = $state<string | null>(null);
-	let storageOrder = $state<string[]>([]);
-	let exporting = $state(false);
-	/** Saving only starts once the stored binder is loaded, so the empty defaults never overwrite it. */
-	let loaded = $state(false);
 
 	let showHelp = $state(false);
 	let showSetModal = $state(false);
 	let showUrlModal = $state(false);
-	let showExportModal = $state(false);
 	let showClearStorageModal = $state(false);
 	let showMyCardsModal = $state(false);
 	let selectedSet = $state('');
@@ -57,208 +40,34 @@
 	let includeCollection = $state(true);
 	let includeWishlist = $state(true);
 
-	const slotsPerPage = $derived(rows * columns);
-	const totalSlots = $derived(pages.length * slotsPerPage);
-	const filledSlots = $derived(pages.reduce((total, page) => total + page.filter(Boolean).length, 0));
-	/** A slot holds either a card code or a raw URL, and the storage uses the same two kinds of key. */
-	const placedItems = $derived(new Set(pages.flat().map(slot => slot?.cardCode ?? slot?.url).filter((key): key is string => Boolean(key))));
-	/** Global index of the slot an armed card lands in: the first empty one from the current page onwards. */
-	const nextEmpty = $derived.by(() => {
-		if (!selectedItem) return -1;
-		for (let page = currentPage; page < pages.length; page++) {
-			const position = pages[page].findIndex(slot => !slot);
-			if (position !== -1) return page * slotsPerPage + position;
-		}
-		return -1;
-	});
+	/** Below `lg` the board and the cards panel do not fit side by side, so one shows at a time. */
+	let mobileView = $state<'board' | 'cards'>('board');
 
-	function emptyPage(): Array<BinderSlot | null> {
-		return Array(rows * columns).fill(null);
-	}
-
-	function saveToLocalStorage() {
-		try {
-			window.localStorage.setItem('binderGridData', JSON.stringify({ columns, pages, rows, spread }));
-			window.localStorage.setItem('binderStoredCards', JSON.stringify(binderStorage.cards));
-		} catch (e) { console.error('Failed to save the binder:', e); }
-	}
-
-	function loadFromLocalStorage() {
-		try {
-			const storedDataString = window.localStorage.getItem('binderStoredCards');
-			if (storedDataString) {
-				const parsed = JSON.parse(storedDataString);
-				if (Array.isArray(parsed)) {
-					if (parsed.every(item => typeof item === 'string')) {
-						binderStorage.cards = parsed;
-					} else {
-						console.warn('Invalid format found in binderStoredCards, resetting.');
-						binderStorage.cards = [];
-					}
-				}
-			}
-
-			const binderDataString = window.localStorage.getItem('binderGridData');
-			if (!binderDataString) {
-				pages = [emptyPage()];
-				return;
-			}
-
-			const binderData = JSON.parse(binderDataString);
-			if (typeof binderData.rows === 'number' && typeof binderData.columns === 'number') {
-				rows = Math.max(1, binderData.rows);
-				columns = Math.max(1, binderData.columns);
-			}
-			if (typeof binderData.spread === 'boolean') spread = binderData.spread;
-
-			if (Array.isArray(binderData.pages)) {
-				pages = binderData.pages.length ? binderData.pages : [emptyPage()];
-			} else {
-				pages = [emptyPage()];
-			}
-		} catch (e) {
-			console.error('Failed to load the binder:', e);
-			pages = [emptyPage()];
-			binderStorage.cards = [];
-		}
-	}
+	const urlCandidates = $derived([cardUrl, ...multipleCardUrls.split(/[\n;]/)]
+		.map(url => url.trim().replace(/\.$/, ''))
+		.filter(url => url.startsWith('http')));
 
 	onMount(() => {
-		loadFromLocalStorage();
-		loaded = true;
+		binder.load();
 
 		data.catalogue.then(cards => {
-			catalogue = cards;
+			binderCards.catalogue = cards;
 		}).catch(error => console.error('Failed to load the card catalogue:', error));
 	});
 
-	$effect(() => {
-		if (loaded) saveToLocalStorage();
-	});
-
-	/** Resizing the pocket grid keeps the cards that still fit and drops the overflow, page by page. */
-	$effect(() => {
-		const size = rows * columns;
-		if (pages.every(page => page.length === size)) return;
-		pages = pages.map(page => {
-			const resized: Array<BinderSlot | null> = Array(size).fill(null);
-			page.forEach((card, index) => { if (card && index < size) resized[index] = { ...card, position: index }; });
-			return resized;
-		});
-	});
-
-	$effect(() => { if (currentPage > pages.length - 1) currentPage = Math.max(0, pages.length - 1); });
-
-	function updatePage(pageIndex: number, updater: (page: Array<BinderSlot | null>) => Array<BinderSlot | null>) {
-		pages = pages.map((page, index) => (index === pageIndex ? updater([...page]) : page));
-	}
-
-	function makeSlot(url: string, cardCode: string | undefined, position: number): BinderSlot {
-		return { cardCode, id: crypto.randomUUID(), position, url };
-	}
-
-	function handleDrop(pageIndex: number, position: number, event: DragEvent) {
-		const sourceType = event.dataTransfer?.getData('source-type');
-
-		if (sourceType === 'storage' || sourceType === 'storage-url') {
-			const url = event.dataTransfer?.getData('cardUrl');
-			if (!url) return;
-			const cardCode = sourceType === 'storage' ? event.dataTransfer?.getData('cardCode') || undefined : undefined;
-			updatePage(pageIndex, page => { page[position] = makeSlot(url, cardCode, position); return page; });
-			return;
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.defaultPrevented || isEditableTarget(event.target)) return;
+		if (event.key === 'Escape') binder.armed = null;
+		if (!(event.ctrlKey || event.metaKey)) return;
+		const key = event.key.toLowerCase();
+		if (key === 'z') {
+			event.preventDefault();
+			if (event.shiftKey) binder.redo();
+			else binder.undo();
+		} else if (key === 'y' && event.ctrlKey) {
+			event.preventDefault();
+			binder.redo();
 		}
-
-		if (sourceType !== 'binder') return;
-
-		const sourcePage = parseInt(event.dataTransfer?.getData('source-page') ?? '-1');
-		const sourcePosition = parseInt(event.dataTransfer?.getData('source-position') ?? '-1');
-		if (sourcePage < 0 || sourcePosition < 0 || (sourcePage === pageIndex && sourcePosition === position)) return;
-
-		const sourceCard = pages[sourcePage]?.[sourcePosition];
-		if (!sourceCard) return;
-		const targetCard = pages[pageIndex]?.[position] ?? null;
-
-		pages = pages.map((page, index) => {
-			if (index !== sourcePage && index !== pageIndex) return page;
-			const next = [...page];
-			if (index === sourcePage) next[sourcePosition] = targetCard ? { ...targetCard, position: sourcePosition } : null;
-			if (index === pageIndex) next[position] = { ...sourceCard, position };
-			return next;
-		});
-	}
-
-	function handleSlotClick(pageIndex: number, position: number) {
-		if (!selectedItem) return;
-		const item = selectedItem;
-		const fullCard = cardsByCode.get(item);
-		updatePage(pageIndex, page => {
-			page[position] = makeSlot(fullCard?.image ?? item, fullCard?.cardCode, position);
-			return page;
-		});
-		selectedItem = null;
-	}
-
-	function removeCard(pageIndex: number, position: number) {
-		updatePage(pageIndex, page => { page[position] = null; return page; });
-	}
-
-	/** Dropping a slot back onto the storage empties it and puts the card back in the list if it was removed. */
-	function handleStorageDrop(event: DragEvent) {
-		if (event.dataTransfer?.getData('source-type') !== 'binder') return;
-		const pageIndex = parseInt(event.dataTransfer.getData('source-page'));
-		const position = parseInt(event.dataTransfer.getData('source-position'));
-		const card = pages[pageIndex]?.[position];
-		if (!card) return;
-		removeCard(pageIndex, position);
-		binderStorage.add([card.cardCode ?? card.url]);
-	}
-
-	function addPage() {
-		pages = [...pages, emptyPage()];
-		currentPage = pages.length - 1;
-	}
-
-	function duplicatePages(pageIndices: number[]) {
-		const copies = pageIndices.map(index => pages[index].map(slot => (slot ? { ...slot, id: crypto.randomUUID() } : null)));
-		const after = pageIndices[pageIndices.length - 1] + 1;
-		pages = [...pages.slice(0, after), ...copies, ...pages.slice(after)];
-		currentPage = after;
-	}
-
-	function clearPages(pageIndices: number[]) {
-		pages = pages.map((page, index) => (pageIndices.includes(index) ? emptyPage() : page));
-	}
-
-	function deletePages(pageIndices: number[]) {
-		const kept = pages.filter((_, index) => !pageIndices.includes(index));
-		pages = kept.length ? kept : [emptyPage()];
-		currentPage = Math.min(currentPage, pages.length - 1);
-	}
-
-	function resetAllPages() {
-		pages = pages.map(() => emptyPage());
-	}
-
-	/** Fills the empty slots with every unplaced card, adding pages until the storage is empty. */
-	function autoFill() {
-		const queue = (storageOrder.length ? storageOrder : binderStorage.cards).filter(item => !placedItems.has(item));
-		if (!queue.length) return;
-
-		const nextPages = pages.map(page => [...page]);
-		let pageIndex = 0;
-		for (const item of queue) {
-			const fullCard = cardsByCode.get(item);
-			let position = -1;
-			while (position === -1) {
-				if (pageIndex >= nextPages.length) nextPages.push(emptyPage());
-				position = nextPages[pageIndex].findIndex(slot => !slot);
-				if (position === -1) pageIndex++;
-			}
-			nextPages[pageIndex][position] = makeSlot(fullCard?.image ?? item, fullCard?.cardCode, position);
-		}
-
-		pages = nextPages;
-		selectedItem = null;
 	}
 
 	function toggleHelp() { showHelp = !showHelp; }
@@ -272,115 +81,81 @@
 	}
 	function toggleMyCardsModal() { showMyCardsModal = !showMyCardsModal; }
 	function toggleClearStorageModal() { showClearStorageModal = !showClearStorageModal; }
-	function toggleExportModal() { showExportModal = !showExportModal; }
 
 	function clearAllStoredCards() {
-		binderStorage.clear();
-		selectedItem = null;
+		binder.clearTray();
 		toggleClearStorageModal();
 	}
 
 	function addSetToStorage() {
 		if (!selectedSet) return;
-		binderStorage.add(catalogue.filter(card => card.setName === selectedSet).map(card => card.cardCode));
+		binder.addToTray(binderCards.catalogue.filter(card => card.setName === selectedSet).map(card => card.cardCode));
 		toggleSetModal();
 	}
 
 	function addMyCardsToStorage() {
 		const codes: string[] = [];
-		if (includeCollection) codes.push(...data.collectionCodes);
-		if (includeWishlist) codes.push(...data.wishlistCodes);
-		binderStorage.add(codes);
+		if (includeCollection) codes.push(...new Set(data.collectionCodes));
+		if (includeWishlist) codes.push(...new Set(data.wishlistCodes));
+		binder.addToTray(codes);
 		toggleMyCardsModal();
 	}
 
 	function addCardFromUrl() {
-		const candidates = [cardUrl, ...multipleCardUrls.split(/[\n;]/)]
-			.map(url => url.trim().replace(/\.$/, ''))
-			.filter(url => url.startsWith('http'));
-		binderStorage.add(candidates);
+		binder.addToTray(urlCandidates);
 		toggleUrlModal();
-	}
-
-	async function exportBinder(scope: 'page' | 'all') {
-		toggleExportModal();
-		exporting = true;
-		try {
-			const target = scope === 'all' ? pages : [pages[currentPage]];
-			const dataUrl = await renderBinderImage({ columns: columns, pages: target, rows: rows, username: data.profile?.username });
-			downloadDataUrl(dataUrl, scope === 'all' ? 'binder-all-pages.png' : `binder-page-${currentPage + 1}.png`);
-		} catch (error) {
-			console.error('Error generating binder image:', error);
-			alert('An error occurred while generating the image.');
-		} finally {
-			exporting = false;
-		}
 	}
 </script>
 
+<svelte:window onkeydown={handleKeydown} onstorage={event => event.key === BINDER_RECORD_KEY && binder.reload()} />
+
 <BinderHelp onClose={toggleHelp} open={showHelp} />
 
-<div class="flex flex-col gap-4 px-4 pb-4 md:px-6 md:pb-6">
-	<PageHeader hideLedeOnPhone lede="Lay out binder pages with your cards, a set or any card by URL, then export them as an image." title="Binder Builder">
+<!-- `lg:pt-8` puts the header where it sits on the other pages: a full-viewport `main` keeps `pt-24` at `lg`, which the header's `lg:-mt-8` would otherwise eat into. -->
+<div class="flex min-h-0 flex-1 flex-col gap-3 px-4 pb-4 md:px-6 lg:pt-8">
+	<PageHeader class="shrink-0" hideLedeOnPhone lede="Lay out binder pages with your cards, a set or any card by URL, then export them as an image." title="Binder Builder">
 		{#snippet extras()}
 			<Button class="p-1.5" onClick={toggleHelp} title="How the Binder Builder works">
 				<HelpCircleIcon size={20} />
 			</Button>
 		{/snippet}
 		{#snippet controls()}
-			<div class="flex flex-wrap gap-2 text-xs">
-				<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{pages.length} page{pages.length > 1 ? 's' : ''} of {slotsPerPage}</span>
-				<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{filledSlots}/{totalSlots} slots filled</span>
-				<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{binderStorage.cards.length - placedItems.size} left in storage</span>
-				{#if exporting}<span class="rounded-full bg-gold-400 px-3 py-1 text-black">Rendering image...</span>{/if}
-			</div>
+			<BinderTopBar username={data.profile?.username} />
 		{/snippet}
 	</PageHeader>
 
-	<BinderToolbar
-		bind:columns={columns}
-		bind:rows={rows}
-		bind:spread={spread}
-		onAddSet={toggleSetModal}
-		onAddUrl={toggleUrlModal}
-		onExport={toggleExportModal}
-		onMyCards={toggleMyCardsModal}
-		onResetAll={resetAllPages}
-	/>
+	<div class="flex shrink-0 gap-1 rounded-lg bg-gray-800 p-1 text-sm lg:hidden" role="group">
+		<button
+			aria-pressed={mobileView === 'board'}
+			class={['focus-ring flex-1 rounded-md px-3 py-1.5 transition-colors', mobileView === 'board' ? 'bg-gold-400 font-semibold text-black' : 'text-gray-300']}
+			onclick={() => (mobileView = 'board')}
+			type="button"
+		>
+			Board
+		</button>
+		<button
+			aria-pressed={mobileView === 'cards'}
+			class={['focus-ring flex-1 rounded-md px-3 py-1.5 transition-colors', mobileView === 'cards' ? 'bg-gold-400 font-semibold text-black' : 'text-gray-300']}
+			onclick={() => (mobileView = 'cards')}
+			type="button"
+		>
+			Cards ({binder.trayLeft})
+		</button>
+	</div>
 
-	<div class="grid grid-cols-1 gap-3 lg:grid-cols-12">
-		<!-- 21rem from `lg`: the board sits under the layout's 128 px padding pulled up 32 px by the header (~81 px with its lede), the 96 px toolbar, two 16 px gaps and the 24 px bottom padding (~329 px).
-		     Below `lg` the header stacks its pills under the title and the layout padding is 96 px, so 22rem leaves room for them. -->
-		<div class="h-[calc(100dvh-22rem)] min-h-[26rem] lg:col-span-8 lg:h-[calc(100dvh-21rem)]">
-			<BinderBoard
-				columns={columns}
-				currentPage={currentPage}
-				{nextEmpty}
-				onAddPage={addPage}
-				onClearPages={clearPages}
-				onDeletePages={deletePages}
-				onDrop={handleDrop}
-				onDuplicatePages={duplicatePages}
-				onGoTo={index => (currentPage = index)}
-				onRemove={removeCard}
-				onSlotClick={handleSlotClick}
-				pages={pages}
-				rows={rows}
-				spread={spread}
-			/>
+	<div class="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)] gap-3 lg:grid-cols-12">
+		<div class={['flex min-h-0 flex-col gap-2 lg:col-span-8', mobileView === 'cards' && 'max-lg:hidden']}>
+			<BinderBoard />
+			<BinderStatus />
 		</div>
 
-		<div class="h-[calc(100dvh-22rem)] min-h-[26rem] lg:col-span-4 lg:h-[calc(100dvh-21rem)]">
+		<div class={['min-h-0 lg:col-span-4', mobileView === 'board' && 'max-lg:hidden']}>
 			<BinderStorage
-				bind:visibleItems={storageOrder}
-				cards={cardsByCode}
-				onAutoFill={autoFill}
+				onAddSet={toggleSetModal}
+				onAddUrl={toggleUrlModal}
+				onArm={() => (mobileView = 'board')}
 				onClear={toggleClearStorageModal}
-				onDropFromBinder={handleStorageDrop}
-				onSelect={item => (selectedItem = item)}
-				{placedItems}
-				ready={catalogueReady}
-				selected={selectedItem}
+				onMyCards={toggleMyCardsModal}
 				{sets}
 			/>
 		</div>
@@ -408,7 +183,7 @@
 
 	{#snippet footer()}
 		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleSetModal}>Cancel</Button>
-		<button class="btn-gold text-sm" disabled={!selectedSet || !catalogueReady} onclick={addSetToStorage} type="button">{catalogueReady ? 'Add set' : 'Loading cards...'}</button>
+		<button class="btn-gold text-sm" disabled={!selectedSet || !binderCards.ready} onclick={addSetToStorage} type="button">{binderCards.ready ? 'Add set' : 'Loading cards...'}</button>
 	{/snippet}
 </Modal>
 
@@ -459,22 +234,7 @@
 	</div>
 	{#snippet footer()}
 		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleUrlModal}>Cancel</Button>
-		<button class="btn-gold text-sm" disabled={!cardUrl && !multipleCardUrls} onclick={addCardFromUrl} type="button">Add card(s)</button>
-	{/snippet}
-</Modal>
-
-<Modal bind:open={showExportModal} onClose={toggleExportModal} title="Export as image">
-	<p class="mb-4 text-sm text-gray-300">
-		Pages render at 300px per card, numbered slot by slot so you can follow the sheet while filling the real binder.
-	</p>
-	{#if filledSlots < totalSlots}
-		<p class="mb-4 rounded-sm bg-gray-900 p-2 text-xs text-gray-400">Some slots are still empty - they export as numbered placeholders.</p>
-	{/if}
-
-	{#snippet footer()}
-		<Button class="border border-gray-600 px-4 py-2 text-sm" onClick={toggleExportModal}>Cancel</Button>
-		<Button class="px-4 py-2 text-sm" onClick={() => exportBinder('page')}>Current page</Button>
-		<button class="btn-gold text-sm" onclick={() => exportBinder('all')} type="button">All {pages.length} pages</button>
+		<button class="btn-gold text-sm" disabled={!urlCandidates.length} onclick={addCardFromUrl} type="button">Add card(s)</button>
 	{/snippet}
 </Modal>
 

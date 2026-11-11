@@ -1,11 +1,10 @@
 import { CARDTRADER_IMAGES } from '#src/constants.ts';
 import { processCardImage } from '#helpers/card-images.ts';
-import type { BinderSlot } from '#lib/types.js';
 
 interface BinderExportOptions {
 	columns: number;
-	/** Pages to draw, in order. Each entry holds `rows * columns` slots. */
-	pages: Array<Array<BinderSlot | null>>;
+	/** Pages to draw, in order. `number` is the page's place in the binder, `images` holds `rows * columns` URLs, `null` for an empty or unresolved pocket. */
+	pages: readonly { images: readonly (string | null)[]; number: number }[];
 	rows: number;
 	/** Stamped in the corner box, falls back to the site name. */
 	username?: string;
@@ -66,11 +65,12 @@ export async function renderBinderImage({ columns, pages, rows, username }: Bind
 
 	/** All images load in parallel but are drawn in slot order, so a slow card never moves the others. */
 	const images = await Promise.all(
-		pages.flatMap(page => page.map(slot => (slot?.url ? loadImage(resolveExportUrl(slot.url)) : Promise.resolve(null))))
+		pages.flatMap(page => page.images.map(image => (image ? loadImage(resolveExportUrl(image)) : Promise.resolve(null))))
 	);
 
 	pages.forEach((page, pageIndex) => {
 		const originY = pageIndex * pageHeight;
+		const firstSlot = (page.number - 1) * slotsPerPage;
 
 		ctx.fillStyle = SHEET;
 		roundedRect(ctx, 8, originY + 8, pageWidth - 16, pageHeight - 16, 18);
@@ -80,12 +80,12 @@ export async function renderBinderImage({ columns, pages, rows, username }: Bind
 		ctx.font = 'bold 26px "Clash Display", sans-serif';
 		ctx.textAlign = 'left';
 		ctx.textBaseline = 'middle';
-		ctx.fillText(`Page ${pageIndex + 1}`, PAGE_PADDING, originY + HEADER_HEIGHT / 2 + 8);
+		ctx.fillText(`Page ${page.number}`, PAGE_PADDING, originY + HEADER_HEIGHT / 2 + 8);
 
 		ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
 		ctx.font = '20px sans-serif';
 		ctx.textAlign = 'right';
-		ctx.fillText(`${page.filter(Boolean).length}/${slotsPerPage}`, pageWidth - PAGE_PADDING, originY + HEADER_HEIGHT / 2 + 8);
+		ctx.fillText(`${page.images.filter(Boolean).length}/${slotsPerPage}`, pageWidth - PAGE_PADDING, originY + HEADER_HEIGHT / 2 + 8);
 
 		for (let position = 0; position < slotsPerPage; position++) {
 			const column = position % columns;
@@ -111,7 +111,7 @@ export async function renderBinderImage({ columns, pages, rows, username }: Bind
 			ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
 			ctx.font = '28px sans-serif';
 			ctx.textAlign = 'center';
-			ctx.fillText(`${pageIndex * slotsPerPage + position + 1}`, x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
+			ctx.fillText(`${firstSlot + position + 1}`, x + CARD_WIDTH / 2, y + CARD_HEIGHT / 2);
 		}
 	});
 

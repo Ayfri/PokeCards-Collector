@@ -179,12 +179,17 @@ export interface BinderCatalogueCard {
 	types: string;
 }
 
-/** One slot of a binder page. */
-export interface BinderSlot {
-	cardCode: string | undefined;
-	id: string;
-	position: number;
-	url: string;
+/** What a binder sheet draws in one pocket. */
+export interface BinderTile {
+	/** Faded by the owned overlay: a card the viewer does not own. */
+	dimmed?: boolean;
+	/** Only where the sheet is not already inside a link, such as the shared binder page, so crawlers read each card as a link. */
+	href?: string;
+	/** Empty while the card is unresolved, which draws the placeholder plate. */
+	image: string;
+	key: string;
+	name: string;
+	types?: string;
 }
 
 export interface SearchedUser {
