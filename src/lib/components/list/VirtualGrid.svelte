@@ -1,18 +1,20 @@
-<script lang="ts">
+<script lang="ts" generics="T extends { cardCode: string }">
+	import type { Snippet } from 'svelte';
 	import ScrollButton from '#components/list/ScrollButton.svelte';
 	import { gridScroll } from '#stores/grid.svelte.ts';
-	import type { FullCard } from '#lib/types.js';
 
 	interface Props {
-		children?: import('svelte').Snippet<[{ index: number; item: FullCard; }]>;
-		empty?: import('svelte').Snippet;
+		children?: Snippet<[{ index: number; item: T; }]>;
+		empty?: Snippet;
 		forcedItemsPerRow?: number | null;
 		gapX?: number;
 		gapY?: number;
 		itemHeight: number;
-		items: FullCard[];
+		items: readonly T[];
 		itemWidth: number;
 		marginTop?: number;
+		/** A grid inside a panel turns it off: the progress bar and the fixed scroll buttons belong to a page that scrolls through one grid. */
+		pageScroll?: boolean;
 	}
 
 	let {
@@ -24,7 +26,8 @@
 		itemHeight,
 		items,
 		itemWidth,
-		marginTop = 0
+		marginTop = 0,
+		pageScroll = true
 	}: Props = $props();
 
 	/** Rows rendered above and below the viewport so a fast scroll never shows a hole. */
@@ -50,6 +53,7 @@
 
 	/** Progress comes from the sizes already tracked, so scrolling never reads `scrollHeight` and never forces a reflow. */
 	$effect(() => {
+		if (!pageScroll) return;
 		const scrollable = totalHeight - containerHeight;
 		gridScroll.progress = scrollable > 0 ? Math.min(100, Math.max(0, (scrollTop / scrollable) * 100)) : 0;
 	});
@@ -106,5 +110,7 @@
 	{/if}
 </div>
 
-<ScrollButton direction="up" onclick={scrollToTop} visible={scrollTop > 100} />
-<ScrollButton direction="down" onclick={scrollToLast} />
+{#if pageScroll}
+	<ScrollButton direction="up" onclick={scrollToTop} visible={scrollTop > 100} />
+	<ScrollButton direction="down" onclick={scrollToLast} />
+{/if}
