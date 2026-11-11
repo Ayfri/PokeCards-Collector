@@ -6,7 +6,7 @@
 		disabled?: boolean;
 		isActive?: boolean;
 		onClick: () => void;
-		/** Tooltip, and the accessible name when the button holds only an icon. */
+		/** Tooltip. A button with no text inside also gets it as its accessible name, through the `title` fallback. */
 		title?: string;
 	}
 
@@ -22,7 +22,6 @@
 </script>
 
 <button
-	aria-label={title || undefined}
 	class="focus-ring relative overflow-hidden flex items-center justify-center bg-transparent border-2 rounded text-sm py-1 px-3 h-8 transition-all duration-300 z-0 enabled:hover:text-black enabled:active:text-black
 		   before:content-[''] before:absolute before:bottom-0 before:left-0 before:z-0 before:h-0 before:w-full before:bg-gold-400 before:transition-[height] before:duration-300 before:ease-in-out
 		   enabled:hover:before:h-full enabled:active:before:h-full disabled:before:hidden
