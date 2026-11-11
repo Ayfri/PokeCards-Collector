@@ -218,11 +218,11 @@
 				<div class="flex min-h-0 flex-col items-center justify-center gap-2">
 					{#key round.card.cardCode}
 						<!-- `flex-initial`, not `flex-1`: the box shrinks when the column is short but never grows past the card, so the name sits right under it. -->
-						<!-- `isolate` keeps the glow's `-z-10` inside this block, behind the card but not behind the page. The glow is a fixed share of the card's box, wider than the card so it shows around it, and it follows
+						<!-- `isolate` keeps the glow's `-z-10` inside this block, behind the card but not behind the page. The glow is wider than the card and 4rem shorter at each end, so its 64 px blur spreads sideways and is not cut by the board's clipped top, and it follows
 						     the card as the art row shrinks, and its type comes from the round alone: it does not change when the answer is revealed. -->
 						<div class="relative isolate flex min-h-0 flex-initial items-center" in:fly={{ duration: 350, easing: cubicOut, y: 24 }}>
 							{#if !NO_IMAGES}
-								<div aria-hidden="true" class={[glowType, 'pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[105%] w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-[15rem] bg-(--type-color) opacity-75 blur-3xl']}></div>
+								<div aria-hidden="true" class={[glowType, 'pointer-events-none absolute inset-y-16 left-1/2 -z-10 w-[140%] -translate-x-1/2 rounded-[15rem] bg-(--type-color) opacity-75 blur-3xl']}></div>
 							{/if}
 							<CardImage
 								alt={round.card.name}
