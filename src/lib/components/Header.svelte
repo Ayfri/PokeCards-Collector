@@ -131,8 +131,9 @@
 	</a>
 {/snippet}
 
-<header class="fixed top-0 left-0 w-full p-2 pb-6 lg:pb-12 z-50 bg-linear-to-b from-gray-900 to-transparent [view-transition-name:header]">
-	<div class="relative py-1.5 xs:py-2.5 lg:py-3 px-4 xs:px-6 lg:px-8 flex items-center justify-between gap-4 rounded-full bg-gray-800">
+<!-- The gradient band under the pill is decoration that overlaps the top of every page, so only the pill and the mobile menu take clicks. -->
+<header class="pointer-events-none fixed top-0 left-0 w-full p-2 pb-6 lg:pb-12 z-50 bg-linear-to-b from-gray-900 to-transparent [view-transition-name:header]">
+	<div class="pointer-events-auto relative py-1.5 xs:py-2.5 lg:py-3 px-4 xs:px-6 lg:px-8 flex items-center justify-between gap-4 rounded-full bg-gray-800">
 		<div class="flex items-center gap-2">
 			<button
 				aria-label="Toggle menu"
@@ -222,7 +223,7 @@
 		<div
 			aria-modal="true"
 			bind:this={mobileMenuNav}
-			class="absolute top-3/4 left-0 right-0 mt-1 mx-2 p-4 rounded-xl shadow-lg bg-gray-800 lg:hidden z-50"
+			class="pointer-events-auto absolute top-3/4 left-0 right-0 mt-1 mx-2 p-4 rounded-xl shadow-lg bg-gray-800 lg:hidden z-50"
 			role="dialog"
 			tabindex="-1"
 			transition:slide={{ axis: 'y', duration: 150 }}
