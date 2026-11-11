@@ -3,7 +3,7 @@
 	import Avatar from '#lib/components/auth/Avatar.svelte';
 	import ColorPicker from '#components/settings/ColorPicker.svelte';
 	import Checkbox from '#components/filters/Checkbox.svelte';
-	import PageTitle from '#lib/components/PageTitle.svelte';
+	import PageHeader from '#lib/components/PageHeader.svelte';
 	import {enhance} from '$app/forms';
 	import {supabase} from '#lib/supabase.ts';
 	import {flushSync} from 'svelte';
@@ -94,12 +94,7 @@
 {/snippet}
 
 <main class="container mx-auto px-4 pb-12 text-white">
-	<div class="w-full pb-4 lg:pb-5">
-		<div class="mx-4 flex items-center justify-between lg:mx-28">
-			<PageTitle title="Settings" />
-		</div>
-		<div class="gold-rule my-2"></div>
-	</div>
+	<PageHeader class="mb-6" lede="Manage your account, your profile look, who can see your collection and your password." title="Settings" />
 
 	{#if !profile}
 		<p class="alert-error text-center">

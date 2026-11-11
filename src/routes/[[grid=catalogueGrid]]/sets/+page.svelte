@@ -1,14 +1,20 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import type { PageData } from './$types';
-	import { formatDate, formatEuros } from '#helpers/format.ts';
+	import { formatDate, formatEuros, pluralize } from '#helpers/format.ts';
+	import GroupHeading from '#components/list/GroupHeading.svelte';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
+	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
+	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import FilterBar from '#components/filters/FilterBar.svelte';
+	import LayersIcon from '@lucide/svelte/icons/layers';
+	import LibraryIcon from '@lucide/svelte/icons/library';
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import SortControl from '#components/filters/SortControl.svelte';
-	import PageTitle from '#components/PageTitle.svelte';
+	import SquareStackIcon from '@lucide/svelte/icons/square-stack';
+	import PageHeader, { type PageStat } from '#components/PageHeader.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import type { SetWithPrice } from '#lib/types.js';
@@ -96,29 +102,49 @@
 	}));
 
 	const shownSetCount = $derived(filteredTiles.reduce((count, tile) => count + tile.sets.length, 0));
+	const countHint = $derived(shownSetCount === typedSets.length ? undefined : `${shownSetCount.toLocaleString('en-US')} of ${typedSets.length.toLocaleString('en-US')}`);
 
-	/** The release years a group spans, a single year when all its sets came out the same year. */
+	/** Totals of the whole list, not of the search: the header stays put while the field filters. Years are read in UTC like `formatDate`, so the server and the browser agree. */
+	const stats = $derived.by((): PageStat[] => {
+		if (!typedSets.length) return [];
+		const years = yearSpan(typedSets);
+
+		return [
+			{ icon: LayersIcon, label: 'sets', value: typedSets.length.toLocaleString('en-US') },
+			{ icon: LibraryIcon, label: 'series', title: 'Series the sets belong to', value: new Set(typedSets.map(set => set.series || 'Other')).size.toLocaleString('en-US') },
+			{ icon: SquareStackIcon, label: 'cards', title: 'Cards across every set', value: typedSets.reduce((count, set) => count + setCardCount(set), 0).toLocaleString('en-US') },
+			{ icon: CircleEuroIcon, label: 'total value', title: 'Cardmarket value of one complete copy of every set', value: formatEuros(typedSets.reduce((total, set) => total + set.totalPrice, 0), 0) },
+			...(years ? [{ icon: CalendarDaysIcon, label: 'released', title: 'Release years', value: years }] : []),
+		];
+	});
+
+	/** The release years a group spans, a single year when all its sets came out the same year, empty when none has a date. Read in UTC like `formatDate`, so the server and the browser agree. */
 	function yearSpan(sets: SetWithPrice[]): string {
-		const years = sets.map(set => new Date(set.releaseDate).getFullYear());
+		const years = sets.map(set => new Date(set.releaseDate).getUTCFullYear()).filter(Number.isFinite);
+		if (!years.length) return '';
 		const [first, last] = [Math.min(...years), Math.max(...years)];
 		return first === last ? `${first}` : `${first} - ${last}`;
 	}
 </script>
 
-<div class="container mx-auto px-4 pt-2 pb-8">
-	<div class="mb-8 flex flex-col sm:flex-row sm:flex-wrap sm:gap-4 items-center justify-between">
-		<div class="flex flex-col items-center gap-2 sm:items-start xl:flex-row xl:items-center xl:gap-4" transition:fly={{ delay: 200, duration: 400, y: 50 }}>
-			<PageTitle title={`${catalogue.routeCode ? `${catalogue.adjective} ` : ''}Pokémon TCG Sets`} />
+<div class="container mx-auto px-4 pb-8">
+	<PageHeader
+		class="mb-4"
+		lede={`Every ${catalogue.routeCode ? `${catalogue.adjective} ` : ''}Pokémon TCG expansion by release date, with its card count and the value of a complete set.`}
+		{stats}
+		title={`${catalogue.routeCode ? `${catalogue.adjective} ` : ''}Pokémon TCG Sets`}
+	>
+		{#snippet extras()}
 			<LanguageSwitch language={data.catalogueLanguage} paths={catalogueRoutes('setsRoute')} />
-		</div>
-
-		<div class="max-sm:w-full" transition:fly={{ delay: 250, duration: 500, y: 50 }}>
+		{/snippet}
+		{#snippet controls()}
 			<FilterBar>
 				{#snippet search()}
 					<TextInput
 						applyOnMount
 						bind:value={searchInput}
 						clearable
+						hint={countHint}
 						icon={SearchIcon}
 						id="setSearch"
 						label="Search"
@@ -141,28 +167,14 @@
 					/>
 				{/snippet}
 			</FilterBar>
-		</div>
-	</div>
-	<hr class="gold-rule my-4 border-0" transition:fade={{ delay: 250, duration: 400 }} />
-
-	<p class="text-gray-300 mb-6" transition:fade={{ delay: 250, duration: 400 }}>
-		Sets are collections of cards that are released together.<br>
-		<span class="text-sm">Showing {shownSetCount} of {typedSets.length} sets.</span>
-	</p>
+		{/snippet}
+	</PageHeader>
 
 	<div transition:fly={{ delay: 400, duration: 400, y: 50 }}>
 		{#each seriesKeys as series, index (series)}
 			{@const seriesSets = groupedTiles[series].flatMap(tile => tile.sets)}
 			<div class="mb-8">
-				<div class="mb-4">
-					<div class="flex flex-wrap items-center gap-x-4 gap-y-1">
-						<h2 class="text-xl font-bold text-gold-400 md:text-2xl">{series}</h2>
-						<p class="flex items-center gap-1.5 whitespace-nowrap text-sm text-gray-300" title="Release years"><span aria-hidden="true" class="icon-calendar-days size-3.5 shrink-0"></span> {yearSpan(seriesSets)}</p>
-						<p class="whitespace-nowrap text-sm text-gray-400">{seriesSets.length} sets</p>
-						<p class="ml-auto whitespace-nowrap text-sm text-gold-400">{formatEuros(seriesSets.reduce((acc, set) => acc + set.totalPrice, 0))}</p>
-					</div>
-					<hr class="w-full border-t border-gray-700 my-2" />
-				</div>
+				<GroupHeading meta={[yearSpan(seriesSets), pluralize(seriesSets.length, 'set')].filter(Boolean)} name={series} value={formatEuros(seriesSets.reduce((acc, set) => acc + set.totalPrice, 0))} />
 				
 				<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ delay: 200 * index, duration: 500, y: 50 }}>
 					{#each groupedTiles[series] as tile, position (tile.set.setId)}

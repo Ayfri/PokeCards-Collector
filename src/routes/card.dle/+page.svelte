@@ -5,7 +5,7 @@
 	import CardDlePicker from '#components/games/CardDlePicker.svelte';
 	import CardDleRules from '#components/games/CardDleRules.svelte';
 	import CardDleWinPanel from '#components/games/CardDleWinPanel.svelte';
-	import PageTitle from '#components/PageTitle.svelte';
+	import PageHeader from '#components/PageHeader.svelte';
 	import { easyFilters, hasEasyFilters, shiftDay } from '#helpers/card-dle.ts';
 	import { readJson } from '#helpers/utils.ts';
 	import type { CardDleGuessResponse, CardDlePendingGuess, CardDleSuggestion } from '#lib/types.js';
@@ -97,29 +97,31 @@
 	}
 </script>
 
-<div class="mx-auto flex w-full max-w-5xl flex-col gap-4 px-3 pt-4 pb-12 text-white md:gap-5 md:pt-7">
-	<header class="flex flex-col items-center gap-2 text-center">
-		<PageTitle title="Card.dle" />
-		<p class="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-gray-400">
-			<span>Find today's mystery card in as few guesses as you can.</span>
-			<button
-				class="focus-ring flex items-center gap-1.5 rounded-full border border-gold-400/60 bg-gold-400/10 px-3 py-1 font-semibold text-gold-300 transition-colors hover:bg-gold-400/20 hover:text-gold-200"
-				onclick={() => (rulesOpen = true)}
-				title="Read the rules of Card.dle"
-				type="button"
-			>
-				<CircleQuestionMarkIcon size={16} /> How to play
-			</button>
-			{#if hydrated}
-				{#if guesses.length > 0}
-					<span class="tabular-nums">Guess {guesses.length}</span>
+<div class="mx-auto flex w-full max-w-5xl flex-col gap-4 px-3 pb-12 text-white md:gap-5">
+	<PageHeader lede="Find today's mystery card in as few guesses as you can." title="Card.dle">
+		{#snippet controls()}
+			<div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-400">
+				<!-- The block is anchored to the right edge from `lg` and grows leftwards, so the button comes last there and stays put when the guess count and streak appear;
+				     stacked under the title it is anchored left, so it comes first. -->
+				{#if hydrated}
+					{#if guesses.length > 0}
+						<span class="tabular-nums">Guess {guesses.length}</span>
+					{/if}
+					{#if cardDle.streak > 0}
+						<span class="flex items-center gap-1 text-orange-400 tabular-nums" title="Days in a row you found the card"><FlameIcon size={16} /> {cardDle.streak}</span>
+					{/if}
 				{/if}
-				{#if cardDle.streak > 0}
-					<span class="flex items-center gap-1 text-orange-400 tabular-nums" title="Days in a row you found the card"><FlameIcon size={16} /> {cardDle.streak}</span>
-				{/if}
-			{/if}
-		</p>
-	</header>
+				<button
+					class="focus-ring flex items-center gap-1.5 rounded-full border border-gold-400/60 bg-gold-400/10 px-3 py-1 font-semibold text-gold-300 transition-colors hover:bg-gold-400/20 hover:text-gold-200 max-lg:order-first"
+					onclick={() => (rulesOpen = true)}
+					title="Read the rules of Card.dle"
+					type="button"
+				>
+					<CircleQuestionMarkIcon size={16} /> How to play
+				</button>
+			</div>
+		{/snippet}
+	</PageHeader>
 
 	{#if won && latest}
 		<CardDleWinPanel

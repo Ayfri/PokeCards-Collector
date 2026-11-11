@@ -3,13 +3,14 @@
 	import type { Round } from './+page.server';
 	import { refreshAll } from '$app/navigation';
 	import CardImage from '#components/card/CardImage.svelte';
+	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import RaritySymbol from '#components/card/RaritySymbol.svelte';
 	import SetLogo from '#components/SetLogo.svelte';
 	import PriceStatsModal from '#components/games/PriceStatsModal.svelte';
 	import { formatDate } from '#helpers/format.ts';
 	import { judgeGuess, PRICE_TIERS, type RoundScore } from '#helpers/price-game.ts';
 	import Numpad from '#lib/components/Numpad.svelte';
-	import PageTitle from '#lib/components/PageTitle.svelte';
+	import PageHeader from '#lib/components/PageHeader.svelte';
 	import { priceGame } from '#stores/games.svelte.ts';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import ChartColumnIcon from '@lucide/svelte/icons/chart-column';
@@ -62,7 +63,10 @@
 	const releaseDate = $derived(round?.releaseDate ? formatDate(round.releaseDate) : 'Unknown');
 	const answered = $derived(verdict !== null);
 
-	const CHIP = 'flex shrink-0 items-center gap-2 rounded-full bg-gray-800/80 px-3 py-1.5 whitespace-nowrap';
+	/** The card's first type, lowercase, which `colors.css` turns into `--type-color`; a Trainer or Energy with no type glows colorless. */
+	const glowType = $derived(round?.card.types.split(',')[0]?.trim().toLowerCase() || 'colorless');
+
+	const CHIP ='flex shrink-0 items-center gap-2 rounded-full bg-gray-800/80 px-3 py-1.5 whitespace-nowrap';
 
 	/** The two gold plates the ripple animates: invisible until the animation classes are added, the second one half a cycle behind. */
 	const RIPPLE =
@@ -159,159 +163,170 @@
 </svelte:head>
 
 <!-- The board height is the viewport minus the layout's header offset (`pt-24` / `lg:pt-32`), because the `min-h-screen` layout never caps a child's height.
-     The top padding leaves room for the PageTitle ghost that overflows above it, which `overflow-hidden` would clip.
+     The page header sits outside the `overflow-hidden` board: it pulls itself up into the layout's padding, which the clip would cut off. On a phone its lede is
+     hidden and the stats button is centred under the title, so the header stays about as tall as the old title row and the board keeps its room.
      The panel keeps one height whatever the state: the verdict covers the keypad's slot and the action button sits on the input's row under `md`,
-     so on a 375x667 phone only the art row shrinks, to about 170 px. -->
-<div class="mx-auto flex h-[calc(100dvh-6rem)] w-full max-w-6xl flex-col items-center gap-2 overflow-hidden px-3 pt-4 pb-3 md:gap-3 md:pt-7 lg:h-[calc(100dvh-8rem)] lg:gap-5">
-	<PageTitle title="Guess the Price!" />
-	<button
-		aria-label="Your stats"
-		class="focus-ring flex h-7 w-full max-w-md shrink-0 items-center justify-center gap-3 rounded-full border border-gold-500/30 bg-gray-800/70 px-3 text-xs text-gray-300 tabular-nums transition-colors hover:border-gold-400"
-		id="price-stats"
-		onclick={() => (statsOpen = true)}
-		title="Your stats"
-		type="button"
-	>
-		{#if hydrated}
-			<span class="flex items-center gap-1" title="Current streak">
-				<FlameIcon class={priceGame.stats.streak >= 2 ? 'text-orange-400' : 'text-gray-400'} size={14} />
-				{priceGame.stats.streak}
-			</span>
-			<span class="flex items-center gap-1" title="Best streak">
-				<TrophyIcon class="text-gold-400" size={14} />
-				{priceGame.stats.bestStreak}
-			</span>
-			<span class="flex items-center gap-1" title="Total score">
-				<StarIcon class="text-gold-400" size={14} />
-				{priceGame.stats.totalScore.toLocaleString('en-US')}
-			</span>
-			<span aria-label="Last rounds" class="flex gap-1 max-2xs:hidden" role="img">
-				{#each priceGame.stats.history as tier, index (index)}
-					<span class={['size-2 rounded-full', PRICE_TIERS[tier].bar]}></span>
-				{/each}
-			</span>
-		{/if}
-		<ChartColumnIcon class="text-gold-400" size={14} />
-	</button>
+     so on a phone only the art row shrinks. -->
+<div class="mx-auto flex h-[calc(100dvh-6rem)] w-full max-w-6xl flex-col px-3 pb-3 lg:h-[calc(100dvh-8rem)]">
+	<PageHeader class="mb-3 shrink-0 lg:mb-4" hideLedeOnPhone lede="Guess a random card's Cardmarket price." title="Guess the Price!">
+		{#snippet controls()}
+			<button
+				aria-label="Your stats"
+				class="focus-ring flex h-7 w-full max-w-md shrink-0 items-center justify-center gap-3 rounded-full border border-gold-500/30 bg-gray-800/70 px-3 text-xs text-gray-300 tabular-nums transition-colors hover:border-gold-400 max-lg:mx-auto lg:w-72"
+				id="price-stats"
+				onclick={() => (statsOpen = true)}
+				title="Your stats"
+				type="button"
+			>
+				{#if hydrated}
+					<span class="flex items-center gap-1" title="Current streak">
+						<FlameIcon class={priceGame.stats.streak >= 2 ? 'text-orange-400' : 'text-gray-400'} size={14} />
+						{priceGame.stats.streak}
+					</span>
+					<span class="flex items-center gap-1" title="Best streak">
+						<TrophyIcon class="text-gold-400" size={14} />
+						{priceGame.stats.bestStreak}
+					</span>
+					<span class="flex items-center gap-1" title="Total score">
+						<StarIcon class="text-gold-400" size={14} />
+						{priceGame.stats.totalScore.toLocaleString('en-US')}
+					</span>
+					<span aria-label="Last rounds" class="flex gap-1 max-2xs:hidden" role="img">
+						{#each priceGame.stats.history as tier, index (index)}
+							<span class={['size-2 rounded-full', PRICE_TIERS[tier].bar]}></span>
+						{/each}
+					</span>
+				{/if}
+				<ChartColumnIcon class="text-gold-400" size={14} />
+			</button>
+		{/snippet}
+	</PageHeader>
 
-	{#if !round}
-		<p class="text-xl text-gray-400">{data.error ?? 'No card to display.'}</p>
-		<button
-			class="btn-gold"
-			disabled={refilling}
-			onclick={nextCard}
-		>
-			{refilling ? 'Drawing...' : 'Retry'}
-		</button>
-	{:else}
-		<!-- Stacked on mobile, only the art row may shrink, so the keypad is never clipped. -->
-		<section class="grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_auto] gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:grid-rows-1 lg:gap-8">
-			<div class="flex min-h-0 flex-col items-center justify-center gap-2">
-				{#key round.card.cardCode}
-					<!-- `flex-initial`, not `flex-1`: the box shrinks when the column is short but never grows past the card, so the name sits right under it. -->
-					<div class="flex min-h-0 flex-initial items-center" in:fly={{ duration: 350, easing: cubicOut, y: 24 }}>
-						<CardImage
-							alt={round.card.name}
-							class="max-h-full w-auto rounded-xl object-contain shadow-2xl shadow-black/60"
-							imageUrl={round.card.image}
-							priority
-							sizes="(max-width: 768px) 60vw, 320px"
-							types={round.card.types}
-						/>
-					</div>
-					<div class="flex max-w-full shrink-0 flex-col items-center gap-1.5" in:fly={{ delay: 80, duration: 350, easing: cubicOut, y: 12 }}>
-						<h2 class="text-center text-xl font-semibold text-gold-300 sm:text-2xl">{round.card.name}</h2>
-						<div class="flex max-w-full flex-wrap justify-center-safe gap-2 text-sm text-gray-300 max-md:flex-nowrap max-md:overflow-x-auto scrollbar-hide">
-							<span class={CHIP} title="Set this card was printed in">
-								<LibraryIcon size={16} />
-								{#if round.set}
-									<SetLogo class="h-5 w-auto max-w-12 shrink-0 object-contain" set={round.set} />
-								{/if}
-								{round.card.setName}
-							</span>
-							<span class={CHIP} title="How scarce this print is"><GemIcon size={16} /> <RaritySymbol decorative rarity={round.card.rarity} /> {round.card.rarity}</span>
-							<span class={CHIP} title="Release date of the set"><CalendarDaysIcon size={16} /> {releaseDate}</span>
+	<div class="flex min-h-0 flex-1 flex-col items-center gap-2 overflow-hidden md:gap-3 lg:gap-5">
+		{#if !round}
+			<p class="text-xl text-gray-400">{data.error ?? 'No card to display.'}</p>
+			<button
+				class="btn-gold"
+				disabled={refilling}
+				onclick={nextCard}
+			>
+				{refilling ? 'Drawing...' : 'Retry'}
+			</button>
+		{:else}
+			<!-- Stacked on mobile, only the art row may shrink, so the keypad is never clipped. -->
+			<section class="grid min-h-0 w-full flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)_auto] gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:grid-rows-1 lg:gap-8">
+				<div class="flex min-h-0 flex-col items-center justify-center gap-2">
+					{#key round.card.cardCode}
+						<!-- `flex-initial`, not `flex-1`: the box shrinks when the column is short but never grows past the card, so the name sits right under it. -->
+						<!-- `isolate` keeps the glow's `-z-10` inside this block, behind the card but not behind the page. The glow is a fixed share of the card's box, wider than the card so it shows around it, and it follows
+						     the card as the art row shrinks, and its type comes from the round alone: it does not change when the answer is revealed. -->
+						<div class="relative isolate flex min-h-0 flex-initial items-center" in:fly={{ duration: 350, easing: cubicOut, y: 24 }}>
+							{#if !NO_IMAGES}
+								<div aria-hidden="true" class={[glowType, 'pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[105%] w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-[15rem] bg-(--type-color) opacity-75 blur-3xl']}></div>
+							{/if}
+							<CardImage
+								alt={round.card.name}
+								class="max-h-full w-auto rounded-xl object-contain shadow-2xl shadow-black/60"
+								imageUrl={round.card.image}
+								priority
+								sizes="(max-width: 768px) 60vw, 320px"
+								types={round.card.types}
+							/>
 						</div>
-					</div>
-				{/key}
-			</div>
-
-			<div class="flex min-h-0 flex-col gap-2 rounded-2xl border border-gold-500/30 bg-gray-800/70 p-3 backdrop-blur-sm md:justify-center md:gap-3 md:p-4">
-				<form class="grid grid-cols-[minmax(0,1fr)_auto] gap-2 md:grid-cols-1" onsubmit={event => { event.preventDefault(); submitGuess(); }}>
-					<label class="col-span-2 flex items-baseline justify-between text-sm font-medium text-gray-300 max-md:sr-only md:col-span-1" for="price-guess">
-						Your guess
-						<span class="text-xs text-gray-500">type digits, Enter to {answered ? 'draw' : 'submit'}</span>
-					</label>
-					<div class="flex items-center gap-2 rounded-lg border border-gold-500/60 bg-gray-900 px-3 py-2 transition-colors focus-within:border-gold-300">
-						<CircleEuroIcon class="shrink-0 text-gold-400" size={20} />
-						<input
-							class="w-full bg-transparent text-lg text-gray-100 tabular-nums outline-hidden placeholder:text-gray-500 read-only:text-gray-500"
-							id="price-guess"
-							inputmode="numeric"
-							oninput={handleInput}
-							placeholder="12"
-							readonly={answered}
-							required
-							type="text"
-							value={guess}
-						/>
-					</div>
-
-					{#if answered}
-						<button
-							class={['btn-gold relative overflow-hidden transition-all active:scale-[0.98] md:order-last', RIPPLE, 'before:animate-ripple-wave after:animate-ripple-wave']}
-							onclick={nextCard}
-							title="Draw another random card (Enter)"
-							type="button"
-						>
-							<span class="relative z-10 flex items-center justify-center gap-2">
-								<RotateCwIcon size={18} />
-								Next<span class="ms-1 max-md:hidden">card</span>
-							</span>
-						</button>
-					{:else}
-						<button
-							class="btn-gold transition-all active:scale-[0.98] md:order-last"
-							disabled={!guess}
-							title="Check how close your guess is (Enter)"
-							type="submit"
-						>
-							<CircleEuroIcon size={18} />
-							<span>Submit<span class="ms-1 max-md:hidden">guess</span></span>
-						</button>
-					{/if}
-
-					<div class="relative col-span-2 md:col-span-1">
-						<div class={[answered && 'invisible']}>
-							<Numpad onKeyPress={typeDigit} />
-						</div>
-						{#if verdict}
-							<div
-								class="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-lg border border-gold-400/40 bg-gray-900 p-2 text-center"
-								in:fly={{ duration: 250, easing: cubicOut, y: 10 }}
-							>
-								<p class="text-lg font-semibold {verdict.color}">{verdict.headline}</p>
-								<p class="text-3xl font-bold text-gold-300 tabular-nums" in:scale={{ duration: 450, easing: backOut, start: 0.6 }}>{verdict.price} €</p>
-								<p class="text-xs text-gray-400">You said {verdict.guessed} € - {Math.round(verdict.off)}% off</p>
-								<p class="flex items-center gap-2 text-lg font-bold text-gold-300">
-									<span in:scale={{ duration: 450, easing: backOut, start: 0.6 }}>+{verdict.score.points}</span>
-									{#if verdict.score.multiplier > 1}
-										<span class="flex items-center gap-1 text-xs font-medium text-orange-400">
-											<FlameIcon size={14} />
-											streak {verdict.score.streak} - x{verdict.score.multiplier}
-										</span>
+						<div class="flex max-w-full shrink-0 flex-col items-center gap-1.5" in:fly={{ delay: 80, duration: 350, easing: cubicOut, y: 12 }}>
+							<h2 class="text-center text-xl font-semibold text-gold-300 sm:text-2xl">{round.card.name}</h2>
+							<div class="flex max-w-full flex-wrap justify-center-safe gap-2 text-sm text-gray-300 max-md:flex-nowrap max-md:overflow-x-auto scrollbar-hide">
+								<span class={CHIP} title="Set this card was printed in">
+									<LibraryIcon size={16} />
+									{#if round.set}
+										<SetLogo class="h-5 w-auto max-w-12 shrink-0 object-contain" set={round.set} />
 									{/if}
-								</p>
-								{#if verdict.score.lostStreak >= 3}
-									<p class="text-xs text-gray-500">Streak of {verdict.score.lostStreak} lost</p>
-								{/if}
+									{round.card.setName}
+								</span>
+								<span class={CHIP} title="How scarce this print is"><GemIcon size={16} /> <RaritySymbol decorative rarity={round.card.rarity} /> {round.card.rarity}</span>
+								<span class={CHIP} title="Release date of the set"><CalendarDaysIcon size={16} /> {releaseDate}</span>
 							</div>
+						</div>
+					{/key}
+				</div>
+
+				<div class="flex min-h-0 flex-col gap-2 rounded-2xl border border-gold-500/30 bg-gray-800/70 p-3 backdrop-blur-sm md:justify-center md:gap-3 md:p-4">
+					<form class="grid grid-cols-[minmax(0,1fr)_auto] gap-2 md:grid-cols-1" onsubmit={event => { event.preventDefault(); submitGuess(); }}>
+						<label class="col-span-2 flex items-baseline justify-between text-sm font-medium text-gray-300 max-md:sr-only md:col-span-1" for="price-guess">
+							Your guess
+							<span class="text-xs text-gray-500">type digits, Enter to {answered ? 'draw' : 'submit'}</span>
+						</label>
+						<div class="flex items-center gap-2 rounded-lg border border-gold-500/60 bg-gray-900 px-3 py-2 transition-colors focus-within:border-gold-300">
+							<CircleEuroIcon class="shrink-0 text-gold-400" size={20} />
+							<input
+								class="w-full bg-transparent text-lg text-gray-100 tabular-nums outline-hidden placeholder:text-gray-500 read-only:text-gray-500"
+								id="price-guess"
+								inputmode="numeric"
+								oninput={handleInput}
+								placeholder="12"
+								readonly={answered}
+								required
+								type="text"
+								value={guess}
+							/>
+						</div>
+
+						{#if answered}
+							<button
+								class={['btn-gold relative overflow-hidden transition-all active:scale-[0.98] md:order-last', RIPPLE, 'before:animate-ripple-wave after:animate-ripple-wave']}
+								onclick={nextCard}
+								title="Draw another random card (Enter)"
+								type="button"
+							>
+								<span class="relative z-10 flex items-center justify-center gap-2">
+									<RotateCwIcon size={18} />
+									Next<span class="ms-1 max-md:hidden">card</span>
+								</span>
+							</button>
+						{:else}
+							<button
+								class="btn-gold transition-all active:scale-[0.98] md:order-last"
+								disabled={!guess}
+								title="Check how close your guess is (Enter)"
+								type="submit"
+							>
+								<CircleEuroIcon size={18} />
+								<span>Submit<span class="ms-1 max-md:hidden">guess</span></span>
+							</button>
 						{/if}
-					</div>
-				</form>
-			</div>
-		</section>
-	{/if}
+
+						<div class="relative col-span-2 md:col-span-1">
+							<div class={[answered && 'invisible']}>
+								<Numpad onKeyPress={typeDigit} />
+							</div>
+							{#if verdict}
+								<div
+									class="absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-lg border border-gold-400/40 bg-gray-900 p-2 text-center"
+									in:fly={{ duration: 250, easing: cubicOut, y: 10 }}
+								>
+									<p class="text-lg font-semibold {verdict.color}">{verdict.headline}</p>
+									<p class="text-3xl font-bold text-gold-300 tabular-nums" in:scale={{ duration: 450, easing: backOut, start: 0.6 }}>{verdict.price} €</p>
+									<p class="text-xs text-gray-400">You said {verdict.guessed} € - {Math.round(verdict.off)}% off</p>
+									<p class="flex items-center gap-2 text-lg font-bold text-gold-300">
+										<span in:scale={{ duration: 450, easing: backOut, start: 0.6 }}>+{verdict.score.points}</span>
+										{#if verdict.score.multiplier > 1}
+											<span class="flex items-center gap-1 text-xs font-medium text-orange-400">
+												<FlameIcon size={14} />
+												streak {verdict.score.streak} - x{verdict.score.multiplier}
+											</span>
+										{/if}
+									</p>
+									{#if verdict.score.lostStreak >= 3}
+										<p class="text-xs text-gray-500">Streak of {verdict.score.lostStreak} lost</p>
+									{/if}
+								</div>
+							{/if}
+						</div>
+					</form>
+				</div>
+			</section>
+		{/if}
+	</div>
 </div>
 
 <PriceStatsModal bind:open={statsOpen} onClose={() => (statsOpen = false)} />

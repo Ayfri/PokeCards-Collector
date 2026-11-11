@@ -10,8 +10,9 @@
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import type { PageData } from './$types';
 	import type { SearchedUserWithStats, SearchUsersResponse } from '#lib/types.js';
+	import { pluralize } from '#helpers/format.ts';
 	import { readJson } from '#helpers/utils.ts';
-	import PageTitle from '#components/PageTitle.svelte';
+	import PageHeader, { type PageStat } from '#components/PageHeader.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import UserCard from '#components/users/UserCard.svelte';
 	import BouncyLoader from '#lib/components/BouncyLoader.svelte';
@@ -24,6 +25,14 @@
 
 	const featuredUsers = $derived(data.featuredUsers || []);
 	const featuredUsersError = $derived(data.featuredUsersError);
+
+	/** The featured list is ranked by unique cards, so its first entry is the biggest public collection. The site-wide count of collectors isn't loaded. */
+	const stats = $derived.by((): PageStat[] => {
+		const [top] = featuredUsers;
+		return top ? [
+			{ icon: CrownIcon, label: `top collector · ${pluralize(top.unique_card_count, 'card')}`, title: `${top.username} holds ${pluralize(top.unique_card_count, 'unique card')}`, value: top.username },
+		] : [];
+	});
 
 	let searchQuery = $state('');
 	let searchResults: SearchedUserWithStats[] = $state([]);
@@ -93,13 +102,12 @@
 	});
 </script>
 
-<div class="container mx-auto px-4 py-6 space-y-6 md:space-y-10 text-white">
-	<div class="flex flex-col items-center text-center space-y-2">
-		<PageTitle title="Users & Collectors" />
-		<p class="text-sm md:text-base text-gray-300 max-w-2xl mx-auto text-balance">
-			Discover fellow Pokémon TCG enthusiasts! See who's leading the pack, or search for specific users to view their public profiles and stats.
-		</p>
-	</div>
+<div class="container mx-auto px-4 pb-6 space-y-6 md:space-y-10 text-white">
+	<PageHeader
+		lede="Browse public collections, see who holds the most unique cards, or search a collector by name."
+		{stats}
+		title="Users & Collectors"
+	/>
 
 	<section aria-labelledby="search-users-title" class="sticky top-0 z-30 py-4 -mx-4 px-4 shadow-lg rounded-b-xl mb-6">
 		<h2 class="text-xl md:text-2xl font-semibold text-white flex items-center gap-2 mb-3 sr-only" id="search-users-title">

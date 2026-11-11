@@ -15,6 +15,11 @@ export function titleCase(str: string): string {
 	return str.replace(/(\w)(\w*)/g, (_, g1, g2) => g1.toUpperCase() + g2.toLowerCase());
 }
 
+/** A count grouped by thousands with its noun, regular plurals only: `pluralize(1, 'set')` is "1 set", `pluralize(202, 'set')` is "202 sets". */
+export function pluralize(count: number, noun: string): string {
+	return `${count.toLocaleString('en-US')} ${noun}${count === 1 ? '' : 's'}`;
+}
+
 /**
  * The elapsed time in its largest whole unit, floored so it never overstates.
  * @example timeAgo('2024-03-01') // "2 years ago" on 2026-09-28

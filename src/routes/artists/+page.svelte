@@ -16,14 +16,18 @@
 	import { formatEuros } from '#helpers/format.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
+	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
+	import CircleEuroIcon from '@lucide/svelte/icons/circle-euro';
 	import FilterBar from '#components/filters/FilterBar.svelte';
+	import PaletteIcon from '@lucide/svelte/icons/palette';
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import SortControl from '#components/filters/SortControl.svelte';
-	import PageTitle from '#components/PageTitle.svelte';
+	import SquareStackIcon from '@lucide/svelte/icons/square-stack';
+	import PageHeader, { type PageStat } from '#components/PageHeader.svelte';
 	import CardImage from '#components/card/CardImage.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import { onMount } from 'svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	interface Props {
@@ -91,21 +95,37 @@
 
 	const sortedArtists = $derived(sortArtistList(data.artists, shownSort.value, shownSort.direction));
 	const filteredArtists = $derived(filterArtistList(sortedArtists, searchTerm));
+	const countHint = $derived(filteredArtists.length === data.artists.length ? undefined : `${filteredArtists.length.toLocaleString('en-US')} of ${data.artists.length.toLocaleString('en-US')}`);
+
+	/** Totals of the whole list, not of the search. A year of 0 means the artist has no dated set. */
+	const stats = $derived.by((): PageStat[] => {
+		const first = Math.min(...data.artists.map(artist => artist.firstReleaseYear || Infinity));
+		const last = Math.max(...data.artists.map(artist => artist.lastReleaseYear));
+
+		return [
+			{ icon: PaletteIcon, label: 'artists', value: data.artists.length.toLocaleString('en-US') },
+			{ icon: SquareStackIcon, label: 'illustrated cards', title: 'Cards with a credited illustrator', value: data.artists.reduce((count, artist) => count + artist.totalCards, 0).toLocaleString('en-US') },
+			{ icon: CircleEuroIcon, label: 'total value', title: 'Cardmarket value of every illustrated card', value: euros(data.artists.reduce((total, artist) => total + artist.totalValue, 0)) },
+			...(Number.isFinite(first) && last ? [{ icon: CalendarDaysIcon, label: 'printed', title: 'Years the artwork was printed', value: first === last ? `${first}` : `${first} - ${last}` }] : []),
+		];
+	});
 </script>
 
-<div class="container mx-auto px-4 py-8">
-	<div class="mb-8 flex flex-col sm:flex-row sm:flex-wrap sm:gap-4 items-center justify-between">
-		<div transition:fly={{ delay: 200, duration: 400, y: 50 }}>
-			<PageTitle title="Card Artists" />
-		</div>
-
-		<div class="max-sm:w-full" transition:fly={{ delay: 250, duration: 500, y: 50 }}>
+<div class="container mx-auto px-4 pb-8">
+	<PageHeader
+		class="mb-4"
+		lede="The illustrators behind the cards: sort by cards drawn or value, then open one to browse their work."
+		{stats}
+		title="Card Artists"
+	>
+		{#snippet controls()}
 			<FilterBar>
 				{#snippet search()}
 					<TextInput
 						applyOnMount
 						bind:value={searchInput}
 						clearable
+						hint={countHint}
 						icon={SearchIcon}
 						id="artistSearch"
 						label="Search"
@@ -129,15 +149,8 @@
 					/>
 				{/snippet}
 			</FilterBar>
-		</div>
-	</div>
-
-	<hr class="gold-rule my-4 border-0" transition:fade={{ delay: 300, duration: 400 }} />
-
-	<p class="text-gray-300 mb-6" transition:fade={{ delay: 300, duration: 400 }}>
-		Artists are the creators of the cards, they are responsible for the design and artwork of the cards.<br>
-		<span class="text-sm">Showing {filteredArtists.length} of {sortedArtists.length} artists.</span>
-	</p>
+		{/snippet}
+	</PageHeader>
 
 	<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6" in:fly={{ delay: 400, duration: 400, y: 50 }}>
 		{#each filteredArtists as artist, artistIndex (artist.name)}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import PageTitle from '#components/PageTitle.svelte';
+	import PageHeader from '#components/PageHeader.svelte';
 	import Button from '#components/filters/Button.svelte';
 	import Checkbox from '#components/filters/Checkbox.svelte';
 	import Select from '#components/filters/Select.svelte';
@@ -320,22 +320,22 @@
 
 <BinderHelp onClose={toggleHelp} open={showHelp} />
 
-<div class="-mt-6 flex flex-col gap-4 p-4 md:p-6 lg:-mt-12">
-	<div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-		<div class="flex items-center gap-3">
-			<PageTitle title="Binder Builder" />
-			<Button class="mt-1 p-1.5" onClick={toggleHelp} title="How the Binder Builder works">
+<div class="flex flex-col gap-4 px-4 pb-4 md:px-6 md:pb-6">
+	<PageHeader hideLedeOnPhone lede="Lay out binder pages with your cards, a set or any card by URL, then export them as an image." title="Binder Builder">
+		{#snippet extras()}
+			<Button class="p-1.5" onClick={toggleHelp} title="How the Binder Builder works">
 				<HelpCircleIcon size={20} />
 			</Button>
-		</div>
-
-		<div class="flex flex-wrap gap-2 text-xs">
-			<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{pages.length} page{pages.length > 1 ? 's' : ''} of {slotsPerPage}</span>
-			<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{filledSlots}/{totalSlots} slots filled</span>
-			<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{binderStorage.cards.length - placedItems.size} left in storage</span>
-			{#if exporting}<span class="rounded-full bg-gold-400 px-3 py-1 text-black">Rendering image...</span>{/if}
-		</div>
-	</div>
+		{/snippet}
+		{#snippet controls()}
+			<div class="flex flex-wrap gap-2 text-xs">
+				<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{pages.length} page{pages.length > 1 ? 's' : ''} of {slotsPerPage}</span>
+				<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{filledSlots}/{totalSlots} slots filled</span>
+				<span class="rounded-full bg-gray-800 px-3 py-1 text-gray-300">{binderStorage.cards.length - placedItems.size} left in storage</span>
+				{#if exporting}<span class="rounded-full bg-gold-400 px-3 py-1 text-black">Rendering image...</span>{/if}
+			</div>
+		{/snippet}
+	</PageHeader>
 
 	<BinderToolbar
 		bind:columns={columns}
@@ -349,7 +349,9 @@
 	/>
 
 	<div class="grid grid-cols-1 gap-3 lg:grid-cols-12">
-		<div class="h-[calc(100dvh-19rem)] min-h-[26rem] lg:col-span-8">
+		<!-- 21rem from `lg`: the board sits under the layout's 128 px padding pulled up 32 px by the header (~81 px with its lede), the 96 px toolbar, two 16 px gaps and the 24 px bottom padding (~329 px).
+		     Below `lg` the header stacks its pills under the title and the layout padding is 96 px, so 22rem leaves room for them. -->
+		<div class="h-[calc(100dvh-22rem)] min-h-[26rem] lg:col-span-8 lg:h-[calc(100dvh-21rem)]">
 			<BinderBoard
 				columns={columns}
 				currentPage={currentPage}
@@ -368,7 +370,7 @@
 			/>
 		</div>
 
-		<div class="h-[calc(100dvh-19rem)] min-h-[26rem] lg:col-span-4">
+		<div class="h-[calc(100dvh-22rem)] min-h-[26rem] lg:col-span-4 lg:h-[calc(100dvh-21rem)]">
 			<BinderStorage
 				bind:visibleItems={storageOrder}
 				cards={cardsByCode}

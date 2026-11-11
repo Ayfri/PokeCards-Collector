@@ -1,16 +1,21 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { PokemonListEntry } from './+page.server';
-	import { formatEuros, titleCase } from '#helpers/format.ts';
+	import { formatEuros, pluralize, titleCase } from '#helpers/format.ts';
+	import GroupHeading from '#components/list/GroupHeading.svelte';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
-	import PageTitle from '#components/PageTitle.svelte';
+	import PageHeader, { type PageStat } from '#components/PageHeader.svelte';
 	import ScrollButton from '#components/list/ScrollButton.svelte';
 	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
 	import Chip from '#components/filters/Chip.svelte';
 	import FilterBar from '#components/filters/FilterBar.svelte';
+	import FlameIcon from '@lucide/svelte/icons/flame';
+	import LayersIcon from '@lucide/svelte/icons/layers';
+	import LibraryIcon from '@lucide/svelte/icons/library';
 	import SearchIcon from '@lucide/svelte/icons/search';
 	import SortControl from '#components/filters/SortControl.svelte';
+	import SquareStackIcon from '@lucide/svelte/icons/square-stack';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import TypeSymbolDefs from '#components/card/TypeSymbolDefs.svelte';
@@ -82,6 +87,18 @@
 
 	const countHint = $derived(filteredPokemons.length === data.pokemons.length ? undefined : `${filteredPokemons.length.toLocaleString('en-US')} of ${data.pokemons.length.toLocaleString('en-US')}`);
 
+	/** Totals of the whole list, not of the search or the type filter. */
+	const stats = $derived.by((): PageStat[] => {
+		const withCards = data.pokemons.filter(pokemon => pokemon.cardCount > 0).length;
+
+		return [
+			{ icon: LibraryIcon, label: 'Pokémon', value: data.pokemons.length.toLocaleString('en-US') },
+			...(withCards === data.pokemons.length ? [] : [{ icon: LayersIcon, label: 'with cards', title: 'Pokémon that appear on at least one card', value: withCards.toLocaleString('en-US') }]),
+			{ icon: SquareStackIcon, label: 'Pokémon cards', title: 'Cards that depict a Pokémon', value: data.pokemons.reduce((count, pokemon) => count + pokemon.cardCount, 0).toLocaleString('en-US') },
+			{ icon: FlameIcon, label: 'types', title: 'Main types of the Pokémon', value: types.length.toLocaleString('en-US') },
+		];
+	});
+
 	/** Generation headers only make sense in Pokédex order over the whole list: any other sort or filter is one flat grid. */
 	const byGeneration = $derived(sortBy === 'pokedex' && !searchTerm.trim() && typeFilter === 'all');
 
@@ -108,12 +125,14 @@
 
 <svelte:window bind:scrollY />
 
-<div class="container mx-auto px-4 py-8 text-white">
-	<div class="flex flex-wrap justify-between items-center gap-y-4 mb-4">
-		<div class="shrink-0">
-			<PageTitle title="All Pokémon" />
-		</div>
-		<div class="max-sm:w-full">
+<div class="container mx-auto px-4 pb-8 text-white">
+	<PageHeader
+		class="mb-3"
+		lede="Every Pokémon with its TCG cards and its priciest card. Jump to a generation or filter by type."
+		{stats}
+		title="All Pokémon"
+	>
+		{#snippet controls()}
 			<FilterBar>
 				{#snippet search()}
 					<TextInput
@@ -142,8 +161,8 @@
 					/>
 				{/snippet}
 			</FilterBar>
-		</div>
-	</div>
+		{/snippet}
+	</PageHeader>
 
 	<!-- A single scrolling row on a phone so the grid stays close to the top, a wrapping one from `md`. The padding keeps the focus ring of a chip from being clipped by the scroller. -->
 	<div aria-label="Filter by type" class="-mx-4 flex gap-1.5 overflow-x-auto px-4 py-1 scrollbar-hide [&>button]:shrink-0 md:mx-0 md:flex-wrap md:overflow-visible md:px-0" role="group">
@@ -154,27 +173,22 @@
 			</Chip>
 		{/each}
 	</div>
-	<div class="gold-rule my-6"></div>
 
 	<TypeSymbolDefs />
 
 	{#if byGeneration}
-		<nav aria-label="Generations" class="flex flex-wrap gap-2">
+		<nav aria-label="Generations" class="jump-links mt-3">
 			{#each GENERATIONS as generation (generation.region)}
-				<a class="btn-outline-gold" href="#gen-{generation.region.toLowerCase()}">{generation.region}</a>
+				<a class="jump-link" href="#gen-{generation.region.toLowerCase()}">{generation.region}</a>
 			{/each}
 		</nav>
 	{/if}
 
 	{#each sections as section, sectionIndex (section.generation?.region ?? 'all')}
 		<!-- The fixed header covers the top of the viewport, so `scroll-mt-28` lands a jump link's heading below it. -->
-		<section class="mt-8 scroll-mt-28" id={section.generation && `gen-${section.generation.region.toLowerCase()}`}>
+		<section class={['scroll-mt-28', sectionIndex ? 'mt-8' : 'mt-4']} id={section.generation && `gen-${section.generation.region.toLowerCase()}`}>
 		{#if section.generation}
-			<h2 class="text-xl md:text-2xl font-bold text-gold-400">
-				{section.generation.region}
-				<span class="text-sm font-normal text-gray-400">#{section.generation.first} - #{section.generation.last}</span>
-			</h2>
-			<p class="mb-4 text-sm text-gray-400">{section.owned ? `${section.owned} / ` : ''}{section.cards.toLocaleString('en-US')} cards</p>
+			<GroupHeading meta={[`#${section.generation.first} - #${section.generation.last}`, `${section.owned ? `${section.owned} / ` : ''}${pluralize(section.cards, 'card')}`]} name={section.generation.region} />
 		{/if}
 		<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
 		{#each section.pokemons as pokemon, index (pokemon.id)}
