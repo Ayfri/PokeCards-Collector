@@ -209,7 +209,7 @@
 
 		<div class="flex items-center gap-2 xs:gap-4 max-sm:min-w-0 max-sm:flex-1">
 			{@render discordLink('hidden sm:flex')}
-			<div class="w-48 sm:w-60 md:w-72 lg:w-80 max-sm:hidden">
+			<div class="w-48 sm:w-60 md:w-72 lg:w-80 xl:w-96 max-sm:hidden">
 				<SearchBar />
 			</div>
 
