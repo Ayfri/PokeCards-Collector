@@ -34,7 +34,7 @@ const PENDING: BinderRecord = {
 };
 
 const UNREADABLE = "Some saved binders could not be read. A copy is kept in this browser's storage.";
-const SAVE_FAILED = 'Your browser storage is full, so the latest changes are not saved. Delete a binder or some pages to free space.';
+const SAVE_FAILED = 'The latest changes are not saved: this browser storage is full or blocked. Delete pages to free space, or allow site data.';
 
 /**
  * The binders, their trays and the state of the page around them. Shared as module state rather than through context because the
@@ -52,6 +52,8 @@ class BinderStore {
 	#notice = $state<string | null>(null);
 	#saveError = $state<string | null>(null);
 	#wide = new MediaQuery('min-width: 48rem');
+	/** The stored string this tab last read or wrote, so `load()` can tell that another tab saved in between. Not reactive: nothing draws it. */
+	#raw: string | null = null;
 
 	currentPage = $state(0);
 	/** Card key armed for click-to-place, `null` when none. */
@@ -105,13 +107,23 @@ class BinderStore {
 	get notice() { return this.#notice; }
 	get saveError() { return this.#saveError; }
 
-	/** Reads the saved record once per session, so it is called from `onMount` only: the server never has a `localStorage`. */
+	/**
+	 * Reads the saved record, so it is called from `onMount` only: the server never has a `localStorage`. The store outlives the page, and the
+	 * `storage` event only reaches a mounted page, so a later call re-reads the key: another tab may have saved while this one was elsewhere,
+	 * and keeping the old record would overwrite its work on the next edit. An unchanged string keeps the history.
+	 */
 	load() {
-		if (this.#loaded) return;
+		if (this.#loaded) {
+			if (this.#read() !== this.#raw) this.reload();
+			return;
+		}
 
+		/** A blocked storage throws on the global itself, so the page loads an empty binder and the first save reports the failure. */
+		let storage: Pick<Storage, 'getItem'> = { getItem: () => null };
 		let raw: string | null = null;
 		try {
-			raw = localStorage.getItem(BINDER_RECORD_KEY);
+			storage = localStorage;
+			raw = storage.getItem(BINDER_RECORD_KEY);
 		} catch { /* A blocked storage reads as an empty one. */ }
 
 		let parsed: ReturnType<typeof parseRecord> = null;
@@ -119,7 +131,8 @@ class BinderStore {
 			parsed = parseRecord(raw);
 			if (!parsed || parsed.dropped) this.#backUp(raw);
 		}
-		this.#record = parsed?.record ?? migrateLegacy(localStorage);
+		this.#record = parsed?.record ?? migrateLegacy(storage);
+		this.#raw = raw;
 		this.#loaded = true;
 		/** A record saved right away pins the version: the legacy keys stay untouched as the user's fallback. */
 		if (raw === null) this.#save();
@@ -128,10 +141,11 @@ class BinderStore {
 	/** Another tab saved: its record wins, and the history, which belongs to this tab's edits, is dropped. */
 	reload() {
 		if (!this.#loaded) return;
-		const raw = localStorage.getItem(BINDER_RECORD_KEY);
+		const raw = this.#read();
 		const parsed = raw === null ? null : parseRecord(raw);
 		if (!parsed) return;
 
+		this.#raw = raw;
 		this.#record = parsed.record;
 		this.#past = [];
 		this.#future = [];
@@ -203,8 +217,11 @@ class BinderStore {
 		this.#edit(binder => ({ ...binder, pages: this.#withSlot(binder.pages, at, null), tray: this.#trayWith(binder.tray, key) }), 'Card removed');
 	}
 
+	/** Closing a gap removes the slot, so its card goes back to the tray like any card that leaves a slot. */
 	shift(at: SlotRef, mode: 'close' | 'insert') {
-		this.#edit(binder => ({ ...binder, pages: shiftSlots(binder.pages, at, this.slotsPerPage, mode) }), mode === 'close' ? 'Gap closed' : 'Gap inserted');
+		const key = this.pages[at.page]?.[at.position];
+		if (key === undefined) return;
+		this.#edit(binder => ({ ...binder, pages: shiftSlots(binder.pages, at, this.slotsPerPage, mode), tray: mode === 'close' ? this.#trayWith(binder.tray, key) : binder.tray }), mode === 'close' ? 'Gap closed' : 'Gap inserted');
 	}
 
 	addPage() {
@@ -218,15 +235,15 @@ class BinderStore {
 		this.goTo(index + 1);
 	}
 
-	/** The page actions do not return their cards to the tray, since they are undoable. */
+	/** The page actions do not return their cards to the tray, since they are undoable. An action that would change nothing leaves no history step. */
 	emptyPage(index: number) {
-		if (!this.pages[index]) return;
+		if (!this.pages[index]?.some(Boolean)) return;
 		this.#edit(binder => ({ ...binder, pages: binder.pages.map((sheet, at) => (at === index ? emptySheet(sheet.length) : sheet)) }), 'Page emptied');
 	}
 
 	/** Deleting the only page leaves one fresh empty page, so a binder always has a page to drop cards on. */
 	deletePage(index: number) {
-		if (!this.pages[index]) return;
+		if (!this.pages[index] || (this.pages.length === 1 && !this.filledSlots)) return;
 		const kept = this.pages.filter((_, at) => at !== index);
 		this.#edit(binder => ({ ...binder, pages: kept.length ? kept : [emptySheet(this.slotsPerPage)] }), 'Page deleted');
 	}
@@ -240,6 +257,7 @@ class BinderStore {
 	}
 
 	emptyAllPages() {
+		if (!this.filledSlots) return;
 		this.#edit(binder => ({ ...binder, pages: binder.pages.map(sheet => emptySheet(sheet.length)) }), 'All pages emptied');
 	}
 
@@ -259,11 +277,13 @@ class BinderStore {
 	}
 
 	removeFromTray(key: string) {
+		if (!this.tray.includes(key)) return;
 		if (this.armed === key) this.armed = null;
 		this.#edit(binder => ({ ...binder, tray: binder.tray.filter(item => item !== key) }), 'Removed from the tray');
 	}
 
 	clearTray() {
+		if (!this.tray.length) return;
 		this.armed = null;
 		this.#edit(binder => ({ ...binder, tray: [] }), 'Tray cleared');
 	}
@@ -317,10 +337,20 @@ class BinderStore {
 	/** A full or blocked storage must be visible: a save that only logged would let the user work on without ever knowing it was lost. */
 	#save() {
 		try {
-			localStorage.setItem(BINDER_RECORD_KEY, JSON.stringify(this.#record));
+			const raw = JSON.stringify(this.#record);
+			localStorage.setItem(BINDER_RECORD_KEY, raw);
+			this.#raw = raw;
 			this.#saveError = null;
 		} catch {
 			this.#saveError = SAVE_FAILED;
+		}
+	}
+
+	#read(): string | null {
+		try {
+			return localStorage.getItem(BINDER_RECORD_KEY);
+		} catch {
+			return null;
 		}
 	}
 

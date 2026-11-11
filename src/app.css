@@ -36,6 +36,24 @@
   /* Entrance for server-rendered content: a CSS animation starts on first paint and survives hydration, a Svelte intro would replay after it. */
   --animate-reveal: reveal 0.4s cubic-bezier(0.33, 1, 0.68, 1) both;
   --animate-flip-in: flip-in 0.5s cubic-bezier(0.33, 1, 0.68, 1) both;
+  /* `backwards` keeps the `from` frame during a delay and leaves no fill behind, so a settled element has no animated opacity or translate left on it. */
+  --animate-pop: pop 0.18s cubic-bezier(0.33, 1, 0.68, 1) backwards;
+  /* The binder's sheets slide in from `--turn-x`, the side the page turns from. */
+  --animate-page-turn: page-turn 0.15s ease-out backwards;
+
+  @keyframes pop {
+    from {
+      opacity: 0;
+      scale: 0.92;
+    }
+  }
+
+  @keyframes page-turn {
+    from {
+      opacity: 0;
+      translate: var(--turn-x, 0) 0;
+    }
+  }
 
   @keyframes reveal {
     from {

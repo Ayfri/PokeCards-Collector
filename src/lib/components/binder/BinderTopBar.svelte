@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Button from '#components/filters/Button.svelte';
 	import NumberInput from '#components/filters/NumberInput.svelte';
-	import Popover from '#components/ui/Popover.svelte';
+	import Popover, { ITEM } from '#components/ui/Popover.svelte';
 	import { downloadDataUrl, renderBinderImage } from '#helpers/binder-export.ts';
 	import { MAX_POCKETS } from '#helpers/binder.ts';
 	import { binderCards } from '#stores/binder-cards.svelte.ts';
@@ -12,7 +12,9 @@
 	import EraserIcon from '@lucide/svelte/icons/eraser';
 	import LayoutGridIcon from '@lucide/svelte/icons/layout-grid';
 	import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
+	import RectangleVerticalIcon from '@lucide/svelte/icons/rectangle-vertical';
 	import Redo2Icon from '@lucide/svelte/icons/redo-2';
+	import Trash2Icon from '@lucide/svelte/icons/trash-2';
 	import Undo2Icon from '@lucide/svelte/icons/undo-2';
 
 	interface Props {
@@ -24,10 +26,10 @@
 
 	/** The pocket layouts real binders actually ship in. */
 	const PRESETS = [
-		{ columns: 2, label: '4', rows: 2 },
-		{ columns: 3, label: '9', rows: 3 },
-		{ columns: 3, label: '12', rows: 4 },
-		{ columns: 4, label: '16', rows: 4 }
+		{ columns: 2, rows: 2 },
+		{ columns: 3, rows: 3 },
+		{ columns: 3, rows: 4 },
+		{ columns: 4, rows: 4 }
 	];
 
 	/** Drafts follow the store, so an undo or a clamp rewrites the field, and are committed once per finished edit (`change`, not each keystroke). */
@@ -83,15 +85,32 @@
 			<div class="flex flex-col gap-1">
 				<span class="text-xs text-gray-300">Pocket layout:</span>
 				<div class="grid grid-cols-4 gap-1">
-					{#each PRESETS as preset (preset.label)}
-						<Button
-							class="px-1 text-xs"
-							isActive={binder.rows === preset.rows && binder.columns === preset.columns}
-							onClick={() => binder.setLayout({ columns: preset.columns, rows: preset.rows })}
-							title="{preset.rows} x {preset.columns} pages, {preset.label} pockets"
+					{#each PRESETS as { columns, rows } (`${rows}x${columns}`)}
+						{@const active = binder.rows === rows && binder.columns === columns}
+						<button
+							aria-pressed={active}
+							class={[
+								'focus-ring flex flex-col items-center gap-1.5 rounded-md border-2 bg-transparent px-1 py-2 text-[0.65rem] whitespace-nowrap transition-colors hover:border-gold-400 hover:text-gold-400',
+								active ? 'border-gold-400 text-gold-400' : 'border-gray-600 text-gray-300'
+							]}
+							onclick={() => binder.setLayout({ columns, rows })}
+							title="{rows} rows x {columns} columns"
+							type="button"
 						>
-							{preset.label}
-						</Button>
+							<!-- Drawn at the real card proportion, so a 3 x 4 sheet looks narrower than a 4 x 4 one. -->
+							<span
+								aria-hidden="true"
+								class="grid h-12 grid-cols-[repeat(var(--columns),minmax(0,1fr))] grid-rows-[repeat(var(--rows),minmax(0,1fr))] gap-0.5"
+								style:--columns={columns}
+								style:--rows={rows}
+								style:aspect-ratio="{columns * 2.5} / {rows * 3.5}"
+							>
+								{#each Array(rows * columns) as _, pocket (pocket)}
+									<span class="rounded-[1px] bg-current/60"></span>
+								{/each}
+							</span>
+							{rows * columns} pockets
+						</button>
 					{/each}
 				</div>
 			</div>
@@ -112,7 +131,7 @@
 					title="Show both facing pages, the way the binder opens"
 					type="button"
 				>
-					<BookOpenIcon size={16} /> Spread
+					{#if binder.spread}<BookOpenIcon size={16} />{:else}<RectangleVerticalIcon size={16} />{/if} Spread
 				</button>
 				<span class="text-xs text-gray-400">Phones show one page at a time</span>
 			</div>
@@ -131,17 +150,18 @@
 					<p class="rounded-sm bg-gray-900 p-2 text-xs text-gray-400">Some slots are still empty - they export as numbered placeholders.</p>
 				{/if}
 				<div class="flex flex-col gap-2">
+					<!-- Before the catalogue arrives a placed card has no image, so the PNG would hold placeholders. -->
 					<Button
-						disabled={exporting}
+						disabled={exporting || !binderCards.ready}
 						onClick={() => exportPages(binder.visiblePages, `binder-page${visibleNumbers.length > 1 ? 's' : ''}-${visibleRange}.png`, close)}
 					>
-						Page{visibleNumbers.length > 1 ? 's' : ''} on screen ({visibleRange})
+						{binderCards.ready ? `Page${visibleNumbers.length > 1 ? 's' : ''} on screen (${visibleRange})` : 'Loading cards...'}
 					</Button>
 					<Button
-						disabled={exporting}
+						disabled={exporting || !binderCards.ready}
 						onClick={() => exportPages(binder.pages.map((_, index) => index), 'binder-all-pages.png', close)}
 					>
-						All {binder.pages.length} pages
+						{binderCards.ready ? `All ${binder.pages.length} pages` : 'Loading cards...'}
 					</Button>
 				</div>
 				{#if exportError}<p class="text-xs text-red-400" role="alert">{exportError}</p>{/if}
@@ -154,13 +174,8 @@
 			<EllipsisIcon size={16} />
 		{/snippet}
 		{#snippet children(close)}
-			<button
-				class="focus-ring flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm whitespace-nowrap text-gray-300 transition-colors hover:bg-gray-700 hover:text-gold-400"
-				onclick={() => { binder.emptyAllPages(); close(); }}
-				type="button"
-			>
-				<EraserIcon size={16} /> Empty every page
-			</button>
+			<button class={ITEM} disabled={!binder.filledSlots} onclick={() => { binder.emptyAllPages(); close(); }} type="button"><EraserIcon size={16} /> Empty every page</button>
+			<button class={ITEM} disabled={!binder.tray.length} onclick={() => { binder.clearTray(); close(); }} type="button"><Trash2Icon size={16} /> Empty the tray</button>
 		{/snippet}
 	</Popover>
 </div>

@@ -21,16 +21,6 @@
 	const filled = $derived(slots.filter(Boolean).length);
 </script>
 
-{#snippet image(tile: BinderTile)}
-	<CardImage
-		alt={tile.name}
-		class="max-h-full max-w-full rounded-[4%] object-contain {NO_IMAGES ? 'ring-1 ring-gold-400 ring-inset' : ''}"
-		imageUrl={tile.image}
-		lazy={true}
-		types={tile.types}
-	/>
-{/snippet}
-
 <div class="flex h-full min-h-0 flex-col gap-2 rounded-xl bg-gray-800/70 p-3 ring-1 ring-white/5">
 	<div class="flex items-center justify-between gap-2 px-1 text-xs">
 		<span class="font-semibold text-gold-400">Page {pageIndex + 1}</span>
@@ -56,15 +46,15 @@
 				{:else}
 					<div class={['relative min-h-0 rounded-md border border-gray-700', tile ? 'bg-gray-900' : 'bg-gray-900/40']}>
 						{#if tile}
-							<div class="absolute inset-0 flex items-center justify-center p-px">
-								{#if tile.href}
-									<a class="flex size-full items-center justify-center" href={tile.href}>
-										{@render image(tile)}
-									</a>
-								{:else}
-									{@render image(tile)}
-								{/if}
-							</div>
+							<svelte:element this={tile.href ? 'a' : 'div'} class="absolute inset-0 flex items-center justify-center p-px" href={tile.href}>
+								<CardImage
+									alt={tile.name}
+									class="max-h-full max-w-full rounded-[4%] object-contain {NO_IMAGES ? 'ring-1 ring-gold-400 ring-inset' : ''}"
+									imageUrl={tile.image}
+									lazy={true}
+									types={tile.types}
+								/>
+							</svelte:element>
 						{:else}
 							<span class="absolute inset-0 flex items-center justify-center text-sm font-semibold text-gray-600 tabular-nums">{pageIndex * slotsPerPage + position + 1}</span>
 						{/if}

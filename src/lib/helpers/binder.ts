@@ -1,3 +1,5 @@
+import { isCardCode } from '#helpers/card-utils.ts';
+import type { BinderCard } from '#lib/types.js';
 import { STORAGE_PREFIX } from '#stores/persisted.svelte.ts';
 
 /** A card code or a raw image URL (`isCardCode` tells them apart), the same two kinds of key the tray holds. `null` is an empty pocket. */
@@ -35,6 +37,10 @@ export const MAX_NAME = 60;
 export const BINDER_RECORD_KEY = `${STORAGE_PREFIX}binder`;
 export const BINDER_BACKUP_KEY = `${STORAGE_PREFIX}binder-backup`;
 export const DRAG_TYPE = 'application/x-pokecards-binder';
+/** Set next to `DRAG_TYPE` on a slot drag only: a `dragover` cannot read the payload, but it can list the types, so the cards panel tells a card coming back from any other drag. */
+export const DRAG_SLOT_TYPE = `${DRAG_TYPE}-slot`;
+/** How the owned overlay fades a card, the same on a board pocket and on a panel tile. */
+export const DIMMED = 'opacity-35 grayscale';
 export const DEFAULT_VIEW: BinderView = {
 	hidePlaced: false,
 	mine: { collection: true, wishlist: true },
@@ -54,6 +60,11 @@ const asRecord = (value: unknown): Record<string, unknown> | null => (typeof val
 const flag = (value: unknown, fallback: boolean) => (typeof value === 'boolean' ? value : fallback);
 const pick = <T extends string>(value: unknown, allowed: readonly T[], fallback: T): T => allowed.find(option => option === value) ?? fallback;
 const clampPockets = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? Math.min(MAX_POCKETS, Math.max(1, Math.round(value))) : DEFAULT_POCKETS);
+const storedPockets = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? Math.max(1, Math.round(value)) : DEFAULT_POCKETS);
+/** An empty string is no card, whatever stored it, so a slot or a tray key is either a non-empty string or nothing. */
+const slotKey = (value: unknown): BinderSlot => (isString(value) && value ? value : null);
+/** The tray holds each key once: a stored duplicate would make the card list's keyed `each` throw. */
+const parseTray = (value: unknown): string[] => (Array.isArray(value) ? [...new Set(value.map(slotKey).filter(key => key !== null))] : []);
 
 export function emptySheet(size: number): BinderSlot[] {
 	return new Array<BinderSlot>(size).fill(null);
@@ -61,11 +72,6 @@ export function emptySheet(size: number): BinderSlot[] {
 
 export function newBinder(name: string, layout: BinderLayout = { columns: DEFAULT_POCKETS, rows: DEFAULT_POCKETS }): StoredBinder {
 	return { ...layout, id: crypto.randomUUID(), name, pages: [emptySheet(layout.columns * layout.rows)], tray: [] };
-}
-
-export function defaultRecord(): BinderRecord {
-	const binder = newBinder(DEFAULT_NAME);
-	return { activeId: binder.id, binders: [binder], shares: {}, spread: true, version: 1, view: parseView(null) };
 }
 
 /** Each field falls back on its own, so adding a field to the view does not invalidate what users already stored. */
@@ -98,9 +104,9 @@ function parseBinder(value: unknown): StoredBinder | null {
 		columns,
 		id: source.id,
 		name: source.name.trim().slice(0, MAX_NAME) || DEFAULT_NAME,
-		pages: parsePages(source.pages, columns * rows, slot => (isString(slot) ? slot : null)),
+		pages: parsePages(source.pages, columns * rows, slotKey),
 		rows,
-		tray: Array.isArray(source.tray) ? source.tray.filter(isString) : []
+		tray: parseTray(source.tray)
 	};
 }
 
@@ -152,14 +158,16 @@ export function migrateLegacy(storage: Pick<Storage, 'getItem'>): BinderRecord {
 
 	const columns = clampPockets(grid?.columns);
 	const rows = clampPockets(grid?.rows);
+	/** The old page accepted more than 8 pockets per side (the input's `max` does not stop typing), so its sheets are read at the stored size, then reflowed into the clamped one. */
+	const storedSize = storedPockets(grid?.columns) * storedPockets(grid?.rows);
+	const pages = parsePages(grid?.pages, storedSize, slot => {
+		const source = asRecord(slot);
+		return slotKey(source?.cardCode ?? source?.url);
+	});
 	const binder: StoredBinder = {
 		...newBinder(DEFAULT_NAME, { columns, rows }),
-		pages: parsePages(grid?.pages, columns * rows, slot => {
-			const source = asRecord(slot);
-			const key = source?.cardCode ?? source?.url;
-			return isString(key) ? key : null;
-		}),
-		tray: Array.isArray(tray) ? tray.filter(isString) : []
+		pages: storedSize === columns * rows ? pages : reflow(pages, columns * rows),
+		tray: parseTray(tray)
 	};
 
 	return {
@@ -211,12 +219,61 @@ export function shiftSlots(pages: readonly BinderSheet[], at: SlotRef, size: num
 	return cut(slots, size, Math.ceil(slots.length / size));
 }
 
+/** One collator per order: `localeCompare` with a locale or options builds a new one on every call, which costs seconds on 21k cards. */
+export const compareLocalIds = new Intl.Collator('en', { numeric: true }).compare;
+const compareText = new Intl.Collator().compare;
+
+const COMPARATORS: Record<Exclude<BinderSort, 'natural'>, (a: BinderCard, b: BinderCard) => number> = {
+	name: (a, b) => compareText(a.name, b.name),
+	number: (a, b) => compareLocalIds(a.localId, b.localId) || compareText(a.name, b.name),
+	price: (a, b) => (a.price ?? 0) - (b.price ?? 0),
+	set: (a, b) => compareText(a.setId, b.setId) || compareLocalIds(a.localId, b.localId)
+};
+
+/**
+ * Card codes always come before URL items, whatever the order. `natural` keeps the input order, which `desc` reverses.
+ * The sort is stable, so equal cards keep the order they came in.
+ */
+export function sortBinderCards(cards: readonly BinderCard[], sortBy: BinderSort, order: 'asc' | 'desc'): BinderCard[] {
+	const sign = order === 'asc' ? 1 : -1;
+	const compare = sortBy === 'natural' ? () => 0 : COMPARATORS[sortBy];
+	const source = sortBy === 'natural' && order === 'desc' ? cards.toReversed() : cards;
+	return source.toSorted((a, b) => Number(isCardCode(b.cardCode)) - Number(isCardCode(a.cardCode)) || sign * compare(a, b));
+}
+
+/** The lower-cased text a search looks into, built once per card: a keystroke then costs one `includes` per card instead of three `toLowerCase`. */
+const haystacks = new WeakMap<BinderCard, string>();
+
+/** Keeps the cards whose name, set name or code holds the term. */
+export function searchCards(cards: readonly BinderCard[], term: string): readonly BinderCard[] {
+	const needle = term.trim().toLowerCase();
+	if (!needle) return cards;
+
+	return cards.filter(card => {
+		let haystack = haystacks.get(card);
+		if (haystack === undefined) {
+			haystack = `${card.name}\n${card.setName}\n${card.cardCode}`.toLowerCase();
+			haystacks.set(card, haystack);
+		}
+		return haystack.includes(needle);
+	});
+}
+
+/** Created on first use in the browser, never at import time: the module is also evaluated on the server. */
+let tabId: string | undefined;
+
+/**
+ * Every payload carries the id of the tab that started the drag. A `slot` or `page` payload holds indices into that tab's binder, so another
+ * window, whose binder can differ, ignores it. A `card` payload is a key, valid everywhere.
+ */
 export function setDrag(event: DragEvent, payload: BinderDrag) {
 	if (!event.dataTransfer) return;
-	const json = JSON.stringify(payload);
+	tabId ??= crypto.randomUUID();
+	const json = JSON.stringify({ ...payload, tab: tabId });
 	/** Firefox only starts a drag when `text/plain` data is set. */
 	event.dataTransfer.setData('text/plain', json);
 	event.dataTransfer.setData(DRAG_TYPE, json);
+	if (payload.kind === 'slot') event.dataTransfer.setData(DRAG_SLOT_TYPE, json);
 	event.dataTransfer.effectAllowed = 'copyMove';
 }
 
@@ -234,9 +291,15 @@ export function readDrag(event: DragEvent): BinderDrag | null {
 
 	const source = asRecord(value);
 	if (source?.kind === 'card' && isString(source.key)) return { key: source.key, kind: 'card' };
+	if (!tabId || source?.tab !== tabId) return null;
 	if (source?.kind === 'page' && Number.isInteger(source.index)) return { index: Number(source.index), kind: 'page' };
 	if (source?.kind === 'slot' && Number.isInteger(source.page) && Number.isInteger(source.position)) return { kind: 'slot', page: Number(source.page), position: Number(source.position) };
 	return null;
+}
+
+/** True when the pointer left the element for good, not when it moved onto one of its children. */
+export function dragLeft(event: DragEvent & { currentTarget: HTMLElement }): boolean {
+	return !(event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget));
 }
 
 export function isEditableTarget(target: EventTarget | null): boolean {

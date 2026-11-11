@@ -179,6 +179,33 @@ export interface BinderCatalogueCard {
 	types: string;
 }
 
+/** A card the builder can draw: catalogue, owned (any language) or an image URL dressed as a card, its `cardCode` holding the URL. */
+export interface BinderCard extends BinderCatalogueCard {
+	language?: Language;
+}
+
+/** A set as the Sets tab lists it, newest first; `total` counts the cards the catalogue really holds. */
+export interface BinderSet {
+	name: string;
+	printedTotal: number;
+	/** `YYYY-MM-DD`: the table holds a `Date`, which JSON would turn into a full timestamp. */
+	releaseDate: string;
+	setId: string;
+	symbol: string;
+	total: number;
+}
+
+export interface BinderPayload {
+	cards: BinderCatalogueCard[];
+	sets: BinderSet[];
+}
+
+/** The viewer's own lists resolved in all three catalogues, since `BinderPayload` is the English catalogue only. */
+export interface BinderOwnedPayload {
+	collection: BinderCard[];
+	wishlist: BinderCard[];
+}
+
 /** What a binder sheet draws in one pocket. */
 export interface BinderTile {
 	/** Faded by the owned overlay: a card the viewer does not own. */
