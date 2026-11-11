@@ -97,7 +97,8 @@
 		}
 	};
 
-	const debouncedSearch = debounce(performSearch, 300);
+	/** 100 ms groups the keys of a burst without being felt: the request answers in ~25 ms, so a 300 ms wait was over 90% of the delay. */
+	const debouncedSearch = debounce(performSearch, 100);
 
 	const handleInput = (value: string) => {
 		searchQuery = value;
