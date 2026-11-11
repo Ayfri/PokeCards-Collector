@@ -21,6 +21,15 @@
 		open = $bindable(false),
 		title = ''
 	}: Props = $props();
+
+	/** Focus moves into the dialog when it opens and back to the element that had it when it closes, so a page's own keys never act on the page behind the overlay. */
+	function takeFocus(dialog: HTMLElement) {
+		const opener = document.activeElement;
+		dialog.focus();
+		return () => {
+			if (opener instanceof HTMLElement) opener.focus();
+		};
+	}
 </script>
 
 <svelte:window onkeydown={event => { if (open && event.key === 'Escape') onClose(); }} />
@@ -35,9 +44,10 @@
 		<div
 			aria-labelledby="modal-title"
 			aria-modal="true"
-			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto {containerClass}"
+			class="bg-gray-800 border border-gray-700 rounded-lg w-full p-6 max-h-[90vh] overflow-y-auto outline-none {containerClass}"
 			role="dialog"
 			tabindex="-1"
+			{@attach takeFocus}
 			transition:fly={{ duration: 200, y: 20 }}
 		>
 			{#if header || title}
