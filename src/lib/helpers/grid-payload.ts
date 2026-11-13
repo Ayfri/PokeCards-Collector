@@ -1,6 +1,7 @@
 import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
 import { type Catalogue, CATALOGUES } from '#helpers/catalogues.ts';
 import { cardPath, cardPrice, formatCardNumber, memoizedOn, setPath } from '#helpers/card-utils.ts';
+import { gzipJson } from '#helpers/catalogue-snapshot.ts';
 import { keepAlive } from '#helpers/data-cache.ts';
 import { cardListSchema, setSchema } from '#helpers/seo.ts';
 import type { Set as CardSet, FullCard, GridPokemon, Pokemon, PriceData } from '#lib/types.js';
@@ -79,14 +80,6 @@ interface CompressedJson {
 	gzip: Uint8Array<ArrayBuffer>;
 }
 
-/** gzip, since `CompressionStream` has no Brotli on Workers (`workers-types` declares gzip, deflate and deflate-raw). */
-async function compressJson(value: unknown): Promise<CompressedJson> {
-	const raw = new TextEncoder().encode(JSON.stringify(value));
-	const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', raw));
-	const gzip = new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer());
-	return { etag: `"${Array.from(digest.subarray(0, 16), byte => byte.toString(16).padStart(2, '0')).join('')}"`, gzip };
-}
-
 const bodyMemos = { binder: new WeakMap<object, unknown>(), grid: new WeakMap<object, unknown>(), suggestions: new WeakMap<object, unknown>() };
 
 /**
@@ -95,7 +88,10 @@ const bodyMemos = { binder: new WeakMap<object, unknown>(), grid: new WeakMap<ob
  */
 export function memoizedJson(name: keyof typeof bodyMemos, cards: FullCard[], inputs: readonly object[], build: () => unknown): Promise<CompressedJson> {
 	return memoizedOn(bodyMemos[name], [cards, ...inputs], () => {
-		const body = (async () => compressJson(build()))();
+		const body = (async () => {
+			const { gzip, hash } = await gzipJson(build());
+			return { etag: `"${hash}"`, gzip };
+		})();
 		keepAlive(body);
 		return body;
 	});

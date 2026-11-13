@@ -15,11 +15,15 @@ export function createSyncClient(url: string, secretKey: string): SupabaseClient
 	return createClient(url, secretKey, {auth: {persistSession: false}});
 }
 
-/** Reads a whole table in pages, because Supabase caps a select at 1000 rows. `orderBy` must be unique, or pages overlap and skip rows. */
-export async function readAll<T>(supabase: SupabaseClient, table: string, columns: string, orderBy: string): Promise<T[]> {
+/**
+ * Reads a whole table in pages of 1000 rows, the cap of a Supabase select: a larger range would come back short and end the loop after one page.
+ * `orderBy` (a column, or several chained in order) must be a total order, or pages overlap and skip rows: paging `cards` on `name` alone
+ * drops ~1700 rows and duplicates others, because only 4618 of its 23546 rows have a name no other row shares.
+ */
+export async function readAll<T>(supabase: SupabaseClient, table: string, columns: string, orderBy: string | readonly string[]): Promise<T[]> {
 	const rows: T[] = [];
 	for (let from = 0; ; from += 1000) {
-		const {data, error} = await supabase.from(table).select(columns).order(orderBy).range(from, from + 999);
+		const {data, error} = await [orderBy].flat().reduce((query, column) => query.order(column), supabase.from(table).select(columns)).range(from, from + 999);
 		if (error) throw new Error(`Error reading ${table}: ${error.message}`);
 		rows.push(...(data as T[]));
 		if (data.length < 1000) return rows;
@@ -39,14 +43,6 @@ export async function upsertRows(supabase: SupabaseClient, table: string, rows: 
 		if (error) throw new Error(`Error upserting ${table} at ${index}: ${error.message}`);
 	}
 	return rows.length;
-}
-
-/** Marks a catalogue as rewritten: the site re-reads a language's tables when its version differs from the one it holds. Returns the new version. */
-export async function bumpCatalogueVersion(supabase: SupabaseClient, lang: Language): Promise<string> {
-	const version = Date.now().toString(36);
-	const {error} = await supabase.from('catalogue_versions').upsert({language: lang, updated_at: new Date().toISOString(), version}, {onConflict: 'language'});
-	if (error) throw new Error(`Error bumping the ${lang} catalogue version: ${error.message}`);
-	return version;
 }
 
 /** Deletes the rows whose `column` is in `values` and returns how many went. Chunks keep the PostgREST query string short. */

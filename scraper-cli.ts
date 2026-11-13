@@ -4,7 +4,8 @@ import { select } from '@inquirer/prompts';
 import { readFile } from 'node:fs/promises';
 import { parseArgs, styleText } from 'node:util';
 import { CATALOGUES, type Language, LANGUAGES } from './src/lib/helpers/catalogues.js';
-import { FILES, POKEMONS, TYPES } from './src/scrapers/cli-config.js';
+import type { PublishSummary } from './src/lib/helpers/catalogue-snapshot.js';
+import { FILES, POKEMONS, publishRemotely, TYPES } from './src/scrapers/cli-config.js';
 import { checkDatabase } from './src/scrapers/db-check.js';
 import { fetchPokemons } from './src/scrapers/pokemon-scraper.js';
 import { purgeExcludedSeries } from './src/scrapers/purge.js';
@@ -38,6 +39,16 @@ function heading(text: string): void {
 
 function row(label: string, value: string | number): void {
 	console.log(`  ${dim(`${label.padEnd(18)}`)} ${value}`);
+}
+
+function reportPublish(summary: PublishSummary): PublishSummary {
+	heading('publish');
+	for (const [name, { bytes, key, rows }] of Object.entries(summary.objects)) {
+		row(name, `${rows} rows, ${(bytes / 1024).toFixed(0)} kB ${dim(key)}`);
+	}
+	row('written', summary.written.length ? summary.written.join(', ') : dim('none, every object was already there'));
+	row('removed', summary.removed);
+	return summary;
 }
 
 const SUPABASE_TARGETS = ['all', 'types', 'pokemons', 'sets', 'jp-sets', 'fr-sets', 'cards', 'jp-cards', 'fr-cards', 'prices', 'jp-prices', 'fr-prices'] as const;
@@ -180,6 +191,7 @@ const commands: Command[] = [
 					for (const code of lang.orphanedOwned.slice(0, 10)) console.log(`      ${dim(code)}`);
 				}
 			}
+			if (!dryRun && report.langs.some(lang => lang.cards || lang.sets.length)) reportPublish(await publishRemotely());
 			return report;
 		},
 	},
@@ -193,8 +205,8 @@ const commands: Command[] = [
 		},
 	},
 	{
-		description: `Upload scraped JSON to Supabase (${SUPABASE_TARGETS.join(', ')})`,
-		flags: '<target>  --dry-run',
+		description: `Upload scraped JSON to Supabase (${SUPABASE_TARGETS.join(', ')}), then publish the catalogue`,
+		flags: '<target>  --dry-run  --json',
 		name: 'supabase',
 		run: async ({ dryRun, target }) => {
 			const chosen = (target ?? 'all') as SupabaseTarget;
@@ -211,11 +223,39 @@ const commands: Command[] = [
 			}
 			const uploaders = await import('./src/scrapers/supabase-uploader.js') as Record<string, (language?: Language) => Promise<void>>;
 			const [uploader, language] = SUPABASE_UPLOADERS[chosen];
-			await uploaders[uploader](language);
+
+			/** The publish runs after a failed upload too, since the tables it already wrote have changed. The upload error is the one that ends the command. */
+			let summary: PublishSummary | undefined;
+			let uploaded = false;
+			try {
+				await uploaders[uploader](language);
+				uploaded = true;
+			} finally {
+				try {
+					summary = reportPublish(await publishRemotely());
+				} catch (error) {
+					if (uploaded) throw error;
+					console.error(`${styleText('red', 'publish failed after the failed upload:')} ${(error as Error).message}`);
+				}
+			}
+			return summary;
 		},
 	},
 	{
-		description: 'scrape, then pokemons, then push everything to Supabase',
+		description: 'Publish the Supabase catalogue as the R2 snapshots the site reads, through the scraper Worker',
+		flags: '--dry-run  --json',
+		name: 'publish',
+		run: async ({ dryRun }) => {
+			if (dryRun) {
+				heading('publish (dry run)');
+				console.log(dim('  dry run: nothing published'));
+				return;
+			}
+			return reportPublish(await publishRemotely());
+		},
+	},
+	{
+		description: 'scrape, then pokemons, then push everything to Supabase and publish it',
 		flags: `--lang ${LANGUAGES.join(',')}  --dry-run`,
 		name: 'all',
 		run: async options => {
@@ -231,7 +271,7 @@ const commands: Command[] = [
 
 function usage(): void {
 	console.log(`
-${bold('Pokémon data scraper')} ${dim('- TCGdex -> src/assets/ -> Supabase')}
+${bold('Pokémon data scraper')} ${dim('- TCGdex -> src/assets/ -> Supabase -> R2')}
 
   ${dim('$')} bun run scrapers ${accent('<command>')} [options]
   ${dim('$')} bun run scrapers               ${dim('# interactive menu')}
@@ -241,7 +281,7 @@ ${commands.map(command => `  ${accent(command.name.padEnd(10))} ${command.descri
 
 ${bold('Options')}
   ${accent('--lang <list>')}   languages to scrape, comma separated ${dim(`(default: ${LANGUAGES.join(',')})`)}
-  ${accent('--dry-run')}       run everything but write nothing: no file, no Supabase row
+  ${accent('--dry-run')}       run everything but write nothing: no file, no Supabase row, no publish
   ${accent('--offline')}       skip the Supabase round-trip in ${accent('verify')}
   ${accent('--json')}          print the raw report instead of the pretty one
   ${accent('--quiet, -q')}     only print the final summary

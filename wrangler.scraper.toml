@@ -1,8 +1,10 @@
-# Daily TCGdex -> Supabase refresh, deployed apart from the site Worker:
+# Daily TCGdex -> Supabase refresh that ends by publishing the catalogue to R2, deployed apart from the site Worker:
+#   bunx wrangler r2 bucket create pokecards-catalogue --location weur
 #   bun run deploy:scraper
 #   bunx wrangler secret put SUPABASE_SECRET_KEY -c wrangler.scraper.toml
 #   bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
 #   bunx wrangler secret put CARDTRADER_TOKEN -c wrangler.scraper.toml
+# `POST /publish` with `Authorization: Bearer $SCRAPER_TRIGGER_TOKEN` publishes the snapshots on demand, which the CLI does after every upload.
 name = "pokecards-scraper"
 main = "src/workers/scraper.ts"
 compatibility_date = "2026-10-23"
@@ -10,16 +12,24 @@ compatibility_date = "2026-10-23"
 [vars]
 PUBLIC_SUPABASE_URL = "https://ptbwuqaqkqntmgmaqboq.supabase.co"
 
-# A full pass is ~50k TCGdex calls plus the Supabase upserts, far over the 10k default.
+# A full pass makes tens of thousands of TCGdex calls plus the Supabase upserts, far over the 10k default.
 [limits]
 subrequests = 1_000_000
+# A publish stringifies, gzips and hashes every catalogue table, far over the default CPU budget of an invocation.
+cpu_ms = 300_000
+
+# The published catalogue snapshots (`src/scrapers/publish.ts`). `remote = true` keeps `wrangler dev` on the real bucket.
+[[r2_buckets]]
+binding = "CATALOGUE"
+bucket_name = "pokecards-catalogue"
+remote = true
 
 # `enabled` is the logs toggle. Traces need their own toggle below until Cloudflare ties them to it behind a compatibility date.
 [observability]
 enabled = true
 
-# A pass makes ~43k TCGdex requests, one span each: 99.7% of the Worker's events. Traces keep 10% of invocations, each one
-# whole; logs, errors and Issues stay complete. Set it back to 1.0 to trace every invocation while chasing a bug.
+# Every TCGdex request of a pass is a span, so the spans are nearly all of the Worker's events. Traces keep 10% of invocations,
+# each one whole; logs, errors and Issues stay complete. Set it back to 1.0 to trace every invocation while chasing a bug.
 [observability.traces]
 enabled = true
 head_sampling_rate = 0.1

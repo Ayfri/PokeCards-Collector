@@ -1,11 +1,13 @@
 import {DurableObject, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep} from 'cloudflare:workers';
 import {type Language, LANGUAGES} from '#helpers/catalogues.ts';
 import {type CardTraderImages, fetchCardTraderScans} from '#scrapers/cardtrader.ts';
-import {bumpCatalogueVersion, createSyncClient, dropSharedProducts, type SyncCardsResult, syncSetCards, syncSets} from '#scrapers/supabase-sync.ts';
+import {publishCatalogue} from '#scrapers/publish.ts';
+import {createSyncClient, dropSharedProducts, type SyncCardsResult, syncSetCards, syncSets} from '#scrapers/supabase-sync.ts';
 import {FetchClient} from '#scrapers/tcgdex/client.ts';
 
 interface Env {
 	CARDTRADER_TOKEN?: string;
+	CATALOGUE: R2Bucket;
 	PUBLIC_SUPABASE_URL: string;
 	SCRAPER: Workflow;
 	SCRAPER_TRIGGER_TOKEN?: string;
@@ -70,7 +72,7 @@ export class TcgdexReader extends DurableObject<Env> {
 /**
  * Daily TCGdex -> Supabase refresh. One step per set batch, so a failure retries that batch alone, not the whole
  * catalogue. Every delete is scoped to a set TCGdex just answered for (a card it dropped, a price it lost, a set it
- * holds no card for), so a half-finished pass never removes rows it has not reached yet.
+ * holds no card for), so a half-finished pass never removes rows it has not reached yet. The last step publishes the tables to R2, where the site reads them.
  */
 export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 	async run(_event: WorkflowEvent<unknown>, step: WorkflowStep): Promise<void> {
@@ -81,9 +83,13 @@ export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 		/** Not caught on purpose: the RPC only throws when no map is stored, and the batch steps would then null every CardTrader scan. */
 		await step.do('cardtrader: images', {retries: {backoff: 'exponential', delay: '1 minute', limit: 2}, timeout: '10 minutes'}, () => reader.syncCardTraderImages());
 
-		for (const lang of LANGUAGES) {
-			/** The bump runs even when a step fails: the batches before it already wrote their rows, and the error still ends the run. */
-			try {
+		/**
+		 * The database is the source of truth, so a failed language still publishes what its batches already wrote.
+		 * A failure stops the languages after it, and the error still ends the run once the publish step is done.
+		 */
+		let failure: unknown;
+		try {
+			for (const lang of LANGUAGES) {
 				const setIds = await step.do(`${lang}: sets`, () => reader.syncSets(lang));
 
 				for (let index = 0; index < setIds.length; index += SETS_PER_STEP) {
@@ -96,28 +102,56 @@ export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 				}
 
 				await step.do(`${lang}: shared products`, () => dropSharedProducts(supabase, lang));
-			} finally {
-				await step.do(`${lang}: version`, () => bumpCatalogueVersion(supabase, lang))
-					.catch((error: unknown) => console.error(`${lang}: catalogue version bump failed, the site keeps the previous one up to 25 h:`, error));
 			}
+		} catch (error) {
+			console.error('A language failed, the publish step still runs:', error);
+			failure = error;
 		}
+
+		await step.do('publish', {retries: {backoff: 'exponential', delay: '1 minute', limit: 2}, timeout: '10 minutes'}, () => publishCatalogue(supabase, this.env.CATALOGUE));
+		if (failure) throw failure;
 	}
 }
 
-/** Manual kick-off: `POST /run` with `Authorization: Bearer $SCRAPER_TRIGGER_TOKEN`. `GET /?id=` reports an instance. */
+/** `timingSafeEqual` is a Workers extension that the DOM typings the project is checked against do not declare. */
+type WorkersSubtle = SubtleCrypto & {timingSafeEqual(a: ArrayBufferView, b: ArrayBufferView): boolean};
+
+/** `timingSafeEqual` throws on buffers of different lengths, so the length is compared first: a wrong length leaks nothing the header does not already show. */
+function authorized(request: Request, env: Env): boolean {
+	if (!env.SCRAPER_TRIGGER_TOKEN) return false;
+
+	const encoder = new TextEncoder();
+	const given = encoder.encode(request.headers.get('authorization') ?? '');
+	const expected = encoder.encode(`Bearer ${env.SCRAPER_TRIGGER_TOKEN}`);
+	return given.byteLength === expected.byteLength && (crypto.subtle as WorkersSubtle).timingSafeEqual(given, expected);
+}
+
+/**
+ * Manual kick-off, both with `Authorization: Bearer $SCRAPER_TRIGGER_TOKEN`: `POST /run` starts a scrape, `POST /publish` publishes the
+ * catalogue snapshots now and answers with their summary. `GET /?id=` reports an instance.
+ */
 export default {
 	async fetch(request: Request, env: Env): Promise<Response> {
 		const url = new URL(request.url);
 
 		if (request.method === 'POST' && url.pathname === '/run') {
-			const token = env.SCRAPER_TRIGGER_TOKEN;
-			if (!token || request.headers.get('authorization') !== `Bearer ${token}`) return new Response('Unauthorized', {status: 401});
+			if (!authorized(request, env)) return new Response('Unauthorized', {status: 401});
 			const instance = await env.SCRAPER.create();
 			return Response.json({id: instance.id, status: await instance.status()});
 		}
 
+		if (request.method === 'POST' && url.pathname === '/publish') {
+			if (!authorized(request, env)) return new Response('Unauthorized', {status: 401});
+			try {
+				return Response.json(await publishCatalogue(createSyncClient(env.PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY), env.CATALOGUE));
+			} catch (error) {
+				console.error('publish failed:', error);
+				return Response.json({error: error instanceof Error ? error.message : String(error)}, {status: 500});
+			}
+		}
+
 		const id = url.searchParams.get('id');
-		if (!id) return new Response('POST /run to start a scrape, GET /?id=<instance> to follow one', {status: 404});
+		if (!id) return new Response('POST /run to start a scrape, POST /publish to publish the snapshots, GET /?id=<instance> to follow one', {status: 404});
 		const instance = await env.SCRAPER.get(id);
 		return Response.json(await instance.status());
 	},

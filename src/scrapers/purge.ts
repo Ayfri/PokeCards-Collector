@@ -1,7 +1,7 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import {CATALOGUES, type Language, LANGUAGES} from '#helpers/catalogues.ts';
 import {envClient} from './cli-config';
-import {bumpCatalogueVersion, deleteIn, ownedCardCodes} from './supabase-sync';
+import {deleteIn, ownedCardCodes} from './supabase-sync';
 import {Http2Pool} from './tcgdex/http2-pool';
 import {EXCLUDED_SERIES, excludedSetIds} from './tcgdex/excluded';
 
@@ -72,7 +72,6 @@ export async function purgeExcludedSeries(dryRun = false): Promise<PurgeReport> 
 			if (codes.length) report.prices = dryRun ? await countIn(supabase, tables.prices, 'card_code', codes) : await deleteIn(supabase, tables.prices, 'card_code', codes);
 			if (!dryRun && codes.length) report.cards = await deleteIn(supabase, tables.cards, 'card_code', codes);
 			if (!dryRun && sets.length) await deleteIn(supabase, tables.sets, 'set_id', sets);
-			if (!dryRun && (codes.length || sets.length)) await bumpCatalogueVersion(supabase, lang);
 			langs.push(report);
 		}
 
