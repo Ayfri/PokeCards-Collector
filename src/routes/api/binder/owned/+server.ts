@@ -1,4 +1,4 @@
-import { getOwnedCards, type OwnedCard } from '#helpers/supabase-data.ts';
+import { getOwnedCards, type OwnedCard } from '#helpers/catalogue-data.ts';
 import type { BinderCard, BinderOwnedPayload } from '#lib/types.js';
 import type { RequestHandler } from './$types';
 

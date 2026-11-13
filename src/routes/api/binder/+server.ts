@@ -1,6 +1,6 @@
 import { cardPrice } from '#helpers/card-utils.ts';
 import { compressedJsonResponse, memoizedJson } from '#helpers/grid-payload.ts';
-import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { getCards, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import type { BinderCatalogueCard, BinderPayload, BinderSet } from '#lib/types.js';
 import type { RequestHandler } from './$types';
 

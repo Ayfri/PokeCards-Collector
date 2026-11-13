@@ -4,8 +4,8 @@ import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$app/env/p
 import { browser } from '$app/env';
 
 /**
- * Anonymous client, no session attached. Reserved for the public catalogue (`cards`, `prices`, `sets`, ...),
- * never for a row whose policy gates on `auth.uid()`.
+ * Anonymous client, no session attached. It serves public user data (public profiles and the `owned_cards` function), never a catalogue
+ * table, which the site reads from R2, and never a row whose policy gates on `auth.uid()`.
  *
  * The auth options keep it session-free. `detectSessionInUrl` defaults to on, and `LoginForm` imports this module, so
  * every page would otherwise claim any token left in the URL fragment and store it in `localStorage`, out of reach of

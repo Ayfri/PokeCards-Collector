@@ -1,5 +1,5 @@
 import { cardPath } from '#helpers/card-utils.ts';
-import { getRandomCard } from '#helpers/supabase-data.ts';
+import { getRandomCard } from '#helpers/catalogue-data.ts';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from '../$types';
 

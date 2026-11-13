@@ -1,7 +1,7 @@
 import { CARD_DLE_MIN_PRICE } from '#helpers/card-dle.ts';
 import { cardPrice } from '#helpers/card-utils.ts';
 import { compressedJsonResponse, memoizedJson } from '#helpers/grid-payload.ts';
-import { getCards, getPrices } from '#helpers/supabase-data.ts';
+import { getCards, getPrices } from '#helpers/catalogue-data.ts';
 import type { CardDleSuggestion } from '#lib/types.js';
 import type { RequestHandler } from './$types';
 

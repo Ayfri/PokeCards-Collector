@@ -31,6 +31,8 @@ declare global {
 		interface Env {
 			/** The static assets of the Worker (`[assets] binding` in `wrangler.toml`); absent under `vite dev`. */
 			ASSETS?: Fetcher;
+			/** The catalogue snapshots the scraper Worker publishes (`[[r2_buckets]]` in `wrangler.toml`): a manifest and the objects it names. */
+			CATALOGUE: R2Bucket;
 		}
 	}
 

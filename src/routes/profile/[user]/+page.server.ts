@@ -1,5 +1,5 @@
 import { LANGUAGES } from '#helpers/catalogues.ts';
-import { countCards, getOwnedCards, getSets } from '#helpers/supabase-data.ts';
+import { countCards, getOwnedCards, getSets } from '#helpers/catalogue-data.ts';
 import { redirect } from '@sveltejs/kit';
 import { formatEuros } from '#helpers/format.ts';
 import { ogImage } from '#helpers/og-image.ts';

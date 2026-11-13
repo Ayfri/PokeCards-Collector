@@ -5,7 +5,7 @@ import { formatDate } from '#helpers/format.ts';
 import { ogImage } from '#helpers/og-image.ts';
 import { isFrenchCode } from '#helpers/owned-cards.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
-import { getCardIndex } from '#helpers/supabase-data.ts';
+import { getCardIndex } from '#helpers/catalogue-data.ts';
 import { getBinderShare } from '#lib/services/binder-shares.ts';
 import type { BinderTile, FullCard } from '#lib/types.js';
 import type { PageServerLoad } from './$types';

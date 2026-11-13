@@ -1,4 +1,4 @@
-import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { getCards, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
 import type { Set as CardSet, FullCard, PlateCard, PlateSet, PriceData } from '#lib/types.js';

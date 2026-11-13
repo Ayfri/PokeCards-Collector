@@ -1,4 +1,4 @@
-import { getCards, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { getCards, getPokemons, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import { searchCards, searchPokemons } from '#helpers/card-search.ts';
 import type { RequestHandler } from './$types';
 

@@ -4,7 +4,7 @@ import { breadcrumbs } from '#helpers/seo.ts';
 import { CATALOGUES } from '#helpers/catalogues.ts';
 import { setPath } from '#helpers/card-utils.ts';
 import { ogImage, setShareImage, setValue } from '#helpers/og-image.ts';
-import { getCards, getPrices } from '#helpers/supabase-data.ts';
+import { getCards, getPrices } from '#helpers/catalogue-data.ts';
 
 /**
  * SEO only: the grid's cards, prices, pokemons and types come from `/api/cards-list` through `+page.ts`.

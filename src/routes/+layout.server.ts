@@ -7,7 +7,7 @@ import { getUserCollection } from '#lib/services/collections.ts';
  * The catalogue is deliberately not returned here. Everything a layout load returns is serialized into the document,
  * so returning `cards` and `prices` put 23546 cards and 19819 prices (a 24 MB document) on every page, even those
  * that only needed them server-side. The English sets stay out too (202 of them, 53 kB on every document): the pages that draw them return them from their own load.
- * Page loads call `getCards()` / `getPrices()` / `getSets()` themselves; `cachedTable` memoizes each, so the whole-table read still happens once per isolate.
+ * Page loads call `getCards()` / `getPrices()` / `getSets()` themselves; `catalogueObject` memoizes each, so the whole-table read still happens once per isolate.
  */
 export const load: LayoutServerLoad = async ({ locals }) => {
 	let wishlistCodes: string[] = [];

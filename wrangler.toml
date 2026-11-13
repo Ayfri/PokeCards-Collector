@@ -20,6 +20,13 @@ zone_name = "ayfri.com"
 directory = ".svelte-kit/cloudflare"
 binding = "ASSETS"
 
+# The catalogue snapshots the scraper Worker publishes: a manifest and the immutable objects it names. `remote = true` makes `vite dev` and
+# `wrangler dev` read the real bucket instead of an empty local one, so dev needs `wrangler login`.
+[[r2_buckets]]
+binding = "CATALOGUE"
+bucket_name = "pokecards-catalogue"
+remote = true
+
 # `enabled` is the logs toggle. Traces need their own toggle below until Cloudflare ties them to it behind a compatibility date.
 [observability]
 enabled = true

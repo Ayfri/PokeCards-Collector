@@ -1,7 +1,7 @@
 import type { CardLink } from '#helpers/card-utils.ts';
 import type { Language } from '#helpers/catalogues.ts';
 import { formatEuros } from '#helpers/format.ts';
-import type { OwnedCard, OwnedCards } from '#helpers/supabase-data.ts';
+import type { OwnedCard, OwnedCards } from '#helpers/catalogue-data.ts';
 import type { CollectionStats, Set } from '#lib/types.js';
 
 /** Number of owned cards the profile showcases, most valuable first. */
@@ -37,7 +37,7 @@ interface UserCardsWording {
 
 /**
  * Lives here and not in `user-cards-page.ts` because `UserCardsView` reads it in the browser: a value import of that module puts
- * `supabase-data.ts` and its `cloudflare:workers` import in the client chunk, which no browser can load, so the page hydrates into an error 500.
+ * `catalogue-data.ts` and its `cloudflare:workers` import in the client chunk, which no browser can load, so the page hydrates into an error 500.
  */
 export const USER_CARDS_WORDING = {
 	collection: {

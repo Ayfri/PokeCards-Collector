@@ -1,5 +1,5 @@
 import { isLanguage } from '#helpers/catalogues.ts';
-import { getCardVersions } from '#helpers/supabase-data.ts';
+import { getCardVersions } from '#helpers/catalogue-data.ts';
 import type { RequestHandler } from './$types';
 
 /** The same card in the other catalogues, for the language switcher of a card that was swapped in the browser without a page load. */

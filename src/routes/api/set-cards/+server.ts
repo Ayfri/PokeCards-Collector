@@ -1,6 +1,6 @@
 import { isLanguage } from '#helpers/catalogues.ts';
 import { setGridResponse } from '#helpers/grid-payload.ts';
-import { getCards, getPokemons, getPrices, getTypes } from '#helpers/supabase-data.ts';
+import { getCards, getPokemons, getPrices, getTypes } from '#helpers/catalogue-data.ts';
 import type { RequestHandler } from './$types';
 
 /** The cards of one set in the grid payload shape, for the grid under a set page's checklist. */

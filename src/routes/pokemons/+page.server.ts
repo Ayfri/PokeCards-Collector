@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
-import { getCards, getPokemons, getPrices } from '#helpers/supabase-data.ts';
+import { getCards, getPokemons, getPrices } from '#helpers/catalogue-data.ts';
 import { processCardImage } from '#helpers/card-images.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { BASE_URL, POKEMONS_COUNT } from '#src/constants.ts';

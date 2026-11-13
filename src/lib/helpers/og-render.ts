@@ -32,7 +32,7 @@ import { formatOgEuros, OG_HEIGHT, OG_WIDTH, type OgPage, ogPrice, type OgTarget
 import { ownedTotals } from '#helpers/owned-cards.ts';
 import { RARITY_SYMBOLS, type RarityTone } from '#helpers/rarity-symbols.ts';
 import { SET_IMAGE_DIR } from '#helpers/set-images.ts';
-import { countCards, getCardDetails, getCardPrice, getCards, getCatalogue, getOwnedCards, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { countCards, getCardDetails, getCardPrice, getCards, getCatalogue, getOwnedCards, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import { RARITY_SHAPES, TYPE_SYMBOLS } from '#helpers/tcg-symbols.ts';
 import { getProfileByUsername } from '#lib/services/profiles.ts';
 import { supabase } from '#lib/supabase.ts';
@@ -338,7 +338,7 @@ function plate(card: Card, height: number): Node {
 	});
 }
 
-/** The card's name, its set with the logo, its flag, energy types and rarity, the price in gold, and the scan. A card and a price are one row read each, never the catalogue. */
+/** The card's name, its set with the logo, its flag, energy types and rarity, the price in gold, and the scan. The card, its price and the set come from the memoized catalogue snapshots. */
 async function cardImage(language: Language, code: string): Promise<Node | null> {
 	const [card, priceData, sets] = await Promise.all([getCardDetails(language, code), getCardPrice(language, code), getSets(language)]);
 	if (!card) return null;

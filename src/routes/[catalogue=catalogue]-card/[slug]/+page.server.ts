@@ -1,5 +1,5 @@
 import { BY_ROUTE_CODE, type LanguagePaths } from '#helpers/catalogues.ts';
-import { findCardBySlug, getCardDetails, getCards, getCardVersions, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { findCardBySlug, getCardDetails, getCards, getCardVersions, getPokemons, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { formatEuros } from '#helpers/format.ts';

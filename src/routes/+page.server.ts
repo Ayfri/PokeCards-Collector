@@ -1,4 +1,4 @@
-import { countCards, getCards, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { countCards, getCards, getPokemons, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import { cardListSchema, faqSchema } from '#helpers/seo.ts';
 import type { BinderTile, Set as CardSet, FullCard, PriceData } from '#lib/types.js';
 import type { PageServerLoad } from './$types';

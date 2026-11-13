@@ -3,7 +3,7 @@ import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
 import { breadcrumbs, profileSchema } from '#helpers/seo.ts';
 import { ogImage } from '#helpers/og-image.ts';
 import { ownedTotals, USER_CARDS_WORDING, type UserCardsKind, type UserCardsSummary } from '#helpers/owned-cards.ts';
-import { getOwnedCards, getPokemons, getSets, getTypes, type OwnedCards } from '#helpers/supabase-data.ts';
+import { getOwnedCards, getPokemons, getSets, getTypes, type OwnedCards } from '#helpers/catalogue-data.ts';
 import { getProfileByUsername } from '#lib/services/profiles.ts';
 import type { FullCard, GridPokemon, PublicProfile, Set, UserProfile } from '#lib/types.js';
 import type { SupabaseClient } from '@supabase/supabase-js';

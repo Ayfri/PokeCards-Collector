@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 import { cardPrice } from '#helpers/card-utils.ts';
 import { pickCardOfTheDay, utcDay } from '#helpers/card-dle.ts';
-import { getCards, getPrices } from '#helpers/supabase-data.ts';
+import { getCards, getPrices } from '#helpers/catalogue-data.ts';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {

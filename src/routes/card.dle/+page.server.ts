@@ -2,7 +2,7 @@ import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
 import { utcDay } from '#helpers/card-dle.ts';
 import { breadcrumbs, gameSchema } from '#helpers/seo.ts';
-import { getSets } from '#helpers/supabase-data.ts';
+import { getSets } from '#helpers/catalogue-data.ts';
 
 /**
  * SEO and the server's UTC day (`today`), which the stored board follows instead of the client clock. The guessable cards come from

@@ -1,6 +1,6 @@
 import { BY_GRID } from '#helpers/catalogues.ts';
 import type { LayoutServerLoad } from './$types';
-import { getSets } from '#helpers/supabase-data.ts';
+import { getSets } from '#helpers/catalogue-data.ts';
 
 /** Depends on the grid only, not on `?set=`: a set filter change never reruns it, and `/japan` to `/france` loads the other catalogue's sets. */
 export const load: LayoutServerLoad = async ({ params }) => {

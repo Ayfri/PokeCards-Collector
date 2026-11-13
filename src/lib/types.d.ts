@@ -1,13 +1,5 @@
 import type { Language } from '#helpers/catalogues.ts';
 
-export interface CardVariants {
-	firstEdition: boolean;
-	holo: boolean;
-	normal: boolean;
-	reverse: boolean;
-	wPromo: boolean;
-}
-
 export interface Card {
 	/** Extensionless TCGdex image base of the artwork a plate crops in place of a missing scan. Only on a card with no scan that has a source. */
 	artImage?: string;
@@ -22,7 +14,6 @@ export interface Card {
 	image: string;
 	/** Set only on pages that mix catalogues (collection, wishlist, profile); absent means the catalogue of the page's path. */
 	language?: Language;
-	legalStandard?: boolean;
 	localId: string;
 	name: string;
 	pokemonNumber?: number;
@@ -38,7 +29,6 @@ export interface Card {
 	supertype: string;
 	tcgdexId?: string;
 	types: string;
-	variants?: CardVariants | null;
 }
 
 export type FullCard = Card;

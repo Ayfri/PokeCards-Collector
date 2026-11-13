@@ -1,6 +1,6 @@
 import { BY_GRID, CATALOGUES } from '#helpers/catalogues.ts';
 import { setPath } from '#helpers/card-utils.ts';
-import { getSets } from '#helpers/supabase-data.ts';
+import { getSets } from '#helpers/catalogue-data.ts';
 import { type SitemapEntry, sitemapResponse, urlset } from '#helpers/sitemap.ts';
 
 /** Browsable routes and every set page. User pages are left out because they are `noindex` unless the profile is public. */

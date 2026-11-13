@@ -2,7 +2,7 @@ import { BY_GRID } from '#helpers/catalogues.ts';
 import { setPath } from '#helpers/card-utils.ts';
 import { redirectToSetPage } from '#helpers/grid-payload.ts';
 import { ogImage, setShareImage, setValue } from '#helpers/og-image.ts';
-import { getCards, getPrices } from '#helpers/supabase-data.ts';
+import { getCards, getPrices } from '#helpers/catalogue-data.ts';
 import type { PageServerLoad } from './$types';
 import { breadcrumbs } from '#helpers/seo.ts';
 

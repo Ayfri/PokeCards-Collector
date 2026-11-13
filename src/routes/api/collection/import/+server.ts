@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { type Language, LANGUAGES } from '#helpers/catalogues.ts';
 import { buildCardIndex, buildSetKeys, type ImportLookups, type ImportRow, MAX_IMPORT_ROWS, resolveRows } from '#helpers/collection-import.ts';
-import { getCards, getSets } from '#helpers/supabase-data.ts';
+import { getCards, getSets } from '#helpers/catalogue-data.ts';
 import type { Card, Set } from '#lib/types.js';
 import type { RequestHandler } from './$types';
 

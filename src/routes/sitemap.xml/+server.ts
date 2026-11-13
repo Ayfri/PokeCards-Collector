@@ -1,5 +1,5 @@
 import { BY_ROUTE_CODE } from '#helpers/catalogues.ts';
-import { countCards } from '#helpers/supabase-data.ts';
+import { countCards } from '#helpers/catalogue-data.ts';
 import { SITEMAP_CHUNK, sitemapIndex, sitemapResponse } from '#helpers/sitemap.ts';
 
 /**

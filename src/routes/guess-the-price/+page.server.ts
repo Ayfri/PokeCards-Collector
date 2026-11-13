@@ -1,4 +1,4 @@
-import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { getCards, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
 import { breadcrumbs, gameSchema } from '#helpers/seo.ts';

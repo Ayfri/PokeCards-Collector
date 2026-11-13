@@ -1,5 +1,5 @@
 import { error, redirect } from '@sveltejs/kit';
-import { findCardBySlug, getCardDetails, getCards, getCardVersions, getPokemons, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { findCardBySlug, getCardDetails, getCards, getCardVersions, getPokemons, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import { CATALOGUES, type LanguagePaths } from '#helpers/catalogues.ts';
 import { formatEuros } from '#helpers/format.ts';
 import { cardOgVersion, ogImage } from '#helpers/og-image.ts';

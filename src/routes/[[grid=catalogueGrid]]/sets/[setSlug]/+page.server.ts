@@ -3,7 +3,7 @@ import { setCardCount, setPath } from '#helpers/card-utils.ts';
 import { setLanding } from '#helpers/grid-payload.ts';
 import { setShareImage } from '#helpers/og-image.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
-import { findSetBySlug, getCards, getPrices, getSetVersions } from '#helpers/supabase-data.ts';
+import { findSetBySlug, getCards, getPrices, getSetVersions } from '#helpers/catalogue-data.ts';
 import { error, redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 

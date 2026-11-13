@@ -1,5 +1,5 @@
 import { BY_GRID } from '#helpers/catalogues.ts';
-import { getCards, getPokemons, getPrices, getTypes } from '#helpers/supabase-data.ts';
+import { getCards, getPokemons, getPrices, getTypes } from '#helpers/catalogue-data.ts';
 import { gridResponse } from '#helpers/grid-payload.ts';
 import type { RequestHandler } from './$types';
 

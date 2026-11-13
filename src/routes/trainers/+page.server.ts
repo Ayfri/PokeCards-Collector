@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
-import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { getCards, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { BASE_URL } from '#src/constants.ts';
 import { cardGroupKey, cardGroupName, cardPath, cardPrice, memoizedOn, SUBTYPE_SECTIONS } from '#helpers/card-utils.ts';

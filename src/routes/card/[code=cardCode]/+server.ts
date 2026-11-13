@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import { cardPath } from '#helpers/card-utils.ts';
-import { findCardLinkByCode } from '#helpers/supabase-data.ts';
+import { findCardLinkByCode } from '#helpers/catalogue-data.ts';
 import type { RequestHandler } from './$types';
 
 /** The card codes that predate the readable URLs: every old link, sitemap entry and share still lands on the card. */

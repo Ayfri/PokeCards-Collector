@@ -355,7 +355,7 @@ interface CardPageData {
  * The shown card drops the columns only `cardSchema` reads on the server. A neighbouring Pokémon needs a link and no card, so it ships a path.
  */
 export function cardPageData(language: Language, shown: FullCard, cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], sets: CardSet[]): CardPageData {
-	const { legalStandard, regulationMark, tcgdexId, variants, ...print } = shown;
+	const { regulationMark, tcgdexId, ...print } = shown;
 	const others = (cardGroups(cards).get(cardGroupKey(shown)) ?? [])
 		.filter(card => card.cardCode !== shown.cardCode)
 		.sort((a, b) => (cardPrice(prices[b.cardCode]) ?? 0) - (cardPrice(prices[a.cardCode]) ?? 0));

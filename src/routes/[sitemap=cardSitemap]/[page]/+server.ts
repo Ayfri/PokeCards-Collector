@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { getCards, getTwinPaths } from '#helpers/supabase-data.ts';
+import { getCards, getTwinPaths } from '#helpers/catalogue-data.ts';
 import { processCardImage } from '#helpers/card-images.ts';
 import { cardPath } from '#helpers/card-utils.ts';
 import { SITEMAP_CHUNK, sitemapResponse, twinAlternates, urlset } from '#helpers/sitemap.ts';

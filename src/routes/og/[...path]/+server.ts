@@ -53,7 +53,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 	const cache = edgeCache();
 	const key = new Request(`${url.origin}${url.pathname}?r=${OG_REVISION}`);
 	const version = url.searchParams.get('v') ?? '';
-	const hit = await cache?.match(key);
+	const hit = await cache.match(key);
 	const mismatch = Boolean(hit && version && version !== hit.headers.get('x-og-v'));
 	if (hit && !(mismatch && Date.now() - Number(hit.headers.get('x-og-at')) >= REFRESH_AFTER_MS)) return mismatch ? withMaxAge(hit, MISMATCH_MAX_AGE) : hit;
 
@@ -61,7 +61,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
 		if (!hit) throw cause;
 		return undefined;
 	});
-	if (hit && cache) {
+	if (hit) {
 		if (rendered === undefined) return withMaxAge(hit, MISMATCH_MAX_AGE);
 		if (!rendered) {
 			waitUntil(cache.delete(key));
@@ -90,6 +90,6 @@ export const GET: RequestHandler = async ({ params, url }) => {
 			'x-og-v': version,
 		},
 	});
-	if (cache && rendered.complete) waitUntil(cache.put(key, response.clone()));
+	if (rendered.complete) waitUntil(cache.put(key, response.clone()));
 	return response;
 };

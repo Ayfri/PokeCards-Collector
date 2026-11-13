@@ -1,4 +1,4 @@
-import { getCards, getPrices, getSets } from '#helpers/supabase-data.ts';
+import { getCards, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import type { PageServerLoad } from './$types';
 import { BY_GRID, type Catalogue, CATALOGUES } from '#helpers/catalogues.ts';
 import { ogImage } from '#helpers/og-image.ts';
