@@ -8,7 +8,7 @@ import { article, breadcrumbs, cardSchema } from '#helpers/seo.ts';
 import type { Pokemon } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ locals, params }) => {
 	/** Started together so the slug lookup, the sibling cards, the prices and the sets load in parallel; the slug lookup shares the memoized card list. */
 	const [found, allCards, prices, allPokemons, sets] = await Promise.all([findCardBySlug('en', params.slug), getCards(), getPrices(), getPokemons(), getSets()]);
 
@@ -22,7 +22,10 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const { cardCode } = found.card;
 	/** Streamed, not awaited: the language switcher is decorative, so a slow or failed read never holds back or breaks the page. */
-	const versions = getCardVersions('en', cardCode).catch((): LanguagePaths => ({ en: cardPath('en', found.card) }));
+	const versions = getCardVersions('en', cardCode).catch((): LanguagePaths => {
+		locals.degraded = true;
+		return { en: cardPath('en', found.card) };
+	});
 	const targetCard = await getCardDetails('en', cardCode);
 
 	if (!targetCard) {

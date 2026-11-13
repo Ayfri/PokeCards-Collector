@@ -12,7 +12,7 @@ import type { PageServerLoad } from './$types';
  * document of its own before any JavaScript runs. It never reads `url.searchParams`: the grid's filters change the query, and a load that
  * reads it would rerun and send the checklist again on every keystroke. The grid's cards come from `/api/set-cards` through `+page.ts`.
  */
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ locals, params }) => {
 	const catalogue: Catalogue = params.grid ? BY_GRID[params.grid] : CATALOGUES.en;
 	const { adjective, language, routeCode } = catalogue;
 
@@ -21,7 +21,10 @@ export const load: PageServerLoad = async ({ params }) => {
 	if (found.canonical !== params.setSlug) redirect(301, setPath(found.set, catalogue));
 
 	const { set } = found;
-	const [cards, prices, versions] = await Promise.all([getCards(language), getPrices(language), getSetVersions(language, set).catch((): LanguagePaths => ({}))]);
+	const [cards, prices, versions] = await Promise.all([getCards(language), getPrices(language), getSetVersions(language, set).catch((): LanguagePaths => {
+		locals.degraded = true;
+		return {};
+	})]);
 	const landing = setLanding(set, cards, prices, catalogue);
 	const canonical = setPath(set, catalogue);
 	const total = setCardCount(set);

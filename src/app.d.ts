@@ -4,6 +4,8 @@ import type { Breadcrumb, Image, SeoType, UserProfile } from '#lib/types.js';
 declare global {
 	namespace App {
 		interface Locals {
+			/** A load sets it when a fallback replaced a failed read, and the hook keeps that response out of the HTML cache. */
+			degraded?: boolean;
 			profile: UserProfile | null;
 			supabase: SupabaseClient;
 			user: User | null;

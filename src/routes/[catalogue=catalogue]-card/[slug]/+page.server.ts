@@ -7,7 +7,7 @@ import { cardOgVersion, ogImage } from '#helpers/og-image.ts';
 import { cardPageData, cardPath, cardPrice, formatCardNumber, setNeighbourLinks, setPath, setsById } from '#helpers/card-utils.ts';
 import { breadcrumbs, cardSchema } from '#helpers/seo.ts';
 
-export const load: PageServerLoad = async ({ params }) => {
+export const load: PageServerLoad = async ({ locals, params }) => {
 	const catalogue = BY_ROUTE_CODE[params.catalogue];
 	const { adjective, language } = catalogue;
 	/** Each catalogue has its own prices and sets. The slug lookup shares the memoized card list. */
@@ -23,7 +23,10 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const { cardCode } = found.card;
 	/** Streamed, not awaited: the language switcher is decorative, so a slow or failed read never holds back or breaks the page. */
-	const versions = getCardVersions(language, cardCode).catch((): LanguagePaths => ({ [language]: cardPath(language, found.card) }));
+	const versions = getCardVersions(language, cardCode).catch((): LanguagePaths => {
+		locals.degraded = true;
+		return { [language]: cardPath(language, found.card) };
+	});
 	const card = await getCardDetails(language, cardCode);
 
 	if (!card) {
