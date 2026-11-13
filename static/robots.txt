@@ -36,4 +36,18 @@ Disallow: /*?*sortby=
 Disallow: /*?*sortorder=
 Disallow: /*?*mostexpensive=
 
+# SEO crawlers walk the whole catalogue and honour `Crawl-delay`. A named group replaces the `*` group for its bots, so the rules are repeated.
+User-agent: SemrushBot
+User-agent: AhrefsBot
+User-agent: MJ12bot
+Crawl-delay: 10
+Allow: /
+Disallow: /api/
+Disallow: /settings
+Disallow: /reset-password
+Disallow: /random
+Disallow: /*?*sortby=
+Disallow: /*?*sortorder=
+Disallow: /*?*mostexpensive=
+
 Sitemap: https://pokecards-collector.ayfri.com/sitemap.xml
