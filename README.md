@@ -19,8 +19,8 @@
 
 PokéCards-Collector browses the full Pokémon Trading Card Game catalogue - English, Japanese and French - and tracks what
 you own and what you want. Cards, prices and sets come from [TCGdex](https://tcgdex.dev/), Pokédex entries from
-[PokéAPI](https://pokeapi.co/), and everything is served from Supabase Postgres by a SvelteKit app running on
-Cloudflare Workers.
+[PokéAPI](https://pokeapi.co/). Everything is stored in Supabase Postgres, the catalogue is published as snapshots to
+a Cloudflare R2 bucket, and a SvelteKit app running on Cloudflare Workers serves it all.
 
 ### 📸 Website
 
@@ -74,7 +74,7 @@ Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
   <tr>
     <td>🤖</td>
     <td><b>Data Pipeline</b></td>
-    <td>A scraper CLI for full refreshes, plus a Cloudflare Workflow that refreshes Supabase every day.</td>
+    <td>A scraper CLI for full refreshes, plus a Cloudflare Workflow that refreshes Supabase every day and publishes the catalogue to R2.</td>
   </tr>
 </table>
 
@@ -83,7 +83,7 @@ Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
 | Layer | What |
 | --- | --- |
 | Frontend | SvelteKit 3 + [Svelte 5 runes](https://svelte.dev/docs/svelte/what-are-runes), TypeScript, Tailwind CSS 4 (CSS-first, no config file), [Lucide icons](https://lucide.dev/) |
-| Data | Supabase Postgres with row level security, [TCGdex](https://tcgdex.dev/) for cards/prices/sets, [PokéAPI](https://pokeapi.co/) for Pokédex entries |
+| Data | Supabase Postgres with row level security, catalogue snapshots in Cloudflare R2, [TCGdex](https://tcgdex.dev/) for cards/prices/sets, [PokéAPI](https://pokeapi.co/) for Pokédex entries |
 | Hosting | Cloudflare Workers with static assets, via `@sveltejs/adapter-cloudflare` |
 | Jobs | A second Worker holding a Cloudflare Workflow, scheduled daily |
 | Tooling | Bun (runtime, package manager and lockfile), Wrangler, Vite, `svelte-check` |
@@ -95,6 +95,7 @@ Live at [pokecards-collector.ayfri.com](https://pokecards-collector.ayfri.com).
 
 - [Bun](https://bun.sh/docs/installation) 1.4 or later
 - A [Supabase](https://supabase.com/) project
+- A [Cloudflare](https://www.cloudflare.com/) account with R2, for the catalogue bucket and the two Workers
 - A [CardTrader](https://www.cardtrader.com/) API token, for the card scans TCGdex has none for
 
 TCGdex needs no API key.
@@ -128,22 +129,33 @@ TCGdex needs no API key.
    PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
    SUPABASE_SECRET_KEY=sb_secret_...
    SCRAPER_TRIGGER_TOKEN=
+   SCRAPER_URL=https://<scraper-worker>.workers.dev
    CARDTRADER_TOKEN=
    PUBLIC_NO_IMAGES=false
    ```
    `SUPABASE_SECRET_KEY` bypasses row level security and must never carry the `PUBLIC_` prefix: SvelteKit
    serialises every `PUBLIC_` variable into the SSR HTML. In production it is a Wrangler secret.
 
-5. **Fill the database:**
+5. **Create the catalogue bucket and deploy the scraper Worker**, which is the one that publishes to it
+   (see "Scheduled refresh" below for its secrets):
+   ```bash
+   bunx wrangler login
+   bunx wrangler r2 bucket create pokecards-catalogue --location weur
+   bun run deploy:scraper
+   ```
+   Point `SCRAPER_URL` in `.env` at your scraper Worker.
+
+6. **Fill the database and publish the catalogue:**
    ```bash
    bun run scrapers all
    ```
+   The catalogue pages answer a 500 until this first publish.
 
-6. **Run the development server:**
+7. **Run the development server:**
    ```bash
    bun run dev
    ```
-   The app runs on `http://localhost:5173`.
+   The app runs on `http://localhost:5173` and reads the real bucket, through the `wrangler login` session.
 </details>
 
 ## 📊 Data Scraping
@@ -156,17 +168,18 @@ TCGdex needs no API key.
 
 | Command | Description | Needs |
 | --- | --- | --- |
-| `all` | `scrape`, then `pokemons`, then `supabase all`, in dependency order. | Supabase credentials and `CARDTRADER_TOKEN` |
+| `all` | `scrape`, then `pokemons`, then `supabase all`, in dependency order. | Supabase credentials, `CARDTRADER_TOKEN` and `SCRAPER_TRIGGER_TOKEN` |
 | `scrape` | Fetch every card, price and set from TCGdex into `src/assets/`, with the CardTrader scans for the cards TCGdex has none for. `--lang en,ja,fr` picks the languages, all three by default. | `CARDTRADER_TOKEN` |
 | `pokemons` | Fetch Pokédex names and descriptions from PokéAPI. | Nothing |
 | `audit` | Match every stored `card_code` to its TCGdex card, rebuild `set-aliases.json` and `card-code-overrides.json` (English and Japanese) and `set-names.json` (the localized set names the collection import matches), report the owned codes pointing at no card and the French vocabulary missing from `french.ts`. | Supabase credentials |
 | `link` | Match every Japanese card to its English twin and write `src/scrapers/tcgdex/jp-twins.json`, and every Japanese set to its English set in `jp-set-twins.json` (artwork hashes are cached in `.cache/`). Rerun it after a scrape that adds Japanese sets. | Nothing |
 | `check` | Read-only sanity pass over the live catalogue: duplicates (card and set slugs included), orphans, unranked rarities, mismatched species, shared Cardmarket products, empty sets. | Supabase credentials |
-| `purge` | Delete the cards, prices and sets of an excluded serie (Pokémon TCG Pocket). | Supabase credentials |
+| `purge` | Delete the cards, prices and sets of an excluded serie (Pokémon TCG Pocket), then publish the catalogue when something was deleted. | Supabase credentials and `SCRAPER_TRIGGER_TOKEN` |
 | `verify` | Check the scraped JSON for `card_code` collisions (within and across catalogues), card and set slug collisions, unknown values, shared set names and owned cards that no longer resolve. `--offline` skips Supabase. | `scrape` |
-| `supabase <target>` | Push one JSON file into its table: `all`, `cards`, `jp-cards`, `fr-cards`, `prices`, `jp-prices`, `fr-prices`, `sets`, `jp-sets`, `fr-sets`, `types`, `pokemons`. `--dry-run` only prints each table with the row count of its staged file. | `scrape` |
+| `supabase <target>` | Push one JSON file into its table: `all`, `cards`, `jp-cards`, `fr-cards`, `prices`, `jp-prices`, `fr-prices`, `sets`, `jp-sets`, `fr-sets`, `types`, `pokemons`. `--dry-run` only prints each table with the row count of its staged file. The upload ends by publishing the catalogue. | `scrape` and `SCRAPER_TRIGGER_TOKEN` |
+| `publish` | Ask the scraper Worker to publish the catalogue snapshots to R2 from what Supabase holds, which is what the site reads. | `SCRAPER_TRIGGER_TOKEN` |
 
-`--dry-run` (run without writing to `src/assets/` or Supabase) is taken by `all`, `scrape`, `pokemons`, `audit`, `link`, `purge` and `supabase`, so `all --dry-run` writes nothing anywhere. `--json` (raw report) is taken by `scrape`, `link`, `verify`, `check` and `purge`. Every command takes `-q` (summary only) and `--help`.
+`--dry-run` (run without writing to `src/assets/`, Supabase or R2) is taken by `all`, `scrape`, `pokemons`, `audit`, `link`, `purge`, `supabase` and `publish`, so `all --dry-run` writes nothing anywhere. `--json` (raw report) is taken by `scrape`, `link`, `verify`, `check`, `purge`, `supabase` and `publish`. Every command takes `-q` (summary only) and `--help`.
 
 A full pass takes about 15 s for ~36 000 cards, the CLI going through an HTTP/2 connection pool. `supabase` needs
 the sets uploaded before the cards, and the cards before the prices; `all` already orders them. Run `verify`
@@ -186,14 +199,22 @@ set TCGdex answered for, so a half-finished pass never removes rows it has not r
 Durable Object pinned to Western Europe, since `api.tcgdex.net` is geo-DNS and its North American mirrors serve a
 stale build.
 
+The last step publishes the catalogue: every table becomes one gzipped JSON object in the `pokecards-catalogue` R2
+bucket, named after the hash of its content, and a `manifest.json` written last names the current object of each
+table. The site reads the catalogue from these objects only, so a publish is what puts an upload live. The step runs
+even when a language failed, since Supabase already holds what its batches wrote.
+
 ```bash
+bunx wrangler r2 bucket create pokecards-catalogue --location weur
 bun run deploy:scraper
 bunx wrangler secret put SUPABASE_SECRET_KEY -c wrangler.scraper.toml
 bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
 bunx wrangler secret put CARDTRADER_TOKEN -c wrangler.scraper.toml
 ```
 
-`SCRAPER_TRIGGER_TOKEN` is the bearer token for the manual `POST /run` on the scraper Worker.
+`SCRAPER_TRIGGER_TOKEN` is the bearer token of the scraper Worker's two manual endpoints: `POST /run` starts a
+scrape and `POST /publish` publishes the catalogue. The CLI calls `/publish` after every upload, so the token is in
+`.env` too.
 </details>
 
 <details>
@@ -234,15 +255,15 @@ There is no test suite and no lint script. `svelte-check` is installed but not w
 │   ├── assets/              # Scraper output staged for upload, not the app's runtime source
 │   ├── lib/
 │   │   ├── components/      # Svelte components, grouped by feature (card, binder, filters, ...)
-│   │   ├── helpers/         # Pure-ish utilities: supabase-data, card-utils, card-images, filters, ...
+│   │   ├── helpers/         # Pure-ish utilities: catalogue-data, card-utils, card-images, filters, ...
 │   │   ├── services/        # Supabase CRUD for user-owned data, returns { data, error }
 │   │   ├── stores/          # Cross-component state, incl. localStorage-backed stores
 │   │   └── supabase.ts      # Browser Supabase client
 │   ├── routes/              # Pages and API endpoints
-│   ├── scrapers/            # TCGdex, CardTrader and PokéAPI scrapers and the Supabase uploaders
+│   ├── scrapers/            # TCGdex, CardTrader and PokéAPI scrapers, the Supabase uploaders and the R2 publisher
 │   ├── workers/scraper.ts   # The daily ScrapeWorkflow Worker
 │   ├── app.css              # Tailwind entry, holds the @theme block
-│   ├── hooks.server.ts      # Per-request Supabase client, user and profile on event.locals
+│   ├── hooks.server.ts      # Per-request Supabase client, user and profile on event.locals, and the HTML cache of the card and set pages
 │   └── constants.ts
 ├── supabase/migrations/     # SQL migrations: schema, indexes, grants, policies, RLS
 ├── static/                  # Favicon and static files
