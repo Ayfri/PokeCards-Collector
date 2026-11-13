@@ -117,9 +117,9 @@ TCGdex needs no API key.
 
 3. **Set up the database:**
    - Create a project on [Supabase](https://supabase.com/)
-   - Run the files in `supabase/migrations/` in filename order from the SQL Editor. Run the last two together:
-     `20260829110000_rls_policies.sql` is what keeps the catalogue readable once
-     `20260829120000_enable_rls.sql` turns row level security on.
+   - `supabase/migrations/` holds the schema changes from 2026-10-31 on, run in filename order from the SQL Editor.
+     The base schema they apply to (the catalogue tables, profiles, collections, wishlists and their row level
+     security) isn't in the repository, so a new project starts from a schema dump of an existing one.
    - Grab the project URL and the keys from Project Settings > API Keys
 
 4. **Configure environment variables:**

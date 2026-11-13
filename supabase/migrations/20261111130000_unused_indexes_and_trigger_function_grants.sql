@@ -3,8 +3,9 @@
 -- pg_stat_user_indexes counts 0 scans on 8 of these 13 indexes. The scans of the supertype and set_name ones are `count(*)` taking
 -- the smallest index of its table as an index-only scan, which `*_set_id_idx` is now. The daily sync rewrites about every card row,
 -- so each index is maintained for nothing: 4.4 MB in all.
--- The `pokemon_id` indexes stay, they back the foreign keys to `pokemons`. `profiles_username_key` stays too, for the reason
--- `20260829100000_indexes_and_function_hardening.sql` gives.
+-- The `pokemon_id` indexes stay, they back the foreign keys to `pokemons`. `profiles_username_key` stays too: it duplicates
+-- `profiles_pkey`, but `collections_username_fkey` and `wishlists_username_fkey` point at it, and recreating both foreign keys
+-- against the primary key is not worth it to save one index on a small table.
 drop index if exists public.idx_cards_rarity;
 drop index if exists public.idx_cards_supertype;
 drop index if exists public.idx_cards_set_name;
