@@ -22,6 +22,8 @@ export interface CatalogueManifest {
 }
 
 export interface PublishSummary extends CatalogueManifest {
+	/** The manifest this publish replaced, `null` on the first one. */
+	previous: CatalogueManifest | null;
 	removed: number;
 	written: CatalogueObjectName[];
 }

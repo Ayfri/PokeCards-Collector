@@ -1,6 +1,7 @@
 import {DurableObject, WorkflowEntrypoint, type WorkflowEvent, type WorkflowStep} from 'cloudflare:workers';
 import {type Language, LANGUAGES} from '#helpers/catalogues.ts';
 import {type CardTraderImages, fetchCardTraderScans} from '#scrapers/cardtrader.ts';
+import {notifyCatalogue} from '#scrapers/catalogue-report.ts';
 import {publishCatalogue} from '#scrapers/publish.ts';
 import {createSyncClient, dropSharedProducts, type SyncCardsResult, syncSetCards, syncSets} from '#scrapers/supabase-sync.ts';
 import {FetchClient} from '#scrapers/tcgdex/client.ts';
@@ -8,6 +9,7 @@ import {FetchClient} from '#scrapers/tcgdex/client.ts';
 interface Env {
 	CARDTRADER_TOKEN?: string;
 	CATALOGUE: R2Bucket;
+	DISCORD_CATALOGUE_WEBHOOK?: string;
 	PUBLIC_SUPABASE_URL: string;
 	SCRAPER: Workflow;
 	SCRAPER_TRIGGER_TOKEN?: string;
@@ -108,7 +110,15 @@ export class ScrapeWorkflow extends WorkflowEntrypoint<Env> {
 			failure = error;
 		}
 
-		await step.do('publish', {retries: {backoff: 'exponential', delay: '1 minute', limit: 2}, timeout: '10 minutes'}, () => publishCatalogue(supabase, this.env.CATALOGUE));
+		const summary = await step.do('publish', {retries: {backoff: 'exponential', delay: '1 minute', limit: 2}, timeout: '10 minutes'}, () => publishCatalogue(supabase, this.env.CATALOGUE));
+
+		/** The catalogue is already published, so a Discord outage is not a sync failure: it is logged and the run goes on. */
+		try {
+			await step.do('notify', {retries: {backoff: 'exponential', delay: '30 seconds', limit: 2}, timeout: '5 minutes'}, () => notifyCatalogue(this.env.CATALOGUE, this.env.DISCORD_CATALOGUE_WEBHOOK, summary));
+		} catch (error) {
+			console.error('The catalogue report failed:', error);
+		}
+
 		if (failure) throw failure;
 	}
 }
@@ -143,7 +153,10 @@ export default {
 		if (request.method === 'POST' && url.pathname === '/publish') {
 			if (!authorized(request, env)) return new Response('Unauthorized', {status: 401});
 			try {
-				return Response.json(await publishCatalogue(createSyncClient(env.PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY), env.CATALOGUE));
+				const summary = await publishCatalogue(createSyncClient(env.PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY), env.CATALOGUE);
+				/** A CLI upload is reported here, since the next daily report diffs against the snapshot this publish wrote and never shows its changes. */
+				await notifyCatalogue(env.CATALOGUE, env.DISCORD_CATALOGUE_WEBHOOK, summary).catch(error => console.error('The catalogue report failed:', error));
+				return Response.json(summary);
 			} catch (error) {
 				console.error('publish failed:', error);
 				return Response.json({error: error instanceof Error ? error.message : String(error)}, {status: 500});

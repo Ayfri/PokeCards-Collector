@@ -202,7 +202,10 @@ stale build.
 The last step publishes the catalogue: every table becomes one gzipped JSON object in the `pokecards-catalogue` R2
 bucket, named after the hash of its content, and a `manifest.json` written last names the current object of each
 table. The site reads the catalogue from these objects only, so a publish is what puts an upload live. The step runs
-even when a language failed, since Supabase already holds what its batches wrote.
+even when a language failed, since Supabase already holds what its batches wrote. After each publish, a Discord embed
+lists per language only what the new snapshot adds to the previous one (sets, cards, images, prices, artists and
+Pokémon), each with its total, and the share of cards that have an image when images were added. Nothing is sent when
+nothing is new or when `DISCORD_CATALOGUE_WEBHOOK` is unset.
 
 ```bash
 bunx wrangler r2 bucket create pokecards-catalogue --location weur
@@ -210,7 +213,10 @@ bun run deploy:scraper
 bunx wrangler secret put SUPABASE_SECRET_KEY -c wrangler.scraper.toml
 bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
 bunx wrangler secret put CARDTRADER_TOKEN -c wrangler.scraper.toml
+bunx wrangler secret put DISCORD_CATALOGUE_WEBHOOK -c wrangler.scraper.toml
 ```
+
+`DISCORD_CATALOGUE_WEBHOOK` is optional, the URL of the Discord webhook that receives the catalogue report.
 
 `SCRAPER_TRIGGER_TOKEN` is the bearer token of the scraper Worker's two manual endpoints: `POST /run` starts a
 scrape and `POST /publish` publishes the catalogue. The CLI calls `/publish` after every upload, so the token is in

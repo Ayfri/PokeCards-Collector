@@ -196,7 +196,7 @@ class Publisher {
 		});
 		if (!written) throw new Error('Another publish wrote the manifest first, run it again');
 
-		return {...manifest, removed: await this.collectGarbage(manifest, previous), written: this.written};
+		return {...manifest, previous, removed: await this.collectGarbage(manifest, previous), written: this.written};
 	}
 }
 

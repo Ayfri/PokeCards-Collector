@@ -4,6 +4,8 @@
 #   bunx wrangler secret put SUPABASE_SECRET_KEY -c wrangler.scraper.toml
 #   bunx wrangler secret put SCRAPER_TRIGGER_TOKEN -c wrangler.scraper.toml
 #   bunx wrangler secret put CARDTRADER_TOKEN -c wrangler.scraper.toml
+#   bunx wrangler secret put DISCORD_CATALOGUE_WEBHOOK -c wrangler.scraper.toml
+# DISCORD_CATALOGUE_WEBHOOK is optional: it is the Discord channel that gets the catalogue report after a publish, and nothing is sent without it.
 # `POST /publish` with `Authorization: Bearer $SCRAPER_TRIGGER_TOKEN` publishes the snapshots on demand, which the CLI does after every upload.
 name = "pokecards-scraper"
 main = "src/workers/scraper.ts"
