@@ -16,12 +16,14 @@ export const GET: RequestHandler = async ({ params }) => {
 	const slice = cards.slice((page - 1) * SITEMAP_CHUNK, page * SITEMAP_CHUNK);
 	if (!slice.length) error(404, 'Not found');
 
+	const setSlugs = new Map<string, string>();
+
 	/** No `lastmod`: cards have no per-card date, and a "now" timestamp on every URL teaches crawlers to ignore the field. */
 	return sitemapResponse(urlset(slice.map(card => ({
 		alternates: twinAlternates(twins?.get(card.cardCode)),
 		changefreq: 'weekly' as const,
 		image: card.image ? { loc: processCardImage(card.image), title: card.name } : undefined,
-		loc: cardPath(language, card),
+		loc: cardPath(language, card, setSlugs),
 		priority: language === 'en' ? 0.6 : 0.4,
 	}))));
 };

@@ -127,11 +127,12 @@ export async function getTwinPaths(language: 'en' | 'fr'): Promise<Map<string, T
 
 	return memoizedOn(twinPathsMemo, [cards, versions], () => {
 		const twins = new Map<string, TwinPaths>();
+		const setSlugs = new Map<string, string>();
 		for (const card of cards) {
 			const twin = versions[card.cardCode]?.[other];
 			if (!twin) continue;
 
-			twins.set(card.cardCode, language === 'en' ? { en: cardPath('en', card), fr: twin } : { en: twin, fr: cardPath('fr', card) });
+			twins.set(card.cardCode, language === 'en' ? { en: cardPath('en', card, setSlugs), fr: twin } : { en: twin, fr: cardPath('fr', card, setSlugs) });
 		}
 
 		return twins;

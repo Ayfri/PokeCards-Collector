@@ -228,8 +228,8 @@ function slugify(value: string, language: Language = 'en'): string {
  * Japanese cards keep their Japanese name, and their set part is the set id because Japanese set names repeat (`SV4a` and `SV3a` are both "レイジングサーフ").
  * A numeric number loses its leading zeros like `formatCardNumber` does, a lettered one keeps its form (`tg01`), and the Unown `!` and `?` are spelled out.
  */
-export function cardSlug(card: CardLink, language: Language): string {
-	return cardSlugParts(card, language).filter(Boolean).join('-');
+export function cardSlug(card: CardLink, language: Language, setSlugs?: Map<string, string>): string {
+	return cardSlugParts(card, language, setSlugs).filter(Boolean).join('-');
 }
 
 /**
@@ -250,8 +250,8 @@ export function cardSlugParts(card: CardLink, language: Language, setSlugs?: Map
 }
 
 /** The card page of a catalogue, percent-encoded for the Japanese names. No `paths.base`, so `goto` and `href` take it as is. */
-export function cardPath(language: Language, card: CardLink): string {
-	return `${CATALOGUES[language].cardRoute}/${encodeURIComponent(cardSlug(card, language))}`;
+export function cardPath(language: Language, card: CardLink, setSlugs?: Map<string, string>): string {
+	return `${CATALOGUES[language].cardRoute}/${encodeURIComponent(cardSlug(card, language, setSlugs))}`;
 }
 
 /** English and French sets use their name, Japanese ones add the set id (`ポケモンジャングル-pmcg2`) since their names repeat. */

@@ -15,14 +15,11 @@ function absolute(url: string): string {
 	return url.startsWith('http') ? url : `${BASE_URL}${url}`;
 }
 
+const XML_ENTITIES: Record<string, string> = { '"': '&quot;', '&': '&amp;', "'": '&apos;', '<': '&lt;', '>': '&gt;' };
+
 /** URLs and titles carry `&`, `'` and accented set names, and an unescaped one makes the whole file unparseable. */
 function xmlEscape(value: string): string {
-	return value
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&apos;');
+	return value.replace(/[&<>"']/g, char => XML_ENTITIES[char]);
 }
 
 /** Sitemaps are capped at 50 000 URLs each; cards are chunked well below that so a file stays quick to fetch. */
