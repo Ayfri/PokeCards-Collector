@@ -1,5 +1,6 @@
 <script lang="ts" module>
-	const UPDATED_AT_FORMAT = new Intl.DateTimeFormat('en-GB', {dateStyle: 'long', timeStyle: 'short'});
+	/** In UTC and labelled so: a local time would print one text on the server and another in the visitor's browser, which fails hydration. */
+	const UPDATED_AT_FORMAT = new Intl.DateTimeFormat('en-GB', {dateStyle: 'long', timeStyle: 'short', timeZone: 'UTC'});
 </script>
 
 <script lang="ts">
@@ -26,7 +27,7 @@
 	const updatedAt = $derived.by(() => {
 		if (!card.cardMarketUpdatedAt) return null;
 		const date = new Date(card.cardMarketUpdatedAt);
-		return Number.isNaN(date.getTime()) ? card.cardMarketUpdatedAt : UPDATED_AT_FORMAT.format(date);
+		return Number.isNaN(date.getTime()) ? card.cardMarketUpdatedAt : `${UPDATED_AT_FORMAT.format(date)} UTC`;
 	});
 </script>
 
