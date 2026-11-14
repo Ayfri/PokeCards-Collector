@@ -79,13 +79,15 @@ const IMAGE_TIMEOUT_MS = 5000;
 /** What one render collects while its layout is built: the scans it fetched itself, and whether every image it needs arrived. */
 interface RenderState {
 	complete: boolean;
+	/** A card image drawn as the plate because the card has no scan of its own: the route renders it again as soon as the card has one. */
+	scanless: boolean;
 	sources: ImageSource[];
 }
 
 /**
  * Clash Display only covers Latin, so Japanese names and symbols such as ♀ or ☆ fall back to Noto Sans JP. The CSS is read once per
  * isolate and lists ~120 `unicode-range` subsets, of which a render downloads only those its text uses. A failed or timed out read
- * renders without the fallback and retries next time.
+ * renders without the fallback, which flags the render as incomplete since a Japanese name would be stored without its glyphs, and retries next time.
  */
 function notoFonts(): Promise<FontSubset[]> {
 	return fallbackFonts ??= googleFonts({ families: [{ name: 'Noto Sans JP', weight: 700 }], timeout: FONT_TIMEOUT_MS }).catch((error: unknown) => {
@@ -339,10 +341,11 @@ function plate(card: Card, height: number): Node {
 }
 
 /** The card's name, its set with the logo, its flag, energy types and rarity, the price in gold, and the scan. The card, its price and the set come from the memoized catalogue snapshots. */
-async function cardImage(language: Language, code: string): Promise<Node | null> {
+async function cardImage(language: Language, code: string, state: RenderState): Promise<Node | null> {
 	const [card, priceData, sets] = await Promise.all([getCardDetails(language, code), getCardPrice(language, code), getSets(language)]);
 	if (!card) return null;
 
+	state.scanless = !card.image;
 	const set = sets.find(entry => entry.setId === card.setId);
 	const price = ogPrice(cardPrice(priceData ?? undefined));
 	const number = card.localId && !borrowsScan(card, language) ? formatCardNumber(card.localId, set?.printedTotal) : '';
@@ -375,7 +378,7 @@ async function setImage(language: Language, setId: string, state: RenderState): 
 	], trioOrLogo(await scans(ranked(setCards, prices), state)));
 }
 
-/** A failed read throws so the route answers 500 uncached, instead of drawing an empty image that would be stored for a day (user images) or a week (card and set images). */
+/** A failed read throws so the route answers 500 uncached, instead of drawing an empty image that would be stored for a day (user images) or 30 days (card and set images). */
 function readFailed(what: string, error: unknown): never {
 	throw new Error(`OG image: ${what} read failed: ${error instanceof Error ? error.message : JSON.stringify(error)}`);
 }
@@ -488,7 +491,7 @@ async function pageImage(name: OgPage, state: RenderState): Promise<Node> {
 
 function layout(target: OgTarget, state: RenderState): Promise<Node | null> {
 	switch (target.kind) {
-		case 'card': return cardImage(target.language, target.code);
+		case 'card': return cardImage(target.language, target.code, state);
 		case 'page': return pageImage(target.name, state);
 		case 'set': return setImage(target.language, target.setId, state);
 		default: return userImage(target.kind, target.username, state);
@@ -496,19 +499,23 @@ function layout(target: OgTarget, state: RenderState): Promise<Node | null> {
 }
 
 interface OgRender {
-	/** False when a scan could not be fetched: the image is still served, but must not be cached. */
+	/** False when a scan or the fallback font could not be fetched: the image is still served, but must not be cached. */
 	complete: boolean;
-	png: Uint8Array<ArrayBuffer>;
+	/** The 1200x630 JPEG. */
+	image: Uint8Array<ArrayBuffer>;
+	/** True for a card image drawn without the card's own scan. */
+	scanless: boolean;
 }
 
-/** The 1200x630 PNG of `target`, or `null` when the card or set does not exist. */
+/** The 1200x630 JPEG of `target`, or `null` when the card or set does not exist. */
 export async function renderOgImage(target: OgTarget): Promise<OgRender | null> {
-	const state: RenderState = { complete: true, sources: [] };
+	const state: RenderState = { complete: true, scanless: false, sources: [] };
 	const [node, noto] = await Promise.all([layout(target, state), notoFonts()]);
 	if (!node) return null;
+	if (!noto.length) state.complete = false;
 
 	/**
-	 * The card hero and the logos the renderer fetches itself: a cached image would keep a blank card for a week, so a network error, a timeout
+	 * The card hero and the logos the renderer fetches itself: a cached image would keep a blank card for 30 days, so a network error, a timeout
 	 * or a 5xx is retried once, then flags the render as incomplete. A 4xx is a scan that does not exist, final.
 	 */
 	const fetchImage = (input: string, init?: RequestInit): Promise<Response> => {
@@ -526,12 +533,16 @@ export async function renderOgImage(target: OgTarget): Promise<OgRender | null> 
 		});
 	};
 
-	const png = await render(node, {
+	const bytes = await render(node, {
 		/** "from-font" keeps the renderer from fetching Twemoji images for characters like ☆, which Noto Sans JP draws. */
 		emoji: 'from-font',
 		fontFamilies: FONT_FAMILIES,
 		fonts: [...CLASH_FONTS, ...noto],
-		format: 'png',
+		/**
+		 * JPEG at quality 85, measured on the WASM build over 30 interleaved renders: 103 ms and 160 kB, against 125 ms and 491 kB for PNG.
+		 * WASM WebP is lossless only (452 kB, no smaller than PNG), so JPEG is the only lossy format the Worker has.
+		 */
+		format: 'jpeg',
 		height: OG_HEIGHT,
 		/**
 		 * A scan or logo that fails to load is left out rather than failing the whole image. Scans are not kept decoded: takumi's 64 MiB
@@ -539,7 +550,8 @@ export async function renderOgImage(target: OgTarget): Promise<OgRender | null> 
 		 * The trio scans are in `sources`, matched by URL before any fetch.
 		 */
 		images: { cache: 'none', fetch: fetchImage, sources: [logoSource, ...state.sources], throwOnError: false },
+		quality: 85,
 		width: OG_WIDTH,
 	});
-	return { complete: state.complete, png };
+	return { complete: state.complete, image: bytes, scanless: state.scanless };
 }
