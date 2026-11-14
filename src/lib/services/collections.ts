@@ -1,10 +1,9 @@
 import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { MAX_CARD_QUANTITY } from '#src/constants.ts';
 import { collection } from '#stores/collection.svelte.ts';
 import { loading } from '#stores/loading.svelte.ts';
 import { selectAll } from './select-all';
-
-const MAX_CARD_QUANTITY = 99;
 
 export async function addCardToCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {

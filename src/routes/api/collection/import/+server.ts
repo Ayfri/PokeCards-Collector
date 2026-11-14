@@ -3,10 +3,9 @@ import { type Language, LANGUAGES } from '#helpers/catalogues.ts';
 import { buildCardIndex, buildSetKeys, type ImportLookups, type ImportRow, MAX_IMPORT_ROWS, resolveRows } from '#helpers/collection-import.ts';
 import { getCards, getSets } from '#helpers/catalogue-data.ts';
 import { memoizedOn } from '#helpers/card-utils.ts';
+import { MAX_CARD_QUANTITY } from '#src/constants.ts';
 import type { RequestHandler } from './$types';
 
-/** A collection stores one row per copy, so 99 copies of a card are 99 rows, the same shape `addCardToCollection` writes one at a time. */
-const MAX_CARD_QUANTITY = 99;
 /** Supabase rejects an oversized statement well before the payload gets too big, so the copies are inserted in slices. */
 const INSERT_BATCH = 500;
 

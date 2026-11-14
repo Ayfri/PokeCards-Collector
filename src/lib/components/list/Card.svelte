@@ -1,20 +1,14 @@
 <script lang="ts">
 	import {formatEuros} from '#helpers/format.ts';
 	import {NO_IMAGES} from '#helpers/card-images.ts';
-	import {addCardToWishlist, removeCardFromWishlist} from '#lib/services/wishlists.ts';
-	import {addCardToCollection, removeCardFromCollection} from '#lib/services/collections.ts';
-	import {wishlist} from '#stores/wishlist.svelte.ts';
-	import {collection} from '#stores/collection.svelte.ts';
 	import { page } from '$app/state';
 	import type {FullCard, GridPokemon, Set} from '#lib/types.js';
 	import { cardPath, formatCardNumber } from '#helpers/card-utils.ts';
 	import CardImage from '#components/card/CardImage.svelte';
+	import CollectionControls from '#components/card/CollectionControls.svelte';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
-	import Heart from '@lucide/svelte/icons/heart';
 	import { getCardSet } from '#helpers/card-grid.ts';
 	import { catalogueOfPath, CATALOGUES } from '#helpers/catalogues.ts';
-	import Plus from '@lucide/svelte/icons/plus';
-	import Minus from '@lucide/svelte/icons/minus';
 	import SetBadge from '#components/SetBadge.svelte';
 
 	interface Props {
@@ -39,11 +33,7 @@
 		sets
 	}: Props = $props();
 
-	/** Maximum quantity allowed per card, mirrors the backend limit. */
-	const MAX_CARD_QUANTITY = 99;
-
 	const types = $derived(card.types ?? '');
-	const cardCode = $derived(card.cardCode);
 
 	const width = $derived(customWidth || 300);
 	const height = $derived(customHeight || 420);
@@ -58,74 +48,8 @@
 	const pokemon = $derived(card.pokemonNumber ? pokemonMap.get(card.pokemonNumber) : null);
 	const set = $derived(getCardSet(card, sets));
 
-	const user = $derived(page.data.user);
-	const profile = $derived(page.data.profile);
-
-	const isInWishlist = $derived(wishlist.has(cardCode));
-	let isUpdatingWishlist = $state(false);
-
-	const collectionCount = $derived(collection.count(cardCode));
-	let isUpdatingCollection = $state(false);
-
-	const isCollectionLimitReached = $derived(collectionCount >= MAX_CARD_QUANTITY);
-
 	const catalogue = $derived(card.language ? CATALOGUES[card.language] : catalogueOfPath(page.url.pathname));
 	const cardLink = $derived(cardPath(catalogue.language, card));
-
-	async function toggleWishlist(event: MouseEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-
-		if (!user || !profile) return;
-
-		isUpdatingWishlist = true;
-
-		try {
-			if (isInWishlist) {
-				await removeCardFromWishlist(profile.username, cardCode);
-			} else {
-				await addCardToWishlist(profile.username, cardCode);
-			}
-		} catch (error) {
-			console.error('Error toggling wishlist status:', error);
-		} finally {
-			isUpdatingWishlist = false;
-		}
-	}
-
-	async function handleAddCard(event: MouseEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-
-		if (!user || !profile || isUpdatingCollection || isCollectionLimitReached) return;
-
-		isUpdatingCollection = true;
-
-		try {
-			await addCardToCollection(profile.username, cardCode);
-		} catch (error) {
-			console.error('Error adding card to collection:', error);
-		} finally {
-			isUpdatingCollection = false;
-		}
-	}
-
-	async function handleRemoveCard(event: MouseEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-
-		if (!user || !profile || isUpdatingCollection || collectionCount === 0) return;
-
-		isUpdatingCollection = true;
-
-		try {
-			await removeCardFromCollection(profile.username, cardCode);
-		} catch (error) {
-			console.error('Error removing card from collection:', error);
-		} finally {
-			isUpdatingCollection = false;
-		}
-	}
 
 	const cardName = $derived(pokemon && catalogue.speciesTitles
 		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
@@ -150,57 +74,7 @@
 		></div>
 	{/if}
 	<div class="relative" style="width: {width}px; height: {height}px; max-width: 100%;">
-		{#if user && profile}
-			<div class="absolute z-10 flex items-center gap-1 rounded-full bg-black/60 p-1 shadow-[0_2px_10px_rgb(0_0_0/0.6)] ring-1 ring-white/10 backdrop-blur-xs" style="bottom: {controlInset}px; right: {controlInset}px;">
-				{#if collectionCount > 0}
-					<button
-						aria-label="Remove one copy from collection"
-						class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-						disabled={isUpdatingCollection}
-						onclick={handleRemoveCard}
-						title="Remove one copy from collection"
-					>
-						<Minus
-							class="text-white"
-							size={controlIconSize}
-						/>
-					</button>
-					<span
-						class="text-sm font-semibold text-green-400 px-1 min-w-[1.5ch] text-center select-none"
-						title={`You have ${collectionCount} cop${collectionCount > 1 ? 'ies' : 'y'}`}
-					>
-						{collectionCount}
-					</span>
-				{/if}
-				<button
-					aria-label="Add one copy to collection"
-					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-					disabled={isUpdatingCollection || isCollectionLimitReached}
-					onclick={handleAddCard}
-					title={isCollectionLimitReached ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
-				>
-					<Plus
-						class={collectionCount > 0 ? 'text-green-400' : 'text-white'}
-						size={controlIconSize}
-					/>
-				</button>
-
-				<div class="w-px h-5 bg-white/30 mx-1"></div>
-
-				<button
-					aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-					disabled={isUpdatingWishlist}
-					onclick={toggleWishlist}
-					title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-				>
-					<Heart
-						class={isInWishlist ? 'text-red-500 fill-red-500' : 'text-white'}
-						size={controlIconSize}
-					/>
-				</button>
-			</div>
-		{/if}
+		<CollectionControls cardCode={card.cardCode} iconSize={controlIconSize} style="bottom: {controlInset}px; right: {controlInset}px;" />
 		<CardImage
 			alt="{cardName} - {card.setName}"
 			{card}

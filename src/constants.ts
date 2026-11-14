@@ -17,6 +17,8 @@ export const SITE_NAME = 'PokéCards-Collector';
 export const CARDTRADER_IMAGES = 'https://www.cardtrader.com/uploads/blueprints/image/';
 /** Credited as `twitter:site` / `twitter:creator`, which is what turns a shared link into an attributed X card. */
 export const SITE_TWITTER = '@ayfri_';
+/** Copies of one card a collection holds at most. A collection stores one row per copy, so 99 copies of a card are 99 rows, written one at a time by `addCardToCollection` and in slices by the import. */
+export const MAX_CARD_QUANTITY = 99;
 
 /** Mirrors the `profiles_username_format` check constraint, so the forms and endpoints reject what the database would. */
 export const USERNAME_PATTERN = /^[a-z0-9_-]{3,20}$/;

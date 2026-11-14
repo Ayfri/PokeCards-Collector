@@ -12,6 +12,7 @@
 	import { wishlist } from '#stores/wishlist.svelte.ts';
 	import { addCardToCollection, removeCardFromCollection } from '#lib/services/collections.ts';
 	import { addCardToWishlist, removeCardFromWishlist } from '#lib/services/wishlists.ts';
+	import { MAX_CARD_QUANTITY } from '#src/constants.ts';
 	import CalendarDays from '@lucide/svelte/icons/calendar-days';
 	import Gem from '@lucide/svelte/icons/gem';
 	import Hash from '@lucide/svelte/icons/hash';
@@ -50,8 +51,6 @@
 
 	const user = $derived(page.data.user);
 	const profile = $derived(page.data.profile);
-
-	const MAX_CARD_QUANTITY = 99;
 
 	const collectionCount = $derived(collection.count(card.cardCode));
 	const cardIsWishlisted = $derived(wishlist.has(card.cardCode));
