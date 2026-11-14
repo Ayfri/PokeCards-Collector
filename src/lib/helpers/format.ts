@@ -32,14 +32,18 @@ export function timeAgo(date: string | Date): string {
 
 /**
  * A calendar date, which the database stores at UTC midnight: it prints in UTC so the day is the same west of UTC and in the server-rendered text.
- * Every caller formats a set release date; a timestamp (a join date, "price updated at") must not go through it.
+ * A timestamp prints the UTC day it falls on (the day a binder was shared); one shown with its time ("price updated at") does not go through it.
  * @example formatDate('2024-03-01') // "March 1, 2024"
  */
 export function formatDate(date: string | Date): string {
-	return new Date(date).toLocaleDateString('en-US', { day: 'numeric', month: 'long', timeZone: 'UTC', year: 'numeric' });
+	return dateFormatter.format(new Date(date));
 }
 
-/** One formatter per precision: `toLocaleString` with options builds a new `Intl.NumberFormat` on every call, and grid tiles format a price each. */
+/**
+ * One formatter per precision and one for the dates: `toLocaleString` and `toLocaleDateString` with options build a new `Intl` formatter on every call,
+ * and grid tiles format a price, set lists a release date each. `Intl.DateTimeFormat.format` throws a `RangeError` on an invalid date, so `toSet` only hands out valid release dates.
+ */
+const dateFormatter = new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'long', timeZone: 'UTC', year: 'numeric' });
 const euroFormatters = new Map<number, Intl.NumberFormat>();
 
 /**

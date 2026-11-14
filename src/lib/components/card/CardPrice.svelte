@@ -1,3 +1,7 @@
+<script lang="ts" module>
+	const UPDATED_AT_FORMAT = new Intl.DateTimeFormat('en-GB', {dateStyle: 'long', timeStyle: 'short'});
+</script>
+
 <script lang="ts">
 	import type { FullCard, PriceData } from '#lib/types.js';
 	import { cardPrice } from '#helpers/card-utils.ts';
@@ -17,8 +21,6 @@
 	let { card, cardPrices }: Props = $props();
 
 	const mainPrice = $derived(cardPrice(cardPrices));
-
-	const UPDATED_AT_FORMAT = new Intl.DateTimeFormat('en-GB', {dateStyle: 'long', timeStyle: 'short'});
 
 	/** TCGdex sends the Cardmarket timestamp as an opaque string, so an unparseable value falls back to the raw text. */
 	const updatedAt = $derived.by(() => {

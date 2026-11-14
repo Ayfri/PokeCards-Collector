@@ -79,12 +79,15 @@ function localImage(url: string | null, files: ReadonlySet<string>): string {
 }
 
 function toSet(set: SetRow, files: ReadonlySet<string>): Set {
+	const released = new Date(set.release_date ?? '');
+
 	return {
 		logo: localImage(set.logo, files),
 		name: set.name,
 		printedTotal: set.printed_total || 0,
 		ptcgoCode: set.ptcgo_code || '',
-		releaseDate: set.release_date ? new Date(set.release_date) : new Date('1995-01-01'),
+		/** `release_date` is a text column TCGdex fills: a missing or unparseable one reads as 1995, before every real set, so no reader meets an invalid `Date`. */
+		releaseDate: Number.isNaN(released.getTime()) ? new Date('1995-01-01') : released,
 		series: set.series || '',
 		setId: set.set_id || '',
 		symbol: localImage(set.symbol, files),
