@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { type Language, LANGUAGES } from '#helpers/catalogues.ts';
 import { buildCardIndex, buildSetKeys, type ImportLookups, type ImportRow, MAX_IMPORT_ROWS, resolveRows } from '#helpers/collection-import.ts';
 import { getCards, getSets } from '#helpers/catalogue-data.ts';
-import type { Card, Set } from '#lib/types.js';
+import { memoizedOn } from '#helpers/card-utils.ts';
 import type { RequestHandler } from './$types';
 
 /** A collection stores one row per copy, so 99 copies of a card are 99 rows, the same shape `addCardToCollection` writes one at a time. */
@@ -18,29 +18,13 @@ interface ImportRequest {
 	setOverride?: string;
 }
 
-interface CatalogueSource {
-	cards: () => Promise<Card[]>;
-	sets: () => Promise<Set[]>;
-}
+const lookupMemo = new WeakMap<object, unknown>();
 
-const SOURCES: Record<Language, CatalogueSource> = {
-	en: { cards: () => getCards('en'), sets: () => getSets('en') },
+/** Memoized on the card and set tables, so a refreshed table rebuilds the lookups and the old ones go with it (rule 2). */
+async function lookups(language: Language): Promise<ImportLookups> {
+	const [cards, sets, englishSets] = await Promise.all([getCards(language), getSets(language), getSets('en')]);
 	/** The English sets are included so a French line that names its set in English still finds the French card. */
-	fr: { cards: () => getCards('fr'), sets: async () => (await Promise.all([getSets('fr'), getSets('en')])).flat() },
-	ja: { cards: () => getCards('ja'), sets: () => getSets('ja') },
-};
-
-/** Rebuilt only when `getCards` returns a different array, which happens at most once an hour after the daily scrape. */
-const cached = new Map<CatalogueSource, { cards: Card[]; catalogue: ImportLookups }>();
-
-async function lookups(source: CatalogueSource): Promise<ImportLookups> {
-	const [cards, sets] = await Promise.all([source.cards(), source.sets()]);
-	let entry = cached.get(source);
-	if (entry?.cards !== cards) {
-		entry = { cards, catalogue: { index: buildCardIndex(cards), setKeys: buildSetKeys(sets, cards) } };
-		cached.set(source, entry);
-	}
-	return entry.catalogue;
+	return memoizedOn(lookupMemo, [cards, sets, englishSets], () => ({ index: buildCardIndex(cards), setKeys: buildSetKeys(language === 'fr' ? [...sets, ...englishSets] : sets, cards) }));
 }
 
 export const POST: RequestHandler = async ({ locals, request }) => {
@@ -53,7 +37,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	if (rows.length === 0) error(400, 'The file holds no importable row.');
 	if (rows.length > MAX_IMPORT_ROWS) error(413, `The file holds ${rows.length} rows, over the ${MAX_IMPORT_ROWS} limit.`);
 
-	const [en, fr, ja] = await Promise.all([lookups(SOURCES.en), lookups(SOURCES.fr), lookups(SOURCES.ja)]);
+	const [en, fr, ja] = await Promise.all([lookups('en'), lookups('fr'), lookups('ja')]);
 	const { matched, unmatched } = resolveRows(rows, { en, fr, ja }, body.setOverride);
 
 	/** The rows already owned decide what is left to write, so a card never goes past 99 copies. */
