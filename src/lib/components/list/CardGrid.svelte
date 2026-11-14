@@ -17,6 +17,7 @@
 	import Button from '#lib/components/filters/Button.svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { pokemonsById } from '#helpers/card-utils.ts';
 	import { filterCards, getCardDimensions, keepMostExpensivePerGroup, sortBySupertype, sortCards } from '#helpers/card-grid.ts';
 	import { cardSize } from '#stores/grid.svelte.ts';
 	import SizeSlider from '#lib/components/filters/SizeSlider.svelte';
@@ -108,7 +109,7 @@
 	const cardDimensions = $derived(getCardDimensions(cardSize.current, windowWidth));
 	const selectedSet = $derived(selectedSetName ? sets.find(set => set.name === selectedSetName) : undefined);
 
-	const pokemonMap = $derived(new Map(pokemons.map(pokemon => [pokemon.id, pokemon])));
+	const pokemonMap = $derived(pokemonsById(pokemons));
 
 	/**
 	 * Filter first, then narrow, then sort. "Most Expensive Only" must run after the set filter: run before it, it picks the
@@ -122,9 +123,9 @@
 	const filteredCards = $derived(filters.supertype === "all" ? sortBySupertype(sortedCards) : sortedCards);
 
 	const visibleCardsCount = $derived(filteredCards.length);
-	/** 66 Pokémon cards have no dex id, and without the `pokemonNumber` guard they would collapse into one extra entry in the count. */
+	/** Counted before the sort, which only reorders: a sort change leaves it alone. 66 Pokémon cards have no dex id, and without the `pokemonNumber` guard they would collapse into one extra entry in the count. */
 	const uniquePokemonCount = $derived(new Set(
-		filteredCards.filter(card => card.supertype === "Pokémon" && card.pokemonNumber != null).map(card => card.pokemonNumber),
+		narrowedCards.filter(card => card.supertype === "Pokémon" && card.pokemonNumber != null).map(card => card.pokemonNumber),
 	).size);
 
 </script>
