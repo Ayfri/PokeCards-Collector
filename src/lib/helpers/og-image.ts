@@ -1,7 +1,6 @@
-import { cardPrice } from '#helpers/card-utils.ts';
 import type { Catalogue, Language } from '#helpers/catalogues.ts';
 import { formatEuros } from '#helpers/format.ts';
-import type { Card, Image, PriceData, Set } from '#lib/types.js';
+import type { Card, Image, Set } from '#lib/types.js';
 
 export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
@@ -56,9 +55,6 @@ export const cardOgVersion = (card: Pick<Card, 'image' | 'name'>, price: number 
 
 /** What a set image draws: the card count and the set value. */
 const setOgVersion = (set: Pick<Set, 'totalCards'>, value: number): OgVersion => [set.totalCards, ogPrice(value)];
-
-export const setValue = (setId: string, cards: Card[], prices: Record<string, PriceData>): number =>
-	cards.reduce((sum, card) => card.setId === setId ? sum + (cardPrice(prices[card.cardCode]) ?? 0) : sum, 0);
 
 /**
  * The share image of a page, rendered by `/og/[...path]`. `version` lists what the image draws (a price, a card count),

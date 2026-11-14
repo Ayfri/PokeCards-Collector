@@ -25,10 +25,10 @@ import clashSemibold from '#src/fonts/ClashDisplay-Semibold.ttf';
 import colorsCss from '#src/styles/colors.css?raw';
 import { BASE_URL, CARDTRADER_IMAGES, POKEMONS_COUNT, SITE_NAME } from '#src/constants.ts';
 import { type ImageQuality, processCardImage } from '#helpers/card-images.ts';
-import { cardPrice, formatCardNumber, setCardCount } from '#helpers/card-utils.ts';
+import { cardPrice, formatCardNumber, setCardCount, setValues } from '#helpers/card-utils.ts';
 import { CATALOGUES, type Language, LANGUAGES } from '#helpers/catalogues.ts';
 import { formatEuros } from '#helpers/format.ts';
-import { formatOgEuros, OG_HEIGHT, OG_WIDTH, type OgPage, ogPrice, type OgTarget, type OgUserKind, setValue } from '#helpers/og-image.ts';
+import { formatOgEuros, OG_HEIGHT, OG_WIDTH, type OgPage, ogPrice, type OgTarget, type OgUserKind } from '#helpers/og-image.ts';
 import { ownedTotals } from '#helpers/owned-cards.ts';
 import { RARITY_SYMBOLS, type RarityTone } from '#helpers/rarity-symbols.ts';
 import { SET_IMAGE_DIR } from '#helpers/set-images.ts';
@@ -367,7 +367,7 @@ async function setImage(language: Language, setId: string, state: RenderState): 
 	if (!set) return null;
 
 	const setCards = cards.filter(card => card.setId === setId);
-	const value = ogPrice(setValue(setId, cards, prices));
+	const value = ogPrice(setValues(cards, prices).get(setId) ?? 0);
 	const year = set.releaseDate.getUTCFullYear();
 
 	return canvas(480, [

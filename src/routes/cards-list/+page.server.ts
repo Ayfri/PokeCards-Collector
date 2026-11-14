@@ -2,8 +2,8 @@ import type { PageServerLoad } from './$types';
 import { redirectToSetPage } from '#helpers/grid-payload.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { CATALOGUES } from '#helpers/catalogues.ts';
-import { setPath } from '#helpers/card-utils.ts';
-import { ogImage, setShareImage, setValue } from '#helpers/og-image.ts';
+import { setPath, setValues } from '#helpers/card-utils.ts';
+import { ogImage, setShareImage } from '#helpers/og-image.ts';
 import { getCards, getPrices } from '#helpers/catalogue-data.ts';
 
 /**
@@ -30,7 +30,7 @@ export const load: PageServerLoad = async ({ isDataRequest, parent, url }) => {
 			/** A `?set=` grid that combines filters is a view of the set page: it keeps its set title and image, and the set page is its canonical. */
 			const [cards, prices] = await Promise.all([getCards(), getPrices()]);
 			const total = set.totalCards ?? set.printedTotal;
-			image = setShareImage(set, setValue(set.setId, cards, prices), CATALOGUES.en);
+			image = setShareImage(set, setValues(cards, prices).get(set.setId) ?? 0, CATALOGUES.en);
 			ogTitle = `${set.name} Card List & Prices`;
 			ogDescription = `Every card in the ${set.name} Pokémon TCG set${total ? `, ${total} cards in total` : ''}, with Cardmarket prices in euros.`;
 			ogKeywords = [`${set.name} card list`, `${set.name} set`, `${set.name} card prices`, 'Pokémon TCG'];

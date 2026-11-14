@@ -1,6 +1,6 @@
 import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
 import { type Catalogue, CATALOGUES } from '#helpers/catalogues.ts';
-import { cardPath, cardPrice, formatCardNumber, memoizedOn, setOrder, setPath } from '#helpers/card-utils.ts';
+import { cardPath, cardPrice, formatCardNumber, memoizedOn, setOrder, setPath, setValues } from '#helpers/card-utils.ts';
 import { gzipJson } from '#helpers/catalogue-snapshot.ts';
 import { keepAlive } from '#helpers/data-cache.ts';
 import { cardListSchema, setSchema } from '#helpers/seo.ts';
@@ -56,7 +56,7 @@ export function setLanding(set: CardSet, cards: FullCard[], prices: Record<strin
 		schemas: [setSchema(set, catalogue), cardListSchema(setCards, setPath(set, catalogue), `${set.name} card list`, 25, catalogue)],
 		topCard: top ? ` The most valuable is ${top.name} ${formatCardNumber(top.localId, set.printedTotal)}, around €${top.price.toFixed(2)} on Cardmarket.` : '',
 		topCards,
-		value: checklist.reduce((sum, entry) => sum + (entry.price ?? 0), 0),
+		value: setValues(cards, prices).get(set.setId) ?? 0,
 	};
 }
 

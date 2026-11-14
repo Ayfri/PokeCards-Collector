@@ -332,6 +332,7 @@ export function isCardCode(item: string): boolean {
 const groupMemo = new WeakMap<object, unknown>();
 const bestMemo = new WeakMap<object, unknown>();
 const setMemo = new WeakMap<object, unknown>();
+const valueMemo = new WeakMap<object, unknown>();
 
 /**
  * The prints of each Pokémon, Trainer or Energy group (`cardGroupKey`), built once per card list. A card without a set name is not a print,
@@ -372,6 +373,18 @@ function bestCardByPokemon(cards: FullCard[], prices: Record<string, PriceData>)
 
 export function setsById(sets: CardSet[]): Map<string, CardSet> {
 	return memoizedOn(setMemo, [sets], () => new Map(sets.map(set => [set.setId, set])));
+}
+
+/** The value of each set in EUR, the `cardPrice()` of its cards summed in list order, built once per card and price table. A set with no price has no entry. */
+export function setValues(cards: Card[], prices: Record<string, PriceData>): Map<string, number> {
+	return memoizedOn(valueMemo, [cards, prices], () => {
+		const values = new Map<string, number>();
+		for (const card of cards) {
+			const price = cardPrice(prices[card.cardCode]);
+			if (price) values.set(card.setId, (values.get(card.setId) ?? 0) + price);
+		}
+		return values;
+	});
 }
 
 /** What a card page ships: the prints of the shown card and their prices and sets, the chain's Pokédex rows and one link per neighbouring Pokémon. */

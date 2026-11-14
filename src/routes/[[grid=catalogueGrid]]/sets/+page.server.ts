@@ -4,19 +4,14 @@ import { BY_GRID, type Catalogue, CATALOGUES } from '#helpers/catalogues.ts';
 import { ogImage } from '#helpers/og-image.ts';
 import { breadcrumbs, setListSchema } from '#helpers/seo.ts';
 import type { Set as CardSet, FullCard, PriceData, SetWithPrice } from '#lib/types.js';
-import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
+import { memoizedOn, setValues } from '#helpers/card-utils.ts';
 
-/** Keyed on the memoized tables: the pass over every card runs once per refreshed table instead of once per request. */
+/** Keyed on the memoized tables: the spread of every set runs once per refreshed table instead of once per request. */
 const totals = new WeakMap<object, unknown>();
 
 const withTotals = (cards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]) => memoizedOn(totals, [cards, prices, sets], (): SetWithPrice[] => {
-	const setPriceTotals = new Map<string, number>();
-	for (const card of cards) {
-		const price = cardPrice(prices[card.cardCode]);
-		if (price && card.setId) setPriceTotals.set(card.setId, (setPriceTotals.get(card.setId) ?? 0) + price);
-	}
-
-	return sets.map(set => ({ ...set, totalPrice: setPriceTotals.get(set.setId ?? '') ?? 0 }));
+	const values = setValues(cards, prices);
+	return sets.map(set => ({ ...set, totalPrice: values.get(set.setId) ?? 0 }));
 });
 
 /** Serves the set lists `/sets`, `/france/sets` and `/japan/sets`. */
