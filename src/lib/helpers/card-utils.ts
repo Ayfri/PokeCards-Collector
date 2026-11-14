@@ -372,7 +372,7 @@ function bestCardByPokemon(cards: FullCard[], prices: Record<string, PriceData>)
 	});
 }
 
-export function setsById(sets: CardSet[]): Map<string, CardSet> {
+export function setsById<T extends Pick<CardSet, 'setId'>>(sets: T[]): Map<string, T> {
 	return memoizedOn(setMemo, [sets], () => new Map(sets.map(set => [set.setId, set])));
 }
 

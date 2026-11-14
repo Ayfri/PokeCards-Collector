@@ -2,27 +2,21 @@
 	import type {CardPageSet, FullCard, Pokemon, PriceData} from '#lib/types.js';
 	import CardImage from '#components/card/CardImage.svelte';
 	import CardmarketLogo from '#components/card/CardmarketLogo.svelte';
+	import CollectionControls from '#components/card/CollectionControls.svelte';
 	import {fade} from 'svelte/transition';
 	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
 	import ExternalLink from '@lucide/svelte/icons/external-link';
 	import { persistedRecord } from '#stores/persisted.svelte.ts';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
-	import { cardGroupName, cardPath, cardPrice } from '#helpers/card-utils.ts';
+	import { cardGroupName, cardPath, cardPrice, pokemonsById, setsById } from '#helpers/card-utils.ts';
 	import { formatEuros } from '#helpers/format.ts';
-	import { addCardToCollection, removeCardFromCollection } from '#lib/services/collections.ts';
-	import { addCardToWishlist, removeCardFromWishlist } from '#lib/services/wishlists.ts';
-	import { collection } from '#stores/collection.svelte.ts';
-	import Heart from '@lucide/svelte/icons/heart';
-	import Minus from '@lucide/svelte/icons/minus';
-	import Plus from '@lucide/svelte/icons/plus';
+	import { compareRarities } from '#helpers/rarity.ts';
 	import SetBadge from '#components/SetBadge.svelte';
 	import { page } from '$app/state';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
-	import { wishlist } from '#stores/wishlist.svelte.ts';
 	import { onMount } from 'svelte';
 
-	
 	interface Props {
 		cards: FullCard[];
 		lowRes?: boolean;
@@ -47,10 +41,6 @@
 	const relatedSort = persistedRecord('related-cards-sort', { direction: 'asc' as 'asc' | 'desc', value: 'sort-set' });
 
 	const catalogue = $derived(catalogueOfPath(page.url.pathname));
-	const user = $derived(page.data.user);
-	const profile = $derived(page.data.profile);
-
-	const MAX_CARD_QUANTITY = 99;
 
 	/** Hundreds of tiles block the main thread, so they replace same-sized placeholders once the card intro has played. */
 	let showTiles = $state(false);
@@ -59,66 +49,29 @@
 		return () => clearTimeout(timeout);
 	});
 
-	/** Built once per `sets`, so the sort comparators do a map lookup instead of scanning every set twice per comparison. */
-	const setsById = $derived(new Map(sets.map(set => [set.setId, set])));
+	const pokemonIndex = $derived(pokemonsById(pokemons));
+	const setIndex = $derived(setsById(sets));
 
-	function getPokemon(pokemonNumber: number | undefined): Pokemon | undefined {
-		if (!pokemonNumber) return undefined;
-		return pokemons.find(p => p.id === pokemonNumber);
-	}
+	/**
+	 * The grid's `sortCards` does not fit here: it reads `card.price`, which only a grid payload carries, and sets keyed by language,
+	 * while a card page ships a price record and the sets of one language. Rarity sorts by tier like the grid, most common first.
+	 */
+	const compare = $derived.by((): (a: FullCard, b: FullCard) => number => {
+		const price = (card: FullCard) => cardPrice(prices[card.cardCode]) ?? 0;
+		const released = (card: FullCard) => setIndex.get(card.setId)?.releaseDate.getTime() ?? 0;
+		const setName = (card: FullCard) => setIndex.get(card.setId)?.name ?? '';
 
-	function sortCards(cardsToSort: FullCard[], sortType: string, order: string) {
-		if (!cardsToSort?.length) return [];
-
-		let sorted = [...cardsToSort];
-
-		switch (sortType) {
-			case 'sort-price':
-				sorted = sorted.sort((a, b) => {
-					const priceA = cardPrice(prices[a.cardCode]) ?? 0;
-					const priceB = cardPrice(prices[b.cardCode]) ?? 0;
-					return order === 'asc' ? priceA - priceB : priceB - priceA;
-				});
-				break;
-			case 'sort-rarity':
-				sorted = sorted.sort((a, b) => {
-					const rarityA = a.rarity ?? '';
-					const rarityB = b.rarity ?? '';
-					return order === 'asc' ? rarityA.localeCompare(rarityB) : rarityB.localeCompare(rarityA);
-				});
-				break;
-			case 'sort-artist':
-				sorted = sorted.sort((a, b) => {
-					const artistA = a.artist || '';
-					const artistB = b.artist || '';
-					return order === 'asc' ? artistA.localeCompare(artistB) : artistB.localeCompare(artistA);
-				});
-				break;
-			case 'sort-date':
-				sorted = sorted.sort((a, b) => {
-					const aSet = setsById.get(a.setId);
-					const bSet = setsById.get(b.setId);
-					const aTime = aSet?.releaseDate?.getTime() ?? 0;
-					const bTime = bSet?.releaseDate?.getTime() ?? 0;
-					return order === 'asc' ? aTime - bTime : bTime - aTime;
-				});
-				break;
+		switch (relatedSort.value) {
+			case 'sort-artist': return (a, b) => a.artist.localeCompare(b.artist);
+			case 'sort-date': return (a, b) => released(a) - released(b);
+			case 'sort-price': return (a, b) => price(a) - price(b);
+			case 'sort-rarity': return (a, b) => compareRarities(a.rarity, b.rarity);
 			/** `sort-set` is the default sort. */
-			default:
-				sorted = sorted.sort((a, b) => {
-					const aSet = setsById.get(a.setId);
-					const bSet = setsById.get(b.setId);
-					const aName = aSet?.name ?? '';
-					const bName = bSet?.name ?? '';
-					return order === 'asc' ? aName.localeCompare(bName) : bName.localeCompare(aName);
-				});
-				break;
+			default: return (a, b) => setName(a).localeCompare(setName(b));
 		}
+	});
 
-		return sorted;
-	}
-
-	const sortedCards = $derived(sortCards(cards, relatedSort.value, relatedSort.direction));
+	const sortedCards = $derived(cards.toSorted(relatedSort.direction === 'asc' ? compare : (a, b) => compare(b, a)));
 
 	const titleName = $derived(pokemon
 		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
@@ -130,32 +83,6 @@
 		onCardSelect(card);
 	}
 
-	async function toggleWishlist(cardCode: string, event: MouseEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-		if (!user || !profile) return;
-		if (wishlist.has(cardCode)) {
-			await removeCardFromWishlist(profile.username, cardCode);
-		} else {
-			await addCardToWishlist(profile.username, cardCode);
-		}
-	}
-	async function handleAddCard(cardCode: string, event: MouseEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-		if (!user || !profile) return;
-		const count = collection.count(cardCode);
-		if (count >= MAX_CARD_QUANTITY) return;
-		await addCardToCollection(profile.username, cardCode);
-	}
-	async function handleRemoveCard(cardCode: string, event: MouseEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-		if (!user || !profile) return;
-		const count = collection.count(cardCode);
-		if (count === 0) return;
-		await removeCardFromCollection(profile.username, cardCode);
-	}
 </script>
 
 <div class="bg-gray-800/40 border-gold-400 border-2 rounded-2xl p-4 md:p-6 w-full">
@@ -187,7 +114,7 @@
 				<!-- The placeholders are what the server renders, so each one is a real link to its print for crawlers. They keep the
 				     prop order, not the persisted sort, which only exists in the browser and would break hydration. -->
 				{#each cards as card (card.cardCode)}
-					{@const setName = setsById.get(card.setId)?.name ?? card.setName}
+					{@const setName = setIndex.get(card.setId)?.name ?? card.setName}
 					{@const price = cardPrice(prices[card.cardCode])}
 					<a class="flex flex-col items-center text-sm" href={cardPath(catalogue.language, card)} title="{card.name} - {setName}">
 						<div class="w-full animate-pulse rounded-lg bg-gray-700/50" style="aspect-ratio: 63/88;"></div>
@@ -197,8 +124,8 @@
 				{/each}
 			{:else}
 			{#each sortedCards as card (card.cardCode)}
-				{@const cardPokemon = getPokemon(card.pokemonNumber)}
-				{@const cardSet = setsById.get(card.setId)}
+				{@const cardPokemon = pokemonIndex.get(card.pokemonNumber ?? 0)}
+				{@const cardSet = setIndex.get(card.setId)}
 				{@const price = cardPrice(prices[card.cardCode])}
 				<div
 					class="relative flex flex-col items-center transition-transform duration-300 hover:-translate-y-1"
@@ -231,44 +158,7 @@
 						{#if cardSet}
 							<SetBadge class="bottom-2 left-2" set={cardSet} />
 						{/if}
-						{#if user && profile}
-							<div class="absolute bottom-2 right-2 z-10 flex items-center gap-1 rounded-full bg-black/50 p-1">
-								{#if collection.count(card.cardCode) > 0}
-									<button
-										aria-label="Remove one copy from collection"
-										class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-										onclick={(e) => handleRemoveCard(card.cardCode, e)}
-										title="Remove one copy from collection"
-									>
-										<Minus class="text-white" size={16} />
-									</button>
-									<span
-										class="text-sm font-semibold text-green-400 px-1 min-w-[1.5ch] text-center select-none"
-										title={`You have ${collection.count(card.cardCode)} cop${collection.count(card.cardCode) > 1 ? 'ies' : 'y'}`}
-									>
-										{collection.count(card.cardCode)}
-									</span>
-								{/if}
-								<button
-									aria-label="Add one copy to collection"
-									class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-									disabled={collection.count(card.cardCode) >= MAX_CARD_QUANTITY}
-									onclick={(e) => handleAddCard(card.cardCode, e)}
-									title={collection.count(card.cardCode) >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
-								>
-									<Plus class={collection.count(card.cardCode) > 0 ? 'text-green-400' : 'text-white'} size={16} />
-								</button>
-								<div class="w-px h-5 bg-white/30 mx-1"></div>
-								<button
-									aria-label={wishlist.has(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
-									class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-									onclick={(e) => toggleWishlist(card.cardCode, e)}
-									title={wishlist.has(card.cardCode) ? 'Remove from wishlist' : 'Add to wishlist'}
-								>
-									<Heart class={wishlist.has(card.cardCode) ? 'text-red-500 fill-red-500' : 'text-white'} size={16} />
-								</button>
-							</div>
-						{/if}
+						<CollectionControls cardCode={card.cardCode} class="bottom-2 right-2" />
 					</div>
 					<div class="mt-0.5 w-full text-center flex flex-col">
 						<h3 class="text-center font-bold text-sm">{cardSet?.name || 'Unknown Set'}</h3>
