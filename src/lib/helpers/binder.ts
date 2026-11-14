@@ -253,14 +253,20 @@ const COMPARATORS: Record<Exclude<BinderSort, 'natural'>, (a: BinderCard, b: Bin
 };
 
 /**
- * Card codes always come before URL items, whatever the order. `natural` keeps the input order, which `desc` reverses.
+ * Card codes always come before URL items, whatever the order: the two kinds are split once and sorted apart, instead of testing `isCardCode`
+ * on both sides of every comparison. `natural` keeps the input order, which `desc` reverses.
  * The sort is stable, so equal cards keep the order they came in.
  */
 export function sortBinderCards(cards: readonly BinderCard[], sortBy: BinderSort, order: 'asc' | 'desc'): BinderCard[] {
 	const sign = order === 'asc' ? 1 : -1;
 	const compare = sortBy === 'natural' ? () => 0 : COMPARATORS[sortBy];
 	const source = sortBy === 'natural' && order === 'desc' ? cards.toReversed() : cards;
-	return source.toSorted((a, b) => Number(isCardCode(b.cardCode)) - Number(isCardCode(a.cardCode)) || sign * compare(a, b));
+	const codes: BinderCard[] = [];
+	const urls: BinderCard[] = [];
+	for (const card of source) (isCardCode(card.cardCode) ? codes : urls).push(card);
+
+	const byOrder = (a: BinderCard, b: BinderCard) => sign * compare(a, b);
+	return [...codes.sort(byOrder), ...urls.sort(byOrder)];
 }
 
 /** The lower-cased text a search looks into, built once per card: a keystroke then costs one `includes` per card instead of three `toLowerCase`. */
