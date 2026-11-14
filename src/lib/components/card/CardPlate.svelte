@@ -67,7 +67,7 @@
      the set symbol and the number. The border is yellow or silver depending on the card's era. The `@max-*` variants drop details once they would shrink below reading size.
      The bottom padding never drops under 3.2rem, so the strip stays above the set badge and collection controls grids lay over the tile (fixed px, unlike the plate). -->
 {#snippet plate(classes: string, css: string)}
-<div aria-label={alt} class="card-plate @container overflow-hidden text-white select-none {classes}" data-card-code={card?.cardCode} role="img" style="{css}; {tintStyle}; {plateTexture(card)}">
+<div aria-label={alt} class="card-plate @container overflow-hidden text-white select-none {classes}" data-card-image role="img" style="{css}; {tintStyle}; {plateTexture(card)}">
 	<div class="relative isolate flex h-full flex-col gap-[2cqw] px-[6.5cqw] pt-[4cqw] pb-[max(3.2rem,16cqw)] @max-[200px]:pb-[max(3.2rem,22cqw)] @max-[120px]:justify-center @max-[120px]:p-[6cqw] @max-[120px]:pb-[6cqw]">
 		{#if scan && fullArt}
 			<CardPlateArt alt={artAlt} base={scan} full onerror={() => (failedScan = scan)} />

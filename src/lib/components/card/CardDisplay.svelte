@@ -14,7 +14,7 @@
 	import { catalogueOfPath, type LanguagePaths } from '#helpers/catalogues.ts';
 	import { cardPath, cardSlug, type SetNeighbourLinks, setPath } from '#helpers/card-utils.ts';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
-	import { morphCards } from '#helpers/view-transitions.ts';
+	import { cardHero, cardTile, morphCards } from '#helpers/view-transitions.ts';
 
 	
 	interface Props {
@@ -62,8 +62,9 @@
 
 	/** Swaps the displayed card without a navigation: the picked tile flies up into the big card while the page jumps back to the top. */
 	function handleCardSelect(selectedCard: FullCard) {
-		goto(cardPath(catalogue.language, selectedCard), { replace: true, shallow: true });
-		morphCards([selectedCard.cardCode], () => {
+		const path = cardPath(catalogue.language, selectedCard);
+		goto(path, { replace: true, shallow: true });
+		morphCards(cardTile(path), cardHero, () => {
 			currentCard = selectedCard;
 			flushSync();
 			window.scrollTo({ behavior: 'instant', top: 0 });

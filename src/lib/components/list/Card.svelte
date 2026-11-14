@@ -56,8 +56,8 @@
 		: (card.name ? card.name.charAt(0).toUpperCase() + card.name.slice(1) : 'Unknown'));
 </script>
 
-<div class="group relative flex flex-col items-center w-fit cursor-pointer text-white transition-transform duration-300 ease-out hover:scale-[1.025] z-1 hover:z-10">
-	<!-- Stretched link: covers the whole card so nested links stay valid HTML. -->
+<div class="group relative flex flex-col items-center w-fit cursor-pointer text-white transition-transform duration-300 ease-out hover:scale-[1.025] z-1 hover:z-10" data-card-path={cardLink}>
+	<!-- Stretched link: covers the whole card so nested links stay valid HTML. It does not wrap the image, so `data-card-path` tells the page transition which card this tile draws. -->
 	<a
 		aria-label={`Go to the card page of ${cardName}`}
 		class="absolute inset-0 z-2"

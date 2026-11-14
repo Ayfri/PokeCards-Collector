@@ -1,10 +1,12 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import CardImage from '#components/card/CardImage.svelte';
 	import type { CardPageSet, FullCard, Pokemon } from '#lib/types.js';
+	import { cardPath } from '#helpers/card-utils.ts';
+	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { titleCase } from '#helpers/format.ts';
 	import { throttle } from '#helpers/utils.ts';
 
-	
 	interface Props {
 		card: FullCard | undefined;
 		currentSet: CardPageSet | undefined;
@@ -49,7 +51,7 @@
 <div
 	bind:this={centerCard}
 	class="w-84 h-116 sm:w-[20rem] sm:h-112 lg:w-92 lg:h-128 max-w-full mx-auto rounded-xl shadow-lg interactive-card"
-	data-card-hero={card?.cardCode}
+	data-card-hero={card && cardPath(catalogueOfPath(page.url.pathname).language, card)}
 >
 	{#key card?.image}
 		{#if card}

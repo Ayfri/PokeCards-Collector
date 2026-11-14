@@ -127,16 +127,18 @@
 				{@const cardPokemon = pokemonIndex.get(card.pokemonNumber ?? 0)}
 				{@const cardSet = setIndex.get(card.setId)}
 				{@const price = cardPrice(prices[card.cardCode])}
+				{@const path = cardPath(catalogue.language, card)}
 				<div
 					class="relative flex flex-col items-center transition-transform duration-300 hover:-translate-y-1"
+					data-card-path={path}
 					transition:fade={{ duration: 200 }}
 				>
 					<!-- Stretched link: covers the whole tile so the nested controls stay valid HTML. A plain click swaps the card in place,
-					     a modified one opens the print's own page like any link. -->
+					     a modified one opens the print's own page like any link. It does not wrap the image, so `data-card-path` names the tile's card for the swap. -->
 					<a
 						aria-label={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
 						class="absolute inset-0 z-2 cursor-pointer"
-						href={cardPath(catalogue.language, card)}
+						href={path}
 						onclick={(event) => selectCard(card, event)}
 						title={`View details for ${card.name} from ${cardSet?.name || 'unknown set'}`}
 					></a>

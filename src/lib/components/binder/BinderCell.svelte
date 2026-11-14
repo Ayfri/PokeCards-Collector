@@ -2,6 +2,7 @@
 	import CardImage from '#components/card/CardImage.svelte';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import { DIMMED, DRAG_TYPE, dragLeft, readDrag, setDrag, type SlotRef } from '#helpers/binder.ts';
+	import { cardPath, isCardCode } from '#helpers/card-utils.ts';
 	import { binderCards } from '#stores/binder-cards.svelte.ts';
 	import { binder } from '#stores/binder.svelte.ts';
 	import X from '@lucide/svelte/icons/x';
@@ -25,6 +26,12 @@
 	let dragOver = $state(false);
 	let hovered = $state(false);
 	let focused = $state(false);
+
+	/** The page the slot menu opens, so the pocket's card flies into it: the menu's link sits in a popover, away from the image. An image URL or an unresolved code has none. */
+	const cardPage = $derived.by(() => {
+		const card = tile && isCardCode(tile.key) ? binderCards.get(tile.key) : undefined;
+		return card && cardPath(card.language ?? 'en', card);
+	});
 
 	/** The slot picked up with the menu's Move: it keeps a ring until its destination is chosen. */
 	const held = $derived(binder.held?.page === at.page && binder.held.position === at.position);
@@ -98,6 +105,7 @@
 		held && 'outline-2 outline-dashed outline-gold-400',
 		tile ? 'bg-gray-900' : 'bg-gray-900/40'
 	]}
+	data-card-path={cardPage}
 	data-slot="{at.page}-{at.position}"
 	draggable={Boolean(tile)}
 	ondragleave={event => { if (dragLeft(event)) dragOver = false; }}
