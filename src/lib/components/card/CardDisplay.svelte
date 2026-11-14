@@ -93,6 +93,7 @@
 	{#if pokemon && href}
 		<a
 			class={['flex-col items-center opacity-70 transition-[opacity,scale] duration-300 ease-[ease] hover:scale-110 hover:opacity-100', desktop ? 'hidden lg:flex w-48' : 'flex w-auto', desktop && (side === 'prev' ? 'order-1' : 'order-3')]}
+			data-card-step={side}
 			{href}
 			in:fly={{ delay: 400, duration: 400, x: side === 'prev' ? -50 : 50 }}
 			title="{titleCase(pokemon.name)} cards"
@@ -162,7 +163,7 @@
 	{#if currentCard && showNeighbours}
 		<nav aria-label="Cards in this set" class="grid w-full max-w-2xl grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-md bg-black/60 px-3 py-2 text-sm">
 			{#if neighbours.previous}
-				<a class="min-w-0 justify-self-start truncate text-white transition-colors hover:text-gold-400" href={neighbours.previous.path} rel="prev">
+				<a class="min-w-0 justify-self-start truncate text-white transition-colors hover:text-gold-400" data-card-step="prev" href={neighbours.previous.path} rel="prev">
 					‹ #{neighbours.previous.number} {neighbours.previous.name}
 				</a>
 			{:else}
@@ -172,7 +173,7 @@
 				{currentSet?.name ?? currentCard.setName}
 			</a>
 			{#if neighbours.next}
-				<a class="min-w-0 justify-self-end truncate text-white transition-colors hover:text-gold-400" href={neighbours.next.path} rel="next">
+				<a class="min-w-0 justify-self-end truncate text-white transition-colors hover:text-gold-400" data-card-step="next" href={neighbours.next.path} rel="next">
 					{neighbours.next.name} #{neighbours.next.number} ›
 				</a>
 			{:else}

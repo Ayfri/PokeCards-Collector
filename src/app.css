@@ -285,13 +285,30 @@ html:active-view-transition-type(back) {
 	animation: vt-fade-in 0.3s ease-out both;
 }
 
-/* A card with nowhere to land (its tile is off screen) leaves with the page instead of freezing in place. */
+/* A card with nowhere to land (the new page does not draw it near the screen) leaves with the page instead of freezing in place. */
 ::view-transition-old(card):only-child {
 	animation: vt-page-out 0.2s cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 ::view-transition-image-pair(card) {
 	animation: vt-card-lift 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* A step to the previous or next card deals the big card sideways: the old one leaves on one side while the new one comes in from the other. */
+html:active-view-transition-type(card-next) {
+	--vt-step: 1;
+}
+
+html:active-view-transition-type(card-prev) {
+	--vt-step: -1;
+}
+
+html:active-view-transition-type(card-next, card-prev)::view-transition-old(card) {
+	animation: vt-card-out 0.25s cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+html:active-view-transition-type(card-next, card-prev)::view-transition-new(card) {
+	animation: vt-card-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
 }
 
 @keyframes vt-page-out {
@@ -320,6 +337,22 @@ html:active-view-transition-type(back) {
 @keyframes vt-card-lift {
 	50% {
 		filter: drop-shadow(0 1.5rem 2.5rem rgb(0 0 0 / 0.6)) drop-shadow(0 0 1.5rem rgb(251 197 74 / 0.35));
+	}
+}
+
+@keyframes vt-card-out {
+	to {
+		opacity: 0;
+		rotate: calc(var(--vt-step) * -6deg);
+		translate: calc(var(--vt-step) * -45%) 0;
+	}
+}
+
+@keyframes vt-card-in {
+	from {
+		opacity: 0;
+		rotate: calc(var(--vt-step) * 6deg);
+		translate: calc(var(--vt-step) * 45%) 0;
 	}
 }
 
