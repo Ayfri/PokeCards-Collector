@@ -1,5 +1,5 @@
 import type { FullCard, GridPokemon, Set } from '#lib/types.js';
-import { cardGroupKey } from '#helpers/card-utils.ts';
+import { cardGroupKey, memoizedOn, pokemonsById } from '#helpers/card-utils.ts';
 import { compareRarities, getRarityLevel } from '#helpers/rarity.ts';
 import type { ActiveFilters } from '#stores/filters.svelte.ts';
 import { CARD_SIZES, DEFAULT_CARD_SIZE } from '#stores/grid.svelte.ts';
@@ -37,6 +37,7 @@ export function keepMostExpensivePerGroup(cards: FullCard[]): FullCard[] {
 
 interface SortValues {
 	artist: string;
+	card: FullCard;
 	cardNumber: string;
 	cardNumberInt: number;
 	isPokemon: boolean;
@@ -50,8 +51,12 @@ interface SortValues {
 
 const SUPERTYPE_ORDER: Record<string, number> = { Energy: 3, 'Pokémon': 1, Trainer: 2 };
 
+const sortValuesMemo = new WeakMap<object, unknown>();
 
-/** Sort keys are computed once per card up front, so the comparator only does lookups. */
+/**
+ * Sort keys are computed once per card, then the sort orders entries that carry their card and keys, so the comparator reads plain fields.
+ * The keys are kept per card while the Pokémon and set lists live, so a sort change over the same cards computes nothing.
+ */
 export function sortCards(
 	cards: FullCard[],
 	sortBy: string,
@@ -59,58 +64,57 @@ export function sortCards(
 	pokemons: GridPokemon[],
 	sets: Set[],
 ): FullCard[] {
-	const pokemonMap = new Map(pokemons.map(pokemon => [pokemon.id, pokemon]));
-	const sortValues = new Map<string, SortValues>();
+	const pokemonMap = pokemonsById(pokemons);
+	const known = memoizedOn(sortValuesMemo, [pokemons, sets], () => new WeakMap<FullCard, SortValues>());
 
-	for (const card of cards) {
-		const pokemon = pokemonMap.get(card.pokemonNumber ?? 0);
-		const cardNumber = card.localId;
-		const cardNumberInt = parseInt(cardNumber);
-
-		sortValues.set(card.cardCode, {
-			artist: card.artist || '',
-			cardNumber,
-			cardNumberInt: isNaN(cardNumberInt) ? 0 : cardNumberInt,
-			isPokemon: card.supertype === 'Pokémon' && card.pokemonNumber != null,
-			name: pokemon?.name ?? card.name,
-			pokemonNumber: card.pokemonNumber ?? 0,
-			price: card.price ?? 0,
-			rarityLevel: getRarityLevel(card.rarity),
-			releaseDate: getCardSet(card, sets)?.releaseDate?.getTime() ?? 0,
-			supertype: card.supertype,
-		});
-	}
+	const entries = cards.map(card => {
+		let values = known.get(card);
+		if (!values) {
+			const cardNumberInt = parseInt(card.localId);
+			known.set(card, values = {
+				artist: card.artist || '',
+				card,
+				cardNumber: card.localId,
+				cardNumberInt: isNaN(cardNumberInt) ? 0 : cardNumberInt,
+				isPokemon: card.supertype === 'Pokémon' && card.pokemonNumber != null,
+				name: pokemonMap.get(card.pokemonNumber ?? 0)?.name ?? card.name,
+				pokemonNumber: card.pokemonNumber ?? 0,
+				price: card.price ?? 0,
+				rarityLevel: getRarityLevel(card.rarity),
+				releaseDate: getCardSet(card, sets)?.releaseDate?.getTime() ?? 0,
+				supertype: card.supertype,
+			});
+		}
+		return values;
+	});
 
 	const multiplier = sortOrder === 'asc' ? 1 : -1;
 
-	return [...cards].sort((a, b) => {
-		const aValues = sortValues.get(a.cardCode)!;
-		const bValues = sortValues.get(b.cardCode)!;
-
+	return entries.sort((a, b) => {
 		switch (sortBy) {
-			case 'sort-artist': return aValues.artist.localeCompare(bValues.artist) * multiplier;
-			case 'sort-id': return a.cardCode.localeCompare(b.cardCode) * multiplier;
-			case 'sort-name': return aValues.name.localeCompare(bValues.name) * multiplier;
-			case 'sort-price': return (aValues.price - bValues.price) * multiplier;
-			case 'sort-rarity': return (aValues.rarityLevel - bValues.rarityLevel) * multiplier;
-			case 'sort-release-date': return (aValues.releaseDate - bValues.releaseDate) * multiplier;
+			case 'sort-artist': return a.artist.localeCompare(b.artist) * multiplier;
+			case 'sort-id': return a.card.cardCode.localeCompare(b.card.cardCode) * multiplier;
+			case 'sort-name': return a.name.localeCompare(b.name) * multiplier;
+			case 'sort-price': return (a.price - b.price) * multiplier;
+			case 'sort-rarity': return (a.rarityLevel - b.rarityLevel) * multiplier;
+			case 'sort-release-date': return (a.releaseDate - b.releaseDate) * multiplier;
 		}
 
 		/** The default sort is by Pokédex number, with the non-Pokémon cards grouped by supertype at the end. */
-		if (aValues.isPokemon !== bValues.isPokemon) return aValues.isPokemon ? -1 : 1;
+		if (a.isPokemon !== b.isPokemon) return a.isPokemon ? -1 : 1;
 
-		if (!aValues.isPokemon) {
-			const aOrder = SUPERTYPE_ORDER[aValues.supertype] || 99;
-			const bOrder = SUPERTYPE_ORDER[bValues.supertype] || 99;
+		if (!a.isPokemon) {
+			const aOrder = SUPERTYPE_ORDER[a.supertype] || 99;
+			const bOrder = SUPERTYPE_ORDER[b.supertype] || 99;
 			if (aOrder !== bOrder) return aOrder - bOrder;
-			return a.name.localeCompare(b.name);
+			return a.card.name.localeCompare(b.card.name);
 		}
 
-		if (aValues.pokemonNumber !== bValues.pokemonNumber) return (aValues.pokemonNumber - bValues.pokemonNumber) * multiplier;
-		if (aValues.releaseDate !== bValues.releaseDate) return (aValues.releaseDate - bValues.releaseDate) * multiplier;
-		if (aValues.cardNumberInt && bValues.cardNumberInt) return (aValues.cardNumberInt - bValues.cardNumberInt) * multiplier;
-		return aValues.cardNumber.localeCompare(bValues.cardNumber) * multiplier;
-	});
+		if (a.pokemonNumber !== b.pokemonNumber) return (a.pokemonNumber - b.pokemonNumber) * multiplier;
+		if (a.releaseDate !== b.releaseDate) return (a.releaseDate - b.releaseDate) * multiplier;
+		if (a.cardNumberInt && b.cardNumberInt) return (a.cardNumberInt - b.cardNumberInt) * multiplier;
+		return a.cardNumber.localeCompare(b.cardNumber) * multiplier;
+	}).map(entry => entry.card);
 }
 
 /** An inactive filter skips its test. Filtering runs before the sort, so the sort and everything after it handle the smaller list. */
