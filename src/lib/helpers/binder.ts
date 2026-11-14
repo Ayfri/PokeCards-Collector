@@ -1,4 +1,4 @@
-import { isCardCode } from '#helpers/card-utils.ts';
+import { compareLocalIds, isCardCode } from '#helpers/card-utils.ts';
 import type { BinderCard } from '#lib/types.js';
 import { STORAGE_PREFIX } from '#stores/persisted.svelte.ts';
 
@@ -243,7 +243,6 @@ export function shiftSlots(pages: readonly BinderSheet[], at: SlotRef, size: num
 }
 
 /** One collator per order: `localeCompare` with a locale or options builds a new one on every call, which costs seconds on 21k cards. */
-export const compareLocalIds = new Intl.Collator('en', { numeric: true }).compare;
 const compareText = new Intl.Collator().compare;
 
 const COMPARATORS: Record<Exclude<BinderSort, 'natural'>, (a: BinderCard, b: BinderCard) => number> = {

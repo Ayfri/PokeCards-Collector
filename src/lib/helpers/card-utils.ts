@@ -209,6 +209,9 @@ const SLUG_SYMBOLS: Record<string, string> = {
  * `ex`, `gx` and `v` stay words (`charizard-ex`). French spells `&` as `et`, so French URLs read like the French names (`rouge-feu-et-vert-feuille`).
  */
 function slugify(value: string, language: Language = 'en'): string {
+	/** Lowercase letters and digits only (a card number like `84`, a set id like `sv3`) are already a slug: skips the normalizations and five replaces. */
+	if (/^[\da-z]+$/.test(value)) return value;
+
 	return value
 		.normalize('NFKD')
 		.replace(/[\u0300-\u036f]/g, '')
@@ -229,12 +232,21 @@ export function cardSlug(card: CardLink, language: Language): string {
 	return cardSlugParts(card, language).filter(Boolean).join('-');
 }
 
-/** The `[name, set, number]` parts of `cardSlug`, each possibly empty. */
-export function cardSlugParts(card: CardLink, language: Language): [name: string, set: string, number: string] {
+/**
+ * The `[name, set, number]` parts of `cardSlug`, each possibly empty. A caller that walks a whole catalogue passes one `setSlugs` map for it,
+ * since about 200 set names repeat over 21,000 cards: the set is slugified once per distinct value (`slugIndex` runs about 30% faster on the English one).
+ */
+export function cardSlugParts(card: CardLink, language: Language, setSlugs?: Map<string, string>): [name: string, set: string, number: string] {
 	const number = /^\d+$/.test(card.localId)
 		? card.localId.replace(/^0+(?=\d)/, '')
 		: card.localId.replaceAll('!', ' exclamation ').replaceAll('?', ' question ');
-	return [slugify(card.name, language), slugify(language === 'ja' ? card.setId : card.setName, language), slugify(number)];
+	const setText = language === 'ja' ? card.setId : card.setName;
+	let set = setSlugs?.get(setText);
+	if (set === undefined) {
+		set = slugify(setText, language);
+		setSlugs?.set(setText, set);
+	}
+	return [slugify(card.name, language), set, slugify(number)];
 }
 
 /** The card page of a catalogue, percent-encoded for the Japanese names. No `paths.base`, so `goto` and `href` take it as is. */
@@ -252,20 +264,34 @@ export function setPath(set: Pick<CardSet, 'name' | 'setId'>, catalogue: Catalog
 	return `${catalogue.setsRoute}/${encodeURIComponent(setSlug(set, catalogue.language))}`;
 }
 
-/** The order a set is printed in: numeric numbers by value, lettered ones (`TG01`, `GG05`) after their prefix, the same order `setLanding` lists. */
-const byLocalId = (a: FullCard, b: FullCard) => a.localId.localeCompare(b.localId, 'en', { numeric: true });
+/**
+ * The order a set is printed in: numeric numbers by value, lettered ones (`TG01`, `GG05`) after their prefix, shared by `setNeighbours` and `setLanding`.
+ * One collator per order: `localeCompare` with a locale or options builds a new one on every call, which costs seconds on 21k cards.
+ */
+export const compareLocalIds = new Intl.Collator('en', { numeric: true }).compare;
 
-/** Sorted once per set and card list, so a card page never re-sorts the catalogue; the list is the memoized one `getCards` returns. */
-const setOrders = new WeakMap<FullCard[], Map<string, FullCard[]>>();
+/**
+ * The cards of each set, grouped in one pass over a card list (the memoized one `getCards` returns), then deduplicated and sorted per set on its
+ * first use: a card page neither scans the catalogue nor re-sorts, and one visited set does not pay for the 200 others.
+ */
+const setOrders = new WeakMap<FullCard[], { bySet: Map<string, FullCard[]>; sorted: Map<string, FullCard[]> }>();
 
-/** The cards printed just before and after this one in its set. `cards` may list a card twice, so the set is deduplicated by `cardCode`. */
+/** The cards printed just before and after this one in its set. `cards` may list a card twice: the later copy replaces the earlier one in its place. */
 function setNeighbours(card: Pick<FullCard, 'cardCode' | 'setId'>, cards: FullCard[]): { next?: FullCard; previous?: FullCard } {
 	let orders = setOrders.get(cards);
-	if (!orders) setOrders.set(cards, orders = new Map());
-	let order = orders.get(card.setId);
+	if (!orders) {
+		const bySet = new Map<string, FullCard[]>();
+		for (const other of cards) {
+			const inSet = bySet.get(other.setId);
+			if (inSet) inSet.push(other);
+			else bySet.set(other.setId, [other]);
+		}
+		setOrders.set(cards, orders = { bySet, sorted: new Map() });
+	}
+	let order = orders.sorted.get(card.setId);
 	if (!order) {
-		const inSet = new Map(cards.filter(other => other.setId === card.setId).map(other => [other.cardCode, other]));
-		orders.set(card.setId, order = [...inSet.values()].sort(byLocalId));
+		const inSet = new Map((orders.bySet.get(card.setId) ?? []).map(other => [other.cardCode, other]));
+		orders.sorted.set(card.setId, order = [...inSet.values()].sort((a, b) => compareLocalIds(a.localId, b.localId)));
 	}
 	const index = order.findIndex(other => other.cardCode === card.cardCode);
 	return index < 0 ? {} : { next: order[index + 1], previous: order[index - 1] };

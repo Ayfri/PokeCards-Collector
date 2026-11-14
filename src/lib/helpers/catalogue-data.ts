@@ -166,13 +166,14 @@ function slugIndex(language: Language, cards: FullCard[]): SlugIndex {
 	if (known) return known;
 
 	const index: SlugIndex = { bySlug: new Map(), byTail: new Map() };
+	const setSlugs = new Map<string, string>();
 	let collisions = 0;
 
 	for (const card of cards) {
-		const slug = cardSlug(card, language);
-		if (keepLowest(index.bySlug, slug, card)) collisions++;
+		const parts = cardSlugParts(card, language, setSlugs);
+		if (keepLowest(index.bySlug, parts.filter(Boolean).join('-'), card)) collisions++;
 
-		const [, set, number] = cardSlugParts(card, language);
+		const [, set, number] = parts;
 		if (set && number) keepLowest(index.byTail, `${set}-${number}`, card);
 	}
 

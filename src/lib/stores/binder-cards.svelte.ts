@@ -1,5 +1,4 @@
-import { compareLocalIds } from '#helpers/binder.ts';
-import { isCardCode } from '#helpers/card-utils.ts';
+import { compareLocalIds, isCardCode } from '#helpers/card-utils.ts';
 import type { BinderCard, BinderCatalogueCard, BinderOwnedPayload, BinderSet, BinderTile } from '#lib/types.js';
 import { binder } from '#stores/binder.svelte.ts';
 
