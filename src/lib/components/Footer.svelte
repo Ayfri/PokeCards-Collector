@@ -40,7 +40,8 @@
 
 	const repositoryUrl = 'https://github.com/Ayfri/PokeCards-Collector';
 	const discordInviteUrl = 'https://discord.com/invite/7c7nzHqxJx';
-	const year = new Date().getFullYear();
+	/** The UTC year, so the server and a browser in another time zone print the same one around New Year. */
+	const year = new Date().getUTCFullYear();
 
 	const linkClass = 'group flex w-fit items-center gap-2 text-gray-300 transition-colors duration-200 hover:text-gold-400';
 	const iconClass = 'shrink-0 text-gold-400/70 transition-colors duration-200 group-hover:text-gold-400';

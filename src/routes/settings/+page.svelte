@@ -5,6 +5,7 @@
 	import Checkbox from '#components/filters/Checkbox.svelte';
 	import PageHeader from '#lib/components/PageHeader.svelte';
 	import {enhance} from '$app/forms';
+	import {formatDate} from '#helpers/format.ts';
 	import {supabase} from '#lib/supabase.ts';
 	import {flushSync} from 'svelte';
 	import {fade, fly} from 'svelte/transition';
@@ -48,9 +49,7 @@
 	/** Follows the stored value, and the checkbox overrides it until the save's reload brings the stored one back. */
 	let isPublic = $derived(profile?.is_public ?? false);
 	let savingVisibility = $state(false);
-	const memberSince = $derived(profile?.created_at
-		? new Date(profile.created_at).toLocaleDateString('en-US', {day: 'numeric', month: 'long', year: 'numeric'})
-		: null);
+	const memberSince = $derived(profile?.created_at ? formatDate(profile.created_at) : null);
 
 	/** The stored color overrides the local one whenever the server sends a fresh profile, so a save shows without a reload. */
 	let profileColor = $derived.by(() => {

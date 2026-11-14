@@ -2,7 +2,7 @@
 	import { refreshAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { cardPath } from '#helpers/card-utils.ts';
-	import { formatEuros, timeAgo } from '#helpers/format.ts';
+	import { formatDate, formatEuros, timeAgo } from '#helpers/format.ts';
 	import { compareRarities } from '#helpers/rarity.ts';
 	import { toggleProfileVisibility } from '#lib/services/profiles.ts';
 	import SetLogo from '#components/SetLogo.svelte';
@@ -157,7 +157,7 @@
 				<div class="min-w-0">
 					<h1 class="truncate text-3xl font-bold md:text-4xl">{username}</h1>
 					<div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-300">
-						<span class="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1" title={`Joined on ${new Date(targetProfile.created_at).toLocaleDateString()}`}>
+						<span class="flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1" title={`Joined on ${formatDate(targetProfile.created_at)}`}>
 							<CalendarDays size={12} />
 							Joined {timeAgo(targetProfile.created_at)}
 						</span>

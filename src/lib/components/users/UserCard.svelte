@@ -3,7 +3,7 @@
 	import Avatar from '#components/auth/Avatar.svelte';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
 	import LayersIcon from '@lucide/svelte/icons/layers';
-	import { timeAgo } from '#helpers/format.ts';
+	import { formatDate, timeAgo } from '#helpers/format.ts';
 
 	interface Props {
 		user: {
@@ -31,7 +31,7 @@
 				<LayersIcon size={14} />
 				{user.unique_card_count} unique card{user.unique_card_count !== 1 ? 's' : ''}
 			</p>
-			<p class="flex items-center justify-center gap-1.5 text-gray-400 text-xs" title={`Joined on ${new Date(user.created_at).toLocaleDateString()}`}>
+			<p class="flex items-center justify-center gap-1.5 text-gray-400 text-xs" title={`Joined on ${formatDate(user.created_at)}`}>
 				<CalendarDaysIcon size={12} />
 				Joined {timeAgo(user.created_at)}
 			</p>

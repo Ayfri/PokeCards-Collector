@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const landing = setLanding(set, cards, prices, catalogue);
 	const canonical = setPath(set, catalogue);
 	const total = setCardCount(set);
-	const released = set.releaseDate ? new Date(set.releaseDate).getFullYear() : null;
+	const released = set.releaseDate.getUTCFullYear();
 	const kind = routeCode ? `${adjective} Pokémon TCG` : 'Pokémon TCG';
 
 	return {
@@ -36,7 +36,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		canonical,
 		catalogueLanguage: language,
 		checklist: landing.checklist,
-		description: `Every card in the ${kind} set ${set.name}${set.series ? ` of the ${set.series} series` : ''}${released ? `, released in ${released}` : ''}${total ? `, ${total} cards in total` : ''}, with Cardmarket prices in euros.${landing.topCard}`,
+		description: `Every card in the ${kind} set ${set.name}${set.series ? ` of the ${set.series} series` : ''}, released in ${released}${total ? `, ${total} cards in total` : ''}, with Cardmarket prices in euros.${landing.topCard}`,
 		image: setShareImage(set, landing.value, catalogue),
 		keywords: [`${set.name} card list`, `${set.name} set`, `${set.name} card prices`, kind],
 		note: catalogue.note,

@@ -69,7 +69,7 @@ const aggregateArtists = (allCards: FullCard[], prices: Record<string, PriceData
 				const price = cardPrice(prices[card.cardCode]) ?? 0;
 				totalValue += price;
 
-				const year = setsById.get(card.setId)?.releaseDate.getFullYear();
+				const year = setsById.get(card.setId)?.releaseDate.getUTCFullYear();
 				if (year && !Number.isNaN(year)) {
 					if (year < firstReleaseYear) firstReleaseYear = year;
 					if (year > lastReleaseYear) lastReleaseYear = year;
