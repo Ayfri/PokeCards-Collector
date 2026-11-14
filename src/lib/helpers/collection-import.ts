@@ -248,12 +248,16 @@ export interface ImportLookups {
 export function resolveRows(rows: ImportRow[], catalogues: Record<Language, ImportLookups>, setOverride?: string): ImportResolution {
 	const matched = new Map<string, ImportMatch>();
 	const unmatched: ImportRow[] = [];
+	/** An import repeats a few hundred set names over thousands of rows, so each one is normalized once per catalogue. An empty set text stands for `setOverride`. */
+	const setKeyCache = new Map<string, string | undefined>();
 
 	const find = (language: Language, row: ImportRow) => {
 		const { index, setKeys } = catalogues[language];
 		/** A full card code needs no set, which is how this site's own export imports back. */
 		const direct = row.number.includes('_') ? index.get(`|${row.number.toLowerCase()}`) : undefined;
-		const setKey = row.set ? setNameForms(row.set).flatMap(form => [setKeys.get(normalize(form)), setKeys.get(tokenKey(form))]).find(Boolean) : setOverride && setKeys.get(normalize(setOverride));
+		const cacheKey = `${language}|${row.set}`;
+		if (!setKeyCache.has(cacheKey)) setKeyCache.set(cacheKey, row.set ? setNameForms(row.set).flatMap(form => [setKeys.get(normalize(form)), setKeys.get(tokenKey(form))]).find(Boolean) : setOverride && setKeys.get(normalize(setOverride)));
+		const setKey = setKeyCache.get(cacheKey);
 		return direct ?? (setKey ? numberForms(normalizeNumber(row.number)).map(number => index.get(`${setKey}|${number}`)).find(Boolean) : undefined);
 	};
 
