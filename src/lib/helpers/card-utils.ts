@@ -272,12 +272,15 @@ export const compareLocalIds = new Intl.Collator('en', { numeric: true }).compar
 
 /**
  * The cards of each set, grouped in one pass over a card list (the memoized one `getCards` returns), then deduplicated and sorted per set on its
- * first use: a card page neither scans the catalogue nor re-sorts, and one visited set does not pay for the 200 others.
+ * first use: a card or set page neither scans the catalogue nor re-sorts, and one visited set does not pay for the 200 others.
  */
 const setOrders = new WeakMap<FullCard[], { bySet: Map<string, FullCard[]>; sorted: Map<string, FullCard[]> }>();
 
-/** The cards printed just before and after this one in its set. `cards` may list a card twice: the later copy replaces the earlier one in its place. */
-function setNeighbours(card: Pick<FullCard, 'cardCode' | 'setId'>, cards: FullCard[]): { next?: FullCard; previous?: FullCard } {
+/**
+ * The cards of a set in the order it is printed in, memoized: a caller must not change the array. `cards` may list a card twice: the later copy
+ * replaces the earlier one in its place.
+ */
+export function setOrder(cards: FullCard[], setId: string): FullCard[] {
 	let orders = setOrders.get(cards);
 	if (!orders) {
 		const bySet = new Map<string, FullCard[]>();
@@ -288,11 +291,17 @@ function setNeighbours(card: Pick<FullCard, 'cardCode' | 'setId'>, cards: FullCa
 		}
 		setOrders.set(cards, orders = { bySet, sorted: new Map() });
 	}
-	let order = orders.sorted.get(card.setId);
+	let order = orders.sorted.get(setId);
 	if (!order) {
-		const inSet = new Map((orders.bySet.get(card.setId) ?? []).map(other => [other.cardCode, other]));
-		orders.sorted.set(card.setId, order = [...inSet.values()].sort((a, b) => compareLocalIds(a.localId, b.localId)));
+		const inSet = new Map((orders.bySet.get(setId) ?? []).map(other => [other.cardCode, other]));
+		orders.sorted.set(setId, order = [...inSet.values()].sort((a, b) => compareLocalIds(a.localId, b.localId)));
 	}
+	return order;
+}
+
+/** The cards printed just before and after this one in its set. */
+function setNeighbours(card: Pick<FullCard, 'cardCode' | 'setId'>, cards: FullCard[]): { next?: FullCard; previous?: FullCard } {
+	const order = setOrder(cards, card.setId);
 	const index = order.findIndex(other => other.cardCode === card.cardCode);
 	return index < 0 ? {} : { next: order[index + 1], previous: order[index - 1] };
 }

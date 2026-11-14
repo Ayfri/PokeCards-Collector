@@ -1,6 +1,6 @@
 import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
 import { type Catalogue, CATALOGUES } from '#helpers/catalogues.ts';
-import { cardPath, cardPrice, compareLocalIds, formatCardNumber, memoizedOn, setPath } from '#helpers/card-utils.ts';
+import { cardPath, cardPrice, formatCardNumber, memoizedOn, setOrder, setPath } from '#helpers/card-utils.ts';
 import { gzipJson } from '#helpers/catalogue-snapshot.ts';
 import { keepAlive } from '#helpers/data-cache.ts';
 import { cardListSchema, setSchema } from '#helpers/seo.ts';
@@ -41,7 +41,7 @@ interface TopCard {
  * It lives here rather than in `seo.ts`, which the `Seo` component ships to every browser.
  */
 export function setLanding(set: CardSet, cards: FullCard[], prices: Record<string, PriceData>, catalogue: Catalogue = CATALOGUES.en) {
-	const setCards = cards.filter(card => card.setId === set.setId).sort((a, b) => compareLocalIds(a.localId, b.localId));
+	const setCards = setOrder(cards, set.setId);
 	const priced = setCards.map(card => ({ card, price: cardPrice(prices[card.cardCode]) }));
 	/** An entry has no `path`: every card of the page shares its set, so `SetChecklist` builds each link from the entry and the set instead of the document carrying one per card. */
 	const checklist: ChecklistEntry[] = priced.map(({ card, price }) => ({ cardCode: card.cardCode, localId: card.localId, name: card.name, price }));
