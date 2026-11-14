@@ -170,7 +170,8 @@
 		{/snippet}
 	</PageHeader>
 
-	<div transition:fly={{ delay: 400, duration: 400, y: 50 }}>
+	<!-- Intro only: an outro at the root of a page keeps the whole list in the document while the next page transitions in below it. -->
+	<div in:fly={{ delay: 400, duration: 400, y: 50 }}>
 		{#each seriesKeys as series, index (series)}
 			{@const seriesSets = groupedTiles[series].flatMap(tile => tile.sets)}
 			<div class="mb-8">
