@@ -4,7 +4,7 @@ import type { PageServerLoad } from './$types';
 import { error, redirect } from '@sveltejs/kit';
 import { formatEuros } from '#helpers/format.ts';
 import { cardOgVersion, ogImage } from '#helpers/og-image.ts';
-import { cardPageData, cardPath, cardPrice, formatCardNumber, setNeighbourLinks, setPath, setsById } from '#helpers/card-utils.ts';
+import { cardPageData, cardPath, cardPrice, formatCardNumber, pokemonsById, setNeighbourLinks, setPath, setsById } from '#helpers/card-utils.ts';
 import { breadcrumbs, cardSchema } from '#helpers/seo.ts';
 
 export const load: PageServerLoad = async ({ locals, params }) => {
@@ -33,7 +33,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 		throw error(404, 'Card not found');
 	}
 
-	const pokemon = pokemons.find(p => p.id === card.pokemonNumber);
+	const pokemon = card.pokemonNumber ? pokemonsById(pokemons).get(card.pokemonNumber) : undefined;
 
 	const price = prices[card.cardCode];
 	const value = cardPrice(price);

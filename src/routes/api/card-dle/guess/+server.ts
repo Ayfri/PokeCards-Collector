@@ -1,11 +1,11 @@
 import type { RequestHandler } from './$types';
 import { cardPrice } from '#helpers/card-utils.ts';
 import { pickCardOfTheDay, utcDay } from '#helpers/card-dle.ts';
-import { getCards, getPrices } from '#helpers/catalogue-data.ts';
+import { getCardIndex, getCards, getPrices } from '#helpers/catalogue-data.ts';
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {
-		const [allCards, prices] = await Promise.all([getCards(), getPrices()]);
+		const [allCards, cardIndex, prices] = await Promise.all([getCards(), getCardIndex('en'), getPrices()]);
 		const date = utcDay();
 		const cardOfTheDay = pickCardOfTheDay(date, allCards, prices);
 
@@ -20,7 +20,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			return Response.json({ error: 'No card selected' }, { status: 400 });
 		}
 
-		const guessedCard = allCards.find(card => card.cardCode === guessedCardCode);
+		const guessedCard = cardIndex.get(guessedCardCode);
 		const guessedPrice = cardPrice(prices[guessedCardCode]);
 
 		if (!guessedCard || !guessedPrice) {

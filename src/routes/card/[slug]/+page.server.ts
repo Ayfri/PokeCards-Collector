@@ -3,7 +3,7 @@ import { findCardBySlug, getCardDetails, getCards, getCardVersions, getPokemons,
 import { CATALOGUES, type LanguagePaths } from '#helpers/catalogues.ts';
 import { formatEuros } from '#helpers/format.ts';
 import { cardOgVersion, ogImage } from '#helpers/og-image.ts';
-import { cardPageData, cardPath, cardPrice, formatCardNumber, setNeighbourLinks, setPath, setsById } from '#helpers/card-utils.ts';
+import { cardPageData, cardPath, cardPrice, formatCardNumber, pokemonsById, setNeighbourLinks, setPath, setsById } from '#helpers/card-utils.ts';
 import { article, breadcrumbs, cardSchema } from '#helpers/seo.ts';
 import type { Pokemon } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
@@ -34,7 +34,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 
 	let associatedPokemon: Pokemon | undefined;
 	if (targetCard.supertype?.toLowerCase() === 'pokémon' && targetCard.pokemonNumber) {
-		associatedPokemon = allPokemons.find(p => p.id === targetCard.pokemonNumber);
+		associatedPokemon = pokemonsById(allPokemons).get(targetCard.pokemonNumber);
 	}
 
 	const set = setsById(sets).get(targetCard.setId);

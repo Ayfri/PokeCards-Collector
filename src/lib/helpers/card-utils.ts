@@ -333,6 +333,7 @@ const groupMemo = new WeakMap<object, unknown>();
 const bestMemo = new WeakMap<object, unknown>();
 const setMemo = new WeakMap<object, unknown>();
 const valueMemo = new WeakMap<object, unknown>();
+const pokemonMemo = new WeakMap<object, unknown>();
 
 /**
  * The prints of each Pokémon, Trainer or Energy group (`cardGroupKey`), built once per card list. A card without a set name is not a print,
@@ -375,6 +376,10 @@ export function setsById(sets: CardSet[]): Map<string, CardSet> {
 	return memoizedOn(setMemo, [sets], () => new Map(sets.map(set => [set.setId, set])));
 }
 
+export function pokemonsById<T extends Pick<Pokemon, 'id'>>(pokemons: T[]): Map<number, T> {
+	return memoizedOn(pokemonMemo, [pokemons], () => new Map(pokemons.map(pokemon => [pokemon.id, pokemon])));
+}
+
 /** The value of each set in EUR, the `cardPrice()` of its cards summed in list order, built once per card and price table. A set with no price has no entry. */
 export function setValues(cards: Card[], prices: Record<string, PriceData>): Map<string, number> {
 	return memoizedOn(valueMemo, [cards, prices], () => {
@@ -412,7 +417,7 @@ export function cardPageData(language: Language, shown: FullCard, cards: FullCar
 	const ids = new Set<number>();
 	const pokemonNumber = shown.pokemonNumber;
 	if (pokemonNumber) {
-		const byId = new Map(pokemons.map(pokemon => [pokemon.id, pokemon]));
+		const byId = pokemonsById(pokemons);
 		const current = byId.get(pokemonNumber);
 		ids.add(pokemonNumber - 1).add(pokemonNumber).add(pokemonNumber + 1);
 
