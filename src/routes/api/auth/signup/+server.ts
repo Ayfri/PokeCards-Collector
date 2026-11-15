@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { PUBLIC_SUPABASE_URL } from '$app/env/public';
 import { SUPABASE_SECRET_KEY } from '$app/env/private';
 import { type ApiError, readJson } from '#helpers/utils.ts';
-import { isStrongPassword, normalizeUsername, PASSWORD_REQUIREMENTS, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
+import { isStrongPassword, normalizeUsername, PASSWORD_REQUIREMENTS, SUPABASE_DB_OPTIONS, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
 
 interface SignupBody {
 	email?: string;
@@ -66,7 +66,7 @@ export const POST: RequestHandler = async ({ request }) => {
 
 		let supabaseAdmin;
 		try {
-			supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey);
+			supabaseAdmin = createClient(supabaseUrl, supabaseSecretKey, { db: SUPABASE_DB_OPTIONS });
 		} catch (clientError) {
 			return Response.json({
 				error: 'Failed to initialize database connection',

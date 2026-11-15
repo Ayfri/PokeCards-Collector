@@ -7,6 +7,7 @@ import type { Handle } from '@sveltejs/kit/hooks';
 import { CACHE_ORIGIN, catalogueManifest, edgeCache, keepAlive } from '#helpers/data-cache.ts';
 import { getProfileByAuthId } from '#lib/services/profiles.ts';
 import type { UserProfile } from '#lib/types.js';
+import { SUPABASE_DB_OPTIONS } from '#src/constants.ts';
 
 /**
  * Routes whose HTML depends only on the path and the catalogue: their loads read no session, cookie, header, query string, clock or randomness,
@@ -98,6 +99,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 					authHeadersSet = true;
 				},
 			},
+			db: SUPABASE_DB_OPTIONS,
 		}),
 	});
 
@@ -121,12 +123,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.user = user;
 	event.locals.profile = profile;
 
-	const response = await resolve(event, {
-		filterSerializedResponseHeaders(name) {
-			/** The Supabase client reads `content-range` (row counts) from server-side fetches replayed in the browser, so it must pass this filter. */
-			return name === 'content-range' || name === 'x-supabase-api-version';
-		},
-	});
+	const response = await resolve(event);
 
 	if (cacheKey && response.status === 200 && !response.headers.has('set-cookie') && !response.headers.has('cache-control') && response.headers.get('content-type')?.startsWith('text/html')) {
 		const headers = new Headers(response.headers);

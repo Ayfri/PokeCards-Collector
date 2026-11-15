@@ -2,6 +2,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createBrowserClient } from '@supabase/ssr';
 import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$app/env/public';
 import { browser } from '$app/env';
+import { SUPABASE_DB_OPTIONS } from '#src/constants.ts';
 
 /**
  * Anonymous client, no session attached. It serves public user data (public profiles and the `owned_cards` function), never a catalogue
@@ -13,6 +14,7 @@ import { browser } from '$app/env';
  */
 export const supabase = createClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
 	auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false },
+	db: SUPABASE_DB_OPTIONS,
 });
 
 let browserClient: SupabaseClient | null = null;
@@ -27,6 +29,6 @@ export function getSupabaseBrowserClient(): SupabaseClient {
 		throw new Error('getSupabaseBrowserClient() is browser-only, server code must pass locals.supabase.');
 	}
 
-	browserClient ??= createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+	browserClient ??= createBrowserClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, { db: SUPABASE_DB_OPTIONS });
 	return browserClient;
 }

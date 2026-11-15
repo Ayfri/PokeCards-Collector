@@ -17,6 +17,12 @@ export const SITE_NAME = 'PokéCards-Collector';
 export const CARDTRADER_IMAGES = 'https://www.cardtrader.com/uploads/blueprints/image/';
 /** Credited as `twitter:site` / `twitter:creator`, which is what turns a shared link into an attributed X card. */
 export const SITE_TWITTER = '@ayfri_';
+/**
+ * The `db` option of every Supabase client. postgrest-js retries a failed GET up to three times with a 1 to 4 s backoff, and no read path retries (rule 11): a slow
+ * database turned those retries into a storm it never got out of. One attempt, then the failure reaches the page.
+ */
+export const SUPABASE_DB_OPTIONS = { retry: false };
+
 /** Copies of one card a collection holds at most. A collection stores one row per copy, so 99 copies of a card are 99 rows, written one at a time by `addCardToCollection` and in slices by the import. */
 export const MAX_CARD_QUANTITY = 99;
 
