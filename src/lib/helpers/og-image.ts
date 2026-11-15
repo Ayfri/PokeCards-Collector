@@ -6,7 +6,7 @@ export const OG_WIDTH = 1200;
 export const OG_HEIGHT = 630;
 
 /** Bumped whenever a layout in `og-render.ts` changes: it is part of the cache key of every share image, so they all render again after the next deploy. */
-export const OG_REVISION = 2;
+export const OG_REVISION = 3;
 
 /** The pages with an image of their own that only depends on the catalogue, keyed by the name `/og/page/<name>.jpg` takes. */
 export const OG_PAGES = ['artists', 'binder', 'card.dle', 'cards-list', 'france', 'guess-the-price', 'home', 'japan', 'pokemons', 'sets', 'trainers', 'users'] as const;

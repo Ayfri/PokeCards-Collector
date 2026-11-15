@@ -2,7 +2,7 @@ import { read } from '$app/server';
 import { env } from 'cloudflare:workers';
 import { render as renderComponent } from 'svelte/server';
 import { type ImageSource, render } from 'takumi-js';
-import { container, type FontSubset, googleFonts, image, type Node, text } from 'takumi-js/helpers';
+import { collectCodepoints, container, type FontSubset, googleFonts, image, type Node, text } from 'takumi-js/helpers';
 import CalendarDays from '@lucide/svelte/icons/calendar-days';
 import CircleEuro from '@lucide/svelte/icons/circle-euro';
 import Flame from '@lucide/svelte/icons/flame';
@@ -18,6 +18,7 @@ import Sparkles from '@lucide/svelte/icons/sparkles';
 import Users from '@lucide/svelte/icons/users';
 import Flag from '#components/Flag.svelte';
 import appCss from '#src/app.css?raw';
+import watermarkUrl from '#src/assets/og-watermark.png';
 import logoUrl from '#src/assets/pokecards-collector.png';
 import clashBold from '#src/fonts/ClashDisplay-Bold.ttf';
 import clashMedium from '#src/fonts/ClashDisplay-Medium.ttf';
@@ -85,9 +86,23 @@ interface RenderState {
 }
 
 /**
- * Clash Display only covers Latin, so Japanese names and symbols such as ♀ or ☆ fall back to Noto Sans JP. The CSS is read once per
- * isolate and lists ~120 `unicode-range` subsets, of which a render downloads only those its text uses. A failed or timed out read
- * renders without the fallback, which flags the render as incomplete since a Japanese name would be stored without its glyphs, and retries next time.
+ * The codepoints Clash Display draws, read from the cmap of its Medium, Semibold and Bold TTFs (identical in the three): hex ranges, a lone
+ * value being a range of one. Regenerate it if the font files change.
+ */
+const CLASH_RANGES = 'd,20-5f,61-7e,a0-a3,a5-a7,a9-ab,ad-ae,b0-b3,b6-b7,b9-137,139-148,14a-17e,192,1fc-1ff,218-21b,237,300-304,306-308,30a-30c,312,326-328,335,337-338,1e80-1e85,1ebc-1ebd,1ef2-1ef3,1ef8-1ef9,2013-2014,2018-201a,201c-201e,2020-2022,2026,2030,2039-203a,2044,2070,2074,20ac,20b9,2122,2212,2248,2260,2264-2265,fb00-fb04'
+	.split(',')
+	.map((range): [number, number] => {
+		const [from, to = from] = range.split('-').map(hex => Number.parseInt(hex, 16));
+		return [from, to];
+	});
+
+const inRanges = (codepoint: number, ranges: [number, number][]) => ranges.some(([from, to]) => codepoint >= from && codepoint <= to);
+
+/**
+ * Clash Display only covers Latin, so Japanese names and symbols such as ♀ or ☆ fall back to Noto Sans JP. A render whose text Clash Display
+ * draws entirely never calls this, which skips the Google Fonts CSS read (~38 ms on a cold isolate). The CSS is read once per isolate and
+ * lists ~120 `unicode-range` subsets, of which a render downloads only those its text uses. A failed or timed out read renders without the
+ * fallback, which flags a render that needs it as incomplete since a Japanese name would be stored without its glyphs, and retries next time.
  */
 function notoFonts(): Promise<FontSubset[]> {
 	return fallbackFonts ??= googleFonts({ families: [{ name: 'Noto Sans JP', weight: 700 }], timeout: FONT_TIMEOUT_MS }).catch((error: unknown) => {
@@ -97,18 +112,22 @@ function notoFonts(): Promise<FontSubset[]> {
 	});
 }
 
-let logoBytes: Promise<ArrayBuffer> | undefined;
+/** A Vite asset's `src` is a site-relative URL the renderer cannot fetch: its bytes are handed over under that same `src`, read once per isolate. */
+function assetSource(src: string) {
+	let bytes: Promise<ArrayBuffer> | undefined;
+	return {
+		cache: 'auto' as const,
+		/** A failed read is dropped, like `notoFonts`, so one bad read never breaks every later render of the isolate. */
+		data: () => bytes ??= read(src).arrayBuffer().catch((error: unknown) => {
+			bytes = undefined;
+			throw error;
+		}),
+		src,
+	};
+}
 
-/** The logo is a Vite asset, so its `src` is a site-relative URL the renderer cannot fetch: its bytes are handed over under that same `src`. */
-const logoSource = {
-	cache: 'auto' as const,
-	/** A failed read is dropped, like `notoFonts`, so one bad read never breaks every later render of the isolate. */
-	data: () => logoBytes ??= read(logoUrl).arrayBuffer().catch((error: unknown) => {
-		logoBytes = undefined;
-		throw error;
-	}),
-	src: logoUrl,
-};
+const logoSource = assetSource(logoUrl);
+const watermarkSource = assetSource(watermarkUrl);
 
 const MIRRORED_PREFIX = `${BASE_URL}/${SET_IMAGE_DIR}/`;
 
@@ -201,7 +220,8 @@ function canvas(width: number, content: Node[], visual: Node | ((room: number) =
 	const room = OG_WIDTH - width - 48;
 	return container({
 		children: [
-			image({ height: 504, src: logoUrl, style: { filter: 'grayscale(100%)', left: 320, opacity: 0.05, position: 'absolute', top: 100 }, width: 560 }),
+			/** The logo pre-rendered with the grayscale filter and 5% opacity, since filtering it on every render cost ~15 ms: render it again if the logo changes. */
+			image({ height: 504, src: watermarkUrl, style: { left: 320, position: 'absolute', top: 100 }, width: 560 }),
 			container({
 				children: [
 					container({ children: [image({ height: 45, src: logoUrl, width: 50 }), text({ text: SITE_NAME, tw: `text-[28px] font-semibold text-[${color('gray-300')}]` })], tw: 'flex items-center gap-3' }),
@@ -220,11 +240,11 @@ function canvas(width: number, content: Node[], visual: Node | ((room: number) =
 
 const cardShadow = '0 24px 48px rgb(0 0 0 / 0.7)';
 
-/** A straight scan with the site's card radius, `rounded-xl` scaled to the card. */
-const scan = (src: string, height: number): Node => image({
+/** A straight scan with the site's card radius, `rounded-xl` scaled to the card. Alone on the black page the shadow is invisible, so only overlapping cards draw it. */
+const scan = (src: string, height: number, boxShadow?: string): Node => image({
 	height,
 	src,
-	style: { borderRadius: Math.round(height * 0.035), boxShadow: cardShadow },
+	style: { borderRadius: Math.round(height * 0.035), boxShadow },
 	width: Math.round(height / CARD_RATIO),
 });
 
@@ -236,7 +256,7 @@ function trio(scans: string[], room: number): Node {
 	const step = width - overlap;
 	const order = scans.length === 3 ? [0, 2, 1] : scans.map((_, index) => index);
 	return container({
-		children: order.map(index => container({ children: [scan(scans[index], height)], style: { left: index * step, top: 0 }, tw: 'absolute flex' })),
+		children: order.map(index => container({ children: [scan(scans[index], height, cardShadow)], style: { left: index * step, top: 0 }, tw: 'absolute flex' })),
 		style: { height, width: width + step * (scans.length - 1) },
 		tw: 'relative flex',
 	});
@@ -259,8 +279,12 @@ const borrowsScan = (card: Card, language = card.language): boolean => language 
  * The card hero is drawn ~393x540 and the hidden-price card 500 px high, so they take `high` (TCGdex 600 px). The trio of the set, user and page
  * images is drawn at most 300 px wide, so it takes `low` (TCGdex 245 px, CardTrader `show_` 500 px). A CardTrader scan is `low` everywhere,
  * since its 868 px original costs ~2 MB decoded in a 128 MB isolate.
+ * A TCGdex scan is the PNG of the URL `processCardImage` gives as WebP: the renderer's WASM decodes the PNG ~27 ms faster for the 600 px hero
+ * (lossless WebP decoding is slow in takumi's WASM build), and `high.png` and `low.png` exist for every TCGdex scan (360 of 360 sampled across en, ja and fr).
  */
-const ogScan = (image: string, quality: ImageQuality): string => processCardImage(image, image.startsWith(CARDTRADER_IMAGES) ? 'low' : quality);
+const ogScan = (image: string, quality: ImageQuality): string => image.startsWith(CARDTRADER_IMAGES)
+	? processCardImage(image, 'low')
+	: processCardImage(image, quality).replace(/\.webp$/, '.png');
 
 /** The cards that have a scan, most valuable first. */
 function ranked(cards: Card[], prices: Record<string, PriceData>): Ranked[] {
@@ -499,7 +523,7 @@ function layout(target: OgTarget, state: RenderState): Promise<Node | null> {
 }
 
 interface OgRender {
-	/** False when a scan or the fallback font could not be fetched: the image is still served, but must not be cached. */
+	/** False when a scan, or the fallback font for a text Clash Display cannot draw, could not be fetched: the image is still served, but must not be cached. */
 	complete: boolean;
 	/** The 1200x630 JPEG. */
 	image: Uint8Array<ArrayBuffer>;
@@ -510,9 +534,16 @@ interface OgRender {
 /** The 1200x630 JPEG of `target`, or `null` when the card or set does not exist. */
 export async function renderOgImage(target: OgTarget): Promise<OgRender | null> {
 	const state: RenderState = { complete: true, scanless: false, sources: [] };
-	const [node, noto] = await Promise.all([layout(target, state), notoFonts()]);
+	const node = await layout(target, state);
 	if (!node) return null;
-	if (!noto.length) state.complete = false;
+
+	/**
+	 * `collectCodepoints` is deprecated since the renderer picks subsets itself, but handing it only the subsets the text needs spares ~8 ms of
+	 * matching every descriptor, and the Google Fonts CSS read (~38 ms on a cold isolate) when Clash Display draws all of it.
+	 */
+	const missing = [...collectCodepoints(node)].filter(codepoint => !inRanges(codepoint, CLASH_RANGES));
+	const noto = missing.length ? await notoFonts() : [];
+	if (missing.length && !noto.length) state.complete = false;
 
 	/**
 	 * The card hero and the logos the renderer fetches itself: a cached image would keep a blank card for 30 days, so a network error, a timeout
@@ -537,7 +568,7 @@ export async function renderOgImage(target: OgTarget): Promise<OgRender | null> 
 		/** "from-font" keeps the renderer from fetching Twemoji images for characters like ☆, which Noto Sans JP draws. */
 		emoji: 'from-font',
 		fontFamilies: FONT_FAMILIES,
-		fonts: [...CLASH_FONTS, ...noto],
+		fonts: [...CLASH_FONTS, ...noto.filter(({ unicodeRange }) => !unicodeRange.length || missing.some(codepoint => inRanges(codepoint, unicodeRange)))],
 		/**
 		 * JPEG at quality 85, measured on the WASM build over 30 interleaved renders: 103 ms and 160 kB, against 125 ms and 491 kB for PNG.
 		 * WASM WebP is lossless only (452 kB, no smaller than PNG), so JPEG is the only lossy format the Worker has.
@@ -549,7 +580,7 @@ export async function renderOgImage(target: OgTarget): Promise<OgRender | null> 
 		 * default cache would fill on a crawler burst inside the 128 MB isolate that also holds the catalogue memos, so only the logo stays.
 		 * The trio scans are in `sources`, matched by URL before any fetch.
 		 */
-		images: { cache: 'none', fetch: fetchImage, sources: [logoSource, ...state.sources], throwOnError: false },
+		images: { cache: 'none', fetch: fetchImage, sources: [logoSource, watermarkSource, ...state.sources], throwOnError: false },
 		quality: 85,
 		width: OG_WIDTH,
 	});
