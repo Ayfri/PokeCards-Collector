@@ -1,12 +1,12 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { PokemonListEntry } from './+page.server';
-	import { formatEuros, pluralize, titleCase } from '#helpers/format.ts';
+	import { pluralize, roundedEuros, titleCase } from '#helpers/format.ts';
 	import GroupHeading from '#components/list/GroupHeading.svelte';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import PageHeader, { type PageStat } from '#components/PageHeader.svelte';
-	import ScrollButton from '#components/list/ScrollButton.svelte';
+	import ScrollButtons from '#components/list/ScrollButtons.svelte';
 	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
 	import Chip from '#components/filters/Chip.svelte';
 	import FilterBar from '#components/filters/FilterBar.svelte';
@@ -45,9 +45,6 @@
 		psychic: '[--glow:var(--psychic)]',
 		water: '[--glow:var(--water)]',
 	};
-
-	/** Totals reach five figures, so cents are noise and are dropped from 100 EUR up. */
-	const euros = (value: number) => formatEuros(value, value >= 100 ? 0 : 2);
 
 	const COMPARATORS: Record<string, (a: PokemonListEntry, b: PokemonListEntry) => number> = {
 		cardCount: (a, b) => a.cardCount - b.cardCount,
@@ -119,11 +116,7 @@
 		}
 		return sortOrder === 'asc' ? buckets : buckets.reverse();
 	});
-
-	let scrollY = $state(0);
 </script>
-
-<svelte:window bind:scrollY />
 
 <div class="container mx-auto px-4 pb-8 text-white">
 	<PageHeader
@@ -231,7 +224,7 @@
 					{owned ? `${owned} / ` : ''}{pokemon.cardCount} card{pokemon.cardCount === 1 ? '' : 's'}
 				</span>
 				{#if pokemon.price}
-					<span class="text-xs font-semibold text-green-400">{euros(pokemon.price)}</span>
+					<span class="text-xs font-semibold text-green-400">{roundedEuros(pokemon.price)}</span>
 				{/if}
 				{#if owned}
 					<span class="absolute inset-x-0 bottom-0 h-0.5 bg-white/10" title="{owned} of {pokemon.cardCount} cards in your collection"><span class="block h-full bg-gold-400" style="width: {(owned / pokemon.cardCount) * 100}%"></span></span>
@@ -243,5 +236,4 @@
 	{/each}
 </div>
 
-<ScrollButton direction="up" onclick={() => window.scrollTo({ behavior: 'smooth', top: 0 })} visible={scrollY > 100} />
-<ScrollButton direction="down" onclick={() => window.scrollTo({ behavior: 'smooth', top: document.documentElement.scrollHeight })} />
+<ScrollButtons />

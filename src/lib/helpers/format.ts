@@ -56,3 +56,8 @@ export function formatEuros(value: number, fractionDigits = 2): string {
 	if (!formatter) euroFormatters.set(fractionDigits, formatter = new Intl.NumberFormat('en-US', { maximumFractionDigits: fractionDigits, minimumFractionDigits: fractionDigits }));
 	return `${formatter.format(value)} €`;
 }
+
+/** An amount for totals that reach five figures, so cents are noise and are dropped from 100 EUR up. */
+export function roundedEuros(value: number): string {
+	return formatEuros(value, value >= 100 ? 0 : 2);
+}

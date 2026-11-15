@@ -1,12 +1,13 @@
 <script lang="ts">
-	import BouncyLoader from '../BouncyLoader.svelte';
-	import PasswordField from './PasswordField.svelte';
+	import BouncyLoader from '#components/BouncyLoader.svelte';
+	import PasswordField from '#components/auth/PasswordField.svelte';
 	import { type ApiError, finishSignIn, readJson } from '#helpers/utils.ts';
 	import { isStrongPassword, normalizeUsername, PASSWORD_REQUIREMENTS, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
 
 	interface Props {
 		onSuccess?: () => void;
-		onSwitch?: (tab: 'login' | 'register') => void;
+		/** `message` is handed to the form the visitor lands on, since this one unmounts. */
+		onSwitch?: (tab: 'login' | 'register', message?: string) => void;
 	}
 
 	let { onSuccess, onSwitch }: Props = $props();
@@ -93,8 +94,7 @@
 			if (!loginResponse.ok) {
 				console.error('Automatic sign in failed after signup:', loginResponse.status);
 				const errorData = await readJson<ApiError>(loginResponse, {});
-				errorMessage = `Registration successful, but automatic login failed. ${errorData.message || 'Please log in manually.'}`;
-				onSwitch?.('login');
+				onSwitch?.('login', `Registration successful, but automatic login failed. ${errorData.message || 'Please log in manually.'}`);
 				return;
 			}
 

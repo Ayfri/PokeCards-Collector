@@ -32,7 +32,7 @@
 		cards,
 		lowRes = false,
 		onCardSelect,
-		pokemon = undefined,
+		pokemon,
 		pokemons,
 		prices,
 		sets

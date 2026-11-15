@@ -1,19 +1,21 @@
 <script lang="ts">
-	import { supabase } from '../../supabase';
-	import BouncyLoader from '../BouncyLoader.svelte';
-	import PasswordField from './PasswordField.svelte';
+	import BouncyLoader from '#components/BouncyLoader.svelte';
+	import PasswordField from '#components/auth/PasswordField.svelte';
 	import { type ApiError, finishSignIn, readJson } from '#helpers/utils.ts';
+	import { supabase } from '#lib/supabase.ts';
 
 	interface Props {
+		/** Shown in the error banner when the form opens, for what happened before the visitor landed here (a registration whose automatic login failed). */
+		initialError?: string;
 		onSuccess?: () => void;
 	}
 
-	let { onSuccess }: Props = $props();
+	let { initialError = '', onSuccess }: Props = $props();
 
 	let email = $state('');
 	let password = $state('');
 	let loading = $state(false);
-	let errorMessage = $state('');
+	let errorMessage = $derived(initialError);
 	let showReset = $state(false);
 	let resetEmail = $state('');
 	let resetLoading = $state(false);

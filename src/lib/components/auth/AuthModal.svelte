@@ -19,9 +19,16 @@
 	let { initialMode = 'login', onClose, open = $bindable(false) }: Props = $props();
 
 	let activeTab = $state<Tab>('login');
+	/** Handed to the login form, which a failed automatic login after a registration lands on. */
+	let notice = $state('');
+
+	function selectTab(tab: Tab, message = '') {
+		activeTab = tab;
+		notice = message;
+	}
 
 	$effect(() => {
-		if (open) activeTab = initialMode;
+		if (open) selectTab(initialMode);
 	});
 
 	function closeModal() {
@@ -38,7 +45,7 @@
 					'flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors focus-ring',
 					activeTab === tab.id ? 'bg-gold-400/15 text-gold-400' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
 				]}
-				onclick={() => (activeTab = tab.id)}
+				onclick={() => selectTab(tab.id)}
 				type="button"
 			>
 				{tab.label}
@@ -46,8 +53,8 @@
 		{/each}
 	</div>
 	{#if activeTab === 'login'}
-		<LoginForm onSuccess={closeModal} />
+		<LoginForm initialError={notice} onSuccess={closeModal} />
 	{:else}
-		<RegisterForm onSuccess={closeModal} onSwitch={tab => (activeTab = tab)} />
+		<RegisterForm onSuccess={closeModal} onSwitch={selectTab} />
 	{/if}
 </Modal>

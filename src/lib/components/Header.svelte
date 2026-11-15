@@ -38,9 +38,11 @@
 		flag?: Language;
 		href?: string;
 		icon: LucideIcon | null;
-		isDropdown?: boolean;
 		name: string;
 	}
+
+	/** The underline of a desktop link grows from its centre on hover. */
+	const NAV_LINK = 'relative flex items-center text-gray-400 transition-colors duration-200 hover:text-gold-400 after:absolute after:-bottom-1 after:left-0 after:h-0.5 after:w-full after:scale-x-0 after:bg-gold-400 after:transition-transform after:duration-300 after:ease-[ease] hover:after:scale-x-100';
 
 	const navLinks: NavLink[] = [
 		{ description: 'PokéCards-Collector home', href: '/', icon: null, name: 'PCC' },
@@ -57,7 +59,6 @@
 			],
 			description: 'Browse the card database',
 			icon: SearchIcon,
-			isDropdown: true,
 			name: 'Browse'
 		},
 		{
@@ -67,7 +68,6 @@
 			],
 			description: 'Daily card games',
 			icon: GamepadIcon,
-			isDropdown: true,
 			name: 'Games'
 		},
 		{ description: 'Lay out a digital binder page', href: '/binder', icon: BinderIcon, name: 'Binder' },
@@ -112,6 +112,14 @@
 	</svg>
 {/snippet}
 
+{#snippet navIcon(item: { flag?: Language; icon: LucideIcon | null }, size: number, flagClass?: string)}
+	{#if item.flag}
+		<Flag class={flagClass} language={item.flag} />
+	{:else if item.icon}
+		<item.icon {size} />
+	{/if}
+{/snippet}
+
 {#snippet logo(className: string)}
 	{#if !NO_IMAGES}
 		<img alt="PokéCards-Collector Logo" class={['object-contain aspect-square', className]} loading="eager" src={pokecardsCollector} />
@@ -153,21 +161,19 @@
 		<nav class="hidden lg:flex items-center gap-4">
 			{#each navLinks as link (link.name)}
 				{#if link.href === '/'}
-					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2" href={link.href} title={link.description}>
+					<a class={[NAV_LINK, 'gap-2']} href={link.href} title={link.description}>
 						{@render logo('h-10 w-10')}
 						<span class="font-bold text-lg">{link.name}</span>
 					</a>
-				{:else if link.isDropdown && link.children}
+				{:else if link.children}
 					<div class="relative">
 						<button
 							aria-expanded={openDropdown === link.name}
-							class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1"
+							class={[NAV_LINK, 'gap-1']}
 							onclick={event => { event.stopPropagation(); toggleDropdown(link.name); }}
 							title={link.description}
 						>
-							{#if !NO_IMAGES && link.icon}
-								<link.icon size={16} />
-							{/if}
+							{@render navIcon(link, 16)}
 							{link.name}
 							<ChevronDownIcon class="transition-transform duration-200 {openDropdown === link.name ? 'rotate-180' : ''}" size={14} />
 						</button>
@@ -183,11 +189,7 @@
 										href={child.href}
 										title={child.description}
 									>
-										{#if child.flag}
-											<Flag class="h-[11px] w-4 shrink-0 rounded-[2px]" language={child.flag} />
-										{:else if !NO_IMAGES && child.icon}
-											<child.icon size={16} />
-										{/if}
+										{@render navIcon(child, 16, 'h-[11px] w-4 shrink-0 rounded-[2px]')}
 										{child.name}
 									</a>
 								{/each}
@@ -195,10 +197,8 @@
 						{/if}
 					</div>
 				{:else}
-					<a class="nav-link text-gray-400 hover:text-gold-400 transition-colors duration-200 flex items-center gap-1" href={link.href} title={link.description}>
-						{#if !NO_IMAGES && link.icon}
-							<link.icon size={16} />
-						{/if}
+					<a class={[NAV_LINK, 'gap-1']} href={link.href} title={link.description}>
+						{@render navIcon(link, 16)}
 						{link.name}
 					</a>
 				{/if}
@@ -235,30 +235,22 @@
 							{@render logo('h-7 w-7')}
 							<span class="font-bold text-lg">{link.name}</span>
 						</a>
-					{:else if link.isDropdown && link.children}
+					{:else if link.children}
 						<div class="border-t border-gray-700 pt-2 mt-1">
 							<div class="flex items-center gap-2 px-2 py-1 text-gray-400 text-sm font-semibold">
-								{#if !NO_IMAGES && link.icon}
-									<link.icon size={16} />
-								{/if}
+								{@render navIcon(link, 16)}
 								{link.name}
 							</div>
 							{#each link.children as child (child.name)}
 								<a class="text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 pl-6 rounded-sm hover:bg-gray-600" href={child.href} title={child.description}>
-									{#if child.flag}
-										<Flag class="h-3 w-[18px] shrink-0 rounded-[2px]" language={child.flag} />
-									{:else if !NO_IMAGES && child.icon}
-										<child.icon size={18} />
-									{/if}
+									{@render navIcon(child, 18, 'h-3 w-[18px] shrink-0 rounded-[2px]')}
 									{child.name}
 								</a>
 							{/each}
 						</div>
 					{:else}
 						<a class="text-gray-300 hover:text-gold-400 transition-colors duration-200 flex items-center gap-2 p-2 rounded-sm hover:bg-gray-600" href={link.href} title={link.description}>
-							{#if !NO_IMAGES && link.icon}
-								<link.icon size={20} />
-							{/if}
+							{@render navIcon(link, 20)}
 							{link.name}
 						</a>
 					{/if}
@@ -267,25 +259,3 @@
 		</div>
 	{/if}
 </header>
-
-<style>
-	.nav-link {
-		position: relative;
-	}
-
-	.nav-link::after {
-		background-color: var(--color-gold-400);
-		bottom: -4px;
-		content: '';
-		height: 2px;
-		left: 0;
-		position: absolute;
-		transform: scaleX(0);
-		transition: transform 0.3s ease;
-		width: 100%;
-	}
-
-	.nav-link:hover::after {
-		transform: scaleX(1);
-	}
-</style>

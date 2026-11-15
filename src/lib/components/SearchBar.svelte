@@ -25,7 +25,7 @@
 
 	let {
 		mobileMode = false,
-		onClose = undefined
+		onClose
 	}: Props = $props();
 
 	let inputElement = $state<HTMLInputElement>();

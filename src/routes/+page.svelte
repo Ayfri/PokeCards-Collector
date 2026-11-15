@@ -8,7 +8,7 @@
 	import { cardPath, setPath } from '#helpers/card-utils.ts';
 	import { CATALOGUES } from '#helpers/catalogues.ts';
 	import { formatDate, formatEuros } from '#helpers/format.ts';
-	import { NO_IMAGES } from '#helpers/card-images.ts';
+	import type { LucideIcon } from '@lucide/svelte';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 	import GiftIcon from '@lucide/svelte/icons/gift';
@@ -33,6 +33,16 @@
 		data: PageData;
 	}
 
+	interface Feature {
+		/** What a signed-out visitor gets in place of the link: a button that opens the auth modal. */
+		auth?: { label: string; mode: 'login' | 'register'; title: string };
+		description: string;
+		href: string;
+		icon: LucideIcon;
+		link: string;
+		name: string;
+	}
+
 	let { data }: Props = $props();
 
 	const tiles = $derived([
@@ -52,7 +62,37 @@
 
 	const latestSetPath = $derived(data.latestSet ? setPath(data.latestSet, CATALOGUES.en) : '/sets');
 
-	const FEATURE_CARD_CLASS = 'card-tile p-6';
+	const setStats = $derived([
+		{ duration: 3, end: data.latestSetStats.pokemonCards, label: 'Pokémon Cards' },
+		{ duration: 2, end: data.latestSetStats.trainerCards, label: 'Trainer Cards' },
+		{ duration: 2, end: data.latestSetStats.energyCards, label: 'Energy Cards' },
+	]);
+
+	const FEATURES: Feature[] = [
+		{
+			auth: { label: 'Log in to manage your collection', mode: 'login', title: 'Sign in to track your collection' },
+			description: 'Keep track of every card you own, organized by set and rarity.',
+			href: '/collection',
+			icon: BookOpenCheckIcon,
+			link: 'My Collection',
+			name: 'Manage Collection'
+		},
+		{
+			auth: { label: 'Log in to build your wishlist', mode: 'register', title: 'Create an account to build a wishlist' },
+			description: 'Curate a list of cards you desire to complete your collection goals.',
+			href: '/wishlist',
+			icon: HeartIcon,
+			link: 'My Wishlist',
+			name: 'Build Wishlist'
+		},
+		{
+			description: 'Easily search and filter through thousands of cards and sets.',
+			href: '/cards-list',
+			icon: SearchIcon,
+			link: 'Find Cards',
+			name: 'Explore & Search'
+		}
+	];
 
 	const GAMES = [
 		{
@@ -87,36 +127,21 @@
 
 {#snippet valuableCards(title: string, href: string, cards: PageData['mostExpensiveCards'])}
 	{#if cards.length > 0}
-		<section
-			class="mb-20"
-			style="--intro-delay: 300ms"
-		>
+		<section class="mb-20" style="--intro-delay: 300ms">
 			<div class="flex justify-between items-center mb-8">
-				<h2
-					class="text-xl md:text-2xl font-bold text-gold-400 flex items-center gap-2"
-				>
-					{#if !NO_IMAGES}
-						<Tag size={24} />
-					{/if}
+				<h2 class="text-xl md:text-2xl font-bold text-gold-400 flex items-center gap-2">
+					<Tag size={24} />
 					{title}
 				</h2>
-				<a
-					class="text-gold-400 hover:underline flex items-center gap-1 group"
-					{href}
-				>
+				<a class="text-gold-400 hover:underline flex items-center gap-1 group" {href}>
 					View all cards
-					<ArrowRight
-						class="group-hover:translate-x-1 transition-all duration-300"
-						size={16}
-					/>
+					<ArrowRight class="group-hover:translate-x-1 transition-all duration-300" size={16} />
 				</a>
 			</div>
 
 			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
 				{#each cards as card, i (card.cardCode)}
-					<div
-						class="card-tile overflow-hidden flex flex-col"
-					>
+					<div class="card-tile overflow-hidden flex flex-col">
 						<a class="block" href={cardPath('en', card)}>
 							<div class="relative pt-[140%]">
 								<CardImage
@@ -169,15 +194,13 @@
 						href={tile.href}
 						title={tile.title}
 					>
-						{#if !NO_IMAGES}
-							<div class="flex h-6 items-center justify-center mb-2">
-								{#if tile.language}
-									<Flag class="h-5 w-7.5 rounded-xs ring-1 ring-white/20" language={tile.language} />
-								{:else if tile.icon}
-									<tile.icon class="text-gold-400" size={24} />
-								{/if}
-							</div>
-						{/if}
+						<div class="flex h-6 items-center justify-center mb-2">
+							{#if tile.language}
+								<Flag class="h-5 w-7.5 rounded-xs ring-1 ring-white/20" language={tile.language} />
+							{:else if tile.icon}
+								<tile.icon class="text-gold-400" size={24} />
+							{/if}
+						</div>
 						<div class="flex items-center justify-center w-full">
 							<ChevronRight class="text-gold-400 shrink-0 mr-1 animate-bounce-right" size={12} />
 							<span class="text-xl md:text-2xl font-bold text-gold-400">
@@ -191,15 +214,9 @@
 			</div>
 
 			<div class="flex flex-wrap gap-4 mb-10 md:mb-0">
-				<a
-					class="btn-gold group"
-					href="/cards-list"
-				>
+				<a class="btn-gold group" href="/cards-list">
 					Explore Cards
-					<ArrowRight
-						class="group-hover:translate-x-1 transition-all duration-300"
-						size={18}
-					/>
+					<ArrowRight class="group-hover:translate-x-1 transition-all duration-300" size={18} />
 				</a>
 			</div>
 		</div>
@@ -207,10 +224,7 @@
 		<div class="flex-1 flex flex-col justify-center items-center gap-3 mt-8 lg:mt-0">
 			{#if data.latestSet}
 				<h2 class="text-lg font-semibold uppercase tracking-[0.2em] text-gold-400">Latest set</h2>
-				<a
-					class="relative w-full max-w-lg transform transition-all duration-300 hover:scale-105 block"
-					href={latestSetPath}
-				>
+				<a class="relative w-full max-w-lg transform transition-all duration-300 hover:scale-105 block" href={latestSetPath}>
 					<SetLogo class="w-[95%] mb-2 object-contain mx-auto rounded-lg shadow-md" set={data.latestSet}>
 						{#snippet fallback()}
 							<div class="w-[95%] aspect-3/1 mb-2 mx-auto rounded-lg bg-gray-800 flex items-start justify-center pt-6">
@@ -218,17 +232,11 @@
 							</div>
 						{/snippet}
 					</SetLogo>
-					<div
-						class="absolute bottom-0 left-0 right-0 bg-linear-to-t from-gray-900/90 via-gray-900/50 to-transparent p-4 rounded-b-2xl"
-					>
-						<h3
-							class="text-xl font-bold text-gold-400 w-fit drop-shadow-[0_0_7px_black]"
-						>
+					<div class="absolute bottom-0 left-0 right-0 bg-linear-to-t from-gray-900/90 via-gray-900/50 to-transparent p-4 rounded-b-2xl">
+						<h3 class="text-xl font-bold text-gold-400 w-fit drop-shadow-[0_0_7px_black]">
 							{data.latestSet.name}
 						</h3>
-						<p
-							class="text-sm text-gray-300 w-fit drop-shadow-[0_0_7px_black]"
-						>
+						<p class="text-sm text-gray-300 w-fit drop-shadow-[0_0_7px_black]">
 							Released on {formatDate(data.latestSet.releaseDate)}
 						</p>
 					</div>
@@ -237,46 +245,25 @@
 		</div>
 	</section>
 
-	<div
-		class="gold-rule my-16"
-	></div>
+	<div class="gold-rule my-16"></div>
 
 	{#if data.latestSet}
-		<section
-			class="mb-20"
-			style="--intro-delay: 200ms"
-		>
-			<div
-				class="flex flex-col sm:flex-row justify-between items-center mb-8"
-			>
-				<a
-					class="text-gold-400 hover:text-gold-300 transition-colors"
-					href={latestSetPath}
-				>
+		<section class="mb-20" style="--intro-delay: 200ms">
+			<div class="flex flex-col sm:flex-row justify-between items-center mb-8">
+				<a class="text-gold-400 hover:text-gold-300 transition-colors" href={latestSetPath}>
 					<h2 class="text-xl md:text-2xl font-bold flex items-center gap-2">
-						{#if !NO_IMAGES}
-							<GiftIcon size={24} />
-						{/if}
+						<GiftIcon size={24} />
 						Latest Set: {data.latestSet.name}
 					</h2>
 				</a>
-				<a
-					class="text-gold-400 hover:underline flex items-center gap-1 group"
-					href={latestSetPath}
-				>
+				<a class="text-gold-400 hover:underline flex items-center gap-1 group" href={latestSetPath}>
 					View all cards in this set
-					<ArrowRight
-						class="group-hover:translate-x-1 transition-all duration-300"
-						size={16}
-					/>
+					<ArrowRight class="group-hover:translate-x-1 transition-all duration-300" size={16} />
 				</a>
 			</div>
 
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-				<a
-					class="card-tile block p-6"
-					href={latestSetPath}
-				>
+				<a class="card-tile block p-6" href={latestSetPath}>
 					<div class="flex flex-col sm:flex-row gap-6 items-center">
 						<SetLogo class="w-32 h-32 object-contain" set={data.latestSet}>
 							{#snippet fallback()}
@@ -295,16 +282,12 @@
 								{formatDate(data.latestSet.releaseDate)}
 							</p>
 							<p class="text-gray-300 mb-1">
-								<span class="text-gray-400"
-									>Number of Cards:</span
-								>
+								<span class="text-gray-400">Number of Cards:</span>
 								{data.latestSet.printedTotal}
 							</p>
 							{#if data.latestSet.ptcgoCode}
 								<p class="text-gray-300 mb-1">
-									<span class="text-gray-400"
-										>PTCGO Code:</span
-									>
+									<span class="text-gray-400">PTCGO Code:</span>
 									{data.latestSet.ptcgoCode}
 								</p>
 							{/if}
@@ -318,46 +301,21 @@
 					</div>
 				</a>
 
-				<div
-					class="block bg-gray-800 p-6 rounded-lg shadow-lg transition-colors border border-transparent"
-				>
-					<h3
-						class="text-xl font-bold text-gold-400 mb-4 flex items-center gap-2"
-					>
-						{#if !NO_IMAGES}
-							<ChartIcon class="text-gold-400" size={20} />
-						{/if}
+				<div class="block bg-gray-800 p-6 rounded-lg shadow-lg transition-colors border border-transparent">
+					<h3 class="text-xl font-bold text-gold-400 mb-4 flex items-center gap-2">
+						<ChartIcon class="text-gold-400" size={20} />
 						Set Statistics
 					</h3>
 
 					<div class="grid grid-cols-3 gap-4 mb-4">
-						<div class="bg-gray-700 p-3 rounded-sm text-center">
-							<p class="text-lg font-bold text-gold-400">
-								<CountUp
-									duration={3}
-									end={data.latestSetStats.pokemonCards}
-								/>
-							</p>
-							<p class="text-xs text-gray-300">Pokémon Cards</p>
-						</div>
-						<div class="bg-gray-700 p-3 rounded-sm text-center">
-							<p class="text-lg font-bold text-gold-400">
-								<CountUp
-									duration={2}
-									end={data.latestSetStats.trainerCards}
-								/>
-							</p>
-							<p class="text-xs text-gray-300">Trainer Cards</p>
-						</div>
-						<div class="bg-gray-700 p-3 rounded-sm text-center">
-							<p class="text-lg font-bold text-gold-400">
-								<CountUp
-									duration={2}
-									end={data.latestSetStats.energyCards}
-								/>
-							</p>
-							<p class="text-xs text-gray-300">Energy Cards</p>
-						</div>
+						{#each setStats as stat (stat.label)}
+							<div class="bg-gray-700 p-3 rounded-sm text-center">
+								<p class="text-lg font-bold text-gold-400">
+									<CountUp duration={stat.duration} end={stat.end} />
+								</p>
+								<p class="text-xs text-gray-300">{stat.label}</p>
+							</div>
+						{/each}
 					</div>
 
 					<div>
@@ -377,167 +335,70 @@
 		</section>
 	{/if}
 
-	<div
-		class="gold-rule my-12"
-	></div>
+	<div class="gold-rule my-12"></div>
 
 	{#if data.latestSet}
 		{@render valuableCards(`Most Valuable Cards in ${data.latestSet.name}`, latestSetPath, data.mostExpensiveLatestSetCards)}
 	{/if}
 	{@render valuableCards('Most Valuable Cards', '/cards-list?mostexpensive=true&sortby=sort-price', data.mostExpensiveCards)}
 
-	<div
-		class="gold-rule my-20"
-	></div>
+	<div class="gold-rule my-20"></div>
 
-	<section
-		class="mb-20"
-		style="--intro-delay: 400ms"
-	>
-		<h2
-			class="text-xl md:text-2xl font-bold text-center text-gold-400 mb-12"
-		>
+	<section class="mb-20" style="--intro-delay: 400ms">
+		<h2 class="text-xl md:text-2xl font-bold text-center text-gold-400 mb-12">
 			Discover PokéCards-Collector Features
 		</h2>
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-			<div class={FEATURE_CARD_CLASS}>
-				{#if !NO_IMAGES}
+			{#each FEATURES as feature (feature.name)}
+				{@const auth = feature.auth}
+				<div class="card-tile p-6">
 					<div class="flex justify-center mb-4">
-						<BookOpenCheckIcon
-							class="text-gold-400"
-							size={40}
-						/>
+						<feature.icon class="text-gold-400" size={40} />
 					</div>
-				{/if}
-				<h3 class="text-xl font-semibold mb-2">
-					Manage Collection
-				</h3>
-				<p class="text-gray-400">
-					Keep track of every card you own, organized by set and
-					rarity.
-				</p>
-				{#if data.profile}
-					<a
-						class="text-gold-400 hover:underline mt-4 inline-block"
-						href="/collection"
-					>
-						My Collection
-					</a>
-				{:else}
-					<button
-						class="focus-ring text-gold-400 hover:underline mt-4 inline-block"
-						onclick={() => openAuthModal('login')}
-						title="Sign in to track your collection"
-						type="button"
-					>
-						Log in to manage your collection
-					</button>
-				{/if}
-			</div>
-			<div class={FEATURE_CARD_CLASS}>
-				{#if !NO_IMAGES}
-					<div class="flex justify-center mb-4">
-						<HeartIcon class="text-gold-400" size={40} />
-					</div>
-				{/if}
-				<h3 class="text-xl font-semibold mb-2">Build Wishlist</h3>
-				<p class="text-gray-400">
-					Curate a list of cards you desire to complete your
-					collection goals.
-				</p>
-				{#if data.profile}
-					<a
-						class="text-gold-400 hover:underline mt-4 inline-block"
-						href="/wishlist"
-					>
-						My Wishlist
-					</a>
-				{:else}
-					<button
-						class="focus-ring text-gold-400 hover:underline mt-4 inline-block"
-						onclick={() => openAuthModal('register')}
-						title="Create an account to build a wishlist"
-						type="button"
-					>
-						Log in to build your wishlist
-					</button>
-				{/if}
-			</div>
-			<div class={FEATURE_CARD_CLASS}>
-				{#if !NO_IMAGES}
-					<div class="flex justify-center mb-4">
-						<SearchIcon class="text-gold-400" size={40} />
-					</div>
-				{/if}
-				<h3 class="text-xl font-semibold mb-2">Explore & Search</h3>
-				<p class="text-gray-400">
-					Easily search and filter through thousands of cards and
-					sets.
-				</p>
-				<a
-					class="text-gold-400 hover:underline mt-4 inline-block"
-					href="/cards-list"
-				>
-					Find Cards
-				</a>
-			</div>
+					<h3 class="text-xl font-semibold mb-2">{feature.name}</h3>
+					<p class="text-gray-400">{feature.description}</p>
+					{#if auth && !data.profile}
+						<button
+							class="focus-ring text-gold-400 hover:underline mt-4 inline-block"
+							onclick={() => openAuthModal(auth.mode)}
+							title={auth.title}
+							type="button"
+						>
+							{auth.label}
+						</button>
+					{:else}
+						<a class="text-gold-400 hover:underline mt-4 inline-block" href={feature.href}>
+							{feature.link}
+						</a>
+					{/if}
+				</div>
+			{/each}
 		</div>
 	</section>
 
-	<section
-		class="mb-20"
-		style="--intro-delay: 450ms"
-	>
-		<div
-			class="bg-linear-to-r from-gray-800 via-gray-700 to-gray-800 rounded-xl p-6 lg:p-10 shadow-2xl border border-gold-600/30"
-		>
+	<section class="mb-20" style="--intro-delay: 450ms">
+		<div class="bg-linear-to-r from-gray-800 via-gray-700 to-gray-800 rounded-xl p-6 lg:p-10 shadow-2xl border border-gold-600/30">
 			<div class="flex flex-col lg:flex-row items-center gap-8">
 				<div class="flex-1">
-					<h2
-						class="text-xl md:text-2xl font-bold text-gold-400 mb-4"
-					>
-						{#if !NO_IMAGES}
-							<div class="flex items-center gap-2">
-								<GridIcon size={28} />
-								<span>Binder Builder</span>
-							</div>
-						{:else}
-							Binder Builder
-						{/if}
+					<h2 class="text-xl md:text-2xl font-bold text-gold-400 mb-4">
+						<div class="flex items-center gap-2">
+							<GridIcon size={28} />
+							<span>Binder Builder</span>
+						</div>
 					</h2>
 					<p class="text-gray-200 mb-4">
-						Create a digital representation of your physical
-						card binder with our powerful Binder Builder
-						tool.
+						Create a digital representation of your physical card binder with our powerful Binder Builder tool.
 					</p>
-					<ul
-						class="list-disc list-inside text-gray-300 space-y-2 mb-6"
-					>
-						<li>
-							Customize your grid to match your physical
-							binder's layout
-						</li>
-						<li>
-							Drag and drop cards to arrange them exactly
-							how you want
-						</li>
-						<li>
-							Add entire sets at once or individual cards
-							from your collection
-						</li>
+					<ul class="list-disc list-inside text-gray-300 space-y-2 mb-6">
+						<li>Customize your grid to match your physical binder's layout</li>
+						<li>Drag and drop cards to arrange them exactly how you want</li>
+						<li>Add entire sets at once or individual cards from your collection</li>
 						<li>Import cards using direct image URLs</li>
-						<li>
-							Export your binder page as an image to share
-							with others
-						</li>
+						<li>Export your binder page as an image to share with others</li>
 					</ul>
-					<a
-						class="btn-gold mt-2 w-fit"
-						href="/binder"
-						title="Open the Binder Builder"
-					>
+					<a class="btn-gold mt-2 w-fit" href="/binder" title="Open the Binder Builder">
 						Try Binder Builder
-						{#if !NO_IMAGES}<GridIcon size={18} />{/if}
+						<GridIcon size={18} />
 					</a>
 				</div>
 				<div class="flex-1 lg:flex-[1.4] flex justify-center w-full">
@@ -565,17 +426,14 @@
 		</div>
 	</section>
 
-	<section
-		class="mb-20"
-		style="--intro-delay: 475ms"
-	>
+	<section class="mb-20" style="--intro-delay: 475ms">
 		<h2 class="text-xl md:text-2xl font-bold text-center text-gold-400 mb-3">Play a Pokémon TCG Game</h2>
 		<p class="text-center text-gray-400 mb-10">Two free games built on the real catalogue, playable without an account.</p>
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 			{#each GAMES as game (game.href)}
 				<article class="card-tile flex flex-col gap-4 p-6">
 					<h3 class="flex items-center gap-3 text-xl font-semibold text-gold-300">
-						{#if !NO_IMAGES}<game.icon class="text-gold-400" size={32} />{/if}
+						<game.icon class="text-gold-400" size={32} />
 						{game.name}
 					</h3>
 					<p class="text-gray-200">{game.description}</p>
@@ -586,16 +444,14 @@
 					</ul>
 					<a class="btn-gold mt-auto w-fit" href={game.href} title="Open {game.name}">
 						{game.action}
-						{#if !NO_IMAGES}<ArrowRight size={18} />{/if}
+						<ArrowRight size={18} />
 					</a>
 				</article>
 			{/each}
 		</div>
 	</section>
 
-	<div
-		class="gold-rule my-20"
-	></div>
+	<div class="gold-rule my-20"></div>
 
 	<section
 		class="text-center bg-linear-to-br from-gray-800 to-gray-900 p-8 rounded-lg shadow-xl mb-20 border border-gold-600/30"
@@ -609,23 +465,13 @@
 				Ready to manage your collection or check your wishlist?
 			</p>
 			<div class="flex flex-wrap justify-center gap-4">
-				<a
-					class="btn-gold"
-					href="/collection"
-				>
+				<a class="btn-gold" href="/collection">
 					Go to Collection
-					{#if !NO_IMAGES}
-						<BookOpenCheckIcon size={18} />
-					{/if}
+					<BookOpenCheckIcon size={18} />
 				</a>
-				<a
-					class="btn-secondary"
-					href="/wishlist"
-				>
+				<a class="btn-secondary" href="/wishlist">
 					View Wishlist
-					{#if !NO_IMAGES}
-						<HeartIcon size={18} />
-					{/if}
+					<HeartIcon size={18} />
 				</a>
 			</div>
 		{:else}
@@ -633,8 +479,7 @@
 				Join PokéCards-Collector Today!
 			</h2>
 			<p class="text-gray-300 text-lg mb-10">
-				Sign up or log in to start managing your Pokémon card
-				collection and wishlist.
+				Sign up or log in to start managing your Pokémon card collection and wishlist.
 			</p>
 			<div class="flex flex-wrap justify-center gap-4">
 				<button
@@ -644,7 +489,7 @@
 					type="button"
 				>
 					Log In
-					{#if !NO_IMAGES}<LogInIcon size={18} />{/if}
+					<LogInIcon size={18} />
 				</button>
 				<button
 					class="btn-secondary"
@@ -653,9 +498,7 @@
 					type="button"
 				>
 					Sign Up
-					{#if !NO_IMAGES}
-						<UserPlusIcon size={18} />
-					{/if}
+					<UserPlusIcon size={18} />
 				</button>
 			</div>
 		{/if}

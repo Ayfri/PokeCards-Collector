@@ -19,6 +19,7 @@
 	import { page } from '$app/state';
 	import { pokemonsById } from '#helpers/card-utils.ts';
 	import { filterCards, getCardDimensions, keepMostExpensivePerGroup, sortBySupertype, sortCards } from '#helpers/card-grid.ts';
+	import { applyFilterParam } from '#helpers/utils.ts';
 	import { cardSize } from '#stores/grid.svelte.ts';
 	import SizeSlider from '#lib/components/filters/SizeSlider.svelte';
 
@@ -65,27 +66,7 @@
 
 	function setFilterName(value: string) {
 		filters.name = value;
-
-		const url = new URL(page.url.href);
-		if (value) {
-			url.searchParams.set('name', value);
-		} else {
-			url.searchParams.delete('name');
-		}
-
-		const activeElement = document.activeElement as HTMLElement;
-		const activeElementId = activeElement?.id;
-
-		goto(url.toString(), { replace: true }).then(() => {
-			if (activeElementId !== 'name') return;
-			const inputElement = document.getElementById('name') as HTMLInputElement | null;
-			if (!inputElement) return;
-			inputElement.focus();
-			if (typeof inputElement.selectionStart === 'number') {
-				const len = inputElement.value.length;
-				inputElement.setSelectionRange(len, len);
-			}
-		});
+		applyFilterParam('name', value);
 	}
 
 	/** Clears the filters, the search box and every filter parameter, keeping only the `user` the page was opened for. */
@@ -134,17 +115,14 @@
 <svelte:body style:overflow={showFilters ? "hidden" : "auto"} />
 
 {#if showFilters}
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -->
 	<div
-		aria-hidden={!showFilters}
 		class="fixed inset-0 z-50 bg-black/70 transition-all duration-300"
 		onclick={() => (showFilters = false)}
-		onkeydown={handleKeydown}
 		transition:fade={{ duration: 200 }}
 	></div>
 	<div
-		class="fixed top-0 h-screen w-full md:w-112.5 bg-gray-800 z-60 shadow-lg flex flex-col {showFilters
-			? 'right-0'
-			: '-right-95'} transition-all duration-300 z-50"
+		class="fixed top-0 right-0 h-screen w-full md:w-112.5 bg-gray-800 z-60 shadow-lg flex flex-col transition-all duration-300"
 		transition:fly={{ duration: 300, x: 380 }}
 	>
 		<div
@@ -218,7 +196,7 @@
 			<div class="w-48 hidden md:block">
 				<TextInput
 					bind:value={searchName}
-					id="name"
+					id="grid-name"
 					label="Name"
 					labelClass="sr-only"
 					onDebouncedInput={setFilterName}

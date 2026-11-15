@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CardImage from '#components/card/CardImage.svelte';
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
-	import { formatEuros } from '#helpers/format.ts';
+	import { roundedEuros } from '#helpers/format.ts';
 	import { loading } from '#stores/loading.svelte.ts';
 	import type { Card } from '#lib/types.js';
 	import type { TrainerGroupEntry } from '#src/routes/trainers/+page.server.ts';
@@ -58,7 +58,7 @@
 		<span aria-hidden="true" class="icon-layers size-3 shrink-0"></span>
 		<span>{owned ? `${owned} / ` : ''}{group.cardCount} print{group.cardCount === 1 ? '' : 's'}</span>
 		{#if group.price}
-			<span class="font-semibold text-green-400" title="Most valuable print">{formatEuros(group.price, group.price >= 100 ? 0 : 2)}</span>
+			<span class="font-semibold text-green-400" title="Most valuable print">{roundedEuros(group.price)}</span>
 		{/if}
 	</span>
 	{#if owned}

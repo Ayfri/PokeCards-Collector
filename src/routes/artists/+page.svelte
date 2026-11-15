@@ -13,7 +13,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { ArtistWithCards } from './+page.server';
-	import { formatEuros } from '#helpers/format.ts';
+	import { roundedEuros } from '#helpers/format.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
 	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
 	import CalendarDaysIcon from '@lucide/svelte/icons/calendar-days';
@@ -35,9 +35,6 @@
 	}
 
 	let { data }: Props = $props();
-
-	/** Totals reach five figures, so cents are noise and are dropped from 100 EUR up. */
-	const euros = (value: number) => formatEuros(value, value >= 100 ? 0 : 2);
 
 	/** Cards drawn on the preview stack of an artist card. */
 	const SHOWCASE_SIZE = 3;
@@ -105,7 +102,7 @@
 		return [
 			{ icon: PaletteIcon, label: 'artists', value: data.artists.length.toLocaleString('en-US') },
 			{ icon: SquareStackIcon, label: 'illustrated cards', title: 'Cards with a credited illustrator', value: data.artists.reduce((count, artist) => count + artist.totalCards, 0).toLocaleString('en-US') },
-			{ icon: CircleEuroIcon, label: 'total value', title: 'Cardmarket value of every illustrated card', value: euros(data.artists.reduce((total, artist) => total + artist.totalValue, 0)) },
+			{ icon: CircleEuroIcon, label: 'total value', title: 'Cardmarket value of every illustrated card', value: roundedEuros(data.artists.reduce((total, artist) => total + artist.totalValue, 0)) },
 			...(Number.isFinite(first) && last ? [{ icon: CalendarDaysIcon, label: 'printed', title: 'Years the artwork was printed', value: first === last ? `${first}` : `${first} - ${last}` }] : []),
 		];
 	});
@@ -192,8 +189,8 @@
 						<span class="flex items-center gap-1.5" title="First and last year this artist was printed"><span aria-hidden="true" class="icon-calendar-days size-3.5 shrink-0"></span> {artist.firstReleaseYear} - {artist.lastReleaseYear}</span>
 					</div>
 					<div class="mt-1 text-sm text-gray-400 flex justify-between">
-						<span class="flex items-center gap-1.5 text-green-400 font-semibold" title="Cardmarket value of every card by this artist"><span aria-hidden="true" class="icon-circle-euro size-3.5 shrink-0"></span> {euros(artist.totalValue)}</span>
-						<span title="Average value of one card by this artist">{euros(artist.averageValue)} avg</span>
+						<span class="flex items-center gap-1.5 text-green-400 font-semibold" title="Cardmarket value of every card by this artist"><span aria-hidden="true" class="icon-circle-euro size-3.5 shrink-0"></span> {roundedEuros(artist.totalValue)}</span>
+						<span title="Average value of one card by this artist">{roundedEuros(artist.averageValue)} avg</span>
 					</div>
 				</div>
 			</a>

@@ -2,7 +2,7 @@
 	import type { LucideIcon } from '@lucide/svelte';
 	import type { PageData } from './$types';
 	import type { TrainerGroupEntry } from './+page.server.ts';
-	import { formatEuros, pluralize } from '#helpers/format.ts';
+	import { pluralize, roundedEuros } from '#helpers/format.ts';
 	import GroupHeading from '#components/list/GroupHeading.svelte';
 	import PageHeader, { type PageStat } from '#components/PageHeader.svelte';
 	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
@@ -20,7 +20,7 @@
 	import TagsIcon from '@lucide/svelte/icons/tags';
 	import TextInput from '#components/filters/TextInput.svelte';
 	import TrainerGroupTile from '#components/list/TrainerGroupTile.svelte';
-	import ScrollButton from '#components/list/ScrollButton.svelte';
+	import ScrollButtons from '#components/list/ScrollButtons.svelte';
 	import TypeSymbolDefs from '#components/card/TypeSymbolDefs.svelte';
 	import UserIcon from '@lucide/svelte/icons/user';
 	import WrenchIcon from '@lucide/svelte/icons/wrench';
@@ -55,11 +55,8 @@
 		'Technical Machines': 'TMs',
 	};
 
-	/** Totals reach five figures for a section, so cents are noise and are dropped from 100 EUR up. */
-	const euros = (value: number) => formatEuros(value, value >= 100 ? 0 : 2);
 	const sectionId = (label: string) => `section-${label.toLowerCase().replace(/[^a-z]+/g, '-')}`;
 
-	let scrollY = $state(0);
 	const DEFAULT_VIEW = { folded: [] as string[], search: '', sortBy: 'name', sortOrder: 'asc' as 'asc' | 'desc' };
 	/** `persistedRecord` saves on property assignment, so `folded` is always reassigned, never mutated in place. */
 	const view = persistedRecord('trainers-view', DEFAULT_VIEW);
@@ -144,12 +141,10 @@
 			{ icon: LayersIcon, label: 'cards', title: 'Distinct Trainer and Energy cards, all prints of one card counted once', value: totalGroups.toLocaleString('en-US') },
 			{ icon: SquareStackIcon, label: 'prints', title: 'Every printing of those cards', value: groups.reduce((prints, group) => prints + group.cardCount, 0).toLocaleString('en-US') },
 			{ icon: TagsIcon, label: 'sections', value: data.sections.length.toLocaleString('en-US') },
-			{ icon: GemIcon, label: 'priciest print', title: 'Cardmarket price of the most valuable print', value: euros(groups.reduce((top, group) => Math.max(top, group.price), 0)) },
+			{ icon: GemIcon, label: 'priciest print', title: 'Cardmarket price of the most valuable print', value: roundedEuros(groups.reduce((top, group) => Math.max(top, group.price), 0)) },
 		];
 	});
 </script>
-
-<svelte:window bind:scrollY />
 
 <div class="container mx-auto px-4 pb-8 text-white">
 	<PageHeader
@@ -213,7 +208,7 @@
 					icon={SECTION_ICONS[section.label] ?? LayersIcon}
 					meta={[pluralize(section.groups.length, 'card'), `${section.owned ? `${section.owned.toLocaleString('en-US')} / ` : ''}${pluralize(section.prints, 'print')}`]}
 					name={section.label}
-					value={section.top ? `up to ${euros(section.top)}` : undefined}
+					value={section.top ? `up to ${roundedEuros(section.top)}` : undefined}
 				/>
 			</summary>
 			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
@@ -227,5 +222,4 @@
 	{/each}
 </div>
 
-<ScrollButton direction="up" onclick={() => window.scrollTo({ behavior: 'smooth', top: 0 })} visible={scrollY > 100} />
-<ScrollButton direction="down" onclick={() => window.scrollTo({ behavior: 'smooth', top: document.body.scrollHeight })} />
+<ScrollButtons />

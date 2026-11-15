@@ -9,8 +9,7 @@
 	import Select from '#components/filters/Select.svelte';
 	import SortControl from '#components/filters/SortControl.svelte';
 	import TextInput from '#components/filters/TextInput.svelte';
-	import { page } from '$app/state';
-	import { goto } from '$app/navigation';
+	import { applyFilterParam } from '#helpers/utils.ts';
 	import type { LucideIcon } from '@lucide/svelte';
 	import ArrowUpDownIcon from '@lucide/svelte/icons/arrow-up-down';
 	import BrushIcon from '@lucide/svelte/icons/brush';
@@ -42,20 +41,9 @@
 	/** The text input debounces, so it holds its own value until the filter catches up, and follows URL seeding and resets. */
 	let searchName = $derived(filters.name);
 
-	/**
-	 * Writes one filter param to the URL and navigates without a reload, keeping the focused control focused.
-	 * A `null` value drops the parameter instead of setting it.
-	 */
-	function applyFilterParam(param: string, value: string | null) {
-		const url = new URL(page.url.href);
-		if (value) {
-			url.searchParams.set(param, value);
-		} else {
-			url.searchParams.delete(param);
-		}
-
-		/** `reset: false` leaves the control focused: a default navigation blurs it, and the picker would lose its draft and reopen on the refocus. */
-		goto(url.toString(), { replace: true, reset: false });
+	function setName(value: string) {
+		filters.name = value;
+		applyFilterParam('name', value);
 	}
 
 	/** Every dropdown drops its parameter on `all`, so a cleared filter leaves no trace in the URL. */
@@ -148,9 +136,9 @@
 				<TextInput
 					bind:value={searchName}
 					icon={SearchIcon}
-					id="name"
+					id="filters-name"
 					label="Name"
-					onDebouncedInput={value => (filters.name = value)}
+					onDebouncedInput={setName}
 					placeholder="Search by name..."
 				/>
 			</div>
