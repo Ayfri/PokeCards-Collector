@@ -16,8 +16,7 @@ import { SUPABASE_DB_OPTIONS } from '#src/constants.ts';
 const CACHED_ROUTES = new Set([
 	'/[[grid=catalogueGrid]]/sets',
 	'/[[grid=catalogueGrid]]/sets/[setSlug]',
-	'/[catalogue=catalogue]-card/[slug]',
-	'/card/[slug]',
+	'/[card=cardPage]/[slug]',
 ]);
 
 /** A publish changes the cache key long before this: the age only bounds how long a colo keeps a page. */
@@ -38,9 +37,8 @@ const PUBLIC_ROUTES = new Set([
 	'/api/search',
 	'/api/search-users',
 	'/api/set-cards',
-	'/[catalogue=catalogue]-card/[code=cardCode]',
+	'/[card=cardPage]/[code=cardCode]',
 	'/[sitemap=cardSitemap]/[page]',
-	'/card/[code=cardCode]',
 	'/og/[...path]',
 	'/sitemap-pages.xml',
 	'/sitemap.xml',

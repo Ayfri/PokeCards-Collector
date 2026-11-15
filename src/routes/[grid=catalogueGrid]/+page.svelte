@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import type { PageData } from './$types';
 	import { filters } from '#stores/filters.svelte.ts';
+	import { cardSize } from '#stores/grid.svelte.ts';
 	import GridHeading from '#lib/components/list/GridHeading.svelte';
 	import BouncyLoader from '#components/BouncyLoader.svelte';
 	import { payloadUrl } from '#helpers/utils.ts';
@@ -15,6 +16,9 @@
 	let { data }: Props = $props();
 
 	const sets = $derived(data.sets);
+
+	/** Only the L and XL card sizes are wide enough to need the full-resolution art. */
+	const lowRes = $derived(cardSize.current < 2);
 
 	const selectedSetName = $derived(filters.set !== 'all' && sets ? (sets.find(set => set.name.toLowerCase() === filters.set)?.name ?? null) : null);
 	const artistName = (artists: string[]) => filters.artist !== 'all' ? (artists.find(artist => artist.toLowerCase() === filters.artist) ?? null) : null;
@@ -29,14 +33,14 @@
 <GridHeading description={data.description} language={catalogueOfPath(page.url.pathname).language} paths={catalogueRoutes('gridRoute')} title={data.title} />
 
 {#key page.params.grid}
-	{#await data.streamed.cardData}
+	{#await data.grid}
 		<div class="flex flex-col items-center justify-center text-center text-xl mt-12">
 			<BouncyLoader size={40} />
 			<p class="mt-3 text-white">Loading cards...</p>
 		</div>
-	{:then cardDataResolved}
+	{:then grid}
 		<div class="flex min-h-0 flex-1 flex-col text-lg text-white">
-			<CardGrid artists={cardDataResolved.artists} cards={cardDataResolved.cards} note={data.note} pageTitle={null} pokemons={cardDataResolved.pokemons} rarities={cardDataResolved.rarities} selectedArtistName={artistName(cardDataResolved.artists)} selectedSetName={selectedSetName} {sets} types={cardDataResolved.types} />
+			<CardGrid artists={grid.artists} cards={grid.cards} {lowRes} note={data.note} pageTitle={null} pokemons={grid.pokemons} rarities={grid.rarities} selectedArtistName={artistName(grid.artists)} selectedSetName={selectedSetName} {sets} types={grid.types} />
 		</div>
 	{:catch error}
 		<p class="p-4 text-red-400">Error loading cards: {error.message}</p>

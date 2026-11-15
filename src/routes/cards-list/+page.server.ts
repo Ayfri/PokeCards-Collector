@@ -1,10 +1,8 @@
 import type { PageServerLoad } from './$types';
-import { redirectToSetPage } from '#helpers/grid-payload.ts';
+import { gridSetView } from '#helpers/grid-payload.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { CATALOGUES } from '#helpers/catalogues.ts';
-import { setPath, setValues } from '#helpers/card-utils.ts';
-import { ogImage, setShareImage } from '#helpers/og-image.ts';
-import { getCards, getPrices } from '#helpers/catalogue-data.ts';
+import { ogImage } from '#helpers/og-image.ts';
 
 /**
  * SEO only: the grid's cards, prices, pokemons and types come from `/api/cards-list` through `+page.ts`.
@@ -14,7 +12,7 @@ import { getCards, getPrices } from '#helpers/catalogue-data.ts';
 export const load: PageServerLoad = async ({ isDataRequest, parent, url }) => {
 	const { sets } = await parent();
 
-	const setParam = url.searchParams.get('set');
+	const view = await gridSetView(url, isDataRequest, sets, CATALOGUES.en);
 	let image = ogImage({ kind: 'page', name: 'cards-list' }, 'Every English Pokémon TCG card on PokéCards-Collector: the card and set count, and the three most valuable cards');
 	let ogTitle = 'All Pokémon Cards';
 	let ogDescription = 'Browse every Pokémon TCG card with its Cardmarket price in euros. Filter by set, artist, rarity, type or Pokémon, and sort by price, name or Pokédex number.';
@@ -22,21 +20,13 @@ export const load: PageServerLoad = async ({ isDataRequest, parent, url }) => {
 	let ogCrumbs = breadcrumbs({ name: 'Cards', url: '/cards-list' });
 	let canonical: string | undefined;
 
-	if (setParam) {
-		const set = sets.find(s => s.name.toLowerCase() === setParam.toLowerCase());
-		if (set) {
-			redirectToSetPage(url, isDataRequest, set, CATALOGUES.en);
-
-			/** A `?set=` grid that combines filters is a view of the set page: it keeps its set title and image, and the set page is its canonical. */
-			const [cards, prices] = await Promise.all([getCards(), getPrices()]);
-			const total = set.totalCards ?? set.printedTotal;
-			image = setShareImage(set, setValues(cards, prices).get(set.setId) ?? 0, CATALOGUES.en);
-			ogTitle = `${set.name} Card List & Prices`;
-			ogDescription = `Every card in the ${set.name} Pokémon TCG set${total ? `, ${total} cards in total` : ''}, with Cardmarket prices in euros.`;
-			ogKeywords = [`${set.name} card list`, `${set.name} set`, `${set.name} card prices`, 'Pokémon TCG'];
-			ogCrumbs = breadcrumbs({ name: 'Sets', url: '/sets' }, { name: set.name, url: setPath(set, CATALOGUES.en) });
-			canonical = setPath(set, CATALOGUES.en);
-		}
+	if (view) {
+		const { set, total } = view;
+		({ canonical, image } = view);
+		ogTitle = `${set.name} Card List & Prices`;
+		ogDescription = `Every card in the ${set.name} Pokémon TCG set${total ? `, ${total} cards in total` : ''}, with Cardmarket prices in euros.`;
+		ogKeywords = [`${set.name} card list`, `${set.name} set`, `${set.name} card prices`, 'Pokémon TCG'];
+		ogCrumbs = breadcrumbs({ name: 'Sets', url: '/sets' }, { name: set.name, url: view.canonical });
 	}
 
 	return {

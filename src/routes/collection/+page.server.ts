@@ -1,9 +1,4 @@
 import { redirect } from '@sveltejs/kit';
+import type { PageServerLoad } from './$types';
 
-export function load({ locals }) {
-    if (!locals.profile) {
-        return redirect(302, '/');
-    }
-
-    return redirect(302, `/collection/${encodeURIComponent(locals.profile.username)}`);
-}
+export const load: PageServerLoad = ({ locals }) => redirect(302, locals.profile ? `/collection/${encodeURIComponent(locals.profile.username)}` : '/');

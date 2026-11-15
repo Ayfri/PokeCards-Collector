@@ -1,12 +1,9 @@
 <script lang="ts">
-	import CardGrid from '#lib/components/list/CardGrid.svelte';
 	import GridHeading from '#lib/components/list/GridHeading.svelte';
-	import Loader from '#lib/components/Loader.svelte';
+	import PayloadGrid from '#lib/components/list/PayloadGrid.svelte';
 	import SetChecklist from '#lib/components/list/SetChecklist.svelte';
 	import { formatCardNumber, setCardCount } from '#helpers/card-utils.ts';
 	import { formatDate, formatEuros } from '#helpers/format.ts';
-	import { filters } from '#stores/filters.svelte.ts';
-	import { cardSize } from '#stores/grid.svelte.ts';
 	import type { PageData } from './$types';
 
 	interface Props {
@@ -15,8 +12,6 @@
 
 	let { data }: Props = $props();
 
-	/** Only the L and XL card sizes are wide enough to need the full-resolution art. */
-	const lowRes = $derived(cardSize.current < 2);
 	const sets = $derived([data.set]);
 </script>
 
@@ -40,28 +35,5 @@
 	{/if}
 	<SetChecklist entries={data.checklist} language={data.catalogueLanguage} set={data.set} />
 
-	<!-- The loader is absolutely positioned so that during its out transition the grid mounts under it, not below it. -->
-	<div class="relative flex min-h-0 flex-1 flex-col">
-		{#await data.streamed.grid}
-			<div class="absolute inset-x-0 top-32 flex justify-center">
-				<Loader />
-			</div>
-		{:then grid}
-			<CardGrid
-				artists={grid.artists}
-				cards={grid.cards}
-				{lowRes}
-				note={data.note}
-				pageTitle={null}
-				pokemons={grid.pokemons}
-				rarities={grid.rarities}
-				selectedArtistName={filters.artist !== 'all' ? (grid.artists.find(artist => artist.toLowerCase() === filters.artist) ?? null) : null}
-				selectedSetName={data.set.name}
-				{sets}
-				types={grid.types}
-			/>
-		{:catch cardError}
-			<p class="p-4 text-red-400">Error loading cards: {cardError.message}</p>
-		{/await}
-	</div>
+	<PayloadGrid grid={data.grid} note={data.note} selectedSetName={data.set.name} {sets} />
 </div>

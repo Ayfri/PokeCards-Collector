@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import type { PageData } from './$types';
 	import CardDisplay from '#components/card/CardDisplay.svelte';
 	import { fade } from 'svelte/transition';
@@ -15,7 +16,7 @@
 		{#key data.prints[0].cardCode}
 			<div in:fade={{ duration: 300 }}>
 				<CardDisplay
-					lowRes={true}
+					lowRes={page.params.card === 'en'}
 					neighbours={data.neighbours}
 					pokemonPaths={data.pokemonPaths}
 					pokemons={data.pokemons}

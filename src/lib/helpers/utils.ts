@@ -1,4 +1,4 @@
-import { version } from '$app/env';
+import { browser, version } from '$app/env';
 import { goto, refreshAll } from '$app/navigation';
 import { page } from '$app/state';
 
@@ -6,6 +6,22 @@ import { page } from '$app/state';
 export async function finishSignIn(): Promise<void> {
 	await refreshAll();
 	if (['/auth', '/reset-password'].some(path => page.url.pathname.startsWith(path))) await goto('/');
+}
+
+/**
+ * Writes one grid filter param to the URL and navigates without a reload, keeping the focused control focused.
+ * A falsy value drops the parameter instead of setting it.
+ */
+export function applyFilterParam(param: string, value: string | null): void {
+	const url = new URL(page.url.href);
+	if (value) {
+		url.searchParams.set(param, value);
+	} else {
+		url.searchParams.delete(param);
+	}
+
+	/** `reset: false` leaves the control focused: a default navigation blurs it, and the picker would lose its draft and reopen on the refocus. */
+	goto(url.toString(), { replace: true, reset: false });
 }
 
 /** Parses a JSON response body as `T`, falling back to `fallback` when the body is absent or malformed. */
@@ -46,6 +62,9 @@ export function cachedJson<T>(fetch: typeof globalThis.fetch, url: string): Prom
 	payloads.set(url, payload);
 	return payload;
 }
+
+/** The payload of a card grid: `cachedJson` in the browser. On the server the promise never resolves: the grid does not render there, since `VirtualGrid` measures itself before drawing a tile. */
+export const gridJson = <T>(fetch: typeof globalThis.fetch, url: string): Promise<T> => (browser ? cachedJson<T>(fetch, url) : new Promise<T>(() => {}));
 
 export function debounce<TArgs extends readonly unknown[]>(fn: (...args: TArgs) => void, delay: number) {
 	let debounceTimeout: number;

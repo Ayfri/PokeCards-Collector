@@ -1,5 +1,4 @@
-import { browser } from '$app/env';
-import { cachedJson } from '#helpers/utils.ts';
+import { gridJson } from '#helpers/utils.ts';
 import type { GridPayload } from '#helpers/grid-payload.ts';
 import type { PageLoad } from './$types';
 
@@ -12,8 +11,5 @@ export const load: PageLoad = ({ data, fetch, params }) => {
 	/** A document request preloads this endpoint from the page head (`preloadPayload`), so the download starts with the document instead of after the scripts. */
 	const payload = `/api/${params.grid}-cards`;
 
-	/** On the server the promise never resolves: the grid does not render there, since `VirtualGrid` measures itself before drawing a tile. */
-	if (!browser) return { ...data, payload, streamed: { cardData: new Promise<GridPayload>(() => {}) } };
-
-	return { ...data, payload, streamed: { cardData: cachedJson<GridPayload>(fetch, payload) } };
+	return { ...data, grid: gridJson<GridPayload>(fetch, payload), payload };
 };

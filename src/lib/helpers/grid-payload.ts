@@ -1,8 +1,10 @@
 import { distinctArtists, distinctRarities } from '#helpers/card-grid.ts';
 import { type Catalogue, CATALOGUES } from '#helpers/catalogues.ts';
 import { cardPath, cardPrice, formatCardNumber, memoizedOn, setOrder, setPath, setValues } from '#helpers/card-utils.ts';
+import { getCards, getPrices } from '#helpers/catalogue-data.ts';
 import { gzipJson } from '#helpers/catalogue-snapshot.ts';
 import { keepAlive } from '#helpers/data-cache.ts';
+import { setShareImage } from '#helpers/og-image.ts';
 import { cardListSchema, setSchema } from '#helpers/seo.ts';
 import type { Card, Set as CardSet, GridPokemon, Pokemon, PriceData } from '#lib/types.js';
 import { redirect } from '@sveltejs/kit';
@@ -67,11 +69,30 @@ const SET_PAGE_QUERY = new Set(['set', 'sortby', 'sortorder']);
  * itself changes `?set=` through client navigations (the load reruns as a data request) and has to stay on the grid. A `?set=` that
  * combines other filters is a grid view, not the set page, so it renders as it is.
  */
-export function redirectToSetPage(url: URL, isDataRequest: boolean, set: CardSet, catalogue: Catalogue): void {
+function redirectToSetPage(url: URL, isDataRequest: boolean, set: CardSet, catalogue: Catalogue): void {
 	if (isDataRequest || [...url.searchParams.keys()].some(key => !SET_PAGE_QUERY.has(key))) return;
 
 	const sort = new URLSearchParams([...url.searchParams].filter(([key]) => key !== 'set'));
 	redirect(301, `${setPath(set, catalogue)}${sort.size ? `?${sort}` : ''}`);
+}
+
+/**
+ * The set a grid's `?set=` names, or `undefined` when the request names none, after the redirect to its page above. A `?set=` grid that combines filters
+ * is a view of the set page: it keeps the set's title and its share image, and the set page is its canonical.
+ */
+export async function gridSetView(url: URL, isDataRequest: boolean, sets: CardSet[], catalogue: Catalogue) {
+	const name = url.searchParams.get('set')?.toLowerCase();
+	const set = name ? sets.find(candidate => candidate.name.toLowerCase() === name) : undefined;
+	if (!set) return undefined;
+
+	redirectToSetPage(url, isDataRequest, set, catalogue);
+	const [cards, prices] = await Promise.all([getCards(catalogue.language), getPrices(catalogue.language)]);
+	return {
+		canonical: setPath(set, catalogue),
+		image: setShareImage(set, setValues(cards, prices).get(set.setId) ?? 0, catalogue),
+		set,
+		total: set.totalCards ?? set.printedTotal,
+	};
 }
 
 /** The ETag hashes the JSON, and only the gzip bytes stay in memory: ~0.8 MB against 7.7 MB raw for the English grid. */
