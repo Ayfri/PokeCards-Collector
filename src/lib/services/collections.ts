@@ -1,9 +1,9 @@
-import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { selectAll } from '#lib/services/select-all.ts';
+import { getSupabaseBrowserClient } from '#lib/supabase.ts';
 import { MAX_CARD_QUANTITY } from '#src/constants.ts';
 import { collection } from '#stores/collection.svelte.ts';
 import { loading } from '#stores/loading.svelte.ts';
-import { selectAll } from './select-all';
 
 export async function addCardToCollection(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
@@ -37,9 +37,6 @@ export async function addCardToCollection(username: string, cardCode: string, cl
 		if (!error && data) collection.add(data.card_code, 1);
 
 		return { data, error };
-	} catch (error) {
-		console.error('Error adding card instance to collection:', error);
-		return { data: null, error };
 	} finally {
 		loading.mutation = false;
 	}
@@ -56,9 +53,12 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 			.eq('card_code', cardCode)
 			.limit(1)
 			.maybeSingle();
-		
-		if (fetchError) throw fetchError;
-		
+
+		if (fetchError) {
+			console.error('Error finding the card instance to remove:', fetchError);
+			return { data: null, error: fetchError };
+		}
+
 		if (!rowToDelete) {
 			/** No row means the client-side count was probably out of sync, so it is corrected here. */
 			console.warn('Attempted to remove a card instance not found in DB:', cardCode);
@@ -73,26 +73,17 @@ export async function removeCardFromCollection(username: string, cardCode: strin
 
 		if (!deleteError) collection.add(cardCode, -1);
 
-		return { data: !deleteError ? { card_code: cardCode } : null, error: deleteError }; 
-
-	} catch (error) {
-		console.error('Error removing card instance from collection:', error);
-		return { data: null, error };
+		return { data: !deleteError ? { card_code: cardCode } : null, error: deleteError };
 	} finally {
 		loading.mutation = false;
 	}
 }
 
 /** Every copy the user owns, one row per copy and only its card code, paged past the row cap. */
-export async function getUserCollection(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
-	try {
-		return await selectAll(() => client
-			.from('collections')
-			.select('card_code', { count: 'exact' })
-			.eq('username', username)
-			.order('id'));
-	} catch (error) {
-		console.error('Error getting user collection card codes:', error);
-		return { data: null, error };
-	}
+export function getUserCollection(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
+	return selectAll(() => client
+		.from('collections')
+		.select('card_code', { count: 'exact' })
+		.eq('username', username)
+		.order('id'));
 }

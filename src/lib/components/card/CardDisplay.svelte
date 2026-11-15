@@ -5,7 +5,7 @@
 	import RelatedCards from '#components/card/RelatedCards.svelte';
 	import {NO_IMAGES} from '#helpers/card-images.ts';
 	import {fade, fly} from 'svelte/transition';
-	import type {CardPageSet, FullCard, Pokemon, PriceData} from '#lib/types.js';
+	import type {Card, CardPageSet, Pokemon, PriceData} from '#lib/types.js';
 	import { titleCase } from '#helpers/format.ts';
 	import InteractiveCard from '#components/card/InteractiveCard.svelte';
 	import { flushSync } from 'svelte';
@@ -25,7 +25,7 @@
 		pokemons: Pokemon[];
 		prices: Record<string, PriceData>;
 		/** The shown card first, then its other prints. */
-		prints: FullCard[];
+		prints: Card[];
 		sets: CardPageSet[];
 		versions: Promise<LanguagePaths>;
 	}
@@ -47,7 +47,7 @@
 	 * Derived from the load rather than set in `onMount`, so the server renders the whole card with its heading, details and links:
 	 * crawlers that run no JavaScript, most answer engines among them, only read that HTML. A related pick or a Back into a shallow entry overrides it.
 	 */
-	let currentCard = $derived<FullCard | undefined>(prints[0]);
+	let currentCard = $derived<Card | undefined>(prints[0]);
 
 	const cardPrices = $derived(currentCard ? prices[currentCard.cardCode] : undefined);
 	const currentSet = $derived(currentCard ? sets.find(set => set.setId === currentCard?.setId) : undefined);
@@ -61,7 +61,7 @@
 	const nextPokemon = $derived(currentPokemonId ? pokemons.find(p => p.id === currentPokemonId + 1) : undefined);
 
 	/** Swaps the displayed card without a navigation: the picked tile flies up into the big card while the page jumps back to the top. */
-	function handleCardSelect(selectedCard: FullCard) {
+	function handleCardSelect(selectedCard: Card) {
 		const path = cardPath(catalogue.language, selectedCard);
 		goto(path, { replace: true, shallow: true });
 		morphCards(cardTile(path), cardHero, () => {
@@ -81,7 +81,7 @@
 		 * The pathname is percent-encoded (Japanese slugs), and the slug is NFC like the ones `cardSlug` builds.
 		 */
 		const slugFromUrl = decodeURIComponent(window.location.pathname.split('/').filter(Boolean).at(-1) ?? '').normalize('NFC');
-		const isShown = (card: FullCard) => cardSlug(card, catalogue.language) === slugFromUrl;
+		const isShown = (card: Card) => cardSlug(card, catalogue.language) === slugFromUrl;
 		const matchingCard = prints.find(isShown);
 
 		if (matchingCard && matchingCard !== currentCard) currentCard = matchingCard;

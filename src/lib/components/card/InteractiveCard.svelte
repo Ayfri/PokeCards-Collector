@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import CardImage from '#components/card/CardImage.svelte';
-	import type { CardPageSet, FullCard, Pokemon } from '#lib/types.js';
+	import type { Card, CardPageSet, Pokemon } from '#lib/types.js';
 	import { cardPath } from '#helpers/card-utils.ts';
 	import { catalogueOfPath } from '#helpers/catalogues.ts';
 	import { titleCase } from '#helpers/format.ts';
 	import { throttle } from '#helpers/utils.ts';
 
 	interface Props {
-		card: FullCard | undefined;
+		card: Card | undefined;
 		currentSet: CardPageSet | undefined;
 		pokemon: Pokemon | undefined;
 	}

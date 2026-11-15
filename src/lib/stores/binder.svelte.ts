@@ -11,7 +11,6 @@ import {
 	MAX_FILL,
 	MAX_HISTORY,
 	MAX_NAME,
-	MAX_POCKETS,
 	MAX_SHARE_PAGES,
 	migrateLegacy,
 	newBinder,
@@ -33,7 +32,8 @@ interface Snapshot { activeId: string; binders: readonly StoredBinder[] }
 /** The record the server and the first client render draw: one empty page, replaced by `load()` once mounted. */
 const PENDING: BinderRecord = {
 	activeId: 'pending',
-	binders: [{ columns: 3, id: 'pending', name: 'My binder', pages: [emptySheet(9)], rows: 3, tray: [] }],
+	/** A literal rather than `newBinder`, whose `crypto.randomUUID()` would run at module load on every page and throws outside a secure context. */
+	binders: [{ columns: 3, id: 'pending', name: DEFAULT_NAME, pages: [emptySheet(9)], rows: 3, tray: [] }],
 	shares: {},
 	spread: true,
 	version: 1,
@@ -182,7 +182,8 @@ class BinderStore {
 	}
 
 	setLayout(layout: Partial<BinderLayout>) {
-		const clamp = (value: number | undefined, current: number) => (value === undefined || !Number.isFinite(value) ? current : Math.min(MAX_POCKETS, Math.max(1, Math.round(value))));
+		/** `clampPockets` alone turns a value that is no number into the default size: an emptied field (`null` from the number input) keeps the current one. */
+		const clamp = (value: number | undefined, current: number) => (Number.isFinite(value) ? clampPockets(value) : current);
 		const columns = clamp(layout.columns, this.columns);
 		const rows = clamp(layout.rows, this.rows);
 		if (columns === this.columns && rows === this.rows) return;

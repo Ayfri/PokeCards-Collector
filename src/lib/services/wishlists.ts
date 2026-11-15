@@ -1,8 +1,8 @@
-import { getSupabaseBrowserClient } from '../supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { wishlist } from '#stores/wishlist.svelte.ts';
+import { selectAll } from '#lib/services/select-all.ts';
+import { getSupabaseBrowserClient } from '#lib/supabase.ts';
 import { loading } from '#stores/loading.svelte.ts';
-import { selectAll } from './select-all';
+import { wishlist } from '#stores/wishlist.svelte.ts';
 
 export async function addCardToWishlist(username: string, cardCode: string, client: SupabaseClient = getSupabaseBrowserClient()) {
 	try {
@@ -17,22 +17,19 @@ export async function addCardToWishlist(username: string, cardCode: string, clie
 		if (existingCard) {
 			wishlist.add(cardCode);
 			return { data: existingCard, error: null };
-		} else {
-			const { data, error } = await client
-				.from('wishlists')
-				.insert({
-					card_code: cardCode,
-					username,
-				})
-				.select();
-
-			if (!error) wishlist.add(cardCode);
-
-			return { data, error };
 		}
-	} catch (error) {
-		console.error('Error adding card to wishlist:', error);
-		return { data: null, error };
+
+		const { data, error } = await client
+			.from('wishlists')
+			.insert({
+				card_code: cardCode,
+				username,
+			})
+			.select();
+
+		if (!error) wishlist.add(cardCode);
+
+		return { data, error };
 	} finally {
 		loading.mutation = false;
 	}
@@ -51,24 +48,16 @@ export async function removeCardFromWishlist(username: string, cardCode: string,
 		if (!error) wishlist.remove(cardCode);
 
 		return { data, error };
-	} catch (error) {
-		console.error('Error removing card from wishlist:', error);
-		return { data: null, error };
 	} finally {
 		loading.mutation = false;
 	}
 }
 
 /** Every card the user wishes for, only its card code, paged past the row cap. */
-export async function getUserWishlist(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
-	try {
-		return await selectAll(() => client
-			.from('wishlists')
-			.select('card_code', { count: 'exact' })
-			.eq('username', username)
-			.order('id'));
-	} catch (error) {
-		console.error('Error getting user wishlist:', error);
-		return { data: null, error };
-	}
+export function getUserWishlist(username: string, client: SupabaseClient = getSupabaseBrowserClient()) {
+	return selectAll(() => client
+		.from('wishlists')
+		.select('card_code', { count: 'exact' })
+		.eq('username', username)
+		.order('id'));
 }

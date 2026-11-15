@@ -9,7 +9,7 @@
 	import ScrollProgress from '#components/list/ScrollProgress.svelte';
 	import TextInput from '#lib/components/filters/TextInput.svelte';
 	import { onMount } from 'svelte';
-	import type { FullCard, GridPokemon, Set } from '#lib/types.js';
+	import type { Card, GridPokemon, Set } from '#lib/types.js';
 	import { fade, fly } from 'svelte/transition';
 	import XIcon from '@lucide/svelte/icons/x';
 	import SlidersHorizontalIcon from '@lucide/svelte/icons/sliders-horizontal';
@@ -24,7 +24,7 @@
 
 	interface Props {
 		artists?: string[];
-		cards: FullCard[];
+		cards: Card[];
 		lowRes?: boolean;
 		/** A caveat about the catalogue (an incomplete one), shown next to the counts. */
 		note?: string;

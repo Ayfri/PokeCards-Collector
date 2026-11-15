@@ -38,9 +38,13 @@ export const MAX_POCKETS = 8;
 export const MAX_HISTORY = 100;
 export const MAX_FILL = 1000;
 export const MAX_NAME = 60;
-/** The table's check constraint enforces the same limits (50 pages, 64 kB), since a signed-in user can insert through PostgREST without the endpoint. */
+/** The table's check constraint enforces the same page limit, since a signed-in user can insert through PostgREST without the endpoint. */
 export const MAX_SHARE_PAGES = 50;
-export const MAX_SHARE_BYTES = 60_000;
+/**
+ * The table checks `octet_length(pages::text) <= 65536`, and Postgres's `jsonb::text` adds a space after every `,` and `:` that `JSON.stringify` leaves out.
+ * Measured on the compact JSON, 60000 characters is a margin under that limit, not the same limit.
+ */
+const MAX_SHARE_BYTES = 60_000;
 export const MAX_SHARES_PER_USER = 20;
 /**
  * A published pocket is a catalogue card code: lower-case letters, digits and underscores, so never a URL, a path or a backslash host. It mirrors the like_regex
@@ -273,7 +277,7 @@ export function sortBinderCards(cards: readonly BinderCard[], sortBy: BinderSort
 const haystacks = new WeakMap<BinderCard, string>();
 
 /** Keeps the cards whose name, set name or code holds the term. */
-export function searchCards(cards: readonly BinderCard[], term: string): readonly BinderCard[] {
+export function filterBinderCards(cards: readonly BinderCard[], term: string): readonly BinderCard[] {
 	const needle = term.trim().toLowerCase();
 	if (!needle) return cards;
 

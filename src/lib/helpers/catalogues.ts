@@ -56,7 +56,6 @@ export type SetTable = CatalogueTables['sets'];
 
 /**
  * Language -> page path of the same card, set or page in each catalogue that has it.
- * Language -> card page path (`cardPath`) of the same card in each catalogue that carries it.
  * English and French share TCGdex ids, so the twin is found by id. Japanese ids are separate products that collide by accident
  * (`neo4-109` is Shining Mewtwo in English and a Trainer in Japanese), so a Japanese print is linked through `jp_cards.twin_tcgdex_id`,
  * which `bun run scrapers link` fills by matching language-independent traits.

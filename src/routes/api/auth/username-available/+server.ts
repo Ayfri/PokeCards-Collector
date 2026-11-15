@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { SUPABASE_SECRET_KEY } from '$app/env/private';
 import { PUBLIC_SUPABASE_URL } from '$app/env/public';
 import { isUsernameTaken } from '#lib/services/profiles.ts';
-import { normalizeUsername, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
+import { normalizeUsername, SUPABASE_DB_OPTIONS, USERNAME_PATTERN, USERNAME_REQUIREMENTS } from '#src/constants.ts';
 import type { RequestHandler } from './$types';
 
 /**
@@ -26,8 +26,8 @@ export const GET: RequestHandler = async ({ url }) => {
 		return Response.json({ error: 'Could not check username availability', success: false }, { status: 500 });
 	}
 
-	const admin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY);
-	const { error, exists } = await isUsernameTaken(username, admin);
+	const admin = createClient(PUBLIC_SUPABASE_URL, SUPABASE_SECRET_KEY, { db: SUPABASE_DB_OPTIONS });
+	const { data: exists, error } = await isUsernameTaken(username, admin);
 
 	if (error) {
 		console.error('Username availability check failed:', error);

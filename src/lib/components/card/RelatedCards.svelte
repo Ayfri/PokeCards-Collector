@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type {CardPageSet, FullCard, Pokemon, PriceData} from '#lib/types.js';
+	import type {Card, CardPageSet, Pokemon, PriceData} from '#lib/types.js';
 	import CardImage from '#components/card/CardImage.svelte';
 	import CardmarketLogo from '#components/card/CardmarketLogo.svelte';
 	import CollectionControls from '#components/card/CollectionControls.svelte';
@@ -18,9 +18,9 @@
 	import { onMount } from 'svelte';
 
 	interface Props {
-		cards: FullCard[];
+		cards: Card[];
 		lowRes?: boolean;
-		onCardSelect: (card: FullCard) => void;
+		onCardSelect: (card: Card) => void;
 		pokemon?: Pokemon | undefined;
 		/** Looked up when a card is a Pokémon card. */
 		pokemons: Pokemon[];
@@ -56,10 +56,10 @@
 	 * The grid's `sortCards` does not fit here: it reads `card.price`, which only a grid payload carries, and sets keyed by language,
 	 * while a card page ships a price record and the sets of one language. Rarity sorts by tier like the grid, most common first.
 	 */
-	const compare = $derived.by((): (a: FullCard, b: FullCard) => number => {
-		const price = (card: FullCard) => cardPrice(prices[card.cardCode]) ?? 0;
-		const released = (card: FullCard) => setIndex.get(card.setId)?.releaseDate.getTime() ?? 0;
-		const setName = (card: FullCard) => setIndex.get(card.setId)?.name ?? '';
+	const compare = $derived.by((): (a: Card, b: Card) => number => {
+		const price = (card: Card) => cardPrice(prices[card.cardCode]) ?? 0;
+		const released = (card: Card) => setIndex.get(card.setId)?.releaseDate.getTime() ?? 0;
+		const setName = (card: Card) => setIndex.get(card.setId)?.name ?? '';
 
 		switch (relatedSort.value) {
 			case 'sort-artist': return (a, b) => a.artist.localeCompare(b.artist);
@@ -77,7 +77,7 @@
 		? pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
 		: (cardGroupName(sortedCards[0]?.name ?? '') || 'Related'));
 
-	function selectCard(card: FullCard, event: MouseEvent) {
+	function selectCard(card: Card, event: MouseEvent) {
 		if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
 		event.preventDefault();
 		onCardSelect(card);

@@ -1,7 +1,7 @@
 import { getCards, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import type { PageServerLoad } from './$types';
 import { ogImage } from '#helpers/og-image.ts';
-import type { Set as CardSet, FullCard, PlateCard, PlateSet, PriceData } from '#lib/types.js';
+import type { Card, Set as CardSet, PlateCard, PlateSet, PriceData } from '#lib/types.js';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 
@@ -24,7 +24,7 @@ interface ShowcaseCard {
 const PLATE_FIELDS = ['artImage', 'artSource', 'artist', 'cardCode', 'hp', 'language', 'localId', 'name', 'pokemonNumber', 'rarity', 'setId', 'setName', 'stage', 'subtype', 'supertype', 'types'] as const satisfies readonly (keyof PlateCard)[];
 
 /** Copies the plate fields that are set: an absent column stays off the object instead of travelling as `void 0` in every document. */
-const plateOf = (card: FullCard, set: CardSet | undefined): NonNullable<ShowcaseCard['plate']> => ({
+const plateOf = (card: Card, set: CardSet | undefined): NonNullable<ShowcaseCard['plate']> => ({
 	card: Object.fromEntries(PLATE_FIELDS.filter(field => card[field] !== undefined).map(field => [field, card[field]])) as PlateCard,
 	...(set && { set: { name: set.name, printedTotal: set.printedTotal, ...(set.symbol && { symbol: set.symbol }) } }),
 });
@@ -46,9 +46,9 @@ export interface ArtistWithCards {
 const aggregates = new WeakMap<object, unknown>();
 
 /** Aggregated on the server: rebuilding these 411 rows in the browser needs all 23546 cards and 19819 prices, a ~26 MB document. */
-const aggregateArtists = (allCards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]) => memoizedOn(aggregates, [allCards, prices, sets], (): ArtistWithCards[] => {
+const aggregateArtists = (allCards: Card[], prices: Record<string, PriceData>, sets: CardSet[]) => memoizedOn(aggregates, [allCards, prices, sets], (): ArtistWithCards[] => {
 	const setsById = new Map(sets.map(set => [set.setId, set]));
-	const byArtist = new Map<string, FullCard[]>();
+	const byArtist = new Map<string, Card[]>();
 
 	for (const card of allCards) {
 		if (!card.artist) continue;
@@ -62,7 +62,7 @@ const aggregateArtists = (allCards: FullCard[], prices: Record<string, PriceData
 			let totalValue = 0;
 			let firstReleaseYear = Number.POSITIVE_INFINITY;
 			let lastReleaseYear = Number.NEGATIVE_INFINITY;
-			const showcase: { card: FullCard; price: number }[] = [];
+			const showcase: { card: Card; price: number }[] = [];
 
 			/** One pass instead of a full sort per artist: the total, the years and the showcase candidates are computed together. */
 			for (const card of artistCards) {

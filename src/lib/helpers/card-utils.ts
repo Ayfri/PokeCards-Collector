@@ -1,5 +1,5 @@
 import { type Catalogue, CATALOGUES, type Language } from '#helpers/catalogues.ts';
-import type { Card, CardPageSet, Set as CardSet, FullCard, Pokemon, PriceData, SetWithPrice } from '#lib/types.js';
+import type { Card, CardPageSet, Set as CardSet, Pokemon, PriceData, SetWithPrice } from '#lib/types.js';
 
 /**
  * Memoizes `build` on the identity of `keys`, one `WeakMap` level per key, so a value derived from memoized tables never keeps one alive:
@@ -274,16 +274,16 @@ export const compareLocalIds = new Intl.Collator('en', { numeric: true }).compar
  * The cards of each set, grouped in one pass over a card list (the memoized one `getCards` returns), then deduplicated and sorted per set on its
  * first use: a card or set page neither scans the catalogue nor re-sorts, and one visited set does not pay for the 200 others.
  */
-const setOrders = new WeakMap<FullCard[], { bySet: Map<string, FullCard[]>; sorted: Map<string, FullCard[]> }>();
+const setOrders = new WeakMap<Card[], { bySet: Map<string, Card[]>; sorted: Map<string, Card[]> }>();
 
 /**
  * The cards of a set in the order it is printed in, memoized: a caller must not change the array. `cards` may list a card twice: the later copy
  * replaces the earlier one in its place.
  */
-export function setOrder(cards: FullCard[], setId: string): FullCard[] {
+export function setOrder(cards: Card[], setId: string): Card[] {
 	let orders = setOrders.get(cards);
 	if (!orders) {
-		const bySet = new Map<string, FullCard[]>();
+		const bySet = new Map<string, Card[]>();
 		for (const other of cards) {
 			const inSet = bySet.get(other.setId);
 			if (inSet) inSet.push(other);
@@ -291,16 +291,19 @@ export function setOrder(cards: FullCard[], setId: string): FullCard[] {
 		}
 		setOrders.set(cards, orders = { bySet, sorted: new Map() });
 	}
+	const listed = orders.bySet.get(setId);
+	/** Nothing is kept for a set the list does not hold: `/api/set-cards` passes its query string here, and every unknown id would stay until the next publish. */
+	if (!listed) return [];
 	let order = orders.sorted.get(setId);
 	if (!order) {
-		const inSet = new Map((orders.bySet.get(setId) ?? []).map(other => [other.cardCode, other]));
+		const inSet = new Map(listed.map(other => [other.cardCode, other]));
 		orders.sorted.set(setId, order = [...inSet.values()].sort((a, b) => compareLocalIds(a.localId, b.localId)));
 	}
 	return order;
 }
 
 /** The cards printed just before and after this one in its set. */
-function setNeighbours(card: Pick<FullCard, 'cardCode' | 'setId'>, cards: FullCard[]): { next?: FullCard; previous?: FullCard } {
+function setNeighbours(card: Pick<Card, 'cardCode' | 'setId'>, cards: Card[]): { next?: Card; previous?: Card } {
 	const order = setOrder(cards, card.setId);
 	const index = order.findIndex(other => other.cardCode === card.cardCode);
 	return index < 0 ? {} : { next: order[index + 1], previous: order[index - 1] };
@@ -318,8 +321,8 @@ export interface SetNeighbourLinks {
 	previous?: NeighbourLink;
 }
 
-export function setNeighbourLinks(language: Language, card: Pick<FullCard, 'cardCode' | 'setId'>, cards: FullCard[]): SetNeighbourLinks {
-	const link = (neighbour?: FullCard): NeighbourLink | undefined => neighbour && { name: neighbour.name, number: formatCardNumber(neighbour.localId), path: cardPath(language, neighbour) };
+export function setNeighbourLinks(language: Language, card: Pick<Card, 'cardCode' | 'setId'>, cards: Card[]): SetNeighbourLinks {
+	const link = (neighbour?: Card): NeighbourLink | undefined => neighbour && { name: neighbour.name, number: formatCardNumber(neighbour.localId), path: cardPath(language, neighbour) };
 	const { next, previous } = setNeighbours(card, cards);
 	return { next: link(next), previous: link(previous) };
 }
@@ -339,9 +342,9 @@ const pokemonMemo = new WeakMap<object, unknown>();
  * The prints of each Pokémon, Trainer or Energy group (`cardGroupKey`), built once per card list. A card without a set name is not a print,
  * and a card the list holds twice counts once, since the card page keys its tiles on `cardCode`.
  */
-function cardGroups(cards: FullCard[]): Map<string, FullCard[]> {
+function cardGroups(cards: Card[]): Map<string, Card[]> {
 	return memoizedOn(groupMemo, [cards], () => {
-		const groups = new Map<string, FullCard[]>();
+		const groups = new Map<string, Card[]>();
 		const seen = new Set<string>();
 		for (const card of cards) {
 			if (!card.setName || seen.has(card.cardCode)) continue;
@@ -356,9 +359,9 @@ function cardGroups(cards: FullCard[]): Map<string, FullCard[]> {
 }
 
 /** The card a Pokémon's neighbours link to: its priciest print, the first listed on a tie. Built once per card and price table. */
-function bestCardByPokemon(cards: FullCard[], prices: Record<string, PriceData>): Map<number, FullCard> {
+function bestCardByPokemon(cards: Card[], prices: Record<string, PriceData>): Map<number, Card> {
 	return memoizedOn(bestMemo, [cards, prices], () => {
-		const best = new Map<number, FullCard>();
+		const best = new Map<number, Card>();
 		const worth = new Map<number, number>();
 		for (const card of cards) {
 			if (card.pokemonNumber === undefined) continue;
@@ -399,7 +402,7 @@ interface CardPageData {
 	pokemons: Pokemon[];
 	prices: Record<string, PriceData>;
 	/** The shown card first, then its other prints by price, highest first. */
-	prints: FullCard[];
+	prints: Card[];
 	sets: CardPageSet[];
 }
 
@@ -407,7 +410,7 @@ interface CardPageData {
  * The slice of the catalogue a card page reads, so the document carries one card group instead of the tables (11.5 MB when sent whole).
  * The shown card drops the columns only `cardSchema` reads on the server. A neighbouring Pokémon needs a link and no card, so it ships a path.
  */
-export function cardPageData(language: Language, shown: FullCard, cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], sets: CardSet[]): CardPageData {
+export function cardPageData(language: Language, shown: Card, cards: Card[], prices: Record<string, PriceData>, pokemons: Pokemon[], sets: CardSet[]): CardPageData {
 	const { regulationMark, tcgdexId, ...print } = shown;
 	const others = (cardGroups(cards).get(cardGroupKey(shown)) ?? [])
 		.filter(card => card.cardCode !== shown.cardCode)

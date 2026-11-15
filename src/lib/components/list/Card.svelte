@@ -2,7 +2,7 @@
 	import {formatEuros} from '#helpers/format.ts';
 	import {NO_IMAGES} from '#helpers/card-images.ts';
 	import { page } from '$app/state';
-	import type {FullCard, GridPokemon, Set} from '#lib/types.js';
+	import type {Card, GridPokemon, Set} from '#lib/types.js';
 	import { cardPath, formatCardNumber } from '#helpers/card-utils.ts';
 	import CardImage from '#components/card/CardImage.svelte';
 	import CollectionControls from '#components/card/CollectionControls.svelte';
@@ -12,7 +12,7 @@
 	import SetBadge from '#components/SetBadge.svelte';
 
 	interface Props {
-		card: FullCard;
+		card: Card;
 		customHeight?: number | null;
 		customWidth?: number | null;
 		/** Loads the first row without waiting for the lazy-loading pass, so the LCP card is requested immediately; the rows below load lazily and at normal priority. */

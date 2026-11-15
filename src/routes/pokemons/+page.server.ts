@@ -5,7 +5,7 @@ import { processCardImage } from '#helpers/card-images.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { BASE_URL, POKEMONS_COUNT } from '#src/constants.ts';
 import { type CardLink, cardPath, cardPrice, memoizedOn } from '#helpers/card-utils.ts';
-import type { FullCard, Pokemon, PriceData } from '#lib/types.js';
+import type { Card, Pokemon, PriceData } from '#lib/types.js';
 
 /**
  * What one grid tile needs. The tiles only read a count, a link target and a fallback scan, so `cards` and `prices` stay
@@ -28,7 +28,7 @@ export interface PokemonListEntry {
 const aggregates = new WeakMap<object, unknown>();
 
 /** The type a card is filed under: the first of its comma-separated types. */
-const mainTypeOf = (card: FullCard) => card.types.split(',', 1)[0]?.trim().toLowerCase() ?? '';
+const mainTypeOf = (card: Card) => card.types.split(',', 1)[0]?.trim().toLowerCase() ?? '';
 
 /** The most frequent type; a tie goes to the type of the most valuable card, then to the first one met. */
 function mainType(counts: Map<string, number>, bestType: string): string {
@@ -40,7 +40,7 @@ function mainType(counts: Map<string, number>, bestType: string): string {
 	return main;
 }
 
-const aggregatePokemons = (pokemons: Pokemon[], allCards: FullCard[], prices: Record<string, PriceData>) => memoizedOn(aggregates, [pokemons, allCards, prices], (): PokemonListEntry[] => {
+const aggregatePokemons = (pokemons: Pokemon[], allCards: Card[], prices: Record<string, PriceData>) => memoizedOn(aggregates, [pokemons, allCards, prices], (): PokemonListEntry[] => {
 	/** One pass over the 23546 cards: scanning all of them for each Pokémon would take 24M comparisons per render. */
 	const best = new Map<number, { bestType: string; card: CardLink; count: number; image: string; price: number; types: Map<string, number> }>();
 	for (const card of allCards) {

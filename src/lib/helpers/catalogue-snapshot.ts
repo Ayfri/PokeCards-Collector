@@ -28,7 +28,7 @@ export interface PublishSummary extends CatalogueManifest {
 	written: CatalogueObjectName[];
 }
 
-/** `cards:details` -> `cards-details/3f2a9c0d1e4b5a6c.json.gz`: one prefix per name, so a key never matches another name's prefix. */
+/** `cards:details` -> `cards-details/3f2a9c0d1e4b5a6c7d8e9f0a1b2c3d4e.json.gz`: one prefix per name, so a key never matches another name's prefix. */
 export const objectKey = (name: CatalogueObjectName, hash: string): string => `${name.replace(':', '-')}/${hash}.json.gz`;
 
 /**

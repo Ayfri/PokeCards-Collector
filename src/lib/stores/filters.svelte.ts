@@ -1,5 +1,5 @@
 import type { Set as CardSet } from '#lib/types.js';
-import { persistedRecord } from './persisted.svelte';
+import { persistedRecord } from '#stores/persisted.svelte.ts';
 
 type SortOrder = 'asc' | 'desc';
 

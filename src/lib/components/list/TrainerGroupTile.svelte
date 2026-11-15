@@ -3,7 +3,7 @@
 	import TypeSymbol from '#components/card/TypeSymbol.svelte';
 	import { formatEuros } from '#helpers/format.ts';
 	import { loading } from '#stores/loading.svelte.ts';
-	import type { FullCard } from '#lib/types.js';
+	import type { Card } from '#lib/types.js';
 	import type { TrainerGroupEntry } from '#src/routes/trainers/+page.server.ts';
 
 	interface Props {
@@ -19,7 +19,7 @@
 	const energyType = $derived(group.plate.supertype === 'Energy' ? ENERGY_TYPE.exec(group.name)?.[1] : undefined);
 
 	/** A tile with a scan only carries the kind and types for its plate, so the printed details fall back to the "nothing to show" values the plate hides. */
-	const plateCard = $derived<FullCard>({
+	const plateCard = $derived<Card>({
 		artist: 'Unknown',
 		localId: '',
 		rarity: 'None',

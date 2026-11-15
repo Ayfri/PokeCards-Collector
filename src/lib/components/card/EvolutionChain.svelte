@@ -2,15 +2,15 @@
 	import { titleCase } from '#helpers/format.ts';
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { getCardImageForPokemon, NO_IMAGES } from '#helpers/card-images.ts';
-	import type { FullCard, Pokemon } from '#lib/types.js';
+	import type { Card, Pokemon } from '#lib/types.js';
 
 	interface Props {
-		card: FullCard;
+		card: Card;
 		/** The path of each Pokémon of the chain that has a card, by Pokédex id. */
 		pokemonPaths: Record<number, string>;
 		pokemons: Pokemon[];
 		/** The prints of the shown Pokémon: the sprite falls back to their scan. */
-		prints: FullCard[];
+		prints: Card[];
 	}
 
 	let {
@@ -20,7 +20,7 @@
 		prints
 	}: Props = $props();
 
-	function buildEvolutionChain(card: FullCard) {
+	function buildEvolutionChain(card: Card) {
 		const currentPokemon = pokemons.find(p => p.id === card.pokemonNumber);
 		if (!currentPokemon) {
 			console.error(`Pokemon #${card.pokemonNumber} not found in pokemons array`);

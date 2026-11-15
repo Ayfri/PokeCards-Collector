@@ -1,5 +1,5 @@
 import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
-import type { CardDleGuess, CardDleSuggestion, FullCard, PriceData } from '#lib/types.js';
+import type { Card, CardDleGuess, CardDleSuggestion, PriceData } from '#lib/types.js';
 
 /** Cards priced below this are bulk nobody recognises, so they are never guessable and never the card of the day. */
 export const CARD_DLE_MIN_PRICE = 3;
@@ -103,7 +103,7 @@ export function shareText(date: string, guesses: CardDleGuess[], url: string, ea
 	return [`Card.dle ${date} - ${guesses.length} ${guesses.length === 1 ? 'guess' : 'guesses'}${easyUsed ? ' (easy mode)' : ''}`, ...rows, url].join('\n');
 }
 
-interface CardOfTheDay extends FullCard {
+interface CardOfTheDay extends Card {
 	price: number;
 }
 
@@ -122,7 +122,7 @@ const pickMemo = new WeakMap<object, unknown>();
  * the date and its own code, so when the daily scrape adds or removes a card, the pick changes only if that card is
  * the winner. Two days never pick neighbouring codes. `date` is a UTC `YYYY-MM-DD`.
  */
-export function pickCardOfTheDay(date: string, cards: FullCard[], prices: Record<string, PriceData>): CardOfTheDay | null {
+export function pickCardOfTheDay(date: string, cards: Card[], prices: Record<string, PriceData>): CardOfTheDay | null {
 	const days = memoizedOn(pickMemo, [cards, prices], () => new Map<string, CardOfTheDay | null>());
 	const known = days.get(date);
 	if (known !== undefined) return known;

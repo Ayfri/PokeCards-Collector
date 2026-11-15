@@ -9,7 +9,7 @@
 	import InfoIcon from '@lucide/svelte/icons/info';
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import type { PageData } from './$types';
-	import type { SearchedUserWithStats, SearchUsersResponse } from '#lib/types.js';
+	import type { SearchedUser, SearchUsersResponse } from '#lib/types.js';
 	import { pluralize } from '#helpers/format.ts';
 	import { readJson } from '#helpers/utils.ts';
 	import PageHeader, { type PageStat } from '#components/PageHeader.svelte';
@@ -35,7 +35,7 @@
 	});
 
 	let searchQuery = $state('');
-	let searchResults: SearchedUserWithStats[] = $state([]);
+	let searchResults: SearchedUser[] = $state([]);
 	let isLoadingSearch = $state(false);
 	let isInitialSearchState = $state(true);
 	let searchErrorMessage = $state('');

@@ -1,6 +1,7 @@
 import {PUBLIC_NO_IMAGES} from '$app/env/public';
+import {ENERGY_TYPES} from '#helpers/card-plate.ts';
 import {CARDTRADER_IMAGES} from '#src/constants.ts';
-import type {FullCard} from '#lib/types.js';
+import type {Card} from '#lib/types.js';
 
 export type ImageQuality = 'high' | 'low';
 
@@ -10,7 +11,7 @@ export const NO_IMAGES = PUBLIC_NO_IMAGES === 'true';
 const PLACEHOLDER = 'https://placehold.co/300x450/transparent/transparent';
 
 /** The scan of the first card depicting `pokemonId`, or an empty string when the list holds none. */
-export function getCardImageForPokemon(pokemonId: number, cards: FullCard[]): string {
+export function getCardImageForPokemon(pokemonId: number, cards: Card[]): string {
 	const pokemonCard = cards.find(c => c.pokemonNumber === pokemonId);
 	return pokemonCard ? processCardImage(pokemonCard.image) : '';
 }
@@ -29,8 +30,7 @@ export function processCardImage(imageUrl: string, quality: ImageQuality = 'high
 /** Intrinsic widths of the `low` and `high` URLs `processCardImage` returns, for `srcset` descriptors: the browser's DPR maths picks the wrong variant on any other number. */
 export const scanWidths = (imageUrl: string): readonly [low: number, high: number] => imageUrl.startsWith(CARDTRADER_IMAGES) ? [500, 868] : [245, 600];
 
-/** The energy names `src/styles/colors.css` declares a `--<type>` / `--<type>2` pair for. */
-const TYPE_COLORS = new Set(['colorless', 'darkness', 'dragon', 'fairy', 'fighting', 'fire', 'grass', 'lightning', 'metal', 'psychic', 'water']);
+const TYPE_COLORS = new Set(ENERGY_TYPES);
 
 /**
  * Inline `--tint-a` / `--tint-b` for a card with no art. The energy types are already in the payload, so the

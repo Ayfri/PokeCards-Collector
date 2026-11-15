@@ -1,6 +1,6 @@
 import { countCards, getCards, getPokemons, getPrices, getSets } from '#helpers/catalogue-data.ts';
 import { cardListSchema, faqSchema } from '#helpers/seo.ts';
-import type { BinderTile, Set as CardSet, FullCard, PriceData } from '#lib/types.js';
+import type { BinderTile, Card, Set as CardSet, PriceData } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 import { cardPrice, memoizedOn } from '#helpers/card-utils.ts';
 import { getRarityLevel, RARITY_MAPPING } from '#helpers/rarity.ts';
@@ -14,8 +14,8 @@ interface CatalogueHome {
 	binderPreview: BinderTile[];
 	latestSet: CardSet;
 	latestSetStats: { energyCards: number; pokemonCards: number; totalValue: number; trainerCards: number };
-	mostExpensiveCards: FullCard[];
-	mostExpensiveLatestSetCards: FullCard[];
+	mostExpensiveCards: Card[];
+	mostExpensiveLatestSetCards: Card[];
 }
 
 /**
@@ -24,9 +24,9 @@ interface CatalogueHome {
  */
 const homes = new WeakMap<object, unknown>();
 
-const catalogueHome = (cards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]) => memoizedOn(homes, [cards, prices, sets], () => buildHome(cards, prices, sets));
+const catalogueHome = (cards: Card[], prices: Record<string, PriceData>, sets: CardSet[]) => memoizedOn(homes, [cards, prices, sets], () => buildHome(cards, prices, sets));
 
-function buildHome(cards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]): CatalogueHome {
+function buildHome(cards: Card[], prices: Record<string, PriceData>, sets: CardSet[]): CatalogueHome {
 	/** Cards are not deduplicated on `image`: TCGdex gives each card its own art URL, so that would only drop the real cards it has no art for. */
 	const processedAllCards = cards.filter(card => Boolean(card.setName));
 
@@ -38,10 +38,10 @@ function buildHome(cards: FullCard[], prices: Record<string, PriceData>, sets: C
 		return cardSetName === latestSet.name.toLowerCase();
 	}) : [];
 
-	const priceOf = (card: FullCard) => cardPrice(prices[card.cardCode]) ?? 0;
+	const priceOf = (card: Card) => cardPrice(prices[card.cardCode]) ?? 0;
 	/** One pass that keeps the five priciest in order: sorting the whole catalogue for them cost ~26 ms per render. */
-	const topFive = (list: FullCard[]) => {
-		const top: { card: FullCard; price: number }[] = [];
+	const topFive = (list: Card[]) => {
+		const top: { card: Card; price: number }[] = [];
 		for (const card of list) {
 			const price = priceOf(card);
 			const slot = top.findIndex(entry => price > entry.price);

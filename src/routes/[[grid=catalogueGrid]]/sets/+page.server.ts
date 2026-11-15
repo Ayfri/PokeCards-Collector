@@ -3,13 +3,13 @@ import type { PageServerLoad } from './$types';
 import { BY_GRID, type Catalogue, CATALOGUES } from '#helpers/catalogues.ts';
 import { ogImage } from '#helpers/og-image.ts';
 import { breadcrumbs, setListSchema } from '#helpers/seo.ts';
-import type { Set as CardSet, FullCard, PriceData, SetWithPrice } from '#lib/types.js';
+import type { Card, Set as CardSet, PriceData, SetWithPrice } from '#lib/types.js';
 import { memoizedOn, setValues } from '#helpers/card-utils.ts';
 
 /** Keyed on the memoized tables: the spread of every set runs once per refreshed table instead of once per request. */
 const totals = new WeakMap<object, unknown>();
 
-const withTotals = (cards: FullCard[], prices: Record<string, PriceData>, sets: CardSet[]) => memoizedOn(totals, [cards, prices, sets], (): SetWithPrice[] => {
+const withTotals = (cards: Card[], prices: Record<string, PriceData>, sets: CardSet[]) => memoizedOn(totals, [cards, prices, sets], (): SetWithPrice[] => {
 	const values = setValues(cards, prices);
 	return sets.map(set => ({ ...set, totalPrice: values.get(set.setId) ?? 0 }));
 });

@@ -10,29 +10,14 @@ import { getUserCollection } from '#lib/services/collections.ts';
  * Page loads call `getCards()` / `getPrices()` / `getSets()` themselves; `catalogueObject` memoizes each, so the whole-table read still happens once per isolate.
  */
 export const load: LayoutServerLoad = async ({ locals }) => {
-	let wishlistCodes: string[] = [];
-	let collectionCodes: string[] = [];
-
-	if (locals.profile) {
-		const username = locals.profile.username;
-		/** `allSettled` so a failing wishlist query does not also lose the user's collection. */
-		const [wishlistResult, collectionResult] = await Promise.allSettled([
-			getUserWishlist(username, locals.supabase),
-			getUserCollection(username, locals.supabase)
-		]);
-
-		if (wishlistResult.status === 'fulfilled' && !wishlistResult.value.error) {
-			wishlistCodes = wishlistResult.value.data?.map(({ card_code }) => card_code) ?? [];
-		} else if (wishlistResult.status === 'rejected' || wishlistResult.value.error) {
-			console.error('Error fetching wishlist in layout:', wishlistResult.status === 'rejected' ? wishlistResult.reason : wishlistResult.value.error);
-		}
-
-		if (collectionResult.status === 'fulfilled' && !collectionResult.value.error) {
-			collectionCodes = collectionResult.value.data?.map(({ card_code }) => card_code) ?? [];
-		} else if (collectionResult.status === 'rejected' || collectionResult.value.error) {
-			console.error('Error fetching collection in layout:', collectionResult.status === 'rejected' ? collectionResult.reason : collectionResult.value.error);
-		}
-	}
+	/** The services never reject, so a failing wishlist query does not also lose the user's collection: each failure only empties its own list. */
+	const [wishlist, collection] = locals.profile
+		? await Promise.all([getUserWishlist(locals.profile.username, locals.supabase), getUserCollection(locals.profile.username, locals.supabase)])
+		: [];
+	if (wishlist?.error) console.error('Error fetching wishlist in layout:', wishlist.error);
+	if (collection?.error) console.error('Error fetching collection in layout:', collection.error);
+	const wishlistCodes = wishlist?.data?.map(({ card_code }) => card_code) ?? [];
+	const collectionCodes = collection?.data?.map(({ card_code }) => card_code) ?? [];
 
 	return {
 		collectionCodes,

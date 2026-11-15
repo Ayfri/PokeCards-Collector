@@ -4,14 +4,14 @@ import { cardPath, cardPrice, formatCardNumber, memoizedOn, setOrder, setPath, s
 import { gzipJson } from '#helpers/catalogue-snapshot.ts';
 import { keepAlive } from '#helpers/data-cache.ts';
 import { cardListSchema, setSchema } from '#helpers/seo.ts';
-import type { Set as CardSet, FullCard, GridPokemon, Pokemon, PriceData } from '#lib/types.js';
+import type { Card, Set as CardSet, GridPokemon, Pokemon, PriceData } from '#lib/types.js';
 import { redirect } from '@sveltejs/kit';
 
 /** Everything a card grid renders. Kept out of the page load so a `?set=` change cannot force it over the wire again. */
 export interface GridPayload {
 	artists: string[];
 	/** Each card carries its own `price`, the only number the grid reads of the price record. */
-	cards: FullCard[];
+	cards: Card[];
 	pokemons: GridPokemon[];
 	rarities: string[];
 	types: string[];
@@ -40,7 +40,7 @@ interface TopCard {
  * set's six most valuable cards and its total value, and the most valuable one as a sentence, since answer engines quote a fact before a claim.
  * It lives here rather than in `seo.ts`, which the `Seo` component ships to every browser.
  */
-export function setLanding(set: CardSet, cards: FullCard[], prices: Record<string, PriceData>, catalogue: Catalogue = CATALOGUES.en) {
+export function setLanding(set: CardSet, cards: Card[], prices: Record<string, PriceData>, catalogue: Catalogue = CATALOGUES.en) {
 	const setCards = setOrder(cards, set.setId);
 	const priced = setCards.map(card => ({ card, price: cardPrice(prices[card.cardCode]) }));
 	/** An entry has no `path`: every card of the page shares its set, so `SetChecklist` builds each link from the entry and the set instead of the document carrying one per card. */
@@ -86,7 +86,7 @@ const bodyMemos = { binder: new WeakMap<object, unknown>(), grid: new WeakMap<ob
  * The compressed JSON `build` returns, built once per card list and rebuilt when any of the other memoized `inputs` (the price table, ...) is a fresh
  * object. Keyed on their identity, so a body keeps none of them alive after a refresh. A failed build is forgotten, so the next request retries it.
  */
-export function memoizedJson(name: keyof typeof bodyMemos, cards: FullCard[], inputs: readonly object[], build: () => unknown): Promise<CompressedJson> {
+export function memoizedJson(name: keyof typeof bodyMemos, cards: Card[], inputs: readonly object[], build: () => unknown): Promise<CompressedJson> {
 	return memoizedOn(bodyMemos[name], [cards, ...inputs], () => {
 		const body = (async () => {
 			const { gzip, hash } = await gzipJson(build());
@@ -124,13 +124,13 @@ export function compressedJsonResponse(request: Request, body: CompressedJson, c
 	return new Response(new Blob([body.gzip]).stream().pipeThrough(new DecompressionStream('gzip')), { headers: { ...headers, 'content-type': 'application/json' } });
 }
 
-function gridCards(cards: FullCard[], prices: Record<string, PriceData>) {
+function gridCards(cards: Card[], prices: Record<string, PriceData>) {
 	/** An artless card is still a real card, so cards are not deduplicated on `image`: that would hide 8899 of the 12781 Japanese cards. */
 	/** `cardMarketUpdatedAt` is only drawn on a card page, so the 21k grid tiles leave it out. */
 	return cards.filter(card => Boolean(card.setName)).map(({ cardMarketUpdatedAt, ...card }) => ({ ...card, price: cardPrice(prices[card.cardCode]) }));
 }
 
-function gridPayload(cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[]): GridPayload {
+function gridPayload(cards: Card[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[]): GridPayload {
 	const visibleCards = gridCards(cards, prices);
 
 	return {
@@ -146,8 +146,8 @@ function gridPayload(cards: FullCard[], prices: Record<string, PriceData>, pokem
  * The grid payload of one set, for its page: its cards, with the pokemons and types they use and nothing of the rest of the catalogue.
  * Small enough to build per request, so there is no ETag; only the browser holds it, for ten minutes. `404` when the set has no card.
  */
-export function setGridResponse(cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[], setId: string): Response {
-	const setCards = gridCards(cards.filter(card => card.setId === setId), prices);
+export function setGridResponse(cards: Card[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[], setId: string): Response {
+	const setCards = gridCards(setOrder(cards, setId), prices);
 	if (!setCards.length) return Response.json({ error: 'Unknown set' }, { status: 404 });
 
 	const dexNumbers = new Set(setCards.map(card => card.pokemonNumber));
@@ -163,6 +163,6 @@ export function setGridResponse(cards: FullCard[], prices: Record<string, PriceD
 }
 
 /** The grid payload as a cacheable JSON response. It is serialized, hashed and gzipped once per memoized table (see `compressedJsonResponse`). */
-export async function gridResponse(request: Request, cards: FullCard[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[]): Promise<Response> {
+export async function gridResponse(request: Request, cards: Card[], prices: Record<string, PriceData>, pokemons: Pokemon[], types: string[]): Promise<Response> {
 	return compressedJsonResponse(request, await memoizedJson('grid', cards, [prices, pokemons, types], () => gridPayload(cards, prices, pokemons, types)));
 }

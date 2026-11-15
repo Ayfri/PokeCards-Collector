@@ -21,7 +21,8 @@ export interface PlateIdentity {
 	typeNames: string[];
 }
 
-const ENERGY_TYPES = ['colorless', 'darkness', 'dragon', 'fairy', 'fighting', 'fire', 'grass', 'lightning', 'metal', 'psychic', 'water'];
+/** The energy names `src/styles/colors.css` declares a `--<type>` / `--<type>2` pair for. */
+export const ENERGY_TYPES = ['colorless', 'darkness', 'dragon', 'fairy', 'fighting', 'fire', 'grass', 'lightning', 'metal', 'psychic', 'water'];
 const ENERGY_TYPE = new RegExp(`\\b(${ENERGY_TYPES.join('|')})\\b`, 'i');
 const BASIC_ENERGY = new RegExp(`^(basic )?(${ENERGY_TYPES.join('|')}) energy$`, 'i');
 

@@ -7,10 +7,10 @@ import { isFrenchCode } from '#helpers/owned-cards.ts';
 import { breadcrumbs } from '#helpers/seo.ts';
 import { getCardIndex } from '#helpers/catalogue-data.ts';
 import { getBinderShare } from '#lib/services/binder-shares.ts';
-import type { BinderTile, FullCard } from '#lib/types.js';
+import type { BinderTile, Card } from '#lib/types.js';
 import type { PageServerLoad } from './$types';
 
-const NONE: ReadonlyMap<string, FullCard> = new Map();
+const NONE: ReadonlyMap<string, Card> = new Map();
 
 /**
  * A shared binder is rendered from the catalogue: the stored share holds codes only, and each one is resolved here into the few fields a pocket draws,
@@ -31,7 +31,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 	const japanese = codes.some(code => !isFrenchCode(code) && !english.has(code)) ? await getCardIndex('ja') : NONE;
 
 	function tileOf(key: string): BinderTile {
-		const [language, card]: [Language, FullCard | undefined] = isFrenchCode(key) ? ['fr', french.get(key)] : english.has(key) ? ['en', english.get(key)] : ['ja', japanese.get(key)];
+		const [language, card]: [Language, Card | undefined] = isFrenchCode(key) ? ['fr', french.get(key)] : english.has(key) ? ['en', english.get(key)] : ['ja', japanese.get(key)];
 		return card ? { href: cardPath(language, card), image: card.image, key, name: card.name, types: card.types } : { image: '', key, name: 'Card not in the catalogue' };
 	}
 

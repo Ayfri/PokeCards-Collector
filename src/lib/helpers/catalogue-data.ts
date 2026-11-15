@@ -1,4 +1,4 @@
-import type { FullCard, Pokemon, PriceData, Set } from '#lib/types.js';
+import type { Card, Pokemon, PriceData, Set } from '#lib/types.js';
 import type { CardDetails, CardListRow, CardVersions, PriceRow, SetRow } from '#helpers/catalogue-snapshot.ts';
 import { catalogueObject, manifestObject } from '#helpers/data-cache.ts';
 import { CATALOGUES, type Language, type LanguagePaths, LANGUAGES } from '#helpers/catalogues.ts';
@@ -9,7 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 const SET_TWINS: Record<'en' | 'ja', Partial<Record<string, string>>> = setTwinsJson;
 
-function toCard(card: CardListRow): FullCard {
+function toCard(card: CardListRow): Card {
 	return {
 		artist: card.artist || '',
 		cardCode: card.card_code,
@@ -99,7 +99,7 @@ export async function getPokemons(): Promise<Pokemon[]> {
 	return catalogueObject('pokemons', rows => rows);
 }
 
-export async function getCards(language: Language = 'en'): Promise<FullCard[]> {
+export async function getCards(language: Language = 'en'): Promise<Card[]> {
 	return catalogueObject(CATALOGUES[language].tables.cards, rows => rows.map(toCard), true);
 }
 
@@ -146,29 +146,26 @@ export async function getRandomCard(): Promise<(CardLink & { cardCode: string })
 }
 
 interface SlugIndex {
-	bySlug: Map<string, FullCard>;
+	bySlug: Map<string, Card>;
 	/** `set-number` of the slug, only for a card that has both parts, so a URL with a wrong or stale name part still finds its card. */
-	byTail: Map<string, FullCard>;
+	byTail: Map<string, Card>;
 }
 
 /** Keyed on the memoized card list, so the index is rebuilt exactly when `catalogueObject` hands out a fresh one. */
-const slugIndexes = new WeakMap<FullCard[], SlugIndex>();
+const slugIndexes = new WeakMap<object, unknown>();
 
 /**
  * A slug depends only on the card's own fields, so two different cards can share one only when their name, set and number are alike.
  * The card with the lowest `cardCode` keeps the slug, which makes the pick the same on every isolate.
  */
-function keepLowest(index: Map<string, FullCard>, key: string, card: FullCard): boolean {
+function keepLowest(index: Map<string, Card>, key: string, card: Card): boolean {
 	const kept = index.get(key);
 	if (!kept || card.cardCode < kept.cardCode) index.set(key, card);
 
 	return kept !== undefined && kept.cardCode !== card.cardCode;
 }
 
-function slugIndex(language: Language, cards: FullCard[]): SlugIndex {
-	const known = slugIndexes.get(cards);
-	if (known) return known;
-
+const slugIndex = (language: Language, cards: Card[]): SlugIndex => memoizedOn(slugIndexes, [cards], () => {
 	const index: SlugIndex = { bySlug: new Map(), byTail: new Map() };
 	const setSlugs = new Map<string, string>();
 	let collisions = 0;
@@ -183,14 +180,13 @@ function slugIndex(language: Language, cards: FullCard[]): SlugIndex {
 
 	if (collisions) console.warn(`${CATALOGUES[language].tables.cards}: ${collisions} card slugs shared by several cards`);
 
-	slugIndexes.set(cards, index);
 	return index;
-}
+});
 
 const cardIndexMemo = new WeakMap<object, unknown>();
 
 /** Keyed on the memoized list like `slugIndexes`, so the map goes with a refreshed table (rule 2). For a read that resolves many codes without a scan each. */
-export async function getCardIndex(language: Language): Promise<ReadonlyMap<string, FullCard>> {
+export async function getCardIndex(language: Language): Promise<ReadonlyMap<string, Card>> {
 	const cards = await getCards(language);
 	return memoizedOn(cardIndexMemo, [cards], () => new Map(cards.map(card => [card.cardCode, card])));
 }
@@ -204,7 +200,7 @@ const MAX_SLUG_NAME_TOKENS = 32;
  * Only a tail that is a real `set-number` matches, never a lone number or set, so a junk URL does not redirect to a card.
  * `canonical` is the card's own slug: the caller redirects to it when it differs from the one requested.
  */
-export async function findCardBySlug(language: Language, slug: string): Promise<{ canonical: string; card: FullCard; } | null> {
+export async function findCardBySlug(language: Language, slug: string): Promise<{ canonical: string; card: Card; } | null> {
 	const { bySlug, byTail } = slugIndex(language, await getCards(language));
 	const wanted = slug.normalize('NFC').toLowerCase();
 	const parts = wanted.split('-');
@@ -226,7 +222,7 @@ export async function findCardLinkByCode(language: Language, cardCode: string): 
  * no scan, so they come from the details for every card. A new object: the list card is memoized and shared with every request and the grid payloads.
  * The list and the details can come from two manifests during a refresh, so a card the details lack gets empty ones.
  */
-export async function getCardDetails(language: Language, cardCode: string): Promise<FullCard | null> {
+export async function getCardDetails(language: Language, cardCode: string): Promise<Card | null> {
 	const [index, details] = await Promise.all([getCardIndex(language), cardDetails(language)]);
 	const card = index.get(cardCode);
 	if (!card) return null;
@@ -297,7 +293,7 @@ export async function getSets(language: Language = 'en'): Promise<Set[]> {
 }
 
 /** Keyed on the memoized set list, like `slugIndexes`. */
-const setSlugIndexes = new WeakMap<Set[], Map<string, Set>>();
+const setSlugIndexes = new WeakMap<object, unknown>();
 
 /**
  * The set a URL slug names, compared in NFC and lowercase like `findCardBySlug`. Set slugs are unique in the three catalogues (`verify` and `check` fail on a
@@ -307,20 +303,18 @@ const setSlugIndexes = new WeakMap<Set[], Map<string, Set>>();
  */
 export async function findSetBySlug(language: Language, slug: string): Promise<{ canonical: string; set: Set } | null> {
 	const sets = await getSets(language);
-	let index = setSlugIndexes.get(sets);
-
-	if (!index) {
-		index = new Map();
+	const index = memoizedOn(setSlugIndexes, [sets], () => {
+		const bySlug = new Map<string, Set>();
 		const released = (set: Set) => new Date(set.releaseDate).getTime() || Infinity;
 
 		for (const set of sets) {
 			const key = setSlug(set, language);
-			const kept = index.get(key);
-			if (!kept || released(set) < released(kept)) index.set(key, set);
+			const kept = bySlug.get(key);
+			if (!kept || released(set) < released(kept)) bySlug.set(key, set);
 		}
 
-		setSlugIndexes.set(sets, index);
-	}
+		return bySlug;
+	});
 
 	const set = index.get(slug.normalize('NFC').toLowerCase());
 	return set ? { canonical: setSlug(set, language), set } : null;
@@ -329,7 +323,7 @@ export async function findSetBySlug(language: Language, slug: string): Promise<{
 type OwnedList = 'collection' | 'wishlist';
 
 /** An owned card with its copy count, the catalogue that resolved it and its `cardPrice()`. */
-export interface OwnedCard extends FullCard {
+export interface OwnedCard extends Card {
 	copies: number;
 	language: Language;
 	price: number | null;
@@ -383,7 +377,7 @@ export async function getOwnedCards(client: SupabaseClient, username: string, li
 
 /** What one catalogue holds: its card list, its price table and its sets. */
 interface CatalogueData {
-	cards: FullCard[];
+	cards: Card[];
 	prices: Record<string, PriceData>;
 	sets: Set[];
 }

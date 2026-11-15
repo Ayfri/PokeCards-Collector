@@ -1,3 +1,4 @@
+import type { PostgrestError } from '@supabase/supabase-js';
 import type { Language } from '#helpers/catalogues.ts';
 
 export interface Card {
@@ -30,8 +31,6 @@ export interface Card {
 	tcgdexId?: string;
 	types: string;
 }
-
-export type FullCard = Card;
 
 /** The fields of a card its plate reads, for a page that ships them for a scanless card without the rest of the card. */
 export type PlateCard = Pick<Card, 'artImage' | 'artSource' | 'artist' | 'cardCode' | 'hp' | 'language' | 'localId' | 'name' | 'pokemonNumber' | 'rarity' | 'setId' | 'setName' | 'stage' | 'subtype' | 'supertype' | 'types'>;
@@ -228,21 +227,9 @@ export interface BinderShareSummary {
 	pageCount: number;
 }
 
-export interface SearchedUser {
-	is_public: boolean;
-	profile_color?: string;
-	username: string;
-}
-
-export interface UsernameCheckResult {
-	error: Error | string | null;
-	exists: boolean;
-}
-
 export interface ServiceResponse<T> {
 	data: T | null;
-	/** Also accepts a Supabase `PostgrestError`, an object with `message`, `details`, `hint` and `code`. */
-	error: Error | { code?: string; details?: string; hint?: string; message: string; } | string | null;
+	error: PostgrestError | null;
 }
 
 /** Per-attribute comparison between a card.dle guess and the card of the day. */
@@ -272,7 +259,7 @@ export interface CardDleSuggestion {
 	image: string;
 	name: string;
 	/** The whole card, only for a card with no scan: its placeholder plate draws the name, type and kind from it. */
-	plate?: FullCard;
+	plate?: Card;
 	pokemonName: string;
 	pokemonNumber?: number;
 	price: number;
@@ -295,7 +282,7 @@ export interface CardDleGuess {
 	isCorrect: boolean;
 	name: string;
 	/** The whole card, only when it has no scan, for its placeholder plate. */
-	plate?: FullCard;
+	plate?: Card;
 	pokemonNumber?: number;
 	/** Looked up in the layout's sets for the logo. */
 	setId: string;
@@ -310,20 +297,22 @@ export type CardDleGuessResponse =
 		/** The UTC day of the mystery card the guess was judged against: the board the guess belongs to. */
 		date: string;
 		feedback: CardDleFeedback;
-		guessedCard: FullCard;
+		guessedCard: Card;
 		isCorrectGuess: boolean;
 		success: true;
 	}
 	| { error: string; success?: false };
 
 /** Row returned by the `search_public_users_with_stats` RPC. */
-export interface SearchedUserWithStats extends SearchedUser {
+export interface SearchedUser {
 	created_at: string;
+	is_public: boolean;
 	profile_color: string | null;
 	unique_card_count: number;
+	username: string;
 }
 
 /** Response of `GET /api/search-users`. */
 export type SearchUsersResponse =
-	| { success: true; users: SearchedUserWithStats[] }
+	| { success: true; users: SearchedUser[] }
 	| { error: string; success?: false; };

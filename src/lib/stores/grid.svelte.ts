@@ -1,4 +1,4 @@
-import { Persisted } from './persisted.svelte';
+import { Persisted } from '#stores/persisted.svelte.ts';
 
 interface CardGridSize {
 	name: string;

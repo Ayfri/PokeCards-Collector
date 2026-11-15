@@ -4,7 +4,7 @@
 </script>
 
 <script lang="ts">
-	import type { FullCard, PriceData } from '#lib/types.js';
+	import type { Card, PriceData } from '#lib/types.js';
 	import { cardPrice } from '#helpers/card-utils.ts';
 	import { formatEuros } from '#helpers/format.ts';
 	import CardmarketLogo from '#components/card/CardmarketLogo.svelte';
@@ -15,7 +15,7 @@
 	import Tag from '@lucide/svelte/icons/tag';
 
 	interface Props {
-		card: FullCard;
+		card: Card;
 		cardPrices: PriceData;
 	}
 

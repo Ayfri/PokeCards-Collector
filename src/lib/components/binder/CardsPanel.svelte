@@ -7,7 +7,7 @@
 	import SetPicker from '#components/binder/SetPicker.svelte';
 	import TrayAdd from '#components/binder/TrayAdd.svelte';
 	import VirtualGrid from '#components/list/VirtualGrid.svelte';
-	import { type BinderSort, type BinderTab, DRAG_SLOT_TYPE, dragLeft, MAX_FILL, readDrag, searchCards, sortBinderCards } from '#helpers/binder.ts';
+	import { type BinderSort, type BinderTab, DRAG_SLOT_TYPE, dragLeft, filterBinderCards, MAX_FILL, readDrag, sortBinderCards } from '#helpers/binder.ts';
 	import { isCardCode } from '#helpers/card-utils.ts';
 	import type { BinderCard } from '#lib/types.js';
 	import { binderCards } from '#stores/binder-cards.svelte.ts';
@@ -103,7 +103,7 @@
 
 	/** The list as displayed, so Fill pours cards in the order the user sorted them. */
 	const shown = $derived.by(() => {
-		const found = searchCards(sorted, term);
+		const found = filterBinderCards(sorted, term);
 		return hidePlaced ? found.filter(card => !binder.placed.has(card.cardCode)) : found;
 	});
 

@@ -11,7 +11,7 @@
 	import { getPokemonImageSrc, handlePokemonImageError } from '#helpers/pokemon-utils.ts';
 	import { formatEuros, titleCase } from '#helpers/format.ts';
 	import { NO_IMAGES } from '#helpers/card-images.ts';
-	import type { FullCard } from '#lib/types.js';
+	import type { Card } from '#lib/types.js';
 	import type { CardSearchResult, PokemonSearchResult } from '#helpers/card-search.ts';
 	import { page } from '$app/state';
 	import { binder } from '#stores/binder.svelte.ts';
@@ -44,7 +44,7 @@
 	const isBinderPage = $derived(page.url.pathname === '/binder');
 
 	/** Drops a searched card into the binder page's tray and flashes the button for a moment. */
-	function addToBinderTray(card: FullCard) {
+	function addToBinderTray(card: Card) {
 		binder.addToTray([card.cardCode]);
 		addedCards.add(card.cardCode);
 		

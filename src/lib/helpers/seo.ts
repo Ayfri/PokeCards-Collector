@@ -92,7 +92,7 @@ export function setSchema(set: Set, catalogue: Catalogue = CATALOGUES.en): Schem
 	return {
 		'@id': setNodeId(set, catalogue),
 		'@type': 'CreativeWorkSeries',
-		datePublished: isoDate(set.releaseDate),
+		datePublished: set.releaseDate.toISOString().slice(0, 10),
 		image: set.logo ? new URL(set.logo, BASE_URL).href : undefined,
 		name: set.name,
 		numberOfItems: setCardCount(set),
@@ -191,10 +191,4 @@ function property(name: string, value: string | number | undefined | null) {
 /** The `@id` of a set node, shared by the set itself and the cards pointing at it; the set page URL is already unique per catalogue. */
 function setNodeId(set: Set, catalogue: Catalogue): string {
 	return `${BASE_URL}${setPath(set, catalogue)}#set`;
-}
-
-function isoDate(value: Date | string | undefined): string | undefined {
-	if (!value) return undefined;
-	const date = value instanceof Date ? value : new Date(value);
-	return Number.isNaN(date.getTime()) ? undefined : date.toISOString().slice(0, 10);
 }
