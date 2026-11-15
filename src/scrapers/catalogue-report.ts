@@ -7,7 +7,7 @@ import type {Pokemon} from '#lib/types.js';
  * Each table is parsed and reduced to a Set before the next one is read, since the isolate has 128 MB.
  */
 
-export interface LanguageFacts {
+interface LanguageFacts {
 	artists: Set<string>;
 	cards: Set<string>;
 	/** The `card_code` of the cards whose `image` is not empty. */
@@ -20,7 +20,7 @@ export interface LanguageFacts {
 }
 
 /** The first group holds the totals of the new snapshot, the second what the previous one did not have. */
-export interface LanguageReport {
+interface LanguageReport {
 	artists: number;
 	cards: number;
 	pokemon: number;
@@ -38,7 +38,7 @@ export interface LanguageReport {
 	newSets: string[];
 }
 
-export interface CatalogueReport {
+interface CatalogueReport {
 	/** The names of the Pokémon in `languages[...].newPokemon`, read once. */
 	pokemonNames: ReadonlyMap<number, string>;
 	languages: Record<Language, LanguageReport>;
@@ -52,7 +52,7 @@ interface DiscordEmbed {
 	title: string;
 }
 
-export interface DiscordPayload {
+interface DiscordPayload {
 	embeds: DiscordEmbed[];
 }
 
@@ -84,7 +84,7 @@ async function readTable<T>(bucket: R2Bucket, key: string): Promise<T[]> {
 	return await new Response(object.body.pipeThrough(new DecompressionStream('gzip'))).json<T[]>();
 }
 
-export async function readFacts(bucket: R2Bucket, manifest: CatalogueManifest, lang: Language): Promise<LanguageFacts> {
+async function readFacts(bucket: R2Bucket, manifest: CatalogueManifest, lang: Language): Promise<LanguageFacts> {
 	const {cards, prices, sets} = CATALOGUES[lang].tables;
 	const facts: LanguageFacts = {artists: new Set(), cards: new Set(), images: new Set(), pokemon: new Set(), prices: new Set(), sets: new Map()};
 
@@ -103,7 +103,7 @@ export async function readFacts(bucket: R2Bucket, manifest: CatalogueManifest, l
 const missing = <T>(current: Iterable<T>, previous: ReadonlySet<T>): T[] => [...current].filter(value => !previous.has(value));
 
 /** A new card that arrives with a scan counts as a new card and as a new image. */
-export function diffFacts(current: LanguageFacts, previous: LanguageFacts): LanguageReport {
+function diffFacts(current: LanguageFacts, previous: LanguageFacts): LanguageReport {
 	return {
 		artists: current.artists.size,
 		cards: current.cards.size,
@@ -121,14 +121,12 @@ export function diffFacts(current: LanguageFacts, previous: LanguageFacts): Lang
 }
 
 /**
- * Null on the first publish: with no baseline, the whole catalogue would read as new.
+ * Needs a previous manifest: with no baseline (the first publish), the whole catalogue would read as new.
  * The diff is snapshot against snapshot, not database triggers: the sync upserts every row daily and `dropSharedProducts` nulls ~460 images
  * and prices per run that the next upsert restores, so only what a publish put live is a real change.
  * The previous tables are read only for a language whose cards, prices or sets object moved (the keys are content hashes).
  */
-export async function reportCatalogue(bucket: R2Bucket, manifest: CatalogueManifest, previous: CatalogueManifest | null): Promise<CatalogueReport | null> {
-	if (!previous) return null;
-
+async function reportCatalogue(bucket: R2Bucket, manifest: CatalogueManifest, previous: CatalogueManifest): Promise<CatalogueReport> {
 	const reports: [Language, LanguageReport][] = [];
 	for (const lang of LANGUAGES) {
 		const {cards, prices, sets} = CATALOGUES[lang].tables;
@@ -189,7 +187,7 @@ function fieldValue(report: LanguageReport, pokemonNames: ReadonlyMap<number, st
 }
 
 /** Null when nothing is new in any language. A language with nothing new gets no field. */
-export function catalogueEmbed({languages, pokemonNames}: CatalogueReport, since: string): DiscordPayload | null {
+function catalogueEmbed({languages, pokemonNames}: CatalogueReport, since: string): DiscordPayload | null {
 	const fields = LANGUAGES.flatMap(lang => {
 		const value = fieldValue(languages[lang], pokemonNames);
 		return value ? [{inline: false, name: `${FLAGS[lang]} ${CATALOGUES[lang].adjective}`, value}] : [];
@@ -208,7 +206,7 @@ export function catalogueEmbed({languages, pokemonNames}: CatalogueReport, since
 }
 
 /** Throws on a non-2xx answer, so a Workflow step retries. */
-export async function sendDiscord(url: string, payload: DiscordPayload): Promise<void> {
+async function sendDiscord(url: string, payload: DiscordPayload): Promise<void> {
 	const response = await fetch(url, {body: JSON.stringify(payload), headers: {'content-type': 'application/json'}, method: 'POST', signal: AbortSignal.timeout(15_000)});
 	if (!response.ok) throw new Error(`Discord answered ${response.status}: ${await response.text()}`);
 }
@@ -220,8 +218,7 @@ const formatUtc = (iso: string): string => `${iso.slice(0, 16).replace('T', ' ')
 export async function notifyCatalogue(bucket: R2Bucket, webhook: string | undefined, summary: PublishSummary): Promise<boolean> {
 	if (!webhook || !summary.previous) return false;
 
-	const report = await reportCatalogue(bucket, summary, summary.previous);
-	const payload = report && catalogueEmbed(report, `since the publish of ${formatUtc(summary.previous.publishedAt)}`);
+	const payload = catalogueEmbed(await reportCatalogue(bucket, summary, summary.previous), `since the publish of ${formatUtc(summary.previous.publishedAt)}`);
 	if (!payload) return false;
 
 	await sendDiscord(webhook, payload);

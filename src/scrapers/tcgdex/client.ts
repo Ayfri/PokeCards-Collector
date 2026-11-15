@@ -25,7 +25,7 @@ async function firstExisting(urls: (string | undefined)[]): Promise<string | und
  * a Japanese set only gets a symbol), and a French logo falls back to the English one.
  * `logo` and `symbol` are full URLs of files that exist, or undefined.
  */
-export async function withProbedAssets(set: TcgdexSet, lang: string): Promise<TcgdexSet> {
+async function withProbedAssets(set: TcgdexSet, lang: string): Promise<TcgdexSet> {
 	const at = (language: string, file: string) => set.serie && `${TCGDEX_ASSETS}/${language}/${set.serie.id}/${set.id}/${file}`;
 	const community = communityImages(lang, set.id);
 	const [logo, symbol] = await Promise.all([
@@ -66,27 +66,64 @@ export async function withRetry<T>(fn: () => Promise<T>, maxRetries = 5, baseDel
 	}
 }
 
-/** `fetch` client for Workers: their `fetch` already speaks HTTP/2. Node's stays on HTTP/1.1 and Bun 1.4's h2 `fetch` is opt-in and experimental, so the CLI keeps the h2 pool. */
-export class FetchClient implements TcgdexClient {
+/** Runs at most `max` calls at once and queues the rest in arrival order. */
+export class Limiter {
 	private inflight = 0;
-	private readonly maxConcurrency = 50;
 	private readonly queue: (() => void)[] = [];
 
-	async json<T>(path: string): Promise<T | null> {
-		if (this.inflight >= this.maxConcurrency) await new Promise<void>(resolve => this.queue.push(resolve));
+	constructor(private readonly max: number) {}
+
+	async run<T>(fn: () => Promise<T>): Promise<T> {
+		if (this.inflight >= this.max) await new Promise<void>(resolve => this.queue.push(resolve));
 		this.inflight++;
 		try {
-			return await withRetry(async () => {
-				const response = await fetch(`${TCGDEX_ORIGIN}${path}`, {headers: {accept: 'application/json'}});
-				if (response.status === 404) return null;
-				if (!response.ok) throw new HttpError(response.status, path);
-				return await response.json() as T;
-			});
+			return await fn();
 		} finally {
 			this.inflight--;
 			this.queue.shift()?.();
 		}
 	}
+}
+
+/** `fetch` client for Workers: their `fetch` already speaks HTTP/2. Node's stays on HTTP/1.1 and Bun 1.4's h2 `fetch` is opt-in and experimental, so the CLI keeps the h2 pool. */
+export class FetchClient implements TcgdexClient {
+	private readonly limiter = new Limiter(50);
+
+	json<T>(path: string): Promise<T | null> {
+		return this.limiter.run(() => withRetry(async () => {
+			const response = await fetch(`${TCGDEX_ORIGIN}${path}`, {headers: {accept: 'application/json'}});
+			if (response.status === 404) return null;
+			if (!response.ok) throw new HttpError(response.status, path);
+			return await response.json() as T;
+		}));
+	}
+}
+
+/** The details of the given sets, `null` for one TCGdex has no page for. `probe` resolves their logo and symbol with `withProbedAssets`. */
+export const setDetails = (client: TcgdexClient, lang: string, ids: readonly string[], probe = false): Promise<(TcgdexSet | null)[]> =>
+	mapAll(ids, async id => {
+		const detail = await client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(id)}`);
+		return probe && detail ? withProbedAssets(detail, lang) : detail;
+	});
+
+/** The id of every card the given sets list. */
+export const cardIds = (details: readonly (TcgdexSet | null)[]): string[] => details.flatMap(set => set?.cards?.map(card => card.id) ?? []);
+
+/**
+ * Every card the given sets list, in listing order, `null` for one TCGdex has no page for. The per-card REST call returns metadata and pricing together.
+ * French only: TCGdex France lists the Arceus `pl4-AR*` cards under `pl3` and has no `pl4` set, so each card is filed under the set that lists it.
+ * The English and Japanese catalogues list no such card, and re-filing one there would create a second row with the same `tcgdex_id`.
+ */
+export async function setCards(client: TcgdexClient, lang: Language, details: readonly (TcgdexSet | null)[], label?: string): Promise<(TcgdexCard | null)[]> {
+	const cards = await mapAll(cardIds(details), id => client.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`), label);
+	if (lang === 'fr') {
+		const listing = new Map(details.flatMap(set => set?.cards?.map(brief => [brief.id, set] as const) ?? []));
+		for (const card of cards) {
+			const set = card && listing.get(card.id);
+			if (set && card.set?.id !== set.id) card.set = {...card.set, id: set.id, name: set.name};
+		}
+	}
+	return cards;
 }
 
 /**
@@ -98,7 +135,7 @@ const englishImages = (client: TcgdexClient, sets: readonly (TcgdexSet | null)[]
 
 /** Card id -> image base of every scanned card in the given English sets, one request per distinct set. */
 async function englishSetImages(client: TcgdexClient, setIds: Iterable<string>): Promise<Map<string, string>> {
-	const english = await mapAll([...new Set(setIds)], setId => client.json<TcgdexSet>(`/v2/en/sets/${encodeURIComponent(setId)}`));
+	const english = await setDetails(client, 'en', [...new Set(setIds)]);
 	return new Map(english.flatMap(set => set?.cards?.flatMap(card => card.image ? [[card.id, card.image] as const] : []) ?? []));
 }
 
@@ -128,18 +165,6 @@ export function fillImage(lang: Language, card: TcgdexCard, fallback: ReadonlyMa
 	const product = card.pricing?.cardmarket?.idProduct;
 	const traded = product === undefined ? undefined : cardTrader.get(product)?.url;
 	card.image = lang === 'ja' ? traded ?? fallback.get(card.id) : fallback.get(card.id) ?? traded;
-}
-
-/**
- * French only: TCGdex France lists the Arceus `pl4-AR*` cards under `pl3` and has no `pl4` set, so each card is filed under the set that lists it.
- * The English and Japanese catalogues list no such card, and re-filing one there would create a second row with the same `tcgdex_id`.
- */
-export function fileUnderListingSets(cards: readonly (TcgdexCard | null)[], sets: readonly (TcgdexSet | null)[]): void {
-	const listing = new Map(sets.flatMap(set => set?.cards?.map(brief => [brief.id, set] as const) ?? []));
-	for (const card of cards) {
-		const set = card && listing.get(card.id);
-		if (set && card.set?.id !== set.id) card.set = {...card.set, id: set.id, name: set.name};
-	}
 }
 
 /** Runs `worker` over every item at once, relying on the client's own queue for back-pressure, and logs progress every 2000 items. */

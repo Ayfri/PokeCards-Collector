@@ -3,10 +3,10 @@ import {CATALOGUES} from '#helpers/catalogues.ts';
 import {CARDTRADER_IMAGES} from '#src/constants.ts';
 import type {CardTraderImages} from './cardtrader';
 import {cardRow, priceRow, setRow} from './rows';
-import {fileUnderListingSets, fillImage, imageFallbacks, mapAll, type TcgdexClient, withProbedAssets} from './tcgdex/client';
+import {cardIds, fillImage, imageFallbacks, setCards, setDetails, type TcgdexClient} from './tcgdex/client';
 import {listCatalogueSets} from './tcgdex/excluded';
 import {type Language, mapCard, mapPrice, mapSet, resolveCardCode, sharedProductCodes} from './tcgdex/mappers';
-import type {TcgdexCard, TcgdexSet} from './tcgdex/types';
+import type {TcgdexSet} from './tcgdex/types';
 
 /** Workers-safe half of the scraper: no `node:fs` and no staged JSON, it maps TCGdex straight into Supabase. */
 
@@ -77,10 +77,7 @@ export function deduplicate(rows: Record<string, unknown>[], key: string): Recor
  */
 export async function syncSets(supabase: SupabaseClient, client: TcgdexClient, lang: Language): Promise<string[]> {
 	const table = CATALOGUES[lang].tables.sets;
-	const details = (await mapAll((await listCatalogueSets(client, lang)).sets, async set => {
-		const detail = await client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`);
-		return detail && withProbedAssets(detail, lang);
-	})).filter((set): set is TcgdexSet => set !== null);
+	const details = (await setDetails(client, lang, (await listCatalogueSets(client, lang)).sets.map(set => set.id), true)).filter((set): set is TcgdexSet => set !== null);
 	await upsertRows(supabase, table, details.filter(set => set.cards?.length).map(set => setRow(mapSet(set))), 'set_id', 100);
 
 	/** Only a set TCGdex answered for and found empty is dropped. A set that failed to load keeps its row. */
@@ -124,16 +121,14 @@ export async function syncSetCards(
 ): Promise<SyncCardsResult> {
 	const tables = CATALOGUES[lang].tables;
 	const [details, stored] = await Promise.all([
-		mapAll(setIds, id => client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(id)}`)),
+		setDetails(client, lang, setIds),
 		storedCards(supabase, tables.cards, setIds),
 	]);
 	const fallback = await imageFallbacks(client, lang, details);
-	const ids = details.flatMap(set => set?.cards?.map(card => card.id) ?? []);
-	const fetched = await mapAll(ids, id => client.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`));
-	if (lang === 'fr') fileUnderListingSets(fetched, details);
+	const fetched = await setCards(client, lang, details);
 
 	/** Only sets that answered can delete cards, so a set that failed to load removes nothing. */
-	const listed = new Set(ids);
+	const listed = new Set(cardIds(details));
 	const answered = new Set(details.flatMap(set => set ? [set.id] : []));
 	const stale = [...stored].filter(([tcgdexId, card]) => !listed.has(tcgdexId) && answered.has(card.setId)).map(([, card]) => card.code);
 

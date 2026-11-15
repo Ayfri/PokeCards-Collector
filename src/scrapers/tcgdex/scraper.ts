@@ -1,10 +1,13 @@
+import * as fs from 'node:fs/promises';
 import {CARDTRADER_IMAGES} from '#src/constants.ts';
-import type {CardTraderScans} from '../cardtrader';
+import {type CardTraderScans, fetchCardTraderScans} from '../cardtrader';
+import {FILES, TYPES} from '../cli-config';
 import {addFallbackArt} from './art';
-import {fileUnderListingSets, fillImage, imageFallbacks, mapAll, type TcgdexClient, withProbedAssets} from './client';
+import {cardIds, fillImage, imageFallbacks, setCards, setDetails, type TcgdexClient} from './client';
 import {listCatalogueSets} from './excluded';
+import {Http2Pool} from './http2-pool';
 import {type Language, mapCard, type MappedCard, type MappedPrice, type MappedSet, mapPrice, mapSet, sharedProductCodes} from './mappers';
-import type {TcgdexCard, TcgdexSet} from './types';
+import type {TcgdexSet} from './types';
 
 export interface ScrapeResult {
 	cards: MappedCard[];
@@ -22,19 +25,14 @@ export async function scrapeLanguage(client: TcgdexClient, lang: Language, cardT
 	const {sets: setList, skipped} = await listCatalogueSets(client, lang);
 	console.log(`[${lang}] ${setList.length} sets${skipped ? ` (${skipped} skipped, excluded series or repeated id)` : ''}`);
 
-	const details = await mapAll(setList, async set => {
-		const detail = await client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`);
-		return detail && withProbedAssets(detail, lang);
-	});
+	const details = await setDetails(client, lang, setList.map(set => set.id), true);
 	/** TCGdex lists sets it has no card for yet (the 15 Japanese CS sets, all named トリプレットビート), which would show as empty pages. */
 	const sets = details.filter((set): set is TcgdexSet => !!set?.cards?.length).map(mapSet).sort((a, b) => a.name.localeCompare(b.name));
 
 	const fallback = await imageFallbacks(client, lang, details);
 
-	const ids = details.flatMap(set => set?.cards?.map(card => card.id) ?? []);
-	console.log(`[${lang}] ${ids.length} cards to fetch`);
-	const fetched = await mapAll(ids, id => client.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`), `[${lang}] cards`);
-	if (lang === 'fr') fileUnderListingSets(fetched, details);
+	console.log(`[${lang}] ${cardIds(details).length} cards to fetch`);
+	const fetched = await setCards(client, lang, details, `[${lang}] cards`);
 
 	const {notReady, products} = await cardTrader;
 	const cards: MappedCard[] = [];
@@ -61,6 +59,40 @@ export async function scrapeLanguage(client: TcgdexClient, lang: Language, cardT
 
 	const elapsed = (performance.now() - started) / 1000;
 	const scans = cards.filter(card => card.image.startsWith(CARDTRADER_IMAGES)).length;
-	console.log(`[${lang}] ${cards.length} cards, ${Object.keys(prices).length} priced, ${sets.length} sets, ${scans} CardTrader scans${notReady.length ? ` (CardTrader expansions not ready: ${notReady.join(', ')})` : ''} in ${elapsed.toFixed(2)}s (${(ids.length / elapsed).toFixed(0)} req/s)`);
+	console.log(`[${lang}] ${cards.length} cards, ${Object.keys(prices).length} priced, ${sets.length} sets, ${scans} CardTrader scans${notReady.length ? ` (CardTrader expansions not ready: ${notReady.join(', ')})` : ''} in ${elapsed.toFixed(2)}s (${(fetched.length / elapsed).toFixed(0)} req/s)`);
 	return {cards, prices, sets};
+}
+
+/** Throws before returning the promise, so a missing token stops the run before any scraping: without the map, uploading would null every scan CardTrader supplies. */
+function envCardTraderScans(): Promise<CardTraderScans> {
+	const token = process.env.CARDTRADER_TOKEN;
+	if (!token) throw new Error('Missing CARDTRADER_TOKEN');
+	return fetchCardTraderScans(token);
+}
+
+async function writeJson(path: string, value: unknown): Promise<void> {
+	await fs.writeFile(path, JSON.stringify(value));
+	console.log(`  wrote ${path}`);
+}
+
+/** `write: false` runs the whole pass without writing to `src/assets/`, to diff or time it. */
+export async function scrapeToFiles(langs: readonly Language[], write: boolean): Promise<Record<Language, ScrapeResult>> {
+	const cardTrader = envCardTraderScans();
+	/** Marks the rejection as handled so a CardTrader failure during the first TCGdex pass does not crash Bun; `scrapeLanguage` still throws it when it awaits the map. */
+	cardTrader.catch(() => {});
+	const pool = new Http2Pool();
+	const results = {} as Record<Language, ScrapeResult>;
+	try {
+		for (const lang of langs) {
+			results[lang] = await scrapeLanguage(pool, lang, cardTrader);
+			if (!write) continue;
+			const {cards, prices, sets} = results[lang];
+			const files = FILES[lang];
+			await Promise.all([writeJson(files.cards, cards), writeJson(files.prices, prices), writeJson(files.sets, sets)]);
+		}
+		if (write) await writeJson(TYPES, (await pool.json<string[]>('/v2/en/types')) ?? []);
+	} finally {
+		pool.close();
+	}
+	return results;
 }

@@ -1,15 +1,13 @@
 import * as fs from 'node:fs';
 import {cardSlug, setSlug, SUBTYPE_SECTIONS} from '#helpers/card-utils.ts';
 import {RARITY_MAPPING} from '#helpers/rarity.ts';
-import {envClient, FILES, TYPES} from '../cli-config';
+import {envClient, FILES, readStaged, TYPES} from '../cli-config';
 import {ownedCardCodes} from '../supabase-sync';
 import type {MappedCard, MappedPrice, MappedSet} from './mappers';
 
 interface FileReport {
 	cards: number;
 	collisions: number;
-	distinct: number;
-	imageless: number;
 	lang: string;
 	/** Japanese only: twin ids (`twinTcgdexId`) that no English card carries, so the twin link would lead nowhere. */
 	missingTwins: string[];
@@ -21,7 +19,6 @@ interface FileReport {
 	slugCollisions: string[];
 	/** Rarities missing from `RARITY_MAPPING`, supertypes outside Pokémon/Trainer/Energy, subtypes outside `SUBTYPE_SECTIONS` and types missing from `types.json`. */
 	unknownValues: string[];
-	unpriced: string[];
 }
 
 interface VerifyReport {
@@ -37,8 +34,6 @@ const LANGS = ['en', 'ja', 'fr'] as const;
 
 const SUPERTYPES = new Set(['Pokémon', 'Trainer', 'Energy']);
 const SUBTYPES = new Set<string>(SUBTYPE_SECTIONS.map(section => section.subtype));
-
-const read = <T>(path: string): T => JSON.parse(fs.readFileSync(path, 'utf8')) as T;
 
 /** `slug (id, id)` for each slug that more than one distinct id produces. */
 function sharedSlugs(entries: Iterable<[slug: string, id: string]>): string[] {
@@ -57,7 +52,7 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 	const files: FileReport[] = [];
 	const produced = new Set<string>();
 	const crossCollisions = new Set<string>();
-	const knownTypes = new Set(read<string[]>(TYPES));
+	const knownTypes = new Set(readStaged<string[]>(TYPES));
 	/** Empty without the English file, which skips the twin check. */
 	const englishIds = new Set<string>();
 
@@ -67,9 +62,9 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 			console.log(`  ${lang}: ${cardsPath} does not exist, skipped`);
 			continue;
 		}
-		const cards = read<MappedCard[]>(cardsPath);
-		const prices = read<Record<string, MappedPrice>>(pricesPath);
-		const sets = read<MappedSet[]>(setsPath);
+		const cards = readStaged<MappedCard[]>(cardsPath);
+		const prices = readStaged<Record<string, MappedPrice>>(pricesPath);
+		const sets = readStaged<MappedSet[]>(setsPath);
 		if (lang === 'en') for (const card of cards) englishIds.add(card.tcgdexId);
 		const distinct = new Set(cards.map(card => card.cardCode));
 		for (const code of distinct) {
@@ -91,8 +86,6 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 		files.push({
 			cards: cards.length,
 			collisions: cards.length - distinct.size,
-			distinct: distinct.size,
-			imageless: cards.filter(card => !card.image).length,
 			lang,
 			missingTwins: lang === 'ja' && englishIds.size ? cards.flatMap(card => card.twinTcgdexId && !englishIds.has(card.twinTcgdexId) ? [`${card.tcgdexId} -> ${card.twinTcgdexId}`] : []) : [],
 			priced: Object.keys(prices).length,
@@ -103,7 +96,6 @@ export async function verifyFiles(checkOwned = true): Promise<VerifyReport> {
 				...sharedSlugs(sets.map((set): [string, string] => [setSlug(set, lang), set.setId])).map(slug => `set:${slug}`),
 			],
 			unknownValues: [...unknownValues],
-			unpriced: cards.filter(card => !prices[card.cardCode]).slice(0, 5).map(card => card.cardCode),
 		});
 	}
 

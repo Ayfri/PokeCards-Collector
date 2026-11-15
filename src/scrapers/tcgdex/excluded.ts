@@ -14,10 +14,20 @@ interface TcgdexSerie {
 	sets?: TcgdexSetBrief[];
 }
 
-/** Set ids of the excluded series, one request per serie. A serie missing in a language answers 404 and adds nothing. */
-export async function excludedSetIds(client: TcgdexClient, lang: string): Promise<Set<string>> {
+/** The excluded series of a language, one request per serie. A serie missing in a language answers 404 and adds nothing. */
+async function excludedSeries(client: TcgdexClient, lang: string): Promise<TcgdexSerie[]> {
 	const series = await Promise.all(EXCLUDED_SERIES.map(id => client.json<TcgdexSerie>(`/v2/${lang}/series/${encodeURIComponent(id)}`)));
-	return new Set(series.flatMap(serie => serie?.sets?.map(set => set.id) ?? []));
+	return series.flatMap(serie => serie ?? []);
+}
+
+/** Set ids of the excluded series. */
+export async function excludedSetIds(client: TcgdexClient, lang: string): Promise<Set<string>> {
+	return new Set((await excludedSeries(client, lang)).flatMap(serie => serie.sets?.map(set => set.id) ?? []));
+}
+
+/** The names of the excluded series, which is what the `series` column of a set table holds (`Pokémon TCG Pocket`), not the serie id. */
+export async function excludedSerieNames(client: TcgdexClient, lang: string): Promise<string[]> {
+	return (await excludedSeries(client, lang)).map(serie => serie.name);
 }
 
 /**

@@ -1,43 +1,40 @@
-import * as fs from 'node:fs';
-import { CATALOGUES, LANGUAGES } from '#helpers/catalogues.ts';
-import { envClient, FILES, POKEMONS, TYPES } from './cli-config';
-import type { PokedexEntry } from './pokemon-scraper';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { CATALOGUES } from '#helpers/catalogues.ts';
+import { envClient, FILES, POKEMONS, readStaged, TYPES } from './cli-config';
+import type { PokedexEntry } from './pokedex';
 import { artRow, cardRow, priceRow, setRow } from './rows';
 import { deduplicate, deleteIn, readAll, upsertRows } from './supabase-sync';
 import { type Language, type MappedCard, type MappedPrice, type MappedSet, resolveCardCode } from './tcgdex/mappers';
 
-const supabase = envClient();
-
-const read = <T>(path: string): T => {
-	if (!fs.existsSync(path)) throw new Error(`File not found: ${path}`);
-	return JSON.parse(fs.readFileSync(path, 'utf-8')) as T;
-};
+/** Built on first use, so the CLI imports this module (for `supabase --dry-run`) with no credentials. */
+let client: SupabaseClient | undefined;
+const supabase = () => client ??= envClient();
 
 async function upsertAll(table: string, rows: Record<string, unknown>[], onConflict: string, batchSize?: number): Promise<void> {
 	const unique = deduplicate(rows, onConflict);
 	if (unique.length !== rows.length) console.log(`  ${table}: ${rows.length - unique.length} duplicate ${onConflict} dropped`);
-	console.log(`✅ Upserted ${await upsertRows(supabase, table, unique, onConflict, batchSize)} rows into ${table}`);
+	console.log(`✅ Upserted ${await upsertRows(supabase(), table, unique, onConflict, batchSize)} rows into ${table}`);
 }
 
 async function deleteAll(table: string, column: string, values: readonly string[], label: string): Promise<void> {
-	console.log(`🧹 Dropped ${await deleteIn(supabase, table, column, values)} ${table} ${label}`);
+	console.log(`🧹 Dropped ${await deleteIn(supabase(), table, column, values)} ${table} ${label}`);
 }
 
 export async function uploadTypes(): Promise<void> {
 	console.log('📤 Uploading Pokémon types...');
-	const types = read<string[]>(TYPES);
+	const types = readStaged<string[]>(TYPES);
 
-	const { error } = await supabase.from('types').delete().neq('name', '');
+	const { error } = await supabase().from('types').delete().neq('name', '');
 	if (error) throw new Error(`Error clearing types: ${error.message}`);
 
-	const { error: insertError } = await supabase.from('types').insert(types.map(name => ({ name })));
+	const { error: insertError } = await supabase().from('types').insert(types.map(name => ({ name })));
 	if (insertError) throw new Error(`Error inserting types: ${insertError.message}`);
 	console.log(`✅ Uploaded ${types.length} types`);
 }
 
 export async function uploadPokemons(): Promise<void> {
 	console.log('📤 Uploading Pokémon data...');
-	const pokemons = read<PokedexEntry[]>(POKEMONS);
+	const pokemons = readStaged<PokedexEntry[]>(POKEMONS);
 
 	await upsertAll('pokemons', pokemons.map(pokemon => ({
 		description: pokemon.description,
@@ -54,7 +51,7 @@ interface StoredRow {
 	tcgdex_id: string | null;
 }
 
-const storedRows = (table: string) => readAll<StoredRow>(supabase, table, 'card_code,set_id,tcgdex_id', 'card_code');
+const storedRows = (table: string) => readAll<StoredRow>(supabase(), table, 'card_code,set_id,tcgdex_id', 'card_code');
 
 /** Scraped `card_code` -> the code the card is stored under, resolved the same way as the Worker sync. */
 function storedCodes(lang: Language, cards: readonly MappedCard[], rows: readonly StoredRow[]): Map<string, string> {
@@ -66,33 +63,34 @@ function storedCodes(lang: Language, cards: readonly MappedCard[], rows: readonl
 export async function uploadSets(lang: Language): Promise<void> {
 	const table = CATALOGUES[lang].tables.sets;
 	console.log(`📤 Uploading ${table}...`);
-	const sets = read<MappedSet[]>(FILES[lang].sets);
+	const sets = readStaged<MappedSet[]>(FILES[lang].sets);
 
 	await upsertAll(table, sets.map(setRow), 'set_id', 100);
 
 	const scraped = new Set(sets.map(set => set.setId));
-	const stored = await readAll<{set_id: string}>(supabase, table, 'set_id', 'set_id');
+	const stored = await readAll<{set_id: string}>(supabase(), table, 'set_id', 'set_id');
 	await deleteAll(table, 'set_id', stored.map(row => row.set_id).filter(setId => !scraped.has(setId)), 'sets the scrape no longer has');
 }
 
 /**
- * Replaces a card table with the TCGdex content. It first deletes the rows of a scraped set that TCGdex no longer lists
- * and the old row of every card that changes code (their prices go with them), then upserts. `collections` and
- * `wishlists` are never touched: a code no card holds renders again once TCGdex fills the set in.
+ * Replaces a card table with the TCGdex content. It first deletes the rows of a scraped set that TCGdex no longer lists, every row of a set the staged
+ * sets lack (`uploadSets` drops an emptied or dropped set, and its cards must not outlive it), and the old row of every card that changes code (their
+ * prices go with them), then upserts. `collections` and `wishlists` are never touched: a code no card holds renders again once TCGdex fills the set in.
  */
 export async function uploadCards(lang: Language): Promise<void> {
 	const table = CATALOGUES[lang].tables.cards;
 	console.log(`📤 Uploading ${table}...`);
-	const cards = read<MappedCard[]>(FILES[lang].cards);
+	const cards = readStaged<MappedCard[]>(FILES[lang].cards);
 	const stored = await storedRows(table);
 	const codes = storedCodes(lang, cards, stored);
 
 	const scrapedSets = new Set(cards.map(card => card.setId));
+	const stagedSets = new Set(readStaged<MappedSet[]>(FILES[lang].sets).map(set => set.setId));
 	const target = new Map(cards.map(card => [card.tcgdexId, codes.get(card.cardCode)!]));
 	const stale = stored.filter(row => {
 		if (!row.tcgdex_id) return true;
 		const code = target.get(row.tcgdex_id);
-		return code ? code !== row.card_code : scrapedSets.has(row.set_id ?? '');
+		return code ? code !== row.card_code : scrapedSets.has(row.set_id ?? '') || !stagedSets.has(row.set_id ?? '');
 	}).map(row => row.card_code);
 	await deleteAll(table, 'card_code', stale, 'rows TCGdex no longer has or that change code');
 
@@ -104,21 +102,12 @@ export async function uploadCards(lang: Language): Promise<void> {
 export async function uploadPrices(lang: Language): Promise<void> {
 	const { cards: cardsTable, prices: table } = CATALOGUES[lang].tables;
 	console.log(`📤 Uploading ${table}...`);
-	const prices = read<Record<string, MappedPrice>>(FILES[lang].prices);
-	const cards = read<MappedCard[]>(FILES[lang].cards);
+	const prices = readStaged<Record<string, MappedPrice>>(FILES[lang].prices);
+	const cards = readStaged<MappedCard[]>(FILES[lang].cards);
 	const codes = storedCodes(lang, cards, await storedRows(cardsTable));
 
 	const rows = Object.entries(prices).map(([cardCode, price]) => priceRow(codes.get(cardCode) ?? cardCode, price));
 	await upsertAll(table, rows, 'card_code');
 
 	await deleteAll(table, 'card_code', cards.filter(card => !prices[card.cardCode]).map(card => codes.get(card.cardCode)!), 'prices a card lost');
-}
-
-/** Cards go before prices because prices have a foreign key on `card_code`. */
-export async function uploadAllData(): Promise<void> {
-	console.log('🚀 Starting full Supabase data upload...');
-	await uploadTypes();
-	await uploadPokemons();
-	for (const upload of [uploadSets, uploadCards, uploadPrices]) for (const lang of LANGUAGES) await upload(lang);
-	console.log('🎉 All data uploaded successfully to Supabase!');
 }

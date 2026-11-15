@@ -3,12 +3,13 @@ import {RARITY_MAPPING} from '#helpers/rarity.ts';
 import {CATALOGUES, type Language, LANGUAGES} from '#helpers/catalogues.ts';
 import {envClient} from './cli-config';
 import {ownedCardCodes, readAll} from './supabase-sync';
-import {EXCLUDED_SERIES} from './tcgdex/excluded';
+import {excludedSerieNames, excludedSetIds} from './tcgdex/excluded';
+import {Http2Pool} from './tcgdex/http2-pool';
 import {sharedProductCodes, speciesInName} from './tcgdex/mappers';
 
 /**
  * Read-only sanity pass over the live Supabase catalogue. It never writes: each check reports a count and a short
- * sample, so a bad upload shows up before anyone browses into it.
+ * sample, so a bad upload shows up before anyone browses into it. The excluded series are the one thing it asks TCGdex for.
  */
 
 /** A single card above this price is a scraping accident: even the most expensive graded singles trade below it. */
@@ -81,8 +82,14 @@ export async function checkDatabase(): Promise<CheckReport> {
 		checks.push({count, name, sample: values.slice(0, SAMPLE), severity});
 	};
 
-	const excluded = new Set<string>(EXCLUDED_SERIES);
-	const excludedNames = new Set(['Pokémon TCG Pocket']);
+	/** What TCGdex lists under the excluded series, per language: the sets by id and the `series` column of a set row by name. */
+	const excluded = new Map<Language, {names: Set<string>; setIds: Set<string>}>();
+	const pool = new Http2Pool();
+	try {
+		for (const lang of LANGUAGES) excluded.set(lang, {names: new Set(await excludedSerieNames(pool, lang)), setIds: await excludedSetIds(pool, lang)});
+	} finally {
+		pool.close();
+	}
 	const known = new Map<string, Language>();
 	const shared: string[] = [];
 	/** `LANGUAGES` lists English first, so its ids are known when the Japanese twins are checked. */
@@ -97,6 +104,7 @@ export async function checkDatabase(): Promise<CheckReport> {
 		]);
 
 		const tag = (name: string) => `${lang}: ${name}`;
+		const { names: excludedNames, setIds: excludedIds } = excluded.get(lang)!;
 		const setIds = new Set(sets.map(set => set.set_id));
 		const cardCodes = new Set(cards.map(card => card.card_code));
 		const pricedCodes = new Set(prices.map(price => price.card_code));
@@ -117,8 +125,8 @@ export async function checkDatabase(): Promise<CheckReport> {
 		add(tag('duplicate set slug'), 'error', duplicates(sets, set => setSlug({name: set.name, setId: set.set_id}, lang)));
 		add(tag('prices with no card'), 'error', prices.filter(price => !cardCodes.has(price.card_code)).map(price => price.card_code));
 		add(tag('cards in an unknown set'), 'error', cards.filter(card => !card.set_id || !setIds.has(card.set_id)).map(card => card.card_code));
-		add(tag('cards from an excluded serie'), 'error', cards.filter(card => card.set_id && excluded.has(card.set_id)).map(card => card.card_code));
-		add(tag('sets from an excluded serie'), 'error', sets.filter(set => set.series && excludedNames.has(set.series)).map(set => set.set_id));
+		add(tag('cards from an excluded serie'), 'error', cards.filter(card => card.set_id && excludedIds.has(card.set_id)).map(card => card.card_code));
+		add(tag('sets from an excluded serie'), 'error', sets.filter(set => excludedIds.has(set.set_id) || (set.series && excludedNames.has(set.series))).map(set => set.set_id));
 		add(tag('sets holding no card'), 'error', sets.filter(set => !heldPerSet.has(set.set_id)).map(set => set.set_id));
 
 		add(tag('cards with no tcgdex_id'), 'warn', cards.filter(card => !card.tcgdex_id).map(card => card.card_code));

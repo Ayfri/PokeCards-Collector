@@ -14,7 +14,6 @@ export interface TcgdexCardMarketPricing {
 	'low-holo'?: number | null;
 	trend?: number | null;
 	'trend-holo'?: number | null;
-	unit?: string;
 	updated?: string;
 }
 
@@ -31,11 +30,7 @@ export interface TcgdexVariants {
 }
 
 export interface TcgdexCardCount {
-	firstEd?: number;
-	holo?: number;
-	normal?: number;
 	official?: number;
-	reverse?: number;
 	total?: number;
 }
 
@@ -48,7 +43,7 @@ export interface TcgdexSetBrief {
 }
 
 export interface TcgdexSet extends TcgdexSetBrief {
-	abbreviation?: {official?: string; short?: string};
+	abbreviation?: {official?: string};
 	cards?: TcgdexCardBrief[];
 	releaseDate?: string;
 	serie?: {id: string; name: string};
@@ -76,7 +71,7 @@ export interface TcgdexCard extends TcgdexCardBrief {
 	energyType?: string;
 	hp?: number;
 	illustrator?: string;
-	legal?: {expanded?: boolean; standard?: boolean};
+	legal?: {standard?: boolean};
 	pricing?: TcgdexPricing | null;
 	rarity?: string;
 	regulationMark?: string;
@@ -87,7 +82,6 @@ export interface TcgdexCard extends TcgdexCardBrief {
 	/** Only on Trainer cards. */
 	trainerType?: string;
 	types?: string[];
-	updated?: string;
 	variants?: TcgdexVariants;
 	weaknesses?: {type: string}[];
 }

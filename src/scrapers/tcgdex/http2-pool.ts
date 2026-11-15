@@ -1,6 +1,6 @@
 import http2 from 'node:http2';
 import {gunzipSync, inflateSync} from 'node:zlib';
-import {HttpError, TCGDEX_ORIGIN, type TcgdexClient, withRetry} from './client';
+import {HttpError, Limiter, TCGDEX_ORIGIN, type TcgdexClient, withRetry} from './client';
 
 /**
  * HTTP/2 client pool for the scraper CLI. The API caps concurrent streams per connection, so a few connections
@@ -10,11 +10,9 @@ import {HttpError, TCGDEX_ORIGIN, type TcgdexClient, withRetry} from './client';
  */
 export class Http2Pool implements TcgdexClient {
 	private readonly connections = 4;
-	private readonly maxConcurrency = 100;
+	private readonly limiter = new Limiter(100 * this.connections);
 	private readonly sessions: (http2.ClientHttp2Session | null)[] = Array.from({length: this.connections}, () => null);
 	private cursor = 0;
-	private inflight = 0;
-	private readonly queue: (() => void)[] = [];
 
 	private session(index: number): http2.ClientHttp2Session {
 		const existing = this.sessions[index];
@@ -26,20 +24,6 @@ export class Http2Pool implements TcgdexClient {
 		session.on('close', () => { if (this.sessions[index] === session) this.sessions[index] = null; });
 		this.sessions[index] = session;
 		return session;
-	}
-
-	private async acquire(): Promise<void> {
-		if (this.inflight < this.maxConcurrency * this.connections) {
-			this.inflight++;
-			return;
-		}
-		await new Promise<void>(resolve => this.queue.push(resolve));
-		this.inflight++;
-	}
-
-	private release(): void {
-		this.inflight--;
-		this.queue.shift()?.();
 	}
 
 	/** One request with no retry. Resolves `null` on 404 so callers can skip missing entities. */
@@ -77,14 +61,11 @@ export class Http2Pool implements TcgdexClient {
 		});
 	}
 
-	async json<T>(path: string): Promise<T | null> {
-		await this.acquire();
-		try {
+	json<T>(path: string): Promise<T | null> {
+		return this.limiter.run(async () => {
 			const text = await withRetry(() => this.request(path));
 			return text === null ? null : JSON.parse(text) as T;
-		} finally {
-			this.release();
-		}
+		});
 	}
 
 	close(): void {

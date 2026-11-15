@@ -1,10 +1,10 @@
 import * as fs from 'node:fs/promises';
 import {inflateSync} from 'node:zlib';
-import {mapAll, type TcgdexClient, withRetry} from './client';
+import {setCards, setDetails, type TcgdexClient, withRetry} from './client';
 import {listCatalogueSets} from './excluded';
 import {Http2Pool} from './http2-pool';
 import {type JpTwin, type Language, pokemonNumber, UNKNOWN_POKEMON} from './mappers';
-import type {TcgdexCard, TcgdexSet} from './types';
+import type {TcgdexCard} from './types';
 
 /**
  * CLI only: it needs `node:zlib`, `Bun.Image` and the filesystem, and the Worker never imports it.
@@ -82,9 +82,8 @@ const PASS_2_KEYS: [method: string, key: Key][] = [
 ];
 
 async function fetchCards(client: TcgdexClient, lang: Language): Promise<TcgdexCard[]> {
-	const sets = await mapAll((await listCatalogueSets(client, lang)).sets, set => client.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`));
-	const ids = sets.flatMap(set => set?.cards?.map(card => card.id) ?? []);
-	const cards = await mapAll(ids, id => client.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`), `[${lang}] cards`);
+	const sets = await setDetails(client, lang, (await listCatalogueSets(client, lang)).sets.map(set => set.id));
+	const cards = await setCards(client, lang, sets, `[${lang}] cards`);
 	return cards.filter((card): card is TcgdexCard => card !== null).sort((a, b) => a.id.localeCompare(b.id));
 }
 

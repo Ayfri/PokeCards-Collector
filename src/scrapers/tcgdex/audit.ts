@@ -5,7 +5,7 @@ import {CATALOGUES} from '#helpers/catalogues.ts';
 import {isFrenchCode} from '#helpers/owned-cards.ts';
 import {envClient} from '../cli-config';
 import {ownedCardCodes, readAll} from '../supabase-sync';
-import {mapAll} from './client';
+import {setCards, setDetails} from './client';
 import {listCatalogueSets} from './excluded';
 import {FRENCH} from './french';
 import {Http2Pool} from './http2-pool';
@@ -45,9 +45,7 @@ interface StoredRow {
 const supertypeOf = (card: TcgdexCard) => generateUniqueCardCode(0, '', '', card.category).split('_')[0];
 
 async function allCards(pool: Http2Pool, lang: Language, sets: TcgdexSet[]): Promise<TcgdexCard[]> {
-	const details = await mapAll(sets, set => pool.json<TcgdexSet>(`/v2/${lang}/sets/${encodeURIComponent(set.id)}`));
-	const ids = details.flatMap(set => set?.cards?.map(card => card.id) ?? []);
-	const cards = await mapAll(ids, id => pool.json<TcgdexCard>(`/v2/${lang}/cards/${encodeURIComponent(id)}`), `${lang} cards`);
+	const cards = await setCards(pool, lang, await setDetails(pool, lang, sets.map(set => set.id)), `${lang} cards`);
 	return cards.filter((card): card is TcgdexCard => card !== null);
 }
 

@@ -3,7 +3,7 @@ import {CATALOGUES, type Language, LANGUAGES} from '#helpers/catalogues.ts';
 import {envClient} from './cli-config';
 import {deleteIn, ownedCardCodes} from './supabase-sync';
 import {Http2Pool} from './tcgdex/http2-pool';
-import {EXCLUDED_SERIES, excludedSetIds} from './tcgdex/excluded';
+import {excludedSerieNames, excludedSetIds} from './tcgdex/excluded';
 
 /**
  * Drops every catalogue row that belongs to an excluded serie (see `EXCLUDED_SERIES`).
@@ -53,7 +53,7 @@ export async function purgeExcludedSeries(dryRun = false): Promise<PurgeReport> 
 	const supabase = envClient();
 	const pool = new Http2Pool();
 	try {
-		const serieNames = (await Promise.all(EXCLUDED_SERIES.map(id => pool.json<{name: string}>(`/v2/en/series/${id}`)))).flatMap(serie => serie?.name ?? []);
+		const serieNames = await excludedSerieNames(pool, 'en');
 		const owned = await ownedCardCodes(supabase);
 		const langs: PurgeLangReport[] = [];
 

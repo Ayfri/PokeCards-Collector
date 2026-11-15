@@ -65,15 +65,10 @@ function versionsOf(lang: Language, passes: ReadonlyMap<Language, CardPass>): Ca
 const keysOf = (manifest: CatalogueManifest): string[] => Object.values(manifest.objects).map(object => object.key);
 
 class Publisher {
-	private readonly bucket: R2Bucket;
 	private readonly published = new Map<CatalogueObjectName, PublishedObject>();
-	private readonly supabase: SupabaseClient;
 	private readonly written: CatalogueObjectName[] = [];
 
-	constructor(supabase: SupabaseClient, bucket: R2Bucket) {
-		this.bucket = bucket;
-		this.supabase = supabase;
-	}
+	constructor(private readonly supabase: SupabaseClient, private readonly bucket: R2Bucket) {}
 
 	/** An empty table throws and the previous manifest stays: it means a wiped or unreachable database. The derived `:details` and `:versions` can be empty. */
 	private async put<N extends CatalogueObjectName>(name: N, value: RawObject<N>, rows: number): Promise<void> {

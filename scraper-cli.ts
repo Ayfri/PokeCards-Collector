@@ -1,17 +1,17 @@
 #!/usr/bin/env bun
 
 import { select } from '@inquirer/prompts';
-import { readFile } from 'node:fs/promises';
 import { parseArgs, styleText } from 'node:util';
 import { CATALOGUES, type Language, LANGUAGES } from './src/lib/helpers/catalogues.js';
 import type { PublishSummary } from './src/lib/helpers/catalogue-snapshot.js';
-import { FILES, POKEMONS, publishRemotely, TYPES } from './src/scrapers/cli-config.js';
+import { FILES, POKEMONS, publishRemotely, readStaged, TYPES } from './src/scrapers/cli-config.js';
 import { checkDatabase } from './src/scrapers/db-check.js';
-import { fetchPokemons } from './src/scrapers/pokemon-scraper.js';
+import { fetchPokemons } from './src/scrapers/pokedex.js';
 import { purgeExcludedSeries } from './src/scrapers/purge.js';
+import { uploadCards, uploadPokemons, uploadPrices, uploadSets, uploadTypes } from './src/scrapers/supabase-uploader.js';
 import { auditTcgdex } from './src/scrapers/tcgdex/audit.js';
+import { scrapeToFiles } from './src/scrapers/tcgdex/scraper.js';
 import { verifyFiles } from './src/scrapers/tcgdex/verify.js';
-import { scrapeToFiles } from './src/scrapers/tcgdex/write.js';
 
 interface Options {
 	dryRun: boolean;
@@ -51,42 +51,29 @@ function reportPublish(summary: PublishSummary): PublishSummary {
 	return summary;
 }
 
-const SUPABASE_TARGETS = ['all', 'types', 'pokemons', 'sets', 'jp-sets', 'fr-sets', 'cards', 'jp-cards', 'fr-cards', 'prices', 'jp-prices', 'fr-prices'] as const;
-type SupabaseTarget = (typeof SUPABASE_TARGETS)[number];
-
-/** In upload order like `SUPABASE_TARGETS`, not alphabetical: the sets go before the cards, and the cards before the prices. */
-const SUPABASE_UPLOADERS: Record<SupabaseTarget, readonly [uploader: string, language?: Language]> = {
-	'all': ['uploadAllData'],
-	'types': ['uploadTypes'],
-	'pokemons': ['uploadPokemons'],
-	'sets': ['uploadSets', 'en'],
-	'jp-sets': ['uploadSets', 'ja'],
-	'fr-sets': ['uploadSets', 'fr'],
-	'cards': ['uploadCards', 'en'],
-	'jp-cards': ['uploadCards', 'ja'],
-	'fr-cards': ['uploadCards', 'fr'],
-	'prices': ['uploadPrices', 'en'],
-	'jp-prices': ['uploadPrices', 'ja'],
-	'fr-prices': ['uploadPrices', 'fr'],
-};
+interface UploadTarget {
+	file: string;
+	/** Absent for `types` and `pokemons`, which hold no language. */
+	lang?: Language;
+	table: string;
+	upload: () => Promise<void>;
+}
 
 /**
- * The table each target writes and the staged file it reads, for `supabase --dry-run`: that path never loads the uploader, which builds its
- * Supabase client when imported, so a dry run needs no credentials. In upload order, which is the order the dry run prints.
+ * Every upload target with the table it writes and the staged file it reads, in upload order, which is the order of `all` and of the dry run:
+ * not alphabetical, the sets go before the cards and the cards before the prices (the prices have a foreign key on `card_code`), so the kind is the outer loop.
+ * The uploader builds its Supabase client on first use, so `supabase --dry-run` imports it with no credentials.
  */
-const SUPABASE_STAGED: Record<Exclude<SupabaseTarget, 'all'>, readonly [table: string, file: string]> = {
-	'types': ['types', TYPES],
-	'pokemons': ['pokemons', POKEMONS],
-	'sets': [CATALOGUES.en.tables.sets, FILES.en.sets],
-	'jp-sets': [CATALOGUES.ja.tables.sets, FILES.ja.sets],
-	'fr-sets': [CATALOGUES.fr.tables.sets, FILES.fr.sets],
-	'cards': [CATALOGUES.en.tables.cards, FILES.en.cards],
-	'jp-cards': [CATALOGUES.ja.tables.cards, FILES.ja.cards],
-	'fr-cards': [CATALOGUES.fr.tables.cards, FILES.fr.cards],
-	'prices': [CATALOGUES.en.tables.prices, FILES.en.prices],
-	'jp-prices': [CATALOGUES.ja.tables.prices, FILES.ja.prices],
-	'fr-prices': [CATALOGUES.fr.tables.prices, FILES.fr.prices],
+const UPLOADS: Record<string, UploadTarget> = {
+	types: { file: TYPES, table: 'types', upload: uploadTypes },
+	pokemons: { file: POKEMONS, table: 'pokemons', upload: uploadPokemons },
+	...Object.fromEntries((['sets', 'cards', 'prices'] as const).flatMap(kind => LANGUAGES.map((lang): [string, UploadTarget] => {
+		const { routeCode, tables } = CATALOGUES[lang];
+		const upload = { cards: uploadCards, prices: uploadPrices, sets: uploadSets }[kind];
+		return [routeCode ? `${routeCode}-${kind}` : kind, { file: FILES[lang][kind], lang, table: tables[kind], upload: () => upload(lang) }];
+	}))),
 };
+const SUPABASE_TARGETS = ['all', ...Object.keys(UPLOADS)];
 
 const commands: Command[] = [
 	{
@@ -206,29 +193,30 @@ const commands: Command[] = [
 	},
 	{
 		description: `Upload scraped JSON to Supabase (${SUPABASE_TARGETS.join(', ')}), then publish the catalogue`,
-		flags: '<target>  --dry-run  --json',
+		flags: `<target>  --lang ${LANGUAGES.join(',')}  --dry-run  --json`,
 		name: 'supabase',
-		run: async ({ dryRun, target }) => {
-			const chosen = (target ?? 'all') as SupabaseTarget;
+		run: async ({ dryRun, langs, target }) => {
+			const chosen = target ?? 'all';
 			if (!SUPABASE_TARGETS.includes(chosen)) throw new Error(`Unknown supabase target "${chosen}". Expected one of: ${SUPABASE_TARGETS.join(', ')}`);
+			/** `all` takes the languages of `--lang` only: uploading the staged files of a language that was not scraped would delete the sets the daily Worker added since and restore old prices. */
+			const targets = chosen === 'all' ? Object.values(UPLOADS).filter(({ lang }) => !lang || langs.includes(lang)) : [UPLOADS[chosen]];
 			heading(dryRun ? `supabase ${chosen} (dry run)` : `supabase ${chosen}`);
 			if (dryRun) {
-				for (const [name, [table, file]] of Object.entries(SUPABASE_STAGED)) {
-					if (chosen !== 'all' && name !== chosen) continue;
-					const staged = JSON.parse(await readFile(file, 'utf8')) as unknown[] | Record<string, unknown>;
+				for (const { file, table } of targets) {
+					const staged = readStaged<unknown[] | Record<string, unknown>>(file);
 					row(table, `${Array.isArray(staged) ? staged.length : Object.keys(staged).length} rows ${dim(`from ${file}`)}`);
 				}
 				console.log(dim('  dry run: Supabase untouched'));
 				return;
 			}
-			const uploaders = await import('./src/scrapers/supabase-uploader.js') as Record<string, (language?: Language) => Promise<void>>;
-			const [uploader, language] = SUPABASE_UPLOADERS[chosen];
 
 			/** The publish runs after a failed upload too, since the tables it already wrote have changed. The upload error is the one that ends the command. */
 			let summary: PublishSummary | undefined;
 			let uploaded = false;
 			try {
-				await uploaders[uploader](language);
+				if (chosen === 'all') console.log('🚀 Starting full Supabase data upload...');
+				for (const { upload } of targets) await upload();
+				if (chosen === 'all') console.log('🎉 All data uploaded successfully to Supabase!');
 				uploaded = true;
 			} finally {
 				try {
@@ -255,7 +243,7 @@ const commands: Command[] = [
 		},
 	},
 	{
-		description: 'scrape, then pokemons, then push everything to Supabase and publish it',
+		description: 'scrape, then pokemons, then push types, pokemons and the scraped languages to Supabase and publish them',
 		flags: `--lang ${LANGUAGES.join(',')}  --dry-run`,
 		name: 'all',
 		run: async options => {
@@ -280,7 +268,7 @@ ${bold('Commands')}
 ${commands.map(command => `  ${accent(command.name.padEnd(10))} ${command.description}${command.flags ? `\n  ${' '.repeat(10)} ${dim(command.flags)}` : ''}`).join('\n')}
 
 ${bold('Options')}
-  ${accent('--lang <list>')}   languages to scrape, comma separated ${dim(`(default: ${LANGUAGES.join(',')})`)}
+  ${accent('--lang <list>')}   languages to scrape, and to upload with ${accent('supabase all')}, comma separated ${dim(`(default: ${LANGUAGES.join(',')})`)}
   ${accent('--dry-run')}       run everything but write nothing: no file, no Supabase row, no publish
   ${accent('--offline')}       skip the Supabase round-trip in ${accent('verify')}
   ${accent('--json')}          print the raw report instead of the pretty one

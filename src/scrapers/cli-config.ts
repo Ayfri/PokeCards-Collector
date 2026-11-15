@@ -1,17 +1,10 @@
+import {readFileSync} from 'node:fs';
 import type {PublishSummary} from '#helpers/catalogue-snapshot.ts';
 import type {Language} from '#helpers/catalogues.ts';
-import {type CardTraderScans, fetchCardTraderScans} from './cardtrader';
 import {createSyncClient} from './supabase-sync';
 
 /** CLI only: it reads `process.env`, which the Worker bundle never has. */
 export const envClient = () => createSyncClient(process.env.PUBLIC_SUPABASE_URL ?? '', process.env.SUPABASE_SECRET_KEY ?? '');
-
-/** Throws before returning the promise, so a missing token stops the run before any scraping: without the map, uploading would null every scan CardTrader supplies. */
-export function envCardTraderScans(): Promise<CardTraderScans> {
-	const token = process.env.CARDTRADER_TOKEN;
-	if (!token) throw new Error('Missing CARDTRADER_TOKEN');
-	return fetchCardTraderScans(token);
-}
 
 const SCRAPER_URL = process.env.SCRAPER_URL || 'https://pokecards-scraper.ayfri.workers.dev';
 
@@ -36,3 +29,6 @@ export const FILES: Record<Language, {cards: string; prices: string; sets: strin
 	fr: {cards: 'src/assets/fr-cards-full.json', prices: 'src/assets/fr-prices.json', sets: 'src/assets/fr-sets-full.json'},
 	ja: {cards: 'src/assets/jp-cards-full.json', prices: 'src/assets/jp-prices.json', sets: 'src/assets/jp-sets-full.json'},
 };
+
+/** A staged JSON file of `src/assets/`. A missing file throws the `ENOENT` that names its path. */
+export const readStaged = <T>(path: string): T => JSON.parse(readFileSync(path, 'utf8')) as T;
