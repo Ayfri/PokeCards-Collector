@@ -1,6 +1,7 @@
 import { version } from '$app/env';
 import { PUBLIC_SUPABASE_PUBLISHABLE_KEY, PUBLIC_SUPABASE_URL } from '$app/env/public';
 import { createServerClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { RequestEvent } from '@sveltejs/kit';
 import type { Handle } from '@sveltejs/kit/hooks';
 import { CACHE_ORIGIN, catalogueManifest, edgeCache, keepAlive } from '#helpers/data-cache.ts';
@@ -44,15 +45,17 @@ const PUBLIC_ROUTES = new Set([
 	'/sitemap.xml',
 ]);
 
+/** Whether the request carries a Supabase auth cookie: without one there is no session to read or refresh. */
+const hasSession = (event: RequestEvent): boolean => event.cookies.getAll().some(({ name }) => name.startsWith('sb-'));
+
 /**
  * The cache key of a page a visitor without a session may be served from the colo cache, or `null` when the request must render. The key holds the
  * build version, since a stored document names the hashed files of its build and a later deploy removes them, and the catalogue's `publishedAt`,
  * since the page is built from it. A page rendered from an older catalogue or build is never read again, whatever its age.
  */
-async function htmlCacheKey(event: RequestEvent): Promise<Request | null> {
+async function htmlCacheKey(event: RequestEvent, session: boolean): Promise<Request | null> {
 	if (event.request.method !== 'GET' || event.isDataRequest || event.isSubRequest || event.url.search !== '') return null;
-	if (!CACHED_ROUTES.has(event.route.id ?? '')) return null;
-	if (event.cookies.getAll().some(({ name }) => name.startsWith('sb-'))) return null;
+	if (!CACHED_ROUTES.has(event.route.id ?? '') || session) return null;
 
 	try {
 		const { publishedAt } = await catalogueManifest();
@@ -66,7 +69,8 @@ async function htmlCacheKey(event: RequestEvent): Promise<Request | null> {
 }
 
 export const handle: Handle = async ({ event, resolve }) => {
-	const cacheKey = await htmlCacheKey(event);
+	const session = hasSession(event);
+	const cacheKey = await htmlCacheKey(event, session);
 	const stored = cacheKey && await edgeCache().match(cacheKey).catch(() => undefined);
 
 	if (stored) {
@@ -78,11 +82,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 
 	let authHeadersSet = false;
+	let supabase: SupabaseClient | undefined;
 
-	event.locals.supabase = createServerClient(
-		PUBLIC_SUPABASE_URL,
-		PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-		{
+	/** Built on first use: constructing the client and its auth, realtime and storage parts is a quarter of a card page's CPU, which a visitor without a session never needs. */
+	Object.defineProperty(event.locals, 'supabase', {
+		get: () => supabase ??= createServerClient(PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_PUBLISHABLE_KEY, {
 			cookies: {
 				getAll: () => event.cookies.getAll(),
 				setAll: (cookiesToSet, headers) => {
@@ -94,13 +98,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 					authHeadersSet = true;
 				},
 			},
-		}
-	);
+		}),
+	});
 
 	let profile: UserProfile | null = null;
 	let user = null;
 
-	if (!PUBLIC_ROUTES.has(event.route.id ?? '')) {
+	if (session && !PUBLIC_ROUTES.has(event.route.id ?? '')) {
 		({ data: { user } } = await event.locals.supabase.auth.getUser());
 
 		if (user) {
