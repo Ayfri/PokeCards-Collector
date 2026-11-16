@@ -36,18 +36,12 @@
 
 	let { loggedIn, onArm, onSignIn }: Props = $props();
 
-	const TABS: { icon: LucideIcon; id: BinderTab; label: string }[] = [
+	/** `source` is the label of the way out of an empty tray: each tab that has one is offered there, and opens the tab that fills it. */
+	const TABS: { icon: LucideIcon; id: BinderTab; label: string; source?: string }[] = [
 		{ icon: InboxIcon, id: 'tray', label: 'Tray' },
-		{ icon: LayersIcon, id: 'sets', label: 'Sets' },
-		{ icon: UserRoundIcon, id: 'mine', label: 'Mine' },
-		{ icon: LayoutGridIcon, id: 'all', label: 'All cards' }
-	];
-
-	/** The ways out of an empty tray: each one opens the tab that fills it. */
-	const SOURCES: { icon: LucideIcon; label: string; tab: BinderTab }[] = [
-		{ icon: LayersIcon, label: 'Pick a set', tab: 'sets' },
-		{ icon: UserRoundIcon, label: 'My cards', tab: 'mine' },
-		{ icon: LayoutGridIcon, label: 'Browse all cards', tab: 'all' }
+		{ icon: LayersIcon, id: 'sets', label: 'Sets', source: 'Pick a set' },
+		{ icon: UserRoundIcon, id: 'mine', label: 'Mine', source: 'My cards' },
+		{ icon: LayoutGridIcon, id: 'all', label: 'All cards', source: 'Browse all cards' }
 	];
 
 	const SORT_OPTIONS: { label: string; value: BinderSort }[] = [
@@ -122,10 +116,6 @@
 		if (!binderCards.ready) return { icon: LoaderCircleIcon, spin: true, text: 'Loading the catalogue...' };
 		return { icon: InboxIcon, text: 'No cards to show.' };
 	});
-
-	function setSort(value: string) {
-		binder.setView({ sortBy: value as BinderSort });
-	}
 
 	function toggleMine(list: 'collection' | 'wishlist') {
 		const other = list === 'collection' ? 'wishlist' : 'collection';
@@ -235,7 +225,7 @@
 			<SortControl
 				active={view.sortBy !== 'natural'}
 				bind:sortDirection={() => view.sortOrder, sortOrder => binder.setView({ sortOrder })}
-				bind:sortValue={() => view.sortBy, setSort}
+				bind:sortValue={() => view.sortBy, value => binder.setView({ sortBy: value as BinderSort })}
 				options={SORT_OPTIONS}
 			/>
 			<Button class="px-2" isActive={view.hidePlaced} onClick={() => binder.setView({ hidePlaced: !view.hidePlaced })} title={view.hidePlaced ? 'Showing only the cards left to place' : 'Hide the cards already placed'}>
@@ -263,14 +253,14 @@
 								<Button onClick={() => binderCards.loadOwned(binderCards.owner, true)}>Try again</Button>
 							{:else if nothing.action === 'sources'}
 								<div class="grid w-full grid-cols-3 gap-2">
-									{#each SOURCES as { icon: Icon, label, tab: target } (target)}
+									{#each TABS.filter(item => item.source) as item (item.id)}
 										<button
 											class="focus-ring flex flex-col items-center gap-1.5 rounded-lg border border-gray-700 bg-gray-900/60 px-1 py-3 text-xs text-gray-200 transition-all hover:border-gold-400 hover:text-gold-400 motion-safe:hover:-translate-y-0.5"
-											onclick={() => selectTab(target)}
+											onclick={() => selectTab(item.id)}
 											type="button"
 										>
-											<Icon size={20} />
-											{label}
+											<item.icon size={20} />
+											{item.source}
 										</button>
 									{/each}
 								</div>

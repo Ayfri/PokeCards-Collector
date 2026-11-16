@@ -7,6 +7,7 @@
 	import type { Card, PriceData } from '#lib/types.js';
 	import { cardPrice } from '#helpers/card-utils.ts';
 	import { formatEuros } from '#helpers/format.ts';
+	import type { LucideIcon } from '@lucide/svelte';
 	import CardmarketLogo from '#components/card/CardmarketLogo.svelte';
 	import ChartLine from '@lucide/svelte/icons/chart-line';
 	import Clock from '@lucide/svelte/icons/clock';
@@ -29,17 +30,32 @@
 		const date = new Date(card.cardMarketUpdatedAt);
 		return Number.isNaN(date.getTime()) ? card.cardMarketUpdatedAt : `${UPDATED_AT_FORMAT.format(date)} UTC`;
 	});
+
+	const positive = (value?: number) => (value ?? 0) > 0;
+	const defined = (value?: number) => value !== undefined;
+
+	type PriceRows = [key: keyof PriceData, label: string][];
+
+	/**
+	 * `keep` picks the rows drawn. `shown` picks when the group is drawn: always, when any row is kept, or only when its first row is
+	 * (the reverse prices need `reverseSimple`, even when `reverseLow` or `reverseTrend` has a value).
+	 */
+	const PRICE_GROUPS: { hint: string; icon: LucideIcon; keep: (value?: number) => boolean; rows: PriceRows; shown: 'always' | 'any' | 'first'; title: string }[] = [
+		{ hint: 'Current Cardmarket listings for the normal print', icon: Tag, keep: positive, rows: [['simple', 'Average Sell:'], ['low', 'Low Price:'], ['trend', 'Trend Price:']], shown: 'always', title: 'Market Prices (€)' },
+		{ hint: 'Prices for the reverse holo print', icon: Repeat2, keep: positive, rows: [['reverseSimple', 'Reverse Simple:'], ['reverseLow', 'Reverse Low:'], ['reverseTrend', 'Reverse Trend:']], shown: 'first', title: 'Reverse Prices' },
+		{ hint: 'Average sale price over the last days', icon: ChartLine, keep: defined, rows: [['avg1', 'Avg (1 day):'], ['avg7', 'Avg (7 days):'], ['avg30', 'Avg (30 days):']], shown: 'always', title: 'Average Prices' },
+		{ hint: 'Average sale price of the reverse holo print', icon: Repeat2, keep: positive, rows: [['reverseAvg1', 'R. Avg (1 day):'], ['reverseAvg7', 'R. Avg (7 days):'], ['reverseAvg30', 'R. Avg (30 days):']], shown: 'any', title: 'Reverse Averages' },
+	];
+
+	const groups = $derived(PRICE_GROUPS.flatMap(group => {
+		const rows = group.rows.filter(([key]) => group.keep(cardPrices[key]));
+		const isShown = group.shown === 'always' || (group.shown === 'first' ? rows[0]?.[0] === group.rows[0][0] : rows.length > 0);
+		return isShown ? [{ ...group, rows }] : [];
+	}));
 </script>
 
-{#snippet priceItem(label: string, value: number | undefined)}
-	<div class="price-item bg-white/10">
-		<span class="font-semibold">{label}</span>
-		<span>{value}€</span>
-	</div>
-{/snippet}
-
 <div class="flex max-h-[80vh] flex-col overflow-y-auto text-[0.95rem] bg-gray-800 border-2 border-gold-400 rounded-xl p-4 w-full max-w-125 h-full">
-	{#if card.cardMarketUrl && card.cardMarketUrl.trim() !== ''}
+	{#if card.cardMarketUrl?.trim()}
 		<a class="text-gold-400 font-bold text-xl mb-3 flex items-center justify-center gap-2 hover:text-gold-300 transition-colors duration-200" href={card.cardMarketUrl} rel="noopener noreferrer" target="_blank" title="Open this card on Cardmarket (new tab)">
 			<CardmarketLogo class="shrink-0" size={24} />
 			Cardmarket Prices
@@ -57,58 +73,20 @@
 	</div>
 
 	<div class="grow overflow-y-auto max-h-[56vh]">
-		<h4 class="text-base text-gold-400 font-bold mb-2 flex items-center justify-center gap-2" title="Current Cardmarket listings for the normal print"><Tag size={16} /> Market Prices (€)</h4>
-		<div class="grid grid-cols-2 gap-3">
-			{#if cardPrices.simple}{@render priceItem('Average Sell:', cardPrices.simple)}{/if}
-			{#if cardPrices.low}{@render priceItem('Low Price:', cardPrices.low)}{/if}
-			{#if cardPrices.trend}{@render priceItem('Trend Price:', cardPrices.trend)}{/if}
-		</div>
-
-		{#if cardPrices.reverseSimple !== undefined && cardPrices.reverseSimple > 0}
-			<h4 class="text-base text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Prices for the reverse holo print"><Repeat2 size={16} /> Reverse Prices</h4>
-			<div class="grid grid-cols-2 gap-3">
-				{@render priceItem('Reverse Simple:', cardPrices.reverseSimple)}
-				{#if cardPrices.reverseLow !== undefined && cardPrices.reverseLow > 0}{@render priceItem('Reverse Low:', cardPrices.reverseLow)}{/if}
-				{#if cardPrices.reverseTrend !== undefined && cardPrices.reverseTrend > 0}{@render priceItem('Reverse Trend:', cardPrices.reverseTrend)}{/if}
+		{#each groups as group (group.title)}
+			<h4 class="text-base text-gold-400 font-bold mt-4 first:mt-0 mb-2 flex items-center justify-center gap-2" title={group.hint}><group.icon size={16} /> {group.title}</h4>
+			<div class="grid grid-cols-2 max-md:grid-cols-1 gap-3">
+				{#each group.rows as [key, label] (key)}
+					<div class="flex justify-between rounded-lg bg-white/10 px-2 py-1 text-[0.9rem]">
+						<span class="font-semibold">{label}</span>
+						<span>{cardPrices[key]}€</span>
+					</div>
+				{/each}
 			</div>
-		{/if}
-
-		<h4 class="text-base text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Average sale price over the last days"><ChartLine size={16} /> Average Prices</h4>
-		<div class="grid grid-cols-2 gap-3">
-			{#if cardPrices.avg1 !== undefined}{@render priceItem('Avg (1 day):', cardPrices.avg1)}{/if}
-			{#if cardPrices.avg7 !== undefined}{@render priceItem('Avg (7 days):', cardPrices.avg7)}{/if}
-			{#if cardPrices.avg30 !== undefined}{@render priceItem('Avg (30 days):', cardPrices.avg30)}{/if}
-		</div>
-
-		{#if (cardPrices.reverseAvg1 !== undefined && cardPrices.reverseAvg1 > 0) ||
-			(cardPrices.reverseAvg7 !== undefined && cardPrices.reverseAvg7 > 0) ||
-			(cardPrices.reverseAvg30 !== undefined && cardPrices.reverseAvg30 > 0)}
-			<h4 class="text-base text-gold-400 font-bold mt-4 mb-2 flex items-center justify-center gap-2" title="Average sale price of the reverse holo print"><Repeat2 size={16} /> Reverse Averages</h4>
-			<div class="grid grid-cols-2 gap-3">
-				{#if cardPrices.reverseAvg1 !== undefined && cardPrices.reverseAvg1 > 0}{@render priceItem('R. Avg (1 day):', cardPrices.reverseAvg1)}{/if}
-				{#if cardPrices.reverseAvg7 !== undefined && cardPrices.reverseAvg7 > 0}{@render priceItem('R. Avg (7 days):', cardPrices.reverseAvg7)}{/if}
-				{#if cardPrices.reverseAvg30 !== undefined && cardPrices.reverseAvg30 > 0}{@render priceItem('R. Avg (30 days):', cardPrices.reverseAvg30)}{/if}
-			</div>
-		{/if}
+		{/each}
 	</div>
 
 	{#if updatedAt}
 		<p class="text-sm text-gray-400 mt-4 flex items-center justify-center gap-1.5" title="When Cardmarket last refreshed these prices"><Clock size={14} /> Last updated: {updatedAt}</p>
 	{/if}
 </div>
-
-<style>
-	.price-item {
-		display: flex;
-		justify-content: space-between;
-		padding: 0.25rem 0.5rem;
-		border-radius: 0.5rem;
-		font-size: 0.9rem;
-	}
-
-	@media (max-width: 768px) {
-		.grid {
-			grid-template-columns: 1fr;
-		}
-	}
-</style>

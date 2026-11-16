@@ -55,30 +55,8 @@
 	const collectionCount = $derived(collection.count(card.cardCode));
 	const cardIsWishlisted = $derived(wishlist.has(card.cardCode));
 
-	async function toggleWishlist(event: MouseEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-		if (!user || !profile) return;
-		if (cardIsWishlisted) {
-			await removeCardFromWishlist(profile.username, card.cardCode);
-		} else {
-			await addCardToWishlist(profile.username, card.cardCode);
-		}
-	}
-	async function handleAddCard(event: MouseEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-		if (!user || !profile) return;
-		if (collectionCount >= MAX_CARD_QUANTITY) return;
-		await addCardToCollection(profile.username, card.cardCode);
-	}
-	async function handleRemoveCard(event: MouseEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-		if (!user || !profile) return;
-		if (collectionCount === 0) return;
-		await removeCardFromCollection(profile.username, card.cardCode);
-	}
+	/** The buttons only render for a signed-in profile, Remove only above 0 copies and Add is disabled at the cap, so a write needs no other guard. */
+	const write = (action: (username: string, cardCode: string) => Promise<unknown>) => () => profile && action(profile.username, card.cardCode);
 </script>
 
 <div class="flex flex-col items-center gap-4 mt-6 lg:mt-12 max-lg:gap-0">
@@ -90,7 +68,7 @@
 						aria-label="Remove one copy from collection"
 						class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 						in:fly={{ delay: 100, duration: 200, y: -5 }}
-						onclick={handleRemoveCard}
+						onclick={write(removeCardFromCollection)}
 						title="Remove one copy from collection"
 					>
 						<Minus class="text-white" size={16} />
@@ -108,7 +86,7 @@
 					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 					disabled={collectionCount >= MAX_CARD_QUANTITY}
 					in:fly={{ delay: collectionCount > 0 ? 200: 100, duration: 200, y: -5 }}
-					onclick={handleAddCard}
+					onclick={write(addCardToCollection)}
 					title={collectionCount >= MAX_CARD_QUANTITY ? `Limit (${MAX_CARD_QUANTITY}) reached` : 'Add to collection'}
 				>
 					<Plus class={collectionCount > 0 ? "text-green-400" : "text-white"} size={16} />
@@ -122,7 +100,7 @@
 					aria-label={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
 					class="focus-ring p-1 hover:bg-white/20 rounded-full transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
 					in:fly={{ delay: 250, duration: 200, y: -5 }}
-					onclick={toggleWishlist}
+					onclick={write(cardIsWishlisted ? removeCardFromWishlist : addCardToWishlist)}
 					title={cardIsWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
 				>
 					<Heart class={cardIsWishlisted ? 'text-red-500 fill-red-500' : 'text-white'} size={16} />
@@ -138,7 +116,7 @@
 			<div class="bg-gray-800 border-2 border-gold-400 rounded-xl p-4 h-full flex flex-col">
 				<h3 class="text-xl text-gold-400 font-bold mb-3 text-center">Card Details</h3>
 
-				<div class="space-y-2 grow">
+				<dl class="space-y-2 grow">
 					{#if card.types || card.supertype}
 						<div class="flex justify-between items-center p-2 bg-gray-900/60 rounded-lg">
 							<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Energy type, or the card category for Trainer and Energy cards"><Sparkles size={14} /> Type:</dt>
@@ -224,7 +202,7 @@
 						<dt class="flex items-center gap-1.5 font-semibold text-gold-300" title="Release date of the set"><CalendarDays size={14} /> Release Date:</dt>
 						<dd class="text-white text-right">{formatDate(set.releaseDate)}</dd>
 					</div>
-				</div>
+				</dl>
 
 				<div class="mt-4 bg-gray-900 border-2 border-gold-400 rounded-lg p-3">
 					<div class="text-sm text-white whitespace-pre-line">{displayDescription}</div>

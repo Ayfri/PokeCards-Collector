@@ -30,7 +30,7 @@
 
 	let inputElement = $state<HTMLInputElement>();
 	let searchQuery = $state('');
-	let searchResults: CardSearchResult[] = $state([]);
+	let cardResults: CardSearchResult[] = $state([]);
 	let pokemonResults: PokemonSearchResult[] = $state([]);
 	let showResults = $state(false);
 	let searchStatus = $state<'idle' | 'loading' | 'done' | 'error'>('idle');
@@ -38,8 +38,9 @@
 	let searchedQuery = $state('');
 	/** Card codes currently flashing the "added" state. */
 	const addedCards = new SvelteSet<string>();
-	let platformModifierKey = $state('');
 	let inputFocused = $state(false);
+	let modifierLabel = $state('');
+	let root = $state<HTMLDivElement>();
 
 	const isBinderPage = $derived(page.url.pathname === '/binder');
 
@@ -53,14 +54,13 @@
 		}, 1500);
 	}
 
-
 	/** Keystrokes race: only the answer to the most recent query is allowed to land. */
 	let latestRequest = 0;
 
 	const clearResults = () => {
 		latestRequest++;
 		pokemonResults = [];
-		searchResults = [];
+		cardResults = [];
 		searchStatus = 'idle';
 		showResults = false;
 	};
@@ -85,14 +85,14 @@
 			if (request !== latestRequest) return;
 
 			pokemonResults = pokemons;
-			searchResults = results;
+			cardResults = results;
 			searchedQuery = query;
 			searchStatus = 'done';
 		} catch (error) {
 			if (request !== latestRequest) return;
 			console.error('Search failed:', error);
 			pokemonResults = [];
-			searchResults = [];
+			cardResults = [];
 			searchStatus = 'error';
 		}
 	};
@@ -114,11 +114,7 @@
 	};
 
 	const handleClickOutside = (event: MouseEvent) => {
-		if (mobileMode) return;
-		const target = event.target as Node;
-		if (showResults && inputElement && !inputElement.contains(target) && !document.querySelector('.search-results')?.contains(target)) {
-			showResults = false;
-		}
+		if (!mobileMode && showResults && !root?.contains(event.target as Node)) showResults = false;
 	};
 
 	const handleInputFocus = () => {
@@ -133,7 +129,7 @@
 	};
 
 	onMount(() => {
-		platformModifierKey = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'Cmd' : 'Ctrl';
+		modifierLabel = navigator.platform.toUpperCase().includes('MAC') ? '⌘' : 'Ctrl';
 
 		if (mobileMode && inputElement) {
 			/** The modal is still transitioning in, and focusing right away gets undone. */
@@ -149,12 +145,11 @@
 			inputElement?.focus();
 		}
 	};
-
 </script>
 
 <svelte:document onclick={handleClickOutside} onkeydown={handleGlobalKeydown} />
 
-<div class="relative {mobileMode ? 'flex flex-col w-full' : ''}">
+<div bind:this={root} class="relative {mobileMode ? 'flex flex-col w-full' : ''}">
 	<div class="relative">
 		<div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
 			<Search size={18} />
@@ -178,9 +173,9 @@
 			>
 				<X size={18} />
 			</button>
-		{:else if !inputFocused && platformModifierKey && !mobileMode}
+		{:else if !inputFocused && modifierLabel && !mobileMode}
 			<div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center space-x-1 text-xs text-gray-500 pointer-events-none">
-				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded-sm">{platformModifierKey === 'Cmd' ? '⌘' : 'Ctrl'}</kbd>
+				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded-sm">{modifierLabel}</kbd>
 				<span class="text-base">+</span>
 				<kbd class="px-1.5 py-0.5 border border-gray-600 bg-gray-800 rounded-sm">K</kbd>
 			</div>
@@ -189,7 +184,7 @@
 
 	{#if showResults && searchStatus !== 'idle'}
 		<div
-			class="search-results {mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg overflow-y-auto max-h-96 z-100 border border-gray-700"
+			class="{mobileMode ? 'mt-4' : 'absolute mt-2'} w-full bg-black rounded-lg shadow-lg overflow-y-auto max-h-96 z-100 border border-gray-700"
 			transition:fade={{ duration: 150 }}
 		>
 			{#if searchStatus === 'loading'}
@@ -199,7 +194,7 @@
 				</p>
 			{:else if searchStatus === 'error'}
 				<p class="p-4 text-center text-sm text-red-400" role="alert">Search failed, try again</p>
-			{:else if pokemonResults.length + searchResults.length === 0}
+			{:else if pokemonResults.length + cardResults.length === 0}
 				<p class="p-4 text-center text-sm text-gray-400 wrap-anywhere" role="status">Nothing found for “{searchedQuery}”</p>
 			{/if}
 			{#each pokemonResults as pokemon (pokemon.id)}
@@ -224,14 +219,12 @@
 					</div>
 				</a>
 			{/each}
-			{#each searchResults as result (result.card.cardCode)}
+			{#each cardResults as result (result.card.cardCode)}
 				{@const card = result.card}
-				{@const cardLink = cardPath('en', card)}
 				{@const isAdded = addedCards.has(card.cardCode)}
-
-				<a 
+				<a
 					class="block hover:bg-gray-800 transition-colors duration-200 border-b border-gray-700 last:border-b-0 relative"
-					href={cardLink}
+					href={cardPath('en', card)}
 					onclick={() => onClose?.()}
 				>
 					<div class="flex items-center p-3 relative">
@@ -264,7 +257,7 @@
 											onclick={(e) => {
 												e.preventDefault();
 												e.stopPropagation();
-												if (!isAdded) addToBinderTray(card);
+												addToBinderTray(card);
 											}}
 											title={isAdded ? "Added to the binder tray" : "Add to the binder tray"}
 										>
