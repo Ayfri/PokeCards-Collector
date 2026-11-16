@@ -20,7 +20,7 @@ export interface ScrapeResult {
  * The per-card REST call returns metadata and pricing together, so no second pricing pass is needed, and the
  * GraphQL endpoint (English-only, no prices) adds nothing.
  */
-export async function scrapeLanguage(client: TcgdexClient, lang: Language, cardTrader: Promise<CardTraderScans>): Promise<ScrapeResult> {
+async function scrapeLanguage(client: TcgdexClient, lang: Language, cardTrader: Promise<CardTraderScans>): Promise<ScrapeResult> {
 	const started = performance.now();
 	const {sets: setList, skipped} = await listCatalogueSets(client, lang);
 	console.log(`[${lang}] ${setList.length} sets${skipped ? ` (${skipped} skipped, excluded series or repeated id)` : ''}`);

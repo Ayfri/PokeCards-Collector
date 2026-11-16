@@ -137,7 +137,7 @@ class CardFilters {
 	 * so a link lands on exactly what it names rather than on top of whatever the visitor last picked. The sort is a
 	 * viewing preference, so it survives unless the link names one.
 	 */
-	applyFromUrl(url: {searchParams: Pick<URLSearchParams, 'get'>}, sets: CardSet[]) {
+	applyFromUrl(url: {searchParams: Pick<URLSearchParams, 'get'>}) {
 		const params = url.searchParams;
 		const value = (key: string) => params.get(key)?.trim().toLowerCase() || null;
 
@@ -158,7 +158,7 @@ class CardFilters {
 		this.reset();
 		if (!sortBy && !sortOrder) Object.assign(this, { sortBy: keptSortBy, sortOrder: keptSortOrder });
 
-		if (set) this.set = sets.find(candidate => candidate.name.toLowerCase() === set)?.name.toLowerCase() ?? set;
+		if (set) this.set = set;
 		if (artist) this.artist = artist;
 		if (supertype) this.supertype = supertype;
 		if (name) this.name = name;

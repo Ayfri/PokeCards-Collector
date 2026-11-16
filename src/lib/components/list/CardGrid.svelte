@@ -61,7 +61,7 @@
 	/** A link into the grid names the filters it wants, so the URL wins over what the visitor last picked. */
 	onMount(() => {
 		filters.clearUnknown(sets, artists);
-		filters.applyFromUrl(page.url, sets);
+		filters.applyFromUrl(page.url);
 	});
 
 	function setFilterName(value: string) {

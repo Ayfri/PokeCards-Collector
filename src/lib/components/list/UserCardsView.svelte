@@ -42,7 +42,7 @@
 	 */
 	onMount(() => {
 		filters.reset();
-		filters.applyFromUrl(page.url, data.sets);
+		filters.applyFromUrl(page.url);
 	});
 </script>
 

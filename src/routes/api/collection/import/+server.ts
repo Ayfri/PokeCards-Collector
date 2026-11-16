@@ -32,6 +32,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
 	const body = await request.json() as ImportRequest;
 	const kind = body.kind === 'wishlist' ? 'wishlist' : 'collection';
+	const table = kind === 'wishlist' ? 'wishlists' : 'collections';
 	const rows = (body.rows ?? []).map(row => ({ ...row, language: LANGUAGES.includes(row.language) ? row.language : 'en' }));
 	if (rows.length === 0) error(400, 'The file holds no importable row.');
 	if (rows.length > MAX_IMPORT_ROWS) error(413, `The file holds ${rows.length} rows, over the ${MAX_IMPORT_ROWS} limit.`);
@@ -41,7 +42,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 
 	/** The rows already owned decide what is left to write, so a card never goes past 99 copies. */
 	const { data: existing, error: readError } = await locals.supabase
-		.from(kind === 'wishlist' ? 'wishlists' : 'collections')
+		.from(table)
 		.select('card_code')
 		.eq('username', username);
 
@@ -80,7 +81,7 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 	if (body.dryRun) return Response.json(summary);
 
 	for (let start = 0; start < inserts.length; start += INSERT_BATCH) {
-		const { error: insertError } = await locals.supabase.from(kind === 'wishlist' ? 'wishlists' : 'collections').insert(inserts.slice(start, start + INSERT_BATCH));
+		const { error: insertError } = await locals.supabase.from(table).insert(inserts.slice(start, start + INSERT_BATCH));
 		/** A failed slice leaves the earlier ones written, so `added: start` is the real count of rows saved. */
 		if (insertError) return Response.json({ ...summary, added: start, failure: insertError.message }, { status: 207 });
 	}

@@ -6,7 +6,7 @@ import type {TcgdexSetBrief} from './types';
  * printed and never sold, so TCGdex has no price for any of them and they would sit in the grid as 2480 permanently
  * priceless entries.
  */
-export const EXCLUDED_SERIES = ['tcgp'] as const;
+const EXCLUDED_SERIES = ['tcgp'] as const;
 
 interface TcgdexSerie {
 	id: string;
