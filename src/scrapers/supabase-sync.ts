@@ -1,6 +1,6 @@
 import {createClient, type SupabaseClient} from '@supabase/supabase-js';
 import {CATALOGUES} from '#helpers/catalogues.ts';
-import {CARDTRADER_IMAGES} from '#src/constants.ts';
+import {CARDTRADER_IMAGES, SUPABASE_DB_OPTIONS} from '#src/constants.ts';
 import type {CardTraderImages} from './cardtrader';
 import {cardRow, priceRow, setRow} from './rows';
 import {cardIds, fillImage, imageFallbacks, setCards, setDetails, type TcgdexClient} from './tcgdex/client';
@@ -10,9 +10,13 @@ import type {TcgdexSet} from './tcgdex/types';
 
 /** Workers-safe half of the scraper: no `node:fs` and no staged JSON, it maps TCGdex straight into Supabase. */
 
+/**
+ * No client retry, one attempt per layer (rule 11): a Workflow step already retries as a whole, and a retry inside it would multiply the attempts
+ * against the small database. The CLI and `POST /publish` make one attempt too, and a failed command is run again by hand.
+ */
 export function createSyncClient(url: string, secretKey: string): SupabaseClient {
 	if (!url || !secretKey) throw new Error('Missing PUBLIC_SUPABASE_URL or SUPABASE_SECRET_KEY');
-	return createClient(url, secretKey, {auth: {persistSession: false}});
+	return createClient(url, secretKey, {auth: {persistSession: false}, db: SUPABASE_DB_OPTIONS});
 }
 
 /**
