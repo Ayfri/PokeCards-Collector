@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ClassValue } from 'svelte/elements';
+	import { HEX_COLOR } from '#src/constants.ts';
 
 	interface Props {
 		/** Tailwind classes that size the circle and its initial, e.g. `size-16 text-2xl`. */
@@ -12,7 +13,7 @@
 	let { class: className = 'size-8 text-lg', profileColor = null, username }: Props = $props();
 
 	/** The end stop is 45% darker, otherwise the gradient would not show. */
-	const gradientStyle = $derived(profileColor && /^#[0-9A-Fa-f]{6}$/.test(profileColor)
+	const gradientStyle = $derived(profileColor && HEX_COLOR.test(profileColor)
 		? `background-image: linear-gradient(to bottom right, ${profileColor}, color-mix(in srgb, ${profileColor} 55%, black));`
 		: 'background-image: linear-gradient(to bottom right, var(--color-gold-400), var(--color-gold-600));');
 </script>

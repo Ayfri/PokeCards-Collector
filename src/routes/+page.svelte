@@ -62,6 +62,13 @@
 
 	const latestSetPath = $derived(data.latestSet ? setPath(data.latestSet, CATALOGUES.en) : '/sets');
 
+	const latestSetFacts = $derived(data.latestSet ? [
+		['Release Date', formatDate(data.latestSet.releaseDate)],
+		['Number of Cards', String(data.latestSet.printedTotal)],
+		['PTCGO Code', data.latestSet.ptcgoCode],
+		['Series', data.latestSet.series],
+	] as const : []);
+
 	const setStats = $derived([
 		{ duration: 3, end: data.latestSetStats.pokemonCards, label: 'Pokémon Cards' },
 		{ duration: 2, end: data.latestSetStats.trainerCards, label: 'Trainer Cards' },
@@ -122,7 +129,6 @@
 		authMode = mode;
 		isAuthModalOpen = true;
 	}
-	function closeAuthModal() { isAuthModalOpen = false; }
 </script>
 
 {#snippet valuableCards(title: string, href: string, cards: PageData['mostExpensiveCards'])}
@@ -277,26 +283,14 @@
 							<h3 class="text-xl font-bold mb-2">
 								{data.latestSet.name}
 							</h3>
-							<p class="text-gray-300 mb-1">
-								<span class="text-gray-400">Release Date:</span>
-								{formatDate(data.latestSet.releaseDate)}
-							</p>
-							<p class="text-gray-300 mb-1">
-								<span class="text-gray-400">Number of Cards:</span>
-								{data.latestSet.printedTotal}
-							</p>
-							{#if data.latestSet.ptcgoCode}
-								<p class="text-gray-300 mb-1">
-									<span class="text-gray-400">PTCGO Code:</span>
-									{data.latestSet.ptcgoCode}
-								</p>
-							{/if}
-							{#if data.latestSet.series}
-								<p class="text-gray-300">
-									<span class="text-gray-400">Series:</span>
-									{data.latestSet.series}
-								</p>
-							{/if}
+							{#each latestSetFacts as [label, value] (label)}
+								{#if value}
+									<p class={['text-gray-300', label !== 'Series' && 'mb-1']}>
+										<span class="text-gray-400">{label}:</span>
+										{value}
+									</p>
+								{/if}
+							{/each}
 						</div>
 					</div>
 				</a>
@@ -504,7 +498,7 @@
 		{/if}
 	</section>
 
-	<AuthModal initialMode={authMode} onClose={closeAuthModal} open={isAuthModalOpen} />
+	<AuthModal initialMode={authMode} onClose={() => (isAuthModalOpen = false)} open={isAuthModalOpen} />
 </div>
 
 <style>

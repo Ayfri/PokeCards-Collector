@@ -6,6 +6,7 @@
 	import PageHeader from '#lib/components/PageHeader.svelte';
 	import {enhance} from '$app/forms';
 	import {formatDate} from '#helpers/format.ts';
+	import {DEFAULT_PROFILE_COLOR, profileColorOf} from '#src/constants.ts';
 	import {supabase} from '#lib/supabase.ts';
 	import {flushSync} from 'svelte';
 	import {fade, fly} from 'svelte/transition';
@@ -26,19 +27,15 @@
 
 	let {data, form}: Props = $props();
 
-	/** Gold-400, the color `Avatar.svelte` falls back to. */
-	const DEFAULT_PROFILE_COLOR = '#fbc54a';
-
 	const TABS = [
-		{description: 'The identity attached to your collection', icon: UserIcon, id: 'account', label: 'Account'},
-		{description: 'The color that tints your avatar', icon: PaletteIcon, id: 'appearance', label: 'Appearance'},
-		{description: 'Who can see your collection and wishlist', icon: ShieldIcon, id: 'privacy', label: 'Privacy'},
-		{description: 'Change the password you sign in with', icon: LockIcon, id: 'security', label: 'Security'}
+		{description: 'The identity attached to your collection', icon: UserIcon, id: 'account', label: 'Account', lede: 'The identity attached to your collection.'},
+		{description: 'The color that tints your avatar', icon: PaletteIcon, id: 'appearance', label: 'Appearance', lede: 'Your color tints your avatar everywhere on the site.'},
+		{description: 'Who can see your collection and wishlist', icon: ShieldIcon, id: 'privacy', label: 'Privacy', lede: 'Who can see your collection and wishlist.'},
+		{description: 'Change the password you sign in with', icon: LockIcon, id: 'security', label: 'Security', lede: 'Change the password you sign in with.'}
 	] as const;
 
-	type TabId = (typeof TABS)[number]['id'];
-
-	let activeTab = $state<TabId>('account');
+	/** Raw, because a proxy of the tab would never equal the `TABS` entry the nav compares it to. */
+	let activeTab = $state.raw<(typeof TABS)[number]>(TABS[0]);
 	let saving = $state(false);
 	let resetPasswordLoading = $state(false);
 	let resetPasswordMessage = $state('');
@@ -52,10 +49,7 @@
 	const memberSince = $derived(profile?.created_at ? formatDate(profile.created_at) : null);
 
 	/** The stored color overrides the local one whenever the server sends a fresh profile, so a save shows without a reload. */
-	let profileColor = $derived.by(() => {
-		const stored = profile?.profile_color;
-		return typeof stored === 'string' && /^#[0-9A-Fa-f]{6}$/.test(stored) ? stored : DEFAULT_PROFILE_COLOR;
-	});
+	let profileColor = $derived(profileColorOf(profile?.profile_color));
 
 	async function handlePasswordReset() {
 		if (!user?.email) {
@@ -132,15 +126,14 @@
 
 				<nav class="flex gap-1 overflow-x-auto rounded-xl border border-gray-700/60 bg-gray-900/60 p-2 lg:flex-col lg:overflow-visible">
 					{#each TABS as tab (tab.id)}
-						{@const Icon = tab.icon}
 						<button
 							class="flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors duration-200 lg:w-full
-								{activeTab === tab.id ? 'bg-gold-400/15 text-gold-400' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}"
-							onclick={() => (activeTab = tab.id)}
+								{activeTab === tab ? 'bg-gold-400/15 text-gold-400' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}"
+							onclick={() => (activeTab = tab)}
 							title={tab.description}
 							type="button"
 						>
-							<Icon size={16} />
+							<tab.icon size={16} />
 							{tab.label}
 						</button>
 					{/each}
@@ -148,123 +141,112 @@
 			</aside>
 
 			<section class="rounded-xl border border-gray-700/60 bg-linear-to-br from-gray-800 to-gray-900 p-6 shadow-xl">
-				{#if activeTab === 'account'}
+				{#key activeTab}
 					<div in:fade={{duration: 200}}>
-						<h2 class="mb-1 text-xl font-bold text-gold-400 md:text-2xl">Account</h2>
-						<p class="mb-5 text-sm text-gray-400">The identity attached to your collection.</p>
-						<div class="grid gap-4 sm:grid-cols-2">
-							{@render readOnlyField('email', 'Email', user?.email || '', 'To change your email, please contact support.')}
-							{@render readOnlyField('username', 'Username', profile.username || '', 'Username cannot be changed.')}
-						</div>
-					</div>
-				{:else if activeTab === 'appearance'}
-					<div in:fade={{duration: 200}}>
-						<h2 class="mb-1 text-xl font-bold text-gold-400 md:text-2xl">Appearance</h2>
-						<p class="mb-5 text-sm text-gray-400">Your color tints your avatar everywhere on the site.</p>
-
-						<form
-							action="?/updateProfile"
-							class="flex flex-col gap-5"
-							method="POST"
-							use:enhance={() => {
-								saving = true;
-								return async ({update}) => {
-									await update({reset: false});
-									saving = false;
-								};
-							}}
-						>
-							<div class="flex items-center gap-4 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4">
-								<Avatar class="size-16 text-3xl" profileColor={profileColor} username={profile.username || 'U'} />
-								<div>
-									<p class="font-medium text-white">Live preview</p>
-									<p class="font-mono text-sm text-gray-400">{profileColor}</p>
-								</div>
+						<h2 class="mb-1 text-xl font-bold text-gold-400 md:text-2xl">{activeTab.label}</h2>
+						<p class="mb-5 text-sm text-gray-400">{activeTab.lede}</p>
+						{#if activeTab.id === 'account'}
+							<div class="grid gap-4 sm:grid-cols-2">
+								{@render readOnlyField('email', 'Email', user?.email || '', 'To change your email, please contact support.')}
+								{@render readOnlyField('username', 'Username', profile.username || '', 'Username cannot be changed.')}
 							</div>
-
-							<ColorPicker bind:value={profileColor} defaultValue={DEFAULT_PROFILE_COLOR} />
-							<input name="profile_color" type="hidden" value={profileColor} />
-
-							{#if form?.error}
-								<p class="text-sm text-red-400">{form.error}</p>
-							{:else if form?.success}
-								<p class="text-sm text-green-400">{form.message}</p>
-							{/if}
-
-							<button
-								class="btn-outline-gold w-fit"
-								disabled={saving}
-								title="Save this color to your profile"
-								type="submit"
+						{:else if activeTab.id === 'appearance'}
+							<form
+								action="?/updateProfile"
+								class="flex flex-col gap-5"
+								method="POST"
+								use:enhance={() => {
+									saving = true;
+									return async ({update}) => {
+										await update({reset: false});
+										saving = false;
+									};
+								}}
 							>
-								<SaveIcon size={16} />
-								{saving ? "Saving..." : "Save profile color"}
+								<div class="flex items-center gap-4 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4">
+									<Avatar class="size-16 text-3xl" profileColor={profileColor} username={profile.username || 'U'} />
+									<div>
+										<p class="font-medium text-white">Live preview</p>
+										<p class="font-mono text-sm text-gray-400">{profileColor}</p>
+									</div>
+								</div>
+
+								<ColorPicker bind:value={profileColor} defaultValue={DEFAULT_PROFILE_COLOR} />
+								<input name="profile_color" type="hidden" value={profileColor} />
+
+								{#if form?.error}
+									<p class="text-sm text-red-400">{form.error}</p>
+								{:else if form?.success}
+									<p class="text-sm text-green-400">{form.message}</p>
+								{/if}
+
+								<button
+									class="btn-outline-gold w-fit"
+									disabled={saving}
+									title="Save this color to your profile"
+									type="submit"
+								>
+									<SaveIcon size={16} />
+									{saving ? "Saving..." : "Save profile color"}
+								</button>
+							</form>
+						{:else if activeTab.id === 'privacy'}
+							<!--
+								Saved as soon as the box changes: the checkbox's `change` event bubbles to the form, which submits itself.
+								`flushSync` first, because Svelte writes the hidden input's value in a later microtask and the submit would read the stale one.
+							-->
+							<form
+								action="?/updateVisibility"
+								class="flex flex-col gap-3 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4"
+								method="POST"
+								onchange={event => {
+									flushSync();
+									event.currentTarget.requestSubmit();
+								}}
+								use:enhance={() => {
+									savingVisibility = true;
+									return async ({result, update}) => {
+										await update({reset: false});
+										if (result.type !== 'success') isPublic = profile?.is_public ?? false;
+										savingVisibility = false;
+									};
+								}}
+							>
+								<Checkbox bind:checked={isPublic} disabled={savingVisibility} id="is-public" label="Public profile" />
+								<input name="is_public" type="hidden" value={isPublic} />
+								<p class="text-sm text-gray-400">
+									{isPublic ? 'Anyone can browse your collection and wishlist.' : 'Only you can see your collection and wishlist.'}
+								</p>
+								{#if form?.visibilityError}
+									<p class="text-sm text-red-400">{form.visibilityError}</p>
+								{:else if form?.visibilityMessage}
+									<p class="text-sm text-green-400">{form.visibilityMessage}</p>
+								{/if}
+							</form>
+						{:else}
+							<div class="flex items-center gap-3 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4 text-sm text-gray-300">
+								<MailIcon class="shrink-0 text-gold-400" size={18} />
+								<span>We send a reset link to <span class="font-medium text-white">{user?.email}</span>, and it opens the page where you pick a new password.</span>
+							</div>
+							<button
+								class="btn-outline-gold mt-5"
+								disabled={resetPasswordLoading}
+								onclick={handlePasswordReset}
+								title="Email yourself a password reset link"
+								type="button"
+							>
+								<LockIcon size={16} />
+								{resetPasswordLoading ? 'Sending...' : 'Send password reset email'}
 							</button>
-						</form>
-					</div>
-				{:else if activeTab === 'privacy'}
-					<div in:fade={{duration: 200}}>
-						<h2 class="mb-1 text-xl font-bold text-gold-400 md:text-2xl">Privacy</h2>
-						<p class="mb-5 text-sm text-gray-400">Who can see your collection and wishlist.</p>
-						<!--
-							Saved as soon as the box changes: the checkbox's `change` event bubbles to the form, which submits itself.
-							`flushSync` first, because Svelte writes the hidden input's value in a later microtask and the submit would read the stale one.
-						-->
-						<form
-							action="?/updateVisibility"
-							class="flex flex-col gap-3 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4"
-							method="POST"
-							onchange={event => {
-								flushSync();
-								event.currentTarget.requestSubmit();
-							}}
-							use:enhance={() => {
-								savingVisibility = true;
-								return async ({result, update}) => {
-									await update({reset: false});
-									if (result.type !== 'success') isPublic = profile?.is_public ?? false;
-									savingVisibility = false;
-								};
-							}}
-						>
-							<Checkbox bind:checked={isPublic} disabled={savingVisibility} id="is-public" label="Public profile" />
-							<input name="is_public" type="hidden" value={isPublic} />
-							<p class="text-sm text-gray-400">
-								{isPublic ? 'Anyone can browse your collection and wishlist.' : 'Only you can see your collection and wishlist.'}
-							</p>
-							{#if form?.visibilityError}
-								<p class="text-sm text-red-400">{form.visibilityError}</p>
-							{:else if form?.visibilityMessage}
-								<p class="text-sm text-green-400">{form.visibilityMessage}</p>
+							{#if resetPasswordMessage}
+								<p class="mt-3 text-sm text-green-400">{resetPasswordMessage}</p>
 							{/if}
-						</form>
-					</div>
-				{:else}
-					<div in:fade={{duration: 200}}>
-						<h2 class="mb-1 text-xl font-bold text-gold-400 md:text-2xl">Security</h2>
-						<p class="mb-5 text-sm text-gray-400">Change the password you sign in with.</p>
-						<div class="flex items-center gap-3 rounded-lg border border-gray-700/60 bg-gray-900/50 p-4 text-sm text-gray-300">
-							<MailIcon class="shrink-0 text-gold-400" size={18} />
-							<span>We send a reset link to <span class="font-medium text-white">{user?.email}</span>, and it opens the page where you pick a new password.</span>
-						</div>
-						<button
-							class="btn-outline-gold mt-5"
-							disabled={resetPasswordLoading}
-							onclick={handlePasswordReset}
-							title="Email yourself a password reset link"
-							type="button"
-						>
-							<LockIcon size={16} />
-							{resetPasswordLoading ? 'Sending...' : 'Send password reset email'}
-						</button>
-						{#if resetPasswordMessage}
-							<p class="mt-3 text-sm text-green-400">{resetPasswordMessage}</p>
-						{/if}
-						{#if resetPasswordError}
-							<p class="mt-3 text-sm text-red-400">{resetPasswordError}</p>
+							{#if resetPasswordError}
+								<p class="mt-3 text-sm text-red-400">{resetPasswordError}</p>
+							{/if}
 						{/if}
 					</div>
-				{/if}
+				{/key}
 			</section>
 		</div>
 	{/if}

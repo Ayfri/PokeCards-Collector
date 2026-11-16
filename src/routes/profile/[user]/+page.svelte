@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { refreshAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
+	import { profileColorOf } from '#src/constants.ts';
 	import { cardPath } from '#helpers/card-utils.ts';
 	import { formatDate, formatEuros, timeAgo } from '#helpers/format.ts';
 	import { compareRarities } from '#helpers/rarity.ts';
@@ -59,7 +60,7 @@
 	const collectionPath = $derived(resolve('/collection/[user]', { user: encodeURIComponent(username) }));
 	const possessive = $derived(isOwnProfile ? 'your' : `${username}'s`);
 	/** Tints the banner and accents with the color picked in the settings, gold when none is set. */
-	const accent = $derived(targetProfile.profile_color && /^#[0-9A-Fa-f]{6}$/.test(targetProfile.profile_color) ? targetProfile.profile_color : '#fbc54a');
+	const accent = $derived(profileColorOf(targetProfile.profile_color));
 
 	const setEntries = $derived(Object.values(collectionStats?.set_completion ?? {}));
 	const sortedSets = $derived(setEntries.toSorted(SET_SORTS[setSort].compare));
@@ -109,33 +110,20 @@
 	] : []);
 
 	async function handleToggleVisibility() {
+		const next = !isPublic;
 		isLoading = true;
-		errorMessage = '';
-		successMessage = '';
+		errorMessage = successMessage = '';
+		const { error } = await toggleProfileVisibility(username, next);
 
-		try {
-			const newVisibility = !isPublic;
-			const { data: updatedProfile, error } = await toggleProfileVisibility(username, newVisibility);
-
-			if (error) {
-				errorMessage = `Failed to update profile visibility: ${error instanceof Error ? error.message : JSON.stringify(error)}`;
-				return;
-			}
-
-			if (!updatedProfile) {
-				errorMessage = 'No data returned from server after toggle.';
-				return;
-			}
-
+		if (error) {
+			errorMessage = `Failed to update profile visibility: ${error.message}`;
+		} else {
 			/** The toggle writes through the browser client, so the page data must be reloaded to show it. */
 			await refreshAll();
-			successMessage = `Your profile is now ${newVisibility ? 'public' : 'private'}.`;
+			successMessage = `Your profile is now ${next ? 'public' : 'private'}.`;
 			setTimeout(() => successMessage = '', 3000);
-		} catch (error) {
-			errorMessage = `An error occurred: ${error instanceof Error ? error.message : 'Unknown error'}.`;
-		} finally {
-			isLoading = false;
 		}
+		isLoading = false;
 	}
 </script>
 

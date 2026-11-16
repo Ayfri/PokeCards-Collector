@@ -44,3 +44,10 @@ export const PASSWORD_CRITERIA = [
 export const PASSWORD_REQUIREMENTS = 'Password must be at least 8 characters long and include at least one number and one special character.';
 
 export const isStrongPassword = (password: string): boolean => PASSWORD_CRITERIA.every(criterion => criterion.test(password));
+
+export const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
+
+/** Gold-400, the color `Avatar.svelte` falls back to. */
+export const DEFAULT_PROFILE_COLOR = '#fbc54a';
+
+export const profileColorOf = (color: string | null | undefined): string => (color && HEX_COLOR.test(color) ? color : DEFAULT_PROFILE_COLOR);

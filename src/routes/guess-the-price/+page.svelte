@@ -37,7 +37,6 @@
 		off: number;
 		price: number;
 		score: RoundScore;
-		tier: number;
 	}
 
 	let { data }: Props = $props();
@@ -100,7 +99,7 @@
 		const { off, tier } = judgeGuess(guessed, price);
 		const { color, high, low } = PRICE_TIERS[tier];
 
-		verdict = { color, guessed, headline: pick(guessed < price ? low : high), off, price, score: priceGame.record(tier, off), tier };
+		verdict = { color, guessed, headline: pick(guessed < price ? low : high), off, price, score: priceGame.record(tier, off) };
 		verdictAt = performance.now();
 		if (tier === 0) window.confetti?.({ origin: { y: 0.6 }, particleCount: 150, spread: 100 });
 	}

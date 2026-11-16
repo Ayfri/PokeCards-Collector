@@ -1,4 +1,5 @@
 import { fail, redirect } from '@sveltejs/kit';
+import { HEX_COLOR } from '#src/constants.ts';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals: { supabase, user } }) => {
@@ -39,7 +40,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const profileColor = formData.get('profile_color') as string;
 
-		if (!/^#[0-9A-Fa-f]{6}$/.test(profileColor)) {
+		if (!HEX_COLOR.test(profileColor)) {
 			return fail(400, {
 				error: 'Invalid hex color format. Please use #RRGGBB.',
 				profileColor,

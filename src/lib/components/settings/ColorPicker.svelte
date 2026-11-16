@@ -3,6 +3,7 @@
 	import CopyIcon from '@lucide/svelte/icons/copy';
 	import RotateCcwIcon from '@lucide/svelte/icons/rotate-ccw';
 	import {onMount} from 'svelte';
+	import {HEX_COLOR} from '#src/constants.ts';
 
 	interface Props {
 		/** Restored by the reset button. */
@@ -19,7 +20,7 @@
 	let pickerReady = $state(false);
 	let copied = $state(false);
 
-	const isValid = $derived(/^#[0-9A-Fa-f]{6}$/.test(value));
+	const isValid = $derived(HEX_COLOR.test(value));
 
 	onMount(async () => {
 		/** `vanilla-colorful` registers a custom element, so it can only be imported in the browser, never during SSR. */
@@ -59,7 +60,7 @@
 				bind:value
 				class="min-w-0 flex-1 rounded-md border border-gray-700 bg-gray-800/60 px-3 py-2 font-mono text-gray-200 focus:border-gold-400 focus:outline-hidden"
 				maxlength="7"
-				pattern={'^#[0-9A-Fa-f]{6}$'}
+				pattern={HEX_COLOR.source}
 				placeholder="#RRGGBB"
 				spellcheck="false"
 				type="text"
